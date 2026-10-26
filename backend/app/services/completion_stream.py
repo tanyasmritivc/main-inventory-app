@@ -23,6 +23,7 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
     activity = None
     activity_started = monotonic()
     still_reported = False
+    last_update = None
     try:
         for chunk in chunks:
             choices = getattr(chunk, 'choices', None) or []
@@ -32,6 +33,13 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
             delta = getattr(choice, 'delta', None) or getattr(choice, 'message', None)
             if delta is None:
                 continue
+            # Liveness is evidence of a received model chunk, not a timer claiming
+            # that a stalled provider is still working. No content leaves here.
+            if report_activity and any(getattr(delta, key, None) for key in ('reasoning_content', 'content', 'tool_calls')):
+                now = monotonic()
+                if last_update is None or now - last_update >= 5:
+                    last_update = now
+                    yield {'type': 'activity', 'source': 'model'}
             # Only fixed activity labels leave this boundary. Never expose or
             # summarize reasoning text, tool arguments, or arbitrary tool names.
             if report_activity and not activity and getattr(delta, 'reasoning_content', None):

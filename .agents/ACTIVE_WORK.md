@@ -1,3 +1,7 @@
+## October 25 - Live chat progress
+
+Emit a content-free model activity event at most every five seconds, only when an actual reasoning/text/tool-call chunk arrives. A quiet provider must not produce pretend liveness. Preserve fixed phase labels, generation budgets, private reasoning, verified final replies, tools and saves. Web consumes the additive event; old clients safely ignore it. No schema or model change.
+
 ## October 25 — Response feedback API (ready for review, not deployed)
 
 ## October 25 — Response feedback migrated and deployed

@@ -207,7 +207,7 @@ def test_capture_reply_retries_interrupted_generation_once_and_resets_text():
         result = list(w.stream_turn(ACTOR, WORLD, 'Auto extract', [], 'cid'))
     assert gateway.call_count == 2
     assert gateway.call_args.kwargs['max_tokens'] == w.CHAT_RETRY_TOKENS
-    assert [e['type'] for e in result if e['type'] != 'status'] == ['delta','reset','delta','done']
+    assert [e['type'] for e in result if e['type'] not in ('status', 'activity')] == ['delta','reset','delta','done']
     assert result[-1]['assistant_message'] == 'Which inventory and Space should I use?'
 
 

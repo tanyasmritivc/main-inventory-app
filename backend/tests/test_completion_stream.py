@@ -125,10 +125,14 @@ def test_activity_is_evidence_based_and_never_leaks_reasoning_or_arguments():
 
 
 def test_still_working_requires_live_chunks_and_does_not_invent_steps():
-    ticks = iter([0, 0, 0, 16, 17])
+    clock = [0]
     reasoning = _as_namespace({'choices': [{'delta': {'reasoning_content': 'SECRET'}}]})
-    with patch('app.services.completion_stream.monotonic', side_effect=lambda: next(ticks)):
-        events = list(completion_events(iter([reasoning, reasoning, reasoning]), report_activity=True))
+    def chunks():
+        for at in [0, 16, 17]:
+            clock[0] = at
+            yield reasoning
+    with patch('app.services.completion_stream.monotonic', side_effect=lambda: clock[0]):
+        events = list(completion_events(chunks(), report_activity=True))
     assert [e['message'] for e in events if e['type'] == 'status'] == [
         'Thinking through your request...', 'Still thinking through your request...']
 
@@ -147,3 +151,26 @@ def test_progress_distinguishes_pending_draft_from_confirmed_changes():
     assert response_status([{'result': {'pending_action': {'status': 'confirmed'}}}]) == 'Working through the results...'
     assert response_status([{'result': {'world_action': {'status': 'pending'}}}]) == 'Writing your draft summary...'
     assert response_status([{'result': {'error': 'PRIVATE'}}]) == 'Working through the results...'
+
+
+def test_live_updates_are_throttled_and_require_actual_model_content():
+    clock = [0]
+    def chunks():
+        for at in [0, 1, 4, 5, 11, 20]:
+            clock[0] = at
+            yield _as_namespace({'choices': [{'delta': {'reasoning_content': 'PRIVATE'}}]}) if at != 20 else chunk()
+    with patch('app.services.completion_stream.monotonic', side_effect=lambda: clock[0]):
+        events = list(completion_events(chunks(), report_activity=True))
+    updates = [e for e in events if e['type'] == 'activity']
+    assert updates == [{'type': 'activity', 'source': 'model'}] * 3
+    assert 'PRIVATE' not in json.dumps(events)
+
+
+def test_world_stream_forwards_liveness_without_treating_it_as_a_completion():
+    from app.services import world_chat as w
+    from uuid import uuid4
+    response = iter([chunk('Hello.')])
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=response):
+        events = list(w.stream_turn(str(uuid4()), 'personal', 'hello', [], 'cid'))
+    assert {'type': 'activity', 'source': 'model'} in events
+    assert events[-1]['type'] == 'done'
