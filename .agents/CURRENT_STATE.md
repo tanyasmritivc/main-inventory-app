@@ -1,3 +1,17 @@
+## October 25 - Chat activity and recovery deployed (PR227)
+
+Runtime `7e82e7e` is live after all five exact-source CI gates passed (40250686843).
+Fixed labels follow actual stream/tool work; reasoning and arguments remain private.
+Independent bounded answer correction survives a transport retry. Action summaries
+wait for receipt-claim validation; repeated invalid claims still fail closed.
+1,535 backend tests pass. The staged real-model apartment probe completed in 31.8s
+with 30 records, five locations and one review card; all actual writes were mocked.
+Guarded publication preserved 122 unrelated source files. HTTPS/API/database health
+and anonymous denial passed. No migration, provider or client layout change.
+Rollback: `/home/ubuntu/findez-chat-activity-final-20261025/before`.
+Receipt: `docs/plans/chat-activity-api-receipt.json`. Web confirmation JSON fix is
+also live in PR228. Existing mobile clients consume these status events; no new binary.
+
 ## October25 — Chat generation budget fix deployed (PR225)
 
 Runtime `84a8991` is live; all five exact-source CI gates passed (40246755670).
