@@ -1,10 +1,11 @@
 /** @jest-environment jsdom */
+import { navigateAfterAuth } from "@/lib/auth-callback";
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/site/auth-form";
 
-const push = jest.fn();
+const push = jest.mocked(navigateAfterAuth);
 const refresh = jest.fn();
 const signUp = jest.fn();
 const signInWithOAuth = jest.fn();
@@ -16,6 +17,7 @@ const from = jest.fn(() => ({ upsert }));
 let mockRedirect = "/inventory";
 let mockPrompt = "";
 
+jest.mock("@/lib/auth-callback", () => ({ ...jest.requireActual("@/lib/auth-callback"), navigateAfterAuth: jest.fn() }));
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh, replace: jest.fn() }),
   useSearchParams: () =>

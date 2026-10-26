@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { normalizeAuthNext } from "@/lib/auth-callback";
+import { previewAuthDestination, previewPrompt } from "@/lib/landing-preview";
 import { signInPath } from "@/lib/auth-paths";
 import { isProtectedPath } from "@/lib/protected-routes";
 
@@ -12,7 +13,7 @@ import { isProtectedPath } from "@/lib/protected-routes";
  * streams. Each page still calls `requireUser()` (lib/auth-guard.ts) on the server
  * as the authoritative check.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -42,14 +43,21 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtectedPath(pathname)) {
     const redirect = NextResponse.redirect(new URL(signInPath(pathname + request.nextUrl.search), request.url));
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    redirect.headers.set("Cache-Control", "private, no-store");
     return redirect;
   }
 
-  if ((pathname === "/signin" || pathname === "/signup") && user) {
+  if ((pathname === "/" || pathname === "/signin" || pathname === "/signup") && user) {
     // Signed-in visitors continue to their requested local destination.
-    const target = new URL(normalizeAuthNext(request.nextUrl.searchParams.get("redirect")), request.url);
+    const destination = previewAuthDestination(
+      normalizeAuthNext(request.nextUrl.searchParams.get("redirect")),
+      previewPrompt(request.nextUrl.searchParams.get("prompt")),
+      false,
+    );
+    const target = new URL(destination, request.url);
     const redirect = NextResponse.redirect(target);
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    redirect.headers.set("Cache-Control", "private, no-store");
     return redirect;
   }
 

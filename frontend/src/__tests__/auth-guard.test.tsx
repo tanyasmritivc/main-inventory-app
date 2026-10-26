@@ -11,7 +11,7 @@ import {
   isProtectedPath,
   PROTECTED_ROUTE_PREFIXES,
 } from "@/lib/protected-routes";
-import { config, middleware } from "../../middleware";
+import { config, proxy as middleware } from "../proxy";
 
 class RedirectSignal extends Error {
   constructor(public destination: string) {
@@ -98,6 +98,44 @@ describe("middleware", () => {
     expect(response.headers.get("location")).toBe(
       "https://findez.ai/inventory?space=Shelf",
     );
+  });
+
+  test.each(["/", "/signin", "/signup"])("returning users skip %s", async (path) => {
+    sessionUser({ id: "u1" });
+    const response = await middleware(new NextRequest(`https://findez.ai${path}`));
+    expect(response.headers.get("location")).toBe("https://findez.ai/worlds");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  test("retains a landing prompt and invitation destinations for returning users", async () => {
+    sessionUser({ id: "u1" });
+    const response = await middleware(new NextRequest("https://findez.ai/signup?prompt=Find+my+drill"));
+    expect(response.headers.get("location")).toBe("https://findez.ai/worlds?q=Find+my+drill");
+    const invite = await middleware(new NextRequest("https://findez.ai/signup?redirect=%2Fjoin%2Fteam%2FABC123&prompt=Hi"));
+    expect(invite.headers.get("location")).toBe("https://findez.ai/join/team/ABC123");
+  });
+
+  test.each(["/signin", "/signup?redirect=/signin", "/", "/x/../signin", "/%73ignup"])("does not redirect back into auth: %s", async (target) => {
+    sessionUser({ id: "u1" });
+    const response = await middleware(new NextRequest(`https://findez.ai/signup?redirect=${encodeURIComponent(target)}`));
+    expect(response.headers.get("location")).toBe("https://findez.ai/worlds");
+  });
+
+  test("refreshed cookies survive both app and redirect responses", async () => {
+    jest.mocked(createServerClient).mockImplementation((_url, _key, options) => ({
+      auth: { getUser: async () => {
+        options.cookies!.setAll!([{ name: "test-session", value: "refreshed", options: { path: "/", httpOnly: true, sameSite: "lax" } }]);
+        return { data: { user: { id: "u1" } } };
+      } },
+    }) as unknown as ReturnType<typeof createServerClient>);
+    for (const path of ["/signup", "/worlds/personal"]) {
+      const response = await middleware(new NextRequest(`https://findez.ai${path}`));
+      expect(response.cookies.get("test-session")).toMatchObject({ value: "refreshed", httpOnly: true, path: "/", sameSite: "lax" });
+    }
+  });
+
+  test("proxy lives beside app so Next includes it in production", () => {
+    expect(statSync(path.join(__dirname, "../proxy.ts")).isFile()).toBe(true);
   });
 
   test("never redirects a signed-in visitor off-site", async () => {

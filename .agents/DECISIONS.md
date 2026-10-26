@@ -1,3 +1,7 @@
+## October 25 - Signed-in web entry skips authentication
+
+Returning authenticated visitors to `/`, `/signin` and `/signup` enter `/worlds`, which revalidates the remembered organization or Personal chat. Preserve bounded landing prompts, local invitation/recovery destinations and token-refresh cookies. The Next.js entry hook must live at `frontend/src/proxy.ts` beside `src/app`; the prior root middleware was absent from the production manifest. Verify the built handler and real HTTP redirects, not only imported unit tests. Successful password auth uses a fresh document navigation to avoid cached signed-out route responses. Keep auth and chat layout unchanged.
+
 ## October 25 - No automatic pre-launch cutoff
 
 ## October 25 - Browser and search favicon cache refresh
