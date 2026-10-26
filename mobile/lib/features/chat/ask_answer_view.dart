@@ -298,6 +298,19 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               children: [
                 for (final link in data.resourceLinks)
                   ActionChip(
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF29485F).withValues(alpha: .8)
+                        : const Color(0xFFDAEDFA).withValues(alpha: .9),
+                    side: BorderSide(
+                      color: const Color(0xFFA9D6F5).withValues(alpha: .6),
+                    ),
+                    shape: const StadiumBorder(),
+                    labelStyle: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFFDCF0FF)
+                          : const Color(0xFF163F5D),
+                    ),
                     avatar: Icon(
                       link.kind == 'space'
                           ? Icons.grid_view_rounded

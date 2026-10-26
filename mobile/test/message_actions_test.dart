@@ -173,14 +173,14 @@ void main() {
                 timestamp: 1000,
                 isUser: true,
                 onRetry: () {},
-                onEdit: () {},
               ),
             ),
           ),
         ),
       );
       expect(find.byTooltip('Good response'), findsNothing);
-      expect(find.byTooltip('Edit prompt'), findsOneWidget);
+      expect(find.byTooltip('Edit prompt'), findsNothing);
+      expect(find.byTooltip('Retry prompt'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });

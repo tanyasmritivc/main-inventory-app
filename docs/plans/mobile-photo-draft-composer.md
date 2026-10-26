@@ -7,3 +7,5 @@ API dependency: migration 084 and backend runtime 874b537 add preview_only witho
 Validation: Flutter analysis is clean; 46 focused tests pass, including save retry/failure, retained draft on stream failure, caption and image-only send, preview-to-chat handoff, and keyboard layout. Four iOS simulator integration cases pass using synthetic APIs. Native Attach menu selection is exercised through its callback because Flutter test taps cannot synthesize UIKit menus. Physical camera/library and on-device network acceptance remain unverified. Full suite and release gates recorded in the delivery receipt.
 
 Build 142 supersedes 141; no App Store submission is authorized by this release.
+
+Follow-up: prompt edit removed, confirmed ratings use filled blue selection, and resource links use blue pills. Completed replies can be rated while the next reply runs. 41 focused action/photo/resource tests and analysis pass. Full preceding suite: 938 passed, one existing skip.

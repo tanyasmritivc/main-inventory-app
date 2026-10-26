@@ -3531,23 +3531,14 @@ class _ChatPageState extends State<ChatPage>
             isUser: message.role == 'user',
             messageId: message.messageId,
             rating: _responseRatings[message.messageId],
-            disabled: _sending,
             onRating: (rating) =>
                 setState(() => _responseRatings[message.messageId!] = rating),
             onRetry:
-                (widget.api.worldKey != null && answer?.messageId != null) ||
-                    answer?.onRetry != null
+                !_sending &&
+                    ((widget.api.worldKey != null &&
+                            answer?.messageId != null) ||
+                        answer?.onRetry != null)
                 ? retry
-                : null,
-            onEdit: message.role == 'user'
-                ? () {
-                    _controller.text = message.content;
-                    _controller.selection = TextSelection.collapsed(
-                      offset: _controller.text.length,
-                    );
-                    _focusNode.requestFocus();
-                    setState(() {});
-                  }
                 : null,
           ),
         ],

@@ -13,7 +13,6 @@ class MessageActions extends StatefulWidget {
     this.rating,
     this.onRating,
     this.onRetry,
-    this.onEdit,
     this.disabled = false,
   });
   final ApiClient api;
@@ -23,7 +22,7 @@ class MessageActions extends StatefulWidget {
   final String? messageId;
   final Map<String, dynamic>? rating;
   final ValueChanged<Map<String, dynamic>>? onRating;
-  final VoidCallback? onRetry, onEdit;
+  final VoidCallback? onRetry;
   @override
   State<MessageActions> createState() => _MessageActionsState();
 }
@@ -179,11 +178,11 @@ class _MessageActionsState extends State<MessageActions> {
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       iconSize: 17,
-      onPressed: widget.disabled || _busy ? null : tap,
-      icon: Icon(
-        data,
-        color: selected ? Theme.of(context).colorScheme.primary : null,
+      style: IconButton.styleFrom(
+        backgroundColor: selected ? const Color(0xFFA9D6F5) : null,
       ),
+      onPressed: widget.disabled || _busy ? null : tap,
+      icon: Icon(data, color: selected ? const Color(0xFF163F5D) : null),
     );
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -200,13 +199,17 @@ class _MessageActionsState extends State<MessageActions> {
         if (!widget.isUser && widget.messageId != null) ...[
           icon(
             'Good response',
-            Icons.thumb_up_outlined,
+            widget.rating?['rating'] == 1
+                ? Icons.thumb_up
+                : Icons.thumb_up_outlined,
             () => rate(1),
             selected: widget.rating?['rating'] == 1,
           ),
           icon(
             'Bad response',
-            Icons.thumb_down_outlined,
+            widget.rating?['rating'] == -1
+                ? Icons.thumb_down
+                : Icons.thumb_down_outlined,
             () => widget.rating?['rating'] == -1 ? showDetails() : rate(-1),
             selected: widget.rating?['rating'] == -1,
           ),
@@ -217,8 +220,6 @@ class _MessageActionsState extends State<MessageActions> {
             Icons.refresh,
             widget.onRetry,
           ),
-        if (widget.isUser && widget.onEdit != null)
-          icon('Edit prompt', Icons.edit_outlined, widget.onEdit),
         Tooltip(
           message: MaterialLocalizations.of(context).formatFullDate(date),
           child: Padding(
