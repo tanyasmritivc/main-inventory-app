@@ -14,4 +14,6 @@ read-only text remains streamed. False repeated claims still fail closed.
 
 No schema, provider, model budget, authorization, layout or navigation change.
 65 focused tests and 1,535 full backend tests passed (existing deprecation warnings).
-Production release awaits exact-source CI. Web card JSON transport is a separate lane.
+Runtime 7e82e7e is deployed after all five exact-source CI gates passed.
+See chat-activity-api-receipt.json for health, preservation and rollback evidence.
+The separate web card JSON transport fix is also deployed (PR228).

@@ -1,0 +1,25 @@
+{
+  "published": true,
+  "source": "7e82e7e4ecebe2021db2429dcdda82cfaf28ba3f",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 122,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "ci_run": 40250686843,
+  "ci_gates": "all five passed",
+  "backend_tests_passed": 1535,
+  "public_https_health": "passed",
+  "public_https_database_health": "passed",
+  "customer_inventory_modified_by_tests": false,
+  "staged_model_probe": {
+    "completed": true,
+    "records": 30,
+    "locations": 5,
+    "seconds": 31.8,
+    "real_writes": false
+  },
+  "rollback": "/home/ubuntu/findez-chat-activity-final-20261025/before",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/227"
+}
