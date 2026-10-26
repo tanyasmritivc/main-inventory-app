@@ -252,3 +252,15 @@ def test_sse_personalization_receipt_uses_current_message_without_extra_model_ca
     assert result[-1]['type']=='done' and 'is on' in result[-1]['assistant_message']
     assert len(calls)==1 and written[0][0]==A and written[0][1].enabled
     assert result[-1]['answer_context']=={}  # no new cards or layout sections
+
+
+def test_memory_question_reads_actual_enabled_state_without_writing(monkeypatch):
+    from app.services.personalization import chat, repository
+    from app.services import world_chat
+    monkeypatch.setattr(world_chat, 'authorize', lambda *a: None)
+    monkeypatch.setattr(repository, 'read', lambda *a: {'profile': {'effective_enabled': True}})
+    monkeypatch.setattr(repository, 'change', lambda *a: pytest.fail('recall must not write preferences'))
+    result = chat.execute(A, 'personal', {}, message='remember what I asked', turn_id=str(uuid4()))
+    assert result['personalization_enabled'] is True and result['saved'] is False
+    assert 'already on' in result['instructions']
+    assert 'current conversation' in result['instructions']

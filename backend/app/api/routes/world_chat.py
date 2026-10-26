@@ -115,7 +115,7 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None, retry_of=None):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None, retry_of=None, preview_only=False):
     key = await asyncio.to_thread(world.authorize, actor, key)
     retry_context = None
     if retry_of:
@@ -137,13 +137,14 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         message = prompts[0]['content']
     source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
-        await asyncio.to_thread(check_and_increment_chat, actor)
+        if not preview_only:
+            await asyncio.to_thread(check_and_increment_chat, actor)
     except (ChatLimitExceeded, TeamSoftCapExceeded):
         raise HTTPException(403, 'Your chat allowance has been reached. Check your account settings.') from None
     turn_id = str(uuid5(NAMESPACE_URL, f'findez:request:{actor}:{key}:{request_id}')) if request_id else str(uuid4())
     if retry_of:
         turn_id = prompts[0]['id']
-    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions or retry_of else {}))
+    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions or retry_of else {}), **({'record_user': False} if preview_only else {}))
     async def generate():
         stored = None
         saved = False
@@ -205,6 +206,9 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                         draft = await asyncio.to_thread(chat_capture.create, actor, key, cid, result.get('items', []), stored.url, result.get('summary'))
                         saved = True
                         yield encode({'type': 'capture', 'conversation_id': cid, 'answer_context': {'chat_capture': draft}})
+                        if preview_only:
+                            yield encode({'type': 'done', 'conversation_id': cid, 'assistant_message': '', 'answer_context': {'chat_capture': draft}})
+                            return
                     evidence = {**photo_facts(retained), 'note': 'Uncertain observations are not verified identities or stock counts.'}
                 else:
                     stage = 'read_chat_photo'
@@ -291,7 +295,7 @@ async def command(request: Request, world_id: str, body: Question, user: Authent
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), request_id: UUID | None = Form(None), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), preview_only: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), request_id: UUID | None = Form(None), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
     try:
         selected_sources = chat_sources.source_adapter.validate_json(sources)
     except ValueError:
@@ -304,7 +308,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions, request_id=request_id)
+    return await answer(user.user_id, world.world_key(world_id), message.strip(), str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions, request_id=request_id, preview_only=preview_only and auto_extract and supports_capture)
 
 
 class Decision(BaseModel):

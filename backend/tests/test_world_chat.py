@@ -65,7 +65,7 @@ def test_tools_reject_malformed_model_arguments(args):
 
 def test_model_can_read_target_ids_but_not_credentials():
     result = w.model_data({'inventory_id': INVENTORY, 'token': 'SECRET', 'image_url': 'SECRET', 'name': 'Hardware'})
-    assert result == {'target_inventory_id': INVENTORY, 'name': 'Hardware'}
+    assert result == {'inventory_id': INVENTORY, 'name': 'Hardware'}
 
 def test_world_search_uses_fresh_scoped_records():
     with patch.object(w, 'authorize'), patch.object(w, '_inventory', return_value=inventory()), patch.object(w, 'directory', return_value={'inventories': [inventory()]}), patch('app.services.ai_agent._current_items', return_value=[{'item_id': 'bolt', 'name': 'Bolt'}]) as read:
@@ -431,3 +431,13 @@ def test_regenerating_finished_answer_cannot_repeat_inventory_mutation():
 def test_operation_diagnostics_never_copy_arguments_or_results():
     result=w.trace_diagnostics([{'tool':'world_adjust_quantity','args':{'secret':'private'},'result':{'inventory_changed':True,'name':'private','quantity':4}}])
     assert result==[{'operation':'world_adjust_quantity','read_only':False,'result':'database_confirmed'}]
+
+
+def test_tool_context_preserves_source_and_target_inventory_ids_without_secrets():
+    from uuid import uuid4
+    target = str(uuid4())
+    data = w.model_data({'items': [{'inventory_id': INVENTORY, 'target_inventory_id': target,
+        'item_id': 'item', 'owner_user_id': 'SECRET', 'token': 'SECRET'}]})
+    assert data['items'][0]['inventory_id'] == INVENTORY
+    assert data['items'][0]['target_inventory_id'] == target
+    assert 'SECRET' not in str(data)

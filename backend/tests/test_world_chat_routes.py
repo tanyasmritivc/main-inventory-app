@@ -286,3 +286,21 @@ def test_regenerated_history_keeps_original_position_and_current_card(transport)
         result=transport.client.get(f'/worlds/{WORLD}/conversations/{CID}').json()
     assert [m['id'] for m in result['messages']]==['prompt-one',c,'prompt-two',b]
     assert result['messages'][1]['answer_context']['world_actions'][0]['status']=='confirmed'
+
+
+def test_preview_only_extracts_without_model_reply_or_synthetic_user_prompt(transport):
+    from app.services import chat_capture as capture
+    out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
+    draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft', 'items': []}
+    with patch.object(route, 'check_and_increment_scan'), \
+         patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), \
+         patch('app.services.photo_extraction.extract_inventory_items', new=AsyncMock(return_value={'items': []})), \
+         patch.object(capture, 'create', return_value=draft), \
+         patch.object(world, 'stream_turn') as model:
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
+            data={'supports_capture': 'true', 'auto_extract': 'true', 'preview_only': 'true'},
+            files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert response.status_code == 200
+    assert '"type": "capture"' in response.text and '"type": "done"' in response.text
+    model.assert_not_called()
+    assert '"assistant_message": ""' in response.text

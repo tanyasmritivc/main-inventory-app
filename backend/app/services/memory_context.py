@@ -16,7 +16,7 @@ def load_preferences(user_id):
         client=get_supabase_raw()
         rows=client.table('user_memory').select('key,memory_kind,payload,confirmed_at').eq('user_id',actor).in_('key',['__settings_v1','answer_length','answer_format']).limit(3).execute().data or []
         control=next((r for r in rows if r['key']=='__settings_v1' and r.get('memory_kind')=='settings'),{})
-        if (control.get('payload') or {}).get('enabled') is not True:
+        if (control.get('payload') or {}).get('enabled', True) is not True:
             return {}
         result={}
         choices={'answer_length':('brief','standard','detailed'),'answer_format':('paragraphs','bullets')}

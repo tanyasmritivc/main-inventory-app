@@ -48,10 +48,23 @@ def execute(actor, world, args, *, message, turn_id):
     parsed = Arguments.model_validate(args, strict=True)
     command = parse(message)
     if not command:
-        return {'instructions':HELP, 'saved':False}
+        state = repository.read(actor)['profile']
+        return {'saved': False, 'personalization_enabled': state['effective_enabled'],
+                'instructions': ('Personalization is already on. Use the current conversation to recall the request; ask which request only if the history is missing or ambiguous. Do not claim a new preference was saved.' if state['effective_enabled'] else
+                    'Personalization is off. Current-conversation recall still works from the provided history. Enable it in Memory settings to use durable preferences.')}
     if not turn_id:
         return {'instructions':'Please update FindEZ before changing personalization in chat. Memory settings still work.', 'saved':False}
     current = repository.read(actor)['profile']
+    if command['action'] in ('enable', 'disable') and 'effective_enabled' in current:
+        from app.services import account_memory
+        from app.schemas.memory import MemoryChange
+        memory = account_memory.snapshot(actor)
+        desired = command['action'] == 'enable'
+        if memory['enabled'] != desired:
+            account_memory.change(actor, MemoryChange(action='settings', enabled=desired,
+                expected_revision=memory['revision'],
+                operation_id=uuid5(NAMESPACE_URL, 'findez:memory-control:'+str(actor)+':'+str(turn_id))))
+            current = repository.read(actor)['profile']
     # A stable operation for this exact user turn makes provider/tool retries safe.
     operation = uuid5(NAMESPACE_URL, 'findez:personalization:'+str(actor)+':'+str(UUID(str(turn_id))))
     common = {'operation_id':operation,'expected_revision':current['revision']}

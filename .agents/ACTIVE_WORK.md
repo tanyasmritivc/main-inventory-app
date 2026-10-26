@@ -1,3 +1,7 @@
+## October 25 - Photo draft composer and truthful memory
+
+Active lane: API memory defaults/status, authorized tool identifiers, safe reviewed fallback and preview-only extraction. User authorized implementation; preserve explicit opt-outs. Separate backend/mobile commits and releases.
+
 ## October 25 - Live chat progress deployed (PR235)
 
 Runtime `9e5e318` is live after all five CI gates passed (40268609538). Content-free model activity events are emitted only on actual received chunks, at most every five seconds. Existing statuses, tool execution, canonical completion, budgets and providers are unchanged. All 1,569 backend tests plus 10 subtests passed. An isolated real-GLM apartment probe completed in 40.2 seconds with 30 records, five locations and a review card; inventory writes were blocked. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or mobile change. This provides liveness evidence, not a speed guarantee or completion percentage. Receipt: `docs/plans/live-chat-progress-api-receipt.json`.

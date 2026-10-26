@@ -17,6 +17,12 @@ def load(actor):
     except Exception:
         logger.info('Chat profile unavailable; inventory remains authoritative')
         result['profile_available'] = False
+    from app.services.personalization.repository import profile
+    try:
+        state = profile(actor)
+        result['personalization_state'] = {'available': True, 'enabled': state['effective_enabled']}
+    except Exception:
+        result['personalization_state'] = {'available': False}
     from app.services.response_feedback import learning_guidance
     result['feedback_guidance'] = learning_guidance(actor)
     return result

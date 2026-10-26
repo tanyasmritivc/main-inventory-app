@@ -91,7 +91,7 @@ def test_accounts_remain_separate_and_legacy_never_activated(api):
     assert 'FOREIGN_SECRET' not in json.dumps(result)
     actor['id']=B
     result=client.get('/memory').json()
-    assert not result['enabled'] and result['entries']==[]
+    assert result['enabled'] and result['entries']==[]  # default on, no invented preferences
     assert 'brief' not in json.dumps(result)
 
 
