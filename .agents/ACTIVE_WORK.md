@@ -1,5 +1,9 @@
 ## October 25 — Mobile response controls (not uploaded)
 
+## October 25 — Response controls delivered to TestFlight 141
+
+Apple acknowledged 1.1.1 (141), source `895a4c4d6e81abdfb0b69053323ea9f6200ee5cc`, delivery `37e20d76-fb6e-4563-ad52-14c224f28497`. Compact response/prompt controls, exact-message ratings, timestamps, safe retry, canonical completion handling and confirmed-save feedback are included. All five CI gates passed (40255674101); 936 mobile tests passed with one existing skip, clean analysis, and five synthetic simulator feedback cases passed. A simulator-framework cache was caught during archive verification; the clean rebuild passed all 34 archive/export device binaries, signing, 26 privacy manifests, production config and Apple validation. Processing/tester availability not polled; physical acceptance unverified. No public App Store submission. Receipt: `docs/plans/response-feedback-mobile-receipt.json`.
+
 Branch `feat/mobile-message-controls` adds compact copy/rating/retry/timestamp
 controls and prompt editing, plus a verified creation confirmation. Feedback stays
 unselected until the exact-message backend receipt; history loads ratings in a
