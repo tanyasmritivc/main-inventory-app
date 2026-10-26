@@ -181,7 +181,7 @@ export function WorldResourceLinks({
   if (!links.length) return null;
   return (
     <div className="ask-resource-links">
-      <div className="workspace-actions">
+      <div className={styles.row}>
         {links.map((l) => (
           <button
             className={styles.link}
