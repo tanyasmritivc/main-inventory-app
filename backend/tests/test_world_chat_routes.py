@@ -304,3 +304,36 @@ def test_preview_only_extracts_without_model_reply_or_synthetic_user_prompt(tran
     assert '"type": "capture"' in response.text and '"type": "done"' in response.text
     model.assert_not_called()
     assert '"assistant_message": ""' in response.text
+
+
+def test_personal_group_fast_reply_has_complete_client_receipt(transport):
+    """Exercise the real fast path through SSE, not a mocked stream contract."""
+    message = 'Save this as my personal group called electronics repair kit.'
+    receipt = {'message_id': str(uuid4()), 'created_at': '2026-10-26T20:00:00Z'}
+    transport.save.return_value = receipt
+    with patch.object(world, 'directory', return_value={}), \
+         patch.object(world, 'execute') as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion') as model:
+        response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': message})
+    payloads = [json.loads(line[6:]) for line in response.text.splitlines()
+                if line.startswith('data: {')]
+    done = next(event for event in payloads if event['type'] == 'done')
+    assert done['conversation_id'] == CID
+    assert done['message_id'] == receipt['message_id']
+    assert done['created_at'] == receipt['created_at']
+    assert "can't save a reusable personal group yet" in done['assistant_message']
+    assert not any(event['type'] == 'error' for event in payloads)
+    transport.save.assert_called_once_with(ACTOR, WORLD, CID, done['assistant_message'],
+                                          {'operation_diagnostics': []})
+    execute.assert_not_called()
+    model.assert_not_called()
+
+
+def test_personal_group_save_failure_is_not_success(transport):
+    transport.save.side_effect = RuntimeError('private storage error')
+    with patch.object(world, 'directory', return_value={}):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_command',
+            json={'message': 'Save this as my personal group kit'})
+    assert '"type": "error"' in response.text
+    assert '"type": "done"' not in response.text
+    assert 'private storage error' not in response.text

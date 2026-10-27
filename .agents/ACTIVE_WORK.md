@@ -1,3 +1,7 @@
+## October 26 - Personal-group completion envelope (active)
+
+`fix/api-group-completion-context` fixes a missing conversation ID in the unsupported-group fast response. Safari exposed the client rejecting a persisted answer as interrupted. Add real service-through-SSE regression coverage. No group persistence, inventory mutation, schema or provider change.
+
 ## October 26 - Group/tool parsing fix deployed
 
 Runtime `c40e9bf` is live after five CI gates passed (40429096988), 1,580 backend tests + 10 subtests and 78 focused tests. Tool batches permit up to 16 bounded calls; unsupported personal-group requests return a truthful answer after authorization without model retries or duplicate proposals. Synthetic staged probe completed in 0.003s with no model/tool calls. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or configuration change. Reusable personal groups are still not implemented. Receipt: `docs/plans/group-tool-stream-receipt.json`.
