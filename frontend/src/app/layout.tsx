@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { AppThemeDocument } from "@/components/site/use-app-theme";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
@@ -14,10 +16,9 @@ import "./workspace.css";
 // marketing, pricing, robotics, auth and every other non-interior route,
 // so the landing page never sees a dark class regardless of the visitor's
 // system preference or a stored choice from a previous interior visit.
-// Without this, AppThemeProvider's useEffect would apply the theme after
-// hydration, and a dark-mode visitor would see a white flash on every
-// interior page load.
-const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(dark)document.documentElement.classList.add("dark");}catch(e){}})();`;
+// The persistent AppThemeDocument maintains this across client navigation.
+// This script covers the first paint of a full document load.
+const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0b0b0d":"#ffffff");}catch(e){}})();`;
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-jakarta", display: "swap",
@@ -69,10 +70,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <meta name="theme-color" content="#ffffff" />
+        <style>{`html { background: #ffffff; } html.dark { background: #0b0b0d; }`}</style>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${jakarta.className} antialiased`}>
+        <Suspense fallback={null}><AppThemeDocument /></Suspense>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div><CookieNotice /></AppDialogProvider>
       </body>
     </html>
