@@ -1,4 +1,5 @@
 """Normalize model chunks without inventing text or exposing tool arguments."""
+import re
 from types import SimpleNamespace
 from time import monotonic
 from app.services.chat_response_style import format_chat_reply
@@ -11,6 +12,33 @@ class CompletionStreamError(RuntimeError):
     def __init__(self, code, message):
         super().__init__(message)
         self.code = code
+
+
+
+# Provider control tokens occasionally arrive in the text channel instead of
+# native tool_calls. Never interpret that text as permission to execute tools.
+_CONTROL_TAGS = ('tool_call', 'tool_calls', 'arg_key', 'arg_value', 'think', 'thinking')
+_CONTROL_MARKUP = re.compile(r'<\s*/?\s*(?:' + '|'.join(_CONTROL_TAGS) + r')(?:[\s>/])|<\|(?:tool_call|tool_calls|function_call|analysis)(?:[\s|>])', re.I)
+_CONTROL_STARTS = tuple(prefix + tag for tag in _CONTROL_TAGS for prefix in ('<', '</')) + (
+    '<|tool_call', '<|tool_calls', '<|function_call', '<|analysis')
+
+
+def public_text_prefix(text, *, final=False):
+    """Hold ambiguous token prefixes across chunks; reject control markup."""
+    if _CONTROL_MARKUP.search(text):
+        raise CompletionStreamError('control_markup', 'The model returned invalid response formatting')
+    # Only an unfinished trailing tag is held. Ordinary comparisons and HTML
+    # remain text, and final plain '<' is allowed. Control prefixes at EOF fail
+    # closed rather than exposing a truncated protocol token.
+    start = text.rfind('<')
+    if start >= 0:
+        tail = re.sub(r'\s+', '', text[start:]).lower()
+        if tail and any(marker.startswith(tail) for marker in _CONTROL_STARTS):
+            if final and len(tail) > 2:
+                raise CompletionStreamError('control_markup', 'The model returned invalid response formatting')
+            if not final:
+                return text[:start]
+    return text
 
 
 def completion_events(response, *, report_activity=False, thinking_message='Thinking through your request...'):
@@ -81,14 +109,14 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
                 if not calls:
                     # Keep punctuation identical to the saved answer, even when
                     # whitespace around an em dash spans several network chunks.
-                    safe = format_chat_reply(''.join(parts)).rstrip(' \t')
+                    safe = format_chat_reply(public_text_prefix(''.join(parts))).rstrip(' \t')
                     delta = safe[len(emitted):]
                     emitted = safe
                     if delta:
                         yield {'type': 'delta', 'delta': delta}
             if getattr(choice, 'finish_reason', None) in ('length', 'content_filter'):
                 raise CompletionStreamError('output_limit' if choice.finish_reason == 'length' else 'content_filter', 'The model answer was interrupted')
-        normalized = format_chat_reply(''.join(parts))
+        normalized = format_chat_reply(public_text_prefix(''.join(parts), final=True))
         if not calls and len(normalized) > len(emitted):
             yield {'type': 'delta', 'delta': normalized[len(emitted):]}
         yield {'type': 'completion', 'content': normalized, 'tool_calls': [

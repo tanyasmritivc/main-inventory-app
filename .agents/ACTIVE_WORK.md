@@ -1,3 +1,7 @@
+## October 26 - Internal tool markup stream guard (active)
+
+`fix/api-private-tool-markup` owns backend content-channel control-markup validation and bounded native-tool recovery. Keep authorization and action receipts unchanged; no textual tool execution, schema or provider changes.
+
 ## October 26 - Personal-group completion receipt repaired and deployed
 
 Runtime `e53d6ea` (PR248) is live. The unsupported personal-group fast path now includes conversation_id, which the web client requires to accept the saved answer. Earlier service-only coverage missed this response-envelope gap. Added real service-through-HTTP-SSE regression coverage and failed-save coverage. 1,582 backend tests plus 10 subtests and all five CI gates (40432773207) passed. API/database health, anonymous denial and preservation of 128 unrelated runtime files passed. Fresh authenticated Safari prompt at 18:36 Pacific completed immediately with the full truthful limitation and response controls. No schema/configuration changes; personal-group persistence remains unsupported. Receipt: `docs/plans/group-completion-context-receipt.json`.
