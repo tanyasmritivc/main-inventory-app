@@ -1,3 +1,9 @@
+## October 26 - Monochrome app with selected blue accents
+
+Tanya confirmed the web app should stay primarily monochrome. Notification previews use neutral grayscale throughout. Keep baby blue limited to explicitly requested accents (Upgrade and chat resource links); do not spread blue to general controls or surfaces.
+
+Document appearance is owned by the persistent root controller, not individual page shells. Do not restore unmount cleanup that removes html.dark during navigation.
+
 ## October 26 — Web plan introduction and truthful pilot usage
 
 User approved ten Team members at existing $29/month or $299/year. Share the web display catalog across public pricing, a once-per-account skippable introduction and account Plans & usage. Keep purchases and plan quotas off during pilot. Existing pilot AI counters are bypassed, so show Not metered until reliable measurement exists. Never equate legacy pro with a verified Plus subscription. Dismissal is auth metadata only, not entitlement.

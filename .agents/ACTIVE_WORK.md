@@ -1,6 +1,6 @@
-## October 26 - Persistent navigation theme (active)
+## October 26 - Persistent navigation theme and monochrome notifications deployed
 
-`fix/web-theme-navigation` owns document-level appearance across interior transitions, loading and public exits. No API, mobile, authorization or price changes.
+Runtime `0eb0f12` (PR250, includes theme fix `6079ec8`) is live in `monochrome-notifications-20261026/frontend`, build `3y1vHI9CvrzWK2YDbiDKh`. A root-level appearance controller survives page-shell replacement, preventing removal of dark mode during navigation. Notification icons, unread dots, surfaces and hover states are neutral gray in both modes. 632 tests/88 suites, TypeScript, ESLint (0 errors/52 existing warnings), five CI gates on each runtime (40434726046 / 40435660784), builds and 27 staged/live routes passed. Safari checked world/account/inventory navigation, light public pricing, dark return and the final monochrome dropdown. Prior compiled releases retained; web deployment preserved backend PID. Receipt: `docs/plans/web-theme-navigation-receipt.json`.
 
 ## October 26 - Memory, Upgrade dialog and concise progress deployed
 

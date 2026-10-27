@@ -1,0 +1,96 @@
+{
+  "published": true,
+  "source": "0eb0f123faefc214b6187a85178954ea3091aea0",
+  "checks": {
+    "/brand/findez-petals.ico": 200,
+    "/brand/findez-petals.svg": 200,
+    "/brand/findez-petals-96.png": 200,
+    "/brand/findez-petals-180.png": 200,
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/pricing": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/worlds/personal": 200,
+    "/favicon.ico": 200,
+    "/brand/findez-favicon-32.png": 200,
+    "/brand/findez-favicon.svg": 200,
+    "/brand/findez-favicon-16.png": 200,
+    "/brand/findez-app-icon-180.png": 200,
+    "/brand/findez-wordmark.svg": 200,
+    "/brand/findez-wordmark-white.svg": 200,
+    "/sitemap.xml": 200,
+    "/mascot/pip.svg": 200,
+    "/settings/plans": 200,
+    "/settings/appearance": 200,
+    "/settings/memory": 200,
+    "/notifications": 200,
+    "/inventory": 200,
+    "/review": 200,
+    "/documents": 200
+  },
+  "backend_unchanged": true,
+  "old_release_preserved": true,
+  "build_id": "3y1vHI9CvrzWK2YDbiDKh",
+  "theme_release": {
+    "published": true,
+    "source": "6079ec87afe39dd0cd9ca22b8baca1f86014eadc",
+    "checks": {
+      "/brand/findez-petals.ico": 200,
+      "/brand/findez-petals.svg": 200,
+      "/brand/findez-petals-96.png": 200,
+      "/brand/findez-petals-180.png": 200,
+      "/": 200,
+      "/signin": 200,
+      "/signup": 200,
+      "/pricing": 200,
+      "/privacy": 200,
+      "/terms": 200,
+      "/worlds/personal": 200,
+      "/favicon.ico": 200,
+      "/brand/findez-favicon-32.png": 200,
+      "/brand/findez-favicon.svg": 200,
+      "/brand/findez-favicon-16.png": 200,
+      "/brand/findez-app-icon-180.png": 200,
+      "/brand/findez-wordmark.svg": 200,
+      "/brand/findez-wordmark-white.svg": 200,
+      "/sitemap.xml": 200,
+      "/mascot/pip.svg": 200,
+      "/settings/plans": 200,
+      "/settings/appearance": 200,
+      "/settings/memory": 200,
+      "/notifications": 200,
+      "/inventory": 200,
+      "/review": 200,
+      "/documents": 200
+    },
+    "backend_unchanged": true,
+    "old_release_preserved": true,
+    "build_id": "LEaXp2oAYoBmfUxqjEzbm"
+  },
+  "validation": {
+    "web_tests": 632,
+    "web_suites": 88,
+    "typescript": "pass",
+    "eslint": {
+      "errors": 0,
+      "existing_warnings": 52
+    },
+    "ci_runs": [
+      40434726046,
+      40435660784
+    ],
+    "ci_gates": "all five passed for both runtime sources",
+    "safari": [
+      "Authenticated navigation across chat, Profile, Memory, Notifications, Tools and inventory-scoped Documents; dark surfaces retained.",
+      "Notification popover and View all notifications work. Final deployed dropdown visually verified in monochrome dark mode.",
+      "Public pricing remains light; Dashboard returns to the dark app.",
+      "Read-only inventory questions completed with 12 records and correct quantity-two subset."
+    ],
+    "limits": [
+      "Transient frame-level continuity is covered by DOM class regression tests; Safari screenshots verify rendered states, not every animation frame.",
+      "No mobile, pricing, auth or database changes."
+    ]
+  }
+}
