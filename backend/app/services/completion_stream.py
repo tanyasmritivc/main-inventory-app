@@ -3,6 +3,8 @@ from types import SimpleNamespace
 from time import monotonic
 from app.services.chat_response_style import format_chat_reply
 
+MAX_TOOL_CALLS = 16
+
 
 class CompletionStreamError(RuntimeError):
     """A fixed parser reason safe to log; never contains provider text or arguments."""
@@ -49,7 +51,9 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
             for fallback_index, call in enumerate(getattr(delta, 'tool_calls', None) or []):
                 index = getattr(call, 'index', None)
                 index = fallback_index if index is None else index
-                if not isinstance(index, int) or not 0 <= index < 4:
+                # Five legitimate lookups previously failed at index 4 and
+                # restarted generation. Bound the batch, not a four-item task.
+                if type(index) is not int or not 0 <= index < MAX_TOOL_CALLS:
                     raise CompletionStreamError('tool_index', 'Invalid model tool index')
                 entry = calls.setdefault(index, {'id': '', 'name': '', 'arguments': ''})
                 function = getattr(call, 'function', None)

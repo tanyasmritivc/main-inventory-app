@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 import json
 import logging
+import re
 import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel, Field, ConfigDict
@@ -383,10 +384,19 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
     yield {'type': 'status', 'message': 'Checking your inventories and Spaces...'}
     known = directory(actor, world)
+    # Named personal groups are not a supported durable memory type. Do not
+    # spend model/tool retries trying to approximate them by creating stock.
+    if re.search(r'\b(?:save|remember)\b[^\n]{0,160}\b(?:my |a )?personal group\b', message, re.I):
+        content = ("I can't save a reusable personal group yet. I can refer to this list "
+                   "in this conversation. No inventory items were created or changed.")
+        yield {'type': 'done', 'assistant_message': content,
+               'answer_context': {'operation_diagnostics': []}}
+        return
     messages = [{'role': 'system', 'content': 'You are FindEZ, AI memory for the physical world. '
         'Answer the user in your own words. Search saved records before making inventory claims. '
         'An extraction draft is NOT saved inventory. Questions such as what items do I have require fresh saved-item tools, even when a draft is in this conversation. '
         'Answer the current question first; do not keep asking for a draft destination when the user changes topic. '
+        'Durable named personal groups are not supported by these tools. Explain that limitation briefly; never create inventory items, Spaces or tasks as a substitute for saving a personal group. '
         'You work across the selected organization, never other organizations. Conversations are private to their author. '
         'Use tools to propose inventories and Spaces from natural language. A proposal is not saved: the user must confirm its card. '
         'Reuse existing structure where appropriate; ask a short question for ambiguous destinations. Never invent stock, quantities, product identity or a completed write. '
@@ -644,7 +654,6 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             raise RuntimeError('Empty model response')
         # Never invent a confirmation control. Regenerate with tools available
         # so a missing proposal can actually be created rather than paraphrased.
-        import re
         mentions_card = bool(re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b|\bcard\b.{0,100}\bconfirm\b|\b(?:proposed|prepared)\s+(?:additions|an?\s+(?:edit|change|move|action|card))', content, re.I | re.S))
         refers_to_previous = prior_pending and bool(re.search(r'\b(?:earlier|previous|above)\b', content, re.I))
         mentions_structure = bool(re.search(
