@@ -10,6 +10,7 @@ import {
   selectInventory,
 } from "@/lib/inventory-selection";
 import { userFacingError } from "@/lib/user-facing-error";
+import { PageTransition } from "./page-transition";
 export function WorldEntry({ query = "" }: { query?: string }) {
   const session = useApiSession();
   return (
@@ -71,8 +72,9 @@ function AccountEntry({
       live = false;
     };
   }, [accountId, router, query, attempt]);
+  if (!error && !sessionError) return <PageTransition />;
   return (
-    <main className="interior-loading" aria-live="polite">
+    <main className="interior-loading inventory-loading" aria-live="polite">
       <p role={error || sessionError ? "alert" : "status"}>
         {error || sessionError || "Opening your world..."}
       </p>

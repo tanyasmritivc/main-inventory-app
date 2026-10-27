@@ -17,6 +17,7 @@ import { signInPath } from "@/lib/auth-paths";
 import { worldHref } from "@/lib/world-navigation";
 import { ApiError } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
+import { PageTransition } from "./page-transition";
 
 export function InventoryBoundary({ children }: { children: React.ReactNode }) {
   const { accountId, loading, error: sessionError } = useApiSession();
@@ -163,6 +164,7 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
       (verified?.inventory_id === inventoryId &&
         verified.accountId === accountId &&
         activeInventory() === verified));
+  if (!ready && !error && !sessionError && (loading || accountId)) return <PageTransition />;
   if (!ready)
     return (
       <div

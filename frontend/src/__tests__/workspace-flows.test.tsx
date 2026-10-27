@@ -24,6 +24,21 @@ jest.mock("@/lib/account-request", () => ({
   accountToken: jest.fn(async () => "token-a"),
 }));
 jest.mock("@/lib/ask-stream", () => ({ askQuestion: jest.fn() }));
+
+test("Stop aborts once, restores the draft and never submits it again", async () => {
+  jest.mocked(askQuestion).mockImplementation(options => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")), {once:true});
+  }));
+  render(<AssistClient />);
+  const input = await screen.findByPlaceholderText("Ask about your inventory…");
+  fireEvent.change(input, {target:{value:"Save my repair kit"}});
+  await userEvent.click(screen.getByRole("button", {name:"Ask"}));
+  await userEvent.click(await screen.findByRole("button", {name:"Stop"}));
+  await screen.findByRole("button", {name:"Ask"});
+  expect(askQuestion).toHaveBeenCalledTimes(1);
+  expect(jest.mocked(askQuestion).mock.calls[0][0].signal.aborted).toBe(true);
+  expect(input).toHaveProperty("value", "Save my repair kit");
+});
 jest.mock("@/lib/use-api-session", () => ({ useApiSession: jest.fn() }));
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("@/components/site/app-dialog-provider", () => ({

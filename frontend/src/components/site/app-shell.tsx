@@ -6,7 +6,6 @@ import { subscribeNotifications } from "@/lib/notification-state";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
   Menu,
   Search,
   Users,
@@ -44,6 +43,7 @@ import { AccountMenu } from "./account-menu";
 import shellStyles from "./desktop-shell.module.css";
 import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
+import { NotificationPreview } from "./notification-preview";
 import { PlanIntroduction } from "./plan-introduction";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
@@ -472,25 +472,7 @@ export function AppShell({
             <span>Go to…</span>
             <kbd>⌘K</kbd>
           </button>
-          <button
-            className="app-icon-button app-notification-button"
-            onClick={() => router.push("/notifications")}
-            aria-label={
-              unread === null
-                ? "Notifications"
-                : `${unread} unread notifications`
-            }
-            title={
-              unread === null
-                ? "Open notifications to check for updates"
-                : undefined
-            }
-          >
-            <Bell size={18} />
-            {unread !== null && unread > 0 && (
-              <span>{unread > 99 ? "99+" : unread}</span>
-            )}
-          </button>
+          <NotificationPreview accountId={userId} unread={unread} />
           <AccountMenu
             name={userName}
             email={userEmail}

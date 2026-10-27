@@ -1,0 +1,6 @@
+.transition { min-height: 70dvh; display: grid; place-items: center; background: var(--light-page, #faf9f6); }
+:global(.dark) .transition { background: var(--light-page, #101010); }
+.mark { display: flex; gap: 6px; opacity: 0; animation: reveal 0s 180ms forwards; }
+.mark span { width: 6px; height: 6px; border-radius: 50%; background: #8b9299; }
+@keyframes reveal { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mark { animation: none; opacity: 1; } }
