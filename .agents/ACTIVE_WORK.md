@@ -1,3 +1,7 @@
+## October 26 - Text-only chat progress and welcome glimmer (active)
+
+Web-only `fix/chat-welcome-shimmer`: remove the decorative bird from chat status, align status/history/timer at the message edge, and reuse the monochrome left-to-right glimmer on empty-chat welcome headings. Preserve real activity, Stop, screen-reader heading semantics and reduced motion. No API/mobile changes.
+
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
 Runtime `24768a6` (PR254) is live after all five CI gates (40442982084) passed. Tools cards have no decorative icons or arrows and use monochrome hover/focus styling. Existing routes and the blue Upgrade control are preserved. 633 web tests, TypeScript and production build pass; lint has zero errors and 52 existing warnings. All 27 production route/asset checks and signed-in Safari visual verification pass. Previous compiled release remains available for rollback; API process unchanged by web publication. Receipt: `docs/plans/tools-text-cards-receipt.json`.

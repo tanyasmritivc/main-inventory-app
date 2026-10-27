@@ -6,7 +6,7 @@ import styles from "./chat-progress.module.css";
  * Same cosine easing, 120 degree band, 40% width and soft falloff.
  * Browser paints the gradient without React rendering on animation frames.
  */
-export function ShinyText({ text, speed = 2 }: { text: string; speed?: number }) {
+export function ShinyText({ text, speed = 2, heading = false }: { text: string; speed?: number; heading?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const node = ref.current;
@@ -44,5 +44,5 @@ export function ShinyText({ text, speed = 2 }: { text: string; speed?: number })
       document.removeEventListener("visibilitychange", sync);
     };
   }, [speed]);
-  return <span role="status" ref={ref} className={styles.shiny}>{text}</span>;
+  return <span role={heading ? undefined : "status"} ref={ref} className={`${styles.shiny}${heading ? ` ${styles.heading}` : ""}`}>{text}</span>;
 }
