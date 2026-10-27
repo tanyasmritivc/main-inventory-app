@@ -1,6 +1,6 @@
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
-Active isolated implementation lane for the requested surface. Preserve organization and actor isolation, existing records, monochrome UI and current provider. No production database changes or public App Store submission.
+Apple acknowledged TestFlight 1.1.1 (147), source `4a6ae7d`, PR256, delivery `ae945b42-3114-4f8e-aac4-747593e0024c`. Extraction loaders consume real preparation/upload/provider progress and show elapsed time during a long stage. Stop, late-result protection, reduced motion, large text and old JSON API compatibility are preserved; scans are not resubmitted for compatibility. 1,185 host tests passed with one existing skip, analysis is clean, and six selected native iOS checks passed. All five exact-source CI gates (40443344737), Apple validation, strict signing, 34 archive and 34 export device-binary checks, 26 privacy manifests and production configuration passed. Archive/IPA preserved. Processing/tester availability was not polled. Physical acceptance for build147 is unverified; public submission remains held. Receipt: `docs/plans/extraction-live-progress-mobile-receipt.json`.
 
 ## October 26 — Mobile signup plans delivered to TestFlight 145
 
