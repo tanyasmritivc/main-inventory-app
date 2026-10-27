@@ -15,6 +15,7 @@ import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_draft.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_page.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_save.dart';
+import 'package:mobile/features/onboarding/chat_onboarding_gate.dart';
 import 'package:mobile/features/onboarding/sample_scan.dart';
 import 'package:mobile/core/first_camera_hint.dart';
 
@@ -24,6 +25,7 @@ class TrialTransport implements dio.HttpClientAdapter {
   final saved = <String, Map<String, dynamic>>{};
   bool loseResponse = false;
   bool partial = false;
+  bool failSave = false;
   @override
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
@@ -57,11 +59,25 @@ class TrialTransport implements dio.HttpClientAdapter {
         'space': {'id': 'space-id', 'name': options.data['name']},
       };
     } else if (options.path == '/inventories/default/inventory/bulk_create') {
+      if (failSave) {
+        throw dio.DioException(
+          requestOptions: options,
+          type: dio.DioExceptionType.connectionError,
+        );
+      }
       final items = (options.data['items'] as List)
           .cast<Map<String, dynamic>>();
       writes.addAll(items);
       final accepted = <int>[];
       for (var i = 0; i < items.length; i++) {
+        // Match the real capture-save required-field contract.
+        if ([
+          'name',
+          'category',
+          'location',
+        ].any((field) => (items[i][field] as String? ?? '').trim().isEmpty)) {
+          throw StateError('Name, category and location are required.');
+        }
         if (partial && i > 0) continue;
         saved.putIfAbsent(
           items[i]['client_request_id'],
@@ -340,6 +356,129 @@ void main() {
       },
     );
   }
+  test(
+    'legacy startup draft supplies category without changing retry IDs',
+    () async {
+      await login();
+      final draft = ChatOnboardingDraft(id: 'legacy')
+        ..method = 'email'
+        ..option = 'list'
+        ..keep = true
+        ..saving = true
+        ..items = [
+          TrialItem(
+            ExtractedInventoryItem(name: 'Hammer', category: '', quantity: 2),
+            'Shelf',
+          ),
+          TrialItem(
+            ExtractedInventoryItem(
+              name: 'Drill',
+              category: 'Tools',
+              quantity: 1,
+            ),
+            'Shelf',
+          ),
+        ];
+      await ChatOnboardingStore.save(draft);
+      final restored = (await ChatOnboardingStore.read())!;
+      await ChatOnboardingSaver(api).save(restored);
+      expect(transport.writes.map((item) => item['category']), [
+        'Other',
+        'Tools',
+      ]);
+      expect(transport.writes.map((item) => item['client_request_id']), [
+        'onboarding-legacy-0',
+        'onboarding-legacy-1',
+      ]);
+      expect(restored.complete, isTrue);
+      expect(transport.saved.length, 2);
+    },
+  );
+
+  testWidgets(
+    'startup failed save can continue without losing or repeating draft',
+    (tester) async {
+      await login();
+      final draft = ChatOnboardingDraft()
+        ..method = 'email'
+        ..option = 'list'
+        ..keep = true;
+      (await TrialTemplates.load()).list(draft, '2 hammers');
+      await ChatOnboardingStore.save(draft);
+      transport.failSave = true;
+      await tester.pumpWidget(MaterialApp(home: ChatOnboardingGate(api: api)));
+      await pump(tester);
+      expect(find.text('Continue to app'), findsOneWidget);
+      expect(
+        find.textContaining('Your setup draft is still on this device'),
+        findsOneWidget,
+      );
+      final attempts = transport.requests
+          .where((p) => p.endsWith('/bulk_create'))
+          .length;
+      expect(attempts, 1);
+      await tester.tap(find.text('Continue to app'));
+      await pump(tester);
+      expect(find.byType(WorldShell), findsOneWidget);
+      expect((await ChatOnboardingStore.read())!.id, draft.id);
+      expect((await ChatOnboardingStore.read())!.complete, isFalse);
+      expect(
+        transport.requests.where((p) => p.endsWith('/bulk_create')).length,
+        attempts,
+      );
+      // A new launch can complete the same draft after the connection returns.
+      await tester.pumpWidget(const SizedBox());
+      transport.failSave = false;
+      await tester.pumpWidget(MaterialApp(home: ChatOnboardingGate(api: api)));
+      await pump(tester);
+      expect(find.byType(WorldShell), findsOneWidget);
+      expect(transport.saved.length, 1);
+      expect(await ChatOnboardingStore.read(), isNull);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'startup unreadable draft is preserved and does not trap app entry',
+    (tester) async {
+      await login();
+      final prefs = await SharedPreferences.getInstance();
+      const raw = '{legacy-unreadable-draft';
+      await prefs.setString(ChatOnboardingStore.key, raw);
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(3.2)),
+            child: child!,
+          ),
+          home: ChatOnboardingGate(api: api),
+        ),
+      );
+      await pump(tester);
+      expect(
+        find.text('We could not open your saved setup draft.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Check your connection'), findsNothing);
+      await tester.ensureVisible(find.text('Continue to app'));
+      await tester.tap(find.text('Continue to app'));
+      await pump(tester);
+      expect(find.byType(WorldShell), findsOneWidget);
+      expect(prefs.getString(ChatOnboardingStore.key), raw);
+      expect(transport.writes, isEmpty);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
   test('another account cannot retry a claimed draft', () async {
     await login();
     final draft = ChatOnboardingDraft()

@@ -188,7 +188,7 @@ class TrialTemplates {
           (entry) => TrialItem(
             ExtractedInventoryItem(
               name: entry.value[0],
-              category: '',
+              category: 'Other',
               quantity: entry.value[1],
             ),
             spots[(entry.key * 5) % spots.length],
@@ -250,7 +250,7 @@ class TrialTemplates {
       result.add(
         ExtractedInventoryItem(
           name: title(match?[2] ?? part),
-          category: '',
+          category: 'Other',
           quantity: match == null
               ? 1
               : int.tryParse(match[1]!) ??

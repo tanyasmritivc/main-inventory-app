@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/chat_source.dart';
 import '../../core/last_place.dart';
 import '../workspaces/inventory_context_host.dart';
@@ -23,6 +24,7 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
   bool _loading = true;
   String? _error;
   bool _notified = false;
+  bool _deferred = false;
   @override
   void initState() {
     super.initState();
@@ -34,10 +36,12 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
       _loading = true;
       _error = null;
     });
+    final owner = widget.api.accountId;
+    var draftRead = false;
     try {
       final draft = await ChatOnboardingStore.read();
       if (!mounted) return;
-      final owner = widget.api.accountId;
+      draftRead = true;
       if (draft == null ||
           draft.option == 'snap' ||
           draft.method.isEmpty ||
@@ -64,12 +68,17 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
         });
       }
       setState(() => _loading = false);
-    } catch (_) {
-      if (mounted) {
+    } catch (error) {
+      if (mounted && widget.api.accountId == owner) {
         setState(() {
           _loading = false;
-          _error =
-              'Your items are safe on this device. We could not finish saving them. Check your connection and retry.';
+          _error = draftRead
+              ? friendlyApiError(
+                  error,
+                  fallback:
+                      'We could not confirm that your setup items were saved.',
+                )
+              : 'We could not open your saved setup draft.';
         });
       }
     }
@@ -77,6 +86,7 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
 
   @override
   Widget build(BuildContext context) {
+    if (_deferred) return WorldSetupGate(api: widget.api);
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -84,16 +94,26 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
       return Scaffold(
         body: SafeArea(
           child: Center(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(_error!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Your setup draft is still on this device. You can retry now or continue and retry when you reopen the app.',
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _load,
                     child: const Text('Retry save'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => setState(() => _deferred = true),
+                    child: const Text('Continue to app'),
                   ),
                 ],
               ),
