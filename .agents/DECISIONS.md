@@ -1,3 +1,7 @@
+## October 26 — Revert mobile build 150 to build 149
+
+User explicitly requested reverting everything to the last build. Restore the complete mobile tree and TESTING.md from build149 commit ca3a43a; only the release build number changes to 151. This removes build150's Personal/Team onboarding, new Scan entry/camera/review flow, first-scan window and suggestions. Existing build149 onboarding, capture and shimmer behavior return. Preserve historical delivery receipts. No server, web, account data or database changes. Verification and replacement TestFlight delivery in progress on revert/mobile-build150-to149.
+
 ## 2026-10-26 — Photo-only Scan entry
 
 Mobile onboarding uses Personal/Team → authentication → Personal Ask, or Team organization creation → single-choice referral → organization Ask. Scan is a monochrome composer control with Take Photo and Photo Library, using the existing extraction and explicit review/save. User explicitly cancelled live Scan Frames and Auto-add; do not restore them as part of this lane. Keep unrelated web/API and UI behavior unchanged.

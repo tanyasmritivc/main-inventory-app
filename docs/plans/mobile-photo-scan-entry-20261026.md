@@ -1,3 +1,5 @@
+> Superseded: the user requested a complete rollback to build149 after build150 delivery. Replacement build151 restores that mobile source. The implementation below is historical.
+
 # Mobile photo Scan entry and onboarding
 
 Scope: mobile only, branch `feat/mobile-scan-entry-onboarding`, delivered TestFlight 1.1.1 (150).

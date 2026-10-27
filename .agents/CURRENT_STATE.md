@@ -1,3 +1,7 @@
+## October 26 — Revert mobile build 150 to build 149
+
+User explicitly requested reverting everything to the last build. Restore the complete mobile tree and TESTING.md from build149 commit ca3a43a; only the release build number changes to 151. This removes build150's Personal/Team onboarding, new Scan entry/camera/review flow, first-scan window and suggestions. Existing build149 onboarding, capture and shimmer behavior return. Preserve historical delivery receipts. No server, web, account data or database changes. Verification and replacement TestFlight delivery in progress on revert/mobile-build150-to149.
+
 ## October 26 — Photo-only Scan entry delivered to TestFlight 150
 
 Apple acknowledged TestFlight 1.1.1 (150), runtime `7f0e5f7`, PR260, delivery `2fb5cce0-e2ba-4a16-907d-ebc11770a7a0`. Personal/Team precedes authentication; Personal opens Ask, Team creates its organization and answers a single-choice referral question. Monochrome Scan, first-scan preview and Space Scan use Take Photo or Photo Library with existing extraction and explicit review/save. Live Scan Frames, periodic capture and Auto-add are removed at the user's request. Existing draft recovery is preserved; no web/API/schema/provider changes.

@@ -1,4 +1,3 @@
-import 'features/onboarding/scan_entry.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -510,16 +509,15 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: ScanSetupGate(
+            child: PlansWelcomeGate(
               key: ValueKey(session.user.id),
-              api: widget.api,
-              onReady: (child) => PlansWelcomeGate(user: session.user, child: child),
+              user: session.user,
               child: ChatOnboardingGate(api: widget.api),
             ),
           );
         }
 
-        return const ScanEntryPage();
+        return ChatOnboardingPage(api: widget.api);
       },
     );
   }
