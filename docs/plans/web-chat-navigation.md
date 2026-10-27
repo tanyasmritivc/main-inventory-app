@@ -22,3 +22,5 @@ receipt. New tests cover Stop without resubmission, stalled-reader abort, queued
 completion cancellation, inventory switching, notification retries and account
 isolation. Backend group/tool parsing is a separate release. No mobile or schema
 changes. Existing self-hosted deployment and pricing are unchanged.
+
+Release completed. See `web-chat-navigation-receipt.json` and CURRENT_STATE for exact-source CI, publication and Safari evidence.

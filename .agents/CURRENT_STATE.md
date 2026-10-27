@@ -1,3 +1,7 @@
+## October 26 - Chat cancellation, Tools and notification preview deployed
+
+Runtime `18a0530` is live in `chat-navigation-20261026/frontend`, build `qxMijwbiTDVPZJvmLjBgU`. Stop cancels stalled readers and cannot turn into submit; quiet themed transitions replace bare text; Tools uses an inventory selector and icon grid; the bell opens a five-entry popover with no entrance animation and View all. 628 tests / 87 suites, TypeScript, ESLint (0 errors/52 existing warnings), five CI gates (40429097939), production build and 27 staged/live routes pass. Safari verified dark desktop Tools, notification preview/Escape/View all, two read-only answers and immediate Stop with draft restoration and no resubmission. Prior release retained. No mobile changes. Receipt: `docs/plans/web-chat-navigation-receipt.json`.
+
 ## October 26 — Baby-blue Upgrade button deployed (PR243)
 
 Runtime `23d6c37` is live in `upgrade-blue-20261026/frontend`, build `ANGzqwqm9IXVTuPlT_7N5`. CSS-only baby-blue glass gradient, soft glow, restrained six-second sheen cycle, focus ring and reduced-motion fallback; original layout/link retained. Safari light/dark preview and live authenticated Upgrade-to-usage navigation verified. All five CI gates (40422960778), production build and 27 staged/live routes passed. Backend unchanged; preceding release retained. Receipt: `docs/plans/upgrade-blue-web-receipt.json`.
