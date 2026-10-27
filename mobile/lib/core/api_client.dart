@@ -745,8 +745,10 @@ class ApiClient {
     required List<int> bytes,
     required String filename,
     dio.CancelToken? cancelToken,
+    ValueChanged<String>? onProgress,
   }) async {
     if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
+    onProgress?.call('Preparing your photo...');
     final outBytes = await compute(
       prepareExtractionImage,
       Uint8List.fromList(bytes),
@@ -762,14 +764,63 @@ class ApiClient {
     debugPrint(
       'FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image',
     );
-    final res = await _dio.post<Map<String, dynamic>>(
+    onProgress?.call('Uploading your photo...');
+    final options = _longRunningOptions();
+    if (onProgress != null) {
+      options.responseType = dio.ResponseType.stream;
+      options.headers = {...?options.headers, 'Accept': 'text/event-stream'};
+    }
+    final res = await _dio.post<dynamic>(
       '/inventory/extract_from_image',
       data: form,
       cancelToken: cancelToken,
-      options: _longRunningOptions(),
+      options: options,
+      onSendProgress: onProgress == null
+          ? null
+          : (sent, total) {
+              if (total > 0 && sent >= total) {
+                onProgress('Photo uploaded. Waiting for analysis...');
+              }
+            },
     );
-    final data = res.data ?? {};
-    return MultiExtractResult.fromJson(data);
+    if (res.data is dio.ResponseBody) {
+      final body = res.data as dio.ResponseBody;
+      final contentType = res.headers.value('content-type') ?? '';
+      if (!contentType.contains('text/event-stream')) {
+        // Older API releases return the original JSON contract, without a retry.
+        final text = await utf8.decoder.bind(body.stream).join();
+        return MultiExtractResult.fromJson(
+          jsonDecode(text) as Map<String, dynamic>,
+        );
+      }
+      await for (final line
+          in body.stream
+              .cast<List<int>>()
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
+        if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
+        if (!line.startsWith('data: ')) continue;
+        final event = jsonDecode(line.substring(6)) as Map<String, dynamic>;
+        if (event['type'] == 'status') {
+          onProgress?.call(event['message'] as String);
+        }
+        if (event['type'] == 'error') {
+          throw AskRequestException(event['message'] as String);
+        }
+        if (event['type'] == 'done') {
+          onProgress?.call('Preparing your review...');
+          return MultiExtractResult.fromJson(
+            event['result'] as Map<String, dynamic>,
+          );
+        }
+      }
+      throw const AskRequestException(
+        'Photo analysis was interrupted. Please retry.',
+      );
+    }
+    return MultiExtractResult.fromJson(
+      Map<String, dynamic>.from(res.data ?? {}),
+    );
   }
 
   Future<BulkCreateResult> bulkCreateInventory({

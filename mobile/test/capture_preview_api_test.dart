@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CaptureAdapter implements dio.HttpClientAdapter {
+  String? streamBody;
   final requests = <dio.RequestOptions>[];
   final preview = <String, dynamic>{
     'name': 'Unidentified item',
@@ -29,6 +30,15 @@ class CaptureAdapter implements dio.HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
+    if (streamBody != null) {
+      return dio.ResponseBody.fromString(
+        streamBody!,
+        200,
+        headers: {
+          dio.Headers.contentTypeHeader: ['text/event-stream'],
+        },
+      );
+    }
     final result = options.path.endsWith('/resolve')
         ? {
             'item': {
@@ -163,6 +173,73 @@ void main() {
       );
       expect(result.confirmedIndices(2), {0});
       expect(result.failures.single['index'], 1);
+      client.close();
+    },
+  );
+
+  test('streamed extraction reports server stages and retains preview', () async {
+    final adapter = CaptureAdapter();
+    adapter.streamBody =
+        'data: ${jsonEncode({'type': 'status', 'message': 'Reading details for 2 objects...'})}\n\n'
+        'data: ${jsonEncode({
+          'type': 'done',
+          'result': {
+            'items': [adapter.preview],
+            'summary': {'total_detected': 1, 'categories': {}},
+          },
+        })}\n\n';
+    final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+      ..httpClientAdapter = adapter;
+    final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+    final updates = <String>[];
+    final result = await api.extractInventoryFromImage(
+      bytes: [1, 2, 3],
+      filename: 'photo.jpg',
+      onProgress: updates.add,
+    );
+    expect(updates, contains('Reading details for 2 objects...'));
+    expect(updates.last, 'Preparing your review...');
+    expect(adapter.requests.single.headers['Accept'], 'text/event-stream');
+    expect(result.items.single.reviewToken, 'signed-preview');
+    client.close();
+  });
+
+  test(
+    'interrupted extraction does not return an empty success or retry',
+    () async {
+      final adapter = CaptureAdapter()
+        ..streamBody =
+            'data: {"type":"status","message":"Finding objects..."}\n\n';
+      final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+        ..httpClientAdapter = adapter;
+      final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+      await expectLater(
+        api.extractInventoryFromImage(
+          bytes: [1, 2, 3],
+          filename: 'photo.jpg',
+          onProgress: (_) {},
+        ),
+        throwsA(isA<AskRequestException>()),
+      );
+      expect(adapter.requests, hasLength(1));
+      client.close();
+    },
+  );
+
+  test(
+    'stream negotiation accepts older JSON API without repeating scan',
+    () async {
+      final adapter = CaptureAdapter();
+      final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+        ..httpClientAdapter = adapter;
+      final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+      final result = await api.extractInventoryFromImage(
+        bytes: [1, 2, 3],
+        filename: 'photo.jpg',
+        onProgress: (_) {},
+      );
+      expect(result.items, hasLength(1));
+      expect(adapter.requests, hasLength(1));
       client.close();
     },
   );

@@ -9,10 +9,17 @@ import 'package:dio/dio.dart';
 
 class CaptureCancelled implements Exception {}
 
+class CaptureProgressToken extends CancelToken {
+  ValueChanged<String>? onProgress;
+  void report(String message) {
+    if (!isCancelled) onProgress?.call(message);
+  }
+}
+
 /// Own the root dialog so a nested Space navigator is never popped by cleanup.
 Future<T> runWithCaptureProgress<T>({
   required BuildContext context,
-  required Future<T> Function(CancelToken cancelToken) extract,
+  required Future<T> Function(CaptureProgressToken cancelToken) extract,
   bool retryOnFailure = false,
   int Function(T result)? itemCount,
 }) async {
@@ -60,14 +67,15 @@ Future<T> runWithCaptureProgress<T>({
 
 Future<T> _runCapture<T>({
   required BuildContext context,
-  required Future<T> Function(CancelToken cancelToken) extract,
+  required Future<T> Function(CaptureProgressToken cancelToken) extract,
   int Function(T result)? itemCount,
 }) async {
-  final token = CancelToken();
+  final token = CaptureProgressToken();
   final loader = showPipExtractLoader(
     context,
     onStop: () => token.cancel('Stopped by user'),
   );
+  token.onProgress = loader.update;
   try {
     final result = await Future.any<T>([
       Future<T>.sync(() => extract(token)),
@@ -83,6 +91,7 @@ Future<T> _runCapture<T>({
     if (token.isCancelled) throw CaptureCancelled();
     rethrow;
   } finally {
+    token.onProgress = null;
     loader.dismiss();
   }
 }

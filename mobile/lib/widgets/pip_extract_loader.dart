@@ -11,6 +11,11 @@ class PipExtractLoaderHandle {
 
   final NavigatorState _navigator;
   final VoidCallback? _onStop;
+  final _status = ValueNotifier<String>('Preparing your photo...');
+  void update(String message) {
+    if (!_closed && message.trim().isNotEmpty) _status.value = message;
+  }
+
   final _count = ValueNotifier<int?>(null);
   late final RawDialogRoute<void> _route;
   Timer? _successTimer;
@@ -66,9 +71,13 @@ PipExtractLoaderHandle showPipExtractLoader(
         FadeTransition(opacity: animation, child: child),
     pageBuilder: (_, _, _) => ValueListenableBuilder<int?>(
       valueListenable: handle._count,
-      builder: (_, count, _) => PipExtractLoader(
-        foundCount: count,
-        onStop: onStop == null ? null : handle.stop,
+      builder: (_, count, _) => ValueListenableBuilder<String>(
+        valueListenable: handle._status,
+        builder: (_, status, _) => PipExtractLoader(
+          foundCount: count,
+          status: status,
+          onStop: onStop == null ? null : handle.stop,
+        ),
       ),
     ),
   );
@@ -77,15 +86,22 @@ PipExtractLoaderHandle showPipExtractLoader(
     handle._route.completed.then((_) {
       handle.dismiss();
       handle._count.dispose();
+      handle._status.dispose();
     }),
   );
   return handle;
 }
 
-/// Presentation only. Timed captions are not model telemetry; no invented finds.
+/// Shows real pipeline milestones; elapsed time does not imply a completed step.
 class PipExtractLoader extends StatefulWidget {
-  const PipExtractLoader({super.key, this.foundCount, this.onStop});
+  const PipExtractLoader({
+    super.key,
+    this.foundCount,
+    this.onStop,
+    this.status = 'Preparing your photo...',
+  });
 
+  final String status;
   final int? foundCount;
   final VoidCallback? onStop;
 
@@ -95,13 +111,6 @@ class PipExtractLoader extends StatefulWidget {
 
 class _PipExtractLoaderState extends State<PipExtractLoader>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  static const _lines = [
-    'Pip is looking...',
-    'Reading labels...',
-    'Counting items...',
-    'Matching model numbers...',
-    'Still working...',
-  ];
   late final _bob = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
@@ -116,7 +125,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
   );
   Timer? _steps;
   Timer? _seeds;
-  int _step = 0;
+  int _elapsed = 0;
   int _nextSeed = 0;
   final _seedIds = <int>[];
   bool _reduceMotion = false;
@@ -125,13 +134,12 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _steps = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      if (_step == _lines.length - 1 || widget.foundCount != null) {
+    _steps = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (widget.foundCount != null) {
         timer.cancel();
         return;
       }
-      setState(() => _step++);
-      if (_step == _lines.length - 1) timer.cancel();
+      setState(() => _elapsed++);
     });
   }
 
@@ -223,7 +231,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
   Widget build(BuildContext context) {
     final count = widget.foundCount;
     final status = count == null
-        ? _lines[_step]
+        ? widget.status
         : 'Found $count ${count == 1 ? 'item' : 'items'}';
     final statusText = Text(
       status,
@@ -363,7 +371,9 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                       const SizedBox(height: 8),
                       Text(
                         count == null
-                            ? 'Looking through your photo'
+                            ? (_elapsed < 30
+                                  ? '$_elapsed s elapsed'
+                                  : '$_elapsed s elapsed - still waiting for results')
                             : '$count found',
                         style: const TextStyle(
                           fontFamily: 'GeistMono',

@@ -1,3 +1,7 @@
+## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
+
+Active isolated implementation lane for the requested surface. Preserve organization and actor isolation, existing records, monochrome UI and current provider. No production database changes or public App Store submission.
+
 ## October 26 — Mobile signup plans delivered to TestFlight 145
 
 Apple acknowledged 1.1.1 (145), source `4e41564526e9c91d4c3c158c119ee1e20304c0a0`,
