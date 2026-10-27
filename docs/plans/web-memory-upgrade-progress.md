@@ -25,3 +25,5 @@ are displayed; no backend or mobile behavior changed.
 Focused validation: 27 tests in four suites. TypeScript passes; ESLint has no
 errors and 52 pre-existing warnings. Full suite, exact-source CI, production build
 and Safari verification are recorded in the delivery receipt.
+
+Delivered on the self-hosted website as runtime `49b55ee`, PR247. All 630 web tests in 88 suites and all five CI gates passed. Production build, 27 staged/live routes and authenticated Safari dark desktop Memory/modal/navigation checks passed. See `web-memory-upgrade-progress-receipt.json`.
