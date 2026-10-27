@@ -1,8 +1,11 @@
+import '../../core/account_refresh.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class CheckoutPage extends StatefulWidget {
   final ApiClient api;
@@ -12,18 +15,34 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
+  late final AccountRefresh _accountRefresh;
   List<Map<String, dynamic>> _checkouts = [];
   bool _loading = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _accountRefresh.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => _load(quiet: true),
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
-    setState(() => _loading = true);
+    setState(() {
+      if (!quiet) _loading = true;
+      _error = null;
+    });
     try {
       final checkouts = await widget.api.getActiveCheckouts();
       if (!mounted) return;
@@ -31,10 +50,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _checkouts = checkouts;
         _loading = false;
       });
-    } catch (e, stack) {
-      if (mounted) setState(() => _loading = false);
-      debugPrint('[CheckOut] API call failed: $e');
-      debugPrint('[CheckOut] Stack: $stack');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = friendlyApiError(
+            e,
+            fallback: 'Could not load checked-out items. Please try again.',
+          );
+        });
+      }
     }
   }
 
@@ -43,19 +68,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text('Return Item', style: TextStyle(color: AppTheme.textPrimary(ctx))),
-        content: Text(
+        title: AppText(
+          'Return Item',
+          style: TextStyle(color: AppTheme.textPrimary(ctx)),
+        ),
+        content: AppText(
           'Mark "$itemName" as returned?',
           style: TextStyle(color: AppTheme.textSecondary(ctx)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.textSecondary(ctx))),
+            child: AppText(
+              'Cancel',
+              style: TextStyle(color: AppTheme.textSecondary(ctx)),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Return', style: TextStyle(color: AppTheme.textPrimary(ctx), fontWeight: FontWeight.w600)),
+            child: AppText(
+              'Return',
+              style: TextStyle(
+                color: AppTheme.textPrimary(ctx),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -65,14 +102,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       await widget.api.returnItem(checkoutId: checkoutId);
       unawaited(_load());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$itemName returned')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: AppText('$itemName returned')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to return item. Try again.')),
+          const SnackBar(content: AppText('Failed to return item. Try again.')),
         );
       }
     }
@@ -90,9 +127,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Color _avatarColor(String name) {
     final colors = [
-      const Color(0xFF6997DD), const Color(0xFF30D158),
-      const Color(0xFFFF9F0A), const Color(0xFFFF375F),
-      const Color(0xFF6997DD), const Color(0xFF6997DD),
+      AppTheme.adaptive(context, const Color(0xFF6997DD)),
+      AppTheme.adaptive(context, const Color(0xFF30D158)),
+      AppTheme.adaptive(context, const Color(0xFFFF9F0A)),
+      AppTheme.adaptive(context, const Color(0xFFFF375F)),
+      AppTheme.adaptive(context, const Color(0xFF6997DD)),
+      AppTheme.adaptive(context, const Color(0xFF6997DD)),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }
@@ -111,94 +151,161 @@ class _CheckoutPageState extends State<CheckoutPage> {
       appBar: AppBar(
         backgroundColor: AppTheme.bg(context),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary(context), size: 18),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppTheme.textPrimary(context),
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppText(
           'Check-Out Tracker',
-          style: TextStyle(color: AppTheme.textPrimary(context), fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh_outlined, color: AppTheme.textSecondary(context), size: 20),
+            icon: Icon(
+              Icons.refresh_outlined,
+              color: AppTheme.textSecondary(context),
+              size: 20,
+            ),
             onPressed: _load,
           ),
         ],
       ),
-      body: _loading
-          ? Center(child: CircularProgressIndicator(color: AppTheme.textPrimary(context)))
-          : _checkouts.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle_outline, color: Color(0xFF30D158), size: 56),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nothing checked out',
-                        style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 20, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Check out items from any item\'s detail view.',
-                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Items checked out from shared spaces\nwill appear here for all team members.',
-                        style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppTheme.textPrimary(context),
-                  backgroundColor: AppTheme.surface2(context),
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardBg(context),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppTheme.cardBorder(context)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.swap_horiz, color: AppTheme.textSecondary(context), size: 20),
-                            const SizedBox(width: 12),
-                            Text(
-                              '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
-                              style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ...() {
-                        final myCheckouts = _checkouts.where((c) => c['from_teammate'] != true).toList();
-                        final teamCheckouts = _checkouts.where((c) => c['from_teammate'] == true).toList();
-                        return [
-                          if (myCheckouts.isNotEmpty) ...[_buildSectionHeader('MY CHECKOUTS'), ...myCheckouts.map(_buildCheckoutCard)],
-                          if (teamCheckouts.isNotEmpty) ...[_buildSectionHeader('TEAM CHECKOUTS'), ...teamCheckouts.map(_buildCheckoutCard)],
-                        ];
-                      }(),
-                    ],
-                  ),
+      body: _error != null
+          ? Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    TextButton(onPressed: _load, child: const AppText('Retry')),
+                  ],
                 ),
+              ),
+            )
+          : _loading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.textPrimary(context),
+              ),
+            )
+          : _checkouts.isEmpty
+          ? Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: AppTheme.foreground(context, Color(0xFF30D158)),
+                      size: 56,
+                    ),
+                    const SizedBox(height: 16),
+                    AppText(
+                      'Nothing checked out',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary(context),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AppText(
+                      'Check out items from any item\'s detail view.',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary(context),
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    AppText(
+                      'Items checked out from shared spaces\nwill appear here for all team members.',
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              color: AppTheme.textPrimary(context),
+              backgroundColor: AppTheme.surface2(context),
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBg(context),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.cardBorder(context)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.swap_horiz,
+                          color: AppTheme.textSecondary(context),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AppText(
+                            '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...() {
+                    final myCheckouts = _checkouts
+                        .where((c) => c['from_teammate'] != true)
+                        .toList();
+                    final teamCheckouts = _checkouts
+                        .where((c) => c['from_teammate'] == true)
+                        .toList();
+                    return [
+                      if (myCheckouts.isNotEmpty) ...[
+                        _buildSectionHeader('MY CHECKOUTS'),
+                        ...myCheckouts.map(_buildCheckoutCard),
+                      ],
+                      if (teamCheckouts.isNotEmpty) ...[
+                        _buildSectionHeader('TEAM CHECKOUTS'),
+                        ...teamCheckouts.map(_buildCheckoutCard),
+                      ],
+                    ];
+                  }(),
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildSectionHeader(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 10, top: 4),
-    child: Text(
+    child: AppText(
       title,
-      style: const TextStyle(
-        color: Color(0x4DFFFFFF),
+      style: TextStyle(
+        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 10,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.4,
@@ -223,10 +330,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: overdue ? const Color(0x0AEF4444) : AppTheme.cardBg(context),
+        color: overdue
+            ? AppTheme.adaptive(context, const Color(0x0AEF4444))
+            : AppTheme.cardBg(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: overdue ? const Color(0x33EF4444) : AppTheme.cardBorder(context),
+          color: overdue
+              ? AppTheme.adaptive(context, const Color(0x33EF4444))
+              : AppTheme.cardBorder(context),
         ),
       ),
       child: Row(
@@ -239,10 +350,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -254,7 +365,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   itemName,
                   style: TextStyle(
                     color: AppTheme.textPrimary(context),
@@ -263,23 +374,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   'Checked out by $checkedOutBy · ${_timeAgo(checkedOutAt)}',
-                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.textSecondary(context),
+                    fontSize: 12,
+                  ),
                 ),
                 if (location.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
                     ),
-                    child: Text(
+                    decoration: BoxDecoration(
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                      ),
+                    ),
+                    child: AppText(
                       location,
-                      style: const TextStyle(
-                        color: Color(0x73FFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -287,20 +412,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                 ],
                 if (isTeammate)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(top: 2),
-                    child: Text(
+                    child: AppText(
                       '👥 From shared space',
-                      style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 if (dueBackAt != null)
-                  Text(
+                  AppText(
                     overdue
                         ? '⚠ Overdue — was due ${_timeAgo(dueBackAt)}'
                         : 'Due back ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
-                      color: overdue ? const Color(0xFFEF4444) : const Color(0xFFFBBF24),
+                      color: overdue
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0xFFEF4444),
+                            )
+                          : AppTheme.foreground(
+                              context,
+                              const Color(0xFFFBBF24),
+                            ),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -317,7 +453,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppTheme.cardBorder(context)),
               ),
-              child: Text(
+              child: AppText(
                 'Return',
                 style: TextStyle(
                   color: AppTheme.textPrimary(context),

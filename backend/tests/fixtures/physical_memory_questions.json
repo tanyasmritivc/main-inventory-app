@@ -1,0 +1,1824 @@
+{
+  "version": 1,
+  "synthetic_only": true,
+  "items": [
+    {
+      "item_id": "00000000-0000-4000-8000-000000000001",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "HDMI adapter",
+      "category": "Electronics",
+      "brand": "Acme",
+      "part_number": "A-100",
+      "barcode": "000111",
+      "quantity": 2,
+      "location": "Top desk drawer",
+      "notes": "little black video adapter",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000002",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "USB-C charger",
+      "category": "Electronics",
+      "brand": "Acme",
+      "part_number": "C-20",
+      "barcode": "000222",
+      "quantity": 1,
+      "location": "Garage shelf",
+      "notes": "small white tablet charger",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000003",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "AA battery",
+      "category": "Supplies",
+      "brand": "Volt",
+      "part_number": "AA-4",
+      "barcode": "000333",
+      "quantity": 8,
+      "location": "Top desk drawer",
+      "notes": "rechargeable cells",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000004",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "AA battery",
+      "category": "Supplies",
+      "brand": "Volt",
+      "part_number": "AA-8",
+      "barcode": "000334",
+      "quantity": null,
+      "location": "Garage shelf",
+      "notes": "not yet counted",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000005",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "Red handle pliers",
+      "category": "Tools",
+      "brand": "Forge",
+      "part_number": "P-10",
+      "barcode": "000444",
+      "quantity": 1,
+      "location": "Workshop cabinet",
+      "notes": "red handle hand tool",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000006",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "M3 screw",
+      "category": "Hardware",
+      "brand": "Forge",
+      "part_number": "M3-10",
+      "barcode": "000555",
+      "quantity": 24,
+      "location": "Fastener bin",
+      "notes": "steel screw",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000007",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "Laser printer",
+      "category": "Electronics",
+      "brand": "PrintCo",
+      "part_number": "LP-5",
+      "barcode": "000666",
+      "quantity": 1,
+      "location": "Office shelf",
+      "notes": "Wi-Fi printer",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000008",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "name": "Drill",
+      "category": "Tools",
+      "brand": "Forge",
+      "part_number": "DR-2",
+      "barcode": "000777",
+      "quantity": 0,
+      "location": null,
+      "notes": "cordless drill",
+      "image_url": null,
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000009",
+      "inventory_id": "inventory-b",
+      "user_id": "owner",
+      "name": "USB-C charger",
+      "category": "Electronics",
+      "brand": "Acme",
+      "part_number": "C-20",
+      "barcode": "000222",
+      "quantity": 999,
+      "location": "Garage shelf",
+      "notes": "FOREIGN_SECRET",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    },
+    {
+      "item_id": "00000000-0000-4000-8000-000000000010",
+      "inventory_id": "inventory-c",
+      "user_id": "foreign",
+      "name": "USB-C charger",
+      "category": "Electronics",
+      "brand": "Acme",
+      "part_number": "C-20",
+      "barcode": "000222",
+      "quantity": 4242,
+      "location": "Garage shelf",
+      "notes": "FOREIGN_SECRET",
+      "image_url": "https://private.test/photo",
+      "created_at": "2026-10-10T00:00:00Z",
+      "space_id": null
+    }
+  ],
+  "cases": [
+    {
+      "id": "memory-001",
+      "question": "Where is my HDMI adapter?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-002",
+      "question": "Find HDMI adapter",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-003",
+      "question": "Do I have HDMI adapter?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-004",
+      "question": "Show me HDMI adapter",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-005",
+      "question": "Where is my USB-C charger?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-006",
+      "question": "Find USB-C charger",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-007",
+      "question": "Do I have USB-C charger?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-008",
+      "question": "Show me USB-C charger",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-009",
+      "question": "Where is my 000333?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-010",
+      "question": "Find 000333",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-011",
+      "question": "Do I have 000333?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-012",
+      "question": "Show me 000333",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-013",
+      "question": "Where is my red handle pliers?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-014",
+      "question": "Find red handle pliers",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-015",
+      "question": "Do I have red handle pliers?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-016",
+      "question": "Show me red handle pliers",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-017",
+      "question": "Where is my M3 screw?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-018",
+      "question": "Find M3 screw",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-019",
+      "question": "Do I have M3 screw?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-020",
+      "question": "Show me M3 screw",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-021",
+      "question": "Where is my laser printer?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-022",
+      "question": "Find laser printer",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-023",
+      "question": "Do I have laser printer?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-024",
+      "question": "Show me laser printer",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-025",
+      "question": "Where is my cordless drill?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-026",
+      "question": "Find cordless drill",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-027",
+      "question": "Do I have cordless drill?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-028",
+      "question": "Show me cordless drill",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-029",
+      "question": "Find HDMI adaptr",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-030",
+      "question": "Where is my chargre?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-031",
+      "question": "Find red handle plers",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-032",
+      "question": "Find lasre printer",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-033",
+      "question": "Find screew",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-034",
+      "question": "Find adapt",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-035",
+      "question": "Locate rechargable cells",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-036",
+      "question": "Find USB-C charg",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "likely"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-037",
+      "question": "Find batteries",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-038",
+      "question": "Where are my AA batteries?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-039",
+      "question": "Show me all AA battery records",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-040",
+      "question": "Do I have AA batteries?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-041",
+      "question": "Find Volt batteries",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-042",
+      "question": "What is in my top desk drawer?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000003"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-043",
+      "question": "Show items in Garage shelf",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000004",
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-044",
+      "question": "Find items in Workshop cabinet",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-045",
+      "question": "Show items in Fastener bin",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-046",
+      "question": "Show items in Office shelf",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-047",
+      "question": "Find electronics in Top desk drawer",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-048",
+      "question": "Find batteries in Garage shelf",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-049",
+      "question": "Show items with brand Forge",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008",
+        "00000000-0000-4000-8000-000000000006",
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-050",
+      "question": "Show items with category Hardware",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-051",
+      "question": "Find charger with brand Acme",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-052",
+      "question": "Show items quantity below 2",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008",
+        "00000000-0000-4000-8000-000000000007",
+        "00000000-0000-4000-8000-000000000005",
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-053",
+      "question": "Show items quantity above 10",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-054",
+      "question": "How many AA batteries do I have?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "2 matching saved records",
+        "8 recorded units",
+        "unknown for 1"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-055",
+      "question": "Count M3 screws",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "1 matching saved records",
+        "24 recorded units"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-056",
+      "question": "How many HDMI adapters?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "2 recorded units"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-057",
+      "question": "Count chargers",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "1 recorded units"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-058",
+      "question": "How many items in Garage shelf?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000004",
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "2 matching saved records",
+        "1 recorded units",
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-059",
+      "question": "Count items in Fastener bin",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000006"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "24 recorded units"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-060",
+      "question": "Count items quantity exactly 0",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "supported",
+      "contains": [
+        "0 recorded units"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-061",
+      "question": "How many items do I own?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004",
+        "00000000-0000-4000-8000-000000000005",
+        "00000000-0000-4000-8000-000000000006",
+        "00000000-0000-4000-8000-000000000007",
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [
+        "8 matching saved records",
+        "37 recorded units",
+        "unknown"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-062",
+      "question": "Show items with no location",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-063",
+      "question": "Find items without image",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-064",
+      "question": "Show items missing quantity",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-065",
+      "question": "Find items without category",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-066",
+      "question": "Find turquoise umbrella",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-067",
+      "question": "Find barcode 000999",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-068",
+      "question": "Where is it?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000001"
+      ]
+    },
+    {
+      "id": "memory-069",
+      "question": "How many of those?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000001"
+      ]
+    },
+    {
+      "id": "memory-070",
+      "question": "Find that one",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000005"
+      ]
+    },
+    {
+      "id": "memory-071",
+      "question": "Why did you choose this result?",
+      "expected_capability": "item.evidence",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000001"
+      ]
+    },
+    {
+      "id": "memory-072",
+      "question": "Where is it?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "ambiguous",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ]
+    },
+    {
+      "id": "memory-073",
+      "question": "Where is it?",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "ambiguous",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000009"
+      ]
+    },
+    {
+      "id": "memory-074",
+      "question": "Find that one",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "ambiguous",
+      "contains": [
+        "Which saved item"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": []
+    },
+    {
+      "id": "memory-075",
+      "question": "Show me all matching items",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ]
+    },
+    {
+      "id": "memory-076",
+      "question": "Find the manual for my laser printer",
+      "expected_capability": "item.documents",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-077",
+      "question": "Show receipts for my laser printer",
+      "expected_capability": "item.documents",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-078",
+      "question": "Find documents for my pliers",
+      "expected_capability": "item.documents",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-079",
+      "question": "Find the manual for my AA battery",
+      "expected_capability": "item.documents",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "ambiguous",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-080",
+      "question": "What did I say about my red handle pliers?",
+      "expected_capability": "item.history",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-081",
+      "question": "When did I last move my pliers?",
+      "expected_capability": "item.history",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-082",
+      "question": "Show the history of my drill",
+      "expected_capability": "item.history",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-083",
+      "question": "What happened to my charger?",
+      "expected_capability": "item.history",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-084",
+      "question": "What did I pay for my printer?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-085",
+      "question": "When did I buy this charger?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-086",
+      "question": "Is my battery compatible with the charger?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-087",
+      "question": "Which cables belong to my monitor?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-088",
+      "question": "What is the warranty period for my printer?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-089",
+      "question": "Remind me to charge this tomorrow",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-090",
+      "question": "Show items with unconfirmed location",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-091",
+      "question": "Show me the smaller one",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-092",
+      "question": "Where is the other one?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-093",
+      "question": "What is the live tracking location of my drill?",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-094",
+      "question": "Where is my HDMI adapter?",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "unavailable",
+      "contains": [
+        "could not verify"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "failure": "database unavailable"
+    },
+    {
+      "id": "memory-095",
+      "question": "Find M3 screw",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "unavailable",
+      "contains": [
+        "could not verify"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "failure": "database unavailable"
+    },
+    {
+      "id": "memory-096",
+      "question": "How many batteries?",
+      "expected_capability": "inventory.count",
+      "expected_ids": [],
+      "expected_state": "unavailable",
+      "contains": [
+        "could not verify"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "failure": "database unavailable"
+    },
+    {
+      "id": "memory-097",
+      "question": "Find manual for printer",
+      "expected_capability": "item.documents",
+      "expected_ids": [],
+      "expected_state": "unavailable",
+      "contains": [
+        "could not verify"
+      ],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "failure": "database unavailable"
+    },
+    {
+      "id": "memory-098",
+      "question": "Find A-101",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-099",
+      "question": "Find 000112",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-100",
+      "question": "Find M3-11",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-101",
+      "question": "Find AA-5",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-102",
+      "question": "Where is my adapter?",
+      "kind": "tool",
+      "tool": "inventory_delete_item",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000001"
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-103",
+      "question": "Show my inventory",
+      "kind": "tool",
+      "tool": "inventory_update_item",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000001",
+        "updates": {
+          "location": "Garage shelf"
+        }
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-104",
+      "question": "Add two batteries",
+      "kind": "tool",
+      "tool": "inventory_add_item",
+      "args": {
+        "name": "AA battery",
+        "category": "Supplies",
+        "quantity": 2
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-105",
+      "question": "We used two batteries",
+      "kind": "tool",
+      "tool": "inventory_log_event",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000003",
+        "event_type": "usage",
+        "quantity_delta": -2
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-106",
+      "question": "Delete all items",
+      "kind": "tool",
+      "tool": "inventory_delete_by_filter",
+      "args": {
+        "category": "Tools"
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-107",
+      "question": "Create space Garage",
+      "kind": "tool",
+      "tool": "create_space",
+      "args": {
+        "name": "Garage"
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-108",
+      "question": "Set quantity to 7",
+      "kind": "tool",
+      "tool": "inventory_update_item",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000001",
+        "updates": {
+          "quantity": 7
+        }
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-109",
+      "question": "Rename adapter to X",
+      "kind": "tool",
+      "tool": "inventory_update_item",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000001",
+        "updates": {
+          "confidence": 1
+        }
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-110",
+      "question": "Search adapter",
+      "kind": "tool",
+      "tool": "inventory_search",
+      "args": {
+        "query": true
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-111",
+      "question": "Search adapter",
+      "kind": "tool",
+      "tool": "inventory_search",
+      "args": {
+        "query": "adapter",
+        "user_id": "foreign"
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-112",
+      "question": "Search adapter",
+      "kind": "tool",
+      "tool": "unknown_tool",
+      "args": {},
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-113",
+      "question": "Move adapter to Office shelf",
+      "kind": "tool",
+      "tool": "inventory_update_item",
+      "args": {
+        "item_id": "00000000-0000-4000-8000-000000000009",
+        "updates": {
+          "location": "Office shelf"
+        }
+      },
+      "expected_rejection": true,
+      "no_action": true,
+      "authorization": "no unauthorized writes"
+    },
+    {
+      "id": "memory-114",
+      "question": "Find barcode 000111",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-115",
+      "question": "Find part number A-100",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-116",
+      "question": "Where is my HDMI adaptor?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-117",
+      "question": "I can't remember its name, but it has a red handle",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000005"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-118",
+      "question": "Where is my AA battery?",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "ambiguous",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET"
+    },
+    {
+      "id": "memory-119",
+      "question": "Find the manual for this",
+      "expected_capability": "item.documents",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000007"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only; no FOREIGN_SECRET",
+      "refs": [
+        "00000000-0000-4000-8000-000000000007"
+      ]
+    },
+    {
+      "id": "memory-120",
+      "kind": "provider",
+      "question": "Hello",
+      "failure": "provider_error",
+      "no_action": true,
+      "expected_state": "unavailable",
+      "authorization": "no tool or mutation after provider failure"
+    },
+    {
+      "id": "memory-121",
+      "kind": "provider",
+      "question": "Hello",
+      "failure": "provider_empty",
+      "no_action": true,
+      "expected_state": "unavailable",
+      "authorization": "no tool or mutation after provider failure"
+    },
+    {
+      "id": "memory-122",
+      "question": "Show items added after 2026-10-01",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004",
+        "00000000-0000-4000-8000-000000000005",
+        "00000000-0000-4000-8000-000000000006",
+        "00000000-0000-4000-8000-000000000007",
+        "00000000-0000-4000-8000-000000000008"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    },
+    {
+      "id": "memory-123",
+      "question": "Show items added before 2026-10-01",
+      "expected_capability": "item.find",
+      "expected_ids": [],
+      "expected_state": "empty",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    },
+    {
+      "id": "memory-124",
+      "question": "Find adapters added since 2026-10-10",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "expected_state": "supported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    },
+    {
+      "id": "memory-125",
+      "question": "Find batteries added before 2026-10-11",
+      "expected_capability": "item.find",
+      "expected_ids": [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004"
+      ],
+      "expected_state": "incomplete",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    },
+    {
+      "id": "memory-126",
+      "question": "Show items after 2026-99-10",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    },
+    {
+      "id": "memory-127",
+      "question": "Show items added yesterday",
+      "expected_capability": "memory.unsupported",
+      "expected_ids": [],
+      "expected_state": "unsupported",
+      "contains": [],
+      "no_action": true,
+      "authorization": "inventory-a only"
+    }
+  ],
+  "documents": [
+    {
+      "document_id": "doc-printer",
+      "inventory_id": "inventory-a",
+      "inventory_visibility": "inventory",
+      "user_id": "owner",
+      "item_id": "00000000-0000-4000-8000-000000000007",
+      "filename": "Printer manual.pdf",
+      "storage_path": "owner/private.pdf",
+      "created_at": "2026-10-11"
+    },
+    {
+      "document_id": "foreign-doc",
+      "inventory_id": "inventory-b",
+      "inventory_visibility": "inventory",
+      "user_id": "owner",
+      "item_id": "00000000-0000-4000-8000-000000000007",
+      "filename": "FOREIGN_SECRET_B.pdf",
+      "storage_path": "owner/private.pdf",
+      "created_at": "2026-10-11"
+    },
+    {
+      "document_id": "private-doc",
+      "inventory_id": "inventory-a",
+      "inventory_visibility": "personal",
+      "user_id": "foreign",
+      "item_id": "00000000-0000-4000-8000-000000000007",
+      "filename": "FOREIGN_SECRET_PRIVATE.pdf",
+      "storage_path": "owner/private.pdf",
+      "created_at": "2026-10-11"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "event-pliers",
+      "inventory_id": "inventory-a",
+      "user_id": "owner",
+      "item_id": "00000000-0000-4000-8000-000000000005",
+      "event_type": "note",
+      "content": "Inspected red handle",
+      "created_at": "2026-10-12"
+    },
+    {
+      "event_id": "foreign-event",
+      "inventory_id": "inventory-b",
+      "user_id": "owner",
+      "item_id": "00000000-0000-4000-8000-000000000005",
+      "event_type": "note",
+      "content": "FOREIGN_SECRET_EVENT",
+      "created_at": "2026-10-12"
+    }
+  ]
+}

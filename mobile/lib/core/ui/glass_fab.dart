@@ -1,4 +1,7 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
+import 'frosted_surface.dart';
 
 class GlassFab extends StatelessWidget {
   const GlassFab({
@@ -16,34 +19,40 @@ class GlassFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(label == null ? 28 : 18),
-      side: const BorderSide(color: Color(0x33FFFFFF), width: 1),
-    );
-    if (label != null) {
-      return FloatingActionButton.extended(
-        heroTag: heroTag,
-        onPressed: onPressed,
-        foregroundColor: Colors.white,
-        backgroundColor: const Color(0xCC2C2C2E),
-        elevation: 6,
-        highlightElevation: 8,
-        shape: shape,
-        icon: Icon(icon, color: Colors.white, size: 22),
-        label: Text(label!),
-      );
-    }
-    return FloatingActionButton(
-      heroTag: heroTag,
-      onPressed: onPressed,
-      foregroundColor: Colors.white,
-      backgroundColor: const Color(0xCC2C2C2E),
-      elevation: 6,
-      highlightElevation: 8,
-      shape: const CircleBorder(
-        side: BorderSide(color: Color(0x33FFFFFF), width: 1),
-      ),
-      child: Icon(icon, color: Colors.white, size: 25),
+    final foreground = onPressed == null
+        ? AppTheme.textSecondary(context)
+        : AppTheme.textPrimary(context);
+    final button = label != null
+        ? FloatingActionButton.extended(
+            heroTag: heroTag,
+            onPressed: onPressed,
+            foregroundColor: foreground,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            highlightElevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            icon: Icon(icon, color: foreground, size: 22),
+            label: AppText(label!),
+          )
+        : FloatingActionButton(
+            heroTag: heroTag,
+            onPressed: onPressed,
+            foregroundColor: foreground,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            highlightElevation: 0,
+            shape: const CircleBorder(),
+            child: Icon(icon, color: foreground, size: 25),
+          );
+    return FrostedSurface(
+      radius: label == null ? 28 : 18,
+      tint: AppTheme.neutralSelectionTint(context),
+      border: AppTheme.textPrimary(
+        context,
+      ).withValues(alpha: MediaQuery.highContrastOf(context) ? .4 : .12),
+      child: button,
     );
   }
 }

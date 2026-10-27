@@ -1,0 +1,18 @@
+{
+  "version": "1.1.1",
+  "build": 133,
+  "uploaded": true,
+  "physical_device_acceptance": "unverified",
+  "public_app_store_submission": false,
+  "source_commit": "f80248d8813ad88a47909bd5a030d7480382e9db",
+  "archive_device_executables_verified": 34,
+  "export_device_executables_verified": 34,
+  "strict_archive_signature_verified": true,
+  "ipa_sha256": "7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f",
+  "archive_preserved": true,
+  "apple_validation": true,
+  "validated_ipa_sha256": "7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "delivery_uuid": "4d60ceee-7770-44db-985d-5eaa164884f7"
+}

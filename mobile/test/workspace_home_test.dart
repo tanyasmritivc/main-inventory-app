@@ -1,0 +1,360 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/last_place.dart';
+import 'package:mobile/core/place_session.dart';
+import 'package:mobile/features/workspaces/workspace_home.dart';
+import 'package:mobile/features/workspaces/hierarchy_page.dart';
+import 'package:mobile/core/ui/member_avatar.dart';
+import 'support/hierarchy_fixture.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final fixture = HierarchyFixture();
+  setUpAll(fixture.initialize);
+  tearDownAll(() => Supabase.instance.dispose());
+  late PlaceSession session;
+  var count = 1, canOpen = true;
+  final opened = <String>[];
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    fixture.status = 200;
+    fixture.requests.clear();
+    count = 1;
+    canOpen = true;
+    opened.clear();
+    fixture.respond = (r) {
+      final id = r.path.split('/').length > 2 ? r.path.split('/')[2] : '';
+      if (r.path == '/organizations') {
+        return {
+          'organizations': [
+            {
+              'organization_id': 'org',
+              'name': 'FTC ROBOTICS 2026',
+              'role': 'member',
+            },
+          ],
+        };
+      }
+      if (r.path == '/organizations/org') {
+        return {
+          'organization': {
+            'organization_id': 'org',
+            'name': 'FTC ROBOTICS 2026',
+            'role': 'member',
+          },
+          'workspaces': [
+            {'team_id': 'ftc', 'name': 'FTC ROBOTS'},
+          ],
+        };
+      }
+      if (r.path == '/inventory-workspaces') {
+        return {
+          'workspaces': [
+            {'workspace_id': 'ftc'},
+            {'workspace_id': 'standalone'},
+          ],
+        };
+      }
+      if (r.path.endsWith('/overview')) {
+        return {
+          'workspace': {
+            'workspace_id': id,
+            'name': id == 'ftc' ? 'FTC ROBOTS' : 'My Team',
+            'organization_id': id == 'ftc' ? 'org' : null,
+            'organization_name': id == 'ftc' ? 'FTC ROBOTICS 2026' : null,
+            'role': 'member',
+            'owner_user_id': 'owner',
+          },
+          'members': [
+            {'user_id': 'owner', 'display_name': 'Owner', 'role': 'owner'},
+            {'user_id': 'actor-a', 'display_name': 'Tanya', 'role': 'member'},
+          ],
+        };
+      }
+      if (r.path.endsWith('/inventories') && r.method == 'POST') {
+        count++;
+        return {
+          'inventory': {'inventory_id': 'inv-${count - 1}'},
+        };
+      }
+      if (r.path.endsWith('/directory')) {
+        return {
+          'inventories': [
+            for (var i = 0; i < count; i++)
+              {
+                'inventory_id': 'inv-$i',
+                'workspace_id': id,
+                'name': 'Inventory $i',
+                'can_open': canOpen,
+                'can_edit': false,
+                'role': 'viewer',
+                'item_count': canOpen ? 60 : null,
+              },
+          ],
+          'next_offset': null,
+        };
+      }
+      if (r.path.endsWith('/audit')) return {'activity': []};
+      if (r.path.endsWith('/access-requests')) return {'requests': []};
+      throw StateError(r.path);
+    };
+    session = PlaceSession(fixture.api, 'actor-a');
+  });
+  tearDown(() => session.dispose());
+  test(
+    'quiet refresh removes deleted inventories without retiring the selected account',
+    () async {
+      await session.selectOrganization('org');
+      expect(session.data!.inventories, hasLength(1));
+      final states = <bool>[];
+      session.addListener(() => states.add(session.loading));
+      count = 0;
+      await session.refresh(quiet: true);
+      expect(session.data!.inventories, isEmpty);
+      expect(session.organizationId, 'org');
+      expect(states, isNotEmpty);
+      expect(states, everyElement(isFalse));
+    },
+  );
+
+  Future<void> open(String id, String workspace, String? org) async {
+    opened.add('$org/$workspace/$id');
+  }
+
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 5)),
+      );
+    }
+  }
+
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    Brightness brightness = Brightness.light,
+  }) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.create(brightness),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
+        home: WorkspaceHome(session: session, onOpenInventory: open),
+      ),
+    );
+    await settle(tester);
+  }
+
+  for (final mode in Brightness.values) {
+    group(mode.name, () {
+      testWidgets(
+        'workspace home has correct role, count and inventory destination',
+        (tester) async {
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, brightness: mode);
+          expect(find.text('FTC ROBOTICS 2026'), findsOneWidget);
+          expect(find.text('60 items · Viewer'), findsOneWidget);
+          expect(find.text('New inventory'), findsNothing);
+          expect(find.text('Tasks'), findsOneWidget);
+          expect(find.text('People'), findsOneWidget);
+          expect(find.byTooltip('Workspace settings'), findsOneWidget);
+          expect(find.byTooltip('Refresh'), findsNothing);
+          await tester.tap(find.text('Inventory 0'));
+          expect(opened, ['org/ftc/inv-0']);
+        },
+      );
+      testWidgets(
+        'create remains visible after the first inventory and refreshes the selected workspace',
+        (tester) async {
+          await tester.runAsync(session.restore);
+          await pump(tester, brightness: mode);
+          expect(find.text('Inventory 0'), findsOneWidget);
+          await tester.tap(find.text('New inventory'));
+          await settle(tester);
+          await tester.enterText(find.byType(TextField), 'Materials');
+          await tester.pump();
+          await tester.tap(find.widgetWithText(TextButton, 'Create'));
+          await settle(tester);
+          expect(
+            fixture.requests.where((r) => r.method == 'POST').last.path,
+            '/inventory-workspaces/personal/inventories',
+          );
+          expect(find.text('Inventory 1'), findsOneWidget);
+          expect(find.text('New inventory'), findsOneWidget);
+          expect(opened, isEmpty);
+        },
+      );
+      testWidgets('Personal contains inventories and no workspace tools', (
+        tester,
+      ) async {
+        await tester.runAsync(session.restore);
+        await pump(tester, brightness: mode);
+        expect(find.text('Personal'), findsNWidgets(2));
+        expect(find.text('Tasks'), findsNothing);
+        expect(find.text('People'), findsNothing);
+      });
+      testWidgets(
+        'workspace picker contains only selected organization children',
+        (tester) async {
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, brightness: mode);
+          await tester.tap(
+            find.bySemanticsLabel('Switch workspace. Current: FTC ROBOTS'),
+          );
+          await settle(tester);
+          expect(find.text('FTC ROBOTS'), findsNWidgets(2));
+          expect(find.text('My Team'), findsNothing);
+          expect(find.text('Personal'), findsNothing);
+          expect(find.text('New workspace'), findsNothing);
+        },
+      );
+      testWidgets(
+        'multiple inventories show list; missing counts stay hidden',
+        (tester) async {
+          count = 2;
+          canOpen = false;
+          await tester.runAsync(session.restore);
+          await pump(tester, brightness: mode);
+          expect(find.text('Inventories'), findsOneWidget);
+          expect(find.text('Access restricted'), findsNWidgets(2));
+          expect(find.text('items'), findsNothing);
+          expect(find.text('0'), findsNothing);
+        },
+      );
+      testWidgets(
+        'home and switcher grow at largest text scale without overflow',
+        (tester) async {
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, scale: 3.2, brightness: mode);
+          expect(tester.takeException(), null);
+          await tester.tap(
+            find.bySemanticsLabel('Switch workspace. Current: FTC ROBOTS'),
+          );
+          await settle(tester);
+          expect(tester.takeException(), null);
+        },
+      );
+      testWidgets(
+        'Leave is on People, uses existing confirmation and does not write on cancel',
+        (tester) async {
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, brightness: mode);
+          await tester.tap(find.text('People'));
+          await settle(tester);
+          expect(find.byType(MemberAvatar), findsNWidgets(2));
+          expect(find.text('Leave workspace'), findsOneWidget);
+          await tester.tap(find.text('Leave workspace'));
+          await settle(tester);
+          expect(find.text('Leave workspace?'), findsOneWidget);
+          await tester.tap(find.text('Cancel'));
+          await settle(tester);
+          expect(fixture.requests.any((r) => r.path.endsWith('/leave')), false);
+          expect(find.byType(HierarchyPage), findsOneWidget);
+        },
+      );
+      testWidgets(
+        'owner deletes a workspace and remains in its empty organization',
+        (tester) async {
+          final original = fixture.respond;
+          var deleted = false;
+          fixture.respond = (r) async {
+            if (r.path == '/resource-removal/workspace/ftc') {
+              if (r.method == 'GET') {
+                return {
+                  'kind': 'workspace',
+                  'id': 'ftc',
+                  'name': 'FTC ROBOTS',
+                  'items': 2,
+                  'spaces': 1,
+                  'inventories': 1,
+                  'workspaces': 0,
+                  'can_move': true,
+                  'destinations': [],
+                };
+              }
+              deleted = true;
+              return {
+                'kind': 'workspace',
+                'id': 'ftc',
+                'action': 'delete',
+                'deleted': true,
+              };
+            }
+            final result = await original(r) as Map<String, dynamic>;
+            if (r.path == '/organizations/org' && deleted) {
+              result['workspaces'] = [];
+            }
+            if (r.path == '/inventory-workspaces/ftc/overview') {
+              result['workspace'] = Map<String, dynamic>.from(
+                result['workspace'] as Map,
+              )..addAll({'role': 'owner', 'owner_user_id': 'actor-a'});
+            }
+            return result;
+          };
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, brightness: mode);
+          expect(session.error, isNull);
+          expect(session.data?.resource['owner_user_id'], 'actor-a');
+          await tester.scrollUntilVisible(
+            find.byTooltip('Workspace settings'),
+            120,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.tap(find.byTooltip('Workspace settings'));
+          await settle(tester);
+          await tester.tap(find.text('Delete workspace'));
+          await settle(tester);
+          await tester.tap(find.byType(CheckboxListTile).last);
+          await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
+          await tester.pump();
+          final confirm = find.widgetWithText(TextButton, 'Delete workspace');
+          await tester.ensureVisible(confirm);
+          await tester.pumpAndSettle();
+          await tester.tap(confirm);
+          await settle(tester);
+          expect(
+            fixture.requests.where((r) => r.method == 'POST').single.path,
+            '/resource-removal/workspace/ftc',
+          );
+          expect(session.organizationId, 'org');
+          expect(session.data, isNull);
+          expect(find.text('No workspaces yet'), findsOneWidget);
+          expect(await session.store.readOrganization(), 'org');
+          expect(opened, isEmpty);
+        },
+      );
+
+      testWidgets('workspace member has no deletion menu', (tester) async {
+        await tester.runAsync(
+          () => session.select(const LastPlace.workspace('ftc')),
+        );
+        await pump(tester, brightness: mode);
+        await tester.tap(find.byTooltip('Workspace settings'));
+        await settle(tester);
+        expect(find.text('Delete workspace'), findsNothing);
+      });
+    });
+  }
+}

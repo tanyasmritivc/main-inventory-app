@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
@@ -5,9 +6,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import 'connector_review_page.dart';
 import '../../core/api_error.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
-enum _ImportState { ready, uploading, success }
+enum _ImportState { ready, uploading }
 
 class ImportSheetPage extends StatefulWidget {
   const ImportSheetPage({
@@ -15,6 +18,7 @@ class ImportSheetPage extends StatefulWidget {
     required this.api,
     required this.location,
     this.shareId,
+    this.kind = 'inventory',
     this.initialFilePath,
     this.initialFilename,
   });
@@ -22,6 +26,7 @@ class ImportSheetPage extends StatefulWidget {
   final ApiClient api;
   final String location;
   final String? shareId;
+  final String kind;
   final String? initialFilePath;
   final String? initialFilename;
 
@@ -35,7 +40,6 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   _ImportState _state = _ImportState.ready;
   String? _filename;
   String? _errorMessage;
-  SpreadsheetImportResult? _result;
 
   @override
   void initState() {
@@ -136,22 +140,29 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     setState(() {
       _filename = file.name;
       _errorMessage = null;
-      _result = null;
       _state = _ImportState.uploading;
     });
 
     try {
       final multipart = await _multipartFile(file);
-      final result = await widget.api.importSpreadsheet(
+      final source = await widget.api.uploadConnectorSource(
         file: multipart,
         location: widget.location,
         shareId: widget.shareId,
+        kind: widget.kind,
       );
       if (!mounted) return;
-      setState(() {
-        _result = result;
-        _state = _ImportState.success;
-      });
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => ConnectorReviewPage(api: widget.api, source: source),
+        ),
+      );
+      if (!mounted) return;
+      if (result == true) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() => _state = _ImportState.ready);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -161,25 +172,18 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     }
   }
 
-  void _importAnother() {
-    setState(() {
-      _filename = null;
-      _errorMessage = null;
-      _result = null;
-      _state = _ImportState.ready;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: _state != _ImportState.uploading,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         appBar: AppBar(
-          title: const Text('Import Spreadsheet'),
+          title: AppText(
+            widget.kind == 'bom' ? 'Import parts list' : 'Import spreadsheet',
+          ),
           centerTitle: true,
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.adaptive(context, Colors.black),
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: _state != _ImportState.uploading,
         ),
@@ -197,13 +201,6 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
                 key: const ValueKey('uploading'),
                 filename: _filename ?? 'Spreadsheet',
                 location: widget.location,
-              ),
-              _ImportState.success => _SuccessView(
-                key: const ValueKey('success'),
-                result: _result!,
-                location: widget.location,
-                onViewItems: () => Navigator.of(context).pop(true),
-                onImportAnother: _importAnother,
               ),
             },
           ),
@@ -230,107 +227,56 @@ class _ReadyView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
       children: [
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: const Color(0xFF171717),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x1FFFFFFF)),
+        AppText(
+          'Save to',
+          style: TextStyle(
+            color: AppTheme.textSecondary(context),
+            fontSize: 13,
           ),
-          child: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0x1AFFFFFF),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.table_chart_outlined,
-                  color: Colors.white,
-                  size: 30,
-                ),
+        ),
+        const SizedBox(height: 8),
+        AppText(
+          location,
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 28),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: onChooseFile,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Import a spreadsheet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Items will be organized and added to “$location”.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: onChooseFile,
-                  icon: const Icon(Icons.folder_open_outlined, size: 20),
-                  label: const Text('Choose Spreadsheet'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: const StadiumBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Excel (.xlsx) or CSV · Maximum 10 MB',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12),
-              ),
-            ],
+            ),
+            child: const AppText('Choose file'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppText(
+          'Excel (.xlsx) or CSV, up to 10 MB',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textSecondary(context),
+            fontSize: 13,
           ),
         ),
         if (errorMessage != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0x1AFF453A),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x4DFF453A)),
-            ),
-            child: Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFFF6961), fontSize: 13),
+          const SizedBox(height: 20),
+          AppText(
+            errorMessage!,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontSize: 14,
             ),
           ),
         ],
-        const SizedBox(height: 24),
-        const _InfoRow(
-          icon: Icons.cloud_upload_outlined,
-          title: 'Processed securely',
-          subtitle:
-              'The file is sent to FindEZ for processing, not parsed on your phone.',
-        ),
-        const _InfoRow(
-          icon: Icons.auto_awesome_outlined,
-          title: 'Columns mapped automatically',
-          subtitle:
-              'Names, quantities, categories, brands, and part numbers are detected.',
-        ),
-        const _InfoRow(
-          icon: Icons.inventory_2_outlined,
-          title: 'Added in one import',
-          subtitle:
-              'Valid rows are saved together and your inventory refreshes afterward.',
-        ),
       ],
     );
   }
@@ -354,183 +300,44 @@ class _UploadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 34,
               height: 34,
               child: CircularProgressIndicator(
-                color: Colors.white,
+                color: AppTheme.adaptive(context, Colors.white),
                 strokeWidth: 2.5,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Importing your inventory…',
+            AppText(
+              'Reading your file...',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              '$filename\nAdding items to “$location”',
+            AppText(
+              '$filename\nPreparing a preview for $location',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0x73FFFFFF),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                 fontSize: 13,
                 height: 1.45,
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Keep FindEZ open while the file is processed.',
+            AppText(
+              'You will review the rows before anything is saved.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SuccessView extends StatelessWidget {
-  const _SuccessView({
-    super.key,
-    required this.result,
-    required this.location,
-    required this.onViewItems,
-    required this.onImportAnother,
-  });
-
-  final SpreadsheetImportResult result;
-  final String location;
-  final VoidCallback onViewItems;
-  final VoidCallback onImportAnother;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0x1A30D158),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: Color(0xFF30D158),
-                size: 38,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Import complete',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 23,
-                fontWeight: FontWeight.w600,
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                fontSize: 12,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
-            ),
-            if (result.failures > 0) ...[
-              const SizedBox(height: 8),
-              Text(
-                '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFFFF9F0A), fontSize: 13),
-              ),
-            ],
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton(
-                onPressed: onViewItems,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text('View Items'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onImportAnother,
-              child: const Text('Import Another'),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0x0FFFFFFF),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, color: const Color(0xB3FFFFFF), size: 20),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Color(0x73FFFFFF),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

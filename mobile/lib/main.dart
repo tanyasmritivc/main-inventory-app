@@ -2,25 +2,31 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:app_links/app_links.dart';
+import 'package:flutter/services.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
+import 'core/app_theme.dart';
+import 'core/appearance_controller.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
+import 'core/launch_notification_permission.dart';
 import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
-import 'features/auth/auth_page.dart';
+import 'core/ui/findez_wordmark.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
-import 'features/onboarding/onboarding_page.dart';
+import 'features/onboarding/chat_onboarding_page.dart';
+import 'features/onboarding/chat_onboarding_gate.dart';
+import 'features/profile/plans_welcome.dart';
 import 'features/splash/splash_page.dart';
-import 'features/shell/main_shell.dart';
+import 'features/workspaces/inventory_context_host.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
-import 'features/teams/team_workspace_page.dart';
+import 'features/sharing/invitation_host.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,36 +46,49 @@ Future<void> main() async {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE'))),
+        home: Scaffold(body: Center(child: AppText('SAFE MODE'))),
       ),
     );
     return;
   }
 
   AppConfig.validate();
-  await ProStatus.loadCached();
   await LowStockNotifications.initialize();
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
-    anonKey: AppConfig.supabaseAnonKey,
+    publishableKey: AppConfig.supabaseAnonKey,
   );
+  await ProStatus.loadCached();
+
+  try {
+    await OnboardingPrefs.prepareGuidedTourInstall(
+      hasSession: Supabase.instance.client.auth.currentSession != null,
+    );
+  } catch (_) {
+    // Keep the app usable without displaying an unconfirmed automatic tour.
+    debugPrint('Could not prepare the one-time guided tour');
+  }
 
   if (launchMode == 1) {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
+        home: Scaffold(body: Center(child: AppText('SAFE MODE (Supabase OK)'))),
       ),
     );
     return;
   }
 
-  runApp(const MyApp());
+  final appearance = AppearanceController();
+  await appearance.load();
+  runApp(MyApp(appearance: appearance));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.appearance});
+
+  final AppearanceController? appearance;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -79,104 +98,34 @@ class _MyAppState extends State<MyApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   StreamSubscription<SharedMedia>? _sharedMediaSub;
-  StreamSubscription<Uri>? _inviteLinkSub;
   StreamSubscription<AuthState>? _shareAuthSub;
   SharedAttachment? _pendingSpreadsheet;
   String? _lastHandledSharePath;
   bool _presentingSharedSpreadsheet = false;
   bool _presentingPasswordRecovery = false;
-  bool _presentingTeamInvite = false;
-  String? _pendingTeamInviteCode;
+  bool _invitationReady = false;
   late final ApiClient _api;
+  late final AppearanceController _appearance;
 
   @override
   void initState() {
     super.initState();
+    _appearance = widget.appearance ?? AppearanceController();
+    unawaited(_appearance.load());
     _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
     _initializeIncomingShares();
-    _initializeIncomingLinks();
-    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((
-      state,
-    ) {
-      _tryPresentSharedSpreadsheet();
-      _tryPresentTeamInvite();
-      if (state.event == AuthChangeEvent.passwordRecovery) {
-        _presentPasswordRecovery();
-      }
-    });
-  }
-
-  Future<void> _initializeIncomingLinks() async {
-    final appLinks = AppLinks();
-    try {
-      final initial = await appLinks.getInitialLink();
-      if (initial != null) _queueTeamInvite(initial);
-    } catch (error) {
-      debugPrint('[TeamInvite] initial link failed: $error');
-    }
-    _inviteLinkSub = appLinks.uriLinkStream.listen(
-      _queueTeamInvite,
-      onError: (Object error) {
-        debugPrint('[TeamInvite] link stream failed: $error');
+    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (state) {
+        _tryPresentSharedSpreadsheet();
+        if (state.event == AuthChangeEvent.passwordRecovery) {
+          _presentPasswordRecovery();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // LaunchAuthGate presents reconnect/retry without clearing the session.
+        debugPrint('Session refresh is temporarily unavailable.');
       },
     );
-  }
-
-  void _queueTeamInvite(Uri uri) {
-    String code = '';
-    if (uri.scheme == 'findez' && uri.host == 'team-invite') {
-      code = uri.queryParameters['code'] ?? '';
-    } else if ((uri.host == 'findez.ai' || uri.host == 'www.findez.ai') &&
-        uri.pathSegments.length >= 3 &&
-        uri.pathSegments[0] == 'join' &&
-        uri.pathSegments[1] == 'team') {
-      code = uri.pathSegments[2];
-    }
-    code = code.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    if (code.length != 6) return;
-    _pendingTeamInviteCode = code;
-    _tryPresentTeamInvite();
-  }
-
-  void _tryPresentTeamInvite() {
-    if (_presentingTeamInvite ||
-        _pendingTeamInviteCode == null ||
-        Supabase.instance.client.auth.currentSession == null) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || _presentingTeamInvite) return;
-      final navigator = _navigatorKey.currentState;
-      final code = _pendingTeamInviteCode;
-      if (navigator == null || code == null) return;
-      _presentingTeamInvite = true;
-      try {
-        final result = await _api.joinTeam(code);
-        final membership = Map<String, dynamic>.from(
-          result['membership'] ?? const {},
-        );
-        final teamId = membership['team_id']?.toString() ?? '';
-        if (teamId.isEmpty) throw StateError('Team invitation is unavailable');
-        _pendingTeamInviteCode = null;
-        if (!mounted) return;
-        await navigator.push<void>(
-          MaterialPageRoute(
-            builder: (_) => TeamWorkspacePage(api: _api, initialTeamId: teamId),
-          ),
-        );
-      } catch (error) {
-        _pendingTeamInviteCode = null;
-        if (!mounted) return;
-        _messengerKey.currentState?.showSnackBar(
-          const SnackBar(
-            content: Text('This team invitation is no longer available.'),
-          ),
-        );
-        debugPrint('[TeamInvite] could not join: $error');
-      } finally {
-        _presentingTeamInvite = false;
-      }
-    });
   }
 
   void _presentPasswordRecovery() {
@@ -242,12 +191,21 @@ class _MyAppState extends State<MyApp> {
       try {
         await ShareHandlerPlatform.instance.resetInitialSharedMedia();
         if (!mounted) return;
-        await navigator.push<bool>(
+        final selectedApi = await navigator.push<ApiClient>(
           MaterialPageRoute(
-            builder: (_) =>
-                SharedSpreadsheetPage(api: _api, filePath: attachment.path),
+            builder: (_) => InventoryContextHost(api: _api, pickOnly: true),
           ),
         );
+        if (selectedApi != null && mounted) {
+          await navigator.push<bool>(
+            MaterialPageRoute(
+              builder: (_) => SharedSpreadsheetPage(
+                api: selectedApi,
+                filePath: attachment.path,
+              ),
+            ),
+          );
+        }
       } catch (error) {
         debugPrint('[ShareImport] could not present import: $error');
       } finally {
@@ -259,316 +217,76 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    if (widget.appearance == null) _appearance.dispose();
     _sharedMediaSub?.cancel();
-    _inviteLinkSub?.cancel();
     _shareAuthSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const bg = AppColors.background;
-    const surface = AppColors.surface;
-    const surface2 = AppColors.surface2;
-
-    const scheme = ColorScheme.dark(
-      primary: Color(0xFFF2F2F7),
-      onPrimary: Color(0xFF1C1C1E),
-      secondary: AppColors.muted,
-      surface: surface,
-      surfaceContainer: surface2,
-      surfaceContainerHigh: Color(0xFF242426),
-      error: AppColors.danger,
-    );
-
-    final darkTheme = ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: scheme,
-      useMaterial3: true,
-      scaffoldBackgroundColor: bg,
-      splashFactory: InkRipple.splashFactory,
-      textTheme: const TextTheme(
-        headlineSmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.4,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.1,
-        ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.1,
-        ),
-      ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.muted),
-        actionsIconTheme: const IconThemeData(color: AppColors.muted),
-        titleTextStyle: TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          letterSpacing: 0,
-        ),
-      ),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.border,
-        thickness: 0.5,
-        space: 0.5,
-      ),
-      inputDecorationTheme: const InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surface,
-        prefixIconColor: AppColors.muted,
-        hintStyle: TextStyle(color: AppColors.hint),
-        labelStyle: TextStyle(color: AppColors.muted),
-        contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.border, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: Color(0x99FFFFFF), width: 1),
-        ),
-      ),
-      cardTheme: const CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(18)),
-          side: BorderSide(color: AppColors.border, width: 0.5),
-        ),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Color(0xCC2C2C2E),
-        foregroundColor: Colors.white,
-        elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-      ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.transparent,
-        indicatorColor: const Color(0x18FFFFFF),
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        elevation: 0,
-        labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
+    return AppearanceScope(
+      controller: _appearance,
+      child: AnimatedBuilder(
+        animation: _appearance,
+        builder: (context, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          scaffoldMessengerKey: _messengerKey,
+          debugShowCheckedModeBanner: false,
+          title: 'FindEZ',
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: _appearance.textScaler(
+                  MediaQuery.textScalerOf(context),
+                ),
+              ),
+              child: AppTypography(
+                child: AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: Theme.of(context).brightness == Brightness.light
+                      ? SystemUiOverlayStyle.dark
+                      : SystemUiOverlayStyle.light,
+                  child: GestureDetector(
+                    // Avoid competing with native controls when no keyboard
+                    // needs dismissal. The shell hides tabs while it is open.
+                    onTap: MediaQuery.viewInsetsOf(context).bottom > 0
+                        ? () => FocusManager.instance.primaryFocus?.unfocus()
+                        : null,
+                    behavior: HitTestBehavior.translucent,
+                    child: LaunchNotificationPermission(
+                      api: _api,
+                      child: InvitationHost(
+                        api: _api,
+                        navigatorKey: _navigatorKey,
+                        ready: _invitationReady,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             );
-          }
-          return const TextStyle(
-            color: AppColors.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-          );
-        }),
-        iconTheme: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: Colors.white, size: 22);
-          }
-          return const IconThemeData(color: AppColors.muted, size: 22);
-        }),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: surface2,
-        contentTextStyle: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w400,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFFF2F2F7),
-          foregroundColor: const Color(0xFF1C1C1E),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.1,
+          },
+          themeMode: _appearance.themeMode,
+          theme: AppTheme.create(Brightness.light),
+          darkTheme: AppTheme.create(Brightness.dark),
+          home: _SplashGate(
+            api: _api,
+            onReady: () {
+              if (mounted) setState(() => _invitationReady = true);
+            },
           ),
         ),
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: surface,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          side: BorderSide(color: AppColors.border, width: 1),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.1,
-          ),
-        ),
-      ),
-      dialogTheme: const DialogThemeData(
-        backgroundColor: AppColors.surface2,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
-        contentTextStyle: TextStyle(
-          color: AppColors.muted,
-          fontSize: 14,
-          height: 1.4,
-        ),
-      ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surface2,
-        modalBackgroundColor: AppColors.surface2,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        modalElevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        showDragHandle: true,
-        dragHandleColor: AppColors.muted,
-        dragHandleSize: Size(36, 4),
-      ),
-      listTileTheme: const ListTileThemeData(
-        textColor: Colors.white,
-        iconColor: AppColors.muted,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-        subtitleTextStyle: TextStyle(
-          color: AppColors.muted,
-          fontSize: 13,
-          height: 1.3,
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      ),
-      popupMenuTheme: const PopupMenuThemeData(
-        color: AppColors.surface2,
-        surfaceTintColor: Colors.transparent,
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-        ),
-        textStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Color(0xFFF2F2F7),
-        linearTrackColor: Color(0x1AFFFFFF),
-        circularTrackColor: Color(0x1AFFFFFF),
-      ),
-      tabBarTheme: const TabBarThemeData(
-        labelColor: Colors.white,
-        unselectedLabelColor: AppColors.muted,
-        indicatorColor: AppColors.blue,
-        dividerColor: AppColors.border,
-        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-      chipTheme: const ChipThemeData(
-        backgroundColor: AppColors.surface2,
-        selectedColor: AppColors.blue,
-        disabledColor: AppColors.surface,
-        side: BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        labelStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-        secondaryLabelStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      scaffoldMessengerKey: _messengerKey,
-      debugShowCheckedModeBanner: false,
-      title: 'FindEZ',
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(boldText: false),
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            behavior: HitTestBehavior.translucent,
-            child: child ?? const SizedBox.shrink(),
-          ),
-        );
-      },
-      themeMode: ThemeMode.dark,
-      theme: darkTheme,
-      darkTheme: darkTheme,
-      home: _SplashGate(api: _api),
     );
   }
 }
 
 class _SplashGate extends StatefulWidget {
-  const _SplashGate({required this.api});
+  const _SplashGate({required this.api, required this.onReady});
 
   final ApiClient api;
+  final VoidCallback onReady;
 
   @override
   State<_SplashGate> createState() => _SplashGateState();
@@ -580,12 +298,13 @@ class _SplashGateState extends State<_SplashGate> {
   @override
   Widget build(BuildContext context) {
     if (_done) {
-      return _AuthGate(api: widget.api);
+      return LaunchAuthGate(api: widget.api);
     }
     return SplashPage(
       onFinished: () {
         if (!mounted) return;
         setState(() => _done = true);
+        widget.onReady();
       },
     );
   }
@@ -621,7 +340,10 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.72);
+    final muted = AppTheme.foreground(
+      context,
+      Colors.white.withValues(alpha: 0.72),
+    );
     return SafeArea(
       child: Center(
         child: Padding(
@@ -635,10 +357,16 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                 scale: scale,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.surface2.withValues(alpha: 0.92),
+                    color: AppTheme.adaptive(
+                      context,
+                      AppColors.surface2.withValues(alpha: 0.92),
+                    ),
                     borderRadius: BorderRadius.circular(26),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.06),
+                      ),
                       width: 1,
                     ),
                     boxShadow: [
@@ -654,14 +382,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'FindEZ',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.3,
-                              ),
-                        ),
+                        const FindEZWordmark(),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: 22,
@@ -669,12 +390,15 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                           child: CircularProgressIndicator(
                             strokeWidth: 2.2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white.withValues(alpha: 0.85),
+                              AppTheme.adaptive(
+                                context,
+                                Colors.white.withValues(alpha: 0.85),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Text(
+                        AppText(
                           widget.message,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium
@@ -693,65 +417,83 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
   }
 }
 
-class _AuthGate extends StatefulWidget {
-  const _AuthGate({required this.api});
+/// Fresh, signed-out installs see onboarding before authentication. Cached
+/// sessions and completed introductions keep the existing returning-user flow.
+class LaunchAuthGate extends StatefulWidget {
+  const LaunchAuthGate({super.key, required this.api});
 
   final ApiClient api;
 
   @override
-  State<_AuthGate> createState() => _AuthGateState();
+  State<LaunchAuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends State<_AuthGate> {
+class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
-  int _refresh = 0;
-  bool _previewDismissed = false;
-  Future<bool>? _onboardingCompletedFuture;
-  String? _onboardingFutureForUserId;
+  bool _retryingSession = false;
+  bool _sessionRetryFailed = false;
 
-  void _bump() {
+  Future<void> _retrySession() async {
+    if (_retryingSession) return;
     setState(() {
-      _refresh++;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+      _retryingSession = true;
+      _sessionRetryFailed = false;
     });
-  }
-
-  void _ensureOnboardingFuture() {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (_onboardingCompletedFuture == null) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-      return;
-    }
-
-    if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+    try {
+      await Supabase.instance.client.auth.refreshSession().timeout(
+        const Duration(seconds: 20),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _sessionRetryFailed = true);
+    } finally {
+      if (mounted) setState(() => _retryingSession = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // acceptable: no hasError branch on the auth stream — Supabase's
-    // onAuthStateChange stream does not emit errors in practice; any
-    // auth failure surfaces as a signed-out event instead.
+    // Refresh/network failures are stream errors, not proof of sign-out.
+    // Only the auth client's confirmed session state decides authentication.
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (_previewOnboarding && !_previewDismissed) {
-          return AppGradientBackground(
-            child: OnboardingPage(
-              saveFirstSpace: false,
-              onFinished: () => setState(() => _previewDismissed = true),
-            ),
-          );
-        }
+        if (_previewOnboarding) return ChatOnboardingPage(api: widget.api);
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
-        if (session != null) {
+        if (session != null && !session.user.isAnonymous) {
+          if (session.isExpired &&
+              (snapshot.hasError || _sessionRetryFailed || _retryingSession)) {
+            return Scaffold(
+              body: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const AppText('Reconnect to continue'),
+                        const SizedBox(height: 12),
+                        const AppText(
+                          'Your sign-in is saved. Check your connection and try again.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _retryingSession ? null : _retrySession,
+                          child: AppText(
+                            _retryingSession ? 'Connecting...' : 'Retry',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
           // If the stream just delivered the initial cached session AND the
           // access token is already expired, Supabase is attempting a
           // background refresh. Show loading instead of MainShell so we
@@ -765,52 +507,17 @@ class _AuthGateState extends State<_AuthGate> {
           if (isInitialStaleSession) {
             return const AppGradientBackground(child: LaunchLoadingScreen());
           }
-          return AppGradientBackground(child: MainShell(api: widget.api));
+          return ColoredBox(
+            color: AppTheme.adaptive(context, const Color(0xFF09090B)),
+            child: PlansWelcomeGate(
+              key: ValueKey(session.user.id),
+              user: session.user,
+              child: ChatOnboardingGate(api: widget.api),
+            ),
+          );
         }
 
-        _ensureOnboardingFuture();
-        return AppGradientBackground(
-          child: FutureBuilder<bool>(
-            key: ValueKey(_refresh),
-            future: _onboardingCompletedFuture,
-            builder: (context, onboardingSnap) {
-              if (onboardingSnap.hasError) {
-                return Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Something went wrong.',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _bump,
-                          child: const Text(
-                            'Retry',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              if (!onboardingSnap.hasData) {
-                return const LaunchLoadingScreen(
-                  message: 'Getting things ready…',
-                );
-              }
-              final completed = onboardingSnap.data ?? false;
-              if (!completed) {
-                return OnboardingPage(onFinished: _bump);
-              }
-              return AuthPage(onAuthChanged: _bump);
-            },
-          ),
-        );
+        return ChatOnboardingPage(api: widget.api);
       },
     );
   }

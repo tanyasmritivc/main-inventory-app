@@ -6,27 +6,24 @@ Exactly-one-owner invariant is enforced here, not in the DB.
 """
 
 import logging
-import random
+import secrets
 from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 from app.services.storage import create_profile_photo_signed_url
+from app.services.team_categories import VALID_PROGRAMS, normalize_custom_category
 
 logger = logging.getLogger(__name__)
 
 # join_code charset: A-Z minus I/O; 0-9 minus 0/1 → 32 unambiguous chars
 _CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-VALID_PROGRAMS = frozenset((
-    "robotics", "ftc", "frc", "vex", "fll",
-    "education", "makerspace", "club", "business", "other",
-))
 VALID_PLANS = frozenset(("free_rookie", "ftc_season", "frc_season", "district"))
 VALID_ROLES = frozenset(("owner", "mentor", "member", "viewer"))
 
 
 def _gen_join_code() -> str:
-    return "".join(random.choices(_CODE_CHARS, k=6))
+    return "".join(secrets.choice(_CODE_CHARS) for _ in range(6))
 
 
 def _unique_join_code() -> str:
@@ -46,15 +43,16 @@ def _unique_join_code() -> str:
 
 # ── CRUD ───────────────────────────────────────────────────────────────────────
 
-def create_team(*, user_id: str, name: str, program: str) -> dict:
+def create_team(*, user_id: str, name: str, program: str, custom_category: str | None = None) -> dict:
     """Create a team and insert the caller as owner. Returns the team row."""
     name = (name or "").strip()
     program = (program or "").lower().strip()
-    if not name:
-        raise ValueError("Team name is required")
+    if not name or len(name) > 100:
+        raise ValueError("Enter a team name of 1 to 100 characters")
     if program not in VALID_PROGRAMS:
         raise ValueError(f"Invalid program '{program}'; must be one of {sorted(VALID_PROGRAMS)}")
 
+    custom_category = normalize_custom_category(program, custom_category)
     supabase = get_supabase_admin()
     join_code = _unique_join_code()
 
@@ -63,6 +61,7 @@ def create_team(*, user_id: str, name: str, program: str) -> dict:
             "name": name,
             "owner_user_id": user_id,
             "program": program,
+            "custom_category": custom_category,
             "join_code": join_code,
         }).execute()
     )
@@ -89,7 +88,7 @@ def join_team(*, user_id: str, code: str) -> dict:
 
     team_resp = supabase_execute_with_retry(
         lambda: supabase.table("teams")
-        .select("team_id, name, program, plan, plan_expires_at, owner_user_id")
+        .select("team_id, name, program, custom_category, plan, plan_expires_at, owner_user_id")
         .eq("join_code", code)
         .execute()
     )
@@ -109,13 +108,24 @@ def join_team(*, user_id: str, code: str) -> dict:
         return {**team, **existing.data[0], "newly_joined": False}
 
     member_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships").insert({
+        lambda: supabase.table("team_memberships").upsert({
             "team_id": team_id,
             "user_id": user_id,
             "role": "member",
-        }).execute()
+        }, on_conflict="team_id,user_id", ignore_duplicates=True).execute()
     )
-    return {**team, **(member_resp.data or [{}])[0], "newly_joined": True}
+    inserted = member_resp.data or []
+    if inserted:
+        return {**team, **inserted[0], "newly_joined": True}
+    # A concurrent acceptance may have won the unique membership insert. Read
+    # its actual role instead of overwriting an owner/mentor/viewer as member.
+    current = supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships").select("member_id,role,joined_at")
+        .eq("team_id", team_id).eq("user_id", user_id).execute()
+    ).data or []
+    if not current:
+        raise ValueError("Membership could not be saved. Please try again.")
+    return {**team, **current[0], "newly_joined": False}
 
 
 def list_user_teams(*, user_id: str) -> list[dict]:
@@ -133,7 +143,7 @@ def list_user_teams(*, user_id: str) -> list[dict]:
     team_ids = [m["team_id"] for m in members_resp.data]
     teams_resp = supabase_execute_with_retry(
         lambda: supabase.table("teams")
-        .select("team_id, name, program, plan, plan_expires_at, join_code, owner_user_id, created_at")
+        .select("team_id, name, program, custom_category, plan, plan_expires_at, join_code, owner_user_id, created_at")
         .in_("team_id", team_ids)
         .execute()
     )
@@ -143,6 +153,9 @@ def list_user_teams(*, user_id: str) -> list[dict]:
     for m in members_resp.data:
         t = team_map.get(m["team_id"])
         if t:
+            t = dict(t)
+            if m["role"] not in ("owner", "mentor"):
+                t.pop("join_code", None)
             result.append({**t, "role": m["role"], "joined_at": m["joined_at"]})
     return result
 
@@ -258,7 +271,7 @@ def update_member_role(
 
     if target_row["role"] == "owner":
         raise PermissionError("CANNOT_CHANGE_OWNER")
-    if caller_role not in ("owner", "mentor"):
+    if caller_role not in ("owner", "mentor") or (target_row["role"] == "mentor" and caller_role != "owner"):
         raise PermissionError("INSUFFICIENT_ROLE")
     if new_role == "mentor" and caller_role != "owner":
         raise PermissionError("ONLY_OWNER_CAN_GRANT_MENTOR")
@@ -304,7 +317,7 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
     target_row = target_resp.data[0]
     if target_row["role"] == "owner":
         raise PermissionError("CANNOT_REMOVE_OWNER")
-    if caller_role not in ("owner", "mentor"):
+    if caller_role not in ("owner", "mentor") or (target_row["role"] == "mentor" and caller_role != "owner"):
         raise PermissionError("INSUFFICIENT_ROLE")
 
     supabase_execute_with_retry(
@@ -370,7 +383,7 @@ def get_team_invitation(*, requesting_user_id: str, team_id: str) -> dict:
     supabase = get_supabase_admin()
     team = supabase_execute_with_retry(
         lambda: supabase.table("teams").select(
-            "team_id,name,program,join_code"
+            "team_id,name,program,custom_category,join_code"
         ).eq("team_id", team_id).limit(1).execute()
     ).data or []
     if not team:
@@ -396,18 +409,10 @@ def delete_team(*, requesting_user_id: str, team_id: str) -> bool:
         return False
     if team[0]["owner_user_id"] != requesting_user_id:
         raise PermissionError("OWNER_ONLY")
-    # Licenses do not have a foreign key to teams; clear the stale redemption
-    # reference before the team's cascading delete.
-    supabase_execute_with_retry(
-        lambda: supabase.table("licenses").update({
-            "redeemed_by": None,
-            "redeemed_at": None,
-        }).eq("redeemed_by", team_id).execute()
-    )
-    supabase_execute_with_retry(
-        lambda: supabase.table("teams").delete().eq("team_id", team_id).execute()
-    )
-    return True
+    result = supabase.rpc('findez_delete_inventory_team', {
+        'p_team_id':team_id,'p_actor_id':requesting_user_id,
+    }).execute()
+    return bool(result.data)
 
 
 # ── License redemption ─────────────────────────────────────────────────────────

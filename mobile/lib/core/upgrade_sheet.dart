@@ -5,13 +5,29 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
 import 'app_theme.dart';
 import 'pro_status.dart';
+import 'plan_visibility.dart';
+import 'package:mobile/core/ui/app_text.dart';
+import '../features/profile/plans_page.dart';
 
 Future<void> showUpgradeSheet(
   BuildContext context,
   ApiClient api, {
   String? reason,
 }) async {
-  if (ProStatus.isPilotMode) return;
+  await ProStatus.refresh(api);
+  if (!context.mounted) return;
+  if (!ProStatus.shouldOfferUpgrade) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: AppText(
+          ProStatus.isPilotMode
+              ? 'Your pre-launch access is still active. Please try this action again.'
+              : 'This action could not finish. Please try again.',
+        ),
+      ),
+    );
+    return;
+  }
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -37,138 +53,139 @@ class _LimitSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
-        24, 16, 24, MediaQuery.of(context).padding.bottom + 24,
+        24,
+        16,
+        24,
+        MediaQuery.of(context).padding.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border(context),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x1AF59E0B),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.lock_outline,
-                    color: Color(0xFFF59E0B), size: 18),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Free limit reached',
-                style: TextStyle(
-                  color: AppTheme.textPrimary(context),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
+                  color: AppTheme.border(context),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ],
-          ),
-          if (reason != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0x1AF59E0B),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x33F59E0B)),
-              ),
-              child: Text(
-                reason!,
-                style: const TextStyle(
-                    color: Color(0xFFF59E0B), fontSize: 13),
-              ),
             ),
-          ],
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBg(context),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.cardBorder(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 20),
+            Row(
               children: [
-                Row(children: [
-                  const Icon(Icons.group_outlined,
-                      color: Color(0xFFA78BFA), size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'FindEZ Team',
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x1AF59E0B)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: AppTheme.foreground(context, Color(0xFFF59E0B)),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppText(
+                    'Usage limit reached',
                     style: TextStyle(
                       color: AppTheme.textPrimary(context),
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      letterSpacing: -0.3,
                     ),
-                  ),
-                ]),
-                const SizedBox(height: 8),
-                Text(
-                  'FindEZ Team covers your whole robotics team — learn more at findez.ai',
-                  style: TextStyle(
-                    color: AppTheme.textMuted(context),
-                    fontSize: 13,
-                    height: 1.45,
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () async {
-              final joined =
-                  await _showJoinCodeDialog(context, api);
-              if (joined == true && context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFA78BFA),
-                borderRadius: BorderRadius.circular(14),
+            if (reason != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.adaptive(context, const Color(0x1AF59E0B)),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x33F59E0B)),
+                  ),
+                ),
+                child: AppText(
+                  mobilePlansVisible
+                      ? reason!
+                      : 'This action has reached the current usage limit. Contact info@findez.ai if you need help.',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFF59E0B)),
+                    fontSize: 13,
+                  ),
+                ),
               ),
-              child: const Text(
-                'Join a team',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+            ],
+            const SizedBox(height: 16),
+            AppText(
+              plansNotice,
+              style: TextStyle(
+                color: AppTheme.textSecondary(context),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                navigator.push<void>(
+                  MaterialPageRoute(builder: (_) => const PlansPage()),
+                );
+              },
+              child: const AppText('Compare plans'),
+            ),
+            GestureDetector(
+              onTap: () async {
+                final joined = await _showJoinCodeDialog(context, api);
+                if (joined == true && context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.adaptive(context, const Color(0xFFA78BFA)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: AppText(
+                  'Join a team',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Text(
-                'Maybe later',
-                style: TextStyle(
-                    color: AppTheme.textMuted(context), fontSize: 13),
+            const SizedBox(height: 10),
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: AppText(
+                  'Maybe later',
+                  style: TextStyle(
+                    color: AppTheme.textMuted(context),
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -199,11 +216,16 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
-      if (s.event == AuthChangeEvent.signedOut && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (s) {
+        if (s.event == AuthChangeEvent.signedOut && mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // Keep the invitation draft through transient session refresh failures.
+      },
+    );
   }
 
   @override
@@ -227,9 +249,9 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       await widget.api.joinTeam(code);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Joined! Your team plan is now active.'),
-          backgroundColor: Color(0xFF30D158),
+        SnackBar(
+          content: AppText('Joined the team.'),
+          backgroundColor: AppTheme.adaptive(context, Color(0xFF30D158)),
         ),
       );
       Navigator.of(context).pop(true);
@@ -237,7 +259,8 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _errorMsg = 'Invalid code. Check with your coach.';
+        _errorMsg =
+            'Could not join. Check the code with your team manager and try again.';
       });
     }
   }
@@ -245,10 +268,15 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: const Text('Join a team',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      title: AppText(
+        'Join a team',
+        style: TextStyle(
+          color: AppTheme.foreground(context, Colors.white),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -257,25 +285,48 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
             autofocus: true,
             maxLength: 6,
             textCapitalization: TextCapitalization.characters,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 22, letterSpacing: 5),
-            decoration: const InputDecoration(
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 22,
+                letterSpacing: 5,
+              ),
+            ),
+            decoration: InputDecoration(
               hintText: 'ABC123',
-              hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-              counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+              hintStyle: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                ),
+              ),
+              counterStyle: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                ),
+              ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0x33FFFFFF)),
+                borderSide: BorderSide(
+                  color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                ),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFA78BFA)),
+                borderSide: BorderSide(
+                  color: AppTheme.adaptive(context, Color(0xFFA78BFA)),
+                ),
               ),
             ),
           ),
           if (_errorMsg != null) ...[
             const SizedBox(height: 6),
-            Text(
+            AppText(
               _errorMsg!,
-              style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                fontSize: 12,
+              ),
             ),
           ],
         ],
@@ -283,24 +334,31 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel',
-              style: TextStyle(color: Color(0x73FFFFFF))),
+          child: AppText(
+            'Cancel',
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+            ),
+          ),
         ),
         TextButton(
           onPressed: _loading ? null : _submit,
           child: _loading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFFA78BFA),
+                    color: AppTheme.adaptive(context, Color(0xFFA78BFA)),
                   ),
                 )
-              : const Text('Join',
+              : AppText(
+                  'Join',
                   style: TextStyle(
-                      color: Color(0xFFA78BFA),
-                      fontWeight: FontWeight.w700)),
+                    color: AppTheme.foreground(context, Color(0xFFA78BFA)),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ],
     );

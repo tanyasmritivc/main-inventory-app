@@ -1,0 +1,560 @@
+[
+  {
+    "space": "Dorm room",
+    "keyword": "dorm|student|college|university|campus|residence hall",
+    "spots": [
+      "Desk drawer",
+      "Bookshelf",
+      "Bedside table",
+      "Under-bed box",
+      "Closet shelf",
+      "Backpack"
+    ],
+    "items": [
+      [
+        "Laptop charger",
+        1
+      ],
+      [
+        "Notebooks",
+        4
+      ],
+      [
+        "Textbooks",
+        6
+      ],
+      [
+        "Headphones",
+        1
+      ],
+      [
+        "Desk lamp",
+        1
+      ],
+      [
+        "Calculator",
+        1
+      ],
+      [
+        "Water bottle",
+        2
+      ],
+      [
+        "USB-C cable",
+        3
+      ],
+      [
+        "Laundry bag",
+        1
+      ],
+      [
+        "Spare sheets",
+        2
+      ],
+      [
+        "Backpack",
+        1
+      ],
+      [
+        "Umbrella",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Lab",
+    "keyword": "\\blab\\b|laboratory|classroom|science|makerspace|maker",
+    "spots": [
+      "Cabinet A",
+      "Cabinet B",
+      "Drawer 2",
+      "Bench 1",
+      "Shelf 3",
+      "Storeroom"
+    ],
+    "items": [
+      [
+        "Safety goggles",
+        12
+      ],
+      [
+        "Beakers",
+        8
+      ],
+      [
+        "Test tube rack",
+        2
+      ],
+      [
+        "Microscope",
+        1
+      ],
+      [
+        "Measuring cylinders",
+        4
+      ],
+      [
+        "Lab notebooks",
+        6
+      ],
+      [
+        "Pipette stand",
+        2
+      ],
+      [
+        "Sample containers",
+        20
+      ],
+      [
+        "Digital scale",
+        1
+      ],
+      [
+        "Labels",
+        100
+      ],
+      [
+        "Multimeter",
+        2
+      ],
+      [
+        "Storage trays",
+        4
+      ]
+    ]
+  },
+  {
+    "space": "Kitchen",
+    "keyword": "kitchen|pantry|fridge|freezer|food|grocer",
+    "spots": [
+      "Pantry",
+      "Top shelf",
+      "Spice rack",
+      "Fridge",
+      "Freezer",
+      "Drawer 2"
+    ],
+    "items": [
+      [
+        "Rice",
+        2
+      ],
+      [
+        "Pasta",
+        4
+      ],
+      [
+        "Olive oil",
+        1
+      ],
+      [
+        "Flour",
+        1
+      ],
+      [
+        "Canned beans",
+        6
+      ],
+      [
+        "Coffee beans",
+        2
+      ],
+      [
+        "Oats",
+        1
+      ],
+      [
+        "Peanut butter",
+        1
+      ],
+      [
+        "Chili flakes",
+        1
+      ],
+      [
+        "Frozen peas",
+        2
+      ],
+      [
+        "Eggs",
+        12
+      ],
+      [
+        "Dish soap",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Closet",
+    "keyword": "closet|wardrobe|clothes|clothing|bedroom",
+    "spots": [
+      "Hanging rail",
+      "Top shelf",
+      "Drawer 1",
+      "Drawer 2",
+      "Shoe rack",
+      "Under bed"
+    ],
+    "items": [
+      [
+        "Winter jacket",
+        2
+      ],
+      [
+        "Hoodies",
+        4
+      ],
+      [
+        "Jeans",
+        5
+      ],
+      [
+        "White shirts",
+        6
+      ],
+      [
+        "Sneakers",
+        3
+      ],
+      [
+        "Boots",
+        1
+      ],
+      [
+        "Scarves",
+        3
+      ],
+      [
+        "Socks",
+        14
+      ],
+      [
+        "Gym clothes",
+        5
+      ],
+      [
+        "Rain jacket",
+        1
+      ],
+      [
+        "Suitcase",
+        1
+      ],
+      [
+        "Spare hangers",
+        20
+      ]
+    ]
+  },
+  {
+    "space": "Craft room",
+    "keyword": "craft|art|sewing|knit|yarn|paint|studio",
+    "spots": [
+      "Drawer 1",
+      "Drawer 2",
+      "Shelf A",
+      "Bin 3",
+      "Cart",
+      "Pegboard"
+    ],
+    "items": [
+      [
+        "Acrylic paints",
+        24
+      ],
+      [
+        "Paint brushes",
+        30
+      ],
+      [
+        "Canvas boards",
+        10
+      ],
+      [
+        "Yarn",
+        18
+      ],
+      [
+        "Sewing machine",
+        1
+      ],
+      [
+        "Thread spools",
+        40
+      ],
+      [
+        "Fabric scissors",
+        2
+      ],
+      [
+        "Glue gun",
+        1
+      ],
+      [
+        "Glue sticks",
+        50
+      ],
+      [
+        "Cutting mat",
+        1
+      ],
+      [
+        "Markers",
+        36
+      ],
+      [
+        "Washi tape",
+        12
+      ]
+    ]
+  },
+  {
+    "space": "Office",
+    "keyword": "office|desk|stationery|study",
+    "spots": [
+      "Desk drawer",
+      "Shelf 1",
+      "Cabinet",
+      "Cable box",
+      "Top drawer",
+      "Bookshelf"
+    ],
+    "items": [
+      [
+        "Printer paper",
+        3
+      ],
+      [
+        "Pens",
+        24
+      ],
+      [
+        "Notebooks",
+        6
+      ],
+      [
+        "Sticky notes",
+        8
+      ],
+      [
+        "HDMI cable",
+        2
+      ],
+      [
+        "USB-C chargers",
+        3
+      ],
+      [
+        "Stapler",
+        1
+      ],
+      [
+        "AA batteries",
+        12
+      ],
+      [
+        "Headphones",
+        1
+      ],
+      [
+        "Folders",
+        15
+      ],
+      [
+        "Desk lamp",
+        1
+      ],
+      [
+        "Label maker",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Garage",
+    "keyword": "garage|car\\b|driveway",
+    "spots": [
+      "Shelf 1",
+      "Shelf 2",
+      "Pegboard",
+      "Workbench",
+      "Bin A",
+      "Bin B"
+    ],
+    "items": [
+      [
+        "Cordless drill",
+        1
+      ],
+      [
+        "Drill bit set",
+        1
+      ],
+      [
+        "Socket wrench set",
+        1
+      ],
+      [
+        "Hammer",
+        2
+      ],
+      [
+        "Tape measure",
+        1
+      ],
+      [
+        "Extension cord",
+        2
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Duct tape",
+        3
+      ],
+      [
+        "Wood screws",
+        120
+      ],
+      [
+        "Work gloves",
+        2
+      ],
+      [
+        "Flashlight",
+        1
+      ],
+      [
+        "Battery charger",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Workshop",
+    "keyword": "robot|ftc|frc|vex|team|workshop|pit|parts\\b|screw|bolt|\\bnuts?\\b|motor|servo|drill|multimeter|solder|wrench|batter|caliper|gear",
+    "spots": [
+      "Tool cabinet",
+      "Bin 1",
+      "Bin 2",
+      "Workbench",
+      "Shelf 2",
+      "Drawer A"
+    ],
+    "items": [
+      [
+        "Cordless drill",
+        1
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Hammer",
+        2
+      ],
+      [
+        "Tape measure",
+        1
+      ],
+      [
+        "Wood screws",
+        40
+      ],
+      [
+        "Work gloves",
+        2
+      ],
+      [
+        "Battery charger",
+        1
+      ],
+      [
+        "Sandpaper",
+        6
+      ],
+      [
+        "Pliers",
+        2
+      ],
+      [
+        "Clamps",
+        4
+      ],
+      [
+        "Safety goggles",
+        2
+      ],
+      [
+        "Extension cord",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Home",
+    "keyword": "^$",
+    "spots": [
+      "Hall closet",
+      "Kitchen drawer",
+      "Garage shelf",
+      "Office",
+      "Under sink",
+      "Linen cupboard"
+    ],
+    "items": [
+      [
+        "Flashlight",
+        2
+      ],
+      [
+        "AA batteries",
+        16
+      ],
+      [
+        "Light bulbs",
+        6
+      ],
+      [
+        "First aid kit",
+        1
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Extension cord",
+        2
+      ],
+      [
+        "Spare keys",
+        3
+      ],
+      [
+        "Duct tape",
+        2
+      ],
+      [
+        "Phone chargers",
+        4
+      ],
+      [
+        "Umbrella",
+        2
+      ],
+      [
+        "Candles",
+        6
+      ],
+      [
+        "Tape measure",
+        1
+      ]
+    ]
+  }
+]

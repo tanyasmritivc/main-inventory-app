@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class MemberAvatar extends StatelessWidget {
   const MemberAvatar({
@@ -26,12 +27,20 @@ class MemberAvatar extends StatelessWidget {
   Widget get _fallback => ColoredBox(
     color: _color,
     child: Center(
-      child: Text(
-        name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * 0.4,
-          fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.1),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: AppText(
+            name.trim().isNotEmpty
+                ? name.trim().characters.first.toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: size * 0.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     ),
@@ -46,8 +55,12 @@ class MemberAvatar extends StatelessWidget {
         child: url.isEmpty
             ? _fallback
             : Image.network(
+                key: ValueKey(url),
                 url,
                 fit: BoxFit.cover,
+                excludeFromSemantics: true,
+                frameBuilder: (_, child, frame, loaded) =>
+                    frame == null && !loaded ? _fallback : child,
                 errorBuilder: (_, _, _) => _fallback,
               ),
       ),
