@@ -1,3 +1,7 @@
+## October 26 — Organization-scoped conversational recall and live gallery vision
+
+Recall reads saved user statements scoped to both author and current organization. It provides historical evidence, never new action authorization or current stock truth. Named definitions can be recalled without introducing duplicate inventory records; this is not a standalone group CRUD model. Saved-image inspection re-reads current item and photo-event galleries, checks access before and after image loading, and sends re-encoded pixels only to the current model request. Pixels are excluded from persisted chat diagnostics. No schema change is needed.
+
 ## October 25 - Live chat progress
 
 Emit a content-free model activity event at most every five seconds, only when an actual reasoning/text/tool-call chunk arrives. A quiet provider must not produce pretend liveness. Preserve fixed phase labels, generation budgets, private reasoning, verified final replies, tools and saves. Web consumes the additive event; old clients safely ignore it. No schema or model change.

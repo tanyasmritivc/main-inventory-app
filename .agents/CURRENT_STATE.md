@@ -1,3 +1,7 @@
+## October 26 — API organization recall and saved-photo vision deployed
+
+Runtime `df16fd7` (PR255) is live after all five CI gates (40443168190) passed. Earlier user statements are recalled only for the same author and organization; saved definitions can be used across conversations without creating duplicate inventory records or replaying old actions. GLM receives fresh authorized primary/gallery photos, including later attachments, as ephemeral image inputs. Extraction exposes real progress over negotiated SSE with JSON compatibility. API/database health and anonymous denial pass; 125 unrelated runtime files preserved. No schema or configuration change. Synthetic live GLM checks passed for historical recall and visible-image quantity comparison; no customer records changed. Receipts: `docs/plans/org-recall-photo-api-receipt.json` and `docs/plans/org-recall-photo-model-check.json`.
+
 ## October 26 - Internal model markup guard deployed
 
 Runtime `052c81f` (PR249) is live. Content-channel tool/argument/reasoning tags are withheld across stream chunks and rejected before display; textual instructions never execute. One bounded recovery preserves completed-action receipts. 118 focused tests, 1,599 backend tests + 10 subtests, and five CI gates (40434724135) passed. Live Safari inventory question completed normally at 18:55:25 Pacific with 12 records and resource links. API/database health and anonymous denial passed; 127 unrelated files preserved. No schema/configuration change or history rewrite. Receipt: `docs/plans/private-tool-markup-receipt.json`.

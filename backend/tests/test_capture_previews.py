@@ -25,7 +25,8 @@ def preview():
 
 
 @pytest.mark.parametrize('path', ['/extract_from_image', '/inventory/extract_from_image'])
-def test_upload_preview_never_writes_the_review_queue(path):
+@pytest.mark.parametrize('stream', [False, True])
+def test_upload_preview_never_writes_the_review_queue(path, stream):
     app = FastAPI()
     app.include_router(items.router)
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(user_id='user-1')
@@ -37,9 +38,16 @@ def test_upload_preview_never_writes_the_review_queue(path):
          patch.object(items, 'create_activity'), \
          patch.object(items, 'enqueue_uncertain_items') as enqueue, \
          patch.object(review_queue, 'get_supabase_admin') as database:
-        response = TestClient(app).post(path, files={'file': ('photo.jpg', b'image', 'image/jpeg')}, data={'preview_only': 'true'})
+        response = TestClient(app).post(path, headers={'Accept': 'text/event-stream'} if stream else {}, files={'file': ('photo.jpg', b'image', 'image/jpeg')}, data={'preview_only': 'true'})
     assert response.status_code == 200
-    result = response.json()
+    if stream and path.startswith('/inventory/'):
+        import json
+        events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ')]
+        assert events[-1]['type'] == 'done'
+        assert response.headers['x-accel-buffering'] == 'no'
+        result = events[-1]['result']
+    else:
+        result = response.json()
     value = result['extracted'] if 'extracted' in result else result['items'][0]
     assert value['review_status'] == 'preview'
     assert value['scan_evidence']['needs_review'] is True

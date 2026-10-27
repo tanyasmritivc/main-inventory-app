@@ -9,18 +9,17 @@ from app.services.inventory_scope import current_inventory
 ACTOR, WORLD, OTHER, INVENTORY, WORKSPACE = [str(uuid4()) for _ in range(5)]
 
 
-def test_personal_group_request_is_truthful_and_never_creates_duplicate_stock():
-    message = ('My usual electronics repair kit means my multimeter, soldering iron, wire stripper, USB-C cables, and electrical tape. '
-               'Save this as my personal group called "electronics repair kit". Don\'t create duplicate inventory items.')
-    with patch.object(w, 'directory', return_value={}) as authorized, patch.object(w, 'execute') as execute, \
-         patch('app.services.agent_gateway_client.gateway_completion') as gateway:
+def test_personal_groups_use_scoped_history_without_creating_stock():
+    message = 'Remember my coffee corner as my machine and mugs.'
+    response = iter([NS(choices=[NS(delta=NS(content='I can recall this definition in this organization.', tool_calls=None), finish_reason=None)]), NS(choices=[NS(delta=NS(content=None, tool_calls=None), finish_reason='stop')])])
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute') as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion', return_value=response) as gateway:
         result = list(w.stream_turn(ACTOR, WORLD, message, [], str(uuid4())))[-1]
-    authorized.assert_called_once_with(ACTOR, WORLD)
     execute.assert_not_called()
-    gateway.assert_not_called()
     assert result['type'] == 'done'
-    assert "can't save a reusable personal group yet" in result['assistant_message']
-    assert result['answer_context']['operation_diagnostics'] == []
+    prompt = str(gateway.call_args.kwargs['messages'])
+    assert 'world_recall' in prompt and 'never other organizations' in prompt
+    assert any(t['function']['name'] == 'world_recall' for t in gateway.call_args.kwargs['tools'])
 
 
 def test_personal_group_fast_answer_still_requires_world_access():

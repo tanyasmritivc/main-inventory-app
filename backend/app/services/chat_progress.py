@@ -2,6 +2,10 @@
 
 
 def tool_status(name):
+    if name == "world_recall":
+        return "Looking through your earlier chats in this organization..."
+    if name == "world_item_photos":
+        return "Opening current item photos..."
     if name in {"world_search", "world_inventory", "world_query"}:
         return "Searching your saved items…"
     if name in {"world_spaces", "world_structure"}:
