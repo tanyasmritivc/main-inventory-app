@@ -306,14 +306,14 @@ def test_preview_only_extracts_without_model_reply_or_synthetic_user_prompt(tran
     assert '"assistant_message": ""' in response.text
 
 
-def test_personal_group_fast_reply_has_complete_client_receipt(transport):
-    """Exercise the real fast path through SSE, not a mocked stream contract."""
+def test_personal_group_model_reply_has_complete_client_receipt(transport):
+    """Exercise a model-written grouping answer through the real SSE route."""
     message = 'Save this as my personal group called electronics repair kit.'
     receipt = {'message_id': str(uuid4()), 'created_at': '2026-10-26T20:00:00Z'}
     transport.save.return_value = receipt
     with patch.object(world, 'directory', return_value={}), \
          patch.object(world, 'execute') as execute, \
-         patch('app.services.agent_gateway_client.gateway_completion') as model:
+         patch('app.services.agent_gateway_client.gateway_completion', return_value=iter([NS(choices=[NS(delta=NS(content='I can recall this definition in this organization.', tool_calls=None), finish_reason=None)]), NS(choices=[NS(delta=NS(content=None, tool_calls=None), finish_reason='stop')])])) as model:
         response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': message})
     payloads = [json.loads(line[6:]) for line in response.text.splitlines()
                 if line.startswith('data: {')]
@@ -321,17 +321,17 @@ def test_personal_group_fast_reply_has_complete_client_receipt(transport):
     assert done['conversation_id'] == CID
     assert done['message_id'] == receipt['message_id']
     assert done['created_at'] == receipt['created_at']
-    assert "can't save a reusable personal group yet" in done['assistant_message']
+    assert 'recall this definition' in done['assistant_message']
     assert not any(event['type'] == 'error' for event in payloads)
-    transport.save.assert_called_once_with(ACTOR, WORLD, CID, done['assistant_message'],
-                                          {'operation_diagnostics': []})
+    assert transport.save.call_args.args[:4] == (ACTOR, WORLD, CID, done['assistant_message'])
+    assert transport.save.call_args.args[-1]['operation_diagnostics'] == []
     execute.assert_not_called()
-    model.assert_not_called()
+    model.assert_called_once()
 
 
 def test_personal_group_save_failure_is_not_success(transport):
     transport.save.side_effect = RuntimeError('private storage error')
-    with patch.object(world, 'directory', return_value={}):
+    with patch.object(world, 'stream_turn', return_value=events()):
         response = transport.client.post(f'/worlds/{WORLD}/ai_command',
             json={'message': 'Save this as my personal group kit'})
     assert '"type": "error"' in response.text

@@ -646,73 +646,87 @@ async def inventory_extract_from_image_route(
             },
         )
 
-    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
-    stored = upload_image(
-        user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{analysis_filename}",
-        content=analysis_bytes,
-    )
-
-    try:
-        data = await extract_inventory_items(
-            filename=analysis_filename,
-            image_bytes=analysis_bytes,
-            content_type="image/jpeg",
-            user_id=user.user_id,
-            source_frame_url=stored.url,
-        )
-    except PhotoExtractionError as exc:
-        logger.warning(
-            "Photo inventory extraction failed (file=%s, size=%d, status=%d)",
-            file.filename,
-            len(analysis_bytes),
-            exc.status_code,
-        )
-        raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
-    except Exception:
-        logger.exception(
-            "Photo inventory extraction failed unexpectedly (file=%s, size=%d)",
-            file.filename,
-            len(analysis_bytes),
-        )
-        raise HTTPException(
-            status_code=503,
-            detail="Photo analysis is temporarily unavailable. Please try again.",
+    effective_owner = user.user_id
+    async def extract(report=None):
+        source_digest = hashlib.sha256(analysis_bytes).hexdigest()
+        stored = upload_image(
+            user_id=effective_owner,
+            filename=f"capture-{uuid4().hex}-{analysis_filename}",
+            content=analysis_bytes,
         )
 
-    items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-    try:
-        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
-        items = prepare(
-            user_id=user.user_id, source_digest=source_digest, items=items
-        )
-    except Exception as exc:
-        logger.exception("Could not prepare uncertain capture results")
-        raise service_unavailable(
-            "Photo preview could not be prepared. Please try again."
-            if preview_only is True else
-            "Uncertain items could not be saved for review. Please try again."
-        ) from exc
-    summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
+        try:
+            data = await extract_inventory_items(
+                filename=analysis_filename,
+                image_bytes=analysis_bytes,
+                content_type="image/jpeg",
+                user_id=effective_owner,
+                source_frame_url=stored.url,
+                **({"on_progress": report} if report else {}),
+            )
+        except PhotoExtractionError as exc:
+            logger.warning(
+                "Photo inventory extraction failed (file=%s, size=%d, status=%d)",
+                file.filename,
+                len(analysis_bytes),
+                exc.status_code,
+            )
+            raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
+        except Exception:
+            logger.exception(
+                "Photo inventory extraction failed unexpectedly (file=%s, size=%d)",
+                file.filename,
+                len(analysis_bytes),
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Photo analysis is temporarily unavailable. Please try again.",
+            )
 
-    if not isinstance(summary, dict):
-        summary = {"total_detected": len(items), "categories": {}}
+        if report:
+            report("Checking catalog matches and preparing review...")
+        items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
+        try:
+            prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+            items = prepare(
+                user_id=effective_owner, source_digest=source_digest, items=items
+            )
+        except Exception as exc:
+            logger.exception("Could not prepare uncertain capture results")
+            raise service_unavailable(
+                "Photo preview could not be prepared. Please try again."
+                if preview_only is True else
+                "Uncertain items could not be saved for review. Please try again."
+            ) from exc
+        summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
 
-    if "total_detected" not in summary:
-        summary["total_detected"] = len(items)
-    if "categories" not in summary:
-        summary["categories"] = {}
+        if not isinstance(summary, dict):
+            summary = {"total_detected": len(items), "categories": {}}
 
-    try:
-        create_activity(
-            user_id=user.user_id,
-            summary=f"Scanned image for inventory items ({len(items)} detected)",
-            metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
-                    )
-    except Exception:
-        logger.exception("Failed to write scan activity")
+        if "total_detected" not in summary:
+            summary["total_detected"] = len(items)
+        if "categories" not in summary:
+            summary["categories"] = {}
 
-    return MultiExtractFromImageResponse(items=items, summary=summary)
+        try:
+            create_activity(
+                user_id=effective_owner,
+                summary=f"Scanned image for inventory items ({len(items)} detected)",
+                metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
+                        )
+        except Exception:
+            logger.exception("Failed to write scan activity")
+
+        return MultiExtractFromImageResponse(items=items, summary=summary)
+
+    if 'text/event-stream' in request.headers.get('accept', ''):
+        from fastapi.responses import StreamingResponse
+        from app.services.extraction_stream import stream_extraction
+        from app.api.routes.ai import _authorized_stream
+        return StreamingResponse(_authorized_stream(stream_extraction(extract)),
+            media_type='text/event-stream',
+            headers={'Cache-Control': 'no-store, no-transform', 'X-Accel-Buffering': 'no'})
+    return await extract()
 
 
 @router.post("/inventory/bulk_create", response_model=BulkCreateResponse)

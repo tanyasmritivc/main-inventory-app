@@ -1,3 +1,7 @@
+## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
+
+Active isolated implementation lane for the requested surface. Preserve organization and actor isolation, existing records, monochrome UI and current provider. No production database changes or public App Store submission.
+
 ## October 26 - Internal model markup guard deployed
 
 Runtime `052c81f` (PR249) is live. Content-channel tool/argument/reasoning tags are withheld across stream chunks and rejected before display; textual instructions never execute. One bounded recovery preserves completed-action receipts. 118 focused tests, 1,599 backend tests + 10 subtests, and five CI gates (40434724135) passed. Live Safari inventory question completed normally at 18:55:25 Pacific with 12 records and resource links. API/database health and anonymous denial passed; 127 unrelated files preserved. No schema/configuration change or history rewrite. Receipt: `docs/plans/private-tool-markup-receipt.json`.
