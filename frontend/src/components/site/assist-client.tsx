@@ -1,6 +1,7 @@
 "use client";
 import { MessageActions, type ResponseRating } from "./message-actions";
 import { ChatProgress } from "./chat-progress";
+import { ShinyText } from "./shiny-text";
 import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
 import { ChatContextPicker } from "./chat-context-picker";
 import { ChatCaptureCard } from "./chat-capture-card";
@@ -752,7 +753,7 @@ function AssistClientWorkspace({
         className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}
       >
         <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
-          {title}
+          {messages.length || opening ? title : <ShinyText text={title} speed={4} heading />}
         </h1>
         <div className="ask-thread">
           {opening ? (

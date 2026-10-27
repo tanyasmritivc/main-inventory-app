@@ -1,3 +1,7 @@
+## October 26 - Text-only chat progress and welcome glimmer deployed
+
+Web runtime `b1159d6` (PR258) is live in `shimmer-frequency-20261026/frontend`. Chat progress is bird-free and aligned at the message edge. Empty-chat headings use a monochrome four-second left-to-right sweep with a one-second pause, matching the separately released mobile lane. Reduced motion and heading semantics are preserved. 633 full web tests, four final focused tests, type checks, lint (52 existing warnings), all five final CI gates (40450201253), production build and 27 route/asset checks passed. Safari showed the heading and bird-free progress; the read-only prompt was interrupted and refresh could not verify the session, so authenticated response acceptance remains incomplete. API unchanged; old compiled release preserved. Receipt: `docs/plans/chat-welcome-shimmer-web-receipt.json`.
+
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
 Runtime `24768a6` (PR254) is live after all five CI gates (40442982084) passed. Tools cards have no decorative icons or arrows and use monochrome hover/focus styling. Existing routes and the blue Upgrade control are preserved. 633 web tests, TypeScript and production build pass; lint has zero errors and 52 existing warnings. All 27 production route/asset checks and signed-in Safari visual verification pass. Previous compiled release remains available for rollback; API process unchanged by web publication. Receipt: `docs/plans/tools-text-cards-receipt.json`.
