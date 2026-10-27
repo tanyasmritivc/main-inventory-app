@@ -144,7 +144,7 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
     _controller.addStatusListener((status) {
       if (widget.heading && status == AnimationStatus.completed) {
         // A quiet pause between sweeps keeps the welcome screen unobtrusive.
-        _pause = Timer(const Duration(seconds: 4), () {
+        _pause = Timer(const Duration(seconds: 1), () {
           _pause = null;
           if (mounted &&
               !MediaQuery.disableAnimationsOf(context) &&

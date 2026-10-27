@@ -71,7 +71,7 @@ void main() {
         expect(tester.takeException(), isNull);
         await tester.pump(const Duration(seconds: 4));
         expect(tester.binding.hasScheduledFrame, isFalse);
-        await tester.pump(const Duration(seconds: 4));
+        await tester.pump(const Duration(seconds: 1));
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.byType(ShaderMask), findsOneWidget);
         await tester.pumpWidget(heading(reduce: true));
