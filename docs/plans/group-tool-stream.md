@@ -15,6 +15,8 @@ implement reusable personal groups or alter saved personalization preferences.
 Validation: 78 focused tests; 1,580 full backend tests and 10 subtests passed.
 Includes five-call assembly, malformed indices, fast response with no model/tool
 calls, authorization denial, existing receipt validation and retry safety.
-Deployment is pending exact-source CI and a guarded two-file release. No schema
-or configuration change is required. Preserve unrelated live source and retain
-backups for rollback. Web controls are a separate release.
+Exact-source CI and the guarded two-file release passed. No schema or
+configuration changed. Unrelated live source was preserved and backups retained
+for rollback. Web controls are a separate release.
+
+Release completed. See `group-tool-stream-receipt.json` and CURRENT_STATE for exact-source CI, publication and Safari evidence.

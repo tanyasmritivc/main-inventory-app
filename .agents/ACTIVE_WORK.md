@@ -1,3 +1,7 @@
+## October 26 - Group/tool parsing fix deployed
+
+Runtime `c40e9bf` is live after five CI gates passed (40429096988), 1,580 backend tests + 10 subtests and 78 focused tests. Tool batches permit up to 16 bounded calls; unsupported personal-group requests return a truthful answer after authorization without model retries or duplicate proposals. Synthetic staged probe completed in 0.003s with no model/tool calls. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or configuration change. Reusable personal groups are still not implemented. Receipt: `docs/plans/group-tool-stream-receipt.json`.
+
 ## October 26 - Group request and tool stream recovery (active)
 
 `fix/api-group-tool-stream` owns the bounded tool-call parser and truthful unsupported personal-group response. No migration, model/provider switch or inventory mutation. Web cancellation/navigation is isolated in `fix/web-chat-and-navigation`.
