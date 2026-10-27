@@ -1,3 +1,7 @@
+## October 26 - Mobile welcome shimmer (active)
+
+Mobile-only style/mobile-chat-welcome-shimmer applies the requested monochrome welcome glimmer to all empty-chat heading variants. Chat progress is already bird-free; preserve its text alignment and the separate Auto Extract loader. Build149 follows startup recovery148. No API/schema changes or public submission.
+
 ## October 26 - Startup onboarding save recovery delivered
 
 Apple acknowledged TestFlight 1.1.1 (148), runtime `a0c9c64`, PR257, delivery `e8ded15a-fed2-49dc-9d79-b08ec63f44ce`. Retained onboarding drafts with empty categories now use Other at the save boundary while preserving request IDs and supplied categories. Startup recovery offers Continue to app without deleting the draft, differentiates read failures from save failures, and supports large text. 1,188 mobile tests plus one existing skip, clean analysis, three native iOS checks, all five CI gates (40446544011), Apple validation, strict signing, 34 archive/export device executables and privacy/configuration checks passed. No server or schema change. Processing/tester availability is pending and not polled; physical startup acceptance for148 remains unverified. Public submission is held. Receipt: `docs/plans/onboarding-save-recovery-mobile-receipt.json`.

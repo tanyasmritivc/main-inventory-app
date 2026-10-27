@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_text.dart';
 
@@ -115,8 +116,17 @@ class _ChatProgressState extends State<ChatProgress> {
 
 /// Native version of the supplied React Bits 2s soft light sweep.
 class ShinyStatusText extends StatefulWidget {
-  const ShinyStatusText(this.text, {super.key});
+  const ShinyStatusText(
+    this.text, {
+    super.key,
+    this.heading = false,
+    this.style,
+    this.textAlign,
+  });
   final String text;
+  final bool heading;
+  final TextStyle? style;
+  final TextAlign? textAlign;
   @override
   State<ShinyStatusText> createState() => _ShinyStatusTextState();
 }
@@ -125,21 +135,47 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 2),
+    duration: Duration(seconds: widget.heading ? 4 : 2),
   );
+  Timer? _pause;
+  @override
+  void initState() {
+    super.initState();
+    _controller.addStatusListener((status) {
+      if (widget.heading && status == AnimationStatus.completed) {
+        // A quiet pause between sweeps keeps the welcome screen unobtrusive.
+        _pause = Timer(const Duration(seconds: 4), () {
+          _pause = null;
+          if (mounted &&
+              !MediaQuery.disableAnimationsOf(context) &&
+              TickerMode.valuesOf(context).enabled) {
+            _controller.forward(from: 0);
+          }
+        });
+      }
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context) ||
         !TickerMode.valuesOf(context).enabled) {
+      _pause?.cancel();
+      _pause = null;
       _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
+    } else if (!_controller.isAnimating && _pause == null) {
+      if (widget.heading) {
+        _controller.forward(from: 0);
+      } else {
+        _controller.repeat();
+      }
     }
   }
 
   @override
   void dispose() {
+    _pause?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -147,11 +183,17 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final base = dark ? const Color(0xFFB5B5B5) : const Color(0xFF626269);
-    final shine = dark ? Colors.white : const Color(0xFF19191D);
+    final base = widget.heading
+        ? (dark ? const Color(0xFFBDBDBD) : const Color(0xFF242424))
+        : (dark ? const Color(0xFFB5B5B5) : const Color(0xFF626269));
+    final shine = dark
+        ? Colors.white
+        : (widget.heading ? const Color(0xFF767676) : const Color(0xFF19191D));
     final text = AppText(
       widget.text,
-      style: TextStyle(fontSize: 16, height: 1.4, color: base),
+      textAlign: widget.textAlign,
+      style: (widget.style ?? const TextStyle(fontSize: 16, height: 1.4))
+          .copyWith(color: base),
     );
     if (MediaQuery.disableAnimationsOf(context)) return text;
     return RepaintBoundary(

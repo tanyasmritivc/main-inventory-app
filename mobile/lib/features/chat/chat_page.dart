@@ -2694,8 +2694,9 @@ class _ChatPageState extends State<ChatPage>
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 320),
-        child: Text(
+        child: ShinyStatusText(
           widget.worldHeading ?? 'What would you like to know?',
+          heading: true,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textPrimary(context),
