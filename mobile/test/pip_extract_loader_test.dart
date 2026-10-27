@@ -45,15 +45,19 @@ void main() {
     final handle = await open(tester);
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Pip is looking...'), findsOneWidget);
+    expect(find.text('Preparing your photo...'), findsOneWidget);
     await tester.tapAt(const Offset(8, 8));
     await tester.binding.handlePopRoute();
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 1500));
     }
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Still working...'), findsOneWidget);
-    expect(find.text('Looking through your photo'), findsOneWidget);
+    expect(find.text('Preparing your photo...'), findsOneWidget);
+    expect(find.textContaining('s elapsed'), findsOneWidget);
+    handle.update('Reading details for 3 objects...');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Reading details for 3 objects...'), findsOneWidget);
     expect(find.textContaining('found'), findsNothing);
     handle.dismiss();
     handle.dismiss();
@@ -168,7 +172,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       expect(tester.takeException(), isNull);
     }
-    expect(find.text('Still working...'), findsOneWidget);
+    handle.update('Checking confidence and trimming item photos...');
+    await tester.pump();
+    expect(find.text('Checking confidence and trimming item photos...'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     handle.dismiss();
     await tester.pumpAndSettle();
   });

@@ -309,6 +309,7 @@ Future<void> runUploadPhotoFlow({
         bytes: bytes,
         filename: x.name,
         cancelToken: cancelToken,
+        onProgress: cancelToken.report,
       ),
     );
   } on CaptureCancelled {

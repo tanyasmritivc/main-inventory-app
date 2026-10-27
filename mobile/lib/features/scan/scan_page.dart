@@ -1224,6 +1224,7 @@ class _ScanPageState extends State<ScanPage> {
           bytes: bytes,
           filename: x.name,
           cancelToken: cancelToken,
+          onProgress: cancelToken.report,
         ),
       );
       developer.log(
