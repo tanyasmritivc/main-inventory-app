@@ -1,0 +1,10 @@
+{
+  "published": true,
+  "source": "df16fd7f0762662906a274be04b9e1bcd9b715fb",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 125,
+  "schema_changed": false,
+  "extraction_provider": "glm"
+}

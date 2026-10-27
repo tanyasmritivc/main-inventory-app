@@ -1,0 +1,25 @@
+{
+  "synthetic_only": true,
+  "customer_records_changed": false,
+  "checks": [
+    {
+      "case": "recall",
+      "passed": true,
+      "seconds": 2.6,
+      "tools": [
+        "world_recall"
+      ],
+      "answer": "You defined it in an earlier chat: \"Coffee corner\" means your espresso machine and two mugs.\n\nThat definition is saved in your chat history, so I'll use it when you say coffee corner. It's a remembered definition, not a check on what's actually in stock right now. If you'd like, I can search your saved items to see whether those items are recorded in your Hardware inventory."
+    },
+    {
+      "case": "vision",
+      "passed": true,
+      "seconds": 4.3,
+      "tools": [
+        "world_query",
+        "world_item_photos"
+      ],
+      "answer": "Here is what I found for [Blue squares](findez://item/a3618c98-c8fe-4de0-b266-4f067e581879/11c48884-ebe0-47b3-97c2-2d945b542067) in Hardware:\n\n- **Recorded quantity:** 9\n- **Visibly shown in the photo:** 3 blue squares\n- **Difference:** the photo shows 6 fewer than recorded\n\nThe photo only captures part of the picture, so this does not prove the other 6 are missing. I have not changed anything."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
-Active isolated implementation lane for the requested surface. Preserve organization and actor isolation, existing records, monochrome UI and current provider. No production database changes or public App Store submission.
+Runtime `df16fd7` (PR255) is live after all five CI gates (40443168190) passed. Earlier user statements are recalled only for the same author and organization; saved definitions can be used across conversations without creating duplicate inventory records or replaying old actions. GLM receives fresh authorized primary/gallery photos, including later attachments, as ephemeral image inputs. Extraction exposes real progress over negotiated SSE with JSON compatibility. API/database health and anonymous denial pass; 125 unrelated runtime files preserved. No schema or configuration change. Synthetic live GLM checks passed for historical recall and visible-image quantity comparison; no customer records changed. Receipts: `docs/plans/org-recall-photo-api-receipt.json` and `docs/plans/org-recall-photo-model-check.json`.
 
 ## October 26 - Internal model markup guard deployed
 
