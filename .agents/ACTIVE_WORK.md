@@ -1871,6 +1871,6 @@ photo receipts repair partial/lost saves. Prepare migration 056 for atomic Revie
 resolution; production application requires separate reviewed approval. Preserve
 model-written Chat, authorization and customer Dashboard. No customer QA writes.
 
-## October 26 account consistency - active
+## October 26 account consistency - deployed
 
 Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
