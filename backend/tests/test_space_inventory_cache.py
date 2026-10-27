@@ -161,3 +161,28 @@ def test_blank_rename_has_no_database_side_effect(database):
     with pytest.raises(ValueError, match="New name is required"):
         spaces_repo.rename_space(user_id="cache-owner-a", space_id="workshop-a", new_name="   ")
     assert database.rows == before
+
+
+def test_authenticated_reads_see_other_worker_updates_and_deletions(database):
+    """Mobile/SQL RPC writes cannot invalidate a web worker's local cache."""
+    from app.services.resource_access import ActorAccess, request_actor
+    items_repo.list_items(user_id="cache-owner-a")  # Old process-local snapshot.
+    token = request_actor.set(ActorAccess("cache-owner-a", fences=[]))
+    try:
+        assert len(items_repo.list_items(user_id="cache-owner-a")) == 5
+        # Simulate a committed write through another client/worker, without
+        # calling this process's invalidation helper.
+        database.rows["items"][0]["location"] = "Renamed on mobile"
+        database.rows["items"][0]["quantity"] = 9
+        database.rows["items"] = [row for row in database.rows["items"]
+                                  if row["item_id"] != "sample-1"]
+        fresh = items_repo.list_items(user_id="cache-owner-a")
+        assert len(fresh) == 4
+        assert fresh[0]["location"] == "Renamed on mobile"
+        assert fresh[0]["quantity"] == 9
+        assert all(row["user_id"] == "cache-owner-a" for row in fresh)
+        database.rows["items"] = [row for row in database.rows["items"]
+                                  if row["user_id"] != "cache-owner-a"]
+        assert items_repo.list_items(user_id="cache-owner-a") == []
+    finally:
+        request_actor.reset(token)

@@ -1870,3 +1870,7 @@ capture's private full frame as gallery photo two, primary crop unchanged; stabl
 photo receipts repair partial/lost saves. Prepare migration 056 for atomic Review
 resolution; production application requires separate reviewed approval. Preserve
 model-written Chat, authorization and customer Dashboard. No customer QA writes.
+
+## October 26 account consistency - active
+
+Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
