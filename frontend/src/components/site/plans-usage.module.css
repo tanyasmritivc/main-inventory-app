@@ -53,3 +53,9 @@
 @media(max-width:680px) { .grid { grid-template-columns:1fr; } .card { padding:20px; } .description { min-height:0; margin-bottom:12px; } .dialog.dialog { padding:24px 18px; } .page h1 { font-size:25px; } .header { align-items:flex-start; } .stat { padding:14px; } .compareHeading { flex-wrap:wrap; } .dialogTitle { font-size:23px; } }
 
 @media(max-width:680px) { .statValue[data-unmetered] { font-size:20px; letter-spacing:-.3px; } }
+
+.upgradeDialog .card { border-radius:18px; }
+.upgradeDialog .card:nth-child(2) { border-color:#8bc8ed; background:linear-gradient(150deg,#bde7ff18,transparent 65%),var(--light-panel); box-shadow:inset 0 1px 0 #d5f0ff44; }
+.upgradeDialog .primary { background:linear-gradient(115deg,#e3f4ff,#b9e2fc); color:#183d59; border-color:#abd8f5; box-shadow:inset 0 1px 0 #ffffffa0; }
+.upgradeFooter { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-top:20px; }
+.fullPlans { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-size:13px; color:var(--ink); text-decoration:underline; text-underline-offset:4px; }

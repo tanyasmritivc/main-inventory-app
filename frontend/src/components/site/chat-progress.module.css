@@ -15,8 +15,10 @@
 .progress summary svg { flex-shrink: 0; transition: transform .15s ease; }
 .progress details[open] summary svg { transform: rotate(180deg); }
 .progress summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px; }
-.progress ol { margin: .2rem 0 .5rem; padding-left: 1.5rem; font-size: .8125rem; }
-.progress li { padding: .15rem 0; }
+.progress ol { display:grid; gap:8px; margin:8px 0 12px 44px; padding:0 0 0 14px; border-left:1px solid var(--light-line-strong); list-style:none; font-size:.8125rem; max-width:440px; }
+.progress li { display:flex; align-items:baseline; justify-content:space-between; gap:16px; line-height:1.5; }
+.progress li small { flex-shrink:0; font-size:10px; color:var(--light-muted); border:1px solid var(--light-line); padding:1px 7px; border-radius:20px; }
+.progress li[aria-current=step] { color:var(--ink); }
 .shiny { display: inline-block; color: var(--status-base); background-color: var(--status-base); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 @media (prefers-reduced-motion: reduce) { .progress summary svg { transition: none; } .shiny { background-image: none !important; } }
 @media (forced-colors: active) { .shiny { background: none !important; -webkit-text-fill-color: currentColor; } }

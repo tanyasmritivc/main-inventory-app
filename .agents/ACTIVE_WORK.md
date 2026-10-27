@@ -1,3 +1,7 @@
+## October 26 - Memory, Upgrade modal and concise progress (active)
+
+`style/web-memory-upgrade-progress` owns web-only Memory layout, sidebar plans dialog and grouped real activity updates. Preserve memory API, prices, early-access status, mobile and backend.
+
 ## October 26 - Chat cancellation, Tools and notification preview deployed
 
 Runtime `18a0530` is live in `chat-navigation-20261026/frontend`, build `qxMijwbiTDVPZJvmLjBgU`. Stop cancels stalled readers and cannot turn into submit; quiet themed transitions replace bare text; Tools uses an inventory selector and icon grid; the bell opens a five-entry popover with no entrance animation and View all. 628 tests / 87 suites, TypeScript, ESLint (0 errors/52 existing warnings), five CI gates (40429097939), production build and 27 staged/live routes pass. Safari verified dark desktop Tools, notification preview/Escape/View all, two read-only answers and immediate Stop with draft restoration and no resubmission. Prior release retained. No mobile changes. Receipt: `docs/plans/web-chat-navigation-receipt.json`.
