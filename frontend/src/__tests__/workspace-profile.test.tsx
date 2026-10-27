@@ -269,11 +269,10 @@ test("settings categories use distinct page routes and keep their labels visible
  expect(screen.queryByRole("button", { name: "Unpin navigation" })).toBeNull();
 });
 
-test("sidebar Upgrade opens the account usage route without an inventory suffix", async () => {
+test("sidebar Upgrade offers a plans dialog while the settings route remains accessible", async () => {
   mockPathname="/settings/plans";
   const inventory = {accountId:"a",inventory_id:"tools",name:"Tools",owner_user_id:"a",team_id:null,is_default:true,can_edit:true,workspace:{workspace_id:"personal",name:"Personal",kind:"personal" as const,team_id:null,role:"owner" as const}};
   selectInventory(inventory);render(<AppShell inventory={inventory}><p>Plan page</p></AppShell>);
-  const link=screen.getByRole("link",{name:"Upgrade — plans and usage"});
-  expect(link.getAttribute("href")).toBe("/settings/plans");expect(link.getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("button",{name:"Upgrade - compare plans"}).getAttribute("aria-haspopup")).toBe("dialog");
   expect(screen.getByRole("link",{name:"Plans & usage"})).toBeTruthy();
 });

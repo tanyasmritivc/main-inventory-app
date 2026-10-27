@@ -4,6 +4,7 @@ import { accountRequest } from "@/lib/account-request";
 import { activeInventory } from "@/lib/inventory-selection";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import styles from "./memory-settings.module.css";
+import { Sparkles, RefreshCw, Download, Trash2 } from "lucide-react";
 import { ApiError } from "@/lib/api";
 
 type Entry = { key: string; kind: string; payload: { value?: string; alias?: string; space_id?: string }; source: string; confirmed_at: string };
@@ -76,30 +77,38 @@ function MemoryEditor({ accountId, inventoryId }: { accountId: string | null; in
     finally { if (alive.current) setBusy(false); }
   }
   const blocked=busy || hasPending;
-  return <section className={`settings-panel ${styles.panel}`} aria-label="Memory">
-    <header><h2>Memory</h2><p>Save only the preferences you choose. Preferences are private to your account across devices.</p></header>
-    {error && <p role="alert">{error}</p>}
-    <p aria-live="polite">{busy ? "Loading or saving memory..." : notice}</p>
-    <button type="button" className="product-button" disabled={busy} onClick={()=>void load()}>Refresh memory</button>
-    {hasPending && <button type="button" className="product-button" disabled={busy} onClick={()=>void write()}>Retry save</button>}
+  return <section className={styles.panel} aria-label="Memory">
+    <header className={styles.header}>
+      <div className={styles.heading}><span className={styles.icon}><Sparkles size={21}/></span><div><h2>Make FindEZ yours</h2><p>Your preferences, synced privately across devices.</p></div></div>
+      <button type="button" className={styles.refresh} disabled={busy} onClick={()=>void load()} aria-label="Refresh memory" title="Refresh memory"><RefreshCw size={17}/><span>Refresh memory</span></button>
+    </header>
+    {error && <p className={styles.feedback} role="alert">{error}</p>}
+    {(busy || notice) && <p className={styles.feedback} role="status">{busy ? "Updating memory..." : notice}</p>}
+    {hasPending && <div className={styles.feedback}><button type="button" className="product-button" disabled={busy} onClick={()=>void write()}>Retry save</button></div>}
     {data && <>
-      <div className="settings-form-row"><label><input type="checkbox" checked={data.enabled} disabled={blocked} onChange={event=>void write({action:"settings",enabled:event.target.checked})}/> Use personalization</label></div>
-      <p>Turning this off stops using preferences. It keeps them until you forget them.</p>
-      {([['answer_length','Answer length',['brief','standard','detailed']],['answer_format','Answer format',['paragraphs','bullets']]] as const).map(([key,label,options])=><div className="settings-form-row" key={key}>
-        <label htmlFor={`memory-${key}`}>{label}</label>
-        <select id={`memory-${key}`} value={data.entries.find(entry=>entry.key===key)?.payload.value || ""} disabled={blocked || !data.enabled} onChange={event=>void write(event.target.value ? {action:"set",key,value:event.target.value} : {action:"delete",key})}>
-          <option value="">Default</option>{options.map(value=><option key={value} value={value}>{value}</option>)}
-        </select>
-      </div>)}
-      <ul>{data.entries.filter(entry=>entry.kind==='preference').map(entry=><li key={entry.key}>{entry.key.replaceAll('_',' ')}: {entry.payload.value}. {entry.source}. Saved {entry.confirmed_at.slice(0,10)}.</li>)}</ul>
-      {inventoryId && <><h3>Location aliases</h3><p>Private names for saved locations in this inventory. An alias does not move any item.</p>
-        <label htmlFor="memory-alias">Alias</label><input id="memory-alias" value={alias} maxLength={60} disabled={blocked || !data.enabled} onChange={event=>setAlias(event.target.value)}/>
-        <label htmlFor="memory-space">Saved location</label><select id="memory-space" value={spaceId} disabled={blocked || !data.enabled} onChange={event=>setSpaceId(event.target.value)}><option value="">Choose a location</option>{spaces.map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select>
-        <button className="product-button" disabled={blocked || !data.enabled || !alias.trim() || !spaceId} onClick={()=>void write({action:"set",inventory_id:inventoryId,alias:alias.trim(),space_id:spaceId})}>Save alias</button>
-        {data.entries.filter(entry=>entry.kind==='alias').map(entry=><div key={entry.key}>{entry.payload.alias}: {spaces.find(space=>space.id===entry.payload.space_id)?.name || 'Unavailable location'} <button disabled={blocked} onClick={()=>void write({action:"delete",inventory_id:inventoryId,alias:entry.payload.alias})}>Forget alias</button></div>)}
-      </>}
-      {data.legacy.length>0 && <details><summary>Unverified legacy memory, excluded from personalization</summary>{data.legacy.map((entry,index)=><p key={index}>{entry.key}: {entry.value}</p>)}{data.legacy_truncated && <p>Only the first records are shown.</p>}</details>}
-      <footer><button type="button" className="product-button" disabled={blocked} onClick={()=>void exportMemory()}>Export memory</button><button type="button" className="settings-text-button" disabled={blocked} onClick={()=>void forget()}>Forget personalization</button></footer>
+      <div className={styles.section}>
+        <div className={styles.toggleRow}><div><label htmlFor="memory-enabled">Use personalization</label><p>Use your saved preferences in answers.</p></div><input id="memory-enabled" className={styles.toggle} type="checkbox" checked={data.enabled} disabled={blocked} onChange={event=>void write({action:"settings",enabled:event.target.checked})}/></div>
+        {!data.enabled && <p className={styles.hint}>Paused. Your saved preferences are kept until you forget them.</p>}
+      </div>
+      <section className={styles.section} aria-labelledby="memory-response-title">
+        <h3 id="memory-response-title">Response style</h3>
+        <div className={styles.preferences}>
+          {([['answer_length','Answer length',['brief','standard','detailed']],['answer_format','Answer format',['paragraphs','bullets']]] as const).map(([key,label,options])=><div className={styles.field} key={key}>
+            <label htmlFor={`memory-${key}`}>{label}</label>
+            <select id={`memory-${key}`} value={data.entries.find(entry=>entry.key===key)?.payload.value || ""} disabled={blocked || !data.enabled} onChange={event=>void write(event.target.value ? {action:"set",key,value:event.target.value} : {action:"delete",key})}>
+              <option value="">Default</option>{options.map(value=><option key={value} value={value}>{value[0].toUpperCase()+value.slice(1)}</option>)}
+            </select>
+          </div>)}
+        </div>
+      </section>
+      {inventoryId && <section className={styles.section} aria-labelledby="memory-alias-title"><h3 id="memory-alias-title">Location aliases</h3><p className={styles.hint}>Private names for saved locations. Items stay where they are.</p>
+        <div className={styles.preferences}><div className={styles.field}><label htmlFor="memory-alias">Alias</label><input id="memory-alias" value={alias} maxLength={60} disabled={blocked || !data.enabled} onChange={event=>setAlias(event.target.value)}/></div>
+        <div className={styles.field}><label htmlFor="memory-space">Saved location</label><select id="memory-space" value={spaceId} disabled={blocked || !data.enabled} onChange={event=>setSpaceId(event.target.value)}><option value="">Choose a location</option>{spaces.map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select></div></div>
+        <button className={`product-button ${styles.saveAlias}`} disabled={blocked || !data.enabled || !alias.trim() || !spaceId} onClick={()=>void write({action:"set",inventory_id:inventoryId,alias:alias.trim(),space_id:spaceId})}>Save alias</button>
+        {data.entries.filter(entry=>entry.kind==='alias').map(entry=><div className={styles.aliasRow} key={entry.key}><span><strong>{entry.payload.alias}</strong><small>{spaces.find(space=>space.id===entry.payload.space_id)?.name || 'Unavailable location'}</small></span><button className={styles.textButton} disabled={blocked} onClick={()=>void write({action:"delete",inventory_id:inventoryId,alias:entry.payload.alias})}>Forget alias</button></div>)}
+      </section>}
+      {data.legacy.length>0 && <details className={styles.section}><summary>Older memory</summary><p className={styles.hint}>Unverified and excluded from personalization.</p>{data.legacy.map((entry,index)=><p key={index}>{entry.key}: {entry.value}</p>)}{data.legacy_truncated && <p>Only the first records are shown.</p>}</details>}
+      <footer className={styles.footer}><button type="button" className={styles.textButton} disabled={blocked} onClick={()=>void exportMemory()}><Download size={16}/>Export memory</button><button type="button" className={`${styles.textButton} ${styles.danger}`} disabled={blocked} onClick={()=>void forget()}><Trash2 size={16}/>Forget personalization</button></footer>
     </>}
   </section>;
 }
