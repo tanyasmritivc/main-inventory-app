@@ -16,7 +16,8 @@ export function ShinyText({ text, speed = 2, heading = false }: { text: string; 
     const stop = () => { cancelAnimationFrame(frame); frame = 0; };
     const tick = (now: number) => {
       if (!start) start = now;
-      const t = ((now - start) % (Math.max(.1, speed) * 1000)) / (Math.max(.1, speed) * 1000);
+      const duration = Math.max(.1, speed) * 1000;
+      const t = Math.min(1, ((now - start) % (duration * (heading ? 2 : 1))) / duration);
       const center = -22 + 144 * (.5 - Math.cos(Math.PI * t) / 2);
       const stops: [number, number][] = [];
       for (const side of [-1, 1]) for (const f of [0, .2, .4, .6, .8, 1]) {
@@ -43,6 +44,6 @@ export function ShinyText({ text, speed = 2, heading = false }: { text: string; 
       stop(); observer?.disconnect(); reduce?.removeEventListener?.("change", sync);
       document.removeEventListener("visibilitychange", sync);
     };
-  }, [speed]);
+  }, [speed, heading]);
   return <span role={heading ? undefined : "status"} ref={ref} className={`${styles.shiny}${heading ? ` ${styles.heading}` : ""}`}>{text}</span>;
 }
