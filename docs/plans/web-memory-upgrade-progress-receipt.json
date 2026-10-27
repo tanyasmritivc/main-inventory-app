@@ -48,7 +48,8 @@
       "Upgrade opens dialog without changing URL",
       "Monthly and yearly prices, Team 10 people verified",
       "Escape dismisses and restores focus to Upgrade",
-      "View plans and usage navigates to full settings page"
+      "View plans and usage navigates to full settings page",
+      "390x844 Safari responsive preview: stacked Memory controls and scrollable plans modal; navigation drawer closes when opening modal"
     ],
     "limits": [
       "No mobile binary or database changes",
