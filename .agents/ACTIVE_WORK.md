@@ -1,6 +1,6 @@
-## October 26 - Text-only chat progress and welcome glimmer (active)
+## October 26 - Text-only chat progress and welcome glimmer deployed
 
-Web-only `fix/chat-welcome-shimmer`: remove the decorative bird from chat status, align status/history/timer at the message edge, and reuse the monochrome left-to-right glimmer on empty-chat welcome headings. Preserve real activity, Stop, screen-reader heading semantics and reduced motion. No API/mobile changes.
+Web runtime `b1159d6` (PR258) is live in `shimmer-frequency-20261026/frontend`. Chat progress is bird-free and aligned at the message edge. Empty-chat headings use a monochrome four-second left-to-right sweep with a one-second pause, matching the separately released mobile lane. Reduced motion and heading semantics are preserved. 633 full web tests, four final focused tests, type checks, lint (52 existing warnings), all five final CI gates (40450201253), production build and 27 route/asset checks passed. Safari showed the heading and bird-free progress; the read-only prompt was interrupted and refresh could not verify the session, so authenticated response acceptance remains incomplete. API unchanged; old compiled release preserved. Receipt: `docs/plans/chat-welcome-shimmer-web-receipt.json`.
 
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
