@@ -1,0 +1,19 @@
+{
+  "published": true,
+  "source": "e53d6ea4620eb6180625118ce1e42347e3a57ce0",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 128,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "ci_run": 40432773207,
+  "ci_gates": "all five passed",
+  "tests": {
+    "focused": 79,
+    "full_backend": 1582,
+    "subtests": 10
+  },
+  "safari": "Fresh live personal chat at 2026-10-26 18:36 Pacific: prompt and complete unsupported-group answer returned in the same displayed minute/second receipt (18:36:19), response copy/rating/retry controls present, no interruption. No inventory tools invoked by this fast path.",
+  "limitation": "Durable named personal groups remain unsupported; only response delivery was repaired."
+}

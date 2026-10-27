@@ -389,7 +389,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     if re.search(r'\b(?:save|remember)\b[^\n]{0,160}\b(?:my |a )?personal group\b', message, re.I):
         content = ("I can't save a reusable personal group yet. I can refer to this list "
                    "in this conversation. No inventory items were created or changed.")
-        yield {'type': 'done', 'assistant_message': content,
+        yield {'type': 'done', 'assistant_message': content, 'conversation_id': conversation_id,
                'answer_context': {'operation_diagnostics': []}}
         return
     messages = [{'role': 'system', 'content': 'You are FindEZ, AI memory for the physical world. '
