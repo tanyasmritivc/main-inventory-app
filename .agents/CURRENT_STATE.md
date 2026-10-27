@@ -2715,4 +2715,4 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## October 26 cross-client account consistency (web)
 
-Runtime `0de1e1d7f7a4e66bafa4763a984fd093d2e6be25` is deployed on the self-hosted service, with all five exact-source CI gates passed. See `docs/plans/account-consistency-web.md` and its receipt. No database migration. Web/mobile use canonical snapshots and visible refresh; unsaved drafts remain local. Mobile build 146 is being delivered separately.
+Runtime `0de1e1d7f7a4e66bafa4763a984fd093d2e6be25` is deployed on the self-hosted service, with all five exact-source CI gates passed. See `docs/plans/account-consistency-web.md` and its receipt. No database migration. Web/mobile use canonical snapshots and visible refresh; unsaved drafts remain local. Mobile build 146 is uploaded; Apple processing and physical two-device acceptance remain pending.

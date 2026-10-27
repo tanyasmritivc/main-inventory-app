@@ -36,5 +36,11 @@
   "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/252",
   "ci_jobs_passed": 5,
   "refresh_interval_seconds": 15,
-  "migrations": false
+  "migrations": false,
+  "safari_authenticated_checks": {
+    "spaces_and_workspace_counts_agree": true,
+    "inventory_search_preserved_across_refresh": true,
+    "dark_layout_verified": true,
+    "production_writes": false
+  }
 }
