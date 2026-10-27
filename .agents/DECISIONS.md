@@ -1,6 +1,6 @@
-## October 26 — Revert mobile build 150 to build 149
+## October 26 — Restore build149 mobile behavior
 
-User explicitly requested reverting everything to the last build. Restore the complete mobile tree and TESTING.md from build149 commit ca3a43a; only the release build number changes to 151. This removes build150's Personal/Team onboarding, new Scan entry/camera/review flow, first-scan window and suggestions. Existing build149 onboarding, capture and shimmer behavior return. Preserve historical delivery receipts. No server, web, account data or database changes. Verification and replacement TestFlight delivery in progress on revert/mobile-build150-to149.
+The user explicitly reverted all build150 changes. Build151 restores build149's complete mobile implementation, with only a new distribution number. Build150's Scan entry and Personal/Team onboarding are historical and must not be reintroduced without a new request. PR260 is closed; rollback delivery is PR261. Web, server and account data are unchanged.
 
 ## 2026-10-26 — Photo-only Scan entry
 
