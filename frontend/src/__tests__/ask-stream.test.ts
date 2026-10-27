@@ -1,5 +1,24 @@
 import { readAskEvents } from "@/lib/ask-stream";
 import { parseAskContext, trustedAskPhotoUrl } from "@/lib/ask-answer";
+
+test("Stop cancels a pending body read even when transport does not reject on abort", async () => {
+  const cancel = jest.fn();
+  const body = new ReadableStream<Uint8Array>({ cancel });
+  const control = new AbortController();
+  const event = jest.fn();
+  const result = readAskEvents(body, event, control.signal);
+  control.abort();
+  await expect(result).rejects.toMatchObject({name: "AbortError"});
+  expect(cancel).toHaveBeenCalledTimes(1);
+  expect(event).not.toHaveBeenCalled();
+});
+
+test("an already stopped stream cannot deliver a queued completion", async () => {
+  const control = new AbortController(); control.abort();
+  const event = jest.fn();
+  await expect(readAskEvents(stream('data: {"type":"done","assistant_message":"late"}\n\n'), event, control.signal)).rejects.toMatchObject({name:"AbortError"});
+  expect(event).not.toHaveBeenCalled();
+});
 function stream(text: string, chunkSize = 3) {
   const bytes = new TextEncoder().encode(text);
   return new ReadableStream<Uint8Array>({

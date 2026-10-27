@@ -26,11 +26,14 @@ export type AskStreamEvent = {
 export async function readAskEvents(
   body: ReadableStream<Uint8Array>,
   onEvent: (event: AskStreamEvent) => void,
+  signal?: AbortSignal,
 ) {
   const reader = body.getReader(),
     decoder = new TextDecoder();
   let buffer = "",
     ended = false;
+  const abort = () => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener("abort", abort, { once: true });
   function consume(block: string) {
     const data = block
       .split(/\r?\n/)
@@ -58,7 +61,9 @@ export async function readAskEvents(
   }
   try {
     while (true) {
+      signal?.throwIfAborted();
       const { value, done } = await reader.read();
+      signal?.throwIfAborted();
       buffer += decoder.decode(value, { stream: !done });
       const blocks = buffer.split(/\r?\n\r?\n/);
       buffer = blocks.pop() ?? "";
@@ -69,6 +74,7 @@ export async function readAskEvents(
     if (!ended)
       throw new Error("The answer stream was interrupted. Please try again.");
   } finally {
+    signal?.removeEventListener("abort", abort);
     await reader.cancel().catch(() => {});
     reader.releaseLock();
   }
@@ -126,6 +132,7 @@ export async function askQuestion({
   if (selected && selected.accountId !== accountId)
     throw new Error("Your account changed. Reopen this page.");
   const token = await accountToken(accountId);
+  signal.throwIfAborted();
   assertInventory(selected);
   const form = new FormData();
   const capabilities = worldId
@@ -201,7 +208,8 @@ export async function askQuestion({
         content: event.assistant_message,
         context: parseAskContext(event.answer_context),
       });
-  });
+  }, signal);
+  signal.throwIfAborted();
   await accountToken(accountId);
   assertInventory(selected);
 }

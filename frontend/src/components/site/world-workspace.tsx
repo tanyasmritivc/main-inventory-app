@@ -4,7 +4,6 @@ import { rememberWorld } from "@/lib/world-entry";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Boxes, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
-import { InventoryChatArchive } from "./inventory-chat-archive";
 import { AppShell } from "./app-shell";
 import { AssistClient } from "./assist-client";
 import { useApiSession } from "@/lib/use-api-session";
@@ -17,6 +16,9 @@ import { worldNavigation } from "@/lib/world-navigation";
 import { userFacingError } from "@/lib/user-facing-error";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import styles from "./world-workspace.module.css";
+import { PageTransition } from "./page-transition";
+import { InteriorLoading } from "./interior-state";
+import { WorldTools } from "./world-tools";
 type Inventory = {
   inventory_id: string;
   name: string;
@@ -31,18 +33,6 @@ type Directory = {
   inventories: Inventory[];
   workspaces: { workspace_id: string; name: string; can_create: boolean }[];
 };
-const tools = [
-  ["Capture / Import", "/scan"],
-  ["Documents", "/documents"],
-  ["Review", "/review"],
-  ["Activity", "/activity"],
-  ["Restock", "/restock"],
-  ["Check-outs", "/checkout"],
-  ["Project kits", "/project-kits"],
-  ["Collections", "/collections"],
-  ["Labels", "/labels"],
-  ["Inventory settings", "/inventory-access"],
-];
 export function WorldWorkspace(props: {
   worldId: string;
   view: string;
@@ -50,7 +40,7 @@ export function WorldWorkspace(props: {
 }) {
   const { accountId, error } = useApiSession();
   if (!accountId)
-    return <p role="status">{error || "Opening your organization…"}</p>;
+    return error ? <div className="interior-loading inventory-loading" role="alert">{error}</div> : <PageTransition />;
   return (
     <WorldContent
       key={`${accountId}:${props.worldId}`}
@@ -243,7 +233,7 @@ function WorldContent({
         </p>
       )}
       {!directory ? (
-        !error && <p role="status">Opening your organization…</p>
+        !error && <InteriorLoading />
       ) : chosen === "chat" || chosen === "search" ? (
         <AssistClient
           worldId={worldId}
@@ -394,42 +384,7 @@ function WorldContent({
               ))}
             </div>
           )}
-          {chosen === "tools" && (
-            <>
-              <p>
-                Choose the inventory for the task. Chat and Spaces cover the
-                whole organization.
-              </p>
-              {inventories.map((i) => (
-                <section className={styles.group} key={i.inventory_id}>
-                  <h2>
-                    {i.workspace_name} / {i.name}
-                  </h2>
-                  <div className={styles.tools}>
-                    <InventoryChatArchive
-                      accountId={accountId}
-                      inventoryId={i.inventory_id}
-                      name={i.name}
-                    />
-                    {tools.map(([label, path]) => (
-                      <Link
-                        key={path}
-                        href={`${path}?inventory=${encodeURIComponent(i.inventory_id)}`}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              ))}
-              {!inventories.length && (
-                <p className={styles.empty}>
-                  Create an inventory in a workspace or ask FindEZ to help you
-                  organize one.
-                </p>
-              )}
-            </>
-          )}
+          {chosen === "tools" && <WorldTools accountId={accountId} inventories={inventories} />}
         </section>
       )}
       <Dialog

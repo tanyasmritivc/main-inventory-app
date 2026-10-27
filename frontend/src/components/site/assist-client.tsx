@@ -514,7 +514,7 @@ function AssistClientWorkspace({
         autoExtract,
         retryOf: retryAnswer?.persistedId || (retryAnswer && !retryAnswer.live ? retryAnswer.id : undefined),
         onCapture: (id, context) => {
-          if (current()) {
+          if (current() && !control.signal.aborted) {
             receivedCapture = true;
             setConversationId(id);
             setMessages((m) =>
@@ -531,14 +531,15 @@ function AssistClientWorkspace({
         // Wait for validation and persistence before presenting the canonical reply.
         onDelta: (delta) => { provisional += delta; },
         onReset: () => { provisional = ""; },
-        onActivity: () => { if (current()) setLastActivityAt(Date.now()); },
+        onActivity: () => { if (current() && !control.signal.aborted) setLastActivityAt(Date.now()); },
         onStatus: (value) => {
-          if (current()) setStatus(value);
+          if (current() && !control.signal.aborted) setStatus(value);
         },
         onDone: (value) => {
-          final = value;
+          if (!control.signal.aborted) final = value;
         },
       });
+      control.signal.throwIfAborted();
       if (!current()) return;
       if (!final?.conversationId)
         throw new Error(
@@ -1110,14 +1111,23 @@ function AssistClientWorkspace({
               )}
               {sending ? (
                 <button
+                  key="stop"
                   type="button"
                   className="workspace-button"
-                  onClick={() => controller.current?.abort()}
+                  onClick={(event) => {
+                    // Cancel the click's default action before React can replace
+                    // this control with the submit button during cancellation.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    controller.current?.abort();
+                  }}
                 >
                   Stop
                 </button>
               ) : (
                 <button
+                  key="send"
+                  type="submit"
                   className="workspace-button primary"
                   disabled={
                     !accountId || unavailable || (!input.trim() && !photo)
