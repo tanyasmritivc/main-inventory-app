@@ -561,6 +561,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 if not retry_available:
                     raise
                 retry_available = False
+                if reason == 'control_markup':
+                    messages.append({'role': 'system', 'content': 'The last generation used invalid internal control markup in visible text. Use only the provided native tool_calls field for tool requests. Write only the user-facing answer in content. Do not include tool, argument or reasoning tags. Do not repeat completed actions; use their existing receipts.'})
                 generation_limit = CHAT_RETRY_TOKENS
                 yield {'type': 'reset'}
                 yield {'type': 'status', 'message': 'Retrying the interrupted response...'}

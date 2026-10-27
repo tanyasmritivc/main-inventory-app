@@ -461,3 +461,27 @@ def test_tool_context_preserves_source_and_target_inventory_ids_without_secrets(
     assert data['items'][0]['inventory_id'] == INVENTORY
     assert data['items'][0]['target_inventory_id'] == target
     assert 'SECRET' not in str(data)
+
+
+def test_text_channel_tool_markup_retries_native_tools_without_leaking_or_executing_text():
+    call = NS(id='read', function=NS(name='world_search', arguments='{"query":"drill"}'))
+    outputs = [completion('<tool_call>world_delete_items<arg_key>item_ids</arg_key><arg_value>PRIVATE</arg_value></tool_call>'),
+               completion(calls=[call]), completion('No matching saved items were found.')]
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'items': []}) as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=outputs) as model:
+        events = list(w.stream_turn(ACTOR, WORLD, 'Where is my drill?', [], 'cid'))
+    assert events[-1]['type'] == 'done'
+    assert events[-1]['conversation_id'] == 'cid'
+    assert not any('PRIVATE' in e.get('delta', '') or '<tool_call' in e.get('delta', '') for e in events)
+    execute.assert_called_once_with(ACTOR, WORLD, 'world_search', {'query': 'drill'})
+    assert any('native tool_calls' in m.get('content', '') for m in model.call_args.kwargs['messages'])
+
+
+def test_repeated_text_tool_markup_stops_after_one_retry():
+    from app.services.completion_stream import CompletionStreamError
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute') as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=lambda **kw: completion('<tool_call>PRIVATE</tool_call>')) as model:
+        with pytest.raises(CompletionStreamError):
+            list(w.stream_turn(ACTOR, WORLD, 'What do I have?', [], 'cid'))
+    assert model.call_count == 2
+    execute.assert_not_called()

@@ -188,3 +188,56 @@ def test_world_stream_forwards_liveness_without_treating_it_as_a_completion():
         events = list(w.stream_turn(str(uuid4()), 'personal', 'hello', [], 'cid'))
     assert {'type': 'activity', 'source': 'model'} in events
     assert events[-1]['type'] == 'done'
+
+
+@pytest.mark.parametrize('markup', [
+    '<tool_call>world_search<arg_key>query</arg_key><arg_value>PRIVATE</arg_value></tool_call>',
+    '<arg_key>query</arg_key>', '</tool_call>', '<think>PRIVATE reasoning</think>',
+    '<|tool_call|>PRIVATE', '< TOOL_CALL >PRIVATE',
+])
+def test_control_markup_is_never_streamed_even_when_split_at_every_boundary(markup):
+    from app.services.completion_stream import CompletionStreamError
+    for boundary in range(1, len(markup)):
+        received = []
+        with pytest.raises(CompletionStreamError) as error:
+            for event in completion_events(iter([chunk(markup[:boundary]), chunk(markup[boundary:])])):
+                received.append(event)
+        assert error.value.code == 'control_markup'
+        assert not [e for e in received if e['type'] in ('delta', 'completion')]
+        assert 'PRIVATE' not in str(error.value)
+
+
+def test_control_markup_after_plain_text_is_withheld_and_stream_is_closed():
+    from app.services.completion_stream import CompletionStreamError
+    closed = []
+    def response():
+        try:
+            for text in ['Checking. ', '<', 'tool_', 'call>PRIVATE']:
+                yield chunk(text)
+        finally:
+            closed.append(True)
+    events = []
+    with pytest.raises(CompletionStreamError):
+        for event in completion_events(response()): events.append(event)
+    assert ''.join(e.get('delta', '') for e in events) == 'Checking.'
+    assert closed == [True]
+
+
+@pytest.mark.parametrize('text', ['Quantity < 2 and > 0.', '<strong>Bolts</strong>', 'A trailing <', '<tool_callback>ordinary tag</tool_callback>'])
+def test_ordinary_comparisons_and_unrelated_markup_are_preserved(text):
+    events = list(completion_events(iter(chunk(char) for char in text)))
+    assert ''.join(e.get('delta', '') for e in events) == text
+    assert events[-1]['content'] == text
+
+
+@pytest.mark.parametrize('text', ['<tool_', '</arg_', '<|tool_c'])
+def test_incomplete_control_prefix_is_not_flushed_at_eof(text):
+    from app.services.completion_stream import CompletionStreamError
+    with pytest.raises(CompletionStreamError):
+        list(completion_events(iter([chunk(text)])))
+
+
+def test_whole_message_fallback_rejects_text_channel_control_tags():
+    from app.services.completion_stream import CompletionStreamError
+    with pytest.raises(CompletionStreamError):
+        list(completion_events(_as_namespace({'choices':[{'message':{'content':'<tool_call>PRIVATE</tool_call>'}}]})))

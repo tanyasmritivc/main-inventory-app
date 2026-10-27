@@ -1,0 +1,26 @@
+{
+  "published": true,
+  "source": "052c81fd8ede056a810d01aedf200c99f72145dc",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 127,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "validation": {
+    "focused_tests": 118,
+    "backend_tests": 1599,
+    "subtests": 10,
+    "existing_warnings": 452,
+    "ci_run": 40434724135,
+    "ci_gates": "all five passed",
+    "safari": [
+      "Authenticated What do I have? completed with 12 records across four Spaces, resource links and response controls at 18:55:25 Pacific; no internal markup or interruption."
+    ],
+    "limitations": [
+      "Malformed model content receives one bounded retry; repeated malformed output fails safely.",
+      "No retroactive rewrite of conversation history.",
+      "Personal-group persistence remains unsupported; prior conversation receipt fix remains live."
+    ]
+  }
+}

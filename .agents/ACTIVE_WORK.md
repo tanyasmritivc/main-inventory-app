@@ -1,3 +1,7 @@
+## October 26 - Internal model markup guard deployed
+
+Runtime `052c81f` (PR249) is live. Content-channel tool/argument/reasoning tags are withheld across stream chunks and rejected before display; textual instructions never execute. One bounded recovery preserves completed-action receipts. 118 focused tests, 1,599 backend tests + 10 subtests, and five CI gates (40434724135) passed. Live Safari inventory question completed normally at 18:55:25 Pacific with 12 records and resource links. API/database health and anonymous denial passed; 127 unrelated files preserved. No schema/configuration change or history rewrite. Receipt: `docs/plans/private-tool-markup-receipt.json`.
+
 ## October 26 - Personal-group completion receipt repaired and deployed
 
 Runtime `e53d6ea` (PR248) is live. The unsupported personal-group fast path now includes conversation_id, which the web client requires to accept the saved answer. Earlier service-only coverage missed this response-envelope gap. Added real service-through-HTTP-SSE regression coverage and failed-save coverage. 1,582 backend tests plus 10 subtests and all five CI gates (40432773207) passed. API/database health, anonymous denial and preservation of 128 unrelated runtime files passed. Fresh authenticated Safari prompt at 18:36 Pacific completed immediately with the full truthful limitation and response controls. No schema/configuration changes; personal-group persistence remains unsupported. Receipt: `docs/plans/group-completion-context-receipt.json`.
