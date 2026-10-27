@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { rememberWorld } from "@/lib/world-entry";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Boxes, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
@@ -70,17 +71,6 @@ function WorldContent({
       control.current?.abort();
     };
   }, []);
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === "visible") setRevision((v) => v + 1);
-    };
-    window.addEventListener("focus", refresh);
-    const timer = window.setInterval(refresh, 30000);
-    return () => {
-      window.removeEventListener("focus", refresh);
-      window.clearInterval(timer);
-    };
-  }, []);
   const [directory, setDirectory] = useState<Directory>();
   const [name, setName] = useState(
     worldId === "personal" ? "Personal" : "Organization",
@@ -94,6 +84,7 @@ function WorldContent({
   const [spaceName, setSpaceName] = useState("");
   const [busy, setBusy] = useState(false);
   const [createError, setCreateError] = useState("");
+  usePermissionRefresh(() => setRevision(v => v + 1), busy || create);
   useLayoutEffect(() => {
     requireInventoryContext(false);
     selectInventory(null);

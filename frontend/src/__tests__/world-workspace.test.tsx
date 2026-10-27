@@ -113,3 +113,24 @@ test("one create submission is locked until its saved receipt arrives", async ()
   await act(async () => finish({ space: { id: "new", name: "Bench" } }));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
+
+test("foreground refresh replaces renamed and deleted Spaces from another client", async () => {
+  render(<WorldWorkspace worldId="org" view="spaces" initialQuery="" />);
+  await screen.findByText("Fasteners");
+  jest.mocked(accountRequest).mockImplementation(async (_actor, path) => {
+    if (path === "/organizations") return { organizations: [{ organization_id: "org", name: "Robotics" }] } as never;
+    if (path.endsWith("/directory")) return { world: "org", inventories: [inventory], workspaces: [] } as never;
+    if (path.endsWith("/spaces")) return { inventories: [{ ...inventory, spaces: [{ id: "space-a", name: "Renamed on mobile", item_count: 9 }] }] } as never;
+    throw new Error("Unexpected request");
+  });
+  fireEvent(window, new Event("online"));
+  await screen.findByText("Renamed on mobile");
+  expect(screen.queryByText("Fasteners")).toBeNull();
+  jest.mocked(accountRequest).mockImplementation(async (_actor, path) => {
+    if (path === "/organizations") return { organizations: [{ organization_id: "org", name: "Robotics" }] } as never;
+    return { world: "org", inventories: [], workspaces: [] } as never;
+  });
+  fireEvent(window, new Event("focus"));
+  await waitFor(() => expect(screen.queryByText("Renamed on mobile")).toBeNull());
+  expect(screen.queryByText("Hardware")).toBeNull();
+});

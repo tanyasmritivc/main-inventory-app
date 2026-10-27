@@ -1,4 +1,5 @@
 'use client';
+import { usePermissionRefresh } from '@/lib/use-permission-refresh';
 import { userFacingError } from '@/lib/user-facing-error';
 import Link from '@/components/site/inventory-link';
 import { canEditInventory } from '@/lib/inventory-selection';
@@ -58,8 +59,10 @@ export function CheckoutClient() {
 
   useEffect(() => { void load(); }, []);
 
-  async function load() {
-    setLoading(true); setError(null); setSignedOut(false);
+  usePermissionRefresh(() => load(true), loading || !!returning);
+
+  async function load(quiet = false) {
+    if (!quiet) setLoading(true); setError(null); setSignedOut(false);
     try {
       const sb = createSupabaseBrowserClient();
       const { data: { session } } = await sb.auth.getSession();

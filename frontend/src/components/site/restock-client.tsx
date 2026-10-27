@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, RefreshCw, ShoppingCart } from "lucide-react";
@@ -59,12 +60,11 @@ function RestockClientWorkspace() {
     } | null>(null),
     [count, setCount] = useState("1");
   const { adopt: adoptRestock } = restock;
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet = false) => {
     if (!accountId) return;
     const account = accountId,
       ticket = ++loadTicket.current;
-    setLoading(true);
-    setItems([]);
+    if (!quiet) { setLoading(true); setItems([]); }
     setError("");
     try {
       const result = await accountRequest<{ items: InventoryItem[] }>(
@@ -86,6 +86,7 @@ function RestockClientWorkspace() {
         setLoading(false);
     }
   }, [accountId, scope, adoptRestock]);
+  usePermissionRefresh(() => load(true), loading || busy || !!edit || picker);
   useEffect(() => {
     setEdit(null);
     setPicker(false);
