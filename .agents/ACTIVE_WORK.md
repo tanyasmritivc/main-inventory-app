@@ -1,6 +1,6 @@
-## October 26 - Internal tool markup stream guard (active)
+## October 26 - Internal model markup guard deployed
 
-`fix/api-private-tool-markup` owns backend content-channel control-markup validation and bounded native-tool recovery. Keep authorization and action receipts unchanged; no textual tool execution, schema or provider changes.
+Runtime `052c81f` (PR249) is live. Content-channel tool/argument/reasoning tags are withheld across stream chunks and rejected before display; textual instructions never execute. One bounded recovery preserves completed-action receipts. 118 focused tests, 1,599 backend tests + 10 subtests, and five CI gates (40434724135) passed. Live Safari inventory question completed normally at 18:55:25 Pacific with 12 records and resource links. API/database health and anonymous denial passed; 127 unrelated files preserved. No schema/configuration change or history rewrite. Receipt: `docs/plans/private-tool-markup-receipt.json`.
 
 ## October 26 - Personal-group completion receipt repaired and deployed
 
