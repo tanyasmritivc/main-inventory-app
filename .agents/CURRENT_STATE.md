@@ -1,3 +1,7 @@
+## October 26 — Text-only Tools cards deployed
+
+Runtime `24768a6` (PR254) is live after all five CI gates (40442982084) passed. Tools cards have no decorative icons or arrows and use monochrome hover/focus styling. Existing routes and the blue Upgrade control are preserved. 633 web tests, TypeScript and production build pass; lint has zero errors and 52 existing warnings. All 27 production route/asset checks and signed-in Safari visual verification pass. Previous compiled release remains available for rollback; API process unchanged by web publication. Receipt: `docs/plans/tools-text-cards-receipt.json`.
+
 ## October 26 - Persistent navigation theme and monochrome notifications deployed
 
 Runtime `0eb0f12` (PR250, includes theme fix `6079ec8`) is live in `monochrome-notifications-20261026/frontend`, build `3y1vHI9CvrzWK2YDbiDKh`. A root-level appearance controller survives page-shell replacement, preventing removal of dark mode during navigation. Notification icons, unread dots, surfaces and hover states are neutral gray in both modes. 632 tests/88 suites, TypeScript, ESLint (0 errors/52 existing warnings), five CI gates on each runtime (40434726046 / 40435660784), builds and 27 staged/live routes passed. Safari checked world/account/inventory navigation, light public pricing, dark return and the final monochrome dropdown. Prior compiled releases retained; web deployment preserved backend PID. Receipt: `docs/plans/web-theme-navigation-receipt.json`.

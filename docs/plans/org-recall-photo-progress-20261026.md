@@ -1,3 +1,3 @@
 # October 26 requested chat and capture updates
 
-Tools cards now use text-only monochrome presentation; navigation destinations are unchanged. 633 web tests and TypeScript pass; lint has zero errors and 52 existing warnings. Production build and Safari verification remain pending.
+Runtime `24768a6` (PR254) is live after all five CI gates (40442982084) passed. Tools cards have no decorative icons or arrows and use monochrome hover/focus styling. Existing routes and the blue Upgrade control are preserved. 633 web tests, TypeScript and production build pass; lint has zero errors and 52 existing warnings. All 27 production route/asset checks and signed-in Safari visual verification pass. Previous compiled release remains available for rollback; API process unchanged by web publication. Receipt: `docs/plans/tools-text-cards-receipt.json`.
