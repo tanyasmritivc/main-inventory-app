@@ -1,0 +1,92 @@
+[
+  {
+    "path": "brand/findez-favicon.svg",
+    "status": 200,
+    "sha256": "1bc42d87f67ca661024f6986a7b0b5ca8b98da02a106df4ffd55ab0b50a96f46",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-app-icon-dark.svg",
+    "status": 200,
+    "sha256": "fd2fdc69ac465d883ddff3299cc7d154c9b924d57a440a335c5cedbc27b80233",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-app-icon-light.svg",
+    "status": 200,
+    "sha256": "aed4b9bcbcca144bc98597a51fdc5f0e3ba225e704016ea530fa59d00bf81f61",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-wordmark-white.svg",
+    "status": 200,
+    "sha256": "db7d61e6342cd4e3a23b2f2a408719878363256b992cfca2e3d32bbc1e324b08",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-wordmark.svg",
+    "status": 200,
+    "sha256": "0b9f7d466c03721afff0d2ab256c30f33e02ed1e15f1c700da415c2d34a20176",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-mark-white.svg",
+    "status": 200,
+    "sha256": "5e1d3fe468c7413e4b86884f9ff4c8013fdd59b893bc0b93fbdce64c68208ce3",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-mark.svg",
+    "status": 200,
+    "sha256": "f2557ae98103f83c30b0286bfe63f13b7a494d9d339a473651c2b71086a65750",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-logo-512.png",
+    "status": 200,
+    "sha256": "6de43f7c999bfb0f43144d017372eb44158938401bbb96ded6cb52cdf8be9b52",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-app-icon-light.png",
+    "status": 200,
+    "sha256": "d2a633ab43bb001c190ed9496c76c637fab7d6b8a85631b6903fc40cdf2ba1cc",
+    "matches": true
+  },
+  {
+    "path": "brand/findez-app-icon-dark.png",
+    "status": 200,
+    "sha256": "57eda693fcf9cab08b9f549758070dce0b38834fa6575e9ec4cd21a64f6d61b2",
+    "matches": true
+  },
+  {
+    "path": "favicon.ico",
+    "status": 200,
+    "sha256": "5110f036d375d42e254d4e9527512af34963193e8f087e85b8eb6c4c7063c736",
+    "matches": true
+  },
+  {
+    "path": "favicon.png",
+    "status": 200,
+    "sha256": "a021656c9b6b0d9ef8c0142c8bec7ef001c6f84cf58fd0ee47f71ad1abbf3fb9",
+    "matches": true
+  },
+  {
+    "path": "apple-touch-icon.png",
+    "status": 200,
+    "sha256": "f360adedd427516a5fc3b282927dbdd4f2e1e1de98cb948a0eecf4b45d751a91",
+    "matches": true
+  },
+  {
+    "path": "images/findez-favicon.svg",
+    "status": 200,
+    "sha256": "1bc42d87f67ca661024f6986a7b0b5ca8b98da02a106df4ffd55ab0b50a96f46",
+    "matches": true
+  },
+  {
+    "path": "images/landing-lab/findez-wordmark.svg",
+    "status": 200,
+    "sha256": "0b9f7d466c03721afff0d2ab256c30f33e02ed1e15f1c700da415c2d34a20176",
+    "matches": true
+  }
+]

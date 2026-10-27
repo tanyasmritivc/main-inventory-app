@@ -1,0 +1,22 @@
+{
+  "version": "1.1.1",
+  "build": 139,
+  "source_commit": "d7cfb0590c41a69ff528d6b4d1b06365b3a6a818",
+  "uploaded": true,
+  "apple_validation": true,
+  "physical_acceptance": "unverified",
+  "backend_activation": "pending migration 081 and deployment; push dispatch disabled",
+  "archive_device_executables_verified": 34,
+  "export_device_executables_verified": 34,
+  "strict_archive_signature_verified": true,
+  "ipa_sha256": "ce2b6e2fab85938dc170eec0f7dd3da19f7f9ef29a0f9c596e9e9a385babf92f",
+  "archive_preserved": true,
+  "validated_ipa_sha256": "ce2b6e2fab85938dc170eec0f7dd3da19f7f9ef29a0f9c596e9e9a385babf92f",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "delivery_uuid": "c0eb1702-45ea-425c-96c9-118ae45fcba3",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/224",
+  "ci_run": 40244305919,
+  "ci_all_five_jobs": "passed",
+  "public_app_store_submission": false
+}

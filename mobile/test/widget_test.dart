@@ -3,20 +3,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/main.dart';
+import 'package:mobile/core/ui/findez_wordmark.dart';
 
 void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'test-anon-key',
+      publishableKey: 'test-anon-key',
     );
   });
 
   testWidgets('renders the FindEZ splash screen', (tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('FindEZ'), findsOneWidget);
+    expect(find.byType(FindEZWordmark), findsOneWidget);
     expect(find.text('FindEZ AI'), findsNothing);
   });
 }

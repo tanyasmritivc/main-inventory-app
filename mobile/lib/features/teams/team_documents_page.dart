@@ -1,3 +1,6 @@
+import '../notifications/notification_bell.dart';
+import '../profile/account_button.dart';
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart' as dio;
@@ -12,6 +15,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/member_avatar.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamDocumentsPage extends StatefulWidget {
   const TeamDocumentsPage({super.key, required this.api, required this.teamId});
@@ -24,15 +29,17 @@ class TeamDocumentsPage extends StatefulWidget {
 }
 
 class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
+  List<Map<String, dynamic>> _members = const [];
   static const _maxBytes = 50 * 1024 * 1024;
 
   bool _loading = true;
+  Timer? _permissionTimer;
   bool _uploading = false;
   String? _error;
   String _role = 'viewer';
   List<Map<String, dynamic>> _documents = const [];
 
-  bool get _canUpload => _role != 'viewer';
+  bool get _canUpload => ['owner', 'mentor', 'member'].contains(_role);
   bool get _canManage => _role == 'owner' || _role == 'mentor';
   String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
@@ -40,18 +47,40 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   void initState() {
     super.initState();
     unawaited(_load());
+    _permissionTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (mounted &&
+          !_loading &&
+          (lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        unawaited(_load(quiet: true));
+      }
+    });
   }
 
-  Future<void> _load() async {
+  @override
+  void dispose() {
+    _permissionTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {
       final result = await widget.api.getTeamDocuments(widget.teamId);
+      List<Map<String, dynamic>> members = const [];
+      try {
+        members = await widget.api.getTeamMembers(widget.teamId);
+      } catch (_) {
+        /* Photos are optional; keep authorized files available. */
+      }
       if (!mounted) return;
       setState(() {
+        _members = members;
         _documents = List<Map<String, dynamic>>.from(
           result['documents'] ?? const [],
         );
@@ -61,6 +90,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
+        _role = 'viewer';
         _error = describeError(error).$1;
         _loading = false;
       });
@@ -72,7 +102,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     HapticFeedback.selectionClick();
     final source = await showModalBottomSheet<_DocumentSource>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Padding(
@@ -82,15 +112,15 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
             children: [
               ListTile(
                 leading: const Icon(CupertinoIcons.photo_on_rectangle),
-                title: const Text('Photo Library'),
-                subtitle: const Text('Photos and videos'),
+                title: const AppText('Photo Library'),
+                subtitle: const AppText('Photos and videos'),
                 onTap: () =>
                     Navigator.pop(sheetContext, _DocumentSource.photoLibrary),
               ),
               ListTile(
                 leading: const Icon(CupertinoIcons.folder),
-                title: const Text('Files'),
-                subtitle: const Text('Documents, spreadsheets, and more'),
+                title: const AppText('Files'),
+                subtitle: const AppText('Documents, spreadsheets, and more'),
                 onTap: () => Navigator.pop(sheetContext, _DocumentSource.files),
               ),
             ],
@@ -200,16 +230,19 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete file?'),
-        content: Text('$filename will be removed for everyone on this team.'),
+        title: const AppText('Delete file?'),
+        content: AppText(
+          '$filename will be removed for everyone on this team.',
+        ),
         actions: [
+          NotificationBell(api: widget.api),
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -232,20 +265,21 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   }
 
   bool _canDelete(Map<String, dynamic> document) {
-    return _canManage || document['uploaded_by']?.toString() == _userId;
+    return _canManage ||
+        (_canUpload && document['uploaded_by']?.toString() == _userId);
   }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(SnackBar(content: AppText(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Documents'),
+        title: const AppText('Documents'),
         actions: [
           if (_canUpload && !_loading)
             IconButton(
@@ -253,6 +287,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
               onPressed: _uploading ? null : _chooseUploadSource,
               icon: const Icon(CupertinoIcons.plus),
             ),
+          AccountButton(api: widget.api),
         ],
         bottom: _uploading
             ? const PreferredSize(
@@ -281,6 +316,13 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
                         final document = _documents[index];
                         return _DocumentRow(
                           document: document,
+                          member: _members
+                              .where(
+                                (member) =>
+                                    member['user_id'] ==
+                                    document['uploaded_by'],
+                              )
+                              .firstOrNull,
                           canDelete: _canDelete(document),
                           onOpen: () => _open(document),
                           onDelete: () => _delete(document),
@@ -300,58 +342,84 @@ class _DocumentRow extends StatelessWidget {
     required this.canDelete,
     required this.onOpen,
     required this.onDelete,
+    this.member,
   });
 
   final Map<String, dynamic> document;
+  final Map<String, dynamic>? member;
   final bool canDelete;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
 
   String get _filename => document['filename']?.toString() ?? 'Untitled file';
 
-  ({IconData icon, Color color}) get _appearance {
+  IconData get _icon {
     final name = _filename.toLowerCase();
     final mime = document['mime_type']?.toString().toLowerCase() ?? '';
     if (mime.startsWith('image/') ||
         name.endsWith('.png') ||
         name.endsWith('.jpg') ||
         name.endsWith('.jpeg')) {
-      return (icon: CupertinoIcons.photo, color: const Color(0xFFB9A4E8));
+      return CupertinoIcons.photo;
     }
     if (mime == 'application/pdf' || name.endsWith('.pdf')) {
-      return (icon: CupertinoIcons.doc_text, color: const Color(0xFFE5A0A9));
+      return CupertinoIcons.doc_text;
     }
     if (name.endsWith('.csv') ||
         name.endsWith('.xls') ||
         name.endsWith('.xlsx')) {
-      return (icon: CupertinoIcons.table, color: const Color(0xFF8FCBB6));
+      return CupertinoIcons.table;
     }
     if (name.endsWith('.zip') || name.endsWith('.rar')) {
-      return (icon: CupertinoIcons.archivebox, color: const Color(0xFFE8B184));
+      return CupertinoIcons.archivebox;
     }
-    return (icon: CupertinoIcons.doc, color: const Color(0xFF9FC3E8));
+    return CupertinoIcons.doc;
   }
 
   @override
   Widget build(BuildContext context) {
-    final appearance = _appearance;
     final size = _formatBytes(document['size_bytes']);
     final date = _formatDate(document['created_at']?.toString());
     return Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(18),
       child: ListTile(
         minVerticalPadding: 16,
         contentPadding: const EdgeInsets.fromLTRB(18, 8, 10, 8),
-        leading: Icon(appearance.icon, color: appearance.color, size: 25),
-        title: Text(
+        leading: Icon(_icon, color: AppTheme.textPrimary(context), size: 25),
+        title: AppText(
           _filename,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          [size, date].where((value) => value.isNotEmpty).join(' · '),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              [size, date].where((value) => value.isNotEmpty).join(' · '),
+            ),
+            if (member != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    MemberAvatar(
+                      name: member!['display_name']?.toString() ?? 'Member',
+                      photoUrl: member!['avatar_url']?.toString(),
+                      colorHex: member!['avatar_color']?.toString(),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: AppText(
+                        'Uploaded by ${member!['display_name'] ?? 'Member'}',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         trailing: canDelete
             ? PopupMenuButton<String>(
@@ -360,12 +428,12 @@ class _DocumentRow extends StatelessWidget {
                   if (value == 'delete') onDelete();
                 },
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  PopupMenuItem(value: 'delete', child: AppText('Delete')),
                 ],
               )
-            : const Icon(
+            : Icon(
                 CupertinoIcons.chevron_forward,
-                color: AppColors.muted,
+                color: AppTheme.foreground(context, AppColors.muted),
                 size: 16,
               ),
         onTap: onOpen,
@@ -386,18 +454,22 @@ class _EmptyState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 36),
     children: [
       SizedBox(height: MediaQuery.sizeOf(context).height * .23),
-      const Icon(CupertinoIcons.doc_on_doc, size: 40, color: Colors.white),
+      Icon(
+        CupertinoIcons.doc_on_doc,
+        size: 40,
+        color: AppTheme.foreground(context, Colors.white),
+      ),
       const SizedBox(height: 20),
-      const Text(
+      const AppText(
         'No files yet',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
-      const Text(
+      AppText(
         'Shared files will appear here.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: AppColors.muted),
+        style: TextStyle(color: AppTheme.foreground(context, AppColors.muted)),
       ),
       if (canUpload) ...[
         const SizedBox(height: 24),
@@ -405,7 +477,7 @@ class _EmptyState extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(CupertinoIcons.plus),
-            label: const Text('Add file'),
+            label: const AppText('Add file'),
           ),
         ),
       ],
@@ -426,18 +498,20 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          const AppText(
             'Couldn’t load files',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+            ),
           ),
           const SizedBox(height: 20),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(onPressed: onRetry, child: const AppText('Try again')),
         ],
       ),
     ),

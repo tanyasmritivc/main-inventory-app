@@ -2,9 +2,6 @@ import type { MetadataRoute } from "next";
 
 const publicRoutes = [
   "",
-  "/product/capture",
-  "/product/ask",
-  "/product/spaces-and-sharing",
   "/privacy",
   "/terms",
   "/docs/api",

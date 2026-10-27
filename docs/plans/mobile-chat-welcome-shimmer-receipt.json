@@ -1,0 +1,21 @@
+{
+  "version": "1.1.1",
+  "build": 149,
+  "source_commit": "6044eb06425579411ab59c87c4a6888e8fcbcc4f",
+  "uploaded": true,
+  "delivery_uuid": "26c6c078-ae68-4312-88cb-d5ccfeb9d9de",
+  "ipa_sha256": "349120e9b861cd009fb5e8343b00ca57f9d1a5dd06a4c9a4eedd065620178fd8",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "ci_run": 40450237050,
+  "ci_gates": 5,
+  "full_tests": 1190,
+  "existing_skips": 1,
+  "final_focused_tests": 4,
+  "native_checks": 4,
+  "analysis": "clean",
+  "heading_sweep_seconds": 4,
+  "heading_pause_seconds": 1,
+  "public_submission": false,
+  "physical_device_acceptance": "unverified"
+}

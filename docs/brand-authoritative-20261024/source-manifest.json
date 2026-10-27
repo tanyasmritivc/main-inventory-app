@@ -1,0 +1,30 @@
+{
+  "findez-favicon.svg": {
+    "provided_file": "findez-favicon.svg",
+    "sha256": "d9c77bcad993bd15bf66e43daded7c67a16a084daa81dd330ada70e6372bcc04"
+  },
+  "findez-app-icon-dark.svg": {
+    "provided_file": "findez-app-icon-dark.svg",
+    "sha256": "1f8595706083e76b72da3cb87c42931f3169a6d6826df8152ca9591155576526"
+  },
+  "findez-app-icon-light.svg": {
+    "provided_file": "findez-app-icon-light.svg",
+    "sha256": "f9dd6e8ae81a7be6022a95c30f73915a6b24ceda87cd5892850499efb81c598b"
+  },
+  "findez-wordmark-white.svg": {
+    "provided_file": "findez-wordmark-white.svg",
+    "sha256": "4e41c8026060f97c16769c6bf64de5d93f6d06b9138ef46bcad156bbca52351e"
+  },
+  "findez-mark-white.svg": {
+    "provided_file": "findez-mark-white.svg",
+    "sha256": "39f6e7f97299d3e25a4fff25abdfb968d17729c0e8201cc0731778706a6eb804"
+  },
+  "findez-wordmark.svg": {
+    "provided_file": "findez-wordmark-2.svg",
+    "sha256": "6ab56fc92f930ca82079f42abadbe6883bb637056e73bcace81f5810c815d109"
+  },
+  "findez-mark.svg": {
+    "provided_file": "findez-mark-2.svg",
+    "sha256": "0e51dcaaf68cbbfeba01224fd1380b016f5e29c989312f4fc7ab97298ad76b76"
+  }
+}

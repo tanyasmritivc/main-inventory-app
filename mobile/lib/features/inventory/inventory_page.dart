@@ -1,4 +1,12 @@
+import '../../core/account_refresh.dart';
+import '../../core/ui/native_menu_button.dart';
+import '../review/review_queue_page.dart';
+import '../workspaces/resource_removal.dart';
+import 'package:mobile/core/private_image.dart';
+import '../notifications/notification_bell.dart';
+import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
+import '../profile/account_button.dart';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -7,12 +15,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/restock_plan.dart';
+import '../../core/ui/restock_status.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -24,6 +35,7 @@ import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
 import 'item_sort.dart';
+import 'space_icon_picker.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import '../scan/import_sheet_page.dart';
@@ -34,6 +46,7 @@ import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/space_members_page.dart';
 import '../showcase/tutorial_controller.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -44,12 +57,14 @@ class InventoryPage extends StatefulWidget {
     this.showAppBar = true,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
+    this.onSpaceDeleted,
   });
 
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
   final bool showAppBar;
+  final ValueChanged<String>? onSpaceDeleted;
   final void Function(VoidCallback)? onRegisterJoinSpace;
   final void Function(Future<void> Function(Map<String, dynamic>))?
   onRegisterOpenAssistDestination;
@@ -84,6 +99,10 @@ class LocationItemsPage extends StatefulWidget {
 
 class _LocationItemsPageState extends State<LocationItemsPage>
     with SingleTickerProviderStateMixin {
+  late final AccountRefresh _accountRefresh;
+  late String _location;
+  String? _syncError;
+  bool _removed = false;
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
   bool _changed = false;
@@ -94,11 +113,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
+  bool _onlyLowQuantity = false;
   late final TextEditingController _spaceSearchController;
   ItemSortOption _sortOption = ItemSortOption.nameAZ;
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     _fabController.dispose();
     _joinCodeCtrl.dispose();
     _listScrollController.dispose();
@@ -122,6 +143,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   @override
   void initState() {
     super.initState();
+    _location = widget.location;
+    _accountRefresh = AccountRefresh(
+      refresh: _refreshSpace,
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_fabOpen),
+    );
     _fabController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -135,12 +162,50 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
     _rebuildCategoryKeys();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  }
+
+  Future<void> _refreshSpace() async {
+    try {
+      final spaces = await widget.api.listSpaces();
       if (!mounted) return;
-      unawaited(
-        TutorialController.instance.maybeShowSpaceStep(context: context),
+      final matches = spaces.where(
+        (space) => widget.spaceId != null
+            ? (space['id'] ?? space['space_id']) == widget.spaceId
+            : space['name'] == _location,
       );
-    });
+      if (matches.isEmpty && widget.spaceId != null) {
+        setState(() {
+          _removed = true;
+          _items = [];
+        });
+        return;
+      }
+      final name = matches.firstOrNull?['name']?.toString() ?? _location;
+      final result = await widget.api.searchItems(query: '');
+      if (!mounted) return;
+      setState(() {
+        _location = name;
+        _syncError = null;
+        _items = result.items
+            .where(
+              (item) => widget.spaceId != null
+                  ? item.spaceId == widget.spaceId
+                  : item.location == name,
+            )
+            .toList();
+        _rebuildCategoryKeys();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _syncError = describeError(error).$1;
+        if (error is dio.DioException &&
+            [401, 403, 404, 410].contains(error.response?.statusCode)) {
+          _removed = true;
+          _items = [];
+        }
+      });
+    }
   }
 
   int _totalCount() {
@@ -153,8 +218,10 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   int _lowCount() {
     var n = 0;
     for (final it in _items) {
-      final thr = _thresholds[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
+      final thr = it.reorderEnabled
+          ? it.reorderThreshold
+          : _thresholds[it.itemId];
+      if ((thr != null && thr >= 0 && it.quantity <= thr) || it.quantity <= 0) {
         n++;
       }
     }
@@ -162,72 +229,32 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    if (widget.readOnly) {
-      _showProductInfo(context, item);
-      return;
-    }
-    final currentThreshold = _thresholds[item.itemId];
-    final updates = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) =>
-          ItemEditorSheet(item: item, initialThreshold: currentThreshold),
-    );
-    if (updates == null) return;
-
-    try {
-      final updated = await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(
-        itemId: item.itemId,
-        threshold: updates.threshold,
-      );
-
-      final nextThresholds = Map<String, int>.from(_thresholds);
-      if (updates.threshold == null || updates.threshold! <= 0) {
-        nextThresholds.remove(item.itemId);
-      } else {
-        nextThresholds[item.itemId] = updates.threshold!;
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _thresholds = nextThresholds;
-        final idx = _items.indexWhere((e) => e.itemId == item.itemId);
-        if (idx != -1) {
-          _items[idx] = updated;
-        }
-        _changed = true;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Inventory updated')));
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
-    }
+    _showProductInfo(context, item);
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final ok = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text(item.name),
+        title: const AppText('Delete item?'),
+        content: AppText(item.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -247,24 +274,25 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Item deleted')));
     } on dio.DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
   }
 
   Widget _buildItemRow(InventoryItem item) {
     final threshold = _thresholds[item.itemId];
     final isLow =
-        threshold != null && threshold > 0 && item.quantity <= threshold;
+        threshold != null && threshold >= 0 && item.quantity <= threshold;
+    final imageUrl = (item.imageUrl ?? '').trim();
     return Dismissible(
       key: ValueKey(item.itemId),
       direction: widget.readOnly
@@ -273,14 +301,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 16),
-        color: AppColors.swipe,
+        color: AppTheme.adaptive(context, AppColors.swipe),
         child: const Icon(Icons.edit_outlined),
       ),
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
-        color: const Color(0x1AFF3B30),
-        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+        color: AppTheme.adaptive(context, const Color(0x1AFF3B30)),
+        child: Icon(
+          Icons.delete_outline,
+          color: AppTheme.foreground(context, AppColors.danger),
+        ),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -299,27 +330,40 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
+              if (imageUrl.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: PrivateImage(
+                    imageUrl,
+                    width: 52,
+                    height: 52,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       item.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       [
                         if (item.displayDescription != null)
                           item.displayDescription!,
                         item.category,
                       ].join(' · '),
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                         fontSize: 13,
                       ),
                     ),
@@ -327,37 +371,26 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 ),
               ),
               if (isLow) ...[
-                const Icon(
+                Icon(
                   Icons.error_outline_rounded,
                   size: 16,
-                  color: AppColors.danger,
+                  color: AppTheme.foreground(context, AppColors.danger),
                 ),
                 const SizedBox(width: 8),
               ],
-              Text(
+              AppText(
                 'Qty ${item.quantity}',
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => _showProductInfo(context, item),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.info_outline,
-                    color: Color(0x4DFFFFFF),
-                    size: 14,
-                  ),
+                style: TextStyle(
+                  fontFamily: 'GeistMono',
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  fontSize: 13,
                 ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: 'Details for ${item.displayName}',
+                onPressed: () => _showProductInfo(context, item),
+                icon: const Icon(Icons.info_outline, size: 20),
               ),
             ],
           ),
@@ -370,13 +403,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     _joinCodeCtrl.clear();
     String? error;
     await showDialog(
+      useRootNavigator: false,
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text(
+          title: AppText(
             'Join a Space',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -389,22 +423,35 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  letterSpacing: 4,
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 20,
+                    letterSpacing: 4,
+                  ),
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
+                  ),
+                  counterStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
+                  ),
                 ),
               ),
               if (error != null)
-                Text(
+                AppText(
                   error!,
-                  style: const TextStyle(
-                    color: Color(0xFFFF453A),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
                     fontSize: 12,
                   ),
                 ),
@@ -413,7 +460,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dlgCtx),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -428,7 +475,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Joined! Check Joined Spaces to view.'),
+                        content: AppText(
+                          'Joined! Check Joined Spaces to view.',
+                        ),
                       ),
                     );
                   }
@@ -436,7 +485,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   setDlgState(() => error = 'Invalid code or already joined.');
                 }
               },
-              child: const Text('Join'),
+              child: const AppText('Join'),
             ),
           ],
         ),
@@ -459,109 +508,20 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   bool _matchesSpaceSearch(InventoryItem item) {
-    final q = _spaceSearchQuery.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    return item.name.toLowerCase().contains(q) ||
-        (item.brand?.toLowerCase().contains(q) ?? false) ||
-        item.category.toLowerCase().contains(q);
+    if (_onlyLowQuantity &&
+        item.quantity >
+            ((item.reorderEnabled
+                    ? item.reorderThreshold
+                    : _thresholds[item.itemId]) ??
+                0)) {
+      return false;
+    }
+    return item.searchScore(_spaceSearchQuery) > 0;
   }
 
   void _onCategoryPillTapped(String cat) {
     setState(() => _selectedCategory = cat);
-    _listScrollController.jumpTo(0);
-  }
-
-  Future<void> _addItem() async {
-    final created = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) => ItemEditorSheet(initialLocation: widget.location),
-    );
-    if (created == null) return;
-    try {
-      final out = await widget.api.addItem(item: created.add);
-      await LowStockPrefs.setThreshold(
-        itemId: out.itemId,
-        threshold: created.threshold,
-      );
-      _changed = true;
-      final result = await widget.api.searchItems(query: '');
-      if (!mounted) return;
-      final locationItems =
-          result.items.where((i) => i.spaceId == widget.spaceId).toList()..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          );
-      setState(() {
-        _items = locationItems;
-        _rebuildCategoryKeys();
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
-    } on SessionExpiredException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please sign in again.')),
-      );
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      if (e.response?.statusCode == 429) {
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 429 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-        return;
-      }
-      if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
-        if (!ProStatus.isPro) {
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: 'You\'ve reached the free item limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 403 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Connection issue. Please try again.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-        ),
-      );
-    }
+    if (_listScrollController.hasClients) _listScrollController.jumpTo(0);
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -572,7 +532,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       api: widget.api,
       permission: widget.readOnly ? 'view' : 'edit',
       initialThreshold: existingThr,
-      spaceName: widget.location,
+      spaceName: _location,
       onItemUpdated: (updated) {
         if (!mounted) return;
         final index = _items.indexWhere(
@@ -601,7 +561,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     await runUploadPhotoFlow(
       context: context,
       api: widget.api,
-      preselectedSpace: widget.location,
+      preselectedSpace: _location,
       onItemsSaved: () async {
         if (!mounted) return;
         _changed = true;
@@ -622,7 +582,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Items saved, but the list could not refresh.'),
+              content: AppText('Items saved, but the list could not refresh.'),
             ),
           );
         }
@@ -633,8 +593,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            ImportSheetPage(api: widget.api, location: widget.location),
+        builder: (_) => ImportSheetPage(api: widget.api, location: _location),
       ),
     );
     if (imported != true) return;
@@ -657,7 +616,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Import finished, but the list could not refresh.'),
+          content: AppText('Import finished, but the list could not refresh.'),
         ),
       );
     }
@@ -665,15 +624,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   void _openBuildReadiness() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) =>
-          BomReadinessPage(api: widget.api, location: widget.location),
+      builder: (_) => BomReadinessPage(api: widget.api, location: _location),
     ),
   );
 
   void _openProjectKits() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) =>
-          ProjectKitsPage(api: widget.api, location: widget.location),
+      builder: (_) => ProjectKitsPage(api: widget.api, location: _location),
     ),
   );
 
@@ -681,7 +638,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     await runSpaceBarcodeFlow(
       context: context,
       api: widget.api,
-      preselectedSpace: widget.location,
+      preselectedSpace: _location,
       onItemsSaved: () async {
         if (!mounted) return;
         _changed = true;
@@ -727,65 +684,69 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         .where((c) => filteredGroups.containsKey(c))
         .toList();
 
-    if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
-      return const Center(
-        child: Text(
-          'No items match your search',
-          style: TextStyle(color: Color(0x4DFFFFFF)),
+    if (filteredCats.isEmpty &&
+        (_spaceSearchQuery.trim().isNotEmpty || _onlyLowQuantity)) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            _onlyLowQuantity
+                ? 'No low-quantity items match this view'
+                : 'No items match your search',
+          ),
         ),
       );
     }
 
-    return ListView(
-      controller: _listScrollController,
-      padding: const EdgeInsets.only(bottom: 16),
-      children: [
-        for (final cat in filteredCats) ...[
-          Padding(
-            key: _categoryKeys[cat],
-            padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
-            child: Text(
-              cat.toUpperCase(),
-              style: const TextStyle(
-                color: Color(0x4DFFFFFF),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
+    // One lazy viewport for the entire Space, including category headings.
+    final entries = <Object>[];
+    for (final cat in filteredCats) {
+      entries.add(cat);
+      entries.addAll(filteredGroups[cat]!);
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+      sliver: SliverList.builder(
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          if (entry is String) {
+            return Padding(
+              key: _categoryKeys[entry],
+              padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
+              child: Text(
+                '$entry  ·  ${filteredGroups[entry]!.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textSecondary(context),
+                ),
               ),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: _buildItemRow(entry as InventoryItem),
             ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF171717),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-            ),
-            clipBehavior: Clip.hardEdge,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
-                  _buildItemRow(filteredGroups[cat]![i]),
-                  if (i < filteredGroups[cat]!.length - 1)
-                    const Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      indent: 16,
-                      endIndent: 16,
-                      color: Color(0x14FFFFFF),
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ],
+          );
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_removed) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Space unavailable')),
+        body: const Center(
+          child: Text('This Space was deleted or is no longer available.'),
+        ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -796,55 +757,52 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       child: Scaffold(
         backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
-          title: Text(widget.location),
+          title: AppText(_location),
+          bottom: _syncError == null
+              ? null
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(44),
+                  child: Text(_syncError!),
+                ),
           centerTitle: true,
           leading: BackButton(
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
-              color: const Color(0xFF1C1C1E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+            NotificationBell(api: widget.api),
+            AppMenuButton(
+              label: 'Space options',
+              useNative: false,
               onSelected: _onFabItemTap,
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: 'Import Spreadsheet',
-                  child: ListTile(
-                    leading: Icon(Icons.table_chart_outlined),
-                    title: Text('Import Spreadsheet'),
+              items: [
+                if (!widget.readOnly)
+                  const AppMenuItem(
+                    'Import Spreadsheet',
+                    'Import Spreadsheet',
+                    'tablecells',
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'Share Space',
-                  child: ListTile(
-                    leading: Icon(Icons.share_outlined),
-                    title: Text('Share Space'),
+                if (!widget.readOnly &&
+                    (widget.api.inventoryContext == null ||
+                        widget.api.inventoryContext!.isPersonal))
+                  const AppMenuItem(
+                    'Share Space',
+                    'Share Space',
+                    'square.and.arrow.up',
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'Join Space',
-                  child: ListTile(
-                    leading: Icon(Icons.person_add_outlined),
-                    title: Text('Join Space'),
+                if (widget.api.inventoryContext == null)
+                  const AppMenuItem(
+                    'Join Space',
+                    'Join Space',
+                    'person.badge.plus',
                   ),
+                const AppMenuItem(
+                  'Print Bin Label',
+                  'Print Bin Label',
+                  'qrcode',
                 ),
-                PopupMenuItem(
-                  value: 'Print Bin Label',
-                  child: ListTile(
-                    leading: Icon(Icons.qr_code_2),
-                    title: Text('Print Bin Label'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'Members',
-                  child: ListTile(
-                    leading: Icon(Icons.people_outline),
-                    title: Text('Members'),
-                  ),
-                ),
+                if (widget.api.inventoryContext == null ||
+                    widget.api.inventoryContext!.isPersonal)
+                  const AppMenuItem('Members', 'Members', 'person.2'),
               ],
             ),
           ],
@@ -857,6 +815,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             Container(
               color: AppTheme.bg(context),
               child: CustomScrollView(
+                controller: _listScrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
                   // Stats bar + action toolbar — scrolls away
                   SliverToBoxAdapter(
@@ -865,27 +826,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       children: [
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                          child: Row(
-                            children: [
-                              _StatChip(
-                                icon: Icons.inventory_2_outlined,
-                                label:
-                                    '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              if (_lowCount() > 0)
-                                _StatChip(
-                                  icon: Icons.warning_amber_outlined,
-                                  label: '${_lowCount()} low stock',
-                                  color: const Color(0xFFFBBF24),
+                          child: Text(
+                            '${_items.length} items · ${_totalCount()} units',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.textSecondary(context),
                                 ),
-                            ],
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          child: _buildProjectsCard(),
+                          child: _buildReviewCard(),
                         ),
                       ],
                     ),
@@ -893,193 +844,221 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
                   // Search bar + category pills — pinned
                   if (_items.isNotEmpty)
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _SearchPinDelegate(
-                        height: 132,
-                        child: Container(
-                          color: Colors.black,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Search bar + sort button
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
-                                child: SizedBox(
-                                  height: 44,
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF171717),
-                                            borderRadius: BorderRadius.circular(
-                                              14,
-                                            ),
-                                            border: Border.all(
-                                              color: const Color(0x14FFFFFF),
-                                              width: 0.5,
-                                            ),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        color: AppTheme.adaptive(context, Colors.black),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Search bar + sort button
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              child: SizedBox(
+                                height: 44,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.adaptive(
+                                            context,
+                                            const Color(0xFF171717),
                                           ),
-                                          child: TextField(
-                                            controller: _spaceSearchController,
-                                            style: const TextStyle(
-                                              color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          border: Border.all(
+                                            color: AppTheme.adaptive(
+                                              context,
+                                              const Color(0x14FFFFFF),
+                                            ),
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: TextField(
+                                          controller: _spaceSearchController,
+                                          style: AppTypography.bodyStyleOf(
+                                            context,
+                                            TextStyle(
+                                              color: AppTheme.foreground(
+                                                context,
+                                                Colors.white,
+                                              ),
                                               fontSize: 14,
                                             ),
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  'Search in this space...',
-                                              hintStyle: const TextStyle(
-                                                color: Color(0x4DFFFFFF),
-                                                fontSize: 14,
-                                              ),
-                                              prefixIcon: const Icon(
-                                                Icons.search,
-                                                color: Color(0x4DFFFFFF),
-                                                size: 20,
-                                              ),
-                                              border: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              focusedBorder: InputBorder.none,
-                                              filled: false,
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 13,
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText: 'Search in this space...',
+                                            hintStyle:
+                                                AppTypography.bodyStyleOf(
+                                                  context,
+                                                  TextStyle(
+                                                    color: AppTheme.foreground(
+                                                      context,
+                                                      Color(0x4DFFFFFF),
+                                                    ),
+                                                    fontSize: 14,
                                                   ),
-                                              suffixIcon:
-                                                  _spaceSearchQuery.isNotEmpty
-                                                  ? GestureDetector(
-                                                      onTap: () {
-                                                        _spaceSearchController
-                                                            .clear();
-                                                        setState(
-                                                          () =>
-                                                              _spaceSearchQuery =
-                                                                  '',
-                                                        );
-                                                        FocusScope.of(
-                                                          context,
-                                                        ).unfocus();
-                                                      },
-                                                      child: const Icon(
-                                                        Icons.close,
-                                                        color: Color(
-                                                          0x4DFFFFFF,
-                                                        ),
-                                                        size: 16,
-                                                      ),
-                                                    )
-                                                  : null,
+                                                ),
+                                            prefixIcon: Icon(
+                                              Icons.search,
+                                              color: AppTheme.foreground(
+                                                context,
+                                                Color(0x4DFFFFFF),
+                                              ),
+                                              size: 20,
                                             ),
-                                            textInputAction:
-                                                TextInputAction.search,
-                                            onSubmitted: (_) => FocusManager
-                                                .instance
-                                                .primaryFocus
-                                                ?.unfocus(),
-                                            onChanged: (v) => setState(
-                                              () => _spaceSearchQuery = v,
-                                            ),
+                                            border: InputBorder.none,
+                                            enabledBorder: InputBorder.none,
+                                            focusedBorder: InputBorder.none,
+                                            filled: false,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  vertical: 13,
+                                                ),
+                                            suffixIcon:
+                                                _spaceSearchQuery.isNotEmpty
+                                                ? GestureDetector(
+                                                    onTap: () {
+                                                      _spaceSearchController
+                                                          .clear();
+                                                      setState(
+                                                        () =>
+                                                            _spaceSearchQuery =
+                                                                '',
+                                                      );
+                                                      FocusScope.of(
+                                                        context,
+                                                      ).unfocus();
+                                                    },
+                                                    child: Icon(
+                                                      Icons.close,
+                                                      color:
+                                                          AppTheme.foreground(
+                                                            context,
+                                                            Color(0x4DFFFFFF),
+                                                          ),
+                                                      size: 16,
+                                                    ),
+                                                  )
+                                                : null,
+                                          ),
+                                          textInputAction:
+                                              TextInputAction.search,
+                                          onSubmitted: (_) => FocusManager
+                                              .instance
+                                              .primaryFocus
+                                              ?.unfocus(),
+                                          onChanged: (v) => setState(
+                                            () => _spaceSearchQuery = v,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: () => showItemSortSheet(
-                                          context,
-                                          _sortOption,
-                                          (opt) async {
-                                            await saveSortPref(opt);
-                                            if (mounted) {
-                                              setState(() => _sortOption = opt);
-                                            }
-                                          },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => showItemSortSheet(
+                                        context,
+                                        _sortOption,
+                                        (opt) async {
+                                          await saveSortPref(opt);
+                                          if (mounted) {
+                                            setState(() => _sortOption = opt);
+                                          }
+                                        },
+                                      ),
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.adaptive(
+                                            context,
+                                            const Color(0xFF171717),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          border: Border.all(
+                                            color: AppTheme.adaptive(
+                                              context,
+                                              const Color(0x14FFFFFF),
+                                            ),
+                                            width: 0.5,
+                                          ),
                                         ),
-                                        child: Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF171717),
-                                            borderRadius: BorderRadius.circular(
-                                              14,
-                                            ),
-                                            border: Border.all(
-                                              color: const Color(0x14FFFFFF),
-                                              width: 0.5,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.sort,
-                                            color:
-                                                _sortOption !=
-                                                    ItemSortOption.nameAZ
-                                                ? Colors.white
-                                                : const Color(0x4DFFFFFF),
-                                            size: 20,
-                                          ),
+                                        child: Icon(
+                                          Icons.sort,
+                                          color:
+                                              _sortOption !=
+                                                  ItemSortOption.nameAZ
+                                              ? AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                )
+                                              : AppTheme.foreground(
+                                                  context,
+                                                  const Color(0x4DFFFFFF),
+                                                ),
+                                          size: 20,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              // Category filter pills
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: SizedBox(
-                                  height: 68,
-                                  child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    physics: const BouncingScrollPhysics(),
-                                    separatorBuilder: (_, _) =>
-                                        const SizedBox(width: 8),
-                                    itemCount: _sortedCategoryPills().length,
-                                    itemBuilder: (_, i) {
-                                      final pills = _sortedCategoryPills();
-                                      final label = pills[i];
-                                      final isActive =
-                                          _selectedCategory == label;
-                                      return GestureDetector(
-                                        onTap: () =>
-                                            _onCategoryPillTapped(label),
+                            ),
+                            // Category filter pills
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SizedBox(
+                                height: 68,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  physics: const BouncingScrollPhysics(),
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(width: 8),
+                                  itemCount: _sortedCategoryPills().length,
+                                  itemBuilder: (_, i) {
+                                    final pills = _sortedCategoryPills();
+                                    final label = pills[i];
+                                    final isActive = _selectedCategory == label;
+                                    return GestureDetector(
+                                      onTap: () => _onCategoryPillTapped(label),
+                                      child: GlassControl(
+                                        radius: 20,
+                                        selected: isActive,
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: isActive
-                                                ? Colors.white
-                                                : const Color(0xFF171717),
+                                            color: Colors.transparent,
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
-                                            border: isActive
-                                                ? null
-                                                : Border.all(
-                                                    color: const Color(
-                                                      0x14FFFFFF,
-                                                    ),
-                                                    width: 0.5,
-                                                  ),
                                           ),
                                           child: Center(
-                                            child: Text(
+                                            child: AppText(
                                               label,
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: isActive
-                                                    ? Colors.black
-                                                    : const Color(0x73FFFFFF),
+                                                    ? AppTheme.accentForeground(
+                                                        context,
+                                                      )
+                                                    : AppTheme.foreground(
+                                                        context,
+                                                        const Color(0x73FFFFFF),
+                                                      ),
                                                 fontSize: 13,
                                                 fontWeight: isActive
                                                     ? FontWeight.w500
@@ -1088,13 +1067,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                             ),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1102,52 +1081,65 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   // Empty state or items list
                   if (_items.isEmpty)
                     SliverFillRemaining(
+                      hasScrollBody: false,
                       child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.add_box_outlined,
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               size: 48,
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            AppText(
                               'This space is empty',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Add your first item to save this space.',
+                            AppText(
+                              'Add items here when you are ready.',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            if (!widget.readOnly) ...[
+                            if (!widget.readOnly && widget.api.canEdit) ...[
                               const SizedBox(height: 24),
                               GestureDetector(
-                                onTap: () => _addItem(),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(99),
-                                  ),
-                                  child: const Text(
-                                    'Add Item',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                onTap: _toggleFab,
+                                child: GlassControl(
+                                  radius: 99,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: AppText(
+                                      'Add Item',
+                                      style: TextStyle(
+                                        color: AppTheme.textPrimary(context),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1158,10 +1150,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       ),
                     )
                   else
-                    SliverFillRemaining(
-                      hasScrollBody: true,
-                      child: _buildGroupedList(),
-                    ),
+                    _buildGroupedList(),
                 ],
               ),
             ),
@@ -1174,15 +1163,22 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 child: GestureDetector(
                   onTap: () {
                     setState(() => _fabOpen = false);
-                    _fabController.reverse();
+                    _fabController.value = 0;
                   },
-                  child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                  child: Container(
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.black.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        floatingActionButton: widget.readOnly ? null : _buildSpeedDial(),
+        floatingActionButton: widget.readOnly || !widget.api.canEdit
+            ? null
+            : _buildSpeedDial(),
       ),
     );
   }
@@ -1190,17 +1186,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   void _toggleFab() {
     setState(() => _fabOpen = !_fabOpen);
     if (_fabOpen) {
-      _fabController.forward();
+      _fabController.value = 1;
     } else {
-      _fabController.reverse();
+      _fabController.value = 0;
     }
   }
 
   Widget _buildSpeedDial() {
     const items = [
-      _FabItem(icon: Icons.edit_outlined, label: 'Manual Add'),
-      _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+      _FabItem(icon: Icons.camera_alt_outlined, label: 'Scan Photo'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
+      _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
     ];
 
     return Column(
@@ -1257,7 +1253,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, right: 4),
       child: Material(
-        color: AppColors.surface2,
+        color: AppTheme.adaptive(context, AppColors.surface2),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: () => _onFabItemTap(item.label),
@@ -1266,19 +1262,27 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: AppTheme.adaptive(context, AppColors.border),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(item.icon, color: Colors.white, size: 16),
+                Icon(
+                  item.icon,
+                  color: AppTheme.foreground(context, Colors.white),
+                  size: 16,
+                ),
                 const SizedBox(width: 10),
-                Text(
-                  item.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: AppText(
+                    item.label,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -1291,11 +1295,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   void _onFabItemTap(String label) {
     setState(() => _fabOpen = false);
-    _fabController.reverse();
+    _fabController.value = 0;
     switch (label) {
-      case 'Manual Add':
-        unawaited(_addItem());
-      case 'Upload Photo':
+      case 'Scan Photo':
         unawaited(_uploadImage());
       case 'Import Spreadsheet':
         unawaited(_importSpreadsheet());
@@ -1314,8 +1316,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, _) =>
-                ShareSpaceSheet(spaceName: widget.location, api: widget.api),
+            builder: (_, _) => ShareSpaceSheet(
+              spaceName: _location,
+              teamId: widget.api.teamId,
+              api: widget.api,
+            ),
           ),
         );
       case 'Join Space':
@@ -1325,8 +1330,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (_) =>
-              BinLabelSheet(spaceName: widget.location, items: _items),
+          builder: (_) => BinLabelSheet(spaceName: _location, items: _items),
         );
       case 'Members':
         unawaited(() async {
@@ -1335,7 +1339,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             dynamic match;
             for (final s in shares) {
               if ((s['share_name'] ?? '').toString().toLowerCase() ==
-                  widget.location.toLowerCase()) {
+                  _location.toLowerCase()) {
                 match = s;
                 break;
               }
@@ -1346,7 +1350,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 MaterialPageRoute(
                   builder: (_) => SpaceMembersPage(
                     shareId: match['share_id'].toString(),
-                    spaceName: widget.location,
+                    spaceName: _location,
                     api: widget.api,
                   ),
                 ),
@@ -1357,7 +1361,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Couldn’t load space members. Try again.'),
+                  content: AppText('Couldn’t load space members. Try again.'),
                 ),
               );
             }
@@ -1365,120 +1369,100 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("This space isn't shared yet")),
+              const SnackBar(content: AppText("This space isn't shared yet")),
             );
           }
         }());
     }
   }
 
-  Widget _buildProjectsCard() => Material(
-    key: TutorialController.projectsCardKey,
-    color: AppColors.surface,
+  Widget _buildReviewCard() => Material(
+    color: AppTheme.adaptive(context, AppColors.surface),
     borderRadius: BorderRadius.circular(16),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: _showProjectsMenu,
-      child: const Padding(
-        padding: EdgeInsets.all(16),
+    clipBehavior: Clip.antiAlias,
+    child: IntrinsicHeight(
+      child: Row(
+        children: [
+          Expanded(
+            child: _reviewAction(
+              icon: Icons.photo_library_outlined,
+              title: 'Review',
+              subtitle: 'Items to finish',
+              onTap: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => ReviewQueuePage(
+                    api: widget.api,
+                    location: _location,
+                    onInventoryMutated: () => _changed = true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          VerticalDivider(
+            width: 1,
+            indent: 16,
+            endIndent: 16,
+            color: AppTheme.border(context),
+          ),
+          Expanded(
+            child: _reviewAction(
+              icon: Icons.inventory_2_outlined,
+              title: 'Low quantity',
+              subtitle: _onlyLowQuantity
+                  ? 'Showing low · Tap to reset'
+                  : '${_lowCount()} items',
+              onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _reviewAction({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) => InkWell(
+    onTap: onTap,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: AppColors.surface2,
-              child: Icon(Icons.inventory_2_outlined, color: Color(0xFFF2F2F7)),
-            ),
-            SizedBox(width: 14),
+            Icon(icon, size: 23),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Projects',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                  AppText(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 3),
-                  Text(
-                    'Build readiness and project kits',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+                  const SizedBox(height: 3),
+                  AppText(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary(context),
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.white54),
           ],
         ),
       ),
     ),
   );
-
-  void _showProjectsMenu() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const ListTile(
-                title: Text(
-                  'Projects',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: Text(
-                  'Plan a build with the inventory you have',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.fact_check_outlined,
-                  color: Color(0xFFF2F2F7),
-                ),
-                title: const Text('Build Readiness'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openBuildReadiness();
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.inventory_2_outlined,
-                  color: Color(0xFFF2F2F7),
-                ),
-                title: const Text('Project Kits'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openProjectKits();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _FabItem {
@@ -1489,15 +1473,24 @@ class _FabItem {
 
 class _InventoryPageState extends State<InventoryPage>
     with WidgetsBindingObserver {
+  late final AccountRefresh _accountRefresh;
   late final TextEditingController _search;
   final ValueNotifier<String> _query = ValueNotifier('');
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
   final ValueNotifier<bool> _aiSearching = ValueNotifier(false);
   final ValueNotifier<Map<String, int>> _thresholds = ValueNotifier(const {});
+  RestockPlan _restockPlan = const RestockPlan({});
+  bool _restockReady = false;
+  bool _restockFailed = false;
 
   final ValueNotifier<String> _category = ValueNotifier('All');
 
   bool _loading = true;
+  bool _hasLoadedItems = false;
+  String? _itemsOwner;
+  Future<void>? _itemsLoad;
+  int _itemsReadGeneration = 0;
+  bool _openingLocation = false;
   String? _error;
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _joinedShares = [];
@@ -1516,7 +1509,20 @@ class _InventoryPageState extends State<InventoryPage>
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () async {
+        await Future.wait([
+          _loadItems(),
+          _loadSpaces(),
+          _loadMyShares(),
+          _loadJoinedShares(),
+        ]);
+      },
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     WidgetsBinding.instance.addObserver(this);
+    RestockPrefs.changes.addListener(_restockChanged);
     _search = TextEditingController();
     _createSpaceCtrl = TextEditingController();
     _joinCodeCtrl = TextEditingController();
@@ -1591,6 +1597,7 @@ class _InventoryPageState extends State<InventoryPage>
     await _openLocation(
       location: spaceName,
       thresholds: await LowStockPrefs.loadAll(),
+      spaceId: hint['space_id']?.toString(),
     );
   }
 
@@ -1599,22 +1606,25 @@ class _InventoryPageState extends State<InventoryPage>
     required String name,
   }) async {
     final confirmed = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave Space?'),
-        content: Text(
+        title: const AppText('Leave Space?'),
+        content: AppText(
           'You will lose access to “$name”. The owner’s Space and items will not be changed.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: AppText(
               'Leave Space',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -1627,33 +1637,19 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Left “$name”')));
+      ).showSnackBar(SnackBar(content: AppText('Left “$name”')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(
-        Future.wait([
-          _loadItems(),
-          _loadMyShares(),
-          _loadJoinedShares(),
-          _loadSpaces(),
-        ]),
-      );
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_items.isEmpty && !_loading) {
+    if (!_hasLoadedItems && !_loading && _itemsLoad == null) {
       unawaited(
         Future.wait([
           _loadItems(),
@@ -1677,6 +1673,45 @@ class _InventoryPageState extends State<InventoryPage>
   Future<void> _openLocation({
     required String location,
     required Map<String, int> thresholds,
+    String? spaceId,
+  }) async {
+    if (!mounted || _openingLocation) return;
+    _openingLocation = true;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    try {
+      // Registration makes navigation available before the cold inventory read
+      // finishes. Never snapshot that uninitialized list into a Space route.
+      if (_itemsLoad != null ||
+          !_hasLoadedItems ||
+          _itemsOwner != owner ||
+          _error != null) {
+        await _loadItems();
+      }
+      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+        return;
+      }
+      if (_error != null || !_hasLoadedItems || _itemsOwner != owner) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: AppText('Could not load this Space. Please try again.'),
+          ),
+        );
+        return;
+      }
+      await _showLocation(
+        location: location,
+        thresholds: thresholds,
+        spaceId: spaceId,
+      );
+    } finally {
+      _openingLocation = false;
+    }
+  }
+
+  Future<void> _showLocation({
+    required String location,
+    required Map<String, int> thresholds,
+    String? spaceId,
   }) async {
     if (!mounted) return;
     final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
@@ -1691,7 +1726,7 @@ class _InventoryPageState extends State<InventoryPage>
         break;
       }
     }
-    if (matchedShare != null) {
+    if (matchedShare != null && spaceId == null) {
       final shareId = (matchedShare['share_id'] ?? '').toString();
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -1707,17 +1742,20 @@ class _InventoryPageState extends State<InventoryPage>
       return;
     }
 
-    final String? spaceId = (loc == 'Unsorted')
-        ? null
-        : (_spaces.firstWhere(
-                (s) =>
-                    (s['name'] as String? ?? '').toLowerCase() ==
-                    loc.toLowerCase(),
-                orElse: () => const <String, dynamic>{},
-              )['id']
-              as String?);
-    final source = _baseItemsForSelectedCategory();
-    final items = source.where((it) => it.spaceId == spaceId).toList();
+    final String? resolvedSpaceId =
+        spaceId ??
+        ((loc == 'Unsorted')
+            ? null
+            : (_spaces.firstWhere(
+                    (s) =>
+                        (s['name'] as String? ?? '').toLowerCase() ==
+                        loc.toLowerCase(),
+                    orElse: () => const <String, dynamic>{},
+                  )['id']
+                  as String?));
+    // A Home Space opens its complete inventory, independent of Find's filter.
+    final source = spaceId == null ? _baseItemsForSelectedCategory() : _items;
+    final items = source.where((it) => it.spaceId == resolvedSpaceId).toList();
 
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -1727,7 +1765,8 @@ class _InventoryPageState extends State<InventoryPage>
           items: items,
           thresholds: thresholds,
           allItems: _items,
-          spaceId: spaceId,
+          spaceId: resolvedSpaceId,
+          readOnly: !widget.api.canEdit,
         ),
       ),
     );
@@ -1765,6 +1804,7 @@ class _InventoryPageState extends State<InventoryPage>
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _search.dispose();
@@ -1774,6 +1814,7 @@ class _InventoryPageState extends State<InventoryPage>
     _query.dispose();
     _rows.dispose();
     _aiSearching.dispose();
+    RestockPrefs.changes.removeListener(_restockChanged);
     _thresholds.dispose();
     _category.dispose();
     super.dispose();
@@ -1788,25 +1829,88 @@ class _InventoryPageState extends State<InventoryPage>
         .toList();
   }
 
-  int _lowStockCount() {
-    var n = 0;
-    for (final it in _items) {
-      final thr = _thresholds.value[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
-        n++;
-      }
+  int _lowStockCount() => _items
+      .where((i) => _restockPlan.needsBuying(i.itemId, i.quantity))
+      .length;
+  int _onOrderCount() =>
+      _items.where((i) => _restockPlan.onOrder(i.itemId)).length;
+  void _restockChanged() => unawaited(_refreshRestock());
+  Future<void> _refreshRestock() async {
+    final account = RestockPrefs.accountKey;
+    try {
+      final plan = await RestockPrefs.load();
+      if (!mounted || account != RestockPrefs.accountKey) return;
+      setState(() {
+        _restockPlan = plan;
+        _restockReady = true;
+        _restockFailed = false;
+      });
+      _thresholds.value = plan.thresholds;
+      unawaited(
+        LowStockNotifications.evaluate(
+          _items
+              .map(
+                (item) => LowStockCandidate(
+                  itemId: item.itemId,
+                  name: item.name,
+                  quantity: item.quantity,
+                  threshold: plan.thresholds[item.itemId] ?? -1,
+                  spaceName: item.location,
+                ),
+              )
+              .toList(),
+        ).catchError((Object error) {
+          if (!mounted || account != RestockPrefs.accountKey) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: AppText(
+                'Could not refresh restock notifications. Your purchase plan is saved.',
+              ),
+            ),
+          );
+        }),
+      );
+    } catch (_) {
+      if (!mounted || account != RestockPrefs.accountKey) return;
+      setState(() {
+        _restockReady = false;
+        _restockFailed = true;
+      });
     }
-    return n;
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _openRestock() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
+    );
+    if (mounted) await _loadItems();
+  }
+
+  Future<void> _loadItems() {
+    final running = _itemsLoad;
+    if (running != null) return running;
+    late final Future<void> request;
+    request = _fetchItems().whenComplete(() {
+      if (identical(_itemsLoad, request)) _itemsLoad = null;
+    });
+    _itemsLoad = request;
+    return request;
+  }
+
+  Future<void> _fetchItems() async {
     if (!mounted) return;
+    final generation = ++_itemsReadGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    bool current() =>
+        mounted &&
+        generation == _itemsReadGeneration &&
+        Supabase.instance.client.auth.currentUser?.id == owner;
     final t0 = DateTime.now().millisecondsSinceEpoch;
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start',
     );
     setState(() {
-      _loading = true;
+      _loading = !_hasLoadedItems;
       _error = null;
     });
 
@@ -1824,47 +1928,45 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)',
       );
-      if (!mounted) return;
+      if (!current()) {
+        return;
+      }
       setState(() {
         _items = result.items;
+        _hasLoadedItems = true;
+        _itemsOwner = owner;
       });
-      LowStockPrefs.loadAll().then((value) {
-        if (!mounted) return;
-        _thresholds.value = value;
-        unawaited(
-          LowStockNotifications.evaluate(
-            result.items.where((item) => value[item.itemId] != null).map((
-              item,
-            ) {
-              return LowStockCandidate(
-                itemId: item.itemId,
-                name: item.name,
-                quantity: item.quantity,
-                threshold: value[item.itemId]!,
-                spaceName: item.location,
-              );
-            }).toList(),
-          ),
-        );
-      });
+      await _refreshRestock();
+      if (!current()) {
+        return;
+      }
       _applyLocalSearch(_query.value);
     } on SessionExpiredException {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'Session expired. Please sign in again.');
     } on TimeoutException catch (e) {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: TimeoutException: $e',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'connection');
     } on dio.DioException catch (e) {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}',
       );
-      if (!mounted) return;
+      if (!current()) return;
+      if ([401, 403, 404, 410].contains(e.response?.statusCode)) {
+        setState(() {
+          _items = [];
+          _spaces = [];
+          _error = 'This inventory is no longer available.';
+        });
+        _rows.value = const [];
+        return;
+      }
       if (e.response?.statusCode == 429) {
         setState(
           () =>
@@ -1877,13 +1979,13 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: catch: $e',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'connection');
     } finally {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems finally (total ${DateTime.now().millisecondsSinceEpoch - t0}ms)',
       );
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -1908,6 +2010,7 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _loadJoinedShares() async {
+    if (widget.api.inventoryContext != null) return;
     if (!mounted) return;
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start',
@@ -1930,6 +2033,10 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _loadMyShares() async {
+    if (widget.api.inventoryContext != null &&
+        !widget.api.inventoryContext!.isPersonal) {
+      return;
+    }
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares start',
     );
@@ -1947,52 +2054,6 @@ class _InventoryPageState extends State<InventoryPage>
     }
   }
 
-  bool _containsToken(String haystack, String token) {
-    if (haystack.isEmpty || token.isEmpty) return false;
-    return haystack.toLowerCase().contains(token.toLowerCase());
-  }
-
-  int _scoreForToken(
-    InventoryItem it,
-    String token, {
-    required String fullQuery,
-  }) {
-    final name = it.name;
-    final category = it.category;
-    final location = it.location;
-    final notes = (it.notes ?? '');
-
-    final nameLower = name.toLowerCase();
-    final tokenLower = token.toLowerCase();
-    final fullLower = fullQuery.toLowerCase();
-
-    var score = 0;
-
-    if (nameLower == fullLower) return 10000;
-    if (nameLower.startsWith(fullLower) && fullLower.isNotEmpty) score += 7000;
-
-    if (nameLower == tokenLower) score += 4500;
-    if (nameLower.startsWith(tokenLower)) score += 2200;
-    if (nameLower.contains(tokenLower)) score += 1500;
-
-    if (_containsToken(category, token)) score += 900;
-
-    final tags = it.tags ?? const <String>[];
-    for (final t in tags) {
-      if (_containsToken(t, token)) {
-        score += 750;
-        break;
-      }
-    }
-
-    if (_containsToken(location, token)) score += 600;
-    if (_containsToken(notes, token)) score += 450;
-    if (_containsToken(it.purchaseSource ?? '', token)) score += 350;
-    if (_containsToken(it.barcode ?? '', token)) score += 250;
-
-    return score;
-  }
-
   List<InventoryItem> _smartLocalSearch(
     String rawQuery, {
     List<String> extraTerms = const [],
@@ -2001,21 +2062,16 @@ class _InventoryPageState extends State<InventoryPage>
     final q = rawQuery.trim();
     if (q.isEmpty) return base;
 
-    final tokens = <String>{
-      ...q
-          .split(RegExp(r'\s+'))
-          .map((t) => t.trim())
-          .where((t) => t.isNotEmpty),
-      ...extraTerms.map((t) => t.trim()).where((t) => t.isNotEmpty),
-    }.toList();
-
     final scored = <({InventoryItem item, int score})>[];
     for (final it in base) {
-      var s = 0;
-      for (final tok in tokens) {
-        s += _scoreForToken(it, tok, fullQuery: q);
+      var score = it.searchScore(q);
+      if (score == 0) {
+        for (final alternative in extraTerms) {
+          final candidate = it.searchScore(alternative);
+          if (candidate > 0) score = 1;
+        }
       }
-      if (s > 0) scored.add((item: it, score: s));
+      if (score > 0) scored.add((item: it, score: score));
     }
 
     scored.sort((a, b) {
@@ -2101,6 +2157,14 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _addItem() async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final created = await showModalBottomSheet<ItemEditorResult>(
       context: context,
       isScrollControlled: true,
@@ -2136,7 +2200,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
+      ).showSnackBar(const SnackBar(content: AppText('Item added')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
@@ -2159,14 +2223,22 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
         return;
       }
+      if (e.response?.statusCode == 403 &&
+          widget.api.inventoryContext != null &&
+          describeError(e).$2 != ErrorKind.planLimit) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
+        return;
+      }
       if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
+        // Legacy unscoped item-limit behavior.
         if (!ProStatus.isPro) {
           showUpgradeSheet(
             context,
@@ -2178,78 +2250,55 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       }
     }
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    final currentThreshold = _thresholds.value[item.itemId];
-    final updates = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) =>
-          ItemEditorSheet(item: item, initialThreshold: currentThreshold),
+    await showItemDetailSheet(
+      context,
+      item: item,
+      api: widget.api,
+      permission: widget.api.canEdit ? 'edit' : 'view',
+      spaceName: item.location,
+      initialThreshold: _thresholds.value[item.itemId],
     );
-    if (updates == null) return;
-
-    try {
-      await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(
-        itemId: item.itemId,
-        threshold: updates.threshold,
-      );
-      final next = Map<String, int>.from(_thresholds.value);
-      if (updates.threshold == null || updates.threshold! <= 0) {
-        next.remove(item.itemId);
-      } else {
-        next[item.itemId] = updates.threshold!;
-      }
-      _thresholds.value = next;
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Saved')));
-      await _loadItems();
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
-        );
-      }
-    }
+    if (mounted) await _loadItems();
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final ok = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text(item.name),
+        title: const AppText('Delete item?'),
+        content: AppText(item.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -2261,18 +2310,22 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Deleted')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       }
     }
@@ -2283,24 +2336,27 @@ class _InventoryPageState extends State<InventoryPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.wifi_off_outlined,
-            color: Color(0x4DFFFFFF),
+            color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
             size: 48,
           ),
           const SizedBox(height: 16),
-          const Text(
+          AppText(
             'Could not load inventory',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          AppText(
             'Pull down to retry',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 24),
           GestureDetector(
@@ -2308,13 +2364,18 @@ class _InventoryPageState extends State<InventoryPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                ),
               ),
-              child: const Text(
+              child: AppText(
                 'Retry',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -2323,87 +2384,10 @@ class _InventoryPageState extends State<InventoryPage>
     );
   }
 
-  IconData _spaceIcon(String name) {
-    final value = name.toLowerCase();
-    if (value.contains('robot') ||
-        value.contains('ftc') ||
-        value.contains('frc') ||
-        value.contains('electronics')) {
-      return CupertinoIcons.gear_alt_fill;
-    }
-    if (value.contains('tool') ||
-        value.contains('hardware') ||
-        value.contains('fastener') ||
-        value.contains('workshop')) {
-      return CupertinoIcons.wrench;
-    }
-    if (value.contains('food') ||
-        value.contains('kitchen') ||
-        value.contains('grocery')) {
-      return CupertinoIcons.cart;
-    }
-    if (value.contains('home') ||
-        value.contains('house') ||
-        value.contains('personal')) {
-      return CupertinoIcons.house;
-    }
-    if (value.contains('book') ||
-        value.contains('school') ||
-        value.contains('class')) {
-      return CupertinoIcons.book;
-    }
-    if (value.contains('car') || value.contains('vehicle')) {
-      return CupertinoIcons.car_detailed;
-    }
-    return CupertinoIcons.archivebox;
-  }
-
-  Color _spaceIconColor(String name) {
-    final value = name.toLowerCase();
-    if (value.contains('robot') ||
-        value.contains('ftc') ||
-        value.contains('frc') ||
-        value.contains('electronics')) {
-      return const Color(0xFFAA9BDE);
-    }
-    if (value.contains('tool') ||
-        value.contains('hardware') ||
-        value.contains('fastener') ||
-        value.contains('workshop')) {
-      return const Color(0xFFE39A86);
-    }
-    if (value.contains('food') ||
-        value.contains('kitchen') ||
-        value.contains('grocery')) {
-      return const Color(0xFF8FCDB2);
-    }
-    if (value.contains('home') ||
-        value.contains('house') ||
-        value.contains('personal')) {
-      return const Color(0xFFE3C36D);
-    }
-    if (value.contains('book') ||
-        value.contains('school') ||
-        value.contains('class')) {
-      return const Color(0xFFD99BBC);
-    }
-    if (value.contains('car') || value.contains('vehicle')) {
-      return const Color(0xFF91BEDB);
-    }
-    const fallbackPalette = [
-      Color(0xFFAA9BDE),
-      Color(0xFF8FCDB2),
-      Color(0xFFE3C36D),
-      Color(0xFFD99BBC),
-      Color(0xFF91BEDB),
-      Color(0xFFE39A86),
-    ];
-    final seed = value.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
-    return fallbackPalette[seed % fallbackPalette.length];
-  }
-
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
+    // Keep the approved default card height, but let accessibility text grow it.
+    final minimumCardHeight = (MediaQuery.sizeOf(context).width - 64) / 3.35;
     final allSpaces = [..._spaces]
       ..sort(
         (a, b) => (a['name'] as String).toLowerCase().compareTo(
@@ -2427,23 +2411,32 @@ class _InventoryPageState extends State<InventoryPage>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppTheme.adaptive(context, AppColors.surface),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border, width: 1),
+                        border: Border.all(
+                          color: AppTheme.adaptive(context, AppColors.border),
+                          width: 1,
+                        ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(
                             Icons.wifi_off_outlined,
-                            color: Color(0x73FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                             size: 20,
                           ),
                           SizedBox(width: 10),
                           Expanded(
-                            child: Text(
+                            child: AppText(
                               'Could not load spaces. Tap to retry.',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 13,
                               ),
                             ),
@@ -2462,23 +2455,32 @@ class _InventoryPageState extends State<InventoryPage>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppTheme.adaptive(context, AppColors.surface),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: Border.all(
+                        color: AppTheme.adaptive(context, AppColors.border),
+                        width: 1,
+                      ),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(
                           Icons.add_box_outlined,
-                          color: Color(0xFFF2F2F7),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFF2F2F7),
+                          ),
                           size: 20,
                         ),
                         SizedBox(width: 10),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             'Create your first space to start organizing your inventory.',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white70,
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -2489,13 +2491,10 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              mainAxisSpacing: 12,
-              childAspectRatio: 3.35,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
+          sliver: SliverList.separated(
+            itemCount: allSpaces.length + (widget.api.canEdit ? 1 : 0),
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
               if (index == allSpaces.length) {
                 return GestureDetector(
                   onTap: () {
@@ -2503,24 +2502,32 @@ class _InventoryPageState extends State<InventoryPage>
                     _createSpace(context);
                   },
                   child: Container(
+                    constraints: BoxConstraints(minHeight: minimumCardHeight),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.border, width: 1),
+                      color: AppTheme.adaptive(context, AppColors.surface),
+                      border: Border.all(
+                        color: AppTheme.adaptive(context, AppColors.border),
+                        width: 1,
+                      ),
                     ),
-                    child: const Column(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.add_circle_outline_rounded,
-                          color: Color(0xFFF2F2F7),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFF2F2F7),
+                          ),
                           size: 28,
                         ),
                         SizedBox(height: 10),
-                        Text(
+                        AppText(
                           'New Space',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -2534,12 +2541,14 @@ class _InventoryPageState extends State<InventoryPage>
               final loc = space['name'] as String;
               final spaceId = space['id'] as String;
               final items = groups[loc] ?? const <InventoryItem>[];
-              final lowStock = items.where((it) {
-                final threshold = thresholds[it.itemId];
-                return threshold != null &&
-                    threshold > 0 &&
-                    it.quantity <= threshold;
-              }).length;
+              final lowStock = items
+                  .where(
+                    (it) => _restockPlan.needsBuying(it.itemId, it.quantity),
+                  )
+                  .length;
+              final onOrder = items
+                  .where((it) => _restockPlan.onOrder(it.itemId))
+                  .length;
               return GestureDetector(
                 key: index == 0 ? TutorialController.firstSpaceCardKey : null,
                 onTap: () {
@@ -2555,8 +2564,11 @@ class _InventoryPageState extends State<InventoryPage>
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: AppColors.surface,
-                        border: Border.all(color: AppColors.border, width: 1),
+                        color: AppTheme.adaptive(context, AppColors.surface),
+                        border: Border.all(
+                          color: AppTheme.adaptive(context, AppColors.border),
+                          width: 1,
+                        ),
                       ),
                       child: Stack(
                         children: [
@@ -2566,128 +2578,169 @@ class _InventoryPageState extends State<InventoryPage>
                             right: 0,
                             child: Container(
                               height: 1,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.white.withValues(alpha: 0.12),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
+                              color: AppTheme.border(context),
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _spaceIcon(loc),
-                                  color: _spaceIconColor(loc),
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        loc,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          height: 1.2,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: -0.2,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: minimumCardHeight - 24,
+                              ),
+                              child: Row(
+                                children: [
+                                  SpaceIconButton(
+                                    key: ValueKey('space-icon-button-$spaceId'),
+                                    spaceId: spaceId,
+                                    spaceName: loc,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        AppText(
+                                          loc,
+                                          style: TextStyle(
+                                            color: AppTheme.foreground(
+                                              context,
+                                              Colors.white,
                                             ),
+                                            fontSize: 16,
+                                            height: 1.2,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: -0.2,
                                           ),
-                                          if (lowStock > 0) ...[
-                                            const Text(
-                                              '  ·  ',
-                                              style: TextStyle(
-                                                color: Color(0x40FFFFFF),
-                                              ),
-                                            ),
-                                            Text(
-                                              '$lowStock low',
-                                              style: const TextStyle(
-                                                color: Color(0xFFFBBF24),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (_) => DraggableScrollableSheet(
-                                        initialChildSize: 0.65,
-                                        maxChildSize: 0.92,
-                                        minChildSize: 0.4,
-                                        builder: (_, _) => ShareSpaceSheet(
-                                          spaceName: loc,
-                                          api: widget.api,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
+                                        const SizedBox(height: 5),
+                                        Wrap(
+                                          children: [
+                                            AppText(
+                                              '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                                              style: TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                ),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                            if (onOrder > 0)
+                                              AppText(
+                                                '  |  $onOrder on order',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color:
+                                                      RestockStatusColors.onOrder(
+                                                        context,
+                                                      ),
+                                                ),
+                                              ),
+                                            if (lowStock > 0) ...[
+                                              AppText(
+                                                '  ·  ',
+                                                style: TextStyle(
+                                                  color: AppTheme.foreground(
+                                                    context,
+                                                    Color(0x40FFFFFF),
+                                                  ),
+                                                ),
+                                              ),
+                                              AppText(
+                                                '$lowStock to buy',
+                                                style: TextStyle(
+                                                  color:
+                                                      RestockStatusColors.toBuy(
+                                                        context,
+                                                      ),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (widget.api.canEdit &&
+                                      (widget.api.inventoryContext == null ||
+                                          widget
+                                              .api
+                                              .inventoryContext!
+                                              .isPersonal))
+                                    IconButton(
+                                      onPressed: () {
+                                        HapticFeedback.lightImpact();
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (_) =>
+                                              DraggableScrollableSheet(
+                                                initialChildSize: 0.65,
+                                                maxChildSize: 0.92,
+                                                minChildSize: 0.4,
+                                                builder: (_, _) =>
+                                                    ShareSpaceSheet(
+                                                      spaceName: loc,
+                                                      api: widget.api,
+                                                    ),
+                                              ),
+                                        );
+                                      },
+                                      tooltip: 'Share space',
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                            width: 32,
+                                            height: 32,
+                                          ),
+                                      icon: Icon(
+                                        Icons.person_add_alt_1_rounded,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x99FFFFFF),
+                                        ),
+                                        size: 18,
                                       ),
-                                    );
-                                  },
-                                  tooltip: 'Share space',
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.person_add_alt_1_rounded,
-                                    color: Color(0x99FFFFFF),
-                                    size: 18,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    HapticFeedback.selectionClick();
-                                    _showSpaceMenu(context, loc, spaceId);
-                                  },
-                                  tooltip: 'Space options',
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.more_horiz,
-                                    color: Color(0x60FFFFFF),
-                                    size: 19,
-                                  ),
-                                ),
-                              ],
+                                    ),
+                                  if (widget.api.canEdit)
+                                    IconButton(
+                                      onPressed: () {
+                                        HapticFeedback.selectionClick();
+                                        _showSpaceMenu(context, loc, spaceId);
+                                      },
+                                      tooltip: 'Space options',
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                            width: 32,
+                                            height: 32,
+                                          ),
+                                      icon: Icon(
+                                        Icons.more_horiz,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x60FFFFFF),
+                                        ),
+                                        size: 19,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -2696,7 +2749,7 @@ class _InventoryPageState extends State<InventoryPage>
                   ),
                 ),
               );
-            }, childCount: allSpaces.length + 1),
+            },
           ),
         ),
         if (_joinedSharesError != null && _joinedShares.isEmpty)
@@ -2710,23 +2763,28 @@ class _InventoryPageState extends State<InventoryPage>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppTheme.adaptive(context, AppColors.surface),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, AppColors.border),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.refresh,
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       size: 16,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         "Couldn't load joined spaces — tap to retry",
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.35),
+                          color: AppTheme.foreground(
+                            context,
+                            Colors.white.withValues(alpha: 0.35),
+                          ),
                           fontSize: 13,
                         ),
                       ),
@@ -2737,15 +2795,15 @@ class _InventoryPageState extends State<InventoryPage>
             ),
           ),
         if (_joinedShares.isNotEmpty) ...<Widget>[
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Text(
+              child: AppText(
                 'JOINED SPACES',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Color(0x4DFFFFFF),
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -2770,36 +2828,35 @@ class _InventoryPageState extends State<InventoryPage>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppTheme.adaptive(context, AppColors.surface),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppColors.border, width: 1),
+                          border: Border.all(
+                            color: AppTheme.adaptive(context, AppColors.border),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFF2F2F7,
-                                ).withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              child: const Icon(
-                                CupertinoIcons.folder_badge_person_crop,
-                                color: Color(0xFFF2F2F7),
-                                size: 20,
-                              ),
+                            SpaceIconButton(
+                              key: ValueKey('share-icon-button-$shareId'),
+                              namespace: 'share',
+                              spaceId: shareId == 'null' ? '' : shareId,
+                              spaceName: name,
+                              fallbackIcon:
+                                  CupertinoIcons.folder_badge_person_crop,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText(
                                     name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: -0.2,
@@ -2808,25 +2865,41 @@ class _InventoryPageState extends State<InventoryPage>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
+                                  AppText(
                                     permission == 'edit'
                                         ? 'Can edit'
                                         : 'View only',
-                                    style: const TextStyle(
-                                      color: Color(0x73FFFFFF),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x73FFFFFF),
+                                      ),
                                       fontSize: 11,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            PopupMenuButton<String>(
-                              tooltip: 'Space options',
-                              icon: const Icon(
-                                Icons.more_horiz_rounded,
-                                color: Color(0x73FFFFFF),
-                              ),
+                            AppMenuButton(
+                              label: 'Space options',
                               onSelected: (value) {
+                                if (value == 'share') {
+                                  showModalBottomSheet<void>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) => SizedBox(
+                                      height:
+                                          MediaQuery.sizeOf(context).height *
+                                          .72,
+                                      child: ShareSpaceSheet(
+                                        spaceName: name,
+                                        shareId: shareId,
+                                        api: widget.api,
+                                      ),
+                                    ),
+                                  );
+                                }
                                 if (value == 'leave') {
                                   unawaited(
                                     _leaveJoinedSpace(
@@ -2836,13 +2909,17 @@ class _InventoryPageState extends State<InventoryPage>
                                   );
                                 }
                               },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(
-                                  value: 'leave',
-                                  child: Text(
-                                    'Leave Space',
-                                    style: TextStyle(color: AppColors.danger),
-                                  ),
+                              items: const [
+                                AppMenuItem(
+                                  'share',
+                                  'Share invitation link',
+                                  'square.and.arrow.up',
+                                ),
+                                AppMenuItem(
+                                  'leave',
+                                  'Leave Space',
+                                  'rectangle.portrait.and.arrow.right',
+                                  destructive: true,
                                 ),
                               ],
                             ),
@@ -2858,13 +2935,19 @@ class _InventoryPageState extends State<InventoryPage>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surface2,
+                            color: AppTheme.adaptive(
+                              context,
+                              AppColors.surface2,
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: AppText(
                             'Shared',
                             style: TextStyle(
-                              color: AppColors.muted,
+                              color: AppTheme.foreground(
+                                context,
+                                AppColors.muted,
+                              ),
                               fontSize: 9,
                               fontWeight: FontWeight.w600,
                             ),
@@ -2886,30 +2969,40 @@ class _InventoryPageState extends State<InventoryPage>
   Future<void> _createSpace(BuildContext context) async {
     _createSpaceCtrl.clear();
     final name = await showDialog<String>(
+      useRootNavigator: false,
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('New Space', style: TextStyle(color: Colors.white)),
+        title: AppText(
+          'New Space',
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+        ),
         content: TextField(
           controller: _createSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: AppTypography.bodyStyleOf(
+            context,
+            TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          ),
+          decoration: InputDecoration(
             hintText: 'Space name',
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+            hintStyle: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _createSpaceCtrl.text.trim()),
-            child: const Text('Create'),
+            child: const AppText('Create'),
           ),
         ],
       ),
@@ -2921,7 +3014,10 @@ class _InventoryPageState extends State<InventoryPage>
     } on dio.DioException catch (e) {
       if (!mounted || !context.mounted) return;
       final status = e.response?.statusCode;
-      if (status == 402 || status == 403) {
+      if (status == 402 ||
+          (status == 403 &&
+              (widget.api.inventoryContext == null ||
+                  describeError(e).$2 == ErrorKind.planLimit))) {
         if (!ProStatus.isPro) {
           showUpgradeSheet(
             context,
@@ -2932,14 +3028,16 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t create the space. Try again.')),
+        const SnackBar(
+          content: AppText('Couldn’t create the space. Try again.'),
+        ),
       );
       return;
     }
@@ -2952,6 +3050,7 @@ class _InventoryPageState extends State<InventoryPage>
     _joinCodeCtrl.clear();
     String? error;
     await showDialog(
+      useRootNavigator: false,
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => Dialog(
@@ -2963,18 +3062,21 @@ class _InventoryPageState extends State<InventoryPage>
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.surface2,
+                  color: AppTheme.adaptive(context, AppColors.surface2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, AppColors.border),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    AppText(
                       'Join a Space',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2985,17 +3087,39 @@ class _InventoryPageState extends State<InventoryPage>
                       autofocus: true,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        letterSpacing: 4,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 20,
+                          letterSpacing: 4,
+                        ),
                       ),
                       decoration: InputDecoration(
                         hintText: '6-character code',
-                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                        counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                          ),
+                        ),
+                        counterStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                          ),
+                        ),
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: AppTheme.adaptive(
+                          context,
+                          AppColors.surface,
+                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
@@ -3004,8 +3128,8 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(context, AppColors.border),
                             width: 1,
                           ),
                         ),
@@ -3013,8 +3137,8 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(context, AppColors.border),
                             width: 1,
                           ),
                         ),
@@ -3022,8 +3146,11 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFF2F2F7),
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(
+                              context,
+                              Color(0xFFF2F2F7),
+                            ),
                             width: 1,
                           ),
                         ),
@@ -3031,10 +3158,13 @@ class _InventoryPageState extends State<InventoryPage>
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 6),
-                      Text(
+                      AppText(
                         error!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF453A),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFFF453A),
+                          ),
                           fontSize: 12,
                         ),
                       ),
@@ -3045,10 +3175,13 @@ class _InventoryPageState extends State<InventoryPage>
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(dlgCtx),
-                          child: Text(
+                          child: AppText(
                             'Cancel',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.50),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.50),
+                              ),
                             ),
                           ),
                         ),
@@ -3072,7 +3205,7 @@ class _InventoryPageState extends State<InventoryPage>
                                 if (!mounted || !context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
+                                    content: AppText(
                                       'Joined! Check Joined Spaces to view.',
                                     ),
                                   ),
@@ -3084,7 +3217,7 @@ class _InventoryPageState extends State<InventoryPage>
                               );
                             }
                           },
-                          child: const Text('Join'),
+                          child: const AppText('Join'),
                         ),
                       ],
                     ),
@@ -3107,48 +3240,59 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF1C1C1E)),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Colors.white),
-              title: const Text(
-                'Rename',
-                style: TextStyle(color: Colors.white),
+              ListTile(
+                leading: Icon(
+                  Icons.edit_outlined,
+                  color: AppTheme.foreground(context, Colors.white),
+                ),
+                title: AppText(
+                  'Rename',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, 'rename'),
               ),
-              onTap: () => Navigator.pop(context, 'rename'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.delete_outline,
-                color: Color(0xFFFF453A),
-              ),
-              title: const Text(
-                'Delete Space',
-                style: TextStyle(color: Color(0xFFFF453A)),
-              ),
-              onTap: () => Navigator.pop(context, 'delete'),
-            ),
-          ],
+              if (widget.api.canDeleteSpace)
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_outline,
+                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                  ),
+                  title: AppText(
+                    'Delete Space',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'delete'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -3167,32 +3311,39 @@ class _InventoryPageState extends State<InventoryPage>
   ) async {
     _renameSpaceCtrl.text = oldName;
     final newName = await showDialog<String>(
+      useRootNavigator: false,
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text(
+        title: AppText(
           'Rename Space',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
         content: TextField(
           controller: _renameSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+          style: AppTypography.bodyStyleOf(
+            context,
+            TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          ),
+          decoration: InputDecoration(
+            hintStyle: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _renameSpaceCtrl.text.trim()),
-            child: const Text('Save'),
+            child: const AppText('Save'),
           ),
         ],
       ),
@@ -3205,7 +3356,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Couldn’t rename the space. Try again.'),
+            content: AppText('Couldn’t rename the space. Try again.'),
           ),
         );
       }
@@ -3217,7 +3368,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (!spacesOk && mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: const AppText(
               'Space renamed, but the view couldn’t refresh.',
             ),
             action: SnackBarAction(
@@ -3238,55 +3389,33 @@ class _InventoryPageState extends State<InventoryPage>
     String loc,
     String spaceId,
   ) async {
-    final spaceData = _spaces.firstWhere(
-      (s) => s['id'] == spaceId,
-      orElse: () => const {},
-    );
-    final itemCount = (spaceData['item_count'] as num?)?.toInt() ?? 0;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.surface2(context),
-        title: const Text(
-          'Delete Space?',
-          style: TextStyle(color: Colors.white),
+    if (!widget.api.canDeleteSpace) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText(
+            'Only inventory owners and admins can delete a Space.',
+          ),
         ),
-        content: Text(
-          itemCount > 0
-              ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
-              : 'The space "$loc" will be removed.',
-          style: const TextStyle(color: Color(0x73FFFFFF)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Color(0xFFFF453A)),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    if (!mounted || !context.mounted) return;
-    try {
-      await widget.api.deleteSpace(spaceId: spaceId);
-      InventoryCache.removeSpace(spaceId);
-    } catch (e) {
-      if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Couldn’t delete the space. Try again.'),
-          ),
-        );
-      }
+      );
       return;
     }
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    final changed = await confirmResourceRemoval(
+      context,
+      widget.api,
+      kind: 'space',
+      id: spaceId,
+      name: loc,
+    );
+    if (!changed ||
+        !mounted ||
+        Supabase.instance.client.auth.currentUser?.id != owner) {
+      return;
+    }
+    _itemsReadGeneration++;
+    _itemsLoad = null;
+    InventoryCache.removeSpace(spaceId, contextKey: widget.api.cacheKey);
+    widget.onSpaceDeleted?.call(spaceId);
     if (mounted) {
       await _loadSpaces();
       await _loadItems();
@@ -3295,6 +3424,11 @@ class _InventoryPageState extends State<InventoryPage>
 
   @override
   Widget build(BuildContext context) {
+    final restockColor = !_restockReady
+        ? AppTheme.textSecondary(context)
+        : _lowStockCount() > 0
+        ? RestockStatusColors.toBuy(context)
+        : RestockStatusColors.onOrder(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: widget.showAppBar
@@ -3302,10 +3436,10 @@ class _InventoryPageState extends State<InventoryPage>
               backgroundColor: Colors.transparent,
               elevation: 0,
               surfaceTintColor: Colors.transparent,
-              title: const Text(
+              title: AppText(
                 'My Inventory',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
@@ -3316,9 +3450,9 @@ class _InventoryPageState extends State<InventoryPage>
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.shopping_cart_outlined,
-                        color: Colors.white70,
+                        color: AppTheme.foreground(context, Colors.white70),
                         size: 22,
                       ),
                       if (_lowStockCount() > 0)
@@ -3328,15 +3462,15 @@ class _InventoryPageState extends State<InventoryPage>
                           child: Container(
                             width: 16,
                             height: 16,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
+                            decoration: BoxDecoration(
+                              color: AppTheme.action,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
-                              child: Text(
+                              child: AppText(
                                 '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.onAction,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -3346,23 +3480,11 @@ class _InventoryPageState extends State<InventoryPage>
                         ),
                     ],
                   ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListPage(api: widget.api),
-                    ),
-                  ),
+                  tooltip: 'Restock planner',
+                  onPressed: _openRestock,
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Colors.white70,
-                    size: 22,
-                  ),
-                  color: const Color(0xFF1C1C1E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                AppMenuButton(
+                  label: 'Inventory options',
                   onSelected: (value) {
                     if (value == 'checkout') {
                       Navigator.push(
@@ -3377,60 +3499,17 @@ class _InventoryPageState extends State<InventoryPage>
                       _loadItems();
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'checkout',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.swap_horiz_outlined,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Check-Out Tracker',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
+                  items: const [
+                    AppMenuItem(
+                      'checkout',
+                      'Check-Out Tracker',
+                      'arrow.left.arrow.right',
                     ),
-                    const PopupMenuItem(
-                      value: 'join',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.person_add_outlined,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Join a Space',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.refresh_outlined,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Refresh',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
+                    AppMenuItem('join', 'Join Space', 'person.badge.plus'),
+                    AppMenuItem('refresh', 'Refresh', 'arrow.clockwise'),
                   ],
                 ),
+                AccountButton(api: widget.api),
               ],
             )
           : null,
@@ -3438,182 +3517,227 @@ class _InventoryPageState extends State<InventoryPage>
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                key: TutorialController.inventorySearchKey,
-                controller: _search,
-                textInputAction: TextInputAction.search,
-                onChanged: _applyLocalSearch,
-                onSubmitted: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-                decoration: const InputDecoration(
-                  hintText: 'Search inventory',
-                  prefixIcon: Icon(Icons.search_rounded),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_lowStockCount() > 0)
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListPage(api: widget.api),
-                    ),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight * 0.5,
                   ),
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AEF4444),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x33EF4444)),
-                    ),
-                    child: Row(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
-                          Icons.shopping_cart_outlined,
-                          color: Color(0xFFEF4444),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${_lowStockCount()} items need restocking',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                        TextField(
+                          key: TutorialController.inventorySearchKey,
+                          controller: _search,
+                          textInputAction: TextInputAction.search,
+                          onChanged: _applyLocalSearch,
+                          onSubmitted: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          decoration: const InputDecoration(
+                            hintText: 'Search inventory',
+                            prefixIcon: Icon(Icons.search_rounded),
                           ),
+                          style: AppTypography.bodyStyleOf(context),
                         ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
+                        const SizedBox(height: 12),
+                        if (_restockFailed ||
+                            _lowStockCount() > 0 ||
+                            _onOrderCount() > 0)
+                          GestureDetector(
+                            onTap: _openRestock,
+                            child: Container(
+                              margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: restockColor.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: restockColor.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _restockReady &&
+                                            _lowStockCount() == 0 &&
+                                            _onOrderCount() > 0
+                                        ? Icons.local_shipping_outlined
+                                        : Icons.shopping_cart_outlined,
+                                    color: restockColor,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: !_restockReady
+                                        ? const AppText(
+                                            'Restock planner could not refresh. Tap to retry.',
+                                            style: TextStyle(fontSize: 13),
+                                          )
+                                        : RestockSummary(
+                                            toBuy: _lowStockCount(),
+                                            onOrder: _onOrderCount(),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: restockColor,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
-              Expanded(
-                child: _loading && _items.isEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(0x14FFFFFF),
-                              width: 0.5,
+                Expanded(
+                  child: _loading && _items.isEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: ListView.separated(
+                              itemCount: 8,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) =>
+                                  const SkeletonListTile(),
                             ),
                           ),
-                          child: ListView.separated(
-                            itemCount: 8,
-                            separatorBuilder: (context, index) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) =>
-                                const SkeletonListTile(),
-                          ),
-                        ),
-                      )
-                    : (_error != null && _items.isEmpty)
-                    ? _buildErrorState()
-                    : ValueListenableBuilder<Map<String, int>>(
-                        valueListenable: _thresholds,
-                        builder: (context, thresholds, _) {
-                          return ValueListenableBuilder<String>(
-                            valueListenable: _query,
-                            builder: (context, q, _) {
-                              final query = q.trim();
-                              if (query.isEmpty) {
-                                return _buildSpacesGrid(thresholds);
-                              }
+                        )
+                      : (_error != null && _items.isEmpty)
+                      ? _buildErrorState()
+                      : ValueListenableBuilder<Map<String, int>>(
+                          valueListenable: _thresholds,
+                          builder: (context, thresholds, _) {
+                            return ValueListenableBuilder<String>(
+                              valueListenable: _query,
+                              builder: (context, q, _) {
+                                final query = q.trim();
+                                if (query.isEmpty) {
+                                  return _buildSpacesGrid(thresholds);
+                                }
 
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: _aiSearching,
-                                builder: (context, searching, _) {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      if (searching)
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            10,
-                                            6,
-                                            10,
-                                            10,
-                                          ),
-                                          child: Text(
-                                            'Searching…',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.55),
-                                                ),
-                                          ),
-                                        ),
-                                      Expanded(
-                                        child:
-                                            ValueListenableBuilder<
-                                              List<InventoryItem>
-                                            >(
-                                              valueListenable: _rows,
-                                              builder: (context, rows, _) {
-                                                if (rows.isEmpty) {
-                                                  return Center(
-                                                    child: Text(
-                                                      'No results.',
-                                                      style: TextStyle(
-                                                        color: Colors.white
-                                                            .withValues(
-                                                              alpha: 0.65,
-                                                            ),
+                                return ValueListenableBuilder<bool>(
+                                  valueListenable: _aiSearching,
+                                  builder: (context, searching, _) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (searching)
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              10,
+                                              6,
+                                              10,
+                                              10,
+                                            ),
+                                            child: AppText(
+                                              'Searching…',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: AppTheme.adaptive(
+                                                      context,
+                                                      Colors.white.withValues(
+                                                        alpha: 0.55,
                                                       ),
                                                     ),
-                                                  );
-                                                }
-
-                                                return _SearchResultsList(
-                                                  rows: rows,
-                                                  thresholds: thresholds,
-                                                  onEdit: _editItem,
-                                                  onDelete: _deleteItem,
-                                                );
-                                              },
+                                                  ),
                                             ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
+                                          ),
+                                        Expanded(
+                                          child:
+                                              ValueListenableBuilder<
+                                                List<InventoryItem>
+                                              >(
+                                                valueListenable: _rows,
+                                                builder: (context, rows, _) {
+                                                  if (rows.isEmpty) {
+                                                    return Center(
+                                                      child: AppText(
+                                                        'No results.',
+                                                        style: TextStyle(
+                                                          color:
+                                                              AppTheme.foreground(
+                                                                context,
+                                                                Colors.white
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.65,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  return _SearchResultsList(
+                                                    rows: rows,
+                                                    thresholds: thresholds,
+                                                    readOnly:
+                                                        !widget.api.canEdit,
+                                                    onEdit: _editItem,
+                                                    onDelete: _deleteItem,
+                                                  );
+                                                },
+                                              ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 94),
-        child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
-      ),
+      floatingActionButton: !widget.api.canEdit
+          ? null
+          : Padding(
+              padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
+              child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
+            ),
     );
   }
 }
 
 class _SearchResultsList extends StatelessWidget {
   const _SearchResultsList({
+    this.readOnly = false,
     required this.rows,
     required this.thresholds,
     required this.onEdit,
@@ -3621,280 +3745,119 @@ class _SearchResultsList extends StatelessWidget {
   });
 
   final List<InventoryItem> rows;
+  final bool readOnly;
   final Map<String, int> thresholds;
   final Future<void> Function(InventoryItem item) onEdit;
   final Future<void> Function(InventoryItem item) onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final hasImages = rows.any((e) => (e.imageUrl ?? '').trim().isNotEmpty);
-    if (!hasImages) {
-      return ListView.separated(
-        itemCount: rows.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final item = rows[index];
-          final threshold = thresholds[item.itemId];
-          final isLow =
-              (threshold != null &&
-              threshold > 0 &&
-              item.quantity <= threshold);
-          return Dismissible(
-            key: ValueKey(item.itemId),
-            background: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 16),
-              color: AppColors.swipe,
-              child: const Icon(Icons.edit_outlined),
-            ),
-            secondaryBackground: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 16),
-              color: Theme.of(
-                context,
-              ).colorScheme.error.withValues(alpha: 0.15),
-              child: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-            confirmDismiss: (direction) async {
-              if (direction == DismissDirection.startToEnd) {
-                await onEdit(item);
-                return false;
-              }
-              if (direction == DismissDirection.endToStart) {
-                await onDelete(item);
-                return false;
-              }
-              return false;
-            },
-            child: ListTile(
-              dense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
-              title: Text(item.displayName),
-              subtitle: Text(
-                [
-                  if (item.displayDescription != null) item.displayDescription!,
-                  item.category,
-                  item.location,
-                ].join(' · '),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isLow) ...[
-                    Icon(
-                      Icons.error_outline_rounded,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.70),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    'Qty ${item.quantity}',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ),
-              onTap: () => onEdit(item),
-            ),
-          );
-        },
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.98,
-      ),
+    return ListView.separated(
       itemCount: rows.length,
+      separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final item = rows[index];
         final threshold = thresholds[item.itemId];
         final isLow =
-            (threshold != null && threshold > 0 && item.quantity <= threshold);
-        return _ItemGridCard(
-          item: item,
-          isLow: isLow,
-          onEdit: () => onEdit(item),
-          onDelete: () => onDelete(item),
+            (threshold != null && threshold >= 0 && item.quantity <= threshold);
+        final imageUrl = (item.imageUrl ?? '').trim();
+        return Dismissible(
+          direction: readOnly
+              ? DismissDirection.none
+              : DismissDirection.horizontal,
+          key: ValueKey(item.itemId),
+          background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 16),
+            color: AppTheme.adaptive(context, AppColors.swipe),
+            child: const Icon(Icons.edit_outlined),
+          ),
+          secondaryBackground: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 16),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+            child: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.startToEnd) {
+              await onEdit(item);
+              return false;
+            }
+            if (direction == DismissDirection.endToStart) {
+              await onDelete(item);
+              return false;
+            }
+            return false;
+          },
+          child: ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 5,
+            ),
+            leading: imageUrl.isEmpty
+                ? null
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: PrivateImage(
+                      imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+            title: AppText(item.displayName),
+            subtitle: AppText(
+              [
+                if (item.displayDescription != null) item.displayDescription!,
+                item.category,
+                item.location,
+              ].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppTheme.foreground(
+                  context,
+                  Colors.white.withValues(alpha: 0.60),
+                ),
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLow) ...[
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 18,
+                    color: AppTheme.foreground(
+                      context,
+                      Colors.white.withValues(alpha: 0.70),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                AppText(
+                  'Qty ${item.quantity}',
+                  style: TextStyle(
+                    fontFamily: 'GeistMono',
+                    color: AppTheme.foreground(
+                      context,
+                      Colors.white.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onTap: () => onEdit(item),
+          ),
         );
       },
     );
   }
-}
-
-class _ItemGridCard extends StatelessWidget {
-  const _ItemGridCard({
-    required this.item,
-    required this.isLow,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final InventoryItem item;
-  final bool isLow;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = (item.imageUrl ?? '').trim();
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onEdit,
-      onLongPress: onDelete,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: url.isEmpty
-                        ? Container(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: Colors.white.withValues(alpha: 0.35),
-                            ),
-                          )
-                        : Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.white.withValues(alpha: 0.04),
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.displayDescription ?? item.location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.65),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: Text(
-                    'Qty ${item.quantity}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
-                    ),
-                  ),
-                ),
-              ),
-              if (isLow)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.error_outline_rounded,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.92),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Pinned header delegate for search + pills ───────────────────────────────
-
-class _SearchPinDelegate extends SliverPersistentHeaderDelegate {
-  const _SearchPinDelegate({required this.child, this.height = 100});
-
-  final Widget child;
-  final double height;
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  bool shouldRebuild(_SearchPinDelegate old) =>
-      old.child != child || old.height != height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) => child;
 }
 
 // ─── Barcode scanner page (reused inside LocationItemsPage) ──────────────────
@@ -3930,10 +3893,10 @@ class _InventoryBarcodeScannerPageState
   Widget build(BuildContext context) {
     final controller = _controller;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Scan Barcode'),
-        backgroundColor: Colors.black,
+        title: const AppText('Scan Barcode'),
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -3979,13 +3942,18 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -3997,17 +3965,17 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 12),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
+            child: AppText(
               'Review ${_items.length} extracted item${_items.length == 1 ? '' : 's'}',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -4016,9 +3984,12 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
+            child: AppText(
               'Location: ${widget.spaceName}',
-              style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                fontSize: 13,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -4030,8 +4001,10 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
-              separatorBuilder: (_, _) =>
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
+              separatorBuilder: (_, _) => Divider(
+                color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                height: 1,
+              ),
               itemBuilder: (_, i) {
                 final it = _items[i];
                 return Padding(
@@ -4040,10 +4013,10 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: Text(
+                        child: AppText(
                           it.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -4052,10 +4025,13 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           it.category,
-                          style: const TextStyle(
-                            color: Color(0x73FFFFFF),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                             fontSize: 13,
                           ),
                           maxLines: 1,
@@ -4063,19 +4039,25 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         '×${it.quantity}',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 13,
                         ),
                       ),
                       const SizedBox(width: 4),
                       GestureDetector(
                         onTap: () => setState(() => _items.removeAt(i)),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           size: 18,
                         ),
                       ),
@@ -4097,9 +4079,11 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
+                    child: AppText(
                       'Cancel',
-                      style: TextStyle(color: Color(0x73FFFFFF)),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      ),
                     ),
                   ),
                 ),
@@ -4110,14 +4094,16 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     onPressed: _items.isEmpty
                         ? null
                         : () => Navigator.of(context).pop(_items),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    style: GlassControl.buttonStyle(
+                      context,
+                      radius: 14,
+                      base: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                    child: Text('Save All (${_items.length})'),
+                    child: AppText('Save All (${_items.length})'),
                   ),
                 ),
               ],
@@ -4172,21 +4158,36 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
 
   InputDecoration _inputDec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+    hintStyle: AppTypography.bodyStyleOf(
+      context,
+      TextStyle(
+        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+        fontSize: 15,
+      ),
+    ),
     filled: true,
-    fillColor: const Color(0xFF171717),
+    fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        width: 0.5,
+      ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        width: 0.5,
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        width: 0.5,
+      ),
     ),
   );
 
@@ -4194,13 +4195,18 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 24),
       child: Column(
@@ -4213,16 +4219,16 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          AppText(
             'Add Scanned Item',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -4233,14 +4239,26 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             controller: _name,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
+            ),
             decoration: _inputDec('Name'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
+            ),
             decoration: _inputDec('Category'),
           ),
           const SizedBox(height: 10),
@@ -4249,14 +4267,26 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
+            ),
             decoration: _inputDec('Quantity'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _location,
             readOnly: true,
-            style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 15),
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                fontSize: 15,
+              ),
+            ),
             decoration: _inputDec('Location'),
           ),
           const SizedBox(height: 16),
@@ -4276,14 +4306,16 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+              style: GlassControl.buttonStyle(
+                context,
+                radius: 14,
+                base: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
-              child: const Text(
+              child: const AppText(
                 'Save',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
@@ -4294,48 +4326,13 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             height: 48,
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: AppText(
                 'Cancel',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                  fontSize: 15,
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0x14FFFFFF)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
