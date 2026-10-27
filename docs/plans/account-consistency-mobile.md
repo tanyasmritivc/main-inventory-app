@@ -1,0 +1,7 @@
+# Account consistency: mobile beta 146
+
+Visible account views re-read server-owned snapshots every 15 seconds and on foreground return. Refresh pauses for covered routes/editors and coalesces overlapping scheduled reads. Spaces, inventory items/counts, workspace directories, documents, checkouts, Review, kits, and memory use the current API data. World refresh does not remount chat. Workspace refresh preserves the selected organization while updating names and inventory membership.
+
+An open Space resolves its stable ID on refresh, follows renames, and becomes unavailable after deletion or revoked access. Removed inventory contents are cleared. Successful canonical responses replace old lists. Unsaved input remains local; this does not implement offline write sync or promise instantaneous server push.
+
+Validation: full host Flutter suite 1,181 passed with one existing skip; final 52 targeted tests passed after unavailable-resource handling; new open-Space test passed on iPhone 17 Pro simulator. The broad world-audit entry could not select UIKit tabs through Flutter's tooltip finder, so the dedicated native account-consistency harness verifies open-Space refresh directly. No production data was changed by these synthetic tests. Final analysis, CI, signed archive and TestFlight delivery pending. Public submission remains held; physical two-device acceptance remains unverified for this binary.

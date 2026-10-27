@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class MemoryPage extends StatefulWidget {
 
 class _MemoryPageState extends State<MemoryPage> {
   late final MemoryController store;
+  late final AccountRefresh _accountRefresh;
   final alias = TextEditingController();
   String? spaceId;
   @override
@@ -24,6 +26,15 @@ class _MemoryPageState extends State<MemoryPage> {
     super.initState();
     store = MemoryController(widget.api)..addListener(_changed);
     unawaited(store.load());
+    _accountRefresh = AccountRefresh(
+      refresh: () => store.load(quiet: true),
+      isActive: () =>
+          mounted &&
+          (ModalRoute.of(context)?.isCurrent ?? true) &&
+          !store.busy &&
+          store.pending == null &&
+          alias.text.isEmpty,
+    );
   }
 
   void _changed() {
@@ -32,6 +43,7 @@ class _MemoryPageState extends State<MemoryPage> {
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     store.removeListener(_changed);
     store.dispose();
     alias.dispose();

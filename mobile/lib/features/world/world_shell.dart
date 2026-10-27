@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import '../../core/account_refresh.dart';
 import 'native_bottom_tabs.dart';
 import 'retained_tab_transition.dart';
 import '../notifications/notification_bell.dart';
@@ -48,6 +50,7 @@ class WorldShell extends StatefulWidget {
 }
 
 class _WorldShellState extends State<WorldShell> {
+  late final AccountRefresh _accountRefresh;
   late ApiClient _chatApi;
   late ProfileStore _profile;
   String _world = '';
@@ -66,6 +69,16 @@ class _WorldShellState extends State<WorldShell> {
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: _load,
+      isActive: () =>
+          mounted &&
+          (ModalRoute.of(context)?.isCurrent ?? true) &&
+          (_loadedNavigation &&
+              !widget.session.loading &&
+              !_creatingSpace &&
+              !_chatFocused),
+    );
     _profile = ProfileStore(api: widget.session.api)
       ..addListener(_profileChanged);
     unawaited(_profile.load());
@@ -141,13 +154,21 @@ class _WorldShellState extends State<WorldShell> {
       }
     } catch (error) {
       if (mounted && generation == _loadGeneration) {
-        setState(() => _error = error);
+        setState(() {
+          _error = error;
+          if (error is DioException &&
+              [401, 403, 404, 410].contains(error.response?.statusCode)) {
+            _directory = null;
+            _spaceGroups = null;
+          }
+        });
       }
     }
   }
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     _loadGeneration++;
     widget.session.removeListener(_changed);
     _profile.removeListener(_profileChanged);

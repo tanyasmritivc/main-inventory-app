@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,20 +15,32 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
+  late final AccountRefresh _accountRefresh;
   List<Map<String, dynamic>> _checkouts = [];
   bool _loading = true;
   String? _error;
 
   @override
+  void dispose() {
+    _accountRefresh.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => _load(quiet: true),
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {

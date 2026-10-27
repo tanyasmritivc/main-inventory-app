@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import '../../core/ui/native_menu_button.dart';
 import '../review/review_queue_page.dart';
 import '../workspaces/resource_removal.dart';
@@ -98,6 +99,10 @@ class LocationItemsPage extends StatefulWidget {
 
 class _LocationItemsPageState extends State<LocationItemsPage>
     with SingleTickerProviderStateMixin {
+  late final AccountRefresh _accountRefresh;
+  late String _location;
+  String? _syncError;
+  bool _removed = false;
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
   bool _changed = false;
@@ -114,6 +119,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     _fabController.dispose();
     _joinCodeCtrl.dispose();
     _listScrollController.dispose();
@@ -137,6 +143,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   @override
   void initState() {
     super.initState();
+    _location = widget.location;
+    _accountRefresh = AccountRefresh(
+      refresh: _refreshSpace,
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_fabOpen),
+    );
     _fabController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -150,6 +162,50 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
     _rebuildCategoryKeys();
+  }
+
+  Future<void> _refreshSpace() async {
+    try {
+      final spaces = await widget.api.listSpaces();
+      if (!mounted) return;
+      final matches = spaces.where(
+        (space) => widget.spaceId != null
+            ? (space['id'] ?? space['space_id']) == widget.spaceId
+            : space['name'] == _location,
+      );
+      if (matches.isEmpty && widget.spaceId != null) {
+        setState(() {
+          _removed = true;
+          _items = [];
+        });
+        return;
+      }
+      final name = matches.firstOrNull?['name']?.toString() ?? _location;
+      final result = await widget.api.searchItems(query: '');
+      if (!mounted) return;
+      setState(() {
+        _location = name;
+        _syncError = null;
+        _items = result.items
+            .where(
+              (item) => widget.spaceId != null
+                  ? item.spaceId == widget.spaceId
+                  : item.location == name,
+            )
+            .toList();
+        _rebuildCategoryKeys();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _syncError = describeError(error).$1;
+        if (error is dio.DioException &&
+            [401, 403, 404, 410].contains(error.response?.statusCode)) {
+          _removed = true;
+          _items = [];
+        }
+      });
+    }
   }
 
   int _totalCount() {
@@ -476,7 +532,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       api: widget.api,
       permission: widget.readOnly ? 'view' : 'edit',
       initialThreshold: existingThr,
-      spaceName: widget.location,
+      spaceName: _location,
       onItemUpdated: (updated) {
         if (!mounted) return;
         final index = _items.indexWhere(
@@ -505,7 +561,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     await runUploadPhotoFlow(
       context: context,
       api: widget.api,
-      preselectedSpace: widget.location,
+      preselectedSpace: _location,
       onItemsSaved: () async {
         if (!mounted) return;
         _changed = true;
@@ -537,8 +593,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            ImportSheetPage(api: widget.api, location: widget.location),
+        builder: (_) => ImportSheetPage(api: widget.api, location: _location),
       ),
     );
     if (imported != true) return;
@@ -569,15 +624,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   void _openBuildReadiness() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) =>
-          BomReadinessPage(api: widget.api, location: widget.location),
+      builder: (_) => BomReadinessPage(api: widget.api, location: _location),
     ),
   );
 
   void _openProjectKits() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) =>
-          ProjectKitsPage(api: widget.api, location: widget.location),
+      builder: (_) => ProjectKitsPage(api: widget.api, location: _location),
     ),
   );
 
@@ -585,7 +638,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     await runSpaceBarcodeFlow(
       context: context,
       api: widget.api,
-      preselectedSpace: widget.location,
+      preselectedSpace: _location,
       onItemsSaved: () async {
         if (!mounted) return;
         _changed = true;
@@ -685,6 +738,15 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   @override
   Widget build(BuildContext context) {
+    if (_removed) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Space unavailable')),
+        body: const Center(
+          child: Text('This Space was deleted or is no longer available.'),
+        ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -695,7 +757,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       child: Scaffold(
         backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
-          title: AppText(widget.location),
+          title: AppText(_location),
+          bottom: _syncError == null
+              ? null
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(44),
+                  child: Text(_syncError!),
+                ),
           centerTitle: true,
           leading: BackButton(
             onPressed: () => Navigator.of(context).pop(_changed),
@@ -1249,7 +1317,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             maxChildSize: 0.92,
             minChildSize: 0.4,
             builder: (_, _) => ShareSpaceSheet(
-              spaceName: widget.location,
+              spaceName: _location,
               teamId: widget.api.teamId,
               api: widget.api,
             ),
@@ -1262,8 +1330,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (_) =>
-              BinLabelSheet(spaceName: widget.location, items: _items),
+          builder: (_) => BinLabelSheet(spaceName: _location, items: _items),
         );
       case 'Members':
         unawaited(() async {
@@ -1272,7 +1339,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             dynamic match;
             for (final s in shares) {
               if ((s['share_name'] ?? '').toString().toLowerCase() ==
-                  widget.location.toLowerCase()) {
+                  _location.toLowerCase()) {
                 match = s;
                 break;
               }
@@ -1283,7 +1350,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 MaterialPageRoute(
                   builder: (_) => SpaceMembersPage(
                     shareId: match['share_id'].toString(),
-                    spaceName: widget.location,
+                    spaceName: _location,
                     api: widget.api,
                   ),
                 ),
@@ -1325,7 +1392,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 MaterialPageRoute(
                   builder: (_) => ReviewQueuePage(
                     api: widget.api,
-                    location: widget.location,
+                    location: _location,
                     onInventoryMutated: () => _changed = true,
                   ),
                 ),
@@ -1406,6 +1473,7 @@ class _FabItem {
 
 class _InventoryPageState extends State<InventoryPage>
     with WidgetsBindingObserver {
+  late final AccountRefresh _accountRefresh;
   late final TextEditingController _search;
   final ValueNotifier<String> _query = ValueNotifier('');
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
@@ -1441,6 +1509,18 @@ class _InventoryPageState extends State<InventoryPage>
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () async {
+        await Future.wait([
+          _loadItems(),
+          _loadSpaces(),
+          _loadMyShares(),
+          _loadJoinedShares(),
+        ]);
+      },
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     WidgetsBinding.instance.addObserver(this);
     RestockPrefs.changes.addListener(_restockChanged);
     _search = TextEditingController();
@@ -1563,20 +1643,6 @@ class _InventoryPageState extends State<InventoryPage>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(
-        Future.wait([
-          _loadItems(),
-          _loadMyShares(),
-          _loadJoinedShares(),
-          _loadSpaces(),
-        ]),
-      );
     }
   }
 
@@ -1738,6 +1804,7 @@ class _InventoryPageState extends State<InventoryPage>
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _search.dispose();
@@ -1843,7 +1910,7 @@ class _InventoryPageState extends State<InventoryPage>
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start',
     );
     setState(() {
-      _loading = true;
+      _loading = !_hasLoadedItems;
       _error = null;
     });
 
@@ -1891,6 +1958,15 @@ class _InventoryPageState extends State<InventoryPage>
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}',
       );
       if (!current()) return;
+      if ([401, 403, 404, 410].contains(e.response?.statusCode)) {
+        setState(() {
+          _items = [];
+          _spaces = [];
+          _error = 'This inventory is no longer available.';
+        });
+        _rows.value = const [];
+        return;
+      }
       if (e.response?.statusCode == 429) {
         setState(
           () =>

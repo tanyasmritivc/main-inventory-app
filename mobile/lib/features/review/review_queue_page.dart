@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
@@ -45,20 +46,32 @@ class ReviewQueuePage extends StatefulWidget {
 }
 
 class _ReviewQueuePageState extends State<ReviewQueuePage> {
+  late final AccountRefresh _accountRefresh;
   bool _loading = true;
   String? _error;
   List<ReviewItem> _items = const [];
 
   @override
+  void dispose() {
+    _accountRefresh.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => _load(quiet: true),
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     unawaited(_load());
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {
