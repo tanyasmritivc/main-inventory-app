@@ -1,3 +1,7 @@
+## October 26 — Baby-blue Upgrade button deployed (PR243)
+
+Runtime `23d6c37` is live in `upgrade-blue-20261026/frontend`, build `ANGzqwqm9IXVTuPlT_7N5`. CSS-only baby-blue glass gradient, soft glow, restrained six-second sheen cycle, focus ring and reduced-motion fallback; original layout/link retained. Safari light/dark preview and live authenticated Upgrade-to-usage navigation verified. All five CI gates (40422960778), production build and 27 staged/live routes passed. Backend unchanged; preceding release retained. Receipt: `docs/plans/upgrade-blue-web-receipt.json`.
+
 ## October 26 — Web plans, sidebar Upgrade and usage deployed (PR242)
 
 Runtime `9d39948` is live in self-hosted `plans-usage-20261026/frontend`, build `bhC0HsnhcOvcIhc4TXAep`. Shared Free/Plus/Team cards now cover public pricing, the skippable first-entry introduction and account Plans & usage. User selected **10 Team members** at unchanged $29/month or $299/year. Intro dismissal persists in account metadata; sidebar Upgrade opens real account-owned record/Space counts. Pilot AI usage correctly says Not metered; paid actions remain Coming soon and early access retains no plan quotas/automatic charges/cutoff.
