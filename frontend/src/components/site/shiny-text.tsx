@@ -17,7 +17,8 @@ export function ShinyText({ text, speed = 2, heading = false }: { text: string; 
     const tick = (now: number) => {
       if (!start) start = now;
       const duration = Math.max(.1, speed) * 1000;
-      const t = Math.min(1, ((now - start) % (duration * (heading ? 2 : 1))) / duration);
+      const cycle = duration + (heading ? 1000 : 0);
+      const t = Math.min(1, ((now - start) % cycle) / duration);
       const center = -22 + 144 * (.5 - Math.cos(Math.PI * t) / 2);
       const stops: [number, number][] = [];
       for (const side of [-1, 1]) for (const f of [0, .2, .4, .6, .8, 1]) {
