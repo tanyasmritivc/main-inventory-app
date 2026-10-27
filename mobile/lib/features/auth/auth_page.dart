@@ -614,6 +614,7 @@ class _AuthPageState extends State<AuthPage> {
           emailRedirectTo: _oauthRedirectTo,
           data: {
             ..._legalAcceptance,
+            'findez_mobile_plan_intro_pending': true,
             if (firstName.isNotEmpty) 'given_name': firstName,
             if (lastName.isNotEmpty) 'family_name': lastName,
             if (fullName.isNotEmpty) 'full_name': fullName,

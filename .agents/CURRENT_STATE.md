@@ -1,3 +1,18 @@
+## October 26 — Mobile signup plans delivered to TestFlight 145
+
+Apple acknowledged 1.1.1 (145), source `4e41564526e9c91d4c3c158c119ee1e20304c0a0`,
+delivery `3d9be244-7275-4680-8173-5759447e8ba7`. PR244 adds a skippable verified-signup
+popup and Settings plan cards with a baby-blue glass finish. Prices match web;
+Team includes ten people. Early access stays free; paid billing remains inactive.
+All five CI gates (40426021126), Apple validation, strict signing, 34 archive/export
+device binaries, 26 privacy manifests and production configuration passed.
+1,178 host tests passed/one existing skip; final 14 focused tests, six native cases
+and Flutter analysis passed. Final screenshots reviewed in both themes and large
+text. Processing/tester availability is pending and was not polled. Physical
+signup/VoiceOver acceptance for this build is unverified; public submission stays
+held. No server deployment or migration. Receipt:
+`docs/plans/mobile-signup-plans-receipt.json`.
+
 ## October 26 - Extraction keyboard follow-up, public submission held
 
 User reported inaccessible composer/keyboard and duplicate headers in Auto Extract after pausing submission. Mobile lane fix/mobile-app-store-audit now pins the composer below a bounded scrollable preview, focuses the outer shell on scan start, adds keyboard dismissal, simplifies scan status and preview, and restores world response actions/photo retry. Full suite 1,167 passed plus one existing skip; 11 focused native checks passed in both themes/small/standard phones/large text. Apple acknowledged TestFlight1.1.1(144), delivery 383aea8e-cbb8-4fc8-9699-127e5df50e84, source 8a8bb6c. All five CI gates, Apple validation, signing/device-platform/privacy/config checks passed. Processing/tester availability pending, not polled. Delivery receipt docs/plans/mobile-extraction-keyboard-receipt.json. User reported physical acceptance on their earlier latest TestFlight; new screenshots supersede any blanket UI acceptance. Keep public submission on hold; beta delivery remains authorized. See docs/plans/mobile-app-store-audit-20261025.md.
