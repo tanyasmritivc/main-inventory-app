@@ -38,6 +38,20 @@ def test_fragmented_tool_arguments_stay_private_and_are_assembled_by_index():
     assert json.loads(call.function.arguments) == {'terms': ['M4']}
 
 
+def test_five_item_lookup_batch_is_not_misclassified_as_broken_stream():
+    calls = [{'index': i, 'id': f'c{i}', 'function': {'name': 'world_search', 'arguments': '{"query":"item"}'}} for i in range(5)]
+    result = list(completion_events(iter([chunk(calls=calls), chunk(finish='tool_calls')])))[-1]
+    assert [call.id for call in result['tool_calls']] == [f'c{i}' for i in range(5)]
+
+
+@pytest.mark.parametrize('index', [-1, 16, True, '0', 0.5])
+def test_malformed_or_unbounded_tool_indexes_still_fail_closed(index):
+    from app.services.completion_stream import CompletionStreamError
+    with pytest.raises(CompletionStreamError) as error:
+        list(completion_events(iter([chunk(calls=[{'index': index, 'function': {'name': 'world_search', 'arguments': '{}'}}])])))
+    assert error.value.code == 'tool_index'
+
+
 @pytest.mark.parametrize('finish', ['length', 'content_filter'])
 def test_truncated_model_output_never_becomes_completed_answer(finish):
     with pytest.raises(RuntimeError, match='interrupted'):

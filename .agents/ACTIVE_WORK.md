@@ -1,3 +1,11 @@
+## October 26 - Group/tool parsing fix deployed
+
+Runtime `c40e9bf` is live after five CI gates passed (40429096988), 1,580 backend tests + 10 subtests and 78 focused tests. Tool batches permit up to 16 bounded calls; unsupported personal-group requests return a truthful answer after authorization without model retries or duplicate proposals. Synthetic staged probe completed in 0.003s with no model/tool calls. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or configuration change. Reusable personal groups are still not implemented. Receipt: `docs/plans/group-tool-stream-receipt.json`.
+
+## October 26 - Group request and tool stream recovery (active)
+
+`fix/api-group-tool-stream` owns the bounded tool-call parser and truthful unsupported personal-group response. No migration, model/provider switch or inventory mutation. Web cancellation/navigation is isolated in `fix/web-chat-and-navigation`.
+
 ## October 25 - Inventory deletion personalization dependency audit
 
 Active API lane `fix/api-inventory-deletion-personalization`. Mobile App Store audit reproduced the inventory purge guard rejecting migration081 tables. Migration085 reviews only the three existing inventory-owned personalization FK dependencies and preserves actor/name, unknown-dependency, and cross-inventory guards. Current production schema (no customer rows, original grants) rehearsed in a network-isolated database; replay, deletion, neighbor preservation, unknown dependencies, foreign aliases, wrong name, outsider and client-RPC denial pass. Production migration pending exact-source CI and backup. No API runtime or mobile change in this lane.

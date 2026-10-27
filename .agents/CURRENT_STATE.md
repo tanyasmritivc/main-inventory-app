@@ -1,3 +1,7 @@
+## October 26 - Group/tool parsing fix deployed
+
+Runtime `c40e9bf` is live after five CI gates passed (40429096988), 1,580 backend tests + 10 subtests and 78 focused tests. Tool batches permit up to 16 bounded calls; unsupported personal-group requests return a truthful answer after authorization without model retries or duplicate proposals. Synthetic staged probe completed in 0.003s with no model/tool calls. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or configuration change. Reusable personal groups are still not implemented. Receipt: `docs/plans/group-tool-stream-receipt.json`.
+
 ## October 25 — Personalization inventory deletion migration085 applied
 
 5cc8d13/PR239, all five CI gates passed. Schema rehearsal and verified full backup preceded the exact function patch; grants preserved and no customer rows modified. Live disposable-account inventory and account deletion, draft save retry, canonical quantity update, and memory switch checks passed. Later AI gateway availability is a separate unresolved mobile-review blocker. See docs/plans/personalization-inventory-deletion.md.

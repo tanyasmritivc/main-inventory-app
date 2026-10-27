@@ -8,6 +8,26 @@ from app.services.inventory_scope import current_inventory
 
 ACTOR, WORLD, OTHER, INVENTORY, WORKSPACE = [str(uuid4()) for _ in range(5)]
 
+
+def test_personal_group_request_is_truthful_and_never_creates_duplicate_stock():
+    message = ('My usual electronics repair kit means my multimeter, soldering iron, wire stripper, USB-C cables, and electrical tape. '
+               'Save this as my personal group called "electronics repair kit". Don\'t create duplicate inventory items.')
+    with patch.object(w, 'directory', return_value={}) as authorized, patch.object(w, 'execute') as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion') as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, message, [], str(uuid4())))[-1]
+    authorized.assert_called_once_with(ACTOR, WORLD)
+    execute.assert_not_called()
+    gateway.assert_not_called()
+    assert result['type'] == 'done'
+    assert "can't save a reusable personal group yet" in result['assistant_message']
+    assert result['answer_context']['operation_diagnostics'] == []
+
+
+def test_personal_group_fast_answer_still_requires_world_access():
+    with patch.object(w, 'directory', side_effect=HTTPException(403)):
+        with pytest.raises(HTTPException):
+            list(w.stream_turn(ACTOR, WORLD, 'Save this as my personal group "kit"', [], str(uuid4())))
+
 def inventory(world=WORLD, role='editor'):
     return {'inventory_id': INVENTORY, 'name': 'Hardware', 'owner_user_id': ACTOR,
         'team_id': WORKSPACE, 'role': role, 'can_edit': role != 'viewer',

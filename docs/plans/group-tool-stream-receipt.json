@@ -1,0 +1,22 @@
+{
+  "published": true,
+  "source": "c40e9bf05ca6910d4b8d5added3e2d52b007c4b0",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 127,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "ci_run": 40429096988,
+  "ci_gates_passed": 5,
+  "backend_tests": 1580,
+  "backend_subtests": 10,
+  "focused_tests": 78,
+  "synthetic_group_probe": {
+    "passed": true,
+    "seconds": 0.003,
+    "model_calls": 0,
+    "inventory_writes": 0
+  },
+  "limitation": "Reusable personal groups remain unsupported; explicit requests get a truthful fast answer."
+}
