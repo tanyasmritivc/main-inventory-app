@@ -55,11 +55,11 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   useLayoutEffect(() => { requireInventoryContext(false); selectInventory(null); }, []);
   useEffect(() => { actor.current = accountId; return () => { actor.current = null; }; }, [accountId]);
   useEffect(() => { setQuery(""); setOffset(0); setPage(null); }, [workspaceId]);
-  usePermissionRefresh(() => setReload(v => v + 1), busy || !!mode);
+  usePermissionRefresh(() => setReload(v => v + 1), busy || !!mode || !!deleting || deleteWorkspace || renameWorkspace || leaveWorkspace);
   useEffect(() => {
     if (!accountId) return;
     let live = true;
-    setLoading(true); setError("");
+    if (reload === 0) setLoading(true); setError("");
     const timer = setTimeout(() => {
       const request = workspaceId
         ? accountRequest<InventoryPage>(accountId, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/directory?q=${encodeURIComponent(query)}&offset=${offset}`).then((result) => { if (live) setPage(result); })

@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import {worldHref} from "@/lib/world-navigation";
 import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
@@ -471,19 +472,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
-  // Refetch spaces and items when the tab regains focus (cross-device sync)
-  useEffect(() => {
-    const onFocus = () => void refreshAll();
-    const onVisibility = () => { if (!document.hidden) void refreshAll(); };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-    // refreshAll reads token via refreshToken() internally — no dependency needed
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  usePermissionRefresh(() => refreshAll(), loading);
 
   // ── Item mutations ─────────────────────────────────────────────────────────
   async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, 'item_id' | 'created_at'>>) {
@@ -613,19 +602,33 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   // ── Space management ───────────────────────────────────────────────────────
+  const refreshSequence = useRef(0);
   async function refreshAll(t?: string) {
+    const sequence = ++refreshSequence.current;
     const tok = t || token || (await refreshToken());
     if (!tok) return;
-    const [itemsResult, spacesResult, reviewsResult] = await Promise.allSettled([
+    const [itemsResult, spacesResult, reviewsResult, queryResult, checkoutsResult] = await Promise.allSettled([
       searchItems({ token: tok, query: '' }),
       getSpaces({ token: tok }),
       getReviewItems({ token: tok, limit: 1 }),
+      query.trim() && !selectedSpace ? searchItems({ token: tok, query: query.trim() }) : Promise.resolve(null),
+      getActiveCheckouts({ token: tok }),
     ]);
+    if (sequence !== refreshSequence.current) return;
     if (itemsResult.status === 'fulfilled') {
       setAllItems(itemsResult.value?.items ?? []);
-      setItems(itemsResult.value?.items ?? []);
+      adoptRestock((itemsResult.value?.items ?? []).map(item => item.item_id));
+      if (!query.trim() || selectedSpace) setItems(itemsResult.value?.items ?? []);
     }
+    if (queryResult.status === 'fulfilled' && queryResult.value) setItems(queryResult.value.items ?? []);
+    if (checkoutsResult.status === 'fulfilled') setActiveCheckouts(checkoutsResult.value.checkouts ?? []);
     if (spacesResult.status === 'fulfilled') {
+      // A saved ID survives rename; a missing ID means the Space was removed.
+      const previous = serverSpaces.find(space => space.name === selectedSpace);
+      if (previous) {
+        const next = spacesResult.value.find(space => space.id === previous.id);
+        setSelectedSpace(next?.name ?? null);
+      }
       setServerSpaces(spacesResult.value);
       setSpacesLoadError(null);
     } else {

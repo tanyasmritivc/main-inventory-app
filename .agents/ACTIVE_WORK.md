@@ -1684,3 +1684,7 @@ preflight evidence and blockers are in `CURRENT_STATE.md` and the release checkl
 Lane fix/web-scan-save-return-20261018 from 8553ad4. Confirmed Capture saves return
 to the inventory-scoped Items route; failed drafts stay for retry. Original photo
 retention/order is API-owned; existing galleries remain private. Dashboard untouched.
+
+## October 26 account consistency - deployed
+
+Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.

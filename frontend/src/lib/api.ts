@@ -147,6 +147,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${apiBase()}${scopedPath}`, {
+      cache: "no-store",
       method: opts.method || "GET",
       headers: {
         Authorization: `Bearer ${token}`,

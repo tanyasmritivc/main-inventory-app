@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { accountRequest } from "@/lib/account-request";
 import { activeInventory } from "@/lib/inventory-selection";
@@ -23,10 +24,10 @@ function MemoryEditor({ accountId, inventoryId }: { accountId: string | null; in
   const pending = useRef<Record<string, unknown> | null>(null), alive = useRef(true);
   const [hasPending, setHasPending] = useState(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet = false) => {
     if (!accountId) return;
     const generation=++epoch.current;
-    setBusy(true); setError(""); setData(undefined); setSpaces([]);
+    setBusy(true); setError(""); if (!quiet) { setData(undefined); setSpaces([]); }
     try {
       const next = await accountRequest<Snapshot>(accountId, "/memory" + (inventoryId ? `?inventory_id=${inventoryId}` : ""));
       if (!alive.current || generation!==epoch.current) return;
@@ -40,6 +41,7 @@ function MemoryEditor({ accountId, inventoryId }: { accountId: string | null; in
     finally { if (alive.current && generation===epoch.current) setBusy(false); }
   }, [accountId, inventoryId]);
   useEffect(() => { void load(); }, [load]);
+  usePermissionRefresh(() => load(true), busy || hasPending || !!alias);
   async function write(values?: Record<string, unknown>) {
     if (!accountId || busy || (!data && !pending.current)) return;
     if (values && !data) return;
