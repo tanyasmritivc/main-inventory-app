@@ -1,6 +1,6 @@
-## October 26 - Mobile welcome shimmer (active)
+## October 26 - Mobile welcome shimmer delivered
 
-Mobile-only style/mobile-chat-welcome-shimmer applies the requested monochrome welcome glimmer to all empty-chat heading variants. Chat progress is already bird-free; preserve its text alignment and the separate Auto Extract loader. Build149 follows startup recovery148. No API/schema changes or public submission.
+Apple acknowledged TestFlight 1.1.1 (149), runtime `6044eb0`, PR259, delivery `26c6c078-ae68-4312-88cb-d5ccfeb9d9de`. All empty-chat headings use a monochrome four-second left-to-right sweep with a one-second pause, matching web. Mobile progress was already bird-free; the separate Auto Extract mascot stays. Build149 includes startup recovery148. 1,190 full tests (one existing skip), four final timing tests, clean analysis, four native iOS checks, all five exact-source CI gates (40450237050), Apple validation, strict signing, 34 archive/export device binaries, 26 privacy manifests and production configuration passed. IPA/archive preserved. Processing/tester availability pending and not polled; physical acceptance unverified. Public submission stays held. Receipt: `docs/plans/mobile-chat-welcome-shimmer-receipt.json`.
 
 ## October 26 - Startup onboarding save recovery delivered
 
