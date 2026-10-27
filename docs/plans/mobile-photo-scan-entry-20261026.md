@@ -1,6 +1,6 @@
 # Mobile photo Scan entry and onboarding
 
-Scope: mobile only, branch `feat/mobile-scan-entry-onboarding`, candidate 1.1.1 (150).
+Scope: mobile only, branch `feat/mobile-scan-entry-onboarding`, delivered TestFlight 1.1.1 (150).
 
 Personal or Team comes before existing Apple/Google/email authentication. Personal opens Ask. Team creates an organization using durable existing organization/workspace/inventory provisioning, then a single-choice referral question before entering its organization. Older retained setup drafts still recover through the existing gate. The plans introduction follows setup.
 
@@ -17,3 +17,7 @@ The user explicitly removed live Scan Frames and Auto-add after the live provide
 - Final analysis, exact-source CI, signed device archive/export verification and Apple validation/upload are recorded with the delivery receipt.
 
 Physical iPhone acceptance remains required for camera permissions and real capture, photo-library cancellation, OAuth, VoiceOver and background/resume behavior. Simulator testing cannot establish real camera performance or production recognition accuracy. Public App Store submission remains held.
+
+## Delivery
+
+Apple acknowledged build 150, delivery `2fb5cce0-e2ba-4a16-907d-ebc11770a7a0`, from runtime `7f0e5f7`. All five CI gates passed on that source; signing, device-platform checks, privacy/configuration and Apple validation passed. Simulator app installed and opened for user review. Processing/tester availability is pending and not polled. See `mobile-photo-scan-entry-receipt.json`.
