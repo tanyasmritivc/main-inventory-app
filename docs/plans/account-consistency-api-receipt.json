@@ -1,0 +1,14 @@
+{
+  "published": true,
+  "source": "1f21a1fa701cb025884f9320c27066b1ad5c5b53",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 127,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/251",
+  "ci_jobs_passed": 5,
+  "refresh_interval_seconds": 15,
+  "migrations": false
+}

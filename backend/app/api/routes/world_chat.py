@@ -52,12 +52,12 @@ async def file_source(request: Request, world_id: str, file: UploadFile = File(.
 
 @router.get('/directory')
 def directory(world_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    return world.directory(user.user_id, world.world_key(world_id))
+    return JSONResponse(world.directory(user.user_id, world.world_key(world_id)), headers={'Cache-Control': 'private, no-store'})
 
 
 @router.get('/spaces')
 def spaces(world_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    return world.spaces(user.user_id, world.world_key(world_id))
+    return JSONResponse(world.spaces(user.user_id, world.world_key(world_id)), headers={'Cache-Control': 'private, no-store'})
 
 
 @router.get('/resources/{inventory_id}/{kind}/{resource_id}')
