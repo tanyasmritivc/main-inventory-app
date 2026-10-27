@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
-import { APP_THEME_STORAGE_KEY } from "@/lib/app-theme-constants";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+import { APP_THEME_STORAGE_KEY, isInteriorPath } from "@/lib/app-theme-constants";
+
+import { usePathname } from "next/navigation";
 
 export type AppThemeChoice = "light" | "dark" | "system";
 export type AppThemeResolved = "light" | "dark";
@@ -54,33 +56,12 @@ type AppThemeContextValue = {
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
-/**
- * Applies the interior's dark class to <html> only while AppShell (the
- * authenticated app frame) is mounted, and removes it on unmount. This
- * keeps dark mode scoped to app-frame routes: the landing page, marketing
- * routes and sign-in never render AppShell, so they never see the .dark
- * class regardless of the visitor's system preference. <html> rather than
- * <body> because the blocking script in layout.tsx (which sets the same
- * class before first paint, to avoid a flash) runs in <head>, before
- * <body> exists.
- */
-export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  // Match the server during hydration. The head script already paints the
-  // saved theme; leave it intact until browser preferences have been read.
+/** Shared preferences; document styling is owned by the persistent root. */
+function useThemeState() {
   const storedChoice = useSyncExternalStore(subscribeChoice, readStoredChoice, serverChoice);
   const choice = storedChoice ?? "system";
   const systemDark = useSyncExternalStore(subscribeSystem, systemPrefersDark, serverSystemDark);
   const resolved: AppThemeResolved = choice === "system" ? (systemDark ? "dark" : "light") : choice;
-
-  useEffect(() => {
-    return () => {
-      document.documentElement.classList.remove("dark");
-    };
-  }, []);
-
-  useEffect(() => {
-    if (storedChoice !== null) document.documentElement.classList.toggle("dark", resolved === "dark");
-  }, [storedChoice, resolved]);
 
   const setTheme = useCallback((next: AppThemeChoice) => {
     try {
@@ -96,6 +77,27 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({ theme: choice, resolvedTheme: resolved, setTheme }), [choice, resolved, setTheme]);
 
+  return { value, ready: storedChoice !== null };
+}
+
+/** Remains mounted when an authenticated page or its loading boundary changes. */
+export function AppThemeDocument() {
+  const pathname = usePathname();
+  const { value, ready } = useThemeState();
+  useLayoutEffect(() => {
+    // Keep the prepaint script's class until browser preference is known.
+    // Public routes must clear it even during hydration/sign-out.
+    const interior = isInteriorPath(pathname ?? "");
+    if (interior && !ready) return;
+    const dark = interior && value.resolvedTheme === "dark";
+    document.documentElement.classList.toggle("dark", dark);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b0b0d" : "#ffffff");
+  }, [pathname, ready, value.resolvedTheme]);
+  return null;
+}
+
+export function AppThemeProvider({ children }: { children: React.ReactNode }) {
+  const { value } = useThemeState();
   return <AppThemeContext.Provider value={value}>{children}</AppThemeContext.Provider>;
 }
 

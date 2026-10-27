@@ -1,3 +1,7 @@
+## October 26 - Persistent navigation theme (active)
+
+`fix/web-theme-navigation` owns document-level appearance across interior transitions, loading and public exits. No API, mobile, authorization or price changes.
+
 ## October 26 - Memory, Upgrade dialog and concise progress deployed
 
 Runtime `49b55ee` is live in `memory-modal-20261026/frontend`, build `7YyH16N06sF1GQ5MmykFa` (PR247). Memory has padded sections, a native personalization switch and paired style selectors. The 48px baby-blue Upgrade button opens shared plan cards with a full-page link. Repeated real progress phases are grouped into at most six stages with received-update counts. Prices and Team ten-person allowance are unchanged. 630 tests / 88 suites, TypeScript, ESLint (0 errors/52 existing warnings), five CI gates (40431343407), production build and 27 staged/live routes passed. Safari verified dark desktop layout, dialog monthly/yearly prices, Escape/focus return and full-page link. Backend process unchanged; previous release retained. Receipt: `docs/plans/web-memory-upgrade-progress-receipt.json`.
