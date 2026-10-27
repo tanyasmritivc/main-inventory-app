@@ -1,6 +1,17 @@
-## October 26 — Mobile signup plans popup (active)
+## October 26 — Mobile signup plans delivered to TestFlight 145
 
-`feat/mobile-plans-welcome` in `/private/tmp/findez-prelaunch-mobile` owns the optional post-signup plans popup and Settings plan styling/catalog. Match web prices and 10 Team members; no backend/web changes, quota activation or public submission. Preserve auth and onboarding drafts. Beta delivery remains authorized.
+Apple acknowledged 1.1.1 (145), source `4e41564526e9c91d4c3c158c119ee1e20304c0a0`,
+delivery `3d9be244-7275-4680-8173-5759447e8ba7`. PR244 adds a skippable verified-signup
+popup and Settings plan cards with a baby-blue glass finish. Prices match web;
+Team includes ten people. Early access stays free; paid billing remains inactive.
+All five CI gates (40426021126), Apple validation, strict signing, 34 archive/export
+device binaries, 26 privacy manifests and production configuration passed.
+1,178 host tests passed/one existing skip; final 14 focused tests, six native cases
+and Flutter analysis passed. Final screenshots reviewed in both themes and large
+text. Processing/tester availability is pending and was not polled. Physical
+signup/VoiceOver acceptance for this build is unverified; public submission stays
+held. No server deployment or migration. Receipt:
+`docs/plans/mobile-signup-plans-receipt.json`.
 
 ## October 26 - Extraction keyboard follow-up, public submission held
 

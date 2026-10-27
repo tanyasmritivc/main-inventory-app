@@ -39,3 +39,8 @@ Simulator tests use synthetic data and do not prove live OAuth/email verificatio
 or physical VoiceOver acceptance. Verify a disposable new account and Settings
 on the delivered TestFlight build. Public App Store submission remains held.
 Build 145 delivery and CI results are recorded in the separate release receipt.
+
+Delivery: Apple acknowledged TestFlight 1.1.1 (145). All five CI gates passed on
+source 4e41564. Signing, device-platform, privacy/config and Apple validation
+passed. Apple processing and tester availability were not polled. Public
+submission remains held. Receipt: mobile-signup-plans-receipt.json.
