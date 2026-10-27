@@ -1126,3 +1126,15 @@ revoked scopes, failed chat deletion, settings persistence/rollback and menu act
 validation. `flutter run -t tool/native_controls_visual.dart -d <ios-device>` runs a
 synthetic debug-only UIKit audit. Manual native/physical acceptance steps and
 known coverage limits: `docs/plans/native-ios-controls-20261023.md`.
+
+
+### Mobile photo-only Scan entry (October 26)
+
+Run `flutter test --no-pub test/scan_entry_flow_test.dart test/onboarding_launch_test.dart`
+for choice/auth order, retained-draft compatibility, account/world isolation,
+photo-only modes, no background capture, cancellation, review/save/Undo,
+unknown-count gating, existing-item confirmation and idempotent lost-response retry.
+`integration_test/scan_entry_native_test.dart` repeats the flow fixtures on iOS;
+`integration_test/scan_entry_visual_test.dart` checks light/dark and 2.6x text.
+No fixture test proves the physical camera or live model latency. Verify those on
+the final TestFlight build. Live frames and Auto-add are intentionally absent.

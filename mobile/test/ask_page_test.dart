@@ -854,56 +854,32 @@ void main() {
     );
   });
 
-  testWidgets(
-    'failed photo-only retry reuses photo and request without duplicates',
-    (tester) async {
-      final api = _AskApi(fail: true, world: true);
-      await tester.pumpWidget(
-        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
-      );
-      await attachWorld(tester);
-      await tester.tap(find.byTooltip('Send message'));
-      await tester.pumpAndSettle();
-      expect(find.text('Retry response'), findsOneWidget);
-      api.fail = false;
-      await tester.tap(find.text('Retry response'));
-      await tester.pumpAndSettle();
-      expect(api.photos, hasLength(2));
-      expect(api.photos.last.bytes, png);
-      expect(api.photoQuestions, ['', '']);
-      expect(api.photoRequestIds.first, isNotNull);
-      expect(api.photoRequestIds.last, api.photoRequestIds.first);
-      expect(api.commands, isEmpty);
-      expect(find.byType(AskQuestionCard), findsOneWidget);
-      expect(find.textContaining('could not be analyzed'), findsNothing);
-      expect(
-        find.textContaining('No inventory item has been added'),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets('completed photo-only response retries through saved message', (
-    tester,
-  ) async {
-    final api = _AskApi(world: true);
-    await tester.pumpWidget(
-      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
-    );
+  testWidgets('failed attachment extraction retains the photo for retry', (tester) async {
+    final api = _AskApi(fail: true, world: true);
+    await tester.pumpWidget(_page(api, photoPicker: (_) async => AskPhoto(bytes: png)));
     await attachWorld(tester);
-    await tester.tap(find.byTooltip('Send message'));
+    expect(find.textContaining('Could not finish scanning'), findsOneWidget);
+    api.fail = false;
+    await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Retry response'));
+    expect(api.photos, hasLength(2));
+    expect(api.photos.last.bytes, png);
+    expect(api.photos.every((photo) => photo.autoExtract), isTrue);
+    expect(find.text('Review extraction'), findsOneWidget);
+    expect(api.commands, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('completed attachment extraction stays in chat without a second request', (tester) async {
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(_page(api, photoPicker: (_) async => AskPhoto(bytes: png)));
+    await attachWorld(tester);
+    expect(find.text('Review extraction'), findsOneWidget);
+    await tester.tap(find.byTooltip('Keep draft in chat'));
     await tester.pumpAndSettle();
-    expect(api.retriedMessageIds, ['photo-answer']);
     expect(api.photos, hasLength(1));
     expect(api.commands, isEmpty);
-    expect(find.byType(AskQuestionCard), findsOneWidget);
-    expect(
-      find.text('Photo answer regenerated without saving items.'),
-      findsOneWidget,
-    );
+    expect(find.text('Blue pen'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -1122,80 +1098,31 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets('typed photo question waits for Send', (tester) async {
+  testWidgets('photo attachment extracts immediately and retains typed question', (tester) async {
     final api = _AskApi(world: true);
-    await tester.pumpWidget(
-      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
-    );
+    await tester.pumpWidget(_page(api, photoPicker: (_) async => AskPhoto(bytes: png)));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Do I have this?');
-    await tester.tap(find.byTooltip('Capture or attach'));
-    await tester.pumpAndSettle();
-    if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
-      tester
-          .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
-          .onSelected('library');
-    } else {
-      if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
-        tester
-            .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
-            .onSelected('library');
-      } else {
-        await tester.tap(find.text('Attach'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Photo library'));
-      }
-    }
-    await tester.pumpAndSettle();
-    expect(api.photos, isEmpty);
+    await attachWorld(tester);
+    expect(api.photos.single.autoExtract, isTrue);
+    expect(api.photoQuestions.single, isEmpty);
+    expect(find.text('Do I have this?'), findsOneWidget);
+    expect(find.text('Review extraction'), findsOneWidget);
     await tester.tap(find.byTooltip('Send message'));
     await tester.pumpAndSettle();
-    expect(api.photos.single.autoExtract, isFalse);
-    expect(api.photoQuestions.single, 'Do I have this?');
+    expect(api.commands.single, 'Do I have this?');
   });
-  testWidgets(
-    'ordinary image-only attachment waits for Send and never auto-extracts',
-    (tester) async {
-      final api = _AskApi(world: true);
-      await tester.pumpWidget(
-        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Capture or attach'));
-      await tester.pumpAndSettle();
-      if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
-        tester
-            .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
-            .onSelected('library');
-      } else {
-        await tester.tap(find.text('Attach'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Photo library'));
-      }
-      await tester.pumpAndSettle();
-      expect(api.photos, isEmpty);
-      expect(find.text('Photo attached'), findsOneWidget);
-      final preview = find.byKey(const Key('ask-photo-preview'));
-      expect(preview, findsOneWidget);
-      final thumbnail = tester.widget<Image>(
-        find.descendant(of: preview, matching: find.byType(Image)),
-      );
-      expect(thumbnail.image, isA<MemoryImage>());
-      expect((thumbnail.image as MemoryImage).bytes, png);
-      // Keep the image visible after typing the accompanying question.
-      await tester.enterText(
-        find.byType(TextField).first,
-        'Describe this photo',
-      );
-      await tester.pump();
-      expect(preview, findsOneWidget);
-      await tester.tap(find.byTooltip('Send message'));
-      await tester.pumpAndSettle();
-      expect(api.photos, hasLength(1));
-      expect(api.photos.single.autoExtract, isFalse);
-      expect(api.photoQuestions.single, contains('Describe this photo'));
-    },
-  );
+  testWidgets('image-only attachment automatically extracts into an unsaved review', (tester) async {
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(_page(api, photoPicker: (_) async => AskPhoto(bytes: png)));
+    await attachWorld(tester);
+    expect(api.photos, hasLength(1));
+    expect(api.photos.single.autoExtract, isTrue);
+    expect(find.text('Review extraction'), findsOneWidget);
+    expect(find.textContaining('Not saved yet'), findsOneWidget);
+    expect(find.byType(AskQuestionCard), findsNothing);
+    expect(api.commands, isEmpty);
+  });
   testWidgets('completed extraction stays visible if the model reply fails', (
     tester,
   ) async {

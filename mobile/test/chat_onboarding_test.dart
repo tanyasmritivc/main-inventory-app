@@ -1,3 +1,4 @@
+import 'package:mobile/features/scan/scan_experience.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -507,7 +508,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(MaterialApp(home: LaunchAuthGate(api: api)));
       await pump(tester);
-      await tap(tester, 'Continue with email');
+      await tap(tester, 'Personal');
+      await tester.tap(find.byKey(const Key('auth-email-option')));
+      await pump(tester);
       expect(find.byType(AuthPage), findsOneWidget);
       for (final entry in {
         'Email': 'trial@example.test',
@@ -717,7 +720,8 @@ void main() {
         tester.widget<ChatPage>(find.byType(ChatPage)).initialSource,
         isNull,
       );
-      expect(find.byTooltip('Snap a shelf'), findsOneWidget);
+      expect(find.text('Scan'), findsOneWidget);
+      expect(find.byType(ScanWelcomeWindow), findsOneWidget);
       expect(find.text('Snap a shelf to add your first items'), findsOneWidget);
       expect(transport.writes, isEmpty);
       expect(await ChatOnboardingStore.read(), isNull);
@@ -768,7 +772,7 @@ void main() {
     });
   }
   testWidgets(
-    'first real camera tap consumes the hint even when photo is cancelled',
+    'cancelled attachment leaves the first-scan invitation available',
     (tester) async {
       await login();
       await FirstCameraHint.arm(actor);
@@ -777,28 +781,27 @@ void main() {
         'personal',
         isCurrent: () => true,
       );
-      var opened = 0;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ChatPage(
               api: worldApi,
               worldHeading: 'Your physical world, remembered.',
-              photoPicker: (camera) async {
-                expect(camera, isTrue);
-                opened++;
-                return null;
-              },
+              photoPicker: (_) async => null,
             ),
           ),
         ),
       );
       await pump(tester);
-      await tester.tap(find.byTooltip('Snap a shelf'));
+      expect(find.text('Scan'), findsOneWidget);
+      expect(find.byType(ScanWelcomeWindow), findsOneWidget);
+      await tester.tap(find.byTooltip('Capture or attach'));
       await pump(tester);
-      expect(opened, 1);
-      expect(await FirstCameraHint.pending(actor), isFalse);
-      expect(find.byTooltip('Snap a shelf'), findsNothing);
+      await tester.tap(find.text('Auto Extract'));
+      await pump(tester);
+      await tester.tap(find.text('Take photo'));
+      await pump(tester);
+      expect(find.byType(ScanWelcomeWindow), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       Supabase.instance.client.auth.stopAutoRefresh();

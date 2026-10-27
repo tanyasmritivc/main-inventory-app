@@ -10,6 +10,8 @@ class WorldComposer extends StatefulWidget {
     super.key,
     this.attachmentKey,
     this.onFirstCamera,
+    this.onScan,
+    this.scanPulse = 0,
     this.sourceChips,
     this.menuOpen = false,
     this.onSourceSelected,
@@ -29,6 +31,8 @@ class WorldComposer extends StatefulWidget {
   });
   final GlobalKey? attachmentKey;
   final VoidCallback? onFirstCamera;
+  final VoidCallback? onScan;
+  final int scanPulse;
   final Widget? sourceChips;
   final bool menuOpen;
   final ValueChanged<String>? onSourceSelected;
@@ -242,45 +246,56 @@ class _WorldComposerState extends State<WorldComposer>
                     onPressed: widget.focusNode.unfocus,
                     icon: const Icon(Icons.keyboard_hide_outlined, size: 21),
                   ),
-                Semantics(
-                  button: true,
-                  label: widget.listening
-                      ? 'Send voice message'
-                      : 'Voice input. Hold to speak, release to send',
-                  onTap: widget.onVoice,
-                  child: Listener(
-                    onPointerDown: widget.onVoiceStart == null
-                        ? null
-                        : (_) => widget.onVoiceStart!(),
-                    onPointerUp: widget.onVoiceStart == null
-                        ? null
-                        : (_) => widget.onVoiceEnd?.call(),
-                    onPointerCancel: (_) => widget.onVoiceCancel?.call(),
-                    child: ExcludeSemantics(
-                      child: AbsorbPointer(
-                        child: IconButton(
-                          tooltip: widget.listening
-                              ? 'Release to send'
-                              : 'Hold to speak',
-                          onPressed: widget.onVoice,
-                          icon: Icon(
-                            widget.listening
-                                ? CupertinoIcons.mic_fill
-                                : CupertinoIcons.mic,
-                            size: 21,
+                if (widget.controller.text.trim().isEmpty && !widget.busy)
+                  Semantics(
+                    button: true,
+                    label: widget.listening
+                        ? 'Send voice message'
+                        : 'Voice input. Hold to speak, release to send',
+                    onTap: widget.onVoice,
+                    child: Listener(
+                      onPointerDown: widget.onVoiceStart == null
+                          ? null
+                          : (_) => widget.onVoiceStart!(),
+                      onPointerUp: widget.onVoiceStart == null
+                          ? null
+                          : (_) => widget.onVoiceEnd?.call(),
+                      onPointerCancel: (_) => widget.onVoiceCancel?.call(),
+                      child: ExcludeSemantics(
+                        child: AbsorbPointer(
+                          child: IconButton(
+                            tooltip: widget.listening
+                                ? 'Release to send'
+                                : 'Hold to speak',
+                            onPressed: widget.onVoice,
+                            icon: Icon(
+                              widget.listening
+                                  ? CupertinoIcons.mic_fill
+                                  : CupertinoIcons.mic,
+                              size: 21,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                if (widget.controller.text.trim().isEmpty &&
+                    !widget.busy &&
+                    widget.onScan != null)
+                  Flexible(
+                    child: _ScanPill(
+                      key: ValueKey(widget.scanPulse),
+                      pulse: widget.scanPulse > 0,
+                      onTap: widget.onScan!,
+                    ),
+                  ),
                 if (widget.onSend != null || widget.busy) ...[
                   const SizedBox(width: 8),
                   IconButton.filled(
                     tooltip: 'Send message',
                     onPressed: widget.onSend,
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFC45A28),
+                      backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: Theme.of(
                         context,
@@ -338,4 +353,55 @@ class _ComposerSurface extends StatelessWidget {
             ),
     );
   }
+}
+
+class _ScanPill extends StatefulWidget {
+  const _ScanPill({super.key, required this.onTap, required this.pulse});
+  final VoidCallback onTap;
+  final bool pulse;
+  @override
+  State<_ScanPill> createState() => _ScanPillState();
+}
+
+class _ScanPillState extends State<_ScanPill>
+    with SingleTickerProviderStateMixin {
+  late final _animation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 650),
+  );
+  bool _started = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_started && widget.pulse && !MediaQuery.disableAnimationsOf(context)) {
+      _started = true;
+      _animation.forward().then((_) {
+        if (mounted) _animation.reverse();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _animation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ScaleTransition(
+    scale: Tween<double>(begin: 1, end: 1.08).animate(_animation),
+    child: FilledButton.icon(
+      onPressed: widget.onTap,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(88, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+      ),
+      icon: MediaQuery.textScalerOf(context).scale(1) > 1.4
+          ? null
+          : const Icon(Icons.document_scanner_outlined, size: 18),
+      label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Scan')),
+    ),
+  );
 }

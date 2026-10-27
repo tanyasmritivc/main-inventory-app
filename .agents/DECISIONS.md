@@ -1,3 +1,7 @@
+## 2026-10-26 — Photo-only Scan entry
+
+Mobile onboarding uses Personal/Team → authentication → Personal Ask, or Team organization creation → single-choice referral → organization Ask. Scan is a monochrome composer control with Take Photo and Photo Library, using the existing extraction and explicit review/save. User explicitly cancelled live Scan Frames and Auto-add; do not restore them as part of this lane. Keep unrelated web/API and UI behavior unchanged.
+
 ## October 26 - Retained onboarding draft recovery
 
 Real onboarding drafts must satisfy the existing capture contract: use Other for an empty category, including legacy retained drafts, while preserving stable request IDs and supplied categories. A failed startup save or unreadable draft must offer Continue to app without deleting local data. Deferral is session-only; a future launch retries through the same receipts. Do not call all startup failures connection errors, and never infer saved status from HTTP200 without accepted item receipts.

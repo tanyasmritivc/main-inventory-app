@@ -1,3 +1,7 @@
+import '../onboarding/scan_entry.dart';
+import '../workspaces/hierarchy_page.dart';
+import '../scan/scan_camera_page.dart';
+import '../scan/scan_experience.dart';
 import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
@@ -274,19 +278,131 @@ class _ChatPageState extends State<ChatPage>
   bool _savingCapture = false;
   final _previewKey = GlobalKey<ChatCaptureCardState>();
   bool _pickingPhoto = false;
+  ScanExperience? _scanExperience;
+  int _scanPulse = 0;
   String? _cameraHintOwner;
   bool get _cameraHint =>
       _cameraHintOwner != null && _cameraHintOwner == widget.api.accountId;
+  Future<void> _openScan() async {
+    if (_sending || _pickingPhoto) return;
+    _focusNode.unfocus();
+    final actor = widget.api.accountId;
+    final wasScanned = _scanExperience?.scanned == true;
+    final outcome = await Navigator.push<ScanOutcome>(
+      context,
+      MaterialPageRoute(builder: (_) => ScanCameraPage(api: widget.api)),
+    );
+    if (!mounted || widget.api.accountId != actor) return;
+    await _loadCameraHint();
+    if (!mounted) return;
+    if (!wasScanned && _scanExperience?.scanned == true) {
+      setState(() => _scanPulse++);
+    }
+    if (outcome == null) return;
+    if (outcome.names.isNotEmpty) {
+      final first = _scanExperience?.scanned != true;
+      try {
+        await _scanExperience?.saved(outcome.names, outcome.location);
+      } catch (_) {
+        /* A preference failure cannot undo confirmed inventory. */
+      }
+      if (!mounted) return;
+      setState(() {
+        if (first) _scanPulse++;
+      });
+      widget.onInventoryMutated?.call();
+      await _offerTeamInvite();
+    }
+  }
+
+  Future<void> _offerTeamInvite() async {
+    final actor = widget.api.accountId;
+    final world = widget.api.worldKey;
+    if (actor == null || world == null || world == 'personal') return;
+    try {
+      final setup = await ScanEntryStore.claim(actor);
+      if (!mounted ||
+          setup?['path'] != 'team' ||
+          setup?['organization'] != world ||
+          setup?['inviteOffered'] == true) {
+        return;
+      }
+      await ScanEntryStore.save(actor, {...setup!, 'inviteOffered': true});
+      if (!mounted) return;
+      final invite = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Invite the team'),
+          content: const Text('Your first items are ready to share.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Not now'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Invite team'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || invite != true) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HierarchyPage(
+            api: widget.api,
+            level: HierarchyLevel.organization,
+            id: world,
+            panel: HierarchyPanel.people,
+            onOpenInventory: (id, workspace, organization) async {},
+          ),
+        ),
+      );
+    } catch (_) {
+      /* Optional invitation cue; saved inventory is already confirmed. */
+    }
+  }
+
+  Widget _scanQuestions() => Wrap(
+    spacing: 8,
+    runSpacing: 6,
+    children: [
+      for (final question in _scanExperience?.questions ?? <String>[])
+        ActionChip(
+          label: Text(question),
+          onPressed: _sending
+              ? null
+              : () {
+                  unawaited(_scanExperience!.used().catchError((_) {}));
+                  unawaited(_submit(question));
+                },
+        ),
+    ],
+  );
+
   Future<void> _loadCameraHint() async {
     final owner = widget.api.accountId;
     if (owner == null) return;
+    final experience = ScanExperience(
+      owner,
+      widget.api.worldKey ??
+          widget.api.inventoryContext?.organizationId ??
+          'personal',
+    );
+    try {
+      await experience.load();
+    } catch (_) {
+      /* Optional first-scan cue. */
+    }
+    if (mounted && widget.api.accountId == owner) {
+      setState(() => _scanExperience = experience);
+    }
     final pending = await FirstCameraHint.pending(owner);
     if (mounted && widget.api.accountId == owner) {
       setState(() => _cameraHintOwner = pending ? owner : null);
     }
   }
-
-  Future<void> _firstCamera() => _attachPhoto(source: true, autoExtract: true);
 
   Future<bool> _consumeCameraHint() async {
     if (!_cameraHint) return true;
@@ -2900,7 +3016,7 @@ class _ChatPageState extends State<ChatPage>
     } else if (selected == 'auto_extract') {
       await _attachPhoto(autoExtract: true);
     } else if (selected == 'camera' || selected == 'library') {
-      await _attachPhoto(source: selected == 'camera');
+      await _attachPhoto(source: selected == 'camera', autoExtract: true);
     } else if (selected == 'file') {
       await _attachChatFile();
     } else if (selected == 'connections') {
@@ -3229,8 +3345,39 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
+  Future<void> _rememberSavedCapture(Map<String, dynamic> draft) async {
+    if (draft['status'] != 'saved' || draft['source_kind'] == 'spreadsheet') {
+      return;
+    }
+    final receipt = draft['receipt'] as Map?;
+    final inserted = (receipt?['resource_links'] as List? ?? [])
+        .whereType<Map>()
+        .where((row) => row['kind'] == 'item');
+    final names = inserted
+        .map((row) => row['label']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
+    if (names.isEmpty) return;
+    final first = _scanExperience?.scanned != true;
+    try {
+      await _scanExperience?.saved(
+        names,
+        draft['location'] as String?,
+      );
+      if (mounted) {
+        setState(() {
+          if (first) _scanPulse++;
+        });
+      }
+      if (mounted) await _offerTeamInvite();
+    } catch (_) {
+      /* Confirmed inventory is independent of the introduction. */
+    }
+  }
+
   void _onCaptureChanged(Map<String, dynamic> updated) {
     if (!mounted) return;
+    unawaited(_rememberSavedCapture(updated));
     setState(() {
       if (_previewDraft?['id'] == updated['id']) _previewDraft = updated;
       for (var i = 0; i < _session.messages.length; i++) {
@@ -3465,9 +3612,8 @@ class _ChatPageState extends State<ChatPage>
                       _capturePreview(),
                     if (_photo != null) _photoPreview(),
                     WorldComposer(
-                      onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
-                          ? _firstCamera
-                          : null,
+                      onScan: _sending || _pickingPhoto ? null : _openScan,
+                      scanPulse: _scanPulse,
                       sourceChips: _sourceChips,
                       menuOpen: _sourceMenuOpen,
                       attachmentKey: _attachmentAnchor,
@@ -3493,6 +3639,19 @@ class _ChatPageState extends State<ChatPage>
                       listening: _isListening,
                       compact: compact,
                     ),
+                    if (_scanExperience != null &&
+                        !_scanExperience!.scanned &&
+                        !_scanningPreview &&
+                        _previewDraft == null) ...[
+                      const SizedBox(height: 16),
+                      ScanWelcomeWindow(
+                        onTap: _sending || _pickingPhoto ? null : _openScan,
+                      ),
+                    ],
+                    if (_scanExperience?.questions.isNotEmpty == true) ...[
+                      const SizedBox(height: 14),
+                      _scanQuestions(),
+                    ],
                   ],
                 ),
               ),
@@ -3631,9 +3790,8 @@ class _ChatPageState extends State<ChatPage>
                 const LinearProgressIndicator(),
               if (_photo != null) _photoPreview(),
               WorldComposer(
-                onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
-                    ? _firstCamera
-                    : null,
+                onScan: _sending || _pickingPhoto ? null : _openScan,
+                scanPulse: _scanPulse,
                 sourceChips: _sourceChips,
                 menuOpen: _sourceMenuOpen,
                 attachmentKey: _attachmentAnchor,
@@ -3760,9 +3918,8 @@ class _ChatPageState extends State<ChatPage>
               if (_photo != null) _photoPreview(),
               if (widget.worldHeading != null)
                 WorldComposer(
-                  onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
-                      ? _firstCamera
-                      : null,
+                  onScan: _sending || _pickingPhoto ? null : _openScan,
+                  scanPulse: _scanPulse,
                   sourceChips: _sourceChips,
                   menuOpen: _sourceMenuOpen,
                   attachmentKey: _attachmentAnchor,

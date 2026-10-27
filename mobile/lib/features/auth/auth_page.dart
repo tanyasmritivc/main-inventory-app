@@ -25,6 +25,7 @@ class AuthPage extends StatefulWidget {
     this.initialMethod,
     this.trialItemCount,
     this.sampleTrial = false,
+    this.welcomeTagline = false,
   });
 
   final VoidCallback? onAuthChanged;
@@ -33,6 +34,7 @@ class AuthPage extends StatefulWidget {
   final String? initialMethod;
   final int? trialItemCount;
   final bool sampleTrial;
+  final bool welcomeTagline;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -72,6 +74,7 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.welcomeTagline) _moreOptions = true;
     if (widget.initialMethod == 'email') _showEmail = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -817,7 +820,9 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  String get _headline => widget.sampleTrial
+  String get _headline => widget.welcomeTagline && !_showEmail
+      ? 'Memory for physical things.'
+      : widget.sampleTrial
       ? 'Now try it on real stuff'
       : widget.trialItemCount != null
       ? 'Keep these ${widget.trialItemCount} items'

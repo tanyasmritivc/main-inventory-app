@@ -1,3 +1,5 @@
+import '../scan/scan_camera_page.dart';
+import '../scan/scan_destination.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -206,11 +208,44 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
       padding: const EdgeInsets.only(top: 4),
       child: Text(widget.subtitle),
     ),
-    trailing: IconButton(
-      key: _anchor,
-      tooltip: 'Options for $name',
-      onPressed: _busy ? null : () => _run(_menu),
-      icon: const Icon(CupertinoIcons.ellipsis),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Scan into $name',
+          onPressed: _busy
+              ? null
+              : () => _run((api) async {
+                  if (!api.canEdit) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'You need editing access to scan into this Space.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScanCameraPage(
+                        api: api,
+                        destination: ScanDestination(api, id, name),
+                      ),
+                    ),
+                  );
+                  if (mounted) await widget.onChanged();
+                }),
+          icon: const Icon(Icons.document_scanner_outlined, size: 21),
+        ),
+        IconButton(
+          key: _anchor,
+          tooltip: 'Options for $name',
+          onPressed: _busy ? null : () => _run(_menu),
+          icon: const Icon(CupertinoIcons.ellipsis),
+        ),
+      ],
     ),
     onTap: _busy ? null : () => _run(_open),
   );

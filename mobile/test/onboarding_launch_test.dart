@@ -14,7 +14,6 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
-import 'package:mobile/features/onboarding/chat_onboarding_page.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
@@ -196,22 +195,22 @@ void main() {
   });
   tearDownAll(() async => Supabase.instance.dispose());
 
-  testWidgets('fresh launch offers a local chat trial before authentication', (
+  testWidgets('fresh launch offers Personal or Team before authentication', (
     tester,
   ) async {
     final api = _Api();
     await tester.pumpWidget(_gate(api));
     await settleHome(tester);
-    expect(find.byType(ChatOnboardingPage), findsOneWidget);
+    expect(find.text('Just you, or a team?'), findsOneWidget);
     expect(find.byType(AuthPage), findsNothing);
     expect(find.byType(MainShell), findsNothing);
     expect(api.reads, 0);
-    expect(find.text('Memory for'), findsOneWidget);
+    expect(find.text('Memory for physical things.'), findsOneWidget);
     await tester.tap(
       find.text('Already have an account? Sign in', findRichText: true),
     );
     await settleHome(tester);
-    expect(find.byType(ChatOnboardingPage), findsNothing);
+    expect(find.text('Just you, or a team?'), findsNothing);
     expect(find.byType(AuthPage), findsOneWidget);
     expect(find.byType(MainShell), findsNothing);
     expect(api.reads, 0);
@@ -221,7 +220,7 @@ void main() {
   });
 
   testWidgets(
-    'Existing-account shortcut opens auth and signed-out restart offers the trial',
+    'Existing-account shortcut opens auth and signed-out restart offers the choice',
     (tester) async {
       final api = _Api();
       await tester.pumpWidget(_gate(api));
@@ -234,20 +233,20 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_gate(api, key: const Key('restart')));
       await settleHome(tester);
-      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+      expect(find.text('Just you, or a team?'), findsOneWidget);
       expect(find.byType(AuthPage), findsNothing);
       expect(api.reads, 0);
     },
   );
 
   testWidgets(
-    'signed-out installs can try chat despite the old completed flag',
+    'signed-out installs see the choice despite the old completed flag',
     (tester) async {
       SharedPreferences.setMockInitialValues({'onboarding_completed': true});
       await tester.pumpWidget(_gate(_Api()));
       await settleHome(tester);
       expect(find.byType(AuthPage), findsNothing);
-      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+      expect(find.text('Just you, or a team?'), findsOneWidget);
     },
   );
 
@@ -263,7 +262,7 @@ void main() {
     expect(find.byType(InventoryContextHost), findsOneWidget);
     expect(find.byType(WorldShell), findsOneWidget);
     expect(find.byType(MainShell), findsNothing);
-    expect(find.byType(ChatOnboardingPage), findsNothing);
+    expect(find.text('Just you, or a team?'), findsNothing);
     expect(find.byType(AuthPage), findsNothing);
     expect(
       Supabase.instance.client.auth.currentUser?.id,
@@ -428,7 +427,7 @@ void main() {
       );
       await settleHome(tester);
       expect(inbox.pending?.kind, kind);
-      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+      expect(find.text('Just you, or a team?'), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
       await tester.tap(
         find.text('Already have an account? Sign in', findRichText: true),
@@ -445,7 +444,7 @@ void main() {
       expect(api.reads, 0);
       await tester.pumpWidget(_gate(api));
       await settleHome(tester);
-      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+      expect(find.text('Just you, or a team?'), findsOneWidget);
     });
   }
 }

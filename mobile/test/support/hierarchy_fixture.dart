@@ -26,6 +26,21 @@ class HierarchyFixture implements dio.HttpClientAdapter {
         if (request.url.path.endsWith('/logout')) {
           return http.Response('{}', 200);
         }
+        if (request.method == 'PUT' && request.url.path.endsWith('/user')) {
+          return http.Response(
+            jsonEncode({
+              'id': account,
+              'aud': 'authenticated',
+              'role': 'authenticated',
+              'email': '$account@example.test',
+              'created_at': '2026-01-01T00:00:00Z',
+              'app_metadata': {},
+              'user_metadata': (jsonDecode(request.body) as Map)['data'] ?? {},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         final token =
             '${base64Url.encode(utf8.encode('{"alg":"HS256"}'))}.${base64Url.encode(utf8.encode(jsonEncode({'sub': account, 'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600})))}.signature';
         return http.Response(
