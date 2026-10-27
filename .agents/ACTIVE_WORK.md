@@ -2311,6 +2311,6 @@ Dashboard layout and permissions. Verify both themes and deliver signed beta87.
 ## October 18 final submission audit
 Active lane `fix/mobile-final-audit-20261018`: user requested hiding mobile Plans. Build 93 hides Settings plan/pilot promotion and the limit-sheet comparison link; server quotas and memberships remain unchanged. Build 92 delivery and backend security audit are recorded in the API lane report.
 
-## October 26 account consistency - active
+## October 26 account consistency - TestFlight 146 delivered
 
 Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
