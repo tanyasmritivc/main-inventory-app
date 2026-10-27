@@ -1,3 +1,7 @@
+## October 26 - Personal-group completion receipt repaired and deployed
+
+Runtime `e53d6ea` (PR248) is live. The unsupported personal-group fast path now includes conversation_id, which the web client requires to accept the saved answer. Earlier service-only coverage missed this response-envelope gap. Added real service-through-HTTP-SSE regression coverage and failed-save coverage. 1,582 backend tests plus 10 subtests and all five CI gates (40432773207) passed. API/database health, anonymous denial and preservation of 128 unrelated runtime files passed. Fresh authenticated Safari prompt at 18:36 Pacific completed immediately with the full truthful limitation and response controls. No schema/configuration changes; personal-group persistence remains unsupported. Receipt: `docs/plans/group-completion-context-receipt.json`.
+
 ## October 26 - Group/tool parsing fix deployed
 
 Runtime `c40e9bf` is live after five CI gates passed (40429096988), 1,580 backend tests + 10 subtests and 78 focused tests. Tool batches permit up to 16 bounded calls; unsupported personal-group requests return a truthful answer after authorization without model retries or duplicate proposals. Synthetic staged probe completed in 0.003s with no model/tool calls. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or configuration change. Reusable personal groups are still not implemented. Receipt: `docs/plans/group-tool-stream-receipt.json`.
