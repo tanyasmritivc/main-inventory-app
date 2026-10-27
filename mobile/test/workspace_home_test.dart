@@ -104,6 +104,22 @@ void main() {
     session = PlaceSession(fixture.api, 'actor-a');
   });
   tearDown(() => session.dispose());
+  test(
+    'quiet refresh removes deleted inventories without retiring the selected account',
+    () async {
+      await session.selectOrganization('org');
+      expect(session.data!.inventories, hasLength(1));
+      final states = <bool>[];
+      session.addListener(() => states.add(session.loading));
+      count = 0;
+      await session.refresh(quiet: true);
+      expect(session.data!.inventories, isEmpty);
+      expect(session.organizationId, 'org');
+      expect(states, isNotEmpty);
+      expect(states, everyElement(isFalse));
+    },
+  );
+
   Future<void> open(String id, String workspace, String? org) async {
     opened.add('$org/$workspace/$id');
   }

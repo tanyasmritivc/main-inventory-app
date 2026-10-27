@@ -74,6 +74,46 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('Spaces follows web rename and deletion while already visible', (
+    tester,
+  ) async {
+    var rows = <Map<String, dynamic>>[
+      {'id': 'space-a', 'name': 'Workbench'},
+    ];
+    final fallback = fixture.respond;
+    fixture.respond = (request) {
+      if (request.path.endsWith('/spaces')) {
+        return {
+          'inventories': [
+            {
+              'name': 'Workshop tools',
+              'workspace_name': 'Personal',
+              'spaces': rows,
+            },
+          ],
+        };
+      }
+      return fallback(request);
+    };
+    await mount(tester);
+    await tester.tap(find.byTooltip('Spaces'));
+    await tester.pumpAndSettle();
+    expect(find.text('Workbench'), findsOneWidget);
+    rows = [
+      {'id': 'space-a', 'name': 'Renamed on web'},
+    ];
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pumpAndSettle();
+    expect(find.text('Workbench'), findsNothing);
+    expect(find.text('Renamed on web'), findsOneWidget);
+    rows = [];
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pumpAndSettle();
+    expect(find.text('Renamed on web'), findsNothing);
+    expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets('Avatar exposes preferences directly $brightness', (
       tester,

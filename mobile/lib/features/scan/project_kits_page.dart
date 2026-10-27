@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import '../../core/app_theme.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
@@ -26,19 +27,31 @@ class ProjectKitsPage extends StatefulWidget {
 }
 
 class _ProjectKitsPageState extends State<ProjectKitsPage> {
+  late final AccountRefresh _accountRefresh;
   bool _loading = true;
   String? _error;
   List<ProjectKitSummary> _kits = [];
 
   @override
+  void dispose() {
+    _accountRefresh.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => _load(quiet: true),
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {

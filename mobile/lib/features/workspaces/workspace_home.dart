@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import 'dart:async';
 import '../notifications/notification_bell.dart';
 import 'package:flutter/material.dart';
@@ -28,11 +29,19 @@ class WorkspaceHome extends StatefulWidget {
 
 class _WorkspaceHomeState extends State<WorkspaceHome>
     with WidgetsBindingObserver {
+  late final AccountRefresh _accountRefresh;
   PlaceSession get session => widget.session;
   bool _creating = false;
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => session.refresh(quiet: true),
+      isActive: () =>
+          mounted &&
+          (ModalRoute.of(context)?.isCurrent ?? true) &&
+          (!session.loading && !_creating),
+    );
     WidgetsBinding.instance.addObserver(this);
     session.addListener(_changed);
     unawaited(session.initializeNavigation());
@@ -40,6 +49,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     session.removeListener(_changed);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -60,13 +70,6 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
           ).showSnackBar(SnackBar(content: Text(notice)));
         }
       });
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !session.loading) {
-      unawaited(session.refresh());
     }
   }
 

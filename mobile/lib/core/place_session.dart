@@ -298,18 +298,24 @@ class PlaceSession extends ChangeNotifier {
     await selectOrganization(data?.organizationId, preferred: current);
   }
 
-  Future<void> selectOrganization(String? id, {LastPlace? preferred}) async {
+  Future<void> selectOrganization(
+    String? id, {
+    LastPlace? preferred,
+    bool quiet = false,
+  }) async {
     final generation = ++_generation;
     final oldOrganization = organizationId;
     final candidate = preferred ?? (oldOrganization == id ? current : null);
     organizationId = id;
     if (oldOrganization != id) organization = null;
     navigationReady = true;
-    workspaces = [];
-    data = null;
-    error = null;
-    loading = true;
-    notifyListeners();
+    if (!quiet) {
+      workspaces = [];
+      data = null;
+      error = null;
+      loading = true;
+      notifyListeners();
+    }
     try {
       Map<String, dynamic>? nextOrganization;
       List<Map<String, dynamic>> choices;
@@ -377,6 +383,7 @@ class PlaceSession extends ChangeNotifier {
         }
       }
       if (!_current(generation)) return;
+      error = null;
       organization = nextOrganization;
       workspaces = choices;
       data = next;
@@ -391,6 +398,12 @@ class PlaceSession extends ChangeNotifier {
       notifyListeners();
     } catch (reason) {
       if (!_current(generation)) return;
+      if (reason is DioException &&
+          [401, 403, 404, 410].contains(reason.response?.statusCode)) {
+        data = null;
+        workspaces = [];
+        organization = null;
+      }
       error = reason;
       loading = false;
       notifyListeners();
@@ -409,8 +422,8 @@ class PlaceSession extends ChangeNotifier {
     );
   }
 
-  Future<void> refresh() => navigationReady
-      ? selectOrganization(organizationId, preferred: current)
+  Future<void> refresh({bool quiet = false}) => navigationReady
+      ? selectOrganization(organizationId, preferred: current, quiet: quiet)
       : select(current);
   String? takeNotice() {
     final value = notice;

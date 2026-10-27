@@ -50,12 +50,14 @@ class MemoryController extends ChangeNotifier {
     }
   }
 
-  Future<void> load({bool afterSave = false}) async {
+  Future<void> load({bool afterSave = false, bool quiet = false}) async {
     if (busy && !afterSave) return;
     busy = true;
     error = null;
-    snapshot = null;
-    spaces = [];
+    if (!quiet) {
+      snapshot = null;
+      spaces = [];
+    }
     _notify();
     try {
       _check();

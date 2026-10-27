@@ -1,3 +1,4 @@
+import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
@@ -37,6 +38,7 @@ class DocumentsPage extends StatefulWidget {
 }
 
 class _DocumentsPageState extends State<DocumentsPage> {
+  late final AccountRefresh _accountRefresh;
   bool _loading = true;
   String? _error;
   List<DocumentEntry> _docs = const [];
@@ -180,6 +182,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
   @override
   void initState() {
     super.initState();
+    _accountRefresh = AccountRefresh(
+      refresh: () => _load(quiet: true),
+      isActive: () =>
+          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_loading),
+    );
     _search = TextEditingController();
     _contentClient = widget.contentClient ?? http.Client();
     _owner = _currentOwner;
@@ -203,6 +210,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   void dispose() {
+    _accountRefresh.dispose();
     _search.dispose();
     _auth?.cancel();
     _generation++;
@@ -210,7 +218,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
     final generation = ++_generation;
     final owner = _currentOwner;
@@ -218,7 +226,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         mounted && generation == _generation && owner == _currentOwner;
 
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
 
