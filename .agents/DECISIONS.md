@@ -1,3 +1,7 @@
+## October 26 - Retained onboarding draft recovery
+
+Real onboarding drafts must satisfy the existing capture contract: use Other for an empty category, including legacy retained drafts, while preserving stable request IDs and supplied categories. A failed startup save or unreadable draft must offer Continue to app without deleting local data. Deferral is session-only; a future launch retries through the same receipts. Do not call all startup failures connection errors, and never infer saved status from HTTP200 without accepted item receipts.
+
 ## October 25 - Sample onboarding TestFlight release authorized
 
 The user requested TestFlight upload after local completion. This supersedes the

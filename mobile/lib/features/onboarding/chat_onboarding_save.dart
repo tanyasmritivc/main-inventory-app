@@ -85,6 +85,10 @@ class ChatOnboardingSaver {
           (trial) => ExtractedInventoryItem.fromJson({
             ...trial.item.toJson(),
             'location': draft.space,
+            // Retained drafts from earlier builds can have no category.
+            'category': trial.item.category.trim().isEmpty
+                ? 'Other'
+                : trial.item.category,
           }),
         )
         .toList();

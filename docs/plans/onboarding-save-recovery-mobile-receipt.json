@@ -1,0 +1,23 @@
+{
+  "version": "1.1.1",
+  "build": 148,
+  "source_commit": "a0c9c6421c72e473c1a6da9000cdba92e3c303f0",
+  "uploaded": true,
+  "public_submission": false,
+  "archive_device_executables_verified": 34,
+  "export_device_executables_verified": 34,
+  "strict_archive_signature_verified": true,
+  "ipa_sha256": "03ae4bdc96802dde6d02477fde04e1f44dbd2e8dd53123b005369b47dc172f40",
+  "archive_preserved": true,
+  "apple_validation": true,
+  "validated_ipa_sha256": "03ae4bdc96802dde6d02477fde04e1f44dbd2e8dd53123b005369b47dc172f40",
+  "processing": "pending; not polled",
+  "tester_availability": "unverified",
+  "delivery_uuid": "e8ded15a-fed2-49dc-9d79-b08ec63f44ce",
+  "ci_run": 40446544011,
+  "ci_all_five_passed": true,
+  "host_tests_passed": 1188,
+  "host_tests_existing_skip": 1,
+  "native_checks_passed": 3,
+  "physical_acceptance": "unverified for build148"
+}
