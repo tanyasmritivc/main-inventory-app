@@ -24,7 +24,7 @@ void main() {
     expect(find.text('\$9.99/month'), findsOneWidget);
     expect(find.text('\$29/month'), findsOneWidget);
     expect(find.text('100 saved item records'), findsOneWidget);
-    expect(find.text('5 people included'), findsOneWidget);
+    expect(find.text('10 people included'), findsOneWidget);
     expect(
       find.text('200 photo extractions per month, shared'),
       findsOneWidget,

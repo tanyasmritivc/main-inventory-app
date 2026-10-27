@@ -1497,3 +1497,11 @@ Use the supplied Lovable screenshots for the compact anchored menu proportions:
 small light plus, searchable four-choice root, nested Back, and separate native
 photo/file menu. Retain accessible tap targets and native system pickers. Ordinary
 photos wait for Send and use direct GLM chat; only Auto Extract starts extraction.
+## October 26 — Mobile plan presentation
+
+Use one mobile catalog for the post-signup popup and Settings → Plans, matching
+web pricing and ten Team members. The popup is optional and dismisses locally
+even offline, with best-effort account-scoped metadata sync. Keep early access
+free and paid plans informational until billing is separately enabled. Do not
+infer entitlements from UI dismissal or signup timestamps. Public submission
+remains paused independently of authorized beta delivery.

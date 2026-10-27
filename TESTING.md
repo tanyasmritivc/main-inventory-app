@@ -1,3 +1,13 @@
+## Mobile signup plans (October 26)
+
+Run `flutter test test/plan_introduction_test.dart test/plans_page_test.dart`,
+full mobile tests and analysis. Run `flutter test
+integration_test/plans_preview_test.dart -d <ios-simulator> --no-pub --reporter
+expanded` for native popup/settings checks in both themes and large text.
+Preserve `PLANS_AUDIT_IMAGE` paths while the simulator test runs; its sandbox
+is removed on completion. See `docs/plans/mobile-signup-plans.md` for eligibility,
+offline behavior and live-device acceptance limits.
+
 ## Native bottom tabs (October 23)
 
 Run `flutter test test/native_bottom_tabs_test.dart test/world_shell_test.dart`

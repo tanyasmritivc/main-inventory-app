@@ -1,3 +1,7 @@
+## October 26 — Mobile signup plans popup (active)
+
+`feat/mobile-plans-welcome` in `/private/tmp/findez-prelaunch-mobile` owns the optional post-signup plans popup and Settings plan styling/catalog. Match web prices and 10 Team members; no backend/web changes, quota activation or public submission. Preserve auth and onboarding drafts. Beta delivery remains authorized.
+
 ## October 26 - Extraction keyboard follow-up, public submission held
 
 User reported inaccessible composer/keyboard and duplicate headers in Auto Extract after pausing submission. Mobile lane fix/mobile-app-store-audit now pins the composer below a bounded scrollable preview, focuses the outer shell on scan start, adds keyboard dismissal, simplifies scan status and preview, and restores world response actions/photo retry. Full suite 1,167 passed plus one existing skip; 11 focused native checks passed in both themes/small/standard phones/large text. Apple acknowledged TestFlight1.1.1(144), delivery 383aea8e-cbb8-4fc8-9699-127e5df50e84, source 8a8bb6c. All five CI gates, Apple validation, signing/device-platform/privacy/config checks passed. Processing/tester availability pending, not polled. Delivery receipt docs/plans/mobile-extraction-keyboard-receipt.json. User reported physical acceptance on their earlier latest TestFlight; new screenshots supersede any blanket UI acceptance. Keep public submission on hold; beta delivery remains authorized. See docs/plans/mobile-app-store-audit-20261025.md.
