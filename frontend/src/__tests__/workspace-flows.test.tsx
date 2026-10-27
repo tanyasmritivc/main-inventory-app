@@ -223,7 +223,7 @@ test("retrying a question leaves an older empty failed reply separate from the p
   await screen.findByText("The answer did not finish.");
   await user.click(screen.getByRole("button", { name: "Ask" }));
   expect(screen.getByText("The answer did not finish.")).toBeTruthy();
-  expect(screen.getByRole("status").textContent).toBe("Checking your inventory…");
+  expect(screen.getByRole("status").textContent).toBe("Checking your inventory...");
   expect(screen.getByRole("status").closest("details")).not.toBeNull();
 });
 test.each([0, 3])("Home shows attention only for actual pending work (%i captures)", async (pending) => {
