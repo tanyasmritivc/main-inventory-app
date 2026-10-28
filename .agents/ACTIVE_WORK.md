@@ -1,6 +1,6 @@
 ## October 27 — Public navigation and explainer pages
 
-Active on `web-landing-v5`: compact centered header, Product/Solutions disclosures and dedicated public pages, Pricing FAQ using the unchanged catalog, Research footer link, and 3px decorative markers. Developers content/routes, authenticated app, mobile and billing behavior are excluded. 638 web tests pass; TypeScript passes; lint has zero errors and 52 existing warnings. Safari desktop Product/menu/section links and 390px responsive layout inspected; final staging and publication pending. Preserve no-push handoff and self-host deployment.
+Completed on `web-landing-v5`, runtime `0fd6c40`, live in self-hosted `public-pages-20261027/frontend`, build `JhcaFxY6cvqGF_OIeECPJ`. Compact centered header, Product/Solutions menus and dedicated pages, Pricing FAQ with unchanged catalog, Research footer link and 3px markers. Developers content/routes, authenticated app, mobile and billing behavior remain unchanged. 638 tests/88 suites, TypeScript, lint (zero errors/52 existing warnings), production build and 30 staged/live checks pass. Safari desktop and 390px layouts, menus, section links, annual pricing and FAQ verified; public HTTPS content and live Product navigation verified. Backend and prior compiled release preserved. No push/CI per handoff. See `docs/landing-v5/public-navigation.md` and deployment receipt.
 
 ## October 27 - Landing and branding v5 published
 
