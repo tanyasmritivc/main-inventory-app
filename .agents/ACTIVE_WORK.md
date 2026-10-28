@@ -1,6 +1,6 @@
 ## October 27 — Direct public navigation follow-up
 
-Active on `web-landing-v5`: replace Product and Solutions disclosures with direct page links, preserving mobile Menu access, all pages and Developers. Removing unused panel styles. Validation and self-host publication pending.
+Completed on `web-landing-v5`, runtime `e03ce56`, live in `direct-nav-20261027/frontend`, build `tbpd7YNTYs5Iku6ICyj-O`. Product and Solutions now link directly to their pages; disclosure triggers, chevrons and unused panel styles removed. Mobile Menu access, all pages and Developers preserved. 638 tests/88 suites, TypeScript, changed-file lint, production build and 30 staged/live routes pass. Public HTTPS header verified to contain direct links and no Product/Solutions buttons. Backend and previous release preserved. No push/CI per handoff. Receipt: `docs/landing-v5/direct-navigation-deployment.json`.
 
 ## October 27 — Public navigation and explainer pages
 
