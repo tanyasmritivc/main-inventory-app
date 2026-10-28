@@ -44,7 +44,7 @@ test("public pages have reachable sections, examples and independent metadata ro
  render(<SolutionsPage/>);
  for(const id of ["home","workshops","teams"]) expect(document.getElementById(id)).toBeTruthy();
  const footer=within(screen.getByRole("navigation",{name:"Footer navigation"}));
- expect(footer.getByRole("link",{name:"Research"}).getAttribute("href")).toBe("/#s6r");
+ expect(footer.getByRole("link",{name:"Research"}).getAttribute("href")).toBe("/research");
  const routes=sitemap().map(item=>item.url);
  expect(routes).toContain("https://findez.ai/product");
  expect(routes).toContain("https://findez.ai/solutions");

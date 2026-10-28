@@ -1,0 +1,20 @@
+:is(.landing-v5,.pages-ui){
+ --ink:#0B0B0C;--ink-2:#55565B;--ink-3:#8C8D92;--line:#ECEAE6;--card:#F5F4F1;--page:#FFFFFF;
+ --or:#0B0B0C;--or-ink:#0B0B0C;--or-tint:#EFEDEA;--bl:#D9D7D3;--bl-tint:#F5F4F1;
+ --f:var(--landing-inter),ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;--mono:var(--landing-mono),ui-monospace,monospace;
+ --W:1152px;--e:cubic-bezier(.22,.8,.2,1)}
+/* grain: a noise layer over gradients, like printed film */
+:is(.landing-v5,.pages-ui) .grain{position:relative;overflow:hidden;isolation:isolate}
+:is(.landing-v5,.pages-ui) .grain::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1;pointer-events:none;opacity:.55;mix-blend-mode:overlay;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");background-size:220px 220px}
+:is(.landing-v5,.pages-ui) .grain>*{position:relative;z-index:2}
+:is(.landing-v5,.pages-ui) .g-sunset{background:radial-gradient(45% 55% at 12% 70%,#C23A28 0%,rgba(194,58,40,0) 70%),radial-gradient(40% 45% at 55% 92%,#E39A3B 0%,rgba(227,154,59,0) 70%),radial-gradient(38% 42% at 88% 75%,#2F6E73 0%,rgba(47,110,115,0) 70%),radial-gradient(50% 50% at 70% 30%,#F1D9B8 0%,rgba(241,217,184,0) 70%),radial-gradient(45% 50% at 25% 20%,#8E3A5A 0%,rgba(142,58,90,0) 70%),linear-gradient(160deg,#D9A07C,#B65B3C 55%,#5B3A3E)}
+:is(.landing-v5,.pages-ui) .g-dusk{background:radial-gradient(60% 55% at 18% 18%,#B7C3CC 0%,rgba(183,195,204,0) 70%),radial-gradient(55% 60% at 45% 55%,#6E7FA0 0%,rgba(110,127,160,0) 70%),radial-gradient(55% 55% at 80% 85%,#1A1C33 0%,rgba(26,28,51,0) 72%),radial-gradient(35% 40% at 70% 40%,#4A4F86 0%,rgba(74,79,134,0) 70%),linear-gradient(150deg,#9AA6B2,#4E5878 50%,#151729)}
+:is(.landing-v5,.pages-ui) .g-dawn{background:radial-gradient(55% 55% at 78% 22%,#F7E6DA 0%,rgba(247,230,218,0) 70%),radial-gradient(60% 60% at 18% 82%,#D5E1EC 0%,rgba(213,225,236,0) 70%),radial-gradient(40% 40% at 50% 50%,#FFFFFF 0%,rgba(255,255,255,0) 70%),linear-gradient(150deg,#EEF1F4,#E6E2DE 50%,#E3E9EF)}
+:is(.landing-v5,.pages-ui) .g-ember{background:radial-gradient(45% 55% at 85% 25%,#D0682E 0%,rgba(208,104,46,0) 70%),radial-gradient(50% 60% at 15% 85%,#1E2147 0%,rgba(30,33,71,0) 70%),radial-gradient(40% 45% at 55% 60%,#8A2F3C 0%,rgba(138,47,60,0) 70%),radial-gradient(35% 40% at 40% 15%,#3C6A78 0%,rgba(60,106,120,0) 70%),linear-gradient(160deg,#1C1B2E,#4A2638 50%,#9A4A2E)}
+
+
+:is(.landing-v5,.pages-ui) .g-sage{background:radial-gradient(50% 55% at 20% 25%,#E9D7BD 0%,rgba(233,215,189,0) 70%),radial-gradient(55% 60% at 80% 70%,#7E9C86 0%,rgba(126,156,134,0) 70%),radial-gradient(40% 45% at 55% 40%,#B3C8AF 0%,rgba(179,200,175,0) 70%),linear-gradient(150deg,#D8D9C6,#9DB29F 55%,#4E6A5B)}
+:is(.landing-v5,.pages-ui) .g-lilac{background:radial-gradient(50% 55% at 75% 20%,#F2D9CC 0%,rgba(242,217,204,0) 70%),radial-gradient(55% 60% at 20% 75%,#9C86B8 0%,rgba(156,134,184,0) 70%),radial-gradient(40% 45% at 50% 50%,#D7CBDD 0%,rgba(215,203,221,0) 70%),linear-gradient(150deg,#E7DDE8,#B8A4C9 55%,#5D4F78)}
+:is(.landing-v5,.pages-ui) .g-moss{background:radial-gradient(45% 50% at 80% 20%,#E3C9A6 0%,rgba(227,201,166,0) 70%),radial-gradient(55% 60% at 15% 80%,#24493F 0%,rgba(36,73,63,0) 72%),radial-gradient(45% 50% at 50% 45%,#7E9C80 0%,rgba(126,156,128,0) 70%),linear-gradient(160deg,#3E5A4C,#6F8C74 50%,#22322C)}
+:is(.landing-v5,.pages-ui) .g-plum{background:radial-gradient(45% 50% at 82% 22%,#E8B9A6 0%,rgba(232,185,166,0) 70%),radial-gradient(55% 60% at 15% 85%,#241D3D 0%,rgba(36,29,61,0) 72%),radial-gradient(45% 50% at 50% 50%,#7A5F95 0%,rgba(122,95,149,0) 70%),linear-gradient(160deg,#2B2440,#6B5486 50%,#A7808F)}

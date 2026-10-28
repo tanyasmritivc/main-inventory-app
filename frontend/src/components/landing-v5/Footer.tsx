@@ -11,7 +11,7 @@ export function Footer() {
 <nav aria-label="Footer navigation">
 <Link href="/product">Product</Link>
 <Link href="/solutions">Solutions</Link>
-<Link href="/#s6r">Research</Link>
+<Link href="/research">Research</Link>
 <Link href="/pricing">
 {"Plans"}
 </Link>

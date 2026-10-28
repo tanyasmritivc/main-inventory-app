@@ -1,3 +1,7 @@
+## October 27 — Public pages v1 presentation
+
+Active on `feat/pages-v1-ui` in `/private/tmp/findez-plans-usage`. Restyle Product, Solutions and Pricing while preserving copy, links, catalog and disabled paid checkout. Add `/research` using only the already-public landing FIND copy, with the explicitly approved footer link. Developers, landing content, authenticated app, mobile and backend excluded. 643 tests, TypeScript and lint pass; desktop/390px and reduced-motion review in progress. No push per supplied handoff.
+
 ## October 27 — Header brand proportions
 
 Completed on `web-landing-v5`, runtime `8631aee`, live in `header-brand-20261027/frontend`, build `o8So_dvmMP113sLwnnUYZ`. Header-only 84×18 wordmark with icon matched to letter height. Existing vector letterforms and mark retained; shared/footer/app branding untouched. Rendered artwork inspected; 3 navigation tests, TypeScript, changed-file lint, production build and 31 staged/live route checks pass. Public HTTPS verifies exact SVG bytes and rendered dimensions. First build received malformed Google-font data; unchanged retry passed. Prior release and backend preserved. No push/CI per handoff. Receipt: `docs/landing-v5/header-brand-deployment.json`.
