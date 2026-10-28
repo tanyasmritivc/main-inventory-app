@@ -1,6 +1,6 @@
-## October 27 — Phone web sign-in recovery (active)
+## October 27 — Phone web sign-in and Apple callback fixed
 
-`fix/web-mobile-signin-tap` in `/private/tmp/findez-plans-usage` owns only the web auth form. iPhone Safari reproduced disabled auth controls after returning from Google with Back, plus input focus auto-zoom. Add immediate provider feedback, synchronous duplicate guards, persisted-page recovery and DOM autofill credentials; use 16px touch-device fields and 44px targets. Full web tests pass (639); publication and Safari acceptance pending. Mobile, API and schema unchanged.
+Web runtime `2db5853` (PR262) is live in `mobile-signin-20261027/frontend`, build `ssjyZUmJhXkdGR6AqyYsB`. Auth controls recover after Safari cached-page Back, show immediate provider feedback, prevent duplicate requests and read autofilled email/password from the form. Touch-device fields avoid focus auto-zoom. 639 web tests, 20 final auth tests, TypeScript, changed-file lint, all five CI gates (40624592288), production build and 27 staged/live routes pass. iPhone Safari verified Google single-tap handoff and Back recovery; Apple initially rejected an outdated callback registration. After user portal login, added the existing production auth domain/callback to com.findez.app.siwa, preserving prior entries. A fresh iPhone Safari tap now reaches Apple’s Sign in to FindEZ form. No authenticated end-to-end login was claimed. API/schema/mobile unchanged; old compiled release preserved. See `docs/plans/mobile-web-signin.md` and receipt.
 
 ## October 26 - Text-only chat progress and welcome glimmer deployed
 
