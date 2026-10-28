@@ -1,0 +1,34 @@
+.panel { min-width:0; border:1px solid var(--light-line); border-radius:20px; background:var(--light-panel); overflow:hidden; color:var(--ink); }
+.header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding:24px; background:linear-gradient(120deg,#b9e2fc14,transparent 70%); }
+.heading { display:flex; align-items:center; gap:14px; }
+.icon { display:grid; place-items:center; flex-shrink:0; width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,#e5f5ff,#bde3fa); color:#244d68; border:1px solid #b9def5; }
+.panel h2 { font-size:17px; font-weight:500; margin:0; }
+.panel h3 { font-size:14px; font-weight:500; margin:0 0 16px; }
+.heading p, .toggleRow p, .hint { font-size:13px; line-height:1.6; color:var(--light-muted); margin:5px 0 0; }
+.refresh { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid var(--light-line); border-radius:10px; background:var(--light-panel); color:var(--light-muted); cursor:pointer; }
+.refresh span { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+.section { padding:24px; border-top:1px solid var(--light-line); }
+.toggleRow { display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.toggleRow label { font-size:14px; font-weight:500; cursor:pointer; }
+.panel input.toggle { appearance:none; -webkit-appearance:none; flex-shrink:0; width:42px; height:24px; border:1px solid var(--light-line-strong); border-radius:20px; background:var(--light-raised); position:relative; cursor:pointer; padding:0; }
+.panel input.toggle::before { content:""; position:absolute; width:16px; height:16px; top:3px; left:3px; border-radius:50%; background:var(--light-muted); }
+.panel input.toggle:checked { background:#bde3fa; border-color:#93c9ec; }
+.panel input.toggle:checked::before { left:21px; background:#254d68; }
+.preferences { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.field { display:grid; gap:9px; min-width:0; }
+.field label { font-size:12px; color:var(--light-muted); }
+.field select,.field input { width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--light-line-strong); border-radius:10px; background:var(--light-panel); color:var(--ink); font-size:14px; }
+.field select option { color:CanvasText; background:Canvas; }
+.hint + .preferences { margin-top:16px; }
+.saveAlias { margin-top:16px; }
+.aliasRow { display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid var(--light-line); padding-top:16px; margin-top:16px; font-size:13px; }
+.aliasRow strong { display:block; font-weight:500; }.aliasRow small { display:block; color:var(--light-muted); margin-top:4px; }
+.footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:16px 24px; border-top:1px solid var(--light-line); }
+.textButton { display:inline-flex; align-items:center; gap:8px; min-height:44px; border:0; background:transparent; color:var(--light-muted); font-size:12px; cursor:pointer; }
+.textButton:hover { color:var(--ink); }.danger { color:var(--danger-ink,#c24c42); }
+.feedback { margin:0; padding:12px 24px; font-size:13px; line-height:1.6; background:var(--light-raised); overflow-wrap:anywhere; }
+.panel button:disabled,.panel input:disabled,.panel select:disabled { opacity:.55; cursor:default; }
+.panel button:focus-visible,.panel input:focus-visible,.panel select:focus-visible,.panel summary:focus-visible { outline:2px solid #7dbce7; outline-offset:3px; }
+.panel details { font-size:13px; overflow-wrap:anywhere; }.panel summary { cursor:pointer; }
+@media(max-width:560px) { .header,.section { padding:20px; }.footer { padding:12px 20px; }.preferences { grid-template-columns:1fr; gap:16px; }.heading p { max-width:26ch; }.heading { align-items:flex-start; }.header { align-items:flex-start; } }
+@media(forced-colors:active) { .panel input.toggle { appearance:auto; -webkit-appearance:auto; }.panel input.toggle::before { display:none; } }

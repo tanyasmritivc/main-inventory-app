@@ -1,0 +1,26 @@
+/* FindEZ theme · orange, baby blue, black, white */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+:root {
+  --fz-ink: #111112; --fz-ink-2: #55565B; --fz-ink-3: #8C8D92;
+  --fz-white: #FFFFFF; --fz-paper: #F7FAFD; --fz-line: #E8E8EA;
+  --fz-orange: #E8590C; --fz-orange-ink: #C2410C; --fz-orange-tint: #FFE8DA;
+  --fz-blue: #A9D6F5; --fz-blue-deep: #6FA9D6; --fz-blue-line: #4E92C9; --fz-blue-tint: #EEF6FD;
+  --fz-night: #0B0B0D;
+  --fz-success: #1E8E5A; --fz-warning: #F2A33A; --fz-danger: #D93B2B;
+  --fz-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fz-mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+  --fz-r-sm: 8px; --fz-r-md: 12px; --fz-r-lg: 18px; --fz-r-xl: 26px; --fz-r-pill: 999px;
+  --fz-shadow-card: 0 0 0 1px rgba(17,17,18,.06), 0 14px 34px rgba(17,17,18,.08);
+  --fz-shadow-float: 0 0 0 1px rgba(17,17,18,.06), 0 24px 60px rgba(60,110,150,.18);
+  --fz-ease: cubic-bezier(.2,.8,.2,1);
+}
+body { font-family: var(--fz-font); color: var(--fz-ink); background: var(--fz-white); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-weight: 600; letter-spacing: -.04em; line-height: 1.04; }
+.fz-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; border-radius: var(--fz-r-pill); font: 500 15px var(--fz-font); }
+.fz-btn-primary { background: var(--fz-ink); color: #fff; }
+.fz-btn-capture { background: var(--fz-orange); color: var(--fz-ink); }
+.fz-btn-secondary { background: #fff; color: var(--fz-ink); box-shadow: 0 0 0 1px var(--fz-line); }
+.fz-card { background: #fff; border-radius: var(--fz-r-lg); box-shadow: var(--fz-shadow-card); }
+.fz-chip { display: inline-block; font: 600 12px var(--fz-font); padding: 4px 10px; border-radius: var(--fz-r-pill); color: var(--fz-orange-ink); background: var(--fz-orange-tint); }
+.fz-data { font-family: var(--fz-mono); font-size: 12px; }
+:focus-visible { outline: 2px solid var(--fz-orange); outline-offset: 2px; }

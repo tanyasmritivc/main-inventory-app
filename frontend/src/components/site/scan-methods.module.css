@@ -1,0 +1,5 @@
+@media(max-width:700px) {
+ .methods:global(.source-tabs) { height:auto; display:flex; flex-wrap:wrap; gap:4px 16px; overflow:visible; padding-bottom:8px; }
+ .methods:global(.source-tabs) button { min-height:40px; padding:6px 0; white-space:normal; font-size:12px; }
+ .methods:global(.source-tabs) button svg { flex-shrink:0; }
+}

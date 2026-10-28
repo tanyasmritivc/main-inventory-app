@@ -11,7 +11,7 @@ const dist = resolve(base, 'dist');
 await mkdir(resolve(dist, 'server'), { recursive: true });
 const built = await build({
   absWorkingDir: base, entryPoints: ['src/stdio.mjs'], outfile: 'dist/server/index.mjs',
-  platform: 'node', target: 'node20', format: 'esm', bundle: true, metafile: true,
+  preserveSymlinks: true, platform: 'node', target: 'node20', format: 'esm', bundle: true, metafile: true,
   banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
 });
 await copyFile(resolve(base, 'manifest.json'), resolve(dist, 'manifest.json'));

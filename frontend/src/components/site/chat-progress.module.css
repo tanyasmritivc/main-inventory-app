@@ -1,0 +1,33 @@
+.progress {
+  --status-base: #626269;
+  --status-shine: #19191d;
+  color: var(--status-base);
+  font-size: .9375rem;
+  line-height: 1.5;
+  margin: .4rem 0;
+}
+:global(.dark) .progress, :global([data-theme="dark"]) .progress {
+  --status-base: #b5b5b5;
+  --status-shine: #fff;
+}
+.progress summary { display: flex; gap: .4rem; align-items: center; width: fit-content; max-width: 100%; min-height: 44px; cursor: pointer; list-style: none; }
+.progress summary::-webkit-details-marker { display: none; }
+.progress summary svg { flex-shrink: 0; transition: transform .15s ease; }
+.progress details[open] summary svg { transform: rotate(180deg); }
+.progress summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px; }
+.progress ol { display:grid; gap:8px; margin:8px 0 12px; padding:0 0 0 14px; border-left:1px solid var(--light-line-strong); list-style:none; font-size:.8125rem; max-width:440px; }
+.progress li { display:flex; align-items:baseline; justify-content:space-between; gap:16px; line-height:1.5; }
+.progress li small { flex-shrink:0; font-size:10px; color:var(--light-muted); border:1px solid var(--light-line); padding:1px 7px; border-radius:20px; }
+.progress li[aria-current=step] { color:var(--ink); }
+.shiny { display: inline-block; color: var(--status-base); background-color: var(--status-base); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .progress summary svg { transition: none; } .shiny { background-image: none !important; } }
+@media (forced-colors: active) { .shiny { background: none !important; -webkit-text-fill-color: currentColor; } }
+
+.timing { margin: 0 0 .35rem; font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--status-base); }
+
+/* Welcome headings share the restrained left-to-right glimmer, without a live announcement. */
+.heading { --status-base: #242424; --status-shine: #767676; }
+:global(.dark) .heading, :global([data-theme="dark"]) .heading {
+  --status-base: #bdbdbd;
+  --status-shine: #fff;
+}
