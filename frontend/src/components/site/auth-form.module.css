@@ -1,0 +1,14 @@
+.card button, .card a, .card input {
+  touch-action: manipulation;
+}
+
+.card button[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* Keep iOS from auto-zooming and moving the controls on field focus. */
+@media (hover: none) and (pointer: coarse) {
+  .card { --auth-field-font-size: 16px; }
+  .card input:not([type="checkbox"]), .card button { min-height: 44px; }
+  .card button[type="submit"]:hover { transform: none; }
+}

@@ -1,3 +1,7 @@
+## October 27 — Phone web sign-in recovery (active)
+
+`fix/web-mobile-signin-tap` in `/private/tmp/findez-plans-usage` owns only the web auth form. iPhone Safari reproduced disabled auth controls after returning from Google with Back, plus input focus auto-zoom. Add immediate provider feedback, synchronous duplicate guards, persisted-page recovery and DOM autofill credentials; use 16px touch-device fields and 44px targets. Full web tests pass (639); publication and Safari acceptance pending. Mobile, API and schema unchanged.
+
 ## October 26 - Text-only chat progress and welcome glimmer deployed
 
 Web runtime `b1159d6` (PR258) is live in `shimmer-frequency-20261026/frontend`. Chat progress is bird-free and aligned at the message edge. Empty-chat headings use a monochrome four-second left-to-right sweep with a one-second pause, matching the separately released mobile lane. Reduced motion and heading semantics are preserved. 633 full web tests, four final focused tests, type checks, lint (52 existing warnings), all five final CI gates (40450201253), production build and 27 route/asset checks passed. Safari showed the heading and bird-free progress; the read-only prompt was interrupted and refresh could not verify the session, so authenticated response acceptance remains incomplete. API unchanged; old compiled release preserved. Receipt: `docs/plans/chat-welcome-shimmer-web-receipt.json`.

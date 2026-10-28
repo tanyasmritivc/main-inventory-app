@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import { navigateAfterAuth } from "@/lib/auth-callback";
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/site/auth-form";
 
@@ -310,4 +310,69 @@ test("OAuth signup uses the same prompt handoff after legal consent", async () =
       "https://findez.ai",
     ).searchParams.get("q"),
   ).toBe(mockPrompt);
+});
+
+
+test.each(["Google", "Apple"])("%s responds to the first tap and starts only once", async (name) => {
+  let resolve!: (value: unknown) => void;
+  signInWithOAuth.mockImplementation(() => new Promise(done => { resolve = done; }));
+  render(<AuthForm />);
+  const button = screen.getByRole("button", { name: `Continue with ${name}` });
+  fireEvent.click(button);
+  expect(screen.getByRole("button", { name: `Opening ${name}…` }).getAttribute("aria-busy")).toBe("true");
+  fireEvent.click(button);
+  fireEvent.submit(document.querySelector("form")!);
+  expect(signInWithOAuth).toHaveBeenCalledTimes(1);
+  expect(signInWithPassword).not.toHaveBeenCalled();
+  await act(async () => { resolve({ data: {}, error: null }); });
+  expect(button.hasAttribute("disabled")).toBe(true);
+});
+
+test("Safari page-cache return re-enables every sign-in method", async () => {
+  signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+  render(<AuthForm />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
+  await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+  const event = new Event("pageshow");
+  Object.defineProperty(event, "persisted", { value: true });
+  fireEvent(window, event);
+  const apple = screen.getByRole("button", { name: "Continue with Apple" });
+  expect(apple.hasAttribute("disabled")).toBe(false);
+  expect(screen.getByRole("button", { name: "Sign in" }).hasAttribute("disabled")).toBe(false);
+  fireEvent.click(apple);
+  await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(2));
+  expect(signInWithOAuth.mock.calls[1][0].provider).toBe("apple");
+});
+
+test("ordinary pageshow does not unlock a pending provider request", async () => {
+  signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+  render(<AuthForm />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
+  fireEvent(window, new Event("pageshow"));
+  expect(screen.getByRole("button", { name: "Continue with Apple" }).hasAttribute("disabled")).toBe(true);
+  await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+});
+
+test("a failed provider start shows an error and permits one deliberate retry", async () => {
+  signInWithOAuth.mockRejectedValueOnce(new Error("Network unavailable"))
+    .mockResolvedValue({ data: {}, error: null });
+  render(<AuthForm />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue with Apple" }));
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button", { name: "Continue with Apple" }));
+  await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(2));
+});
+
+test("password sign-in uses browser-autofilled fields without requiring React change events", async () => {
+  signInWithPassword.mockResolvedValue({ error: null });
+  render(<AuthForm />);
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  setter.call(screen.getByLabelText("Email"), " ada@example.com ");
+  setter.call(screen.getByLabelText("Password"), "autofilled-password");
+  fireEvent.submit(document.querySelector("form")!);
+  fireEvent.submit(document.querySelector("form")!);
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/inventory"));
+  expect(signInWithPassword).toHaveBeenCalledTimes(1);
+  expect(signInWithPassword).toHaveBeenCalledWith({ email: "ada@example.com", password: "autofilled-password" });
+  expect(screen.getByRole("button", { name: "Signing in…" }).hasAttribute("disabled")).toBe(true);
 });
