@@ -237,9 +237,10 @@
  .landing-v5 [data-rv] {opacity:1!important;transform:none!important;}
 }
 
-/* Compact public navigation. Panels are disclosures, usable by touch and keyboard. */
+/* Compact public navigation with direct links and a mobile menu. */
 .landing-v5 .nav .wrap{width:min(1200px,calc(100% - 48px));height:64px;display:grid;grid-template-columns:1fr auto 1fr;gap:24px}
 .landing-v5 .nav .brand{justify-self:start}
+.landing-v5 .nav .header-wordmark{width:84px;height:18px;display:block}
 .landing-v5 .nav .menu{display:flex;gap:4px;font-size:13px}
 .landing-v5 .nav .links{justify-self:end;font-size:13px;white-space:nowrap}
 .landing-v5 .nav .links a.lg{display:inline-flex}

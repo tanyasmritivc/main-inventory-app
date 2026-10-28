@@ -1,3 +1,7 @@
+## October 27 — Header brand proportions
+
+Active on `web-landing-v5`: header-only 84×18 wordmark with icon matched to letter height. Existing vector letterforms and mark retained; shared/footer/app branding untouched. Navigation tests, TypeScript and changed-file lint pass; publication pending.
+
 ## October 27 — Direct public navigation follow-up
 
 Completed on `web-landing-v5`, runtime `e03ce56`, live in `direct-nav-20261027/frontend`, build `tbpd7YNTYs5Iku6ICyj-O`. Product and Solutions now link directly to their pages; disclosure triggers, chevrons and unused panel styles removed. Mobile Menu access, all pages and Developers preserved. 638 tests/88 suites, TypeScript, changed-file lint, production build and 30 staged/live routes pass. Public HTTPS header verified to contain direct links and no Product/Solutions buttons. Backend and previous release preserved. No push/CI per handoff. Receipt: `docs/landing-v5/direct-navigation-deployment.json`.

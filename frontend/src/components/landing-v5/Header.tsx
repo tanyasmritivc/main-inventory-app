@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FindEZWordmark } from "@/components/site/findez-brand";
+import Image from "next/image";
 
 export function Header() {
  const root = useRef<HTMLElement>(null);
@@ -19,7 +19,7 @@ export function Header() {
   }
  }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) close(); }}>
   <div className="wrap">
-   <Link className="brand" href="/" aria-label="FindEZ home" onClick={close}><FindEZWordmark width={96} height={27}/></Link>
+   <Link className="brand" href="/" aria-label="FindEZ home" onClick={close}><Image className="header-wordmark" src="/brand/findez-header-wordmark.svg" alt="FindEZ" width={84} height={18}/></Link>
    <button className="mobile-nav-toggle" type="button" aria-expanded={mobile} aria-controls="public-navigation" onClick={() => { setMobile(!mobile); }}>{mobile ? "Close" : "Menu"}</button>
    <nav className={`menu${mobile ? " mobile-open" : ""}`} id="public-navigation" aria-label="Main">
     <Link href="/product" onClick={close}>Product</Link>
