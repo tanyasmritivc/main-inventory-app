@@ -3,6 +3,8 @@ import { PUBLIC_SITE_UPDATED_AT, PUBLIC_SITE_URL } from "@/lib/public-positionin
 
 const publicRoutes = [
   "",
+  "/product",
+  "/solutions",
   "/pricing",
   "/privacy",
   "/terms",

@@ -1,3 +1,7 @@
+## October 27 — Public navigation and explainer pages
+
+Active on `web-landing-v5`: compact centered header, Product/Solutions disclosures and dedicated public pages, Pricing FAQ using the unchanged catalog, Research footer link, and 3px decorative markers. Developers content/routes, authenticated app, mobile and billing behavior are excluded. 638 web tests pass; TypeScript passes; lint has zero errors and 52 existing warnings. Safari desktop Product/menu/section links and 390px responsive layout inspected; final staging and publication pending. Preserve no-push handoff and self-host deployment.
+
 ## October 27 - Landing and branding v5 published
 
 Local branch `web-landing-v5`, runtime `654236e`, is live on the existing self-hosted `landing-v5-20261027/frontend` release. Build `fwD8JLFgTO-4lI8lo0QVR`. The prototype landing replaces only `/`; shared black Petals logos/icons replace orange artwork. 636 tests/87 suites, TypeScript, lint (zero errors, 52 existing warnings), production build and 27 staged/live routes pass. Safari desktop/phone layouts, reverse scroll, audience selection, font isolation and live HTTPS content verified. Four unused-font preload notices remain from the shared layout; no hydration or runtime errors observed. No push/CI per explicit handoff. Mobile branding is a separate local-only branch, no TestFlight. Prior compiled release and backend process preserved. See `docs/landing-v5/README.md` and deployment receipt.

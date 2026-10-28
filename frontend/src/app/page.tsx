@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import { publicFonts } from "@/components/landing-v5/fonts";
 import { LandingV5 } from "@/components/landing-v5/LandingV5";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
-const inter = Inter({subsets:["latin"],weight:["400","500","600"],variable:"--landing-inter",display:"swap"});
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600"], variable: "--landing-jakarta", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], weight: ["400"], variable: "--landing-mono", display: "swap" });
 export const metadata: Metadata = {
   title: { absolute: PUBLIC_SITE_TITLE },
   description: PUBLIC_SITE_DESCRIPTION,
@@ -28,6 +25,6 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }} />
-    <LandingV5 className={`${inter.variable} ${jakarta.variable} ${mono.variable}`} />
+    <LandingV5 className={publicFonts} />
   </>;
 }

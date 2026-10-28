@@ -1,7 +1,6 @@
 /** @jest-environment jsdom */
 import { render, screen } from "@testing-library/react";
 import { redirect } from "next/navigation";
-import ProductPage from "@/app/product/page";
 import AskPage from "@/app/product/ask/page";
 import CapturePage from "@/app/product/capture/page";
 import SpacesPage from "@/app/product/spaces-and-sharing/page";
@@ -12,7 +11,7 @@ jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
 jest.mock("@/lib/use-marketing-session", () => ({ useMarketingSession: jest.fn(() => false) }));
 beforeEach(() => jest.clearAllMocks());
 
-test.each([[ProductPage, "/home"], [AskPage, "/assist"], [CapturePage, "/scan"], [SpacesPage, "/spaces"], [RoboticsPage, "/teams"]])("legacy feature links open the actual function instead of repeating the landing page", (Page, target) => {
+test.each([[AskPage, "/assist"], [CapturePage, "/scan"], [SpacesPage, "/spaces"], [RoboticsPage, "/teams"]])("legacy feature links open the actual function instead of repeating the landing page", (Page, target) => {
   Page();
   expect(redirect).toHaveBeenCalledWith(target);
 });

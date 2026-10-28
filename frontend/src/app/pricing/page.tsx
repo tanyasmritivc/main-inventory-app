@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PublicShell } from "@/components/landing-v5/PublicShell";
 import { PricingClient } from "@/components/site/pricing-client";
 
 export const metadata: Metadata = {
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  return <PricingClient />;
+  return <PublicShell><PricingClient /></PublicShell>;
 }

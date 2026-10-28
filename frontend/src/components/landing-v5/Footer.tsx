@@ -1,31 +1,35 @@
+import Link from "next/link";
 import { FindEZWordmark } from "@/components/site/findez-brand";
 
 export function Footer() {
  return (<footer >
 <div className="wrap">
-<a className="brand" href="#hero" style={{"fontSize":"17px"}}>
+<Link className="brand" href="/" style={{"fontSize":"17px"}}>
 <FindEZWordmark width={96} height={27} />
-</a>
+</Link>
 
 <nav aria-label="Footer navigation">
-<a href="/pricing">
+<Link href="/product">Product</Link>
+<Link href="/solutions">Solutions</Link>
+<Link href="/#s6r">Research</Link>
+<Link href="/pricing">
 {"Plans"}
-</a>
-<a href="/docs/api">
+</Link>
+<Link href="/docs/api">
 {"Developers"}
-</a>
-<a href="https://apps.apple.com/us/app/findez-ai/id6760401697">
+</Link>
+<Link href="https://apps.apple.com/us/app/findez-ai/id6760401697">
 {"iOS App"}
-</a>
-<a href="/privacy">
+</Link>
+<Link href="/privacy">
 {"Privacy"}
-</a>
-<a href="/terms">
+</Link>
+<Link href="/terms">
 {"Terms"}
-</a>
-<a href="mailto:info@findez.ai">
+</Link>
+<Link href="mailto:info@findez.ai">
 {"Contact"}
-</a>
+</Link>
 </nav>
 
 <span >

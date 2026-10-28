@@ -81,7 +81,7 @@ The Next.js app serves the animated marketing homepage and authenticated product
 routes such as `/home`, `/scan`, `/review`, `/inventory`, `/assist`, `/checkout`,
 `/teams`, `/collections`, `/project-kits`, `/documents`, `/labels`, and `/settings`.
 Server components protect routes with Supabase Auth. Client components call FastAPI
-with the current access token. `/product` and `/robotics` redirect to `/`.
+with the current access token. `/product` and `/solutions` are public explainer pages. Legacy product subroutes retain their existing app redirects.
 
 ## Backend and APIs
 
