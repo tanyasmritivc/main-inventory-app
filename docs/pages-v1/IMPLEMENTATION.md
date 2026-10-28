@@ -54,6 +54,8 @@ No original content was removed or merged away. The prototype's fourth plan, ent
 - Chrome responsive inspection: all four pages at 1440px and 390px; document width matches viewport in each. Mobile navigation, Solutions sticky/phone-static layouts, annual prices, FAQ and Research footer route verified.
 - Inter computed font verified after correcting a global inheritance conflict. Team gradient/white-text contrast corrected and visually checked.
 - Reduced motion: no running animations, all Research words fully visible and sharp. CSS also forces full question text and the first audience label without motion.
-- Production build and live release receipt to follow.
+- Production webpack build passed; all 32 staged and live route/asset checks passed. Published directly to the existing self-hosted service from runtime `95d7c945650bc5568bcdb58d40b8cb38cd4553d1`, build `m6h3XZXrsPhx9gaUQkOwN`. Public HTTPS Product/Research markup and the live Research browser rendering were verified. See `deployment-receipt.json`.
+- Developers and billing catalog file hashes match the prior release; the backend process and previous compiled release are preserved. No branch push.
+- Live Chrome reported a stylesheet-preload warning; no JavaScript or hydration error was observed. Existing lint warnings remain outside this presentation scope.
 
 Motion uses one rAF scheduler, DOM styles/refs rather than per-frame React state, IntersectionObserver, CSS and WAAPI. No animation dependency added. CSS loops pause offscreen; the scheduler pauses when the tab is hidden. All text remains available to assistive technology and server rendering.

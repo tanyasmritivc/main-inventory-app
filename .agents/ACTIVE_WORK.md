@@ -1,6 +1,6 @@
 ## October 27 — Public pages v1 presentation
 
-Active on `feat/pages-v1-ui` in `/private/tmp/findez-plans-usage`. Restyle Product, Solutions and Pricing while preserving copy, links, catalog and disabled paid checkout. Add `/research` using only the already-public landing FIND copy, with the explicitly approved footer link. Developers, landing content, authenticated app, mobile and backend excluded. 643 tests, TypeScript and lint pass; desktop/390px and reduced-motion review in progress. No push per supplied handoff.
+Completed on `feat/pages-v1-ui` in `/private/tmp/findez-plans-usage`; runtime `95d7c945` is live in self-hosted `pages-v1-20261027/frontend`, build `m6h3XZXrsPhx9gaUQkOwN`. Product, Solutions and Pricing restyled with exact copy/links/catalog preserved; approved `/research` uses only existing public FIND copy and is linked from the footer. Developers, authenticated app, mobile and backend unchanged. 643 tests/89 suites, TypeScript, lint (0 errors/52 existing warnings), production build and all 32 staged/live checks pass. All four pages verified at 1440px/390px, reduced motion, annual prices, FAQ and live Research rendering. Backend and old compiled release preserved. No push per handoff. See `docs/pages-v1/IMPLEMENTATION.md` and `deployment-receipt.json`.
 
 ## October 27 — Header brand proportions
 
