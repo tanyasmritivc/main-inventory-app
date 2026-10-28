@@ -1,3 +1,7 @@
+## October 27 - Mobile branding v5 (completed locally)
+
+User-supplied launch handoff. Isolated mobile-brand-v5 branch; branding only outside web landing. Latest user authorizes self-hosted web publication after verification. Mobile remains local, no TestFlight upload.
+
 ## October 26 — Build149 rollback delivered as TestFlight151
 
 At the user's request, the complete mobile tree is restored to build149 (`ca3a43a`, runtime `6044eb0`), with only the release number changed to151. Build150 onboarding/Scan changes are removed and its unmerged PR260 is closed. Replacement runtime `7da9f72`, PR261. Apple acknowledged TestFlight1.1.1(151), delivery `ee9a130a-e4d9-42db-98a7-0d376e128ed1`. All five exact-source CI gates (40460187327), 1,190 mobile tests plus one existing skip, clean analysis, strict signing, 34 archive/export device binaries, 26 privacy manifests, production configuration and Apple validation passed. Simulator151 is installed with app data preserved; simulator returned to its prior shut-down state. IPA/archive preserved. Processing/tester availability pending, not polled; physical acceptance unverified. Public submission stays held. No web/server/database/customer-data changes. Receipt: `docs/plans/mobile-build149-rollback-receipt.json`.

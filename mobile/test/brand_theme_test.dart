@@ -126,12 +126,14 @@ void main() {
     );
   });
 
-  test('Petals native icon is opaque with white petals on orange', () {
+  test('Petals native icon is opaque with white petals on a dark glow tile', () {
     final icon = image.decodePng(
       File('assets/brand/findez-app-icon.png').readAsBytesSync(),
     )!;
     expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
-    expect(icon.getPixel(0, 0).toList(), [232, 89, 12]);
+    expect(icon.getPixel(0, 0).r, lessThan(80));
+    expect(icon.getPixel(0, 0).g, lessThan(80));
+    expect(icon.getPixel(0, 0).b, lessThan(80));
     expect(icon.getPixel(750, 250).toList(), [255, 255, 255]);
     expect(icon.getPixel(400, 400).toList(), [255, 255, 255]);
   });
@@ -139,7 +141,7 @@ void main() {
   test('Petals mark and outlined wordmark retain supplied geometry', () async {
     for (final name in ['findez-mark.svg', 'findez-wordmark.svg']) {
       final svg = await rootBundle.loadString('assets/brand/$name');
-      expect(svg, contains('fill="#E8590C"'));
+      expect(svg, contains('fill="#111112"'));
       expect(svg, isNot(contains('#A9D6F5')));
       expect(svg, contains('M12 24A12 12 0 0 1 24 12'));
       // Keep the supplied filled vector paths, without added strokes.
@@ -188,7 +190,7 @@ void main() {
     });
 
     testWidgets(
-      '${brightness.name} wordmark preserves orange and only reverses ink',
+      '${brightness.name} wordmark uses the supplied reversed ink artwork',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await tester.pumpWidget(
