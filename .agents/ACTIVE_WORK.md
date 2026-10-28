@@ -1,6 +1,6 @@
 ## October 27 — Header brand proportions
 
-Active on `web-landing-v5`: header-only 84×18 wordmark with icon matched to letter height. Existing vector letterforms and mark retained; shared/footer/app branding untouched. Navigation tests, TypeScript and changed-file lint pass; publication pending.
+Completed on `web-landing-v5`, runtime `8631aee`, live in `header-brand-20261027/frontend`, build `o8So_dvmMP113sLwnnUYZ`. Header-only 84×18 wordmark with icon matched to letter height. Existing vector letterforms and mark retained; shared/footer/app branding untouched. Rendered artwork inspected; 3 navigation tests, TypeScript, changed-file lint, production build and 31 staged/live route checks pass. Public HTTPS verifies exact SVG bytes and rendered dimensions. First build received malformed Google-font data; unchanged retry passed. Prior release and backend preserved. No push/CI per handoff. Receipt: `docs/landing-v5/header-brand-deployment.json`.
 
 ## October 27 — Direct public navigation follow-up
 
