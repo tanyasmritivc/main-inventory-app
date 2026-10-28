@@ -22,7 +22,7 @@ function oldComponent(file:string,name="default"){
 }
 function content(component:React.ReactNode){
  const root=document.createElement("div");root.innerHTML=renderToStaticMarkup(component);const main=root.querySelector("main")||root;
- main.querySelectorAll('script,style,[aria-hidden="true"],svg').forEach(n=>n.remove());
+ main.querySelectorAll('script,style,[aria-hidden="true"],svg,.public-eyebrow').forEach(n=>n.remove());
  const walker=document.createTreeWalker(main,NodeFilter.SHOW_TEXT);const words:string[]=[];let node;
  while((node=walker.nextNode()))words.push(...(node.textContent||"").split(/\s+/).filter(Boolean));
  return {words:words.sort(),links:Array.from(main.querySelectorAll("a")).map(a=>[a.textContent,a.getAttribute("href")]).sort()};
@@ -31,7 +31,7 @@ test.each([
  ["frontend/src/app/product/page.tsx",Product,"default"],
  ["frontend/src/app/solutions/page.tsx",Solutions,"default"],
  ["frontend/src/components/site/pricing-client.tsx",PricingClient,"PricingClient"],
-] as const)("preserves all existing content and destinations: %s",(file,Current,name)=>{
+] as const)("preserves content and destinations apart from approved eyebrow removal: %s",(file,Current,name)=>{
  const Previous=oldComponent(file,name);expect(content(<Current/>)).toEqual(content(<Previous/>));
 });
 test("research contains only the already-public FIND content",()=>{

@@ -1,3 +1,7 @@
+## October 27 — Public section label removal
+
+Active on `feat/pages-v1-ui`. User requested removal of the small grey headings throughout the public pages. Remove Product/Solutions eyebrow labels and reclaim their spacing; keep main headings, body copy, links, pricing, Research status labels and Developers unchanged. No push.
+
 ## October 27 — Public pages v1 presentation
 
 Completed on `feat/pages-v1-ui` in `/private/tmp/findez-plans-usage`; runtime `95d7c945` is live in self-hosted `pages-v1-20261027/frontend`, build `m6h3XZXrsPhx9gaUQkOwN`. Product, Solutions and Pricing restyled with exact copy/links/catalog preserved; approved `/research` uses only existing public FIND copy and is linked from the footer. Developers, authenticated app, mobile and backend unchanged. 643 tests/89 suites, TypeScript, lint (0 errors/52 existing warnings), production build and all 32 staged/live checks pass. All four pages verified at 1440px/390px, reduced motion, annual prices, FAQ and live Research rendering. Backend and old compiled release preserved. No push per handoff. See `docs/pages-v1/IMPLEMENTATION.md` and `deployment-receipt.json`.
