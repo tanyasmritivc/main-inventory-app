@@ -1,3 +1,7 @@
+## October 27 — Direct public navigation follow-up
+
+Active on `web-landing-v5`: replace Product and Solutions disclosures with direct page links, preserving mobile Menu access, all pages and Developers. Removing unused panel styles. Validation and self-host publication pending.
+
 ## October 27 — Public navigation and explainer pages
 
 Completed on `web-landing-v5`, runtime `0fd6c40`, live in self-hosted `public-pages-20261027/frontend`, build `JhcaFxY6cvqGF_OIeECPJ`. Compact centered header, Product/Solutions menus and dedicated pages, Pricing FAQ with unchanged catalog, Research footer link and 3px markers. Developers content/routes, authenticated app, mobile and billing behavior remain unchanged. 638 tests/88 suites, TypeScript, lint (zero errors/52 existing warnings), production build and 30 staged/live checks pass. Safari desktop and 390px layouts, menus, section links, annual pricing and FAQ verified; public HTTPS content and live Product navigation verified. Backend and prior compiled release preserved. No push/CI per handoff. See `docs/landing-v5/public-navigation.md` and deployment receipt.
