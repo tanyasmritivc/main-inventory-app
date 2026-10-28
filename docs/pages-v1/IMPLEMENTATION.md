@@ -59,3 +59,11 @@ No original content was removed or merged away. The prototype's fourth plan, ent
 - Live Chrome reported a stylesheet-preload warning; no JavaScript or hydration error was observed. Existing lint warnings remain outside this presentation scope.
 
 Motion uses one rAF scheduler, DOM styles/refs rather than per-frame React state, IntersectionObserver, CSS and WAAPI. No animation dependency added. CSS loops pause offscreen; the scheduler pauses when the tab is hidden. All text remains available to assistive technology and server rendering.
+
+## October 27 follow-up: labels and Developers header
+
+The user approved removal of the small grey eyebrow headings after reviewing the release. Product and Solutions no longer render hero, numbered-section or example eyebrow labels; main headings, body text, navigation links, examples and pricing remain. The section grid now starts the main heading in the first row, reclaiming the removed-label spacing. Research and Pricing have no matching eyebrow headings. Existing preservation checks exclude only the intentionally removed labels.
+
+A separate explicit follow-up authorizes the Developers header theme only: white background, neutral link/focus color and a subtle divider. Its JSX, content, sidebar, layout and destinations remain unchanged. This supersedes the earlier Developers exclusion for header CSS only.
+
+Validation: five content-preservation/plan tests and four existing API documentation tests pass; TypeScript and changed-file ESLint pass. Product capture spacing inspected at 1440px and 390px. Developers header computed white with neutral links and no horizontal overflow at 390px. Production build and all 32 staged/live route checks passed after an unchanged retry for a transient Google-font response. Live browser confirms the white Developers header and 390px fit. Runtime `bf8fa9d9` is published in `labels-header-20261027/frontend`, build `TJhn0LDHD621dTKAVn-fj`. Previous release and backend preserved; no push. Receipt: `labels-header-deployment.json`.
