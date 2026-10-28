@@ -1,6 +1,6 @@
-## October 27 - Web landing and branding v5 (active)
+## October 27 - Landing and branding v5 published
 
-User-supplied launch handoff. Isolated web-landing-v5 branch; branding only outside web landing. Latest user authorizes self-hosted web publication after verification. Mobile remains local, no TestFlight upload.
+Local branch `web-landing-v5`, runtime `654236e`, is live on the existing self-hosted `landing-v5-20261027/frontend` release. Build `fwD8JLFgTO-4lI8lo0QVR`. The prototype landing replaces only `/`; shared black Petals logos/icons replace orange artwork. 636 tests/87 suites, TypeScript, lint (zero errors, 52 existing warnings), production build and 27 staged/live routes pass. Safari desktop/phone layouts, reverse scroll, audience selection, font isolation and live HTTPS content verified. Four unused-font preload notices remain from the shared layout; no hydration or runtime errors observed. No push/CI per explicit handoff. Mobile branding is a separate local-only branch, no TestFlight. Prior compiled release and backend process preserved. See `docs/landing-v5/README.md` and deployment receipt.
 
 ## October 27 — Phone web sign-in and Apple callback fixed
 

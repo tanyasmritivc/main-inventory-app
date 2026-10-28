@@ -44,3 +44,9 @@ Existing app accents in `globals.css`, `app-theme.css`, `workspace.css`, onboard
 - `frontend/src/components/landing-v3/sceneData.ts`
 - `frontend/src/components/landing-v3/toolsScene.js`
 - `frontend/src/components/landing-v3/useScrollProgress.ts`
+
+## Publication
+
+Published runtime `654236e` on the existing self-hosted service. All 27 staged and live route/asset checks pass; prior compiled release preserved and API process unchanged. HTTPS Safari loads the new homepage. Receipt: `deployment-receipt.json`.
+
+Safari console showed four unused-font preload notices from fonts loaded by the shared layout, but no hydration/runtime errors or image sizing warning. The final scoped font fix resolves inherited app typography. A full frame-by-frame pixel diff was not performed; key desktop/phone sections were compared to the supplied prototype in Safari.
