@@ -1,6 +1,6 @@
 ## October 27 — Public section label removal
 
-Active on `feat/pages-v1-ui`. User requested removal of the small grey headings throughout the public pages. Remove Product/Solutions eyebrow labels and reclaim their spacing; keep main headings, body copy, links, pricing, Research status labels and Developers unchanged. No push.
+Active on `feat/pages-v1-ui`. User requested removal of the small grey headings throughout the public pages. Remove Product/Solutions eyebrow labels and reclaim their spacing; keep main headings, body copy, links, pricing, Research status labels unchanged. Follow-up explicitly authorizes only Developers header theme: white background, neutral text/divider/focus; documentation and layout unchanged. No push.
 
 ## October 27 — Public pages v1 presentation
 
