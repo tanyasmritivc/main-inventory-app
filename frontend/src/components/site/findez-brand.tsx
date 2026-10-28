@@ -5,7 +5,8 @@ import styles from "./findez-brand.module.css";
 export function FindEZMark({ width = 24, height = 24, ...props }: SVGProps<SVGSVGElement>) {
   const small = Number(width) < 32;
   return <svg viewBox="0 0 80 80" width={width} height={height} aria-hidden="true" {...props}>
-    <image href={`/brand/findez-mark${small ? "-small" : ""}.svg`} width="80" height="80" />
+    <image className={styles.light} href={`/brand/findez-mark${small ? "-small" : ""}.svg`} width="80" height="80" />
+    <image className={styles.dark} href={`/brand/findez-mark${small ? "-small" : ""}-white.svg`} width="80" height="80" />
   </svg>;
 }
 

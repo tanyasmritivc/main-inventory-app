@@ -387,21 +387,19 @@ Manager. Distinguish prepared assets from uploaded assets and a local reply
 draft from a sent message. Simulator results do not constitute physical-device
 acceptance.
 
-### Landing v3 homepage
+### Landing v5 homepage
 
-Run `npm run test:ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`
-from `frontend/`. The build requires the existing public Supabase URL/anon-key
-configuration for unrelated prerendered authentication pages; non-secret build
-placeholders suffice for static verification. Do not commit environment files.
-`landing-page` checks copy, links, encoded signup prompts, preserved metadata and
-shared SiteNav session cleanup. `landing-v3-motion` checks negative entering
-progress, smoothing/reduced motion and all major scene states at desktop/mobile
-sizes. `landing-v3-webgl` checks unavailable/throwing contexts and renderer failure.
-Browser-check the full scroll sequence at 1440×900 and 390×844, console hydration,
-page width, reduced motion and returning tools. See `docs/landing-v3/README.md`.
-The homepage now always sends acquisition actions to signup per the prototype;
-interior shared SiteNav retains its authenticated Dashboard behavior.
-All five CI jobs must pass on the PR head before finishing.
+Run `npm run test:ci`, `npm run lint`, `npx tsc --noEmit`, and
+`npm run build -- --webpack` from `frontend/`. Build with the existing public
+Supabase configuration; never commit environment files. `landing-page` checks
+copy, routes, signup drafts, IME behavior and preserved metadata.
+`landing-v5-motion` checks scroll reversal, counts, loop cleanup, mobile and
+reduced-motion finished states, and audience rotation stopping after selection.
+Check Safari at 1440x900 and 390x844, all sections, page width and console.
+The landing has no three.js imports. See `docs/landing-v5/README.md`.
+For this no-push handoff, GitHub CI is not triggered; record local validation
+honestly and require the isolated self-hosted production build and route checks
+before publication. Future PR releases retain the normal five CI gates.
 
 ### Persistent web navigation and hover sidebar
 

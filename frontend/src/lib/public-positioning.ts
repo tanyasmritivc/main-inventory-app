@@ -16,7 +16,7 @@ export const PUBLIC_SITE_STRUCTURED_DATA = {
       legalName: "AI Robots Inc.",
       email: "info@findez.ai",
       url: PUBLIC_SITE_URL,
-      logo: `${PUBLIC_SITE_URL}/brand/findez-logo-512.png`,
+      logo: `${PUBLIC_SITE_URL}/brand/findez-favicon.png`,
     },
     {
       "@type": "WebSite",

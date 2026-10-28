@@ -7,11 +7,11 @@ const mockRouter = { push, prefetch: jest.fn() };
 const unsubscribe = jest.fn();
 let authChanged: (event: string, session: object | null) => void;
 jest.mock("next/font/google", () => ({
+  Inter: () => ({ variable: "landing-inter" }),
   Plus_Jakarta_Sans: () => ({ variable: "landing-jakarta" }),
   Geist_Mono: () => ({ variable: "landing-mono" }),
 }));
 jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
-jest.mock("@/components/landing-v3/useScrollProgress", () => ({ useScrollProgress: () => ({ motion: {current: {}}, registerTools: jest.fn() }) }));
 jest.mock("@/lib/supabase/browser", () => ({ createSupabaseBrowserClient: () => ({ auth: {
   onAuthStateChange: (listener: typeof authChanged) => { authChanged = listener; return { data: { subscription: { unsubscribe } } }; },
 } }) }));
@@ -25,14 +25,14 @@ test("homepage preserves the requested copy, sections, metadata and destinations
   render(await LandingPage());
   expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
   expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
-  for (const id of ["storyA", "who", "biz", "app", "sync", "end"]) expect(document.getElementById(id)).toBeTruthy();
-  expect(document.querySelectorAll("[data-drawer]")).toHaveLength(48);
-  const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
-  expect(header.getByRole("link", {name: "Get started ↗"}).getAttribute("href")).toBe("/signup");
+  for (const id of ["hero", "build", "s2", "s4", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
+  expect(document.querySelectorAll("#prows .pr")).toHaveLength(12);
+  const header = within(screen.getByRole("banner"));
+  expect(header.getByRole("link", {name: "Get started"}).getAttribute("href")).toBe("/signup");
   const footer = within(screen.getByRole("navigation", {name: "Footer navigation"}));
   const destinations = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
   for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", {name}).getAttribute("href")).toBe(href);
-  expect(screen.getByRole("link", {name: "Business inquiries ↗"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
+  expect(screen.getByRole("link", {name: "Talk to us"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
   expect(metadata.title).toEqual({absolute: "FindEZ | AI for the physical world"});
   expect(metadata.alternates).toEqual({canonical: "/"});
   expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
@@ -58,9 +58,8 @@ test("empty prompts focus the composer; attachment controls still open signup", 
   expect(document.activeElement).toBe(screen.getByRole("textbox"));
   expect(push).not.toHaveBeenCalled();
   expect(screen.queryByRole("dialog")).toBeNull();
-  for (const name of ["Attach", "Take a photo", "Speak"]) {
-    fireEvent.click(screen.getByRole("button", {name}));
-    expect(push).toHaveBeenLastCalledWith("/signup");
+  for (const name of ["Add", "Scan", "Speak"]) {
+    expect(screen.getByRole("link", {name}).getAttribute("href")).toBe("/signup");
   }
 });
 

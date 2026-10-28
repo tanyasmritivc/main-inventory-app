@@ -1,3 +1,7 @@
+## October 27 - Web landing and branding v5 (active)
+
+User-supplied launch handoff. Isolated web-landing-v5 branch; branding only outside web landing. Latest user authorizes self-hosted web publication after verification. Mobile remains local, no TestFlight upload.
+
 ## October 27 — Phone web sign-in and Apple callback fixed
 
 Web runtime `2db5853` (PR262) is live in `mobile-signin-20261027/frontend`, build `ssjyZUmJhXkdGR6AqyYsB`. Auth controls recover after Safari cached-page Back, show immediate provider feedback, prevent duplicate requests and read autofilled email/password from the form. Touch-device fields avoid focus auto-zoom. 639 web tests, 20 final auth tests, TypeScript, changed-file lint, all five CI gates (40624592288), production build and 27 staged/live routes pass. iPhone Safari verified Google single-tap handoff and Back recovery; Apple initially rejected an outdated callback registration. After user portal login, added the existing production auth domain/callback to com.findez.app.siwa, preserving prior entries. A fresh iPhone Safari tap now reaches Apple’s Sign in to FindEZ form. No authenticated end-to-end login was claimed. API/schema/mobile unchanged; old compiled release preserved. See `docs/plans/mobile-web-signin.md` and receipt.

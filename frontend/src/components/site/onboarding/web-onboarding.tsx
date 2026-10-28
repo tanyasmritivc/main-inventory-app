@@ -1,4 +1,5 @@
 "use client";
+import { FindEZWordmark } from "../findez-brand";
 import { continuePreview, previewPrompt } from "@/lib/landing-preview";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
@@ -201,7 +202,7 @@ function SetupAccount({ userId, prompt }: { userId: string; prompt: string }) {
     if (event.key === "Enter" && !event.nativeEvent.isComposing && event.target === heading.current && step === "welcome") { event.preventDefault(); next(); }
   }}>
     <header className={styles.top}>
-      <div className={styles.brand} aria-label="FindEZ"><svg width="24" height="24" viewBox="0 0 100 100" aria-hidden="true"><path fill="#E8590C" d="M55.5 1H99V44H55.5z" /><path fill="#111112" d="M0 23.5H76V46H0zM53.5 23.5H76V100H53.5z" /></svg><span>Find<b>EZ</b></span></div>
+      <div className={styles.brand}><FindEZWordmark width={96} height={27} /></div>
       <div className={styles.progress} aria-label={`Setup step ${Math.max(0, steps.indexOf(step) + 1)} of ${steps.length}`}>{steps.map((s, i) => <i key={s} className={i <= steps.indexOf(step) ? styles.progressOn : ""} />)}</div>
       {step !== "setup" && <button className={styles.skip} type="button" disabled={busy} onClick={() => void skip()}>Skip for now</button>}
     </header>
