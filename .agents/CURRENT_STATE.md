@@ -2724,3 +2724,13 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 ## October 26 cross-client account consistency (web)
 
 Runtime `0de1e1d7f7a4e66bafa4763a984fd093d2e6be25` is deployed on the self-hosted service, with all five exact-source CI gates passed. See `docs/plans/account-consistency-web.md` and its receipt. No database migration. Web/mobile use canonical snapshots and visible refresh; unsaved drafts remain local. Mobile build 146 is uploaded; Apple processing and physical two-device acceptance remain pending.
+
+
+## October 28 — Retain interrupted streamed answers
+
+Web main and contextual chat retain already received assistant text on an interrupted response, with the existing failure notice. Existing in-place chunk fade remains unchanged. Validation: 649 tests across 90 suites, TypeScript clean, changed-file lint zero errors. Self-hosted release pending exact-source CI; no unrelated pages or styles changed.
+
+
+## October 28 — Web streamed-prefix release — delivered
+
+Deployed runtime 5d8274d498cb8ecb6c1a2482c3169b4ce0dfd942 to /home/ubuntu/findez-web-releases/realtime-20261028/frontend. Five CI gates passed (40823497574), 649 Jest tests and TypeScript passed, changed-file lint has zero errors. Production build and all 32 staged/live route checks passed. Previous release retained; unrelated public pages preserved. Main unchanged.

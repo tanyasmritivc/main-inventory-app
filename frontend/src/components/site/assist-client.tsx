@@ -604,7 +604,7 @@ function AssistClientWorkspace({
         setMessages((m) =>
           m.map((msg) =>
             msg.id === assistantId
-              ? { ...msg, content: "", failed: true }
+              ? { ...msg, failed: true }
               : msg,
           ),
         );
