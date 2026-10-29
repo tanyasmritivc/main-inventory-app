@@ -3417,3 +3417,8 @@ Runtime `3dab494` delivered as signed TestFlight 1.1.1 (146). Five exact-source 
 ## October 28 — Space search and Ask placement — build 155
 
 Space search opens from the header icon. Ask FindEZ occupies a contrasting monochrome row beneath the summary, above items, with existing inventory scope and chat sheet. Main Ask and other destinations remain unchanged. Interrupted streams retain the received prefix and show an incomplete notice. Native iOS light/dark populated/empty layout and search checks pass; analysis clean. Build 155 delivery pending CI/signing. Physical device acceptance remains unverified; main unchanged.
+
+
+## October 28 — TestFlight 155 — upload acknowledged
+
+Uploaded 1.1.1 (155), source 4dfc88dbcacf97615c408c89a8ee6a350dbc4b2f. Apple delivery a8697901-91de-467a-a532-837d1ff2eb98. Five CI gates passed (40823502359); 1,209 local tests passed with one existing skip, analyzer clean, four native iOS populated/empty light/dark layout/search checks passed. Archive/export each verified 34 iOS device executables, strict signing, 26 privacy manifests, production configuration, Inter assets and license. Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build155. Processing and tester availability not polled; physical device acceptance remains unverified. Main unchanged; no App Store submission.
