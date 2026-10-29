@@ -94,8 +94,11 @@ def storage_path(url: object) -> str | None:
         return None
     for mode in ('public', 'authenticated', 'sign'):
         prefix = f'/storage/v1/object/{mode}/{settings.supabase_storage_bucket}/'
-        if parsed.path.startswith(prefix):
-            path = unquote(parsed.path[len(prefix):])
+        # Existing uploads can contain //storage after a trailing-slash base URL.
+        # Normalize only leading separators, never the object key or origin.
+        locator = '/' + parsed.path.lstrip('/')
+        if locator.startswith(prefix):
+            path = unquote(locator[len(prefix):])
             from app.api.routes.private_images import safe_image_path
             try:
                 return safe_image_path(path)
@@ -104,33 +107,66 @@ def storage_path(url: object) -> str | None:
     return None
 
 
-def references(inventory: list[dict]) -> list[tuple[str,str]]:
-    """Current primary plus later-added gallery photos; never query foreign IDs."""
-    ids = sorted({str(item['item_id']) for item in inventory if item.get('item_id')})
-    refs = set()
-    for offset in range(0,len(ids),100):
-        # Re-read primary URLs and existence too, including the final race check.
-        items = (get_supabase_admin().table('items').select('item_id,image_url')
-            .in_('item_id',ids[offset:offset+100]).execute().data or [])
-        live_ids = {str(item['item_id']) for item in items}
+def photo_catalog(inventory: list[dict]) -> list[dict]:
+    """Fresh current-photo metadata. Missing timestamps are unknown, never creation time."""
+    from datetime import datetime, timezone
+    source = {str(i['item_id']): i for i in inventory if i.get('item_id')}
+    ids = sorted(source)
+    catalog = []
+    for offset in range(0, len(ids), 100):
+        items = (get_supabase_admin().table('items').select('item_id,image_url,created_at')
+            .in_('item_id', ids[offset:offset+100]).execute().data or [])
+        live_ids = {str(i['item_id']) for i in items}
+        events = []
+        if live_ids:
+            page = 0
+            while True:
+                rows = (get_supabase_admin().table('item_events').select('item_id,event_id,image_url,created_at,content')
+                    .in_('item_id', sorted(live_ids)).eq('event_type', 'photo')
+                    .order('event_id').range(page, page+999).execute().data or [])
+                events.extend(rows)
+                if len(rows) < 1000: break
+                page += 1000
         for item in items:
-            if path := storage_path(item.get('image_url')):
-                refs.add((str(item['item_id']),path))
-        if not live_ids:
-            continue
-        page = 0
-        while True:
-            rows = (get_supabase_admin().table('item_events').select('item_id,image_url')
-                .in_('item_id',sorted(live_ids)).eq('event_type','photo')
-                .order('event_id').range(page,page+999).execute().data or [])
-            for row in rows:
-                item_id = str(row.get('item_id') or '')
-                if item_id in live_ids and (path := storage_path(row.get('image_url'))):
-                    refs.add((item_id,path))
-            if len(rows) < 1000:
-                break
-            page += 1000
-    return sorted(refs)
+            item_id = str(item['item_id'])
+            primary = str(item.get('image_url') or '').strip()
+            urls = {}
+            if primary: urls[primary] = None
+            for event in events:
+                url = str(event.get('image_url') or '').strip()
+                if str(event.get('item_id')) == item_id and url:
+                    previous = urls.get(url)
+                    if previous is None or str(event.get('created_at') or '') < str(previous.get('created_at') or ''):
+                        urls[url] = event
+            photos = []
+            for url, event in urls.items():
+                # Preserving an original scan is not evidence of a later attachment.
+                from app.services.item_photos import ORIGINAL_SCAN_PHOTO
+                recorded = event.get('created_at') if event else None
+                added = recorded if event and event.get('content') != ORIGINAL_SCAN_PHOTO else None
+                later = None
+                try:
+                    if added and item.get('created_at'):
+                        attached = datetime.fromisoformat(added.replace('Z', '+00:00'))
+                        created = datetime.fromisoformat(item['created_at'].replace('Z', '+00:00'))
+                        # Legacy items.created_at is timestamp without time zone;
+                        # the database and application persist these values in UTC.
+                        if attached.tzinfo is None: attached = attached.replace(tzinfo=timezone.utc)
+                        if created.tzinfo is None: created = created.replace(tzinfo=timezone.utc)
+                        later = attached > created
+                except (ValueError, TypeError): pass
+                path = storage_path(url)
+                photos.append({'path': path, 'is_primary': url == primary,
+                    'added_at': added, 'added_after_item_creation': later,
+                    'timing_basis': 'photo_attachment_event' if added else 'unknown',
+                    'readable_locator': path is not None})
+            catalog.append({**source[item_id], 'item_created_at': item.get('created_at'), 'photos': photos})
+    return catalog
+
+
+def references(inventory: list[dict]) -> list[tuple[str, str]]:
+    return sorted({(str(item['item_id']), photo['path'])
+        for item in photo_catalog(inventory) for photo in item['photos'] if photo['path']})
 
 
 def _authorized(actor_id: str, path: str) -> bool:

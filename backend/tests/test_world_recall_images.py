@@ -58,7 +58,7 @@ def test_current_later_added_gallery_pixels_and_removal(removed,allowed,expected
     storage=NS(download=lambda _:pixels())
     raw=NS(storage=NS(from_=lambda _:storage))
     with patch.object(world,'in_inventory',scope), patch.object(world,'inventory_scope'), patch.object(ai_agent,'_current_items',return_value=[item]), \
-         patch.object(photos.gallery,'references',side_effect=[refs,[] if removed else refs]), patch.object(photos.gallery,'_authorized',return_value=allowed), patch.object(photos,'get_supabase_raw',return_value=raw):
+         patch.object(photos.gallery,'photo_catalog',return_value=[{**item,'item_created_at':None,'photos':[{'path':'later-added.jpg'}]}]), patch.object(photos.gallery,'references',return_value=[] if removed else refs), patch.object(photos.gallery,'_authorized',return_value=allowed), patch.object(photos,'get_supabase_raw',return_value=raw):
         result=photos.read(ACTOR,ORG,INVENTORY)
     assert result['photos_read'] == expected
     assert len(result['_image_parts']) == expected*2

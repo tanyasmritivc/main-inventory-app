@@ -76,6 +76,7 @@ def test_foreign_or_malformed_urls_never_become_storage_paths(url):
 
 def test_known_private_locator_maps_without_fetching_arbitrary_url():
     assert search.storage_path(URL)==PATH
+    assert search.storage_path(URL.replace('/storage/', '//storage/'))==PATH
     assert search.storage_path(URL.replace('/public/','/sign/')+'?token=old')==PATH
 
 
