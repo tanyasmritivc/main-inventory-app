@@ -1,6 +1,6 @@
-## October 28 — Stable public answer delivery (verification complete)
+## October 28 — Stable public answer delivery deployed
 
-`fix/stable-answer-stream` keeps provisional model deltas and resets private at the shared API boundary. Only the validated, persisted final answer is delivered, in bounded word-aligned chunks using the clients’ existing fade. Tool/retry progress remains visible until then; no progress events follow the first public answer chunk. Organization and inventory scope, tools, models, actions and capture cards are unchanged. 107 focused tests and 1,624 backend tests plus 10 subtests pass. Deployment pending; see `docs/plans/stable-answer-stream.md`.
+`fix/stable-answer-stream` keeps provisional model deltas and resets private at the shared API boundary. Only the validated, persisted final answer is delivered, in bounded word-aligned chunks using the clients’ existing fade. Tool/retry progress remains visible until then; no progress events follow the first public answer chunk. Organization and inventory scope, tools, models, actions and capture cards are unchanged. 107 focused tests and 1,624 backend tests plus 10 subtests pass. Runtime `84dd1cf` (PR266) is live after all five CI gates (40816903062) passed. Real HTTP delivery verified 12 separate chunks with exact final text and no resets or progress after text. Public API/database health and website HTTP200 pass; anonymous access is denied and 130 unrelated runtime files are preserved. Main is unchanged. Current web/mobile clients receive this API fix without a new TestFlight binary. Receipt: `docs/plans/stable-answer-stream-receipt.json`.
 
 ## October 26 — API organization recall and saved-photo vision deployed
 
