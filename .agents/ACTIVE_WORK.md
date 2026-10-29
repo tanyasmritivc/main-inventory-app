@@ -2382,3 +2382,10 @@ Mobile-only monochrome UI and motion update: remove retired orange/blue/cream in
 ## October 28 — larger Default text and extraction presentation
 
 User added a UI-only follow-up during build157 packaging. Hold upload of the first archive; rebuild157 from the final source after checks. Default text factor rises from .90 to .96 (about7%); other explicit size choices and nonlinear system scaling remain. Extraction preview uses bounded gray glass, a compact native activity indicator with actual stream statuses, grouped review rows, and a pinned destination/save area when space permits. Small/keyboard/accessibility layouts scroll all review content instead. Capture, edit, selection, destination, save/retry, cancellation and scopes remain unchanged.
+
+
+## October 28 — mobile UI TestFlight 157 delivered
+
+Build 1.1.1 (157), runtime source fbfde35014185b8d6ee482eb7c86dea420bf3871, was acknowledged by Apple (9b63d37e-f88d-4fe8-ad28-d017e6e54ff5). Monochrome interface surfaces replace orange/blue/cream; contextual Ask uses gray glass; pages have a subtle settle with faster tab selection. Default text rises about7% (.90→.96) through the existing scaler with SF Pro and accessibility preserved. Extraction has bounded glass, actual stream status with a native activity indicator, grouped review rows and pinned existing destination/save controls when space permits; small/keyboard/large-text layouts scroll safely. No features, API behavior, chat scopes or web changes.
+
+Validation: 1,211 Flutter tests, one existing skip, clean analysis, 85 focused extraction/appearance checks, 21 native layout/motion checks plus9 native extraction/keyboard checks and a loader visual recapture. All five CI jobs passed on final source (40831509387). Signed IPA/device binaries verified (34 archive +34 export),26 privacy manifests, production config, SF Pro font manifest and Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build157. Processing/tester availability remain pending and unpolled; physical-device visual acceptance is unverified. Main remains1c97e1f; no public App Store submission. PR273 remains isolated from main.
