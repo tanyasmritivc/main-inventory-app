@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
@@ -1004,6 +1005,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         .where((d) => !_isImage(d) && !_isNote(d) && !_isPdf(d))
         .toList();
     return Scaffold(
+      floatingActionButton: InventoryChatButton(api: widget.api),
       backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: AppBar(
         backgroundColor: AppTheme.adaptive(context, HomeColors.background),

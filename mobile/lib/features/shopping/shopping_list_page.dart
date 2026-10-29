@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
+import '../chat/inventory_chat_button.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
@@ -460,6 +461,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     return widget.embedded
         ? body
         : Scaffold(
+            floatingActionButton: InventoryChatButton(api: widget.api),
             backgroundColor: AppTheme.bg(context),
             appBar: AppBar(
               title: const AppText('Restock planner'),

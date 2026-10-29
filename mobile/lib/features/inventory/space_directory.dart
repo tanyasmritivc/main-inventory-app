@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -357,6 +358,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
             )
             .toList();
         return Scaffold(
+          floatingActionButton: InventoryChatButton(api: widget.api),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
               ? Colors.black
               : const Color(0xFFFCFAF7),
