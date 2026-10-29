@@ -4,7 +4,7 @@ import 'app_typography.dart';
 
 export 'app_typography.dart';
 
-/// App text uses bundled Inter, preserving styling and semantics with the shared
+/// App text uses native SF Pro on iOS, preserving styling and semantics with the shared
 /// weight policy. Prefer this to a raw Text in app-owned screens and dialogs.
 class AppText extends StatelessWidget {
   const AppText(

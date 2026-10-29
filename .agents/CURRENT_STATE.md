@@ -3422,3 +3422,13 @@ Space search opens from the header icon. Ask FindEZ occupies a contrasting monoc
 ## October 28 — TestFlight 155 — upload acknowledged
 
 Uploaded 1.1.1 (155), source 4dfc88dbcacf97615c408c89a8ee6a350dbc4b2f. Apple delivery a8697901-91de-467a-a532-837d1ff2eb98. Five CI gates passed (40823502359); 1,209 local tests passed with one existing skip, analyzer clean, four native iOS populated/empty light/dark layout/search checks passed. Archive/export each verified 34 iOS device executables, strict signing, 26 privacy manifests, production configuration, Inter assets and license. Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build155. Processing and tester availability not polled; physical device acceptance remains unverified. Main unchanged; no App Store submission.
+
+
+## October 28 — native SF Pro typography (active)
+
+Mobile-only lane fix/mobile-sf-pro replaces Inter throughout app-owned text, theme, inputs, chat, onboarding and page overrides with the native iOS SF Pro family. Preserve weights, layout, icons, behavior and existing release 155 features. No Apple font binary is bundled. Build 156 pending verification and delivery; main remains unchanged.
+
+
+## October 28 — SF Pro TestFlight 156 delivered
+
+Native SF Pro replaces Inter across app-owned text, framework controls, inputs, chat and explicit page styles. Runtime source 6b0cfe5d2817f4431b329a7ddd6b9bac3afe6b18. Build 1.1.1 (156) uploaded; Apple acknowledgment 067e1aab-e997-436d-b1a4-a0ce2857ea4b. All five CI gates passed (40825853896), 1,209 local tests passed with one existing skip, analyzer clean, and 14 native iOS typography/chat/layout checks passed. Production IPA contains no Inter or Apple font binary; native CupertinoSystemText resolves SF Pro. Verified 34 archive and 34 export device executables, strict signing, 26 privacy manifests, production configuration, and Apple validation. Artifacts and receipts are in Documents/FindEZ/AppStore/1.1.1-build156. Apple processing and tester availability remain pending/unpolled; physical-device acceptance unverified. Main remains 1c97e1f; no web/API changes or public submission.

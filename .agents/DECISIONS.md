@@ -1525,3 +1525,8 @@ even offline, with best-effort account-scoped metadata sync. Keep early access
 free and paid plans informational until billing is separately enabled. Do not
 infer entitlements from UI dismissal or signup timestamps. Public submission
 remains paused independently of authorized beta delivery.
+
+
+## October 28 — SF Pro throughout mobile
+
+Use Flutter's native iOS CupertinoSystemText family for all app-owned mobile text, including framework controls and explicit page overrides. Preserve existing font sizes, weights and accessibility policy. Resolve SF Pro from iOS; do not ship Apple font files or bundle Inter. Web typography is outside this request.

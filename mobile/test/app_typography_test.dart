@@ -79,7 +79,11 @@ void main() {
               matching: find.byType(RichText),
             ),
           );
-          expect(text.text.style?.fontFamily, 'Inter', reason: label);
+          expect(
+            text.text.style?.fontFamily,
+            'CupertinoSystemText',
+            reason: label,
+          );
         }
         await tester.enterText(find.byType(TextField), 'Retained input');
         expect(
@@ -87,7 +91,7 @@ void main() {
               .widget<EditableText>(find.byType(EditableText))
               .style
               .fontFamily,
-          'Inter',
+          'CupertinoSystemText',
         );
         expect(
           tester
@@ -171,7 +175,7 @@ void main() {
     final text = tester.widget<Text>(find.text('Visible code'));
     expect(text.style?.fontWeight, FontWeight.w400);
     expect(text.style?.color, Colors.orange);
-    expect(text.style?.fontFamily, 'Inter');
+    expect(text.style?.fontFamily, 'CupertinoSystemText');
     expect(text.style?.letterSpacing, .5);
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);

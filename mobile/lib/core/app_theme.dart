@@ -76,7 +76,7 @@ class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       useMaterial3: true,
-      fontFamily: 'Inter',
+      fontFamily: 'CupertinoSystemText',
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
@@ -116,7 +116,7 @@ class AppTheme {
           fontWeight: FontWeight.w500,
           letterSpacing: 0.1,
         ),
-      ).apply(fontFamily: 'Inter'),
+      ).apply(fontFamily: 'CupertinoSystemText'),
       appBarTheme: AppBarTheme(
         systemOverlayStyle: brightness == Brightness.light
             ? SystemUiOverlayStyle.dark
