@@ -21,7 +21,7 @@ class MemberAvatar extends StatelessWidget {
       final value = int.tryParse('FF$hex', radix: 16);
       if (value != null) return Color(value);
     }
-    return const Color(0xFFA9ADB5);
+    return const Color(0xFFADADAD);
   }
 
   Widget get _fallback => ColoredBox(

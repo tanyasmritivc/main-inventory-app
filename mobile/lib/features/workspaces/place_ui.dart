@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 
 abstract final class PlaceTokens {
-  static const background = Color(0xFFF6F5F3),
+  static const background = Color(0xFFF5F5F5),
       card = Color(0xFFFFFFFF),
-      border = Color(0xFFECEAE6),
-      separator = Color(0xFFF1EFEB);
+      border = Color(0xFFEAEAEA),
+      separator = Color(0xFFEFEFEF);
   static const primary = Color(0xFF111112),
-      secondary = Color(0xFF8A8782),
-      dim = Color(0xFF6B6965),
-      label = Color(0xFF9A978F);
-  static const orange = Color(0xFFE8590C),
-      darkOrange = Color(0xFFC2410C),
-      destructive = Color(0xFFB42318);
-  static const icon = Color(0xFF3F3D39),
-      chevron = Color(0xFFC4C1BA),
-      outline = Color(0xFFE3E0DA);
-  static const blue = Color(0xFFE3ECFB),
-      blueText = Color(0xFF2453A8),
-      green = Color(0xFFDFF1E6),
-      greenText = Color(0xFF1D6B43);
-  static const purple = Color(0xFFECE8F6),
-      purpleText = Color(0xFF4F3F8C),
-      owner = Color(0xFFFDE6D8),
-      ownerText = Color(0xFFA8380A);
+      secondary = Color(0xFF878787),
+      dim = Color(0xFF696969),
+      label = Color(0xFF979797);
+  static const orange = Color(0xFF727272),
+      darkOrange = Color(0xFF595959),
+      destructive = Color(0xFF414141);
+  static const icon = Color(0xFF3D3D3D),
+      chevron = Color(0xFFC1C1C1),
+      outline = Color(0xFFE0E0E0);
+  static const blue = Color(0xFFEBEBEB),
+      blueText = Color(0xFF4F4F4F),
+      green = Color(0xFFECECEC),
+      greenText = Color(0xFF585858);
+  static const purple = Color(0xFFEAEAEA),
+      purpleText = Color(0xFF484848),
+      owner = Color(0xFFEAEAEA),
+      ownerText = Color(0xFF4C4C4C);
   static TextStyle text(
     double size, {
     FontWeight weight = FontWeight.w400,
@@ -71,13 +71,13 @@ class PlacePalette {
           PlaceTokens.border: const Color(0xFF343436),
           PlaceTokens.separator: const Color(0xFF2C2C2E),
           PlaceTokens.primary: const Color(0xFFF4F4F2),
-          PlaceTokens.secondary: const Color(0xFFB8B7B2),
-          PlaceTokens.dim: const Color(0xFFC0BFBA),
-          PlaceTokens.label: const Color(0xFFB8B7B2),
-          PlaceTokens.icon: const Color(0xFFC0BFBA),
-          PlaceTokens.chevron: const Color(0xFFAAA9A3),
-          PlaceTokens.outline: const Color(0xFF6B6965),
-          PlaceTokens.destructive: const Color(0xFFFF9B91),
+          PlaceTokens.secondary: const Color(0xFFB7B7B7),
+          PlaceTokens.dim: const Color(0xFFBFBFBF),
+          PlaceTokens.label: const Color(0xFFB7B7B7),
+          PlaceTokens.icon: const Color(0xFFBFBFBF),
+          PlaceTokens.chevron: const Color(0xFFA9A9A9),
+          PlaceTokens.outline: const Color(0xFF696969),
+          PlaceTokens.destructive: const Color(0xFFB0B0B0),
         }[light] ??
         light;
   }
@@ -130,9 +130,7 @@ class PlaceTheme extends StatelessWidget {
           bodyColor: p.primary,
           displayColor: p.primary,
         ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: PlaceTokens.orange,
-          brightness: base.brightness,
+        colorScheme: base.colorScheme.copyWith(
           surface: p.background,
           onSurface: p.primary,
           onSurfaceVariant: p.secondary,
@@ -317,7 +315,7 @@ class PlaceAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = current
-        ? (const Color(0xFFFBE1D2), const Color(0xFFB33F08))
+        ? (const Color(0xFFE5E5E5), const Color(0xFF545454))
         : [
             (PlaceTokens.blue, PlaceTokens.blueText),
             (PlaceTokens.purple, PlaceTokens.purpleText),

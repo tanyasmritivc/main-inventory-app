@@ -361,7 +361,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
           floatingActionButton: InventoryChatButton(api: widget.api),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
               ? Colors.black
-              : const Color(0xFFFCFAF7),
+              : const Color(0xFFFFFFFF),
           appBar: AppBar(
             title: const Text('Spaces'),
             leading: BackButton(onPressed: widget.onBack),

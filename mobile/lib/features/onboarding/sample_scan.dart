@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
 import 'chat_onboarding_draft.dart';
 
-const _orange = Color(0xFFE8590C);
+const _orange = Color(0xFF111111);
 const samplePhoto = 'assets/onboarding/sample_workbench.jpg';
 
 /// Bundled, explicitly labelled demonstration, never an extraction result.
@@ -162,7 +162,7 @@ class _SampleScanCardState extends State<SampleScanCard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x266B452E),
+            color: Color(0x264B4B4B),
             blurRadius: 20,
             offset: Offset(0, 8),
           ),

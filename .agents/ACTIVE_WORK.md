@@ -2372,3 +2372,20 @@ Mobile-only lane fix/mobile-sf-pro replaces Inter throughout app-owned text, the
 ## October 28 — SF Pro TestFlight 156 delivered
 
 Native SF Pro replaces Inter across app-owned text, framework controls, inputs, chat and explicit page styles. Runtime source 6b0cfe5d2817f4431b329a7ddd6b9bac3afe6b18. Build 1.1.1 (156) uploaded; Apple acknowledgment 067e1aab-e997-436d-b1a4-a0ce2857ea4b. All five CI gates passed (40825853896), 1,209 local tests passed with one existing skip, analyzer clean, and 14 native iOS typography/chat/layout checks passed. Production IPA contains no Inter or Apple font binary; native CupertinoSystemText resolves SF Pro. Verified 34 archive and 34 export device executables, strict signing, 26 privacy manifests, production configuration, and Apple validation. Artifacts and receipts are in Documents/FindEZ/AppStore/1.1.1-build156. Apple processing and tester availability remain pending/unpolled; physical-device acceptance unverified. Main remains 1c97e1f; no web/API changes or public submission.
+
+
+## October 28 — monochrome mobile UI and subtle motion (active)
+
+Mobile-only monochrome UI and motion update: remove retired orange/blue/cream interface styling, use gray glass for contextual Ask, preserve SF Pro and existing features. Retained tabs use a 360ms 94%-to-100% settle with under 4px motion; fallback indicator finishes in 140ms and UIKit tab animation clock is faster. Reduce Motion remains immediate and mounted drafts are retained. Build 157 pending regression, native visual checks, CI and signed beta delivery. Main unchanged.
+
+
+## October 28 — larger Default text and extraction presentation
+
+User added a UI-only follow-up during build157 packaging. Hold upload of the first archive; rebuild157 from the final source after checks. Default text factor rises from .90 to .96 (about7%); other explicit size choices and nonlinear system scaling remain. Extraction preview uses bounded gray glass, a compact native activity indicator with actual stream statuses, grouped review rows, and a pinned destination/save area when space permits. Small/keyboard/accessibility layouts scroll all review content instead. Capture, edit, selection, destination, save/retry, cancellation and scopes remain unchanged.
+
+
+## October 28 — mobile UI TestFlight 157 delivered
+
+Build 1.1.1 (157), runtime source fbfde35014185b8d6ee482eb7c86dea420bf3871, was acknowledged by Apple (9b63d37e-f88d-4fe8-ad28-d017e6e54ff5). Monochrome interface surfaces replace orange/blue/cream; contextual Ask uses gray glass; pages have a subtle settle with faster tab selection. Default text rises about7% (.90→.96) through the existing scaler with SF Pro and accessibility preserved. Extraction has bounded glass, actual stream status with a native activity indicator, grouped review rows and pinned existing destination/save controls when space permits; small/keyboard/large-text layouts scroll safely. No features, API behavior, chat scopes or web changes.
+
+Validation: 1,211 Flutter tests, one existing skip, clean analysis, 85 focused extraction/appearance checks, 21 native layout/motion checks plus9 native extraction/keyboard checks and a loader visual recapture. All five CI jobs passed on final source (40831509387). Signed IPA/device binaries verified (34 archive +34 export),26 privacy manifests, production config, SF Pro font manifest and Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build157. Processing/tester availability remain pending and unpolled; physical-device visual acceptance is unverified. Main remains1c97e1f; no public App Store submission. PR273 remains isolated from main.

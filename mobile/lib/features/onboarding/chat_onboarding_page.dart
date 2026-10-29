@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math' as math;
@@ -12,10 +13,10 @@ import 'chat_onboarding_world.dart';
 import 'sample_scan.dart';
 
 const trialInk = Color(0xFF111112),
-    trialBlue = Color(0xFFA9D6F5),
-    trialMuted = Color(0xFF6B6C72),
-    trialLine = Color(0xFFECEDF0),
-    trialOrange = Color(0xFFE8590C);
+    trialBlue = Color(0xFFCFCFCF),
+    trialMuted = Color(0xFF6C6C6C),
+    trialLine = Color(0xFFEDEDED),
+    trialOrange = Color(0xFF111111);
 
 void trialEvent(String event, [Map<String, Object> values = const {}]) =>
     developer.log('$event $values', name: 'findez.onboarding');
@@ -485,10 +486,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
     final theme = ThemeData(
       brightness: Brightness.light,
       fontFamily: 'CupertinoSystemText',
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: trialInk,
-        brightness: Brightness.light,
-      ),
+      colorScheme: AppTheme.create(Brightness.light).colorScheme,
       scaffoldBackgroundColor: Colors.white,
       textTheme: ThemeData.light().textTheme.apply(
         fontFamily: 'CupertinoSystemText',
@@ -523,7 +521,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                       gradient: RadialGradient(
                         center: Alignment.topCenter,
                         radius: 1,
-                        colors: [Color(0xFFFFEDE2), Colors.white],
+                        colors: [Color(0xFFF0F0F0), Colors.white],
                       ),
                     ),
                   ),
@@ -725,8 +723,8 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
             colors: [
               Colors.transparent,
               Colors.transparent,
-              Color(0xFFFFD3B8),
-              Color(0xFFFFD3B8),
+              Color(0xFFDADADA),
+              Color(0xFFDADADA),
               Colors.transparent,
             ],
             stops: [0, .64, .64, .92, .92],
@@ -907,7 +905,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8DA),
+                  color: const Color(0xFFECECEC),
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
@@ -915,7 +913,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFC2410C),
+                    color: Color(0xFF595959),
                   ),
                 ),
               ),
@@ -982,7 +980,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
     const colors = [
       trialInk,
       trialBlue,
-      Color(0xFFF2F2EF),
+      Color(0xFFF2F2F2),
       trialInk,
       trialBlue,
       trialInk,
@@ -1045,7 +1043,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               onPressed: () => setState(() => _editing = edit ? -1 : index),
               style: TextButton.styleFrom(
                 minimumSize: const Size(44, 44),
-                foregroundColor: edit ? const Color(0xFFC2410C) : trialInk,
+                foregroundColor: edit ? const Color(0xFF595959) : trialInk,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
               child: Text(
@@ -1120,7 +1118,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                     focusedBorder: InputBorder.none,
                     filled: false,
                     isDense: true,
-                    hintStyle: const TextStyle(color: Color(0xFF9A9BA0)),
+                    hintStyle: const TextStyle(color: Color(0xFF9B9B9B)),
                     hintText: _draft.items.isNotEmpty
                         ? 'Ask about anything on the list...'
                         : _draft.option == 'describe'
@@ -1150,7 +1148,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
       liveRegion: true,
       child: Text(
         _error!,
-        style: const TextStyle(color: Color(0xFFC2410C), fontSize: 14),
+        style: const TextStyle(color: Color(0xFF595959), fontSize: 14),
       ),
     ),
   );
@@ -1161,7 +1159,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
       borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       boxShadow: [
         BoxShadow(
-          color: Color(0x1F1E3C64),
+          color: Color(0x1F393939),
           blurRadius: 50,
           offset: Offset(0, -20),
         ),
@@ -1415,7 +1413,7 @@ class _TrialThinkingState extends State<TrialThinking>
                         shaderCallback: (bounds) => LinearGradient(
                           colors: const [
                             trialMuted,
-                            Color(0xFFC9CBD1),
+                            Color(0xFFCBCBCB),
                             trialMuted,
                           ],
                           stops: [

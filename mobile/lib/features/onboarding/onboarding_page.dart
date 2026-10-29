@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -12,24 +13,21 @@ import 'world_motion.dart' show phase;
 
 const worldBackground = Color(0xFFF7F7F6);
 const worldInk = Color(0xFF111112);
-const worldSecondary = Color(0xFF6B6965);
-const worldHint = Color(0xFF8A8782);
-const worldOrange = Color(0xFFE8590C);
-const worldBorder = Color(0xFFE3E0DA);
+const worldSecondary = Color(0xFF696969);
+const worldHint = Color(0xFF878787);
+const worldOrange = Color(0xFF111111);
+const worldBorder = Color(0xFFE0E0E0);
 
 ThemeData worldTheme(BuildContext context) => Theme.of(context).copyWith(
   brightness: Brightness.light,
   scaffoldBackgroundColor: worldBackground,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: worldOrange,
-    brightness: Brightness.light,
-  ),
+  colorScheme: AppTheme.create(Brightness.light).colorScheme,
   textTheme: Theme.of(
     context,
   ).textTheme.apply(fontFamily: 'CupertinoSystemText', bodyColor: worldInk),
   textSelectionTheme: const TextSelectionThemeData(
     cursorColor: worldOrange,
-    selectionColor: Color(0x44E8590C),
+    selectionColor: Color(0x44727272),
     selectionHandleColor: worldOrange,
   ),
   filledButtonTheme: const FilledButtonThemeData(),
@@ -895,7 +893,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             child: Text(
                               _error!,
                               style: const TextStyle(
-                                color: Color(0xFFB42318),
+                                color: Color(0xFF414141),
                                 fontFamily: 'CupertinoSystemText',
                                 fontSize: 13,
                               ),
@@ -983,7 +981,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           ],
           const SizedBox(height: 24),
           if (_error != null)
-            Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+            Text(_error!, style: const TextStyle(color: Color(0xFF414141))),
           if (_setup.step == WorldStep.world) _continue(),
           if (_setup.step == WorldStep.choose)
             TextButton(
@@ -1029,7 +1027,7 @@ class _OnboardingPageState extends State<OnboardingPage>
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFFFFF8F3) : Colors.white,
+                color: selected ? const Color(0xFFF9F9F9) : Colors.white,
                 border: Border.all(
                   color: selected ? worldOrange : worldBorder,
                   width: selected ? 2 : 1,
@@ -1152,7 +1150,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 : _setup.step == WorldStep.workspace
                 ? 'e.g. Field service'
                 : 'e.g. Lab supplies',
-            hintStyle: const TextStyle(color: Color(0xFFB3B0A9)),
+            hintStyle: const TextStyle(color: Color(0xFFB0B0B0)),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
@@ -1272,7 +1270,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                           : Colors.white,
                       foregroundColor: label == selected
                           ? Colors.white
-                          : const Color(0xFF3F3D39),
+                          : const Color(0xFF3D3D3D),
                       shape: StadiumBorder(
                         side: label == selected
                             ? BorderSide.none
@@ -1328,7 +1326,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                   fontSize: 10.5,
                   fontWeight: FontWeight.w500,
                   letterSpacing: .84,
-                  color: Color(0xFF9A978F),
+                  color: Color(0xFF979797),
                 ),
               ),
               const SizedBox(height: 3),
@@ -1357,7 +1355,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         backgroundColor: worldInk,
         foregroundColor: Colors.white,
         disabledBackgroundColor: worldBorder,
-        disabledForegroundColor: const Color(0xFF9A978F),
+        disabledForegroundColor: const Color(0xFF979797),
         minimumSize: const Size(double.infinity, 56),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -1424,7 +1422,7 @@ class _IntroPainter extends CustomPainter {
         at,
         3,
         Paint()
-          ..color = (detection > 0 ? worldOrange : const Color(0xFFC8C5BE))
+          ..color = (detection > 0 ? worldOrange : const Color(0xFFC5C5C5))
               .withValues(alpha: fade),
       );
       if (detection > 0) {

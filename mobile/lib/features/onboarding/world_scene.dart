@@ -83,20 +83,20 @@ class _WorldSceneState extends State<WorldScene> with TickerProviderStateMixin {
                     0,
                     _model.organization,
                     _model.personal
-                        ? const Color(0xFF3E9B63)
-                        : const Color(0xFFE8590C),
+                        ? const Color(0xFF838383)
+                        : const Color(0xFF727272),
                     tagWidth,
                   ),
                   _tag(
                     1,
                     widget.setup.workspacePurpose,
-                    const Color(0xFF9FB3DD),
+                    const Color(0xFFB2B2B2),
                     tagWidth,
                   ),
                   _tag(
                     2,
                     widget.setup.inventoryName,
-                    const Color(0xFFFDBA8C),
+                    const Color(0xFFC5C5C5),
                     tagWidth,
                   ),
                 ],
@@ -168,7 +168,7 @@ class _TagContents extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: .96),
-      border: Border.all(color: const Color(0xFFE3E0DA)),
+      border: Border.all(color: const Color(0xFFE0E0E0)),
       borderRadius: BorderRadius.circular(40),
       boxShadow: const [
         BoxShadow(
@@ -218,14 +218,14 @@ class WorldPainter extends CustomPainter {
   Color visible(Color color) =>
       color.withValues(alpha: color.a * model.opacity);
   static const _blue = [
-    Color(0xFFDDE7FB),
-    Color(0xFFA3B8E2),
-    Color(0xFFC2D2F1),
+    Color(0xFFE6E6E6),
+    Color(0xFFB7B7B7),
+    Color(0xFFD1D1D1),
   ];
   static const _orange = [
-    Color(0xFFFCE3D3),
-    Color(0xFFD99A76),
-    Color(0xFFEDBB9C),
+    Color(0xFFE7E7E7),
+    Color(0xFFA5A5A5),
+    Color(0xFFC3C3C3),
   ];
   @override
   void paint(Canvas canvas, Size size) {
@@ -254,8 +254,8 @@ class WorldPainter extends CustomPainter {
       );
     }
     final outline = personal
-        ? const Color(0xFF3E9B63)
-        : const Color(0xFFE8590C);
+        ? const Color(0xFF838383)
+        : const Color(0xFF727272);
     _box(
       canvas,
       0,
@@ -265,8 +265,8 @@ class WorldPainter extends CustomPainter {
       200,
       22,
       personal
-          ? const [Colors.white, Color(0xFFCFE0D4), Color(0xFFE2EEE6)]
-          : const [Colors.white, Color(0xFFD6D1C9), Color(0xFFE7E3DC)],
+          ? const [Colors.white, Color(0xFFDCDCDC), Color(0xFFEBEBEB)]
+          : const [Colors.white, Color(0xFFD1D1D1), Color(0xFFE3E3E3)],
     );
     final top = _polygon([
       (-100.0, -100.0, 22.0),
@@ -311,7 +311,7 @@ class WorldPainter extends CustomPainter {
         ]);
         final paint = Paint()
           ..color = visible(
-            const Color(0xFF8A8782).withValues(alpha: .6 * ghost),
+            const Color(0xFF878787).withValues(alpha: .6 * ghost),
           )
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.2;
@@ -341,11 +341,11 @@ class WorldPainter extends CustomPainter {
       (-2.0, -2.0, 2),
     ];
     const shades = [
-      [Colors.white, Color(0xFFBDB8B0), Color(0xFFDDD9D2)],
-      [Color(0xFFE8590C), Color(0xFF9C3A07), Color(0xFFC24A0A)],
-      [Color(0xFFFDBA8C), Color(0xFFC98458), Color(0xFFE39E70)],
-      [Color(0xFFB9CAEE), Color(0xFF7F95C4), Color(0xFF9DB1DD)],
-      [Color(0xFFD4D1CB), Color(0xFF8F8B84), Color(0xFFB3AFA8)],
+      [Colors.white, Color(0xFFB8B8B8), Color(0xFFD9D9D9)],
+      [Color(0xFF727272), Color(0xFF4B4B4B), Color(0xFF5F5F5F)],
+      [Color(0xFFC5C5C5), Color(0xFF8F8F8F), Color(0xFFA9A9A9)],
+      [Color(0xFFC9C9C9), Color(0xFF949494), Color(0xFFB0B0B0)],
+      [Color(0xFFD1D1D1), Color(0xFF8B8B8B), Color(0xFFAFAFAF)],
     ];
     final order = List<int>.generate(7, (i) => i)
       ..sort(

@@ -1164,10 +1164,10 @@ class _TeamSpaceInventoryPageState
               ),
             if (_canEdit)
               ListTile(
-                leading: const Icon(CupertinoIcons.delete, color: Colors.red),
+                leading: const Icon(CupertinoIcons.delete, color: Colors.grey),
                 title: const AppText(
                   'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: Colors.grey),
                 ),
                 onTap: () => Navigator.pop(context, 'delete'),
               ),
@@ -1347,7 +1347,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
             ListTile(
               title: const AppText(
                 'Remove from Team',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.grey),
               ),
               onTap: () => Navigator.pop(context, 'remove'),
             ),

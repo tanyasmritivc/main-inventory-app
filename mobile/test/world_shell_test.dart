@@ -237,7 +237,7 @@ void main() {
       });
     }
   }
-  testWidgets('whole page fades without outgoing header or footer relayout', (
+  testWidgets('page settles without outgoing content or footer relayout', (
     tester,
   ) async {
     final fallback = fixture.respond;
@@ -258,16 +258,15 @@ void main() {
     };
     await mount(tester);
     final heading = find.text('Create your inventory world.');
-    final before = tester.getRect(heading);
     await tester.tap(find.byTooltip('Spaces'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    // Outgoing Ask must not jump when Spaces reveals its footer action.
-    expect(tester.getRect(heading), before);
+    // Only the destination paints while the mounted Ask retains its state.
+    expect(heading, findsNothing);
     final transition = find.byType(RetainedTabTransition);
     expect(
       find.descendant(of: transition, matching: find.byType(OrganizationPill)),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.descendant(

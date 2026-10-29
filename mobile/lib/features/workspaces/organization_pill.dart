@@ -143,13 +143,15 @@ class _OrganizationPillState extends State<OrganizationPill> {
       if (widget.glass) ...[
         CircleAvatar(
           radius: 14,
-          backgroundColor: const Color(0xFFC45A28).withValues(alpha: .14),
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: .14),
           child: Text(
             name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: Color(0xFFC45A28),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -285,15 +287,17 @@ class _OrganizationPillState extends State<OrganizationPill> {
             if (widget.glass) ...[
               CircleAvatar(
                 radius: 13,
-                backgroundColor: const Color(0xFFC45A28).withValues(alpha: .18),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: .18),
                 child: Text(
                   widget.name.isEmpty
                       ? '?'
                       : widget.name.characters.first.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFFC45A28),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),

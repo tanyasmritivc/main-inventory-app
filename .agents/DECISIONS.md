@@ -1530,3 +1530,13 @@ remains paused independently of authorized beta delivery.
 ## October 28 — SF Pro throughout mobile
 
 Use Flutter's native iOS CupertinoSystemText family for all app-owned mobile text, including framework controls and explicit page overrides. Preserve existing font sizes, weights and accessibility policy. Resolve SF Pro from iOS; do not ship Apple font files or bundle Inter. Web typography is outside this request.
+
+
+## October 28 — monochrome UI and fast tab selection
+
+Black, white and neutral gray are the mobile interface palette. Retired accent compatibility names resolve to neutral roles; account photos and supplied media are not filtered. Contextual Ask uses bounded gray glass. Tab feedback precedes a restrained 360ms page settle (minimum 94% opacity), replacing whole-screen crossfades. Keep page state and Reduce Motion support. No feature additions or backend/web changes.
+
+
+## October 28 — readable Default and extraction glass
+
+Increase only the app Default size from .90 to .96 through the existing root text scaler; preserve Small/Large/Larger choices and compose with system accessibility. Keep extraction within its existing chat lifecycle. Presentation may pin existing save controls on roomy layouts, but must fall back to scrolling when the keyboard, accessibility text or an error needs the room. Use actual pipeline status, never simulated progress.

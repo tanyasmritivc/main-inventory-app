@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Dissolves between mounted tabs without losing drafts or scroll positions.
+/// A subtle settle between mounted tabs, preserving drafts and scroll positions.
 /// A rapid selection retargets from the current frame, rather than flashing back.
 class RetainedTabTransition extends StatefulWidget {
   const RetainedTabTransition({
@@ -8,10 +8,10 @@ class RetainedTabTransition extends StatefulWidget {
     required this.index,
     required this.children,
   });
-  static const duration = Duration(milliseconds: 340);
-  static const pageDuration = Duration(milliseconds: 150);
+  static const duration = Duration(milliseconds: 140);
+  static const pageDuration = Duration(milliseconds: 360);
   // Immediate visible feedback, with a gentle settle rather than a slow start.
-  static const curve = Curves.easeOutQuad;
+  static const curve = Curves.easeOutCubic;
 
   final int index;
   final List<Widget> children;
@@ -27,21 +27,13 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
     duration: RetainedTabTransition.pageDuration,
     value: 1,
   );
-  late List<double> _from = _target;
+  double _fromOpacity = .94;
   bool _reduceMotion = false;
 
-  List<double> get _target => List.generate(
-    widget.children.length,
-    (i) => i == widget.index ? 1.0 : 0.0,
-  );
-
-  List<double> _values(int selected) {
-    final progress = RetainedTabTransition.curve.transform(_controller.value);
-    return List.generate(widget.children.length, (i) {
-      final end = i == selected ? 1.0 : 0.0;
-      return _from[i] + (end - _from[i]) * progress;
-    });
-  }
+  double get _opacity =>
+      _fromOpacity +
+      (1 - _fromOpacity) *
+          RetainedTabTransition.curve.transform(_controller.value);
 
   @override
   void didChangeDependencies() {
@@ -56,10 +48,10 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   void didUpdateWidget(RetainedTabTransition oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.children.length != widget.children.length) {
-      _from = _target;
+      _fromOpacity = .94;
       _controller.value = 1;
     } else if (oldWidget.index != widget.index) {
-      _from = _values(oldWidget.index);
+      _fromOpacity = _controller.isAnimating ? _opacity : .94;
       if (_reduceMotion) {
         _controller.value = 1;
       } else {
@@ -78,13 +70,13 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: _controller,
     builder: (context, _) {
-      final values = _values(widget.index);
+      final opacity = _opacity;
       return Stack(
         fit: StackFit.expand,
         children: [
           for (var i = 0; i < widget.children.length; i++)
             Offstage(
-              offstage: values[i] == 0,
+              offstage: i != widget.index,
               child: TickerMode(
                 enabled: i == widget.index,
                 child: IgnorePointer(
@@ -92,8 +84,14 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
                   child: ExcludeSemantics(
                     excluding: i != widget.index,
                     child: Opacity(
-                      opacity: values[i].clamp(0.0, 1.0),
-                      child: RepaintBoundary(child: widget.children[i]),
+                      opacity: i == widget.index ? opacity : 0,
+                      child: Transform.translate(
+                        offset: Offset(
+                          0,
+                          i == widget.index ? (1 - opacity) * 64 : 0,
+                        ),
+                        child: RepaintBoundary(child: widget.children[i]),
+                      ),
                     ),
                   ),
                 ),

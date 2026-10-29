@@ -504,11 +504,11 @@ class _SeedState extends State<_Seed> with SingleTickerProviderStateMixin {
               width: 14,
               height: 9,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8590C),
+                color: const Color(0xFF727272),
                 borderRadius: BorderRadius.circular(7),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x291E3C64),
+                    color: Color(0x29393939),
                     offset: Offset(0, 8),
                     blurRadius: 18,
                   ),

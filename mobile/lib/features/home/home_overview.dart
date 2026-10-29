@@ -9,28 +9,28 @@ class HomeColors {
   static const background = Color(0xFF09090B);
   static const surface = Color(0xFF171719);
   static const text = Color(0xFFF1F1F3);
-  static const secondary = Color(0xFFA1A1AA);
-  static const hint = Color(0xFF85858E);
-  static const orange = Color(0xFFFF7A2F);
-  static const amber = Color(0xFFE4AF46);
+  static const secondary = Color(0xFFA2A2A2);
+  static const hint = Color(0xFF868686);
+  static const orange = Color(0xFF919191);
+  static const amber = Color(0xFFB3B3B3);
 }
 
 abstract final class HomeDecisionColors {
   static Color identifying(BuildContext context) => AppTheme.isDark(context)
-      ? const Color(0xFFD6AF4C)
-      : const Color(0xFF946900);
+      ? const Color(0xFFB0B0B0)
+      : const Color(0xFF6B6B6B);
 
   static Color toBuy(BuildContext context) => AppTheme.isDark(context)
-      ? const Color(0xFFB59AD9)
-      : const Color(0xFF74429B);
+      ? const Color(0xFFA4A4A4)
+      : const Color(0xFF535353);
 
   static Color outOfStock(BuildContext context) => AppTheme.isDark(context)
-      ? const Color(0xFFE49AA5)
-      : const Color(0xFF9E3545);
+      ? const Color(0xFFABABAB)
+      : const Color(0xFF4C4C4C);
 
   static Color lent(BuildContext context) => AppTheme.isDark(context)
-      ? const Color(0xFF8FBEA2)
-      : const Color(0xFF1D6045);
+      ? const Color(0xFFB2B2B2)
+      : const Color(0xFF505050);
 }
 
 class HomeOverview extends StatefulWidget {

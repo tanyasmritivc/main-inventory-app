@@ -179,10 +179,10 @@ class _MessageActionsState extends State<MessageActions> {
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       iconSize: 17,
       style: IconButton.styleFrom(
-        backgroundColor: selected ? const Color(0xFFA9D6F5) : null,
+        backgroundColor: selected ? const Color(0xFFCFCFCF) : null,
       ),
       onPressed: widget.disabled || _busy ? null : tap,
-      icon: Icon(data, color: selected ? const Color(0xFF163F5D) : null),
+      icon: Icon(data, color: selected ? const Color(0xFF383838) : null),
     );
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,

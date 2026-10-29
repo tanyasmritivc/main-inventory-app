@@ -1,3 +1,4 @@
+import 'extraction_progress_panel.dart';
 import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
@@ -3085,82 +3086,98 @@ class _ChatPageState extends State<ChatPage>
 
   Widget _capturePreview() => ConstrainedBox(
     constraints: BoxConstraints(
-      maxHeight: MediaQuery.sizeOf(context).height * .55,
+      maxHeight: MediaQuery.sizeOf(context).height * .64,
     ),
-    child: Material(
-      elevation: 1,
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+    child: LayoutBuilder(
+      builder: (context, bounds) => LiquidSurface(
+        radius: 26,
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text(
-                  'Review extraction',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              IconButton(
-                tooltip: _scanningPreview
-                    ? 'Stop scanning'
-                    : 'Keep draft in chat',
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  if (_scanningPreview) {
-                    _requestGeneration++;
-                    final active = _activeReply;
-                    _activeReply = null;
-                    if (active != null) unawaited(active.cancel());
-                    setState(() {
-                      _scanningPreview = false;
-                      _pickingPhoto = false;
-                      _progress = null;
-                    });
-                  }
-                  _publishPreview();
-                },
-              ),
-            ],
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              key: const Key('extraction-preview-scroll'),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_scanningPreview)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: ChatProgress(
-                        message: _progress ?? 'Reading your photo...',
+              Padding(
+                padding:
+                    bounds.maxHeight < 160 ||
+                        MediaQuery.viewInsetsOf(context).bottom > 0
+                    ? const EdgeInsets.fromLTRB(18, 0, 10, 0)
+                    : const EdgeInsets.fromLTRB(18, 10, 10, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.viewfinder,
+                      size: 21,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Review extraction',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  if (_previewDraft != null && _currentConversationId != null)
-                    ChatCaptureCard(
-                      key: _previewKey,
-                      api: widget.api,
-                      conversationId: _currentConversationId!,
-                      draft: _previewDraft!,
-                      embedded: true,
-                      disabled: _scanningPreview,
-                      onChanged: _onCaptureChanged,
-                      onSaved: () {
-                        _controller.clear();
+                    IconButton(
+                      tooltip: _scanningPreview
+                          ? 'Stop scanning'
+                          : 'Keep draft in chat',
+                      icon: const Icon(CupertinoIcons.xmark, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: .05),
+                        minimumSize: const Size(44, 44),
+                      ),
+                      onPressed: () {
+                        if (_scanningPreview) {
+                          _requestGeneration++;
+                          final active = _activeReply;
+                          _activeReply = null;
+                          if (active != null) unawaited(active.cancel());
+                          setState(() {
+                            _scanningPreview = false;
+                            _pickingPhoto = false;
+                            _progress = null;
+                          });
+                        }
                         _publishPreview();
-                        widget.onInventoryMutated?.call();
                       },
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              if (_scanningPreview)
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: ExtractionProgressPanel(
+                      message: _progress ?? 'Reading your photo...',
+                    ),
+                  ),
+                ),
+              if (_previewDraft != null && _currentConversationId != null)
+                Flexible(
+                  child: ChatCaptureCard(
+                    key: _previewKey,
+                    api: widget.api,
+                    conversationId: _currentConversationId!,
+                    draft: _previewDraft!,
+                    embedded: true,
+                    disabled: _scanningPreview,
+                    onChanged: _onCaptureChanged,
+                    onSaved: () {
+                      _controller.clear();
+                      _publishPreview();
+                      widget.onInventoryMutated?.call();
+                    },
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     ),
   );

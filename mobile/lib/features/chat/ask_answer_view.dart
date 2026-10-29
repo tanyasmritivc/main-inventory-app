@@ -301,16 +301,16 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                   ActionChip(
                     backgroundColor:
                         Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF29485F).withValues(alpha: .8)
-                        : const Color(0xFFDAEDFA).withValues(alpha: .9),
+                        ? const Color(0xFF434343).withValues(alpha: .8)
+                        : const Color(0xFFEAEAEA).withValues(alpha: .9),
                     side: BorderSide(
-                      color: const Color(0xFFA9D6F5).withValues(alpha: .6),
+                      color: const Color(0xFFCFCFCF).withValues(alpha: .6),
                     ),
                     shape: const StadiumBorder(),
                     labelStyle: TextStyle(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFFDCF0FF)
-                          : const Color(0xFF163F5D),
+                          ? const Color(0xFFEDEDED)
+                          : const Color(0xFF383838),
                     ),
                     avatar: Icon(
                       link.kind == 'space'
