@@ -55,6 +55,7 @@ def test_failed_durable_save_never_delivers_an_action_card(transport):
     assert '"type": "done"' not in response.text
     assert '"type": "error"' in response.text
     assert 'SECRET' not in response.text and 'world_actions' not in response.text
+    assert '"type": "delta"' not in response.text
 
 def test_membership_and_allowance_failure_happen_before_conversation_write(transport):
     transport.authorize.side_effect = HTTPException(403, 'Access denied')
@@ -337,3 +338,34 @@ def test_personal_group_save_failure_is_not_success(transport):
     assert '"type": "error"' in response.text
     assert '"type": "done"' not in response.text
     assert 'private storage error' not in response.text
+
+
+@pytest.mark.parametrize('outcome', ['success', 'generation_failure', 'save_failure'])
+def test_public_world_answer_is_append_only_after_tools_retries_and_save(transport, outcome):
+    final = 'The charger is in Hardware, on shelf 2. ' * 8
+    def attempts(*args, **kwargs):
+        for text in ['First speculative line.', 'Different speculative line.', 'Unverified answer.']:
+            yield {'type': 'delta', 'delta': text}
+            yield {'type': 'reset'}
+            yield {'type': 'status', 'message': 'Working through the results...'}
+        if outcome == 'generation_failure':
+            raise RuntimeError('interrupted')
+        yield {'type': 'done', 'assistant_message': final, 'conversation_id': CID, 'answer_context': {}}
+        yield {'type': 'status', 'message': 'Unexpected late working'}
+    if outcome == 'save_failure':
+        transport.save.side_effect = RuntimeError('save failed')
+    with patch.object(world, 'stream_turn', side_effect=attempts):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': 'Where is the charger?'})
+    rows = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ') and line != 'data: [DONE]']
+    chunks = [row['delta'] for row in rows if row.get('type') == 'delta']
+    assert not any(row.get('type') == 'reset' for row in rows)
+    assert 'speculative' not in response.text and 'Unverified answer' not in response.text
+    if outcome != 'success':
+        assert chunks == []
+        assert rows[-1]['type'] == 'error'
+        return
+    assert len(chunks) > 1
+    assert ''.join(chunks) == rows[-1]['assistant_message'] == final
+    first = next(i for i, row in enumerate(rows) if row.get('type') == 'delta')
+    assert all(row['type'] in ('delta', 'done') for row in rows[first:])
+    transport.save.assert_called_once()

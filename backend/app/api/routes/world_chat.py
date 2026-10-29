@@ -229,6 +229,9 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft, enabled=supports_capture) as capture:
                 async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}), **({'read_only_retry': True} if retry_of else {}))):
+                    if event['type'] in ('delta', 'reset'):
+                        # Tool-turn preambles and repaired attempts are not public answers.
+                        continue
                     if event['type'] == 'done':
                         if supports_task_actions or retry_of:
                             event['answer_context']['request_message_id'] = turn_id
@@ -256,7 +259,12 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                                     event['answer_context'][field] = retry_context[field]
                         if supports_capture and capture['draft']:
                             event['answer_context']['chat_capture'] = capture['draft']
+                        from app.services.answer_delivery import deliver_answer
+                        async for chunk in deliver_answer(event['assistant_message']):
+                            yield encode({'type': 'delta', 'delta': chunk})
                     yield encode(event)
+                    if event['type'] == 'done':
+                        break
             yield 'data: [DONE]\n\n'
         except (ScanLimitExceeded, TeamSoftCapExceeded):
             yield encode({'type': 'error', 'message': 'Your photo allowance has been reached. Check your account settings.'})

@@ -1,3 +1,7 @@
+## October 28 — Stable public answer delivery (verification complete)
+
+`fix/stable-answer-stream` keeps provisional model deltas and resets private at the shared API boundary. Only the validated, persisted final answer is delivered, in bounded word-aligned chunks using the clients’ existing fade. Tool/retry progress remains visible until then; no progress events follow the first public answer chunk. Organization and inventory scope, tools, models, actions and capture cards are unchanged. 107 focused tests and 1,624 backend tests plus 10 subtests pass. Deployment pending; see `docs/plans/stable-answer-stream.md`.
+
 ## October 26 - Organization recall, saved-photo vision, Tools and extraction progress
 
 Runtime `df16fd7` (PR255) is live after all five CI gates (40443168190) passed. Earlier user statements are recalled only for the same author and organization; saved definitions can be used across conversations without creating duplicate inventory records or replaying old actions. GLM receives fresh authorized primary/gallery photos, including later attachments, as ephemeral image inputs. Extraction exposes real progress over negotiated SSE with JSON compatibility. API/database health and anonymous denial pass; 125 unrelated runtime files preserved. No schema or configuration change. Synthetic live GLM checks passed for historical recall and visible-image quantity comparison; no customer records changed. Receipts: `docs/plans/org-recall-photo-api-receipt.json` and `docs/plans/org-recall-photo-model-check.json`.
