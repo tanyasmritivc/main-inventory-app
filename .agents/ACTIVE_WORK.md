@@ -2352,3 +2352,8 @@ Active lane `fix/mobile-final-audit-20261018`: user requested hiding mobile Plan
 ## October 26 account consistency - TestFlight 146 delivered
 
 Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
+
+
+## October 28 — Space search and Ask placement — build 155
+
+Space search opens from the header icon. Ask FindEZ occupies a contrasting monochrome row beneath the summary, above items, with existing inventory scope and chat sheet. Main Ask and other destinations remain unchanged. Interrupted streams retain the received prefix and show an incomplete notice. Native iOS light/dark populated/empty layout and search checks pass; analysis clean. Build 155 delivery pending CI/signing. Physical device acceptance remains unverified; main unchanged.

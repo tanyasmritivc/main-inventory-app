@@ -3412,3 +3412,8 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 ## October 26 account consistency: beta 146 delivered
 
 Runtime `3dab494` delivered as signed TestFlight 1.1.1 (146). Five exact-source CI gates, host regression tests, clean analysis and native open-Space rename/delete check passed. Apple upload acknowledged; processing/tester availability unpolled. Shared web/API fixes are live; server snapshots refresh on visible pages and foreground return without replacing drafts. No migration or public submission. Physical two-device acceptance of this binary remains unverified. See `docs/plans/account-consistency-mobile-receipt.json`.
+
+
+## October 28 — Space search and Ask placement — build 155
+
+Space search opens from the header icon. Ask FindEZ occupies a contrasting monochrome row beneath the summary, above items, with existing inventory scope and chat sheet. Main Ask and other destinations remain unchanged. Interrupted streams retain the received prefix and show an incomplete notice. Native iOS light/dark populated/empty layout and search checks pass; analysis clean. Build 155 delivery pending CI/signing. Physical device acceptance remains unverified; main unchanged.

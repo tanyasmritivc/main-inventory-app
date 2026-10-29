@@ -114,6 +114,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
+  bool _searchOpen = false;
   bool _onlyLowQuantity = false;
   late final TextEditingController _spaceSearchController;
   ItemSortOption _sortOption = ItemSortOption.nameAZ;
@@ -758,7 +759,20 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       child: Scaffold(
         backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
-          title: AppText(_location),
+          title: _searchOpen
+              ? TextField(
+                  controller: _spaceSearchController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search this space',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) =>
+                      setState(() => _spaceSearchQuery = value),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                )
+              : AppText(_location),
           bottom: _syncError == null
               ? null
               : PreferredSize(
@@ -770,6 +784,18 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
+            IconButton(
+              tooltip: _searchOpen ? 'Close search' : 'Search this space',
+              icon: Icon(_searchOpen ? Icons.close : Icons.search),
+              onPressed: () => setState(() {
+                _searchOpen = !_searchOpen;
+                if (!_searchOpen) {
+                  _spaceSearchController.clear();
+                  _spaceSearchQuery = '';
+                  FocusScope.of(context).unfocus();
+                }
+              }),
+            ),
             NotificationBell(api: widget.api),
             AppMenuButton(
               label: 'Space options',
@@ -843,6 +869,38 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     ),
                   ),
 
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InventoryChatButton(
+                              api: widget.api,
+                              prominent: true,
+                            ),
+                          ),
+                          if (_items.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            IconButton.outlined(
+                              tooltip: 'Sort items',
+                              icon: const Icon(Icons.sort),
+                              onPressed: () => showItemSortSheet(
+                                context,
+                                _sortOption,
+                                (opt) async {
+                                  await saveSortPref(opt);
+                                  if (mounted) {
+                                    setState(() => _sortOption = opt);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                   // Search bar + category pills — pinned
                   if (_items.isNotEmpty)
                     SliverToBoxAdapter(
@@ -852,166 +910,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Search bar + sort button
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              child: SizedBox(
-                                height: 44,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.adaptive(
-                                            context,
-                                            const Color(0xFF171717),
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: AppTheme.adaptive(
-                                              context,
-                                              const Color(0x14FFFFFF),
-                                            ),
-                                            width: 0.5,
-                                          ),
-                                        ),
-                                        child: TextField(
-                                          controller: _spaceSearchController,
-                                          style: AppTypography.bodyStyleOf(
-                                            context,
-                                            TextStyle(
-                                              color: AppTheme.foreground(
-                                                context,
-                                                Colors.white,
-                                              ),
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          decoration: InputDecoration(
-                                            hintText: 'Search in this space...',
-                                            hintStyle:
-                                                AppTypography.bodyStyleOf(
-                                                  context,
-                                                  TextStyle(
-                                                    color: AppTheme.foreground(
-                                                      context,
-                                                      Color(0x4DFFFFFF),
-                                                    ),
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                            prefixIcon: Icon(
-                                              Icons.search,
-                                              color: AppTheme.foreground(
-                                                context,
-                                                Color(0x4DFFFFFF),
-                                              ),
-                                              size: 20,
-                                            ),
-                                            border: InputBorder.none,
-                                            enabledBorder: InputBorder.none,
-                                            focusedBorder: InputBorder.none,
-                                            filled: false,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  vertical: 13,
-                                                ),
-                                            suffixIcon:
-                                                _spaceSearchQuery.isNotEmpty
-                                                ? GestureDetector(
-                                                    onTap: () {
-                                                      _spaceSearchController
-                                                          .clear();
-                                                      setState(
-                                                        () =>
-                                                            _spaceSearchQuery =
-                                                                '',
-                                                      );
-                                                      FocusScope.of(
-                                                        context,
-                                                      ).unfocus();
-                                                    },
-                                                    child: Icon(
-                                                      Icons.close,
-                                                      color:
-                                                          AppTheme.foreground(
-                                                            context,
-                                                            Color(0x4DFFFFFF),
-                                                          ),
-                                                      size: 16,
-                                                    ),
-                                                  )
-                                                : null,
-                                          ),
-                                          textInputAction:
-                                              TextInputAction.search,
-                                          onSubmitted: (_) => FocusManager
-                                              .instance
-                                              .primaryFocus
-                                              ?.unfocus(),
-                                          onChanged: (v) => setState(
-                                            () => _spaceSearchQuery = v,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () => showItemSortSheet(
-                                        context,
-                                        _sortOption,
-                                        (opt) async {
-                                          await saveSortPref(opt);
-                                          if (mounted) {
-                                            setState(() => _sortOption = opt);
-                                          }
-                                        },
-                                      ),
-                                      child: Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.adaptive(
-                                            context,
-                                            const Color(0xFF171717),
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: AppTheme.adaptive(
-                                              context,
-                                              const Color(0x14FFFFFF),
-                                            ),
-                                            width: 0.5,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.sort,
-                                          color:
-                                              _sortOption !=
-                                                  ItemSortOption.nameAZ
-                                              ? AppTheme.foreground(
-                                                  context,
-                                                  Colors.white,
-                                                )
-                                              : AppTheme.foreground(
-                                                  context,
-                                                  const Color(0x4DFFFFFF),
-                                                ),
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
                             // Category filter pills
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -1177,12 +1075,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             ),
           ],
         ),
-        floatingActionButton: InventoryChatButton(
-          api: widget.api,
-          primary: widget.readOnly || !widget.api.canEdit
-              ? null
-              : _buildSpeedDial(),
-        ),
+        floatingActionButton: widget.readOnly || !widget.api.canEdit
+            ? null
+            : _buildSpeedDial(),
       ),
     );
   }

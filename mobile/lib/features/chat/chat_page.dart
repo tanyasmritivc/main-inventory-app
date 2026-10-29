@@ -2247,6 +2247,7 @@ class _ChatPageState extends State<ChatPage>
     } on dio.DioException catch (e) {
       if (!mounted || requestGeneration != _requestGeneration) return;
       _cancelPresentation(assistantIndex);
+      final visible = _session.messages[assistantIndex].content;
       final dioErrMsg = _friendlyRequestError(e);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
@@ -2254,7 +2255,9 @@ class _ChatPageState extends State<ChatPage>
           answerContext: _session.messages[assistantIndex].answerContext,
           onRetry: retry,
           failed: true,
-          content: dioErrMsg.length > 1000
+          content: visible.isNotEmpty
+              ? '$visible\n\nThis response was interrupted. Please retry.'
+              : dioErrMsg.length > 1000
               ? '${dioErrMsg.substring(0, 1000)}...'
               : dioErrMsg,
           timestamp: _session.messages[assistantIndex].timestamp,
@@ -2268,13 +2271,16 @@ class _ChatPageState extends State<ChatPage>
     } catch (e) {
       if (!mounted || requestGeneration != _requestGeneration) return;
       _cancelPresentation(assistantIndex);
+      final visible = _session.messages[assistantIndex].content;
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
           answerContext: _session.messages[assistantIndex].answerContext,
           onRetry: retry,
           failed: true,
-          content: e is AskRequestException
+          content: visible.isNotEmpty
+              ? '$visible\n\nThis response was interrupted. Please retry.'
+              : e is AskRequestException
               ? e.message
               : 'This response was interrupted. Please retry.',
           timestamp: _session.messages[assistantIndex].timestamp,

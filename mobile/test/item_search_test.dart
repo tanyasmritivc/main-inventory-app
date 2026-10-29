@@ -108,6 +108,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Search this space'));
+      await tester.pumpAndSettle();
       final input = find.byType(TextField).first;
       await tester.enterText(input, 'Pn-F');
       await tester.pumpAndSettle();
