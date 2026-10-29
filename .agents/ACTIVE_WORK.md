@@ -1886,3 +1886,8 @@ model-written Chat, authorization and customer Dashboard. No customer QA writes.
 ## October 26 account consistency - deployed
 
 Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
+
+
+## October 28 — Real-time final answers and current item photos
+
+Private tool selection is followed by a tool-free final generation. Explicit empty gateway tools enable raw streaming; only final provider chunks reach clients. No artificial splitting, delay or rewrite. Existing authorization, action receipts and durable completion remain enforced. Current attachment metadata and bounded image pixels include later additions. Validation: 1,631 backend tests plus 10 subtests; real HTTP/SSE first delta before generation completion; live GLM synthetic read-only check delivered 26 chunks, first at 2.47 seconds. Deployment pending exact-source CI; no schema changes.

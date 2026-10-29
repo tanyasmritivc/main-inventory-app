@@ -172,9 +172,9 @@ async def ai_photo_question_route(
             yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
             while not task.done() or not chunks.empty():
                 try:
-                    await asyncio.wait_for(chunks.get(), timeout=.1)
-                    # Drain private model attempts; only the persisted answer is delivered.
-                    # Both provisional text and resets stay behind the progress indicator.
+                    text = await asyncio.wait_for(chunks.get(), timeout=.1)
+                    if text:
+                        yield f"data: {json_module.dumps({'type': 'delta', 'delta': text})}\n\n".encode()
                 except asyncio.TimeoutError:
                     continue
             answer = await task
@@ -189,9 +189,6 @@ async def ai_photo_question_route(
                 await asyncio.to_thread(remember_photo_answer, user_id=effective_user_id, message=question, answer=answer['assistant_message'])
             except Exception:
                 logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
-            from app.services.answer_delivery import deliver_answer
-            async for chunk in deliver_answer(answer['assistant_message']):
-                yield f"data: {json_module.dumps({'type': 'delta', 'delta': chunk})}\n\n".encode()
             yield f"data: {json_module.dumps({'type': 'done', **(receipt if isinstance(receipt, dict) else {}), 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
             yield b'data: [DONE]\n\n'
         except FindPipelineError as exc:
@@ -327,8 +324,9 @@ async def ai_command_route(
                         conversation_id=conv_id,
                         allow_item_actions=payload.supports_item_actions,
                     ):
-                        if item.get("type") in ("delta", "reset"):
-                            # Intermediate attempts may be replaced by tools/retries.
+                        if item.get("type") == "delta":
+                            yield f"data: {json_module.dumps({'content': item['delta']})}\n\n".encode("utf-8")
+                        elif item.get("type") == "reset":
                             continue
                         elif item.get("type") == "done":
                             full_response = item.get("assistant_message") or ""
@@ -348,11 +346,6 @@ async def ai_command_route(
                             asyncio.create_task(extract_and_save_memory(effective_user_id, payload.message, full_response))
                             asyncio.create_task(log_query(effective_user_id, payload.message))
                             asyncio.create_task(save_conversation(effective_user_id, payload.message, full_response))
-                            from app.services.answer_delivery import deliver_answer
-                            async for chunk in deliver_answer(full_response):
-                                data = f"data: {json_module.dumps({'content': chunk})}\n\n"
-                                padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
-                                yield (data + padding).encode("utf-8")
                             nav_hint = item.get("nav_hint")
                             yield f"data: {json_module.dumps({'type': 'done', **(receipt if isinstance(receipt, dict) else {}), 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                             break

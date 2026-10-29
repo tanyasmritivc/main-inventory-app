@@ -41,6 +41,10 @@ class _Completions:
         payload = dict(kwargs)
         payload["stream"] = bool(payload.get("stream"))
         if payload["stream"]:
+            # Omitted tools selects the gateway's managed-agent mode, which
+            # buffers its final action. An explicit empty list requests a raw
+            # streamed completion with no tools; supplied tool schemas stay intact.
+            payload.setdefault("tools", [])
             return self._stream(payload, extra_headers)
         with httpx.Client(timeout=self._owner.timeout) as client:
             response = client.post(

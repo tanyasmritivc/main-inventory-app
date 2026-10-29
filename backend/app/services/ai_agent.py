@@ -1038,6 +1038,13 @@ def _run_agent(
 
 def iter_model_turn(*, user_id, message, messages, model_call, allowed_tools, cancelled=None):
     """Shared sequential, validated model/tool loop for text and attached photos."""
+    from app.services.answer_delivery import PREPARE_ANSWER, FINAL_ANSWER, stream_final_answer
+    if allowed_tools:
+        messages.append({'role': 'system', 'content': PREPARE_ANSWER})
+    else:
+        answer = yield from stream_final_answer(model_call(messages, False), validate=lambda text: validate_model_answer(message, [], text))
+        yield {'type': 'model_done', 'assistant_message': answer, 'tool_trace': [], 'tool': None}
+        return
     trace, results = [], {}
     last_tool = None
     for step in range(9):
@@ -1051,9 +1058,7 @@ def iter_model_turn(*, user_id, message, messages, model_call, allowed_tools, ca
             if cancelled and cancelled():
                 return
             if event['type'] == 'delta':
-                streamed += event['delta']
-                validate_model_answer(message, trace, streamed)
-                yield event
+                pass  # Private tool planning, never a public answer.
             else:
                 content, calls = event['content'], event['tool_calls']
         if calls:
@@ -1083,8 +1088,10 @@ def iter_model_turn(*, user_id, message, messages, model_call, allowed_tools, ca
             continue
         if not isinstance(content, str) or not content.strip():
             raise RuntimeError('The model returned an empty answer')
-        answer = format_chat_reply(content.strip())
-        validate_model_answer(message, trace, answer)
+        validate_model_answer(message, trace, content)
+        messages[:] = [m for m in messages if m.get('content') != PREPARE_ANSWER]
+        messages.append({'role': 'system', 'content': FINAL_ANSWER})
+        answer = yield from stream_final_answer(model_call(messages, False), validate=lambda text: validate_model_answer(message, trace, text))
         yield {'type': 'model_done', 'assistant_message': answer,
             'tool_trace': trace, 'tool': last_tool}
         return

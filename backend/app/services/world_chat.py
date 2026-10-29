@@ -521,6 +521,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     prior_states = {a.get('id'): a for row in history for a in row.get('action_states', [])}
     prior_pending = any(a.get('status') == 'pending' for a in prior_states.values())
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
+    from app.services.answer_delivery import PREPARE_ANSWER, FINAL_ANSWER, stream_final_answer
+    messages.append({'role': 'system', 'content': PREPARE_ANSWER})
     client_tools = available_tools
     card_repair_available = True
     repairing = False
@@ -530,8 +532,6 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         available_tools = capture_tools(client_tools, capture)
         # Retry generation only: executed tools and their durable receipts stay in
         # messages/memo. A transport failure never reruns an inventory mutation.
-        from app.services.assistant_tool_safety import READ_TOOLS, mutation_requested
-        hold_summary = mutation_requested(message) or any(t['tool'] not in READ_TOOLS for t in trace)
         while True:
             try:
                 from app.core.config import get_settings
@@ -545,8 +545,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     if event['type'] in ('status', 'activity'):
                         yield event
                     elif event['type'] == 'delta':
-                        if not hold_summary:
-                            yield event
+                        pass  # Tool-selection content is private.
                     else:
                         content, calls = event['content'], event['tool_calls']
                 if not content.strip() and not calls:
@@ -696,9 +695,16 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         # An invented internal URL must not look like a working navigation control.
         content = re.sub(r'\[([^\]]+)\]\((findez://[^)]+)\)',
             lambda match: match.group(0) if match.group(2) in references else match.group(1), content)
-        if hold_summary:
-            yield {'type': 'delta', 'delta': format_chat_reply(content)}
-        yield {'type': 'done', 'assistant_message': format_chat_reply(content),
+        messages[:] = [m for m in messages if m.get('content') != PREPARE_ANSWER]
+        messages.append({'role': 'system', 'content': FINAL_ANSWER})
+        def validate_public(text):
+            validate_model_answer(message, trace, text)
+            if re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b', text, re.I | re.S) and not (actions or item_actions or attachment or capture and capture['draft'] or prior_pending):
+                raise RuntimeError('The reply referenced an action card that does not exist')
+        response = gateway_completion(messages=messages, conversation_id=conversation_id,
+            model=get_settings().findez_chat_vision_model, max_tokens=generation_limit, stream=True)
+        content = yield from stream_final_answer(response, validate=validate_public, allowed_links=references)
+        yield {'type': 'done', 'assistant_message': content,
             'answer_context': {'operation_diagnostics': trace_diagnostics(trace), **({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
         return

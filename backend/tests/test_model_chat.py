@@ -12,7 +12,7 @@ def completion(content='',name=None,args=None):
 @pytest.mark.parametrize('streaming',[False,True])
 def test_roadrunner_requirements_reach_model_and_exact_authorized_project_tool(streaming):
     model_text='Roadrunner requires 4 wheels. You have 2 recorded, so this saved parts list is short by 2.'
-    create=Mock(side_effect=[completion(name='inventory_knowledge_search',args={'query':'Roadrunner'}),completion(name='project_kit_readiness',args={'kit_id':'project-id'}),completion(model_text)])
+    create=Mock(side_effect=[completion(name='inventory_knowledge_search',args={'query':'Roadrunner'}),completion(name='project_kit_readiness',args={'kit_id':'project-id'}),completion(model_text),completion(model_text)])
     provider=ai_agent._ChatProvider(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),model='configured-route',conversation_id='roadrunner',timezone='UTC')
     project={'id':'project-id','name':'Roadrunner','items':[{'id':'wheel','name':'Wheel','required_quantity':4,'available_quantity':2}]}
     state=ai_agent._SessionState()
@@ -20,7 +20,7 @@ def test_roadrunner_requirements_reach_model_and_exact_authorized_project_tool(s
         args=dict(user_id='actor',message='how many wheels do I need for the roadrunner',first_name=None)
         answer=list(ai_agent._iter_agent_streaming(**args))[-1] if streaming else ai_agent.run_ai_command(**args)
     assert answer['assistant_message']==model_text
-    assert create.call_count==3
+    assert create.call_count==4
     knowledge.assert_called_once_with(user_id='actor',query='Roadrunner')
     readiness.assert_called_once_with(kit_id='project-id',user_id='actor')
     assert answer['answer_context']['rows'][0]['required_quantity']==4

@@ -1,25 +1,44 @@
-import asyncio
-from unittest.mock import AsyncMock, patch
+from types import SimpleNamespace as NS
 import pytest
-from app.services.answer_delivery import answer_chunks, deliver_answer
+from app.services.answer_delivery import stream_final_answer
 
 
-@pytest.mark.parametrize('text', ['', 'Short answer.', '  **Charger**\n\n- Café 👩🏽‍🔧\n- [Shelf](findez://space/a)  ', 'A long answer with repeated words. ' * 500, 'x' * 10000])
-def test_chunks_preserve_exact_final_text_and_bound_delivery(text):
-    chunks = list(answer_chunks(text))
-    assert ''.join(chunks) == text
-    assert len(chunks) <= 40
-    assert all(chunks)
+def chunk(text='', calls=None):
+    return NS(choices=[NS(delta=NS(content=text, tool_calls=calls), finish_reason=None)])
 
 
-def test_delivery_yields_before_wait_and_cancellation_stops_following_chunks():
-    async def check():
-        with patch('app.services.answer_delivery.asyncio.sleep', new_callable=AsyncMock) as sleep:
-            stream = deliver_answer('A final answer with enough words. ' * 10)
-            first = await anext(stream)
-            assert first
-            sleep.assert_not_awaited()
-            sleep.side_effect = asyncio.CancelledError()
-            with pytest.raises(asyncio.CancelledError):
-                await anext(stream)
-    asyncio.run(check())
+def test_first_delta_arrives_before_provider_finishes_without_replay():
+    reached_end = False
+    def provider():
+        nonlocal reached_end
+        yield chunk('The charger')
+        yield chunk(' is on shelf 2.')
+        reached_end = True
+    stream = stream_final_answer(provider(), validate=lambda text: None)
+    assert next(stream) == {'type': 'delta', 'delta': 'The charger'}
+    assert not reached_end
+    assert next(stream) == {'type': 'delta', 'delta': ' is on shelf 2.'}
+    with pytest.raises(StopIteration) as done:
+        next(stream)
+    assert done.value.value == 'The charger is on shelf 2.'
+    assert reached_end
+
+
+def test_interruption_keeps_prefix_and_does_not_restart():
+    def provider():
+        yield chunk('Visible prefix')
+        raise RuntimeError('interrupted')
+    stream = stream_final_answer(provider(), validate=lambda text: None)
+    assert next(stream)['delta'] == 'Visible prefix'
+    with pytest.raises(RuntimeError, match='interrupted'):
+        next(stream)
+
+
+def test_validation_runs_before_any_rejected_chunk_is_published():
+    def validate(text):
+        if 'saved' in text:
+            raise RuntimeError('unconfirmed')
+    stream = stream_final_answer(iter([chunk('I '), chunk('saved the item.')]), validate=validate)
+    assert next(stream)['delta'] == 'I'
+    with pytest.raises(RuntimeError, match='unconfirmed'):
+        next(stream)

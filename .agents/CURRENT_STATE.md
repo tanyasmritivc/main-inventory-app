@@ -2997,3 +2997,8 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 ## October 26 cross-client account consistency (api)
 
 Runtime `1f21a1fa701cb025884f9320c27066b1ad5c5b53` is deployed on the self-hosted service, with all five exact-source CI gates passed. See `docs/plans/account-consistency-api.md` and its receipt. No database migration. Web/mobile use canonical snapshots and visible refresh; unsaved drafts remain local. Mobile build 146 is uploaded; Apple processing and physical two-device acceptance remain pending.
+
+
+## October 28 — Real-time final answers and current item photos
+
+Private tool selection is followed by a tool-free final generation. Explicit empty gateway tools enable raw streaming; only final provider chunks reach clients. No artificial splitting, delay or rewrite. Existing authorization, action receipts and durable completion remain enforced. Current attachment metadata and bounded image pixels include later additions. Validation: 1,631 backend tests plus 10 subtests; real HTTP/SSE first delta before generation completion; live GLM synthetic read-only check delivered 26 chunks, first at 2.47 seconds. Deployment pending exact-source CI; no schema changes.

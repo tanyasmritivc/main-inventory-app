@@ -60,10 +60,13 @@ def test_inventory_photo_tool_uses_bound_actor_and_inventory_not_supplied_destin
 
 def test_inventory_photo_pixels_reach_model_but_never_returned_trace():
     call=NS(id='photo',function=NS(name='inventory_item_photos',arguments='{}'))
-    responses=iter([iter([{'type':'done','content':'','tool_calls':[call]}]),iter([{'type':'done','content':'The photo shows a red container.','tool_calls':[]}])])
+    from app.services.agent_gateway_client import _as_namespace
+    def complete(content='', calls=None):
+        return NS(choices=[NS(message=NS(content=content, tool_calls=calls), finish_reason='stop')])
+    responses=iter([complete(calls=[call]),complete('READY'),complete('The photo shows a red container.')])
     parts=[{'type':'image_url','image_url':{'url':'data:image/jpeg;base64,PRIVATE_PIXELS'}}]
     messages=[]
-    with patch.object(agent,'completion_events',side_effect=lambda response:response),patch.object(agent,'_guarded_tool_call',return_value={'photos_read':1,'_image_parts':parts}):
+    with patch.object(agent,'_guarded_tool_call',return_value={'photos_read':1,'_image_parts':parts}):
         events=list(agent.iter_model_turn(user_id=OWNER,message='Describe the photo',messages=messages,model_call=lambda *a:next(responses),allowed_tools={'inventory_item_photos'}))
     assert 'PRIVATE_PIXELS' in str(messages)
     assert 'PRIVATE_PIXELS' not in str(events)
@@ -71,3 +74,8 @@ def test_inventory_photo_pixels_reach_model_but_never_returned_trace():
     kwargs=agent._completion_kwargs(provider,messages=messages,stream=True,allow_tools=True)
     assert kwargs['model']==agent.get_settings().findez_chat_vision_model
     assert kwargs['max_tokens']==8192
+
+
+def test_photo_tool_accepts_metadata_only_boolean_flag():
+    from app.services.assistant_tool_safety import rejection
+    assert rejection(tool_name='inventory_item_photos', args={'include_images': False}, definitions=agent._TOOLS, enabled=True, message='Which items have photos?', trace=[]) is None
