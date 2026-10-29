@@ -1,6 +1,6 @@
 ## October 28 — Contextual chat and immediate streaming
 
-`feat/web-context-chat`: implementation and host checks complete; isolated inventory chat on work pages, immediate delta rendering on main and contextual chat. Production build/publication pending. See `docs/plans/context-chat-web.md`.
+`feat/web-context-chat`: implementation and host checks complete; isolated inventory chat on work pages, immediate delta rendering on main and contextual chat. Live from `cadfb72` in `context-chat-20261028/frontend` after 648 tests, five CI gates (40813683381), production build and 32 staged/live route checks. Previous release and backend preserved. See `docs/plans/context-chat-web.md` and its deployment receipt.
 
 ## October 27 — Public section label removal
 
