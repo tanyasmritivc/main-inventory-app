@@ -39,7 +39,7 @@ test("public pages have reachable sections, examples and independent metadata ro
  const product=render(<ProductPage/>);
  expect(screen.getByRole("heading",{level:1}).textContent).toContain("A place for your things.");
  for(const id of ["capture","ask","share"]) expect(document.getElementById(id)).toBeTruthy();
- expect(screen.getByText("Illustrative conversation")).toBeTruthy();
+ expect(screen.queryByText("Illustrative conversation")).toBeNull();
  product.unmount();
  render(<SolutionsPage/>);
  for(const id of ["home","workshops","teams"]) expect(document.getElementById(id)).toBeTruthy();

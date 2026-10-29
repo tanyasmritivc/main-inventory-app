@@ -40,20 +40,18 @@ test("ordinary links are safe and decorative rules are omitted", () => {
 });
 
 
-test("a batched completed answer still reveals chunks and earlier text never restarts its fade", () => {
+test("incoming chunks render immediately without pacing and only new text fades", () => {
   jest.useFakeTimers();
   const answer = Array.from({ length: 50 }, (_, i) => `word${i}`).join(" ");
   const view = render(<AskMarkdown animate>{answer}</AskMarkdown>);
   const surface = view.container.querySelector(".ask-markdown")!;
-  expect(surface.textContent).toContain("word0");
-  expect(surface.textContent).not.toContain("word49");
-  act(() => jest.advanceTimersByTime(220));
-  expect(surface.querySelector(".ask-chunk")?.getAttribute("style")).toContain("animation-duration: 0ms");
-  act(() => jest.advanceTimersByTime(1500));
   expect(surface.textContent).toBe(answer);
-  expect(surface.textContent?.match(/word49/g)).toHaveLength(1);
-  view.unmount();
+  act(() => jest.advanceTimersByTime(220));
+  view.rerender(<AskMarkdown animate>{answer + " fresh chunk"}</AskMarkdown>);
+  expect(surface.textContent).toBe(answer + " fresh chunk");
+  expect(surface.querySelector(".ask-chunk")?.getAttribute("style")).toContain("animation-duration: 0ms");
   expect(jest.getTimerCount()).toBe(0);
+  view.unmount();
   jest.useRealTimers();
 });
 

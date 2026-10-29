@@ -1,3 +1,7 @@
+## October 28 — Contextual chat and immediate streaming
+
+`feat/web-context-chat`: implementation and host checks complete; isolated inventory chat on work pages, immediate delta rendering on main and contextual chat. Production build/publication pending. See `docs/plans/context-chat-web.md`.
+
 ## October 27 — Public section label removal
 
 Completed on `feat/pages-v1-ui`, runtime `bf8fa9d9`, live in `labels-header-20261027/frontend`. Nine focused tests, TypeScript, changed-file lint, production build and 32 staged/live checks pass; Product desktop/phone spacing and live Developers header verified. User requested removal of the small grey headings throughout the public pages. Remove Product/Solutions eyebrow labels and reclaim their spacing; keep main headings, body copy, links, pricing, Research status labels unchanged. Follow-up explicitly authorizes only Developers header theme: white background, neutral text/divider/focus; documentation and layout unchanged. No push.

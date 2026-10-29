@@ -56,18 +56,20 @@ type Message = ConversationMessage & {
   retrySources?: ChatSource[];
   retryPhoto?: File;
 };
-type AssistProps = { initialQuery?: string; worldId?: string; title?: string };
+type AssistProps = { initialQuery?: string; worldId?: string; title?: string; contextual?: boolean };
 export function AssistClient({
   initialQuery = "",
   worldId,
   title,
+  contextual = false,
 }: AssistProps) {
   const { accountId } = useApiSession();
   return (
     <AssistClientWorkspace
-      key={`${accountId || "signed-out"}:${worldId || "inventory"}`}
+      key={`${accountId || "signed-out"}:${worldId || activeInventory()?.inventory_id || "inventory"}`}
       worldId={worldId}
       title={title}
+      contextual={contextual}
       initialQuery={initialQuery}
     />
   );
@@ -76,7 +78,10 @@ function AssistClientWorkspace({
   initialQuery = "",
   worldId,
   title = "Ask FindEZ",
+  contextual = false,
 }: AssistProps) {
+  const inventoryId = worldId ? undefined : activeInventory()?.inventory_id;
+  const draftScope = worldId ? `:world:${worldId}` : inventoryId ? `:inventory:${inventoryId}` : "";
   const prefix = worldId ? `/worlds/${encodeURIComponent(worldId)}` : "";
   const retry = useRef<
     | {
@@ -103,6 +108,13 @@ function AssistClientWorkspace({
   const [conversations, setConversations] = useState<ConversationSummary[]>([]),
     [conversationId, setConversationId] = useState<string | null>(null),
     [messages, setMessages] = useState<Message[]>([]);
+  const thread = useRef<HTMLDivElement>(null);
+  const followReply = useRef(true);
+  useEffect(() => {
+    if (contextual && followReply.current && thread.current) {
+      thread.current.scrollTop = thread.current.scrollHeight;
+    }
+  }, [contextual, messages]);
   const [ratings, setRatings] = useState<Record<string, ResponseRating>>({});
   const composer = useRef<HTMLTextAreaElement>(null);
   const sendLock = useRef(false);
@@ -304,7 +316,7 @@ function AssistClientWorkspace({
       setInput(
         initialQuery ||
           localStorage.getItem(
-            `findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`,
+            `findez-ask-draft:${accountId}${draftScope}`,
           ) ||
           "",
       );
@@ -319,7 +331,7 @@ function AssistClientWorkspace({
       controller.current?.abort();
       epoch.current++;
     };
-  }, [accountId, initialQuery, loadHistory, worldId]);
+  }, [accountId, initialQuery, loadHistory, worldId, draftScope]);
   useEffect(() => {
     if (!photo) {
       setPreview(undefined);
@@ -334,7 +346,7 @@ function AssistClientWorkspace({
     if (accountId) {
       try {
         localStorage.setItem(
-          `findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`,
+          `findez-ask-draft:${accountId}${draftScope}`,
           value,
         );
       } catch {
@@ -402,6 +414,7 @@ function AssistClientWorkspace({
     draft("");
   }
   useEffect(() => {
+    if (!worldId) return;
     const fresh = () => newChat();
     window.addEventListener("findez-new-world-chat", fresh);
     return () => window.removeEventListener("findez-new-world-chat", fresh);
@@ -529,9 +542,17 @@ function AssistClientWorkspace({
         photo: retryAnswer?.persistedId || (retryAnswer && !retryAnswer.live) ? undefined : requestPhoto,
         conversationId,
         signal: control.signal,
-        // Wait for validation and persistence before presenting the canonical reply.
-        onDelta: (delta) => { provisional += delta; },
-        onReset: () => { provisional = ""; },
+        onDelta: (delta) => {
+          if (!current() || control.signal.aborted) return;
+          provisional += delta;
+          const content = provisional;
+          setMessages(rows => rows.map(row => row.id === assistantId ? { ...row, content } : row));
+        },
+        onReset: () => {
+          if (!current() || control.signal.aborted) return;
+          provisional = "";
+          setMessages(rows => rows.map(row => row.id === assistantId ? { ...row, content: "", revision: (row.revision ?? 0) + 1 } : row));
+        },
         onActivity: () => { if (current() && !control.signal.aborted) setLastActivityAt(Date.now()); },
         onStatus: (value) => {
           if (current() && !control.signal.aborted) setStatus(value);
@@ -755,7 +776,10 @@ function AssistClientWorkspace({
         <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
           {messages.length || opening ? title : <ShinyText text={title} speed={4} heading />}
         </h1>
-        <div className="ask-thread">
+        <div className="ask-thread" ref={thread} onScroll={contextual ? () => {
+          const node = thread.current;
+          if (node) followReply.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+        } : undefined}>
           {opening ? (
             <p role="status">Opening conversation…</p>
           ) : (
