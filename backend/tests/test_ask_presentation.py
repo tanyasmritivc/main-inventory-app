@@ -145,7 +145,7 @@ def test_answer_snapshot_save_failure_emits_error_instead_of_saved_done(stub_ai_
 
     async def events(**kwargs):
         yield {'type': 'delta', 'delta': 'Grounded answer'}
-        yield {'type': 'done', 'answer_context': project_answer_context(_project())}
+        yield {'type': 'done', 'assistant_message': 'Grounded answer', 'answer_context': project_answer_context(_project())}
     with patch.object(ai, 'iter_ai_command_events_async', new=events):
         response = _api_client().post('/ai_command?stream=true', json={'message': 'Question'})
     assert 'could not be saved' in response.text and 'SECRET' not in response.text
@@ -176,3 +176,28 @@ def test_empty_completed_stream_is_an_error_and_never_saves_substitute_answer(st
     assert '"type":"error"' in response.text
     assert '"type": "done"' not in response.text
     assert not any(call.args[0].get('role')=='assistant' for call in stub_ai_io.table.return_value.insert.call_args_list)
+
+
+@pytest.mark.parametrize('fails', [False, True])
+def test_inventory_transport_never_publishes_replaceable_attempts(stub_ai_io, fails):
+    import json
+    final = 'Your drill is in the Hardware inventory. ' * 6
+    async def attempts(**kwargs):
+        yield {'type': 'delta', 'delta': 'Discarded opening'}
+        yield {'type': 'reset'}
+        yield {'type': 'delta', 'delta': 'Different opening'}
+        yield {'type': 'reset'}
+        if fails:
+            raise RuntimeError('interrupted')
+        yield {'type': 'done', 'assistant_message': final, 'answer_context': {}}
+    with patch.object(ai, 'iter_ai_command_events_async', new=attempts):
+        response = _api_client().post('/ai_command?stream=true', json={'message': 'Where is the drill?'})
+    rows = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ') and line != 'data: [DONE]']
+    chunks = [row['content'] for row in rows if 'content' in row]
+    assert 'opening' not in response.text
+    assert not any(row.get('type') == 'reset' for row in rows)
+    if fails:
+        assert not chunks
+    else:
+        assert len(chunks) > 1
+        assert ''.join(chunks) == rows[-1]['assistant_message'] == final

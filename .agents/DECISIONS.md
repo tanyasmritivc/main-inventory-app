@@ -1,3 +1,7 @@
+## October 28 — Public chat text is append-only after finalization
+
+Model output before a terminal validated reply is speculative: late tool calls, retries and repairs can replace it. Public HTTP chat streams must not forward those deltas or reset events. Persist the canonical answer first, then deliver that exact text in bounded chunks and finish with the same completion receipt. This is presentation streaming, not lower model latency. Never fall back to speculative text if terminal content is missing. Keep progress before the first answer chunk and preserve cancellation and scope.
+
 ## October 26 — Organization-scoped conversational recall and live gallery vision
 
 Recall reads saved user statements scoped to both author and current organization. It provides historical evidence, never new action authorization or current stock truth. Named definitions can be recalled without introducing duplicate inventory records; this is not a standalone group CRUD model. Saved-image inspection re-reads current item and photo-event galleries, checks access before and after image loading, and sends re-encoded pixels only to the current model request. Pixels are excluded from persisted chat diagnostics. No schema change is needed.

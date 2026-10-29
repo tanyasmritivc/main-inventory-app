@@ -334,3 +334,27 @@ def test_uncertain_photo_and_distinct_identifiers_preserve_evidence():
     assert evidence['observations'][0]['length_mm']==123
     evidence=photos.photo_evidence(identified=[item(barcode='',part_number='M1'),item(barcode='',part_number='M2')],inventory=[],photo_url=URL)
     assert len(evidence['observations'])==2
+
+
+@pytest.mark.parametrize('save_fails', [False, True])
+def test_photo_stream_hides_restarts_and_emits_only_saved_final_text(route_io, save_fails):
+    import json
+    from app.api.routes import ai
+    final = 'The photo shows a charger beside three cables. ' * 6
+    async def attempts(**kwargs):
+        await kwargs['on_delta']('Temporary photo answer')
+        await kwargs['on_reset']()
+        await kwargs['on_delta']('Another temporary answer')
+        return {'assistant_message': final, 'answer_context': {}}
+    route_io.answer.side_effect = attempts
+    with patch.object(ai.limiter, 'enabled', False), patch.object(ai, '_save_ask_answer', side_effect=RuntimeError('save failed') if save_fails else None, return_value={}):
+        response = post(data={'message': 'What is shown?'})
+    rows = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ') and line != 'data: [DONE]']
+    chunks = [row['delta'] for row in rows if row.get('type') == 'delta']
+    assert 'temporary' not in response.text.lower()
+    assert not any(row.get('type') == 'reset' for row in rows)
+    if save_fails:
+        assert not chunks and rows[-1]['type'] == 'error'
+    else:
+        assert len(chunks) > 1
+        assert ''.join(chunks) == rows[-1]['assistant_message'] == final
