@@ -16,6 +16,25 @@ import '../profile/terms_of_service_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
+/// Optional presentation adapter. Authentication and email validation stay here.
+class AuthPresentation {
+  const AuthPresentation({
+    required this.apple,
+    required this.google,
+    required this.email,
+    required this.closeEmail,
+    required this.emailForm,
+    required this.showEmail,
+    required this.busy,
+    this.method,
+    this.error,
+  });
+  final VoidCallback apple, google, email, closeEmail;
+  final Widget emailForm;
+  final bool showEmail, busy;
+  final String? method, error;
+}
+
 class AuthPage extends StatefulWidget {
   const AuthPage({
     super.key,
@@ -25,6 +44,9 @@ class AuthPage extends StatefulWidget {
     this.initialMethod,
     this.trialItemCount,
     this.sampleTrial = false,
+    this.presentationBuilder,
+    this.beforeAuth,
+    this.onSignupUser,
   });
 
   final VoidCallback? onAuthChanged;
@@ -33,6 +55,9 @@ class AuthPage extends StatefulWidget {
   final String? initialMethod;
   final int? trialItemCount;
   final bool sampleTrial;
+  final Widget Function(BuildContext, AuthPresentation)? presentationBuilder;
+  final Future<void> Function(String method, bool signup)? beforeAuth;
+  final Future<void> Function(User user)? onSignupUser;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -475,12 +500,15 @@ class _AuthPageState extends State<AuthPage> {
     String? accessToken,
   }) async {
     final auth = Supabase.instance.client.auth;
-    return auth.signInWithIdToken(
+    await widget.beforeAuth?.call(provider.name, true);
+    final response = await auth.signInWithIdToken(
       provider: provider,
       idToken: idToken,
       nonce: nonce,
       accessToken: accessToken,
     );
+    if (response.user != null) await widget.onSignupUser?.call(response.user!);
+    return response;
   }
 
   static const List<String> _blockedDomains = [
@@ -581,6 +609,7 @@ class _AuthPageState extends State<AuthPage> {
         throw const AuthException('Email and password are required');
       }
 
+      await widget.beforeAuth?.call('email', !_isLogin);
       if (_isLogin) {
         await auth.signInWithPassword(email: email, password: password);
         await auth.refreshSession();
@@ -623,6 +652,8 @@ class _AuthPageState extends State<AuthPage> {
             if (organization.isNotEmpty) 'organization': organization,
           },
         );
+
+        if (res.user != null) await widget.onSignupUser?.call(res.user!);
 
         // Email confirmation required — user created but no active session yet
         if (res.session == null && res.user != null) {
@@ -928,33 +959,35 @@ class _AuthPageState extends State<AuthPage> {
       ),
     ],
   );
-  Widget _emailForm() => AutofillGroup(
+  Widget _emailForm({bool providers = true}) => AutofillGroup(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ..._providers(),
-        const SizedBox(height: 24),
-        const Row(
-          children: [
-            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
-            Flexible(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
-                child: Text(
-                  'or use email',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'PlusJakartaSans',
-                    fontSize: 13,
-                    color: Color(0xFF6B6965),
+        if (providers) ...[
+          ..._providers(),
+          const SizedBox(height: 24),
+          const Row(
+            children: [
+              Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+              Flexible(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Text(
+                    'or use email',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 13,
+                      color: Color(0xFF6B6965),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
-          ],
-        ),
-        const SizedBox(height: 24),
+              Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
         if (!_isLogin) ...[
           _field(
             _firstName,
@@ -1136,7 +1169,43 @@ class _AuthPageState extends State<AuthPage> {
   );
 
   @override
-  Widget build(BuildContext context) => Theme(
+  Widget build(BuildContext context) {
+    if (widget.presentationBuilder != null) {
+      return widget.presentationBuilder!(
+        context,
+        AuthPresentation(
+          apple: () {
+            if (!_loading) {
+              _isLogin = true;
+              unawaited(_signInWithApple());
+            }
+          },
+          google: () {
+            if (!_loading) {
+              _isLogin = true;
+              unawaited(_signInWithGoogle());
+            }
+          },
+          email: () => setState(() {
+            _showEmail = true;
+            _isLogin = false;
+            _error = null;
+          }),
+          closeEmail: () {
+            if (!_loading) setState(() => _showEmail = false);
+          },
+          emailForm: _emailForm(providers: false),
+          showEmail: _showEmail,
+          busy: _loading,
+          method: _loading ? (_oauthProviderLoading?.name ?? 'email') : null,
+          error: _error,
+        ),
+      );
+    }
+    return _standardPresentation(context);
+  }
+
+  Widget _standardPresentation(BuildContext context) => Theme(
     data: Theme.of(context).copyWith(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF7F7F6),

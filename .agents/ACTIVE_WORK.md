@@ -1,3 +1,7 @@
+## October 27 — Onboarding v5
+
+Active on `feat/onboarding-v5`. Mobile-only pre-sign-up welcome, four questions, existing auth, metadata persistence and confirmation. Supplied prototype/video are authoritative. No main-app/backend/web/schema/env changes. User now authorizes TestFlight 152 upload; leave main unchanged. Preserve legacy retained item drafts and account isolation. No database migration is required.
+
 ## October 27 - Mobile branding v5 (completed locally)
 
 User-supplied launch handoff. Isolated mobile-brand-v5 branch; branding only outside web landing. Latest user authorizes self-hosted web publication after verification. Mobile remains local, no TestFlight upload.

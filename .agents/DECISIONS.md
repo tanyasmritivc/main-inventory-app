@@ -1,3 +1,7 @@
+## October 28 - Onboarding v5 metadata and release boundary
+
+Pre-signup answers are preferences only: used_by does not grant sharing or create an organization. Persist to existing auth metadata and bind retries to the signup account. Keep legacy retained-item recovery. User authorizes TestFlight152 from feat/onboarding-v5 and explicitly leaves main unchanged; no migration or broad branch merge is part of delivery.
+
 ## October 26 — Restore build149 mobile behavior
 
 The user explicitly reverted all build150 changes. Build151 restores build149's complete mobile implementation, with only a new distribution number. Build150's Scan entry and Personal/Team onboarding are historical and must not be reintroduced without a new request. PR260 is closed; rollback delivery is PR261. Web, server and account data are unchanged.

@@ -1,3 +1,7 @@
+## October 28 - Mobile pre-signup onboarding v5
+
+Signed-out LaunchAuthGate now uses OnboardingV5Page with pre-auth questions and existing AuthPage handlers. Signed-in users bypass it. OnboardingV5Store persists anonymous answers and account-bound retry receipts; Supabase auth user_metadata.onboarding stores the completed answers. No schema/profile JSON migration is required. Legacy ChatOnboardingGate remains solely for retained trial-item recovery. See docs/onboarding-v5/IMPLEMENTATION.md. The sample-first launch description below is historical.
+
 ## October21 capture integration (implementation lane, not yet production)
 
 World chat Auto Extract uses FIND and a canonical messages.answer_context.chat_capture
