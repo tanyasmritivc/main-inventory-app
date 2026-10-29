@@ -117,3 +117,19 @@ test('inventory drafts are separate from each other and organization chat', asyn
  view.rerender(<AssistClient contextual/>);
  await waitFor(()=>expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('Hardware draft'));
 });
+
+
+test('interrupted streaming retains received text and marks it incomplete', async () => {
+ const {askQuestion}=await import('@/lib/ask-stream');
+ jest.mocked(accountRequest).mockResolvedValue([]);
+ jest.mocked(askQuestion).mockImplementation(async options => {
+   options.onDelta('The charger is on shelf 2.');
+   throw new Error('Connection interrupted');
+ });
+ const view=render(<AssistClient worldId="org-a"/>);
+ fireEvent.change(screen.getByRole('textbox',{name:'Your question'}),{target:{value:'Where is the charger?'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ask'}));
+ await screen.findByRole('alert');
+ expect(view.container.textContent).toContain('The charger is on shelf 2.');
+ expect(view.container.textContent).toContain('This answer was interrupted.');
+});

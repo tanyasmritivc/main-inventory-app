@@ -1728,3 +1728,8 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 ## October 26 account consistency - deployed
 
 Account consistency lane: canonical uncached authenticated reads, quiet visible-client refresh, stable Space identity, deletion/access invalidation, and cross-client regression checks. Preserve open drafts and monochrome UI. No database migration or public App Store submission.
+
+
+## October 28 — Retain interrupted streamed answers
+
+Web main and contextual chat retain already received assistant text on an interrupted response, with the existing failure notice. Existing in-place chunk fade remains unchanged. Validation: 649 tests across 90 suites, TypeScript clean, changed-file lint zero errors. Self-hosted release pending exact-source CI; no unrelated pages or styles changed.
