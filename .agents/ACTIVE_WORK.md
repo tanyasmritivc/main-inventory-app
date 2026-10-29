@@ -1,6 +1,6 @@
 ## October 28 — Immediate streaming and inventory contextual chat
 
-`feat/mobile-context-chat`: immediate received deltas on main chat, isolated inventory assistant sheets on work pages, keyboard-aware monochrome presentation. Full 1,204 host tests, 36 final focused checks and clean analysis. Native verification and build153 delivery tracked in `docs/plans/context-chat-mobile.md`. Main unchanged.
+`feat/mobile-context-chat`: immediate received deltas on main chat, isolated inventory assistant sheets on work pages, keyboard-aware monochrome presentation. Full 1,204 host tests, 36 final focused checks and clean analysis. Five native checks passed; Apple acknowledged TestFlight 1.1.1 (153), source135af87, delivery 380b3c1a-ba9c-4d5f-b908-d9aaf0784b0e. All five CI gates passed. Processing/tester availability unverified; physical acceptance pending. Details in `docs/plans/context-chat-mobile.md`. Main unchanged.
 
 ## October 28 - Onboarding v5 delivered to TestFlight 152
 
