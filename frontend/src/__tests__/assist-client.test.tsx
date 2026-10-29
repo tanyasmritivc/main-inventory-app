@@ -2,6 +2,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AssistClient } from '@/components/site/assist-client';
 import { accountRequest } from '@/lib/account-request';
+import { selectInventory, type InventorySelection } from '@/lib/inventory-selection';
+afterEach(() => selectInventory(null));
 
 jest.mock('next/navigation',()=>({useRouter:()=>({push:jest.fn()})}));
 jest.mock('@/lib/use-api-session', () => ({ useApiSession: () => ({ accountId: 'fixture-account', error: null }) }));
@@ -76,4 +78,42 @@ test('spreadsheet uploads create reviewable drafts without calling the chat mode
  expect(screen.getByRole('button',{name:'Add to chat'})).toHaveProperty('disabled',false);
  expect(askQuestion).not.toHaveBeenCalled();
  expect(screen.getByRole('button',{name:'Confirm and save'})).toHaveProperty('disabled',true);
+});
+
+test('received deltas are visible before done and reset removes superseded text', async () => {
+ const {askQuestion}=await import('@/lib/ask-stream');
+ jest.mocked(accountRequest).mockResolvedValue([]);
+ let callbacks!: Parameters<typeof askQuestion>[0];
+ let finish!: () => void;
+ jest.mocked(askQuestion).mockImplementation(options => { callbacks=options; return new Promise<void>(resolve => {finish=resolve;}); });
+ const view=render(<AssistClient worldId="org-a"/>);
+ fireEvent.change(screen.getByRole('textbox',{name:'Your question'}),{target:{value:'Where are the bolts?'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ask'}));
+ const {act}=await import('@testing-library/react');
+ await act(async()=>callbacks.onDelta('Bolts are on shelf 2.'));
+ expect(view.container.textContent).toContain('Bolts are on shelf 2.');
+ expect(screen.getByRole('button',{name:'Stop'})).toBeTruthy();
+ await act(async()=>callbacks.onReset?.());
+ expect(view.container.textContent).not.toContain('Bolts are on shelf 2.');
+ await act(async()=>callbacks.onDelta('The current location is shelf 3.'));
+ expect(view.container.textContent).toContain('The current location is shelf 3.');
+ await act(async()=>{callbacks.onDone({conversationId:'saved',content:'The current location is shelf 3.'});finish();});
+ expect(view.container.textContent).toContain('The current location is shelf 3.');
+});
+
+
+test('inventory drafts are separate from each other and organization chat', async () => {
+ jest.mocked(accountRequest).mockResolvedValue([]);
+ const inventory: InventorySelection = {accountId:'fixture-account',inventory_id:'hardware',name:'Hardware',owner_user_id:'fixture-account',team_id:null,is_default:false,can_edit:true,workspace:{workspace_id:'personal',name:'Personal',kind:'personal',team_id:null,role:'owner'}};
+ selectInventory(inventory);
+ const view = render(<AssistClient contextual/>);
+ fireEvent.change(screen.getByRole('textbox',{name:'Your question'}),{target:{value:'Hardware draft'}});
+ selectInventory({...inventory,inventory_id:'bathroom'});
+ view.rerender(<AssistClient contextual/>);
+ expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('');
+ view.rerender(<AssistClient worldId="personal"/>);
+ expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('');
+ selectInventory(inventory);
+ view.rerender(<AssistClient contextual/>);
+ await waitFor(()=>expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('Hardware draft'));
 });

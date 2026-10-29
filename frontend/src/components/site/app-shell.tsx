@@ -44,6 +44,7 @@ import shellStyles from "./desktop-shell.module.css";
 import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
 import { NotificationPreview } from "./notification-preview";
+import { ContextChat, hasContextChat } from "./context-chat";
 import { PlanIntroduction } from "./plan-introduction";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
@@ -483,6 +484,7 @@ export function AppShell({
         <main id="app-main" className="app-main" tabIndex={-1}>
           <div className="app-content">{children}</div>
         </main>
+        {inventory && hasContextChat(pathname) && <ContextChat key={`${inventory.accountId}:${inventory.inventory_id}`} inventory={inventory} />}
         <Dialog open={commandOpen} onOpenChange={setCommandOpen}>
           <DialogContent
             className="command-panel"
