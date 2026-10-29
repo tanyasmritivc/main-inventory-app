@@ -3002,3 +3002,5 @@ Runtime `1f21a1fa701cb025884f9320c27066b1ad5c5b53` is deployed on the self-hoste
 ## October 28 — Real-time final answers and current item photos
 
 Private tool selection is followed by a tool-free final generation. Explicit empty gateway tools enable raw streaming; only final provider chunks reach clients. No artificial splitting, delay or rewrite. Existing authorization, action receipts and durable completion remain enforced. Current attachment metadata and bounded image pixels include later additions. Validation: 1,631 backend tests plus 10 subtests; real HTTP/SSE first delta before generation completion; live GLM synthetic read-only check delivered 26 chunks, first at 2.47 seconds. Deployment pending exact-source CI; no schema changes.
+
+Deployment baseline reconciliation: live ai_agent.py includes the earlier selected-inventory Space helper from 305e3e0. Preserve those exact lines and the existing agent_spaces helper in this branch; no Space behavior or schema change. Focused model/photo/gateway/answer checks: 23 passed after reconciliation.

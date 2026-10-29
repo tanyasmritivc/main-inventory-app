@@ -358,7 +358,7 @@ def _completion_kwargs(
         'X-Agent-Timezone': provider.timezone,
     }
     if allow_tools:
-        kwargs['tools'] = [tool for tool in _TOOLS if tool['function']['name'] in READ_TOOLS or tool['function']['name'] == 'inventory_update_item' or (allow_item_actions and tool['function']['name'] in ('inventory_propose_add', 'inventory_propose_delete'))]
+        kwargs['tools'] = [tool for tool in _TOOLS if tool['function']['name'] in READ_TOOLS or tool['function']['name'] in {'inventory_update_item', 'create_space'} or (allow_item_actions and tool['function']['name'] in ('inventory_propose_add', 'inventory_propose_delete'))]
         kwargs['tool_choice'] = 'auto'
         kwargs['parallel_tool_calls'] = False
     if any(isinstance(m.get('content'), list) and any(p.get('type') == 'image_url' for p in m['content']) for m in messages):
@@ -522,7 +522,7 @@ _SYSTEM_PROMPT = (
     "For a direct single-field edit, freshly retrieve one exact saved item and use the field/value "
     "explicitly supplied by the user. For item additions or deletions, use the proposal tools to show "
     "an exact review card; the separate confirmation control performs the write. Preparing a card "
-    "does not add or delete anything. Quantity edits, Space creation and other changes still require "
+    "does not add or delete anything. An explicit request such as Create a Space called Garage may use create_space in the selected inventory; a successful receipt confirms creation or an existing Space. Ask for one exact name if ambiguous. Quantity edits and other changes still require "
     "the relevant editor. "
     "For informational questions do not mutate anything. Explain limitations naturally.\n"
     "Keep replies clear and relevant to the physical-world task. Greet naturally; answer useful "
@@ -686,8 +686,8 @@ _TOOLS: list[dict[str, Any]] = [
         'function': {
             'name': 'create_space',
             'description': (
-                "Create a new space (or return an existing one if the name already exists). "
-                "Use when the user wants to create a space without adding an item."
+                "Create a Space in the currently selected inventory, or return the existing Space with that name. "
+                "Use only for an explicit request naming one Space, for example: Create a Space called Garage. Never infer an inventory or name. Retrying the same name is safe."
             ),
             'parameters': {
                 'type': 'object',
@@ -947,17 +947,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
         return {'events': events, 'count': len(events)}
 
     if tool_name == 'create_space':
-        from app.services.spaces_repo import get_or_create_space
-        name = (args.get('name') or '').strip()
-        if not name:
-            return {'error': 'name is required'}
-        try:
-            return get_or_create_space(user_id=user_id, name=name)
-        except SpaceLimitExceeded:
-            return {
-                'error': 'space_limit_reached',
-                'message': 'You\'ve reached the free plan limit of 3 spaces. Upgrade to Pro for unlimited spaces.',
-            }
+        from app.services.agent_spaces import create_selected_space
+        return create_selected_space(args['name'])
 
     if tool_name == 'list_spaces':
         from app.services.spaces_repo import list_spaces
@@ -1135,7 +1126,7 @@ def _iter_agent_streaming(
             provider, messages=messages, stream=True, allow_tools=enabled, allow_item_actions=allow_item_actions))
     with use_photo(retained_photo):
         for event in iter_model_turn(user_id=user_id, message=message, messages=messages,
-                model_call=model_call, allowed_tools=READ_TOOLS | {'inventory_update_item'} | ({'inventory_propose_add', 'inventory_propose_delete'} if allow_item_actions else set()), cancelled=cancelled):
+                model_call=model_call, allowed_tools=READ_TOOLS | {'inventory_update_item', 'create_space'} | ({'inventory_propose_add', 'inventory_propose_delete'} if allow_item_actions else set()), cancelled=cancelled):
             if event['type'] != 'model_done':
                 yield event
                 continue
