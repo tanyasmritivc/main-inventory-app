@@ -1,3 +1,7 @@
+## October 28 — Mobile typography is Inter
+
+Use bundled Inter for all app-owned mobile text, including labels/codes, chat, onboarding/auth, framework controls and UIKit inventory lists. Preserve existing sizes/weights and accessibility scaling; do not reintroduce Jakarta/Geist overrides. OS-owned permission/auth/camera sheets retain system typography. The Inter asset is bundled, so no font download is required. Web typography is outside this change.
+
 ## October 28 - Onboarding v5 metadata and release boundary
 
 Pre-signup answers are preferences only: used_by does not grant sharing or create an organization. Persist to existing auth metadata and bind retries to the signup account. Keep legacy retained-item recovery. User authorizes TestFlight152 from feat/onboarding-v5 and explicitly leaves main unchanged; no migration or broad branch merge is part of delivery.

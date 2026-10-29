@@ -65,7 +65,30 @@ void main() {
         expect(_weight(tester, 'Framework toolbar'), FontWeight.w500);
         expect(_weight(tester, 'Framework button'), FontWeight.w500);
         expect(_weight(tester, 'Field hint'), FontWeight.w400);
+        for (final label in [
+          'Heading',
+          'Supporting text',
+          'Framework body',
+          'Framework toolbar',
+          'Framework button',
+          'Field hint',
+        ]) {
+          final text = tester.widget<RichText>(
+            find.descendant(
+              of: find.text(label),
+              matching: find.byType(RichText),
+            ),
+          );
+          expect(text.text.style?.fontFamily, 'Inter', reason: label);
+        }
         await tester.enterText(find.byType(TextField), 'Retained input');
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText))
+              .style
+              .fontFamily,
+          'Inter',
+        );
         expect(
           tester
               .widget<EditableText>(find.byType(EditableText))
@@ -148,7 +171,7 @@ void main() {
     final text = tester.widget<Text>(find.text('Visible code'));
     expect(text.style?.fontWeight, FontWeight.w400);
     expect(text.style?.color, Colors.orange);
-    expect(text.style?.fontFamily, 'monospace');
+    expect(text.style?.fontFamily, 'Inter');
     expect(text.style?.letterSpacing, .5);
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);

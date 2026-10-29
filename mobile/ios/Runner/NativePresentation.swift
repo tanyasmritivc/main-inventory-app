@@ -206,7 +206,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     let label = UILabel()
     label.text = (search?.searchBar.text ?? "").isEmpty ? (data["empty"] as? String ?? "No items") : "No matching results"
     label.textColor = .secondaryLabel; label.textAlignment = .center
-    label.font = page["textSizeFactor"] != nil ? appFont(15, style: .body) : .preferredFont(forTextStyle: .body)
+    label.font = appFont(15, style: .body)
     label.adjustsFontForContentSizeCategory = true
     label.numberOfLines = 0
     if data["loading"] as? Bool == true {
@@ -225,7 +225,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   // Match Flutter's 15pt body / 13pt detail at the same app-size factor.
   // UIFontMetrics applies the system Dynamic Type curve exactly once.
   private static let registerBrandFont: Void = {
-    if let url = Bundle.main.url(forResource: "Frameworks/App.framework/flutter_assets/assets/fonts/PlusJakartaSans", withExtension: "ttf") {
+    if let url = Bundle.main.url(forResource: "Frameworks/App.framework/flutter_assets/assets/fonts/inter/Inter", withExtension: "ttf") {
       CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
     }
   }()
@@ -234,7 +234,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     let factor = min(1.3, max(0.8, (page["textSizeFactor"] as? NSNumber)?.doubleValue ?? 1))
     _ = Self.registerBrandFont
     let pointSize = size * CGFloat(factor)
-    let base = UIFont(name: "PlusJakartaSans-Regular", size: pointSize)
+    let base = UIFont(name: "Inter-Regular", size: pointSize)
       ?? .systemFont(ofSize: pointSize, weight: weight)
     let descriptor = base.fontDescriptor.addingAttributes([
       .traits: [UIFontDescriptor.TraitKey.weight: weight]

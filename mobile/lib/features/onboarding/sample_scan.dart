@@ -460,7 +460,7 @@ class _SampleScanPhotoState extends State<SampleScanPhoto>
                   child: Text(
                     (box['label'] as String).split(' · ').first,
                     style: const TextStyle(
-                      fontFamily: 'GeistMono',
+                      fontFamily: 'Inter',
                       fontSize: 8,
                       color: Colors.white,
                     ),

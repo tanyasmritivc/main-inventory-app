@@ -16,7 +16,7 @@ class WorldStyle extends StatelessWidget {
       FontWeight weight = FontWeight.w400,
       bool secondary = false,
     }) => TextStyle(
-      fontFamily: 'PlusJakartaSans',
+      fontFamily: 'Inter',
       fontSize: size,
       fontWeight: weight,
       letterSpacing: -.25,
@@ -26,7 +26,7 @@ class WorldStyle extends StatelessWidget {
     final title = text(
       30,
       weight: FontWeight.w600,
-    ).copyWith(fontFamily: 'PlusJakartaSans', letterSpacing: -.7, height: 1.15);
+    ).copyWith(fontFamily: 'Inter', letterSpacing: -.7, height: 1.15);
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(24),
       borderSide: BorderSide(color: ink.withValues(alpha: .10), width: .7),

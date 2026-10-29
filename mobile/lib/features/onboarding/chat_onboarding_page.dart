@@ -484,14 +484,14 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
   Widget build(BuildContext context) {
     final theme = ThemeData(
       brightness: Brightness.light,
-      fontFamily: 'PlusJakartaSans',
+      fontFamily: 'Inter',
       colorScheme: ColorScheme.fromSeed(
         seedColor: trialInk,
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: Colors.white,
       textTheme: ThemeData.light().textTheme.apply(
-        fontFamily: 'PlusJakartaSans',
+        fontFamily: 'Inter',
         bodyColor: trialInk,
         displayColor: trialInk,
       ),
@@ -963,7 +963,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               Text(
                 '$_visible items',
                 style: const TextStyle(
-                  fontFamily: 'GeistMono',
+                  fontFamily: 'Inter',
                   fontSize: 12.5,
                   color: trialMuted,
                 ),
@@ -1016,7 +1016,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                     Text(
                       trial.detail!,
                       style: const TextStyle(
-                        fontFamily: 'GeistMono',
+                        fontFamily: 'Inter',
                         fontSize: 11,
                         color: trialMuted,
                       ),
@@ -1054,7 +1054,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                     : '${item.quantity}',
                 semanticsLabel:
                     '${item.name} quantity ${item.scanEvidence?.quantityMissing == true ? 'unknown' : item.quantity}. Edit quantity',
-                style: const TextStyle(fontFamily: 'GeistMono', fontSize: 13),
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13),
               ),
             ),
             if (edit)

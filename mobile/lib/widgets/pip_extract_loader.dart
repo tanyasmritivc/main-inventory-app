@@ -238,7 +238,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
       key: ValueKey(status),
       textAlign: TextAlign.center,
       style: const TextStyle(
-        fontFamily: 'PlusJakartaSans',
+        fontFamily: 'Inter',
         fontWeight: FontWeight.w600,
         fontSize: 16,
         color: Colors.white,
@@ -376,7 +376,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                                   : '$_elapsed s elapsed - still waiting for results')
                             : '$count found',
                         style: const TextStyle(
-                          fontFamily: 'GeistMono',
+                          fontFamily: 'Inter',
                           fontSize: 12,
                           color: Color(0xD1FFFFFF),
                         ),

@@ -319,7 +319,7 @@ class _SharingPageState extends State<SharingPage> {
                                               (share['share_code'] ?? '')
                                                   .toString(),
                                               style: TextStyle(
-                                                fontFamily: 'GeistMono',
+                                                fontFamily: 'Inter',
                                                 color: AppTheme.foreground(
                                                   context,
                                                   Colors.white,
@@ -1081,7 +1081,7 @@ class _ShareCodeSheet extends StatelessWidget {
               child: AppText(
                 code,
                 style: TextStyle(
-                  fontFamily: 'GeistMono',
+                  fontFamily: 'Inter',
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.foreground(context, Colors.white),
@@ -1260,7 +1260,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               style: AppTypography.bodyStyleOf(
                 context,
                 TextStyle(
-                  fontFamily: 'GeistMono',
+                  fontFamily: 'Inter',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.foreground(context, Colors.white),
@@ -1274,7 +1274,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                   context,
                   TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                    fontFamily: 'GeistMono',
+                    fontFamily: 'Inter',
                     fontSize: 28,
                     letterSpacing: 8,
                   ),

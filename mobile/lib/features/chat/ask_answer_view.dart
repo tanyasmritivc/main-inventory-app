@@ -251,6 +251,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                 // Generated images must not trigger arbitrary third-party requests.
                 sizedImageBuilder: (_) => const SizedBox.shrink(),
                 styleSheet: MarkdownStyleSheet(
+                  code: const TextStyle(fontFamily: 'Inter'),
                   p: AppTypography.styleOf(
                     context,
                     TextStyle(
@@ -437,7 +438,7 @@ class _ResultRow extends StatelessWidget {
                 row.status!,
                 style: TextStyle(
                   color: colors.$1,
-                  fontFamily: 'GeistMono',
+                  fontFamily: 'Inter',
                   fontSize: 12,
                   letterSpacing: 0.5,
                 ),
