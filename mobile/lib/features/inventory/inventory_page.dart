@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/ui/native_menu_button.dart';
 import '../review/review_queue_page.dart';
@@ -1176,9 +1177,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             ),
           ],
         ),
-        floatingActionButton: widget.readOnly || !widget.api.canEdit
-            ? null
-            : _buildSpeedDial(),
+        floatingActionButton: InventoryChatButton(
+          api: widget.api,
+          primary: widget.readOnly || !widget.api.canEdit
+              ? null
+              : _buildSpeedDial(),
+        ),
       ),
     );
   }
@@ -3725,12 +3729,15 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         ),
       ),
-      floatingActionButton: !widget.api.canEdit
-          ? null
-          : Padding(
-              padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
-              child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
-            ),
+      floatingActionButton: InventoryChatButton(
+        api: widget.api,
+        primary: !widget.api.canEdit
+            ? null
+            : Padding(
+                padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
+                child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
+              ),
+      ),
     );
   }
 }

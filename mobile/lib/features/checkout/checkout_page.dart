@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'dart:async';
 
@@ -147,6 +148,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: InventoryChatButton(api: widget.api),
       backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         backgroundColor: AppTheme.bg(context),

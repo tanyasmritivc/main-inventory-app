@@ -62,10 +62,12 @@ class ChatPage extends StatefulWidget {
     this.photoPicker,
     this.worldHeading,
     this.onCaptureAction,
+    this.contextual = false,
     this.initialSource,
     this.onInitialSourceReady,
   });
 
+  final bool contextual;
   final String? worldHeading;
   final ChatSource? initialSource;
   final VoidCallback? onInitialSourceReady;
@@ -252,12 +254,6 @@ class _ChatPageState extends State<ChatPage>
   Timer? _firstTokenFallbackTimer;
   final Map<String, GlobalKey<ChatCaptureCardState>> _captureKeys = {};
   final Set<int> _replyHaptics = {};
-  Timer? _presentationTimer;
-  Timer? _presentationIdleTimer;
-  final Map<int, StringBuffer> _presentationBuffers = {};
-  final Queue<({int index, String text})> _presentationQueue = Queue();
-  final Map<int, Map<String, dynamic>?> _presentationHints = {};
-  final Set<int> _presentationComplete = <int>{};
   final Set<String> _actionReplyIds = {};
   final Queue<String> _queuedFollowUps = Queue();
   bool _canQueueFollowUp = false;
@@ -378,67 +374,21 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _enqueuePresentation(int index, String content) {
-    _presentationIdleTimer?.cancel();
-    final pending = '${_presentationBuffers[index]?.toString() ?? ''}$content';
-    final whitespace = RegExp(r'\s').allMatches(pending).toList();
-    if (whitespace.isEmpty) {
-      _presentationBuffers[index] = StringBuffer(pending);
-    } else {
-      final splitAt = whitespace.last.end;
-      _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
-      _queuePresentationWords(index, pending.substring(0, splitAt));
+    if (!mounted ||
+        index < 0 ||
+        index >= _session.messages.length ||
+        content.isEmpty) {
+      return;
     }
-    _presentationIdleTimer = Timer(const Duration(milliseconds: 48), () {
-      if (!mounted) return;
-      final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
-      if (buffered.isNotEmpty) _queuePresentationWords(index, buffered);
+    setState(() {
+      final message = _session.messages[index];
+      _session.messages[index] = message.copyWith(
+        content: message.content + content,
+        isStreaming: true,
+      );
     });
-  }
-
-  void _queuePresentationWords(int index, String content) {
-    for (final match in RegExp(r'\s+|\S+\s*').allMatches(content)) {
-      _presentationQueue.add((index: index, text: match.group(0)!));
-    }
-    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 24), (
-      _,
-    ) {
-      if (!mounted) return;
-      if (_presentationQueue.isEmpty) {
-        _presentationTimer?.cancel();
-        _presentationTimer = null;
-        return;
-      }
-      final index = _presentationQueue.first.index;
-      final text = StringBuffer();
-      final reduced = MediaQuery.disableAnimationsOf(context);
-      final count = reduced
-          ? _presentationQueue.length
-          : (8 + _presentationQueue.length ~/ 8).clamp(8, 48);
-      for (
-        var i = 0;
-        i < count &&
-            _presentationQueue.isNotEmpty &&
-            _presentationQueue.first.index == index;
-        i++
-      ) {
-        text.write(_presentationQueue.removeFirst().text);
-      }
-      if (index < 0 || index >= _session.messages.length) return;
-      final isLast =
-          _presentationComplete.contains(index) &&
-          !_presentationQueue.any((entry) => entry.index == index);
-      setState(() {
-        final message = _session.messages[index];
-        _session.messages[index] = message.copyWith(
-          content: message.content + text.toString(),
-          isStreaming: !isLast,
-          navHint: isLast ? _presentationHints.remove(index) : null,
-        );
-      });
-      _replyVisible(index);
-      if (isLast) _presentationComplete.remove(index);
-      _scrollToBottom(animated: false);
-    });
+    _replyVisible(index);
+    _scrollToBottom(animated: false);
   }
 
   void _completePresentation(
@@ -447,42 +397,22 @@ class _ChatPageState extends State<ChatPage>
     String? canonical,
   }) {
     if (!mounted || index < 0 || index >= _session.messages.length) return;
-    _presentationIdleTimer?.cancel();
-    _presentationIdleTimer = null;
     final message = _session.messages[index];
-    final pending = StringBuffer(message.content);
-    for (final entry in _presentationQueue) {
-      if (entry.index == index) pending.write(entry.text);
-    }
-    pending.write(_presentationBuffers.remove(index)?.toString() ?? '');
-    final target = canonical ?? pending.toString();
+    final target = canonical ?? message.content;
     if (target.trim().isEmpty) throw StateError('Ask returned no answer');
-    _presentationQueue.removeWhere((entry) => entry.index == index);
-    // Reconcile formatting without exposing the unseen suffix at completion.
-    final shown = message.content.length.clamp(0, target.length);
-    _session.messages[index] = message.copyWith(
-      content: target.substring(0, shown),
+    setState(
+      () => _session.messages[index] = message.copyWith(
+        content: target,
+        isStreaming: false,
+        navHint: hint,
+      ),
     );
-    _presentationHints[index] = hint;
-    _presentationComplete.add(index);
-    if (shown < target.length) {
-      _queuePresentationWords(index, target.substring(shown));
-    } else {
-      _presentationComplete.remove(index);
-      setState(
-        () => _session.messages[index] = _session.messages[index].copyWith(
-          isStreaming: false,
-          navHint: _presentationHints.remove(index),
-        ),
-      );
-    }
+    _replyVisible(index);
+    _scrollToBottom(animated: false);
   }
 
   void _cancelPresentation(int index) {
-    _presentationBuffers.remove(index);
-    _presentationQueue.removeWhere((entry) => entry.index == index);
-    _presentationHints.remove(index);
-    _presentationComplete.remove(index);
+    // Text is painted on receipt, so there is no delayed presentation queue.
   }
 
   void _resetChat() {
@@ -493,14 +423,6 @@ class _ChatPageState extends State<ChatPage>
     if (active != null) unawaited(active.cancel());
     _captureKeys.clear();
     _replyHaptics.clear();
-    _presentationTimer?.cancel();
-    _presentationTimer = null;
-    _presentationIdleTimer?.cancel();
-    _presentationIdleTimer = null;
-    _presentationBuffers.clear();
-    _presentationQueue.clear();
-    _presentationHints.clear();
-    _presentationComplete.clear();
     _queuedFollowUps.clear();
     _actionReplyIds.clear();
     _responseRatings.clear();
@@ -1525,11 +1447,8 @@ class _ChatPageState extends State<ChatPage>
     });
     _scrollToBottom(animated: false);
 
-    await Future<void>.delayed(const Duration(milliseconds: 48));
-    if (!mounted) return;
     _fakeTypingAssistantIndex = -1;
-    _presentationBuffers[assistantIndex] = StringBuffer(text);
-    _completePresentation(assistantIndex, null);
+    _completePresentation(assistantIndex, null, canonical: text);
   }
 
   dio.Dio _backend() {
@@ -2283,6 +2202,7 @@ class _ChatPageState extends State<ChatPage>
         if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
           if (photo != null) _progress = null;
           provisional += event.delta!;
+          _enqueuePresentation(assistantIndex, event.delta!);
         }
         if (event.type == 'status' && (event.message ?? '').isNotEmpty) {
           setState(() => _progress = event.message);
@@ -2298,14 +2218,6 @@ class _ChatPageState extends State<ChatPage>
           savedMessageId = event.messageId;
           savedAt = event.createdAt;
           canonical = event.assistantMessage ?? provisional;
-          if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
-              !_presentationQueue.any(
-                (chunk) => chunk.index == assistantIndex,
-              ) &&
-              _session.messages[assistantIndex].content.isEmpty &&
-              canonical.isNotEmpty) {
-            _enqueuePresentation(assistantIndex, canonical);
-          }
           break;
         }
       }
@@ -2395,7 +2307,10 @@ class _ChatPageState extends State<ChatPage>
   @override
   void initState() {
     super.initState();
-    _session = widget.api.worldKey == null
+    _session =
+        widget.api.worldKey == null &&
+            widget.api.inventoryContext == null &&
+            !widget.contextual
         ? _ChatSession()
         : _ChatSession._internal();
     _controller = TextEditingController();
@@ -2465,8 +2380,6 @@ class _ChatPageState extends State<ChatPage>
     _requestGeneration++;
     final active = _activeReply;
     if (active != null) unawaited(active.cancel());
-    _presentationTimer?.cancel();
-    _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2570,6 +2483,23 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
+    if (widget.contextual) {
+      return Row(
+        children: [
+          IconButton(
+            tooltip: 'Chat history',
+            onPressed: _sending ? null : _openHistory,
+            icon: const Icon(Icons.history_rounded, size: 22),
+          ),
+          const Spacer(),
+          IconButton(
+            tooltip: 'New chat',
+            onPressed: _sending ? null : _resetChat,
+            icon: const Icon(Icons.edit_square, size: 22),
+          ),
+        ],
+      );
+    }
     if (widget.worldHeading != null) {
       return Row(
         children: [
@@ -3581,7 +3511,8 @@ class _ChatPageState extends State<ChatPage>
         View.of(context).viewInsets.bottom > 0 ||
         MediaQuery.viewInsetsOf(context).bottom > 0;
     final compactComposer =
-        keyboardVisible && MediaQuery.textScalerOf(context).scale(16) > 32;
+        keyboardVisible &&
+        (widget.contextual || MediaQuery.textScalerOf(context).scale(16) > 32);
     final canSend =
         !_savingCapture &&
         !_scanningPreview &&
@@ -3667,7 +3598,7 @@ class _ChatPageState extends State<ChatPage>
     return Scaffold(
       // MainShell already resizes its PageView for the keyboard.
       resizeToAvoidBottomInset: !widget.inPageView,
-      backgroundColor: widget.worldHeading != null
+      backgroundColor: widget.worldHeading != null || widget.contextual
           ? Colors.transparent
           : AppTheme.adaptive(context, const Color(0xFF09090B)),
 
@@ -3679,11 +3610,13 @@ class _ChatPageState extends State<ChatPage>
             18,
             16,
             // MainShell reserves space for its pill below the page.
-            keyboardVisible || widget.inPageView ? 12 : 110,
+            keyboardVisible || widget.inPageView || widget.contextual
+                ? 12
+                : 110,
           ),
           child: Column(
             children: [
-              if (_session.messages.isNotEmpty &&
+              if ((widget.contextual || _session.messages.isNotEmpty) &&
                   (widget.worldHeading == null || !_worldHome)) ...[
                 _buildHeader(),
                 const SizedBox(height: 12),
@@ -3713,6 +3646,9 @@ class _ChatPageState extends State<ChatPage>
                     },
                     itemBuilder: (context, index) {
                       if (_session.messages.isEmpty) {
+                        if (widget.contextual && keyboardVisible) {
+                          return const SizedBox.shrink();
+                        }
                         return _buildEmptyState();
                       }
                       final messageIndex = index;

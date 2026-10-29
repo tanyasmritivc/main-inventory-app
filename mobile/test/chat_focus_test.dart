@@ -244,7 +244,7 @@ void main() {
         expect(find.byType(AppBar), findsNothing);
         expect(find.byType(HomeNavigation), findsNothing);
         expect(find.byTooltip('Back'), findsOneWidget);
-        expect(find.textContaining('receipt89'), findsNothing);
+        expect(find.textContaining('receipt89'), findsOneWidget);
         await tester.pumpAndSettle();
         expect(find.textContaining(api.reply), findsOneWidget);
         tester
@@ -337,7 +337,7 @@ void main() {
 
   for (final brightness in Brightness.values) {
     testWidgets(
-      '${brightness.name} completion drains chunks instead of dumping a batched answer',
+      '${brightness.name} received chunks appear before completion without artificial pacing',
       (tester) async {
         final answer = List.generate(90, (index) => 'part$index').join(' ');
         final stream = StreamController<AiStreamEvent>();
@@ -349,25 +349,35 @@ void main() {
         await _send(tester, 'Show my parts');
         await tester.pump(const Duration(milliseconds: 300));
         stream.add(AiStreamEvent(type: 'delta', delta: answer));
+        await tester.pump();
+        await tester.pump();
+        final received = tester
+            .widgetList<RichText>(find.byType(RichText))
+            .map((text) => text.text.toPlainText())
+            .join(' ');
+        expect(received, contains('part0'));
+        expect(received, contains('part89'));
+        stream.add(AiStreamEvent(type: 'reset'));
+        await tester.pump();
+        expect(find.textContaining(answer), findsNothing);
+        stream.add(
+          AiStreamEvent(type: 'delta', delta: 'Corrected inventory answer.'),
+        );
+        await tester.pump();
+        await tester.pump();
+        expect(
+          find.textContaining('Corrected inventory answer.'),
+          findsOneWidget,
+        );
         stream.add(
           AiStreamEvent(type: 'done', conversationId: 'streaming-parts'),
         );
         await stream.close();
-        await tester.pump();
-        final initial = tester
-            .widgetList<RichText>(find.byType(RichText))
-            .map((text) => text.text.toPlainText())
-            .join(' ');
-        expect(initial, isNot(contains('part89')));
-        await tester.pump(const Duration(milliseconds: 72));
-        final during = tester
-            .widgetList<RichText>(find.byType(RichText))
-            .map((text) => text.text.toPlainText())
-            .join(' ');
-        expect(during, contains('part0'));
-        expect(during, isNot(contains('part89')));
         await tester.pumpAndSettle();
-        expect(find.textContaining(answer), findsOneWidget);
+        expect(
+          find.textContaining('Corrected inventory answer.'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },

@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/app_theme.dart';
 import 'package:dio/dio.dart' as dio;
@@ -162,10 +163,13 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       centerTitle: true,
       backgroundColor: AppTheme.adaptive(context, Colors.black),
     ),
-    floatingActionButton: GlassFab(
-      onPressed: _loading ? null : _create,
-      icon: Icons.add_rounded,
-      label: 'New Project',
+    floatingActionButton: InventoryChatButton(
+      api: widget.api,
+      primary: GlassFab(
+        onPressed: _loading ? null : _create,
+        icon: Icons.add_rounded,
+        label: 'New Project',
+      ),
     ),
     body: RefreshIndicator(
       onRefresh: _load,
@@ -402,6 +406,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    floatingActionButton: InventoryChatButton(api: widget.api),
     backgroundColor: AppTheme.adaptive(context, Colors.black),
     appBar: AppBar(
       title: AppText(_kit.name),

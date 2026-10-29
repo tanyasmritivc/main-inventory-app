@@ -1,3 +1,4 @@
+import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
@@ -123,6 +124,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: InventoryChatButton(api: widget.api),
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
         title: const AppText('Review'),
