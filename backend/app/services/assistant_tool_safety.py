@@ -5,7 +5,7 @@ import re
 
 READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
                         'inventory_recall', 'documents_list', 'list_spaces',
-                        'inventory_query', 'project_kit_readiness',
+                        'inventory_query', 'inventory_item_photos', 'project_kit_readiness',
                         'world_directory', 'world_search', 'world_inventory', 'world_spaces',
                         'world_tracking', 'world_reorders', 'world_query', 'world_projects',
                         'world_project_readiness', 'world_activity', 'world_recall', 'world_item_photos'))
