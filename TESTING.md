@@ -1145,3 +1145,15 @@ keyboard layouts and in-flow gray glass Ask. Native live frames can advance betw
 selection and a pump; retarget opacity must not move backward.
 Before public submission, judge the final TestFlight motion and glass contrast on
 a physical iPhone with Reduce Motion, normal motion and both appearances.
+
+
+### Larger Default and extraction presentation
+
+Default text now composes system scaling with .96 instead of .90; other saved
+size choices remain unchanged. Appearance controller/widget tests verify scaling
+and persistence. `ask_page_test.dart` checks the glass extraction preview at
+320/390pt in both themes, keyboard and 2.6x accessibility, pinned destination
+actions on roomy layouts, and stopping extraction without dropping a draft.
+`chat_capture_card_test.dart` keeps selection, edit, destination and save/retry
+contracts covered. Run `integration_test/extraction_keyboard_audit_test.dart`
+filtered to `extraction keeps composer|scanning preview` for native visual checks.

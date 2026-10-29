@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppTextSize {
   small('Small', 0.8),
-  standard('Default', 0.9),
+  standard('Default', 0.96),
   large('Large', 1.15),
   larger('Larger', 1.3);
 
@@ -61,7 +61,7 @@ class AppearanceController extends ChangeNotifier {
       var size = await _storage.read(textSizeKey);
       if (size == null) {
         size = await _storage.read(legacyTextSizeKey);
-        // The former Small is now Default; preserve its physical size.
+        // The former Small maps to Default; retain the saved size choice.
         if (size == 'small') size = 'standard';
       }
       if (_disposed) return;

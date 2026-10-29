@@ -520,68 +520,68 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               'findez://space/${_draft['inventory_id']}/${_draft['space_id']}',
         }) ??
         links.where((link) => link.kind == 'space').firstOrNull;
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            if (!widget.embedded)
-              const Icon(Icons.auto_awesome_outlined, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                widget.embedded
-                    ? '$selected of ${rows.length} selected · Not saved yet'
-                    : saved
-                    ? (_draft['source_kind'] == 'text'
-                          ? 'Items saved'
-                          : 'Extraction saved')
-                    : _draft['source_kind'] == 'text'
-                    ? 'Inventory draft'
-                    : 'Auto Extract',
-                style: TextStyle(
-                  fontSize: widget.embedded ? 13 : 17,
-                  color: widget.embedded
-                      ? AppTheme.textSecondary(context)
-                      : null,
-                  fontWeight: widget.embedded
-                      ? FontWeight.w400
-                      : FontWeight.w600,
-                ),
+    final review = <Widget>[
+      Row(
+        children: [
+          if (!widget.embedded)
+            const Icon(Icons.auto_awesome_outlined, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              widget.embedded
+                  ? '$selected of ${rows.length} selected · Not saved yet'
+                  : saved
+                  ? (_draft['source_kind'] == 'text'
+                        ? 'Items saved'
+                        : 'Extraction saved')
+                  : _draft['source_kind'] == 'text'
+                  ? 'Inventory draft'
+                  : 'Auto Extract',
+              style: TextStyle(
+                fontSize: widget.embedded ? 13 : 17,
+                color: widget.embedded ? AppTheme.textSecondary(context) : null,
+                fontWeight: widget.embedded ? FontWeight.w400 : FontWeight.w600,
               ),
             ),
-            IconButton(
-              tooltip: 'Refresh extraction',
-              onPressed: _busy || widget.disabled ? null : _refresh,
-              icon: const Icon(Icons.refresh, size: 20),
-            ),
-          ],
+          ),
+          IconButton(
+            tooltip: 'Refresh extraction',
+            onPressed: _busy || widget.disabled ? null : _refresh,
+            icon: const Icon(Icons.refresh, size: 20),
+          ),
+        ],
+      ),
+      if (!widget.embedded)
+        Text(
+          saved
+              ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
+              : '$selected of ${rows.length} selected · Not saved yet',
+          style: TextStyle(
+            color: AppTheme.textSecondary(context),
+            fontSize: 13,
+          ),
         ),
-        if (!widget.embedded)
-          Text(
-            saved
-                ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
-                : '$selected of ${rows.length} selected · Not saved yet',
-            style: TextStyle(
-              color: AppTheme.textSecondary(context),
-              fontSize: 13,
-            ),
+      if (!saved && rows.isEmpty)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('No items were detected. Try a closer, well-lit photo.'),
+        ),
+      for (final row
+          in (saved
+              ? <Map<String, dynamic>>[]
+              : _expanded
+              ? rows.take(_visibleRows)
+              : rows.take(4))) ...[
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: .035),
+            borderRadius: BorderRadius.circular(16),
           ),
-        if (!saved && rows.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              'No items were detected. Try a closer, well-lit photo.',
-            ),
-          ),
-        for (final row
-            in (saved
-                ? <Map<String, dynamic>>[]
-                : _expanded
-                ? rows.take(_visibleRows)
-                : rows.take(4))) ...[
-          const SizedBox(height: 8),
-          Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (!saved)
@@ -617,7 +617,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   children: [
                     Text(
                       row['item']['name'] as String,
-                      style: const TextStyle(fontSize: 15),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                      ),
                     ),
                     Text(
                       _quantityMissing(row)
@@ -636,9 +640,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                     if ((row['item']['scan_evidence']
                             as Map?)?['needs_review'] ==
                         true)
-                      const Text(
-                        'Needs Review',
-                        style: TextStyle(fontSize: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Needs Review',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondary(context),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -651,88 +662,133 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 ),
             ],
           ),
-        ],
-        if (!saved && rows.length > 4)
-          TextButton(
-            onPressed: () => setState(() => _expanded = !_expanded),
-            child: Text(
-              _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
-            ),
-          ),
-        if (!saved && _expanded && rows.length > _visibleRows)
-          TextButton(
-            onPressed: () => setState(() => _visibleRows += 40),
-            child: const Text('Show more items'),
-          ),
-        if (!saved) ...[
-          const SizedBox(height: 12),
-          if (!widget.embedded || _draft['space_id'] != null)
-            TextButton.icon(
-              onPressed: _editable ? _destination : null,
-              icon: const Icon(Icons.folder_outlined, size: 18),
-              label: Text(
-                _draft['space_id'] == null
-                    ? 'Choose a Space'
-                    : '${_draft['location']}',
-              ),
-            ),
-          Text(
-            _missingRows.isNotEmpty
-                ? 'Add the missing quantities, or uncheck those items to save the rest.'
-                : _draft['space_id'] == null
-                ? 'Choose where to keep these items.'
-                : 'Ready to save to ${_draft['location']}.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary(context),
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _busy || widget.disabled || selected == 0 ? null : _save,
-            child: Text(
-              saving
-                  ? 'Retry save safely'
-                  : _missingRows.isNotEmpty
-                  ? 'Add missing quantity'
-                  : _draft['space_id'] == null
-                  ? 'Choose a Space'
-                  : 'Save items',
-            ),
-          ),
-        ],
-        if (_busy && !_choosing) const LinearProgressIndicator(),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        if (receipt != null) ...[
-          for (final failure in receipt['failures'] as List? ?? [])
-            Text(failure['reason'] as String),
-          if (destination != null)
-            TextButton.icon(
-              onPressed: widget.onOpenResource == null
-                  ? null
-                  : () => widget.onOpenResource!(destination),
-              icon: const Icon(Icons.folder_outlined, size: 18),
-              label: Text('Open ${destination.label}'),
-            ),
-          if (saved && selected > 0)
-            TextButton(
-              onPressed: _showSavedItems,
-              child: Text('View $selected extracted items'),
-            ),
-        ],
+        ),
       ],
+      if (!saved && rows.length > 4)
+        TextButton(
+          onPressed: () => setState(() => _expanded = !_expanded),
+          child: Text(
+            _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
+          ),
+        ),
+      if (!saved && _expanded && rows.length > _visibleRows)
+        TextButton(
+          onPressed: () => setState(() => _visibleRows += 40),
+          child: const Text('Show more items'),
+        ),
+    ];
+    final actions = <Widget>[
+      if (!saved) ...[
+        const SizedBox(height: 12),
+        if (!widget.embedded || _draft['space_id'] != null)
+          TextButton.icon(
+            onPressed: _editable ? _destination : null,
+            icon: const Icon(Icons.folder_outlined, size: 18),
+            label: Text(
+              _draft['space_id'] == null
+                  ? 'Choose a Space'
+                  : '${_draft['location']}',
+            ),
+          ),
+        Text(
+          _missingRows.isNotEmpty
+              ? 'Add the missing quantities, or uncheck those items to save the rest.'
+              : _draft['space_id'] == null
+              ? 'Choose where to keep these items.'
+              : 'Ready to save to ${_draft['location']}.',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondary(context),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: _busy || widget.disabled || selected == 0 ? null : _save,
+          child: Text(
+            saving
+                ? 'Retry save safely'
+                : _missingRows.isNotEmpty
+                ? 'Add missing quantity'
+                : _draft['space_id'] == null
+                ? 'Choose a Space'
+                : 'Save items',
+          ),
+        ),
+      ],
+      if (_busy && !_choosing) const LinearProgressIndicator(),
+      if (_error != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+      if (receipt != null) ...[
+        for (final failure in receipt['failures'] as List? ?? [])
+          Text(failure['reason'] as String),
+        if (destination != null)
+          TextButton.icon(
+            onPressed: widget.onOpenResource == null
+                ? null
+                : () => widget.onOpenResource!(destination),
+            icon: const Icon(Icons.folder_outlined, size: 18),
+            label: Text('Open ${destination.label}'),
+          ),
+        if (saved && selected > 0)
+          TextButton(
+            onPressed: _showSavedItems,
+            child: Text('View $selected extracted items'),
+          ),
+      ],
+    ];
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [...review, ...actions],
     );
     if (widget.embedded) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: content,
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final pinActions =
+              constraints.hasBoundedHeight &&
+              constraints.maxHeight >= 380 &&
+              _error == null &&
+              MediaQuery.textScalerOf(context).scale(16) < 28;
+          final scroll = SingleChildScrollView(
+            key: const Key('extraction-preview-scroll'),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: pinActions
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: review,
+                  )
+                : content,
+          );
+          if (!pinActions) return scroll;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(child: scroll),
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: .08),
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: actions,
+                ),
+              ),
+            ],
+          );
+        },
       );
     }
     return ContentCard(

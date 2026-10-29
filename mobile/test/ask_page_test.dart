@@ -944,6 +944,42 @@ void main() {
             expect(find.text('Review extraction'), findsOneWidget);
             expect(find.text('Auto Extract'), findsNothing);
             expect(find.byType(LinearProgressIndicator), findsNothing);
+            if (width == 390 && scale == 1) {
+              expect(
+                find
+                    .widgetWithText(FilledButton, 'Choose a Space')
+                    .hitTestable(),
+                findsOneWidget,
+              );
+              final actionRect = tester.getRect(
+                find.widgetWithText(FilledButton, 'Choose a Space'),
+              );
+              await tester.drag(
+                find.byKey(const Key('extraction-preview-scroll')),
+                const Offset(0, -160),
+              );
+              await tester.pumpAndSettle();
+              expect(
+                tester.getRect(
+                  find.widgetWithText(FilledButton, 'Choose a Space'),
+                ),
+                actionRect,
+              );
+              if (previewAuditCapture != null) {
+                final boundary = tester.renderObject<RenderRepaintBoundary>(
+                  find.byKey(const Key('preview-audit-frame')),
+                );
+                final image = await boundary.toImage(pixelRatio: 1);
+                final data = await image.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                await previewAuditCapture!(
+                  'extraction-review-${brightness.name}',
+                  data!.buffer.asUint8List(),
+                );
+                image.dispose();
+              }
+            }
             tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
             await tester.enterText(
               find.byType(TextField).first,
@@ -1007,14 +1043,21 @@ void main() {
   testWidgets(
     'scanning preview has one status and stops without losing typed text',
     (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final pending = StreamController<AiStreamEvent>();
       addTearDown(pending.close);
       final focused = <bool>[];
       await tester.pumpWidget(
-        _page(
-          _AskApi(world: true, pending: pending),
-          photoPicker: (_) async => AskPhoto(bytes: png),
-          onChatStateChanged: focused.add,
+        RepaintBoundary(
+          key: const Key('preview-audit-frame'),
+          child: _page(
+            _AskApi(world: true, pending: pending),
+            photoPicker: (_) async => AskPhoto(bytes: png),
+            onChatStateChanged: focused.add,
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -1030,6 +1073,19 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byTooltip('Stop scanning').hitTestable(), findsOneWidget);
+      if (previewAuditCapture != null) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const Key('preview-audit-frame')),
+        );
+        final image = await boundary.toImage(pixelRatio: 1);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        await previewAuditCapture!(
+          'extraction-loading-dark',
+          data!.buffer.asUint8List(),
+        );
+        image.dispose();
+      }
+
       await tester.enterText(find.byType(TextField).first, 'Keep this draft');
       await tester.pump();
       await tester.tap(find.byTooltip('Stop scanning'));

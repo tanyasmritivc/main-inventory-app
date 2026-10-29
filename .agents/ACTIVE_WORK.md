@@ -2377,3 +2377,8 @@ Native SF Pro replaces Inter across app-owned text, framework controls, inputs, 
 ## October 28 — monochrome mobile UI and subtle motion (active)
 
 Mobile-only monochrome UI and motion update: remove retired orange/blue/cream interface styling, use gray glass for contextual Ask, preserve SF Pro and existing features. Retained tabs use a 360ms 94%-to-100% settle with under 4px motion; fallback indicator finishes in 140ms and UIKit tab animation clock is faster. Reduce Motion remains immediate and mounted drafts are retained. Build 157 pending regression, native visual checks, CI and signed beta delivery. Main unchanged.
+
+
+## October 28 — larger Default text and extraction presentation
+
+User added a UI-only follow-up during build157 packaging. Hold upload of the first archive; rebuild157 from the final source after checks. Default text factor rises from .90 to .96 (about7%); other explicit size choices and nonlinear system scaling remain. Extraction preview uses bounded gray glass, a compact native activity indicator with actual stream statuses, grouped review rows, and a pinned destination/save area when space permits. Small/keyboard/accessibility layouts scroll all review content instead. Capture, edit, selection, destination, save/retry, cancellation and scopes remain unchanged.

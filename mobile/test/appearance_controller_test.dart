@@ -44,7 +44,7 @@ double _contrast(Color a, Color b) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'first launch defaults to compact text with system accessibility scaling',
+    'first launch defaults to slightly larger text with system accessibility scaling',
     () async {
       final storage = _Storage();
       final controller = AppearanceController(storage: storage);
@@ -55,8 +55,8 @@ void main() {
       expect(controller.themeMode, ThemeMode.light);
       expect(controller.textSize, AppTextSize.standard);
       const system = _NonlinearScaler();
-      expect(controller.textScaler(system).scale(14), closeTo(25.2, .001));
-      expect(controller.textScaler(system).scale(24), closeTo(32.4, .001));
+      expect(controller.textScaler(system).scale(14), closeTo(26.88, .001));
+      expect(controller.textScaler(system).scale(24), closeTo(34.56, .001));
     },
   );
 
