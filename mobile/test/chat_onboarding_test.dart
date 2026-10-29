@@ -505,9 +505,18 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      draft.method = 'email';
+      await ChatOnboardingStore.save(draft);
       await tester.pumpWidget(MaterialApp(home: LaunchAuthGate(api: api)));
       await pump(tester);
-      await tap(tester, 'Continue with email');
+      await tester.tap(
+        find.text('Already have an account? Sign in', findRichText: true),
+      );
+      await pump(tester);
+      await tester.tap(find.byKey(const Key('auth-more-options')));
+      await pump(tester);
+      await tester.tap(find.byKey(const Key('auth-email-option')));
+      await pump(tester);
       expect(find.byType(AuthPage), findsOneWidget);
       for (final entry in {
         'Email': 'trial@example.test',

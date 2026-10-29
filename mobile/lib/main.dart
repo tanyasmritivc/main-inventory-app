@@ -19,7 +19,8 @@ import 'core/ui/launch_loading_screen.dart';
 import 'core/ui/findez_wordmark.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
-import 'features/onboarding/chat_onboarding_page.dart';
+import 'features/onboarding/onboarding_v5_page.dart';
+import 'features/onboarding/onboarding_v5_store.dart';
 import 'features/onboarding/chat_onboarding_gate.dart';
 import 'features/profile/plans_welcome.dart';
 import 'features/splash/splash_page.dart';
@@ -431,6 +432,31 @@ class LaunchAuthGate extends StatefulWidget {
 class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   bool _retryingSession = false;
+  bool _onboardingActive = false;
+  final _onboardingStore = OnboardingV5Store();
+  String? _retriedAnswersFor;
+
+  Widget _onboarding() => OnboardingV5Page(
+    store: _onboardingStore,
+    onFinished: () {
+      if (mounted) setState(() => _onboardingActive = false);
+    },
+  );
+
+  Future<void> _retryAnswers(User user) async {
+    try {
+      await _onboardingStore.bind(user);
+      final method = await _onboardingStore.sync(Supabase.instance.client);
+      if (method != null) {
+        onboardingEvent('onboarding_completed', {'auth_method': method});
+      }
+    } catch (_) {
+      // The account-bound receipt is retained for the next signed-in launch.
+      // This optional preference write must not block access to saved inventory.
+      debugPrint('Onboarding answers remain on this device for retry.');
+    }
+  }
+
   bool _sessionRetryFailed = false;
 
   Future<void> _retrySession() async {
@@ -457,7 +483,7 @@ class _AuthGateState extends State<LaunchAuthGate> {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (_previewOnboarding) return ChatOnboardingPage(api: widget.api);
+        if (_previewOnboarding || _onboardingActive) return _onboarding();
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
@@ -507,6 +533,10 @@ class _AuthGateState extends State<LaunchAuthGate> {
           if (isInitialStaleSession) {
             return const AppGradientBackground(child: LaunchLoadingScreen());
           }
+          if (_retriedAnswersFor != session.user.id) {
+            _retriedAnswersFor = session.user.id;
+            unawaited(_retryAnswers(session.user));
+          }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
             child: PlansWelcomeGate(
@@ -517,7 +547,8 @@ class _AuthGateState extends State<LaunchAuthGate> {
           );
         }
 
-        return ChatOnboardingPage(api: widget.api);
+        _onboardingActive = true;
+        return _onboarding();
       },
     );
   }

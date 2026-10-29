@@ -1,0 +1,231 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FindEZ Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/*LOCALFONTS*/
+:root{--ink:#0B0B0C;--ink2:#5E5F64;--ink3:#9A9BA0;--line:#ECEBE8;--card:#F5F4F1;--bg:#FFFFFF}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:#ECE9E4;font-family:Inter,'Inter',system-ui,sans-serif;color:var(--ink);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+svg{display:block;flex:none}
+.mono{font-family:'Geist Mono',M,monospace;letter-spacing:0}
+.top{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:430px;padding:20px 20px 14px;font-size:13px;color:var(--ink2)}
+.top b{color:var(--ink);font-weight:500;font-size:14px}
+.top button{height:32px;padding:0 14px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px #DAD7D2;font-weight:500}
+#phone{position:relative;width:390px;height:844px;border-radius:54px;overflow:hidden;overflow:clip;background:var(--bg);box-shadow:0 0 0 11px #0E0E10,0 30px 80px rgba(40,30,20,.25);margin-bottom:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:52px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0 44px;font-weight:600;font-size:16px;z-index:90;pointer-events:none;transition:color .6s}
+.sb.dark{color:#fff}
+.isl{position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:20px;background:#000;z-index:91}
+.hi{position:absolute;bottom:8px;left:50%;width:132px;height:5px;margin-left:-66px;border-radius:3px;background:var(--ink);z-index:91;transition:background .6s}
+.hi.dark{background:#fff}
+
+/* one persistent backdrop: soft aurora with grain that drifts and dims between steps */
+#bg{position:absolute;inset:0;z-index:0;background:#FBFAF8;transition:opacity .9s cubic-bezier(.32,.72,0,1)}
+#bg i{position:absolute;border-radius:50%;filter:blur(46px);transition:transform 1.4s cubic-bezier(.32,.72,0,1),opacity 1.2s}
+#bg .b1{width:300px;height:300px;left:-90px;top:-70px;background:#E9C3A8}
+#bg .b2{width:280px;height:280px;right:-110px;top:40px;background:#B9C8DA}
+#bg .b3{width:260px;height:260px;left:60px;top:420px;background:#D7CBDD;opacity:.6}
+#bg::after{content:"";position:absolute;inset:0;opacity:.35;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#bg .fade{position:absolute;left:0;right:0;bottom:0;height:45%;background:linear-gradient(rgba(255,255,255,0),#fff);border-radius:0;filter:none}
+
+.layer{position:absolute;inset:0;z-index:5;pointer-events:none}
+.layer.on{pointer-events:auto}
+[data-in]{opacity:0}
+
+/* persistent mark: moves between welcome (centre) and the question header (top left) */
+#mark{position:absolute;left:0;top:0;width:64px;height:64px;z-index:40;transform-origin:0 0;will-change:transform}
+
+/* welcome */
+#welcome .copy{position:absolute;left:28px;right:28px;top:300px;text-align:center}
+.h1{font-size:34px;font-weight:500;letter-spacing:-.04em;line-height:1.08}
+.sub{color:var(--ink2);font-size:15.5px;line-height:1.5;margin-top:12px}
+.auth{position:absolute;left:20px;right:20px;bottom:46px;display:flex;flex-direction:column;gap:10px}
+.btn{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;height:54px;border-radius:999px;font-size:15.5px;font-weight:500;transition:transform .35s cubic-bezier(.32,.72,0,1),background .3s,box-shadow .3s}
+.btn:active{transform:scale(.98)}
+.btn.k{background:var(--ink);color:#fff}.btn.w{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.btn .spin{position:absolute;right:20px;width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;opacity:0;animation:sp .8s linear infinite;transition:opacity .25s}
+.btn.w .spin{border-color:rgba(0,0,0,.12);border-top-color:var(--ink)}
+.btn.busy .spin{opacity:1}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fine{text-align:center;color:var(--ink3);font-size:12.5px;margin-top:6px}
+
+/* questions */
+.qhead{position:absolute;left:20px;right:20px;top:62px;height:40px;display:flex;align-items:center;justify-content:space-between;z-index:30}
+.prog{position:absolute;left:76px;right:76px;top:81px;height:3px;border-radius:3px;background:#ECEAE6;overflow:hidden;z-index:30;opacity:0}
+.prog i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:3px;transition:width .8s cubic-bezier(.32,.72,0,1)}
+.skip{font-size:14.5px;font-weight:500;color:var(--ink2);padding:8px 2px;opacity:0;transition:opacity .5s}
+.back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--line);background:#fff;opacity:0;transition:opacity .5s}
+.q .copy{position:absolute;left:24px;right:24px;top:128px}
+.q .h2{font-size:28px;font-weight:500;letter-spacing:-.035em;line-height:1.12}
+.q .sub{margin-top:8px;font-size:15px}
+.opts{position:absolute;left:20px;right:20px;top:248px;display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border-radius:18px;padding:13px 14px;box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .45s cubic-bezier(.32,.72,0,1),background .45s,opacity .45s,transform .35s cubic-bezier(.32,.72,0,1)}
+.opt:active{transform:scale(.985)}
+.opt .tl{width:42px;height:42px;border-radius:13px;background:var(--card);display:grid;place-items:center;flex:none;transition:background .45s,color .45s}
+.opt b{display:block;font-weight:500;font-size:15.5px}.opt small{color:var(--ink2);font-size:13px}
+.ck{margin-left:auto;width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #D7D4CF;display:grid;place-items:center;flex:none;transition:background .4s,box-shadow .4s}
+.ck path{stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .45s .1s cubic-bezier(.32,.72,0,1)}
+.opt.sel{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt.sel .tl{background:var(--ink);color:#fff}
+.opt.sel .ck{background:var(--ink);box-shadow:none}.opt.sel .ck path{stroke-dashoffset:0}
+.opts.picked .opt:not(.sel){opacity:.4}
+.two{flex-direction:row}.two .opt{flex-direction:column;align-items:flex-start;gap:34px;height:180px;padding:16px;position:relative}.two .ck{position:absolute;right:14px;top:14px}
+
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 .opt{flex-direction:column;align-items:flex-start;gap:26px;height:128px;padding:14px;position:relative}
+.grid2 .ck{position:absolute;right:12px;top:12px}
+.opt.compact{padding:14px 16px}.opt.compact .tl{display:none}
+.chipq{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px}
+.chipq .opt{width:auto;padding:0 16px;height:44px;border-radius:999px;gap:8px}.chipq .opt .tl,.chipq .opt .ck{display:none}
+.chipq .opt.sel{background:var(--ink);color:#fff;box-shadow:none}
+/* signup */
+#signup .copy{position:absolute;left:24px;right:24px;top:128px}
+.sum{position:absolute;left:20px;right:20px;top:250px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:22px;box-shadow:inset 0 0 0 1px var(--line);padding:6px 16px}
+.sum .r{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.sum .r:last-child{border-bottom:0}.sum .r span{color:var(--ink2)}.sum .r b{font-weight:500}
+.done{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 40px}
+.done .ok{width:56px;height:56px;border-radius:50%;background:var(--ink);display:grid;place-items:center}
+.done .ok path{stroke-dasharray:24;stroke-dashoffset:24}
+.signin{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:14px;color:var(--ink2)}.signin b{color:var(--ink);font-weight:500}
+</style></head><body>
+<div class="top"><div><b>FindEZ onboarding</b><br>Before sign-up · clickable prototype</div><button id="restart">Restart</button></div>
+<div id="phone">
+ <div class="sb" id="sb"><span>9:41</span><span class="sig" style="display:flex;gap:6px;align-items:center"><svg width="18" height="12" viewBox="0 0 18 12" fill="#111112"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="#111112"><path d="M8 12l2.4-2.9a3.6 3.6 0 0 0-4.8 0zM3.4 6.6l1.4 1.6a4.9 4.9 0 0 1 6.4 0l1.4-1.6a7 7 0 0 0-9.2 0zM.6 3.4L2 5a9.2 9.2 0 0 1 12 0l1.4-1.6a11.4 11.4 0 0 0-14.8 0z"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="#111112" opacity=".4"/><rect x="2" y="2" width="19" height="8" rx="2" fill="#111112"/><rect x="23.6" y="4" width="1.6" height="4" rx=".8" fill="#111112" opacity=".4"/></svg></span></div><div class="isl"></div>
+ <div id="bg"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="fade"></i></div>
+
+ <section class="layer" id="welcome">
+  <div class="copy"><h1 class="h1" data-in>Memory for<br>physical things.</h1><p class="sub" data-in>A few quick questions, then FindEZ is set up for you.</p></div>
+  <div class="auth"><button class="btn k" data-in id="start">Get started</button><p class="fine" data-in>Takes about 20 seconds.</p></div>
+  <button class="signin" data-in id="have">Already have an account? <b>Sign in</b></button>
+ </section>
+
+ <div class="qhead" id="qhead"><button class="back" id="qback" aria-label="Back"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="skip" id="qskip">Skip</button></div>
+ <div class="prog" id="prog"><i></i></div>
+
+ <section class="layer q" id="q1"><div class="copy"><h2 class="h2" data-in>What are you organizing?</h2><p class="sub" data-in>FindEZ sets up the first space for it.</p></div><div class="opts " id="oq1"><button class="opt" data-in data-v="home"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/></svg></span><span><b>Home</b><small>Closets, garage, kitchen</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="workshop"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a4 4 0 0 0 4.9 4.9l-9 9a2 2 0 0 1-2.8-2.8l9-9a4 4 0 0 0-2.1-2.1z"/></svg></span><span><b>Workshop or garage</b><small>Tools, parts, bins</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="robotics"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="12" height="10" rx="2"/><path d="M16 12h4M8 7v10M12 7v10"/></svg></span><span><b>Robotics team</b><small>Parts, kits, pit cart</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="lab"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5M10 4v6l-5 8.5a1 1 0 0 0 .9 1.5h12.2a1 1 0 0 0 .9-1.5L14 10V4"/></svg></span><span><b>Lab or classroom</b><small>Equipment and supplies</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="business"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="5" rx="1.5"/><path d="M5.5 10v8a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-8M10 13.5h4"/></svg></span><span><b>Business</b><small>Stock, supplies, assets</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button></div></section>
+ <section class="layer q" id="q2"><div class="copy"><h2 class="h2" data-in>Who will use FindEZ?</h2><p class="sub" data-in>Sharing is set up to match.</p></div><div class="opts" id="oq2"><button class="opt" data-in data-v="solo"><span class="tl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></span><span><b>Just me</b><small>A private inventory</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="household"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/></svg></span><span><b>Me and my household</b><small>Family or roommates</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="team"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.5M17.5 14.5A5 5 0 0 1 20.5 19"/></svg></span><span><b>A team or class</b><small>A club, lab, class or robotics team</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="org"><span class="tl"><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="5" rx="1.5"/><path d="M5.5 10v8a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-8M10 13.5h4"/></svg></span><span><b>A company or organization</b><small>Shared across departments or sites</small></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button></div></section>
+ <section class="layer q" id="q3"><div class="copy"><h2 class="h2" data-in>What should FindEZ help with most?</h2><p class="sub" data-in>Pick the one that matters most right now.</p></div><div class="opts " id="oq3"><button class="opt compact" data-in data-v="find"><span class="tl"></span><span><b>Finding things when I need them</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt compact" data-in data-v="counts"><span class="tl"></span><span><b>Knowing what is running low</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt compact" data-in data-v="shared"><span class="tl"></span><span><b>Keeping track of shared or borrowed items</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt compact" data-in data-v="dupes"><span class="tl"></span><span><b>Buying things I already own</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt compact" data-in data-v="setup"><span class="tl"></span><span><b>Getting started from scratch</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button></div></section>
+ <section class="layer q" id="q4"><div class="copy"><h2 class="h2" data-in>How did you hear about FindEZ?</h2><p class="sub" data-in>This helps a small team know what works.</p></div><div class="opts chipq" id="oq4"><button class="opt" data-in data-v="instagram"><span class="tl"></span><span><b>Instagram</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="tiktok"><span class="tl"></span><span><b>TikTok</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="appstore"><span class="tl"></span><span><b>App Store</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="friend"><span class="tl"></span><span><b>Friend or teammate</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="first"><span class="tl"></span><span><b>FIRST or robotics community</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="search"><span class="tl"></span><span><b>Search</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button><button class="opt" data-in data-v="other"><span class="tl"></span><span><b>Other</b></span><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4L18 8"/></svg></span></button></div></section>
+
+ <section class="layer" id="signup">
+  <div class="copy"><h2 class="h2" data-in style="font-size:28px;font-weight:500;letter-spacing:-.035em">Create your account</h2><p class="sub" data-in style="font-size:15px">Your answers are saved to it.</p></div>
+  <div class="sum" data-in id="sum"></div>
+  <div class="auth">
+   <button class="btn k" data-in data-auth><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></svg>Continue with Apple<span class="spin"></span></button>
+   <button class="btn w" data-in data-auth><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.5z"/><path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.2 13.6a6 6 0 0 1 0-3.8V7.1H2.7a10 10 0 0 0 0 9.2z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.9.5 4 1.5l3-3A10 10 0 0 0 2.7 7.1l3.5 2.7C7 7.9 9.3 6.1 12 6.1z"/></svg>Continue with Google<span class="spin"></span></button>
+   <button class="btn w" data-in data-auth>Continue with email<span class="spin"></span></button>
+   <p class="fine" data-in>Free to start. Nothing is shared without permission.</p>
+  </div>
+ </section>
+
+ <section class="layer" id="done"><div class="done"><span class="ok" data-in><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+  <h2 class="h2" data-in style="font-size:26px;font-weight:500;letter-spacing:-.035em">You're all set</h2><p class="sub" data-in>Account created. Your answers were saved to it.</p><p class="fine" data-in style="margin-top:20px">Prototype ends here. The app continues to its main screen.</p></div></section>
+ <div class="hi" id="hi"></div>
+</div>
+<script>const $ = s => document.getElementById(s);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const E = 'cubic-bezier(.32,.72,0,1)';
+const wait = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
+const A = (el, kf, d, delay = 0, easing = E) => el.animate(kf, { duration: RM ? 1 : d, delay: RM ? 0 : delay, easing, fill: 'both' }).finished;
+const ins = l => [...l.querySelectorAll('[data-in]')];
+
+function enter(layer, step = 55) {
+  layer.classList.add('on'); layer.style.visibility = 'visible';
+  return Promise.all(ins(layer).map((el, i) => A(el, [{ opacity: 0, transform: 'translateY(14px)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], 680, i * step)));
+}
+function leave(layer) {
+  layer.classList.remove('on');
+  return Promise.all(ins(layer).map((el, i) => A(el, [{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: 'translateY(-10px)', filter: 'blur(4px)' }], 340, i * 18, 'cubic-bezier(.4,0,1,1)')))
+    .then(() => { layer.style.visibility = 'hidden'; });
+}
+
+/* backdrop drifts between steps, never cuts */
+const B = [...$('bg').querySelectorAll('i')];
+const BG = [
+  [['0,0', 1], ['0,0', 1], ['0,0', .6]],
+  [['-60px,-60px', .55], ['70px,-40px', .5], ['0,140px', 0]],
+  [['-20px,-80px', .5], ['40px,-10px', .55], ['-40px,100px', .15]],
+  [['-80px,-40px', .5], ['90px,-60px', .45], ['20px,120px', .1]],
+  [['-40px,-70px', .55], ['60px,-20px', .5], ['0,160px', 0]],
+  [['0,-20px', .8], ['20px,0', .8], ['0,40px', .45]],
+];
+function setBg(k) { BG[k].forEach(([t, o], i) => { B[i].style.transform = `translate(${t})`; B[i].style.opacity = o; }); }
+
+/* answers: kept on the device until sign-up, then written to the new account */
+const ORDER = ['welcome', 'q1', 'q2', 'q3', 'q4', 'signup', 'done'];
+const ANS = { use_case: null, used_by: null, main_need: null, heard_from: null };
+const KEY = { q1: 'use_case', q2: 'used_by', q3: 'main_need', q4: 'heard_from' };
+const LABEL = { use_case: 'Organizing', used_by: 'Used by', main_need: 'Main need', heard_from: 'Heard from' };
+const TEXT = {};
+const save = () => { try { localStorage.setItem('findez_onboarding', JSON.stringify(ANS)); } catch (e) {} };
+
+const qback = $('qback'), qskip = $('qskip'), prog = $('prog'), bar = prog.firstElementChild;
+let headOn = false;
+function header(on) {
+  if (on === headOn) return; headOn = on;
+  [qback, qskip].forEach(el => { el.style.opacity = on ? 1 : 0; el.style.pointerEvents = on ? 'auto' : 'none'; });
+  A(prog, on ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], 500);
+}
+
+let cur = null, busy = false;
+async function go(to) {
+  if (busy || to === cur) return; busy = true;
+  const from = cur ? $(cur) : null; cur = to;
+  const out = from ? leave(from) : Promise.resolve();
+  const k = ORDER.indexOf(to); setBg(Math.min(k, 5));
+  const isQ = to[0] === 'q';
+  header(isQ || to === 'signup');
+  qskip.style.visibility = isQ ? 'visible' : 'hidden';
+  bar.style.width = isQ ? `${(k / 4) * 100}%` : to === 'signup' ? '100%' : '0';
+  if (to === 'signup') renderSummary();
+  await wait(from ? 200 : 120);
+  await enter($(to), to === 'q4' ? 35 : 55);
+  await out; busy = false;
+}
+
+$('start').addEventListener('click', () => go('q1'));
+$('have').addEventListener('click', () => { const b = $('have'); A(b, [{ opacity: 1 }, { opacity: .4 }, { opacity: 1 }], 500); });
+
+/* one tap answers; the choice holds briefly so it is seen, then the next question arrives */
+['q1', 'q2', 'q3', 'q4'].forEach(q => {
+  const box = $('o' + q);
+  box.addEventListener('click', async e => {
+    const o = e.target.closest('.opt'); if (!o || busy || box.classList.contains('picked')) return;
+    box.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+    o.classList.add('sel'); box.classList.add('picked');
+    ANS[KEY[q]] = o.dataset.v; TEXT[KEY[q]] = o.querySelector('b').textContent; save();
+    await wait(650);
+    await go(ORDER[ORDER.indexOf(q) + 1]);
+    box.classList.remove('picked');
+  });
+});
+qback.addEventListener('click', () => go(ORDER[ORDER.indexOf(cur) - 1]));
+qskip.addEventListener('click', () => go(ORDER[ORDER.indexOf(cur) + 1]));
+
+function renderSummary() {
+  const rows = Object.keys(LABEL).filter(k => TEXT[k]);
+  $('sum').style.display = rows.length ? '' : 'none';
+  $('sum').innerHTML = rows.map(k => `<div class="r"><span>${LABEL[k]}</span><b>${TEXT[k]}</b></div>`).join('');
+}
+
+/* sign-up: spinner on the tapped button, then the answers are attached to the new account */
+document.querySelectorAll('[data-auth]').forEach(b => b.addEventListener('click', async () => {
+  if (busy) return; b.classList.add('busy'); await wait(900); b.classList.remove('busy');
+  console.log('save to account', JSON.stringify(ANS));
+  await go('done');
+  const p = document.querySelector('.done .ok path'); A(p, [{ strokeDashoffset: 24 }, { strokeDashoffset: 0 }], 600, 250);
+}));
+
+function restart() {
+  document.getAnimations().forEach(a => a.cancel());
+  Object.keys(ANS).forEach(k => { ANS[k] = null; delete TEXT[k]; });
+  document.querySelectorAll('.layer').forEach(l => { l.classList.remove('on'); l.style.visibility = 'hidden'; });
+  document.querySelectorAll('.opt.sel').forEach(o => o.classList.remove('sel'));
+  [qback, qskip].forEach(el => el.style.opacity = 0); prog.style.opacity = 0; bar.style.width = '0'; headOn = false;
+  cur = null; busy = false; go('welcome');
+}
+$('restart').addEventListener('click', restart);
+restart();
+window.__ob = { go, ANS };
+</script></body></html>
