@@ -1,6 +1,6 @@
-## October 27 — Onboarding v5
+## October 28 - Onboarding v5 delivered to TestFlight 152
 
-Active on `feat/onboarding-v5`. Mobile-only pre-sign-up welcome, four questions, existing auth, metadata persistence and confirmation. Supplied prototype/video are authoritative. No main-app/backend/web/schema/env changes. User now authorizes TestFlight 152 upload; leave main unchanged. Preserve legacy retained item drafts and account isolation. No database migration is required.
+Apple acknowledged TestFlight 1.1.1 (152), source a9bf2f09f6135b49133f32722ac57d3e42b79e73, delivery 7ad953ff-2000-464b-a4d0-1194b2fba15c. All five CI gates (40809523164), 1,199 mobile tests with one existing skip, clean analysis, nine native iOS flow checks, approved disposable account persistence/cleanup, 34 archive/export device binaries, 26 privacy manifests and Apple validation passed. Processing/tester availability remains pending and was not polled. Physical OAuth, VoiceOver and motion acceptance remains pending. User requested main unchanged; release uses feat/onboarding-v5 and draft PR263 against release/onboarding-v5-base. No database migration or public App Store submission. Receipt: docs/onboarding-v5/RELEASE-152.json.
 
 ## October 27 - Mobile branding v5 (completed locally)
 

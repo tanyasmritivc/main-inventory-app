@@ -20,4 +20,4 @@ Physical iPhone OAuth, email deep-link return, spoken VoiceOver and motion smoot
 
 ## Delivery
 
-User authorized TestFlight upload and explicitly requested leaving main as-is. Build 1.1.1 (152) is prepared on feat/onboarding-v5. An isolated draft PR against its mobile branding baseline is used only for CI; main is not merged or changed. No web, backend, database, environment or CI configuration changes are included. Apple upload acknowledgment and exact source are recorded separately after upload.
+User authorized TestFlight upload and explicitly requested leaving main as-is. Apple acknowledged upload of build 1.1.1 (152) from feat/onboarding-v5. An isolated draft PR against its mobile branding baseline is used only for CI; main is not merged or changed. No web, backend, database, environment or CI configuration changes are included. Apple acknowledgment and exact source are recorded in RELEASE-152.json. Processing/tester availability is pending and was not polled.
