@@ -599,9 +599,9 @@ account switching. Source/widget results are not a native physical pass.
 ### Stable light typography and OS Bold Text
 
 `app_typography_test.dart` verifies rendered RichText and EditableText weights:
-app and framework supporting text/inputs use 400 and headings/buttons cap at 500
+app and framework supporting text/inputs use 400 and headings/buttons cap at 600
 in both themes, with identical weights when OS Bold Text changes. Text semantics, layout options,
-monospace styling, OS scaling and other accessibility flags are retained.
+explicit color/spacing, OS scaling and other accessibility flags are retained.
 `appearance_widget_test.dart` changes the actual app root's OS preference and
 app text size while retaining its Navigator and an unsaved form draft.
 
@@ -1126,3 +1126,8 @@ revoked scopes, failed chat deletion, settings persistence/rollback and menu act
 validation. `flutter run -t tool/native_controls_visual.dart -d <ios-device>` runs a
 synthetic debug-only UIKit audit. Manual native/physical acceptance steps and
 known coverage limits: `docs/plans/native-ios-controls-20261023.md`.
+
+
+### Native SF Pro typography
+
+App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. Inter is not in the production font manifest. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.

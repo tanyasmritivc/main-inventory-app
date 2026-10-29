@@ -383,7 +383,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               AppText(
                 'Qty ${item.quantity}',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: 'CupertinoSystemText',
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   fontSize: 13,
                 ),
@@ -3745,7 +3745,7 @@ class _SearchResultsList extends StatelessWidget {
                 AppText(
                   'Qty ${item.quantity}',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: 'CupertinoSystemText',
                     color: AppTheme.foreground(
                       context,
                       Colors.white.withValues(alpha: 0.75),

@@ -26,7 +26,7 @@ ThemeData worldTheme(BuildContext context) => Theme.of(context).copyWith(
   ),
   textTheme: Theme.of(
     context,
-  ).textTheme.apply(fontFamily: 'Inter', bodyColor: worldInk),
+  ).textTheme.apply(fontFamily: 'CupertinoSystemText', bodyColor: worldInk),
   textSelectionTheme: const TextSelectionThemeData(
     cursorColor: worldOrange,
     selectionColor: Color(0x44E8590C),
@@ -462,7 +462,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                       child: const Text(
                         'Everything you own, remembered.',
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: 'CupertinoSystemText',
                           fontSize: 16,
                           color: worldSecondary,
                         ),
@@ -493,7 +493,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         child: Text(
           _title,
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'CupertinoSystemText',
             fontSize: 34,
             fontWeight: FontWeight.w600,
             letterSpacing: -1.19,
@@ -506,7 +506,7 @@ class _OnboardingPageState extends State<OnboardingPage>
       Text(
         _subtitle,
         style: const TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: 'CupertinoSystemText',
           fontSize: 15,
           height: 1.45,
           color: worldSecondary,
@@ -545,7 +545,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 context,
                 label,
                 const TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: 'CupertinoSystemText',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -562,7 +562,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         text: TextSpan(
           text: label,
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'CupertinoSystemText',
             fontSize: 14.5,
             fontWeight: FontWeight.w500,
             letterSpacing: 0,
@@ -597,7 +597,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               context,
               label,
               const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'CupertinoSystemText',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -.24,
@@ -649,7 +649,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           context,
           _title,
           const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'CupertinoSystemText',
             fontSize: 34,
             fontWeight: FontWeight.w600,
             letterSpacing: -1.19,
@@ -661,7 +661,11 @@ class _OnboardingPageState extends State<OnboardingPage>
         _textHeight(
           context,
           _subtitle,
-          const TextStyle(fontFamily: 'Inter', fontSize: 15, height: 1.45),
+          const TextStyle(
+            fontFamily: 'CupertinoSystemText',
+            fontSize: 15,
+            height: 1.45,
+          ),
           width - 48,
         );
     final inputHeight =
@@ -673,7 +677,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     context,
                     'Your team will see this. You can change it later.',
                     const TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: 'CupertinoSystemText',
                       fontSize: 13,
                       height: 1.35,
                     ),
@@ -816,7 +820,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             child: Text(
                               'Starting solo? You can add an organization anytime.',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: 'CupertinoSystemText',
                                 fontSize: 13.5,
                                 height: 1.4,
                                 color: worldHint,
@@ -835,7 +839,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                               child: const Text(
                                 'I already have an account',
                                 style: TextStyle(
-                                  fontFamily: 'Inter',
+                                  fontFamily: 'CupertinoSystemText',
                                   fontSize: 15,
                                   color: worldSecondary,
                                 ),
@@ -892,7 +896,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                               _error!,
                               style: const TextStyle(
                                 color: Color(0xFFB42318),
-                                fontFamily: 'Inter',
+                                fontFamily: 'CupertinoSystemText',
                                 fontSize: 13,
                               ),
                             ),
@@ -1086,7 +1090,7 @@ class _OnboardingPageState extends State<OnboardingPage>
       Text(
         personal ? 'Just me' : 'My team',
         style: const TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: 'CupertinoSystemText',
           fontSize: 22,
           fontWeight: FontWeight.w600,
           letterSpacing: -.44,
@@ -1098,7 +1102,7 @@ class _OnboardingPageState extends State<OnboardingPage>
       Text(
         personal ? 'Home, garage, desk or dorm.' : 'A company, lab or team.',
         style: const TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: 'CupertinoSystemText',
           fontSize: 14,
           height: 1.25,
           color: worldSecondary,
@@ -1135,7 +1139,7 @@ class _OnboardingPageState extends State<OnboardingPage>
             }
           },
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'CupertinoSystemText',
             fontSize: 18,
             fontWeight: FontWeight.w400,
             color: worldInk,
@@ -1171,7 +1175,7 @@ class _OnboardingPageState extends State<OnboardingPage>
             child: Text(
               'Your team will see this. You can change it later.',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'CupertinoSystemText',
                 fontSize: 13,
                 height: 1.35,
                 color: worldHint,
@@ -1280,7 +1284,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: 'CupertinoSystemText',
                         fontSize: 14.5,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0,
@@ -1320,7 +1324,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               Text(
                 entry.$1,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: 'CupertinoSystemText',
                   fontSize: 10.5,
                   fontWeight: FontWeight.w500,
                   letterSpacing: .84,
@@ -1331,7 +1335,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               Text(
                 entry.$2,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: 'CupertinoSystemText',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -.24,
@@ -1370,7 +1374,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           : Text(
               'Open my dashboard',
               style: const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'CupertinoSystemText',
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -.17,

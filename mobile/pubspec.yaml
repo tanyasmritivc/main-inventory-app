@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.1+155
+version: 1.1.1+156
 
 environment:
   sdk: ^3.10.7
@@ -100,19 +100,10 @@ flutter:
     - assets/brand/
     - assets/fonts/brand/
     - assets/mascot/
-    - assets/fonts/inter/OFL.txt
     - assets/fonts/OFL.txt
     - assets/fonts/Jakarta-OFL.txt
     - assets/fonts/GeistMono-OFL.txt
   fonts:
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/inter/Inter.ttf
-          weight: 400
-        - asset: assets/fonts/inter/Inter.ttf
-          weight: 500
-        - asset: assets/fonts/inter/Inter.ttf
-          weight: 600
     - family: PlusJakartaSans
       fonts:
         - asset: assets/fonts/brand/PlusJakartaSans-Regular.ttf

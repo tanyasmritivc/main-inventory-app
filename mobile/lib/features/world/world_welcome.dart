@@ -52,7 +52,7 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                         'Your world, remembered.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: 'CupertinoSystemText',
                           fontSize: 34,
                           fontWeight: FontWeight.w600,
                         ),

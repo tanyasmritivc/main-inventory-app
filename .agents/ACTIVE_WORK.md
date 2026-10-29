@@ -2362,3 +2362,8 @@ Space search opens from the header icon. Ask FindEZ occupies a contrasting monoc
 ## October 28 — TestFlight 155 — upload acknowledged
 
 Uploaded 1.1.1 (155), source 4dfc88dbcacf97615c408c89a8ee6a350dbc4b2f. Apple delivery a8697901-91de-467a-a532-837d1ff2eb98. Five CI gates passed (40823502359); 1,209 local tests passed with one existing skip, analyzer clean, four native iOS populated/empty light/dark layout/search checks passed. Archive/export each verified 34 iOS device executables, strict signing, 26 privacy manifests, production configuration, Inter assets and license. Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build155. Processing and tester availability not polled; physical device acceptance remains unverified. Main unchanged; no App Store submission.
+
+
+## October 28 — native SF Pro typography (active)
+
+Mobile-only lane fix/mobile-sf-pro replaces Inter throughout app-owned text, theme, inputs, chat, onboarding and page overrides with the native iOS SF Pro family. Preserve weights, layout, icons, behavior and existing release 155 features. No Apple font binary is bundled. Build 156 pending verification and delivery; main remains unchanged.

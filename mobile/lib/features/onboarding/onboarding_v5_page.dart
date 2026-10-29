@@ -280,7 +280,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
     value,
     textAlign: align,
     style: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: 'CupertinoSystemText',
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -344,7 +344,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
         side: BorderSide(color: black ? _ink : _line),
         shape: const StadiumBorder(),
         textStyle: const TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: 'CupertinoSystemText',
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
@@ -625,7 +625,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                         child: Text.rich(
                           TextSpan(
                             style: const TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: 'CupertinoSystemText',
                               fontSize: 13,
                               color: _secondary,
                             ),
@@ -868,7 +868,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
     return Theme(
       data: ThemeData(
         brightness: Brightness.light,
-        fontFamily: 'Inter',
+        fontFamily: 'CupertinoSystemText',
         platform: Theme.of(context).platform,
         colorScheme: const ColorScheme.light(
           primary: _ink,

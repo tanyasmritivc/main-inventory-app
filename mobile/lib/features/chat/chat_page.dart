@@ -2638,7 +2638,7 @@ class _ChatPageState extends State<ChatPage>
             color: AppTheme.textPrimary(context),
             fontSize: widget.worldHeading == null ? 22 : 24,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Inter',
+            fontFamily: 'CupertinoSystemText',
             letterSpacing: widget.worldHeading == null ? null : -0.6,
             height: 1.25,
           ),
