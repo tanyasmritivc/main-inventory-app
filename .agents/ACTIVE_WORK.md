@@ -1891,3 +1891,8 @@ Account consistency lane: canonical uncached authenticated reads, quiet visible-
 ## October 28 — Real-time final answers and current item photos
 
 Private tool selection is followed by a tool-free final generation. Explicit empty gateway tools enable raw streaming; only final provider chunks reach clients. No artificial splitting, delay or rewrite. Existing authorization, action receipts and durable completion remain enforced. Current attachment metadata and bounded image pixels include later additions. Validation: 1,631 backend tests plus 10 subtests; real HTTP/SSE first delta before generation completion; live GLM synthetic read-only check delivered 26 chunks, first at 2.47 seconds. Deployment pending exact-source CI; no schema changes.
+
+
+## October 28 — Real-time streaming and photo release — delivered
+
+Deployed runtime 33de84f1c0b64d93083f29facf1caac16a98d9f7 via a guarded nine-file overlay. Five CI gates passed (40823720894). API/database health and anonymous-access rejection passed; 124 unrelated source files preserved. No schema, provider or main-branch change. Live read-only photo check: 298 Hardware records, 103 with photos, 195 without; later attachment dates and bounded image pixels verified. Live synthetic inventory-tool check: world_query and world_search, first delta 2.524 seconds, 9 chunks, final text identical; no inventory writes. Real HTTP/SSE test also proves first delta precedes generation completion and final persistence. Release receipt: /home/ubuntu/findez-realtime-api-20261028/published.json.
