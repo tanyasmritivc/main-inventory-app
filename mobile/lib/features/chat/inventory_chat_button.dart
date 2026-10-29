@@ -7,9 +7,15 @@ import 'chat_page.dart';
 /// A contextual assistant always receives the already-authorized inventory client.
 /// It cannot silently fall back to the organization-wide chat or legacy account.
 class InventoryChatButton extends StatelessWidget {
-  const InventoryChatButton({super.key, required this.api, this.primary});
+  const InventoryChatButton({
+    super.key,
+    required this.api,
+    this.primary,
+    this.prominent = false,
+  });
   final ApiClient api;
   final Widget? primary;
+  final bool prominent;
 
   Future<void> _open(BuildContext context) async {
     if (api.inventoryContext == null) return;
@@ -112,6 +118,44 @@ class InventoryChatButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (api.inventoryContext == null) return primary ?? const SizedBox.shrink();
+    if (prominent) {
+      final colors = Theme.of(context).colorScheme;
+      return Material(
+        color: colors.onSurface,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _open(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 20,
+                  color: colors.surface,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ask FindEZ',
+                    style: TextStyle(
+                      color: colors.surface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: colors.surface,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,

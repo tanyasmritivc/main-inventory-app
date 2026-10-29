@@ -98,6 +98,25 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     expect(find.text('Ask FindEZ'), findsNothing);
     await api.stream.close();
   });
+  testWidgets('interruption retains the answer prefix with an incomplete notice', (tester) async {
+    final api = ChatApi('Hardware');
+    await tester.pumpWidget(host(api));
+    await tester.tap(find.text('Ask FindEZ'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Where is my drill?');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pump();
+    api.stream.add(AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'));
+    await tester.pump();
+    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+    api.stream.addError(StateError('interrupted'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+    expect(find.textContaining('This response was interrupted.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await api.stream.close();
+  });
   for (final brightness in Brightness.values) {
     testWidgets(
       '${brightness.name} scoped sheet has close, original client, immediate stream, and cancels on dismissal',
