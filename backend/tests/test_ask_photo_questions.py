@@ -337,14 +337,13 @@ def test_uncertain_photo_and_distinct_identifiers_preserve_evidence():
 
 
 @pytest.mark.parametrize('save_fails', [False, True])
-def test_photo_stream_hides_restarts_and_emits_only_saved_final_text(route_io, save_fails):
+def test_photo_stream_forwards_final_generation_before_save(route_io, save_fails):
     import json
     from app.api.routes import ai
     final = 'The photo shows a charger beside three cables. ' * 6
     async def attempts(**kwargs):
-        await kwargs['on_delta']('Temporary photo answer')
-        await kwargs['on_reset']()
-        await kwargs['on_delta']('Another temporary answer')
+        await kwargs['on_delta'](final[:20])
+        await kwargs['on_delta'](final[20:])
         return {'assistant_message': final, 'answer_context': {}}
     route_io.answer.side_effect = attempts
     with patch.object(ai.limiter, 'enabled', False), patch.object(ai, '_save_ask_answer', side_effect=RuntimeError('save failed') if save_fails else None, return_value={}):
@@ -354,7 +353,7 @@ def test_photo_stream_hides_restarts_and_emits_only_saved_final_text(route_io, s
     assert 'temporary' not in response.text.lower()
     assert not any(row.get('type') == 'reset' for row in rows)
     if save_fails:
-        assert not chunks and rows[-1]['type'] == 'error'
+        assert ''.join(chunks) == final and rows[-1]['type'] == 'error'
     else:
         assert len(chunks) > 1
         assert ''.join(chunks) == rows[-1]['assistant_message'] == final

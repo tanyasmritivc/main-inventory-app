@@ -35,7 +35,7 @@ def test_direct_result_is_receipt_grounded_and_not_a_pending_confirmation():
     call = NS(id='edit', function=NS(name='world_adjust_quantity', arguments=json.dumps({'inventory_id': INV, 'item_id': ITEM, 'delta': -3})))
     action = {'id': str(uuid4()), 'status': 'pending', 'operation': 'edit', 'inventory_id': INV}
     result = {'pending_action': {**action, 'status': 'confirmed'}, 'inventory_changed': True, 'receipt': {'operation': 'edit', 'count': 1}}
-    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'pending_action': action}), patch.object(direct, 'apply', return_value=result) as apply, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('Updated the saved quantity to 5.')]):
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'pending_action': action}), patch.object(direct, 'apply', return_value=result) as apply, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('Updated the saved quantity to 5.'),completion('Updated the saved quantity to 5.')]):
         events = list(w.stream_turn(ACTOR, WORLD, 'I used 3 AA batteries', [], str(uuid4()), supports_item_management=True, supports_task_actions=True, turn_id=str(uuid4())))
     apply.assert_called_once()
     assert events[-1]['answer_context']['pending_actions'][0]['status'] == 'confirmed'

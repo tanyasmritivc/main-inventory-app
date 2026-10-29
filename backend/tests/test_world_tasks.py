@@ -48,6 +48,6 @@ def test_move_freezes_saved_identity_instead_of_copying_or_trusting_model_snapsh
 def test_composite_tool_only_exposed_to_clients_that_display_entire_plan(supported):
     with patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello')) as gateway:
         list(world.stream_turn(ACTOR, WORLD, 'Hello', [], 'cid', supports_task_actions=supported))
-    names = {t['function']['name'] for t in gateway.call_args.kwargs['tools']}
+    names = {t['function']['name'] for t in gateway.call_args_list[0].kwargs['tools']}
     assert ('world_create_task' in names) == supported
     assert ('world_structure' in names) != supported

@@ -16,7 +16,7 @@ def test_replies_are_normalized_before_emission_and_session_persistence(mode):
     user_text = 'Find my M4—steel screws'
     data = {'items': [{'item_id': 'item-1', 'name': 'M4—steel', 'quantity': 24}]}
     call = SimpleNamespace(id='call-1', function=SimpleNamespace(name='inventory_search', arguments=json.dumps({'query': 'M4—steel'})))
-    create = Mock(side_effect=[completion('Checking—now', [call]), completion(original)])
+    create = Mock(side_effect=[completion('Checking—now', [call]), completion(original), completion(original)])
     provider = ai_agent._ChatProvider(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))), model='test-model', conversation_id='conversation-1', timezone='America/Los_Angeles')
     state = ai_agent._SessionState()
     with patch.object(ai_agent, '_get_chat_provider', return_value=provider), patch.object(ai_agent, '_load_context', return_value={}), patch.object(ai_agent, '_get_state', return_value=state), patch.object(ai_agent, '_execute_tool_call', return_value=data) as execute, patch.object(ai_agent, '_update_memory_from_trace'), patch.object(ai_agent, '_persist_state') as persist:
@@ -37,8 +37,8 @@ def test_replies_are_normalized_before_emission_and_session_persistence(mode):
     assert answer['result']['tool_trace'][0]['result'] == data
     messages = create.call_args.kwargs['messages']
     assert CHAT_STYLE_INSTRUCTION in messages[0]['content']
-    assert messages[-1]['role'] == 'tool'
-    assert json.loads(messages[-1]['content']) == data
+    assert messages[-2]['role'] == 'tool'
+    assert json.loads(messages[-2]['content']) == data
     assert next((msg for msg in messages if msg['role'] == 'user'))['content'] == user_text
 
 def test_document_chat_summary_emits_identical_delta_and_final_text():

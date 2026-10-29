@@ -96,10 +96,10 @@ def test_stream_failure_never_exposes_raw_exception_or_done():
 def test_photo_pixels_reach_glm_but_never_saved_diagnostics():
     call = NS(id='photo-call',function=NS(name='world_item_photos',arguments=json.dumps({'inventory_id':INVENTORY})))
     parts=[{'type':'image_url','image_url':{'url':'data:image/jpeg;base64,PRIVATE_PIXELS'}}]
-    completions=[iter([{'type':'done','content':'','tool_calls':[call]}]),iter([{'type':'done','content':'The photo shows a container; hidden contents cannot be counted.','tool_calls':[]}])]
+    def completion(text='', calls=None):
+        return NS(choices=[NS(message=NS(content=text,tool_calls=calls),finish_reason='stop')])
     with patch.object(world,'directory',return_value={}), patch.object(world,'execute',return_value={'photos':[], '_image_parts':parts}), \
-         patch('app.services.agent_gateway_client.gateway_completion') as gateway, \
-         patch('app.services.completion_stream.completion_events',side_effect=completions):
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('READY'), completion('The photo shows a container; hidden contents cannot be counted.')]) as gateway:
         result=list(world.stream_turn(ACTOR,ORG,'Inspect saved photos',[],str(uuid4())))[-1]
     assert 'PRIVATE_PIXELS' in str(gateway.call_args.kwargs['messages'])
     assert 'PRIVATE_PIXELS' not in str(result)

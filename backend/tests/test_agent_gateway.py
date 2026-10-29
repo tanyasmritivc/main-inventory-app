@@ -59,18 +59,18 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
     tool_call = SimpleNamespace(id='tool-call-1', function=SimpleNamespace(name='inventory_search', arguments='{"query":"M4"}'))
     first = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='', tool_calls=[tool_call]))])
     second = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='M4 screws are in Cabinet.', tool_calls=[]))])
-    create = Mock(side_effect=[first, second])
+    create = Mock(side_effect=[first, second, second])
     provider = ai_agent._ChatProvider(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))), model='deepseek-v4-flash-agent', conversation_id='conversation-123', timezone='America/Los_Angeles')
     state = ai_agent._SessionState()
     with patch.object(ai_agent, '_get_chat_provider', return_value=provider), patch.object(ai_agent, '_load_context', return_value={}), patch.object(ai_agent, '_get_state', return_value=state), patch.object(ai_agent, '_execute_tool_call', return_value={'items': [{'name': 'M4 screw'}]}) as execute, patch.object(ai_agent, '_persist_state'), patch.object(ai_agent, '_update_memory_from_trace'):
         events = list(ai_agent._iter_agent_streaming(user_id='user-1', message='Where are the M4 screws?', first_name='Tanya', conversation_id='conversation-123'))
     execute.assert_called_once_with(user_id='user-1', tool_name='inventory_search', args={'query': 'M4'})
-    assert create.call_count == 2
+    assert create.call_count == 3
     assert create.call_args_list[0].kwargs['stream'] is True
     assert create.call_args_list[0].kwargs['parallel_tool_calls'] is False
     returned_messages = create.call_args_list[1].kwargs['messages']
-    assert returned_messages[-2]['tool_calls'][0]['id'] == 'tool-call-1'
-    assert returned_messages[-1]['tool_call_id'] == 'tool-call-1'
+    assert returned_messages[-3]['tool_calls'][0]['id'] == 'tool-call-1'
+    assert returned_messages[-2]['tool_call_id'] == 'tool-call-1'
     assert events[0] == {'type': 'delta', 'delta': 'M4 screws are in Cabinet.'}
     assert events[-1]['type'] == 'done'
     assert events[-1]['assistant_message'] == 'M4 screws are in Cabinet.'

@@ -1,32 +1,68 @@
-"""Deliver only settled, persisted answer text to public chat streams.
-
-Model deltas can precede tool calls, retries and answer repairs. They are private
-attempts, not an append-only public answer. Call this after final validation and
-history persistence, with the exact text used by the completion receipt.
-"""
-import asyncio
-import math
+"""Public answer generation, separate from private tool selection."""
 import re
+from app.services.completion_stream import completion_events
+
+PREPARE_ANSWER = (
+    'This is the private tool-selection phase. Call the available tools needed to answer '
+    'the user or prepare requested actions. Do not write the user-facing answer or a '
+    'preamble in this phase. When the evidence and action receipts are sufficient, or '
+    'a clarification is needed, respond with only READY. A separate tool-free pass '
+    'will write the answer. Never repeat an action already confirmed by a receipt.'
+)
+FINAL_ANSWER = (
+    'Tool selection is complete. Write the final user-facing answer now, directly '
+    'from the available evidence and receipts. Do not output READY, planning, tool '
+    'markup or a preamble. No tools or further actions are available in this pass. '
+    'Do not claim a completed change without a confirmed receipt. A pending card '
+    'is not a saved change. Do not promise or describe a card that does not exist. '
+    'If evidence is missing, state the limitation or ask a concise question. '
+    'Use plain names for navigation; do not invent findez:// links.'
+)
 
 
-def answer_chunks(text: str):
-    """Keep Unicode words and all Markdown/whitespace intact; bound delivery time."""
-    target = max(64, math.ceil(len(text) / 40))
-    start = 0
-    for token in re.finditer(r"\S+\s*|\s+", text):
-        if token.end() - start >= target:
-            yield text[start:token.end()]
-            start = token.end()
-    if start < len(text):
-        yield text[start:]
+def _links(text, allowed, final=False):
+    if allowed is None:
+        return text
+    # Hold only an unfinished Markdown link so an invented internal destination
+    # cannot flash as a clickable URL and then be replaced at completion.
+    if not final:
+        start = text.rfind('[')
+        if start >= 0 and re.fullmatch(r'\[[^\]\n]*|\[[^\]\n]+\](?:\([^\)\n]*)?', text[start:]):
+            text = text[:start]
+    return re.sub(r'\[([^\]]+)\]\((findez://[^)]+)\)',
+        lambda m: m.group(0) if m.group(2) in allowed else m.group(1), text)
 
 
-async def deliver_answer(text: str):
-    # A short bounded cadence separates received chunks for the clients' existing
-    # 180ms fade. It is presentation of finalized text, not model-token streaming.
-    first = True
-    for chunk in answer_chunks(text):
-        if not first:
-            await asyncio.sleep(0.025)
-        first = False
-        yield chunk
+def stream_final_answer(response, *, validate, allowed_links=None):
+    """Forward safe provider deltas immediately; never replay or replace a prefix.
+
+    The caller has disabled tools. Validation runs before each new prefix leaves
+    the server. An interruption propagates to the existing error envelope, keeping
+    the visible prefix instead of retrying a different answer over it.
+    """
+    answer = ''
+    raw = ''
+    for event in completion_events(response):
+        if event['type'] == 'delta':
+            raw += event['delta']
+            candidate = _links(raw, allowed_links)
+            validate(candidate)
+            if not candidate.startswith(answer):
+                raise RuntimeError('Final answer changed its streamed prefix')
+            delta = candidate[len(answer):]
+            answer = candidate
+            if delta:
+                yield {'type': 'delta', 'delta': delta}
+        elif event['tool_calls']:
+            raise RuntimeError('Unexpected tool call in final answer')
+        else:
+            final = _links(event['content'], allowed_links, final=True)
+            validate(final)
+            if not final.startswith(answer):
+                raise RuntimeError('Final answer changed its streamed prefix')
+            if len(final) > len(answer):
+                yield {'type': 'delta', 'delta': final[len(answer):]}
+            answer = final
+    if not answer.strip():
+        raise RuntimeError('Empty final answer')
+    return answer

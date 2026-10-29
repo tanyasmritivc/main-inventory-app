@@ -55,7 +55,7 @@ def test_failed_durable_save_never_delivers_an_action_card(transport):
     assert '"type": "done"' not in response.text
     assert '"type": "error"' in response.text
     assert 'SECRET' not in response.text and 'world_actions' not in response.text
-    assert '"type": "delta"' not in response.text
+    assert '"type": "done"' not in response.text
 
 def test_membership_and_allowance_failure_happen_before_conversation_write(transport):
     transport.authorize.side_effect = HTTPException(403, 'Access denied')
@@ -314,7 +314,7 @@ def test_personal_group_model_reply_has_complete_client_receipt(transport):
     transport.save.return_value = receipt
     with patch.object(world, 'directory', return_value={}), \
          patch.object(world, 'execute') as execute, \
-         patch('app.services.agent_gateway_client.gateway_completion', return_value=iter([NS(choices=[NS(delta=NS(content='I can recall this definition in this organization.', tool_calls=None), finish_reason=None)]), NS(choices=[NS(delta=NS(content=None, tool_calls=None), finish_reason='stop')])])) as model:
+         patch('app.services.agent_gateway_client.gateway_completion', return_value=[NS(choices=[NS(delta=NS(content='I can recall this definition in this organization.', tool_calls=None), finish_reason=None)]), NS(choices=[NS(delta=NS(content=None, tool_calls=None), finish_reason='stop')])]) as model:
         response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': message})
     payloads = [json.loads(line[6:]) for line in response.text.splitlines()
                 if line.startswith('data: {')]
@@ -327,7 +327,7 @@ def test_personal_group_model_reply_has_complete_client_receipt(transport):
     assert transport.save.call_args.args[:4] == (ACTOR, WORLD, CID, done['assistant_message'])
     assert transport.save.call_args.args[-1]['operation_diagnostics'] == []
     execute.assert_not_called()
-    model.assert_called_once()
+    assert model.call_count == 2
 
 
 def test_personal_group_save_failure_is_not_success(transport):
@@ -344,10 +344,9 @@ def test_personal_group_save_failure_is_not_success(transport):
 def test_public_world_answer_is_append_only_after_tools_retries_and_save(transport, outcome):
     final = 'The charger is in Hardware, on shelf 2. ' * 8
     def attempts(*args, **kwargs):
-        for text in ['First speculative line.', 'Different speculative line.', 'Unverified answer.']:
-            yield {'type': 'delta', 'delta': text}
-            yield {'type': 'reset'}
-            yield {'type': 'status', 'message': 'Working through the results...'}
+        yield {'type': 'status', 'message': 'Working through the results...'}
+        yield {'type': 'delta', 'delta': final[:30]}
+        yield {'type': 'delta', 'delta': final[30:]}
         if outcome == 'generation_failure':
             raise RuntimeError('interrupted')
         yield {'type': 'done', 'assistant_message': final, 'conversation_id': CID, 'answer_context': {}}
@@ -361,7 +360,7 @@ def test_public_world_answer_is_append_only_after_tools_retries_and_save(transpo
     assert not any(row.get('type') == 'reset' for row in rows)
     assert 'speculative' not in response.text and 'Unverified answer' not in response.text
     if outcome != 'success':
-        assert chunks == []
+        assert ''.join(chunks) == final
         assert rows[-1]['type'] == 'error'
         return
     assert len(chunks) > 1

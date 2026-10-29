@@ -241,8 +241,10 @@ def test_every_previous_question_family_reaches_model_without_answer_shortcuts(c
             answer = run()
             assert answer['assistant_message'] == expected
             assert state.conversation_history[-1]['content'] == expected
-    create.assert_called_once()
-    assert 'tools' in create.call_args.kwargs
+    assert create.call_count == (1 if case.get('kind') == 'provider' else 2)
+    assert 'tools' in create.call_args_list[0].kwargs
+    if case.get('kind') != 'provider':
+        assert 'tools' not in create.call_args.kwargs
     assert memory.writes == 0
 
 @pytest.mark.parametrize('terms,filters,names', [(['hdmi', 'adapter'], {}, ['HDMI adapter']), (['battery'], {}, ['AA battery', 'AA battery']), ([], {'location': 'Garage shelf'}, ['USB-C charger', 'AA battery']), ([], {'quantity_op': 'at least', 'quantity_value': 8}, ['AA battery', 'M3 screw']), ([], {'created_op': 'before', 'created_date': '2026-10-01'}, []), (['A-101'], {}, []), (['000112'], {}, [])])

@@ -183,10 +183,8 @@ def test_inventory_transport_never_publishes_replaceable_attempts(stub_ai_io, fa
     import json
     final = 'Your drill is in the Hardware inventory. ' * 6
     async def attempts(**kwargs):
-        yield {'type': 'delta', 'delta': 'Discarded opening'}
-        yield {'type': 'reset'}
-        yield {'type': 'delta', 'delta': 'Different opening'}
-        yield {'type': 'reset'}
+        yield {'type': 'delta', 'delta': final[:20]}
+        yield {'type': 'delta', 'delta': final[20:]}
         if fails:
             raise RuntimeError('interrupted')
         yield {'type': 'done', 'assistant_message': final, 'answer_context': {}}
@@ -197,7 +195,7 @@ def test_inventory_transport_never_publishes_replaceable_attempts(stub_ai_io, fa
     assert 'opening' not in response.text
     assert not any(row.get('type') == 'reset' for row in rows)
     if fails:
-        assert not chunks
+        assert ''.join(chunks) == final
     else:
         assert len(chunks) > 1
         assert ''.join(chunks) == rows[-1]['assistant_message'] == final

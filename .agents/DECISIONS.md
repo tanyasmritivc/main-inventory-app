@@ -1386,3 +1386,8 @@ then reach the verified private GLM model as pixels; they consume no scan credit
 and create no extraction draft. Retain owned images for follow-ups and failed
 response retries. GLM box/crop extraction remains opt-in until comparative QA
 shows reliable results. Do not infer model identity from the older gateway alias.
+
+
+## October 28 — stable real-time answer generation
+
+Tool-selection prose stays private. The final tool-free provider stream is forwarded immediately, validated incrementally, and never replaced by another opening. Send explicit tools=[] to the gateway for raw completion streaming; omitted tools selects managed buffering. Persist the canonical answer on completion; on interruption preserve the visible prefix and show failure. Never replay a finished response using artificial chunk timing.

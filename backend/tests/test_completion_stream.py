@@ -74,6 +74,7 @@ def test_http_stream_parses_multiline_utf8_and_closes_without_buffering():
         assert list(events) == []
     response.__exit__.assert_called_once()
     assert http.stream.call_args.kwargs['json']['stream'] is True
+    assert http.stream.call_args.kwargs['json']['tools'] == []
 
 
 def test_http_stream_requires_final_receipt_not_silent_eof():
@@ -183,7 +184,7 @@ def test_live_updates_are_throttled_and_require_actual_model_content():
 def test_world_stream_forwards_liveness_without_treating_it_as_a_completion():
     from app.services import world_chat as w
     from uuid import uuid4
-    response = iter([chunk('Hello.')])
+    response = [chunk('Hello.')]
     with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=response):
         events = list(w.stream_turn(str(uuid4()), 'personal', 'hello', [], 'cid'))
     assert {'type': 'activity', 'source': 'model'} in events

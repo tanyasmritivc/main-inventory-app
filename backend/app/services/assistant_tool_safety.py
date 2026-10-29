@@ -33,6 +33,8 @@ def _valid(value, schema):
                 and all(_valid(item, schema['items']) for item in value))
     if kind == 'string':
         return isinstance(value, str) and len(value) <= 2000 and ('enum' not in schema or value in schema['enum'])
+    if kind == 'boolean':
+        return isinstance(value, bool)
     if kind == 'integer':
         return isinstance(value, int) and not isinstance(value, bool) and abs(value) <= 1_000_000
     return False

@@ -320,9 +320,9 @@ def test_first_turn_can_resolve_destination_after_drafting_without_another_messa
                          {'name': 'Fridge', 'spaces': ['Fridge']}]}))
     offered = []
     responses = iter([response('world_draft_items', {'place': 'Fridge', 'items': [
-        {'name': 'Strawberries', 'quantity': 6}]}), next_response, response()])
+        {'name': 'Strawberries', 'quantity': 6}]}), next_response, response(), response()])
     def gateway(**kwargs):
-        offered.append({t['function']['name'] for t in kwargs['tools']})
+        offered.append({t['function']['name'] for t in kwargs.get('tools', [])})
         return next(responses)
     with c.use_capture(ACTOR, WORLD, CID, None) as state, patch.object(w, 'authorize'), \
          patch.object(w, 'directory', return_value=known), \
@@ -357,7 +357,7 @@ def test_first_turn_cannot_bypass_draft_with_add_items_in_same_tool_batch(store)
          patch('app.services.chat_item_actions.propose_additions') as additions, \
          patch('app.services.agent_gateway_client.gateway_completion', side_effect=[
              NS(choices=[NS(message=NS(content='', tool_calls=calls))]),
-             NS(choices=[NS(message=NS(content='Your draft is ready.', tool_calls=[]))])]):
+             NS(choices=[NS(message=NS(content='Your draft is ready.', tool_calls=[]))]), NS(choices=[NS(message=NS(content='Your draft is ready.', tool_calls=[]))])]):
         events = list(w.stream_turn(ACTOR, WORLD, 'Add six strawberries to my fridge', [], CID))
     additions.assert_not_called()
     assert not events[-1]['answer_context'].get('pending_actions')
