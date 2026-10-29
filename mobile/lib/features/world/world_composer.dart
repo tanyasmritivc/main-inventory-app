@@ -229,8 +229,10 @@ class _WorldComposerState extends State<WorldComposer>
                       tooltip: 'Snap a shelf',
                       onPressed: widget.onFirstCamera,
                       style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFE8590C),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
+                        foregroundColor: Theme.of(context).colorScheme.surface,
                       ),
                       icon: const Icon(Icons.camera_alt_outlined, size: 20),
                     ),
@@ -280,8 +282,8 @@ class _WorldComposerState extends State<WorldComposer>
                     tooltip: 'Send message',
                     onPressed: widget.onSend,
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFC45A28),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.onSurface,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                       disabledBackgroundColor: Theme.of(
                         context,
                       ).colorScheme.onSurface.withValues(alpha: .06),
@@ -316,11 +318,11 @@ class _ComposerSurface extends StatelessWidget {
     const radius = BorderRadius.all(Radius.circular(20));
     final surface = DecoratedBox(
       decoration: BoxDecoration(
-        color: (dark ? const Color(0xFF272B33) : const Color(0xFFFFFFFF))
+        color: (dark ? const Color(0xFF262626) : const Color(0xFFFFFFFF))
             .withValues(alpha: highContrast ? 1 : .78),
         borderRadius: radius,
         border: Border.all(
-          color: (dark ? Colors.white : const Color(0xFF373D48)).withValues(
+          color: (dark ? Colors.white : const Color(0xFF373737)).withValues(
             alpha: highContrast ? .45 : (dark ? .07 : .08),
           ),
           width: .5,

@@ -22,7 +22,7 @@ class LiquidSurface extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final solid = MediaQuery.highContrastOf(context);
     final rounding = BorderRadius.circular(radius);
-    final base = dark ? const Color(0xFF262626) : const Color(0xFFFFFCF8);
+    final base = dark ? const Color(0xFF262626) : const Color(0xFFF4F4F4);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: rounding,
@@ -65,7 +65,7 @@ class LiquidSurface extends StatelessWidget {
               ),
               border: Border.all(
                 width: .7,
-                color: (dark ? Colors.white : const Color(0xFF6D5141))
+                color: (dark ? Colors.white : const Color(0xFF555555))
                     .withValues(
                       alpha: solid
                           ? .5

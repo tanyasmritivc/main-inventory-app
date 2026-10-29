@@ -227,7 +227,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
             if (_store.photoUrl.isNotEmpty)
               ListTile(
                 title: const AppText('Remove photo'),
-                textColor: Colors.redAccent,
+                textColor: Colors.grey,
                 onTap: () => Navigator.pop(context, 'remove'),
               ),
             ListTile(

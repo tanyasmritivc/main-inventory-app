@@ -6,8 +6,8 @@ import '../../core/plan_catalog.dart';
 class BluePlanSurface extends StatelessWidget {
   const BluePlanSurface({super.key, required this.child});
   final Widget child;
-  static const ink = Color(0xFF183D59);
-  static const muted = Color(0xFF3E6078);
+  static const ink = Color(0xFF373737);
+  static const muted = Color(0xFF5B5B5B);
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
@@ -15,13 +15,13 @@ class BluePlanSurface extends StatelessWidget {
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF0FAFF), Color(0xFFB9E2FC), Color(0xFFD6EFFF)],
+        colors: [Color(0xFFF8F8F8), Color(0xFFDBDBDB), Color(0xFFEBEBEB)],
         stops: [0, .48, 1],
       ),
-      border: Border.all(color: const Color(0xFFE7F6FF)),
+      border: Border.all(color: const Color(0xFFF3F3F3)),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2279C8FF),
+          color: Color(0x22BBBBBB),
           blurRadius: 16,
           offset: Offset(0, 4),
         ),
@@ -51,7 +51,7 @@ class PlanPeriodSelector extends StatelessWidget {
           (value) => ChoiceChip(
             label: AppText(value ? 'Yearly' : 'Monthly'),
             selected: annual == value,
-            selectedColor: const Color(0xFFD6EFFF),
+            selectedColor: const Color(0xFFEBEBEB),
             labelStyle: TextStyle(
               color: annual == value ? BluePlanSurface.ink : null,
             ),
@@ -145,7 +145,7 @@ class PlanCard extends StatelessWidget {
                   onPressed: null,
                   style: OutlinedButton.styleFrom(
                     disabledForegroundColor: BluePlanSurface.muted,
-                    side: const BorderSide(color: Color(0x557093AB)),
+                    side: const BorderSide(color: Color(0x558D8D8D)),
                   ),
                   child: const AppText('Coming soon'),
                 ),

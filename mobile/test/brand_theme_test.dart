@@ -20,17 +20,17 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
-  test('exact guide tokens and monochrome legacy UI roles', () {
+  test('monochrome interface tokens retain contrast in both themes', () {
     expect(BrandColors.ink.toARGB32(), 0xFF111112);
-    expect(BrandColors.signal.toARGB32(), 0xFFE8590C);
+    expect(BrandColors.signal.toARGB32(), 0xFFE6E6E6);
     expect(BrandColors.paper.toARGB32(), 0xFFFFFFFF);
-    expect(BrandColors.surface.toARGB32(), 0xFFF7FAFD);
+    expect(BrandColors.surface.toARGB32(), 0xFFF7F7F7);
     expect(BrandColors.hairline.toARGB32(), 0xFFE8E8EA);
     expect(BrandColors.inkSoft.toARGB32(), 0xFF55565B);
     expect(BrandColors.inkMuted.toARGB32(), 0xFF8C8D92);
-    expect(BrandColors.warning.toARGB32(), 0xFF8A5A00);
-    expect(BrandColors.success.toARGB32(), 0xFF2F7D5A);
-    expect(BrandColors.danger.toARGB32(), 0xFFC9363E);
+    expect(BrandColors.warning.toARGB32(), 0xFF555555);
+    expect(BrandColors.success.toARGB32(), 0xFF555555);
+    expect(BrandColors.danger.toARGB32(), 0xFF555555);
     for (final brightness in Brightness.values) {
       final theme = AppTheme.create(brightness);
       expect(
@@ -126,17 +126,20 @@ void main() {
     );
   });
 
-  test('Petals native icon is opaque with white petals on a dark glow tile', () {
-    final icon = image.decodePng(
-      File('assets/brand/findez-app-icon.png').readAsBytesSync(),
-    )!;
-    expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
-    expect(icon.getPixel(0, 0).r, lessThan(80));
-    expect(icon.getPixel(0, 0).g, lessThan(80));
-    expect(icon.getPixel(0, 0).b, lessThan(80));
-    expect(icon.getPixel(750, 250).toList(), [255, 255, 255]);
-    expect(icon.getPixel(400, 400).toList(), [255, 255, 255]);
-  });
+  test(
+    'Petals native icon is opaque with white petals on a dark glow tile',
+    () {
+      final icon = image.decodePng(
+        File('assets/brand/findez-app-icon.png').readAsBytesSync(),
+      )!;
+      expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
+      expect(icon.getPixel(0, 0).r, lessThan(80));
+      expect(icon.getPixel(0, 0).g, lessThan(80));
+      expect(icon.getPixel(0, 0).b, lessThan(80));
+      expect(icon.getPixel(750, 250).toList(), [255, 255, 255]);
+      expect(icon.getPixel(400, 400).toList(), [255, 255, 255]);
+    },
+  );
 
   test('Petals mark and outlined wordmark retain supplied geometry', () async {
     for (final name in ['findez-mark.svg', 'findez-wordmark.svg']) {

@@ -677,7 +677,7 @@ class _WorldShellState extends State<WorldShell> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final focused = _tab == 0 && _chatFocused;
     return Scaffold(
-      backgroundColor: dark ? Colors.black : const Color(0xFFFCFAF7),
+      backgroundColor: dark ? Colors.black : Colors.white,
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: !dark && !_chatFocused && _tab == 0
@@ -685,7 +685,7 @@ class _WorldShellState extends State<WorldShell> {
                   center: const Alignment(.3, 1.2),
                   radius: 1.15,
                   colors: [
-                    const Color(0xFFEE9B6C).withValues(alpha: dark ? .18 : .22),
+                    Colors.black.withValues(alpha: .035),
                     Colors.transparent,
                   ],
                 )

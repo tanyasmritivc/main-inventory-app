@@ -195,7 +195,7 @@ class _PlansWelcomeDialogState extends State<PlansWelcomeDialog> {
                       (index) => ChoiceChip(
                         label: AppText(findEZPlans[index].name),
                         selected: _plan == index,
-                        selectedColor: const Color(0xFFD6EFFF),
+                        selectedColor: const Color(0xFFEBEBEB),
                         labelStyle: TextStyle(
                           color: _plan == index ? BluePlanSurface.ink : null,
                         ),
@@ -228,7 +228,7 @@ class _PlansWelcomeDialogState extends State<PlansWelcomeDialog> {
                   child: FilledButton(
                     style:
                         FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFB9E2FC),
+                          backgroundColor: const Color(0xFFDBDBDB),
                           foregroundColor: BluePlanSurface.ink,
                           minimumSize: const Size(0, 48),
                         ).copyWith(

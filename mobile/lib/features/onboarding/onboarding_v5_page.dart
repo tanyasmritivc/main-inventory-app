@@ -10,10 +10,10 @@ import '../auth/auth_page.dart';
 import 'onboarding_v5_store.dart';
 
 const _ink = Color(0xFF0B0B0C);
-const _secondary = Color(0xFF5E5F64);
-const _tertiary = Color(0xFF9A9BA0);
-const _line = Color(0xFFECEBE8);
-const _soft = Color(0xFFF5F4F1);
+const _secondary = Color(0xFF5F5F5F);
+const _tertiary = Color(0xFF9B9B9B);
+const _line = Color(0xFFEBEBEB);
+const _soft = Color(0xFFF4F4F4);
 const onboardingCurve = Cubic(.32, .72, 0, 1);
 
 class _Choice {
@@ -1002,7 +1002,7 @@ class _CheckPainter extends CustomPainter {
       center,
       size.width / 2 - 1,
       Paint()
-        ..color = Color.lerp(const Color(0xFFD8D7D4), _ink, t)!
+        ..color = Color.lerp(const Color(0xFFD7D7D7), _ink, t)!
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -1048,7 +1048,7 @@ class _Backdrop extends StatelessWidget {
           builder: (_, bounds) => Stack(
             children: [
               const Positioned.fill(
-                child: ColoredBox(color: Color(0xFFFBFAF8)),
+                child: ColoredBox(color: Color(0xFFFAFAFA)),
               ),
               for (var i = 0; i < 3; i++)
                 AnimatedPositioned(
@@ -1080,9 +1080,9 @@ class _Backdrop extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: [
-                            const Color(0xFFE9C3A8),
-                            const Color(0xFFB9C8DA),
-                            const Color(0xFFD7CBDD),
+                            const Color(0xFFC9C9C9),
+                            const Color(0xFFC6C6C6),
+                            const Color(0xFFCFCFCF),
                           ][i],
                         ),
                       ),

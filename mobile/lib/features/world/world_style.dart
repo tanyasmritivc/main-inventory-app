@@ -9,8 +9,8 @@ class WorldStyle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final ink = dark ? const Color(0xFFF4F3F1) : const Color(0xFF111112);
-    final muted = dark ? const Color(0xFFA8A5A2) : const Color(0xFF55565B);
+    final ink = dark ? const Color(0xFFF4F4F4) : const Color(0xFF111112);
+    final muted = dark ? const Color(0xFFA8A8A8) : const Color(0xFF55565B);
     TextStyle text(
       double size, {
       FontWeight weight = FontWeight.w400,
@@ -58,9 +58,7 @@ class WorldStyle extends StatelessWidget {
             hintStyle: text(16, secondary: true),
             border: border,
             enabledBorder: border,
-            focusedBorder: border.copyWith(
-              borderSide: const BorderSide(color: Color(0xFFE8590C)),
-            ),
+            focusedBorder: border.copyWith(borderSide: BorderSide(color: ink)),
             fillColor: ink.withValues(alpha: .035),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 18,
@@ -76,7 +74,7 @@ class WorldStyle extends StatelessWidget {
             ),
           ),
           popupMenuTheme: PopupMenuThemeData(
-            color: dark ? const Color(0xFF262626) : const Color(0xF2FFFCF8),
+            color: dark ? const Color(0xFF262626) : const Color(0xF2FFFFFF),
             surfaceTintColor: Colors.transparent,
             textStyle: text(16),
             elevation: 12,
@@ -87,7 +85,7 @@ class WorldStyle extends StatelessWidget {
           bottomSheetTheme: theme.bottomSheetTheme.copyWith(
             backgroundColor: dark
                 ? const Color(0xFF262626)
-                : const Color(0xF7FFFCF8),
+                : const Color(0xF7FFFFFF),
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(32)),

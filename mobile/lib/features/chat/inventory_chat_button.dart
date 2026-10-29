@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/ui/liquid_surface.dart';
 import '../../core/api_error.dart';
 import 'chat_page.dart';
 
@@ -120,37 +121,41 @@ class InventoryChatButton extends StatelessWidget {
     if (api.inventoryContext == null) return primary ?? const SizedBox.shrink();
     if (prominent) {
       final colors = Theme.of(context).colorScheme;
-      return Material(
-        color: colors.onSurface,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => _open(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 20,
-                  color: colors.surface,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Ask FindEZ',
-                    style: TextStyle(
-                      color: colors.surface,
-                      fontWeight: FontWeight.w500,
+      return LiquidSurface(
+        radius: 18,
+        shadow: false,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _open(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 20,
+                    color: colors.onSurface,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ask FindEZ',
+                      style: TextStyle(
+                        color: colors.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: colors.surface,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: colors.onSurface,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -160,31 +165,24 @@ class InventoryChatButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Material(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: .88),
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: Theme.of(context).dividerColor.withValues(alpha: .2),
-                ),
-              ),
-              child: InkWell(
-                onTap: () => _open(context),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 17, vertical: 13),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                      SizedBox(width: 9),
-                      Text('Ask FindEZ'),
-                    ],
-                  ),
+        LiquidSurface(
+          radius: 28,
+          shadow: false,
+          child: Material(
+            color: Colors.transparent,
+            shape: const StadiumBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => _open(context),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                    SizedBox(width: 9),
+                    Text('Ask FindEZ'),
+                  ],
                 ),
               ),
             ),

@@ -17,9 +17,9 @@ class AppColors {
 
   // Semantic colors. These meanings are stable across every feature.
   // Contrast-safe dark variants. Light uses the exact brand status tokens.
-  static const success = Color(0xFF75C7A0);
-  static const warning = Color(0xFFE2BD75);
-  static const danger = Color(0xFFFF858D);
+  static const success = Color(0xFFB8B8B8);
+  static const warning = Color(0xFFB8B8B8);
+  static const danger = Color(0xFFB8B8B8);
   static const info = muted;
   static const ai = muted;
   static const scan = accent;

@@ -1131,3 +1131,17 @@ known coverage limits: `docs/plans/native-ios-controls-20261023.md`.
 ### Native SF Pro typography
 
 App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. Inter is not in the production font manifest. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.
+
+
+### Monochrome mobile UI and restrained navigation
+
+Run the full Flutter suite and analyzer. `retained_tab_transition_test.dart`
+checks draft retention, rapid retargeting, selected-page taps and Reduce Motion;
+`world_composer_test.dart` checks neutral send/camera contrast in both themes.
+`integration_test/monochrome_motion_test.dart` runs these on native iOS.
+`integration_test/world_audit_test.dart --plain-name "Ask layout"` and
+`integration_test/space_chat_layout_test.dart` cover light/dark, narrow/large-text/
+keyboard layouts and in-flow gray glass Ask. Native live frames can advance between
+selection and a pump; retarget opacity must not move backward.
+Before public submission, judge the final TestFlight motion and glass contrast on
+a physical iPhone with Reduce Motion, normal motion and both appearances.

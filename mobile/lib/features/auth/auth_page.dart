@@ -10,6 +10,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../../core/legal_links.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/terms_of_service_page.dart';
@@ -789,7 +790,7 @@ class _AuthPageState extends State<AuthPage> {
       const TextStyle(
         fontFamily: 'CupertinoSystemText',
         fontSize: 16,
-        color: Color(0xFF302D38),
+        color: Color(0xFF303030),
       ),
     ),
     decoration: InputDecoration(
@@ -820,13 +821,13 @@ class _AuthPageState extends State<AuthPage> {
     style: OutlinedButton.styleFrom(
       foregroundColor: provider == OAuthProvider.apple
           ? Colors.white
-          : const Color(0xFF302D38),
+          : const Color(0xFF303030),
       backgroundColor: provider == OAuthProvider.apple
-          ? const Color(0xFF302D38)
+          ? const Color(0xFF303030)
           : Colors.white,
       minimumSize: const Size(double.infinity, 56),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      side: BorderSide(color: const Color(0xFF302D38), width: 1.8),
+      side: BorderSide(color: const Color(0xFF303030), width: 1.8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: const TextStyle(
         fontFamily: 'CupertinoSystemText',
@@ -878,7 +879,7 @@ class _AuthPageState extends State<AuthPage> {
             fontWeight: FontWeight.w600,
             letterSpacing: -.75,
             height: 1.12,
-            color: Color(0xFF302D38),
+            color: Color(0xFF303030),
           ),
         ),
       ),
@@ -937,7 +938,7 @@ class _AuthPageState extends State<AuthPage> {
               'Terms of Service',
               style: TextStyle(
                 decoration: TextDecoration.underline,
-                color: Color(0xFF302D38),
+                color: Color(0xFF303030),
               ),
             ),
           ),
@@ -951,7 +952,7 @@ class _AuthPageState extends State<AuthPage> {
               'Privacy Policy',
               style: TextStyle(
                 decoration: TextDecoration.underline,
-                color: Color(0xFF302D38),
+                color: Color(0xFF303030),
               ),
             ),
           ),
@@ -968,7 +969,7 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 24),
           const Row(
             children: [
-              Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+              Expanded(child: Divider(color: Color(0xFFE3E3E3))),
               Flexible(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
@@ -983,7 +984,7 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                 ),
               ),
-              Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+              Expanded(child: Divider(color: Color(0xFFE3E3E3))),
             ],
           ),
           const SizedBox(height: 24),
@@ -1209,13 +1210,10 @@ class _AuthPageState extends State<AuthPage> {
     data: Theme.of(context).copyWith(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF7F7F6),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFFE8590C),
-        brightness: Brightness.light,
-      ),
+      colorScheme: AppTheme.create(Brightness.light).colorScheme,
       textTheme: Theme.of(context).textTheme.apply(
         fontFamily: 'CupertinoSystemText',
-        bodyColor: const Color(0xFF302D38),
+        bodyColor: const Color(0xFF303030),
       ),
       inputDecorationTheme: InputDecorationTheme(
         labelStyle: const TextStyle(
@@ -1230,16 +1228,16 @@ class _AuthPageState extends State<AuthPage> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE3E0DA)),
+          borderSide: const BorderSide(color: Color(0xFFE3E3E3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE8590C), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF111111), width: 1.5),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF302D38),
+          backgroundColor: const Color(0xFF303030),
           foregroundColor: Colors.white,
           textStyle: const TextStyle(
             fontFamily: 'CupertinoSystemText',
@@ -1254,7 +1252,7 @@ class _AuthPageState extends State<AuthPage> {
       outlinedButtonTheme: const OutlinedButtonThemeData(),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF302D38),
+          foregroundColor: const Color(0xFF303030),
           minimumSize: const Size(44, 44),
         ),
       ),
@@ -1332,10 +1330,10 @@ class _AuthPageState extends State<AuthPage> {
                                   : () => setState(() => _showEmail = true),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 56),
-                                foregroundColor: const Color(0xFF302D38),
+                                foregroundColor: const Color(0xFF303030),
                                 backgroundColor: Colors.white,
                                 side: const BorderSide(
-                                  color: Color(0xFF302D38),
+                                  color: Color(0xFF303030),
                                   width: 1.8,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -1366,7 +1364,7 @@ class _AuthPageState extends State<AuthPage> {
                                 fontFamily: 'CupertinoSystemText',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF302D38),
+                                color: Color(0xFF303030),
                               ),
                             ),
                           ),

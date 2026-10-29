@@ -4,7 +4,7 @@ import 'package:mobile/features/world/retained_tab_transition.dart';
 
 void main() {
   testWidgets(
-    'crossfade preserves draft and retargets without an opacity jump',
+    'subtle page settle preserves drafts and follows the faster tab indicator',
     (tester) async {
       var selected = 0;
       late StateSetter update;
@@ -40,19 +40,21 @@ void main() {
       update(() => selected = 1);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      // No delayed ease-in: the destination is visibly appearing at 50ms.
-      expect(opacity()[0], inExclusiveRange(.4, .5));
-      expect(opacity()[1], inExclusiveRange(.5, .6));
-      // The nav indicator retains its existing 340ms cadence independently.
-      expect(RetainedTabTransition.duration, const Duration(milliseconds: 340));
+      // The selected page is almost opaque; no whole-page dissolve.
+      expect(opacity()[0], 0);
+      expect(opacity()[1], inExclusiveRange(.94, 1));
+      // The indicator finishes before the restrained page settle.
+      expect(RetainedTabTransition.duration, const Duration(milliseconds: 140));
       expect(
         RetainedTabTransition.pageDuration,
-        const Duration(milliseconds: 150),
+        const Duration(milliseconds: 360),
       );
       final before = opacity();
       update(() => selected = 2);
       await tester.pump();
-      expect(opacity(), before);
+      // Live native frames may advance between selection and the next pump.
+      expect(opacity()[2], inInclusiveRange(before[1], 1));
+      expect(opacity()[1], 0);
       await tester.pumpAndSettle();
       expect(opacity(), [0, 0, 1]);
       update(() => selected = 0);
@@ -63,7 +65,7 @@ void main() {
     },
   );
 
-  testWidgets('only selected tab can receive taps during dissolve', (
+  testWidgets('only selected tab can receive taps during page settle', (
     tester,
   ) async {
     var selected = 0;

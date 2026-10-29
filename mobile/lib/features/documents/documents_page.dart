@@ -797,7 +797,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: AppTheme.adaptive(context, const Color(0xFF35191B)),
-        child: const Icon(Icons.delete_outline, color: Colors.redAccent),
+        child: const Icon(Icons.delete_outline, color: Colors.grey),
       ),
       confirmDismiss: (_) async {
         await _deleteDocument(document);

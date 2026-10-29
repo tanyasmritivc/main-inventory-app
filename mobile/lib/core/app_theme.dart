@@ -43,7 +43,7 @@ class AppTheme {
             outlineVariant: AppColors.border,
             error: AppColors.danger,
             onError: BrandColors.ink,
-            errorContainer: Color(0xFF2F1D21),
+            errorContainer: Color(0xFF262626),
             onErrorContainer: AppColors.danger,
           )
         : const ColorScheme.light(
@@ -63,12 +63,12 @@ class AppTheme {
             onSurface: BrandColors.ink,
             onSurfaceVariant: BrandColors.inkSoft,
             surfaceContainer: lightSurface2,
-            surfaceContainerHigh: Color(0xFFE6E6E2),
+            surfaceContainerHigh: Color(0xFFE6E6E6),
             outline: BrandColors.inkSoft,
             outlineVariant: BrandColors.hairline,
             error: BrandColors.danger,
             onError: BrandColors.paper,
-            errorContainer: Color(0xFFFBECEE),
+            errorContainer: Color(0xFFF2F2F2),
             onErrorContainer: BrandColors.ink,
           );
 
@@ -388,7 +388,7 @@ class AppTheme {
   static const Color action = AppColors.accent;
   static const Color onAction = BrandColors.ink;
 
-  // Controls are neutral. Navigation keeps its separate orange selection.
+  // Actions and navigation share the same monochrome roles.
   static Color accentForegroundFor(Brightness brightness) =>
       brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
   static Color accentForeground(BuildContext context) =>
@@ -402,8 +402,8 @@ class AppTheme {
 
   static Color navigationForegroundFor(Brightness brightness) =>
       brightness == Brightness.dark
-      ? const Color(0xFFF6803D)
-      : const Color(0xFFB83E05);
+      ? const Color(0xFFFFFFFF)
+      : const Color(0xFF111112);
   static Color navigationTintFor(Brightness brightness) => Color.alphaBlend(
     BrandColors.signal.withValues(alpha: 0.08),
     brightness == Brightness.dark ? darkSurface : lightSurface,
@@ -555,6 +555,7 @@ class AppTheme {
       case 0xB8B8BD:
       case 0xB8B8C0:
         return withAlpha(dark ? darkTextSecondary : lightTextSecondary);
+      case 0xB8B8B8:
       case 0x30D158:
       case 0x34D399:
       case 0x59BE96:
@@ -595,12 +596,12 @@ class AppTheme {
       case 0xE8590C:
         return withAlpha(action);
       case 0x13241E:
-        return dark ? const Color(0xFF15281F) : const Color(0xFFEAF3EE);
+        return dark ? const Color(0xFF262626) : const Color(0xFFF2F2F2);
       case 0x281316:
       case 0x35191B:
-        return dark ? const Color(0xFF2F1D21) : const Color(0xFFFBECEE);
+        return dark ? const Color(0xFF262626) : const Color(0xFFF2F2F2);
       case 0x282110:
-        return dark ? const Color(0xFF302719) : const Color(0xFFF7F0DF);
+        return dark ? const Color(0xFF262626) : const Color(0xFFF2F2F2);
       case 0x102A43:
       case 0x123B63:
       case 0x174A76:
