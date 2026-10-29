@@ -1,3 +1,7 @@
+## October 28 — Inter throughout mobile delivered to TestFlight154
+
+`style/mobile-inter` replaces Jakarta/Geist text overrides with bundled Inter across Flutter pages, shared controls, AI Markdown and app-owned UIKit lists/search. Sizes, weights, colors, scaling and semantics are retained. The existing onboarding Inter asset and license are bundled offline with regular/medium/semibold mappings. Host tests now load the real font rather than Ahem. All 1,204 tests pass (one existing skip), analysis is clean; nine native iOS checks and all five CI gates (40818486949) passed. Apple acknowledged TestFlight1.1.1(154), source088950f, delivery59e983a4-81ed-4d08-b968-d495545cfe71. All 34 archive/export device binaries, signing, 26 privacy manifests, bundled Inter/license and Apple validation passed. Processing/tester availability remains pending; physical acceptance unverified. Web/API/main unchanged. See `docs/plans/mobile-inter.md`.
+
 ## October 28 — Immediate streaming and inventory contextual chat
 
 `feat/mobile-context-chat`: immediate received deltas on main chat, isolated inventory assistant sheets on work pages, keyboard-aware monochrome presentation. Full 1,204 host tests, 36 final focused checks and clean analysis. Five native checks passed; Apple acknowledged TestFlight 1.1.1 (153), source135af87, delivery 380b3c1a-ba9c-4d5f-b908-d9aaf0784b0e. All five CI gates passed. Processing/tester availability unverified; physical acceptance pending. Details in `docs/plans/context-chat-mobile.md`. Main unchanged.

@@ -52,7 +52,7 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                         'Your world, remembered.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'PlusJakartaSans',
+                          fontFamily: 'Inter',
                           fontSize: 34,
                           fontWeight: FontWeight.w600,
                         ),

@@ -191,7 +191,7 @@ class _TagContents extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(
-              fontFamily: 'PlusJakartaSans',
+              fontFamily: 'Inter',
               color: Color(0xFF111112),
               fontSize: 13,
               fontWeight: FontWeight.w500,

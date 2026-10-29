@@ -29,7 +29,7 @@ abstract final class PlaceTokens {
     Color color = primary,
     double? spacing,
   }) => TextStyle(
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: 'Inter',
     fontSize: size,
     fontWeight: weight,
     color: color,
@@ -43,7 +43,7 @@ abstract final class PlaceTokens {
   static TextStyle get subtitle =>
       text(13, color: secondary).copyWith(height: 1.2);
   static TextStyle get section => const TextStyle(
-    fontFamily: 'GeistMono',
+    fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: .66,
@@ -126,7 +126,7 @@ class PlaceTheme extends StatelessWidget {
       data: base.copyWith(
         scaffoldBackgroundColor: p.background,
         textTheme: base.textTheme.apply(
-          fontFamily: 'PlusJakartaSans',
+          fontFamily: 'Inter',
           bodyColor: p.primary,
           displayColor: p.primary,
         ),
