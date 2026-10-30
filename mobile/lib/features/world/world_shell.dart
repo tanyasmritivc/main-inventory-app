@@ -408,7 +408,10 @@ class _WorldShellState extends State<WorldShell> {
       );
     }
     if (_spaceGroups == null) {
-      return const SkeletonPage();
+      return const SkeletonPage(
+        layout: SkeletonLayout.spaces,
+        padding: EdgeInsets.fromLTRB(20, 82, 20, 100),
+      );
     }
     final query = _search.text.trim().toLowerCase();
     final rows = <Map<String, dynamic>>[];
@@ -663,7 +666,7 @@ class _WorldShellState extends State<WorldShell> {
         body: SafeArea(
           child: Center(
             child: widget.session.error == null
-                ? const SkeletonPage()
+                ? const SkeletonPage(layout: SkeletonLayout.chat)
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [

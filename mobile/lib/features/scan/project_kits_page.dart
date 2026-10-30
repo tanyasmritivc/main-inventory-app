@@ -175,7 +175,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
     body: RefreshIndicator(
       onRefresh: _load,
       child: _loading
-          ? const SkeletonPage()
+          ? const SkeletonPage(layout: SkeletonLayout.board)
           : _error != null
           ? ListView(
               children: [

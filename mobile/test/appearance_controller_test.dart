@@ -55,8 +55,8 @@ void main() {
       expect(controller.themeMode, ThemeMode.light);
       expect(controller.textSize, AppTextSize.standard);
       const system = _NonlinearScaler();
-      expect(controller.textScaler(system).scale(14), closeTo(26.88, .001));
-      expect(controller.textScaler(system).scale(24), closeTo(34.56, .001));
+      expect(controller.textScaler(system).scale(14), closeTo(29.12, .001));
+      expect(controller.textScaler(system).scale(24), closeTo(37.44, .001));
     },
   );
 

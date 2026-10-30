@@ -3411,12 +3411,14 @@ class _ChatPageState extends State<ChatPage>
               prompt,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
             ),
-            backgroundColor: Colors.transparent,
-            side: BorderSide(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: .12),
-            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF242424)
+                : const Color(0xFFF0F0F0),
+            surfaceTintColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            elevation: 0,
+            pressElevation: 0,
+            side: BorderSide.none,
             shape: const StadiumBorder(),
             onPressed: () {
               _controller.text = prompt;

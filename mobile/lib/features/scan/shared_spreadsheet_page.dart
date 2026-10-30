@@ -141,7 +141,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
           future: _spacesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const SkeletonPage();
+              return const SkeletonPage(layout: SkeletonLayout.items);
             }
             if (snapshot.hasError) {
               return _LoadError(

@@ -113,50 +113,103 @@ class SkeletonListTile extends StatelessWidget {
   );
 }
 
+enum SkeletonLayout {
+  list,
+  spaces,
+  items,
+  history,
+  documents,
+  board,
+  form,
+  chat,
+}
+
+/// Data placeholders match the pending content, never the navigation animation.
 class SkeletonPage extends StatelessWidget {
-  const SkeletonPage({super.key});
+  const SkeletonPage({
+    super.key,
+    this.layout = SkeletonLayout.list,
+    this.padding = const EdgeInsets.all(20),
+  });
+  final SkeletonLayout layout;
+  final EdgeInsets padding;
+
+  Widget _lines({double width = .65}) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FractionallySizedBox(
+          widthFactor: width,
+          child: const SkeletonBox(height: 16),
+        ),
+        const SizedBox(height: 12),
+        const FractionallySizedBox(
+          widthFactor: .45,
+          child: SkeletonBox(height: 12),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading page',
+    label: 'Loading ${layout == SkeletonLayout.list ? 'content' : layout.name}',
     child: ExcludeSemantics(
       child: SkeletonShine(
         child: ListView(
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: padding,
           children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: SkeletonBox(height: 24, width: 160),
-            ),
-            const SizedBox(height: 28),
-            const SkeletonBox(height: 72, borderRadius: 24),
-            const SizedBox(height: 24),
-            for (var i = 0; i < 6; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 18),
-                child: Row(
-                  children: const [
-                    SkeletonBox(height: 56, width: 56, borderRadius: 18),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FractionallySizedBox(
-                            widthFactor: .6,
-                            child: SkeletonBox(height: 14),
-                          ),
-                          SizedBox(height: 12),
-                          FractionallySizedBox(
-                            widthFactor: .85,
-                            child: SkeletonBox(height: 12),
+            if (layout == SkeletonLayout.chat) ...[
+              const SizedBox(height: 120),
+              const Center(child: SkeletonBox(height: 24, width: 240)),
+              const SizedBox(height: 28),
+              const SkeletonBox(height: 128, borderRadius: 24),
+            ] else
+              for (var i = 0; i < 5; i++)
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: layout == SkeletonLayout.spaces ? 32 : 20,
+                  ),
+                  child: switch (layout) {
+                    SkeletonLayout.board => const SkeletonBox(
+                      height: 120,
+                      borderRadius: 24,
+                    ),
+                    SkeletonLayout.form => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SkeletonBox(height: 12, width: 100),
+                        SizedBox(height: 12),
+                        SkeletonBox(height: 52),
+                      ],
+                    ),
+                    SkeletonLayout.history => Row(
+                      children: [_lines(width: i.isEven ? .75 : .55)],
+                    ),
+                    _ => Row(
+                      children: [
+                        SkeletonBox(
+                          height: layout == SkeletonLayout.spaces ? 64 : 48,
+                          width: layout == SkeletonLayout.spaces ? 64 : 48,
+                          borderRadius: layout == SkeletonLayout.documents
+                              ? 8
+                              : 16,
+                        ),
+                        const SizedBox(width: 16),
+                        _lines(),
+                        if (layout == SkeletonLayout.items) ...[
+                          const SizedBox(width: 12),
+                          const SkeletonBox(
+                            height: 24,
+                            width: 32,
+                            borderRadius: 8,
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
+                  },
                 ),
-              ),
           ],
         ),
       ),

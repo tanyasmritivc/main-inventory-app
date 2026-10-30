@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:mobile/core/ui/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
@@ -188,6 +189,31 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
+    testWidgets(
+      'Space loader lasts only while its item request is pending $brightness',
+      (tester) async {
+        final loaded = Completer<void>();
+        final respond = f.respond;
+        f.respond = (r) async {
+          if (r.path.endsWith('/search_items')) await loaded.future;
+          return respond(r);
+        };
+        await mount(tester, brightness: brightness);
+        await tester.tap(find.text('Workbench'));
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 30));
+        }
+        expect(find.byType(SkeletonPage), findsOneWidget);
+        loaded.complete();
+        await tester.pumpAndSettle();
+        expect(find.byType(SkeletonPage), findsNothing);
+        expect(find.byType(LocationItemsPage), findsOneWidget);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(SkeletonPage), findsNothing);
+      },
+    );
+
     testWidgets(
       'Spaces menu is anchored and updates after rename $brightness',
       (tester) async {

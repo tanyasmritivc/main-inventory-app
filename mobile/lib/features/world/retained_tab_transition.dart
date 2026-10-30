@@ -1,4 +1,3 @@
-import '../../core/ui/skeleton.dart';
 import 'package:flutter/material.dart';
 
 /// A subtle settle between mounted tabs, preserving drafts and scroll positions.
@@ -9,8 +8,8 @@ class RetainedTabTransition extends StatefulWidget {
     required this.index,
     required this.children,
   });
-  static const duration = Duration(milliseconds: 140);
-  static const pageDuration = Duration(milliseconds: 360);
+  static const duration = Duration(milliseconds: 100);
+  static const pageDuration = Duration(milliseconds: 160);
   // Immediate visible feedback, with a gentle settle rather than a slow start.
   static const curve = Curves.easeOutCubic;
 
@@ -68,49 +67,36 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _controller,
-    builder: (context, _) {
-      final opacity = _opacity;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          for (var i = 0; i < widget.children.length; i++)
-            Offstage(
-              offstage: i != widget.index,
-              child: TickerMode(
-                enabled: i == widget.index,
-                child: IgnorePointer(
-                  ignoring: i != widget.index,
-                  child: ExcludeSemantics(
-                    excluding: i != widget.index,
-                    child: Opacity(
-                      opacity: i == widget.index ? opacity : 0,
-                      child: Transform.translate(
-                        offset: Offset(
-                          0,
-                          i == widget.index ? (1 - opacity) * 64 : 0,
-                        ),
-                        child: RepaintBoundary(child: widget.children[i]),
-                      ),
-                    ),
+  Widget build(BuildContext context) {
+    final opacity = _controller.drive(
+      Tween<double>(
+        begin: _fromOpacity,
+        end: 1,
+      ).chain(CurveTween(curve: RetainedTabTransition.curve)),
+    );
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          Offstage(
+            offstage: i != widget.index,
+            child: TickerMode(
+              enabled: i == widget.index,
+              child: IgnorePointer(
+                ignoring: i != widget.index,
+                child: ExcludeSemantics(
+                  excluding: i != widget.index,
+                  child: FadeTransition(
+                    opacity: i == widget.index
+                        ? opacity
+                        : const AlwaysStoppedAnimation<double>(0),
+                    child: RepaintBoundary(child: widget.children[i]),
                   ),
                 ),
               ),
             ),
-          if (!_reduceMotion &&
-              _controller.isAnimating &&
-              _controller.value < .5)
-            Positioned.fill(
-              child: AbsorbPointer(
-                child: ColoredBox(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: const SkeletonPage(),
-                ),
-              ),
-            ),
-        ],
-      );
-    },
-  );
+          ),
+      ],
+    );
+  }
 }

@@ -1,3 +1,7 @@
+## October 29 - Mobile loading and motion follow-up
+
+`fix/mobile-loading-motion` owns removal of navigation-only skeletons, short stationary fades, flat opaque new-chat suggestions and slightly larger default text. Real data loaders remain page-owned. Mobile only; preparing TestFlight159.
+
 ## October 29 — Mobile fluid surfaces delivered to TestFlight158
 
 Apple acknowledged 1.1.1 (158), source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, delivery
