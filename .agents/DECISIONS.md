@@ -1,3 +1,14 @@
+## October 29 — Restrained native-style crossfade after control fixes
+
+Repair Spaces interaction regressions before changing motion. Shared primary tabs
+and routes use a short stationary crossfade with modest staggering, no scale or
+automatic translation and no blank-frame fade. The outgoing scene remains behind
+an opaque incoming surface. UIKit Reduce Motion and Prefer Cross-Fade preferences
+are read at launch, on native notifications and on resume. Reduce Motion without
+explicit Prefer Cross-Fade switches immediately. UIKit-owned sheets keep system
+animation handling. Interactive edge-back remains driven by the route gesture.
+Spaces remains skeleton-free.
+
 ## October 29 - Spaces loading is static
 
 User rejects skeleton loaders in Spaces and related inventory pages, including actual loading. Use a static loading status for missing data and preserve loaded directories during refresh. Do not reintroduce skeleton rows or shimmer in these flows. Existing short route fades remain.

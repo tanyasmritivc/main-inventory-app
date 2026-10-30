@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/navigation_motion.dart';
 
-/// A subtle settle between mounted tabs, preserving drafts and scroll positions.
-/// A rapid selection retargets from the current frame, rather than flashing back.
+/// Retains every tab; only the incoming and outgoing destinations paint.
 class RetainedTabTransition extends StatefulWidget {
   const RetainedTabTransition({
     super.key,
@@ -9,94 +9,135 @@ class RetainedTabTransition extends StatefulWidget {
     required this.children,
   });
   static const duration = Duration(milliseconds: 100);
-  static const pageDuration = Duration(milliseconds: 160);
-  // Immediate visible feedback, with a gentle settle rather than a slow start.
   static const curve = Curves.easeOutCubic;
-
   final int index;
   final List<Widget> children;
-
   @override
   State<RetainedTabTransition> createState() => _RetainedTabTransitionState();
 }
 
 class _RetainedTabTransitionState extends State<RetainedTabTransition>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+  late final _controller = AnimationController(
     vsync: this,
-    duration: RetainedTabTransition.pageDuration,
+    duration: NavigationMotion.duration,
     value: 1,
-  );
-  double _fromOpacity = .94;
-  bool _reduceMotion = false;
+  )..addStatusListener(_settled);
+  int? _outgoing;
+  double _start = 0;
 
-  double get _opacity =>
-      _fromOpacity +
-      (1 - _fromOpacity) *
-          RetainedTabTransition.curve.transform(_controller.value);
+  @override
+  void initState() {
+    super.initState();
+    NativeMotionPreferences.instance.addListener(_preferencesChanged);
+  }
+
+  void _preferencesChanged() {
+    if (!mounted) return;
+    if (!NavigationMotion.enabled(
+      context,
+      NativeMotionPreferences.instance.value,
+    )) {
+      _controller.value = 1;
+      _outgoing = null;
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion =
-        MediaQuery.disableAnimationsOf(context) ||
-        MediaQuery.accessibleNavigationOf(context);
-    if (_reduceMotion) _controller.value = 1;
+    _preferencesChanged();
+  }
+
+  void _settled(AnimationStatus status) {
+    if (status == AnimationStatus.completed && _outgoing != null && mounted) {
+      setState(() => _outgoing = null);
+    }
   }
 
   @override
   void didUpdateWidget(RetainedTabTransition oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.children.length != widget.children.length) {
-      _fromOpacity = .94;
-      _controller.value = 1;
-    } else if (oldWidget.index != widget.index) {
-      _fromOpacity = _controller.isAnimating ? _opacity : .94;
-      if (_reduceMotion) {
-        _controller.value = 1;
+    if (oldWidget.index != widget.index) {
+      // A rapid retarget keeps the visually dominant prior scene underneath.
+      final previous = _controller.isAnimating && _controller.value < .5
+          ? _outgoing ?? oldWidget.index
+          : oldWidget.index;
+      final returning = _outgoing == widget.index;
+      _start = _controller.isAnimating
+          ? (returning ? 1 - _controller.value : _controller.value)
+          : 0;
+      _outgoing = previous == widget.index ? oldWidget.index : previous;
+      if (NavigationMotion.enabled(
+        context,
+        NativeMotionPreferences.instance.value,
+      )) {
+        _controller.forward(from: _start);
       } else {
-        _controller.forward(from: 0);
+        _controller.value = 1;
+        _outgoing = null;
       }
     }
   }
 
   @override
   void dispose() {
+    NativeMotionPreferences.instance.removeListener(_preferencesChanged);
     _controller.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final opacity = _controller.drive(
-      Tween<double>(
-        begin: _fromOpacity,
-        end: 1,
-      ).chain(CurveTween(curve: RetainedTabTransition.curve)),
-    );
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        for (var i = 0; i < widget.children.length; i++)
-          Offstage(
-            offstage: i != widget.index,
-            child: TickerMode(
-              enabled: i == widget.index,
-              child: IgnorePointer(
-                ignoring: i != widget.index,
-                child: ExcludeSemantics(
-                  excluding: i != widget.index,
-                  child: FadeTransition(
-                    opacity: i == widget.index
-                        ? opacity
-                        : const AlwaysStoppedAnimation<double>(0),
-                    child: RepaintBoundary(child: widget.children[i]),
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<MotionPreferences>(
+    valueListenable: NativeMotionPreferences.instance,
+    builder: (context, preferences, _) {
+      final animate = NavigationMotion.enabled(context, preferences);
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => Stack(
+          fit: StackFit.expand,
+          // Stable keyed wrappers preserve text fields/scroll positions when the
+          // selected page is painted last. Inactive tabs never receive input.
+          children: [
+            for (final i in [
+              for (var n = 0; n < widget.children.length; n++)
+                if (n != widget.index) n,
+              widget.index,
+            ])
+              Offstage(
+                key: ValueKey(i),
+                offstage: i != widget.index && (!animate || i != _outgoing),
+                child: TickerMode(
+                  enabled: i == widget.index,
+                  child: IgnorePointer(
+                    ignoring: i != widget.index,
+                    child: ExcludeSemantics(
+                      excluding: i != widget.index,
+                      child: Opacity(
+                        opacity: !animate
+                            ? 1
+                            : i == widget.index
+                            ? NavigationMotion.incoming(_controller.value)
+                            : NavigationMotion.outgoing(_controller.value),
+                        child: RepaintBoundary(
+                          child: Material(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            child: widget.children[i],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-      ],
-    );
-  }
+          ],
+        ),
+      );
+    },
+  );
 }

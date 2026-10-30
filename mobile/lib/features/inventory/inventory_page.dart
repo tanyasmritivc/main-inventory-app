@@ -110,6 +110,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   bool _changed = false;
   bool _fabOpen = false;
   late final AnimationController _fabController;
+  late final CurvedAnimation _fabAnimation;
   late final TextEditingController _joinCodeCtrl;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
@@ -123,6 +124,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   @override
   void dispose() {
     _accountRefresh.dispose();
+    _fabAnimation.dispose();
     _fabController.dispose();
     _joinCodeCtrl.dispose();
     _listScrollController.dispose();
@@ -154,7 +156,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     );
     _fabController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 180),
+    );
+    _fabAnimation = CurvedAnimation(
+      parent: _fabController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
     );
     _joinCodeCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
@@ -750,362 +757,348 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       );
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        result;
-        Navigator.of(context).pop(_changed);
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        extendBody: true,
-        bottomNavigationBar: IgnorePointer(
-          child: ScrollGlass(
-            top: false,
-            child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
-          ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      bottomNavigationBar: IgnorePointer(
+        child: ScrollGlass(
+          top: false,
+          child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
         ),
-        backgroundColor: AppTheme.bg(context),
-        appBar: AppBar(
-          flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
-          title: _searchOpen
-              ? TextField(
-                  controller: _spaceSearchController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Search this space',
-                    border: InputBorder.none,
-                  ),
-                  onChanged: (value) =>
-                      setState(() => _spaceSearchQuery = value),
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                )
-              : AppText(_location),
-          bottom: _syncError == null
-              ? null
-              : PreferredSize(
-                  preferredSize: const Size.fromHeight(44),
-                  child: Text(_syncError!),
+      ),
+      backgroundColor: AppTheme.bg(context),
+      appBar: AppBar(
+        flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
+        title: _searchOpen
+            ? TextField(
+                controller: _spaceSearchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search this space',
+                  border: InputBorder.none,
                 ),
-          centerTitle: true,
-          leading: BackButton(
-            onPressed: () => Navigator.of(context).pop(_changed),
+                onChanged: (value) => setState(() => _spaceSearchQuery = value),
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+              )
+            : AppText(_location),
+        bottom: _syncError == null
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(44),
+                child: Text(_syncError!),
+              ),
+        centerTitle: true,
+        leading: BackButton(
+          onPressed: () => Navigator.of(context).pop(_changed),
+        ),
+        actions: [
+          IconButton(
+            tooltip: _searchOpen ? 'Close search' : 'Search this space',
+            icon: Icon(_searchOpen ? Icons.close : Icons.search),
+            onPressed: () => setState(() {
+              _searchOpen = !_searchOpen;
+              if (!_searchOpen) {
+                _spaceSearchController.clear();
+                _spaceSearchQuery = '';
+                FocusScope.of(context).unfocus();
+              }
+            }),
           ),
-          actions: [
-            IconButton(
-              tooltip: _searchOpen ? 'Close search' : 'Search this space',
-              icon: Icon(_searchOpen ? Icons.close : Icons.search),
-              onPressed: () => setState(() {
-                _searchOpen = !_searchOpen;
-                if (!_searchOpen) {
-                  _spaceSearchController.clear();
-                  _spaceSearchQuery = '';
-                  FocusScope.of(context).unfocus();
-                }
-              }),
-            ),
-            NotificationBell(api: widget.api),
-            AppMenuButton(
-              label: 'Space options',
-              useNative: false,
-              onSelected: _onFabItemTap,
-              items: [
-                if (!widget.readOnly)
-                  const AppMenuItem(
-                    'Import Spreadsheet',
-                    'Import Spreadsheet',
-                    'tablecells',
-                  ),
-                if (!widget.readOnly &&
-                    (widget.api.inventoryContext == null ||
-                        widget.api.inventoryContext!.isPersonal))
-                  const AppMenuItem(
-                    'Share Space',
-                    'Share Space',
-                    'square.and.arrow.up',
-                  ),
-                if (widget.api.inventoryContext == null)
-                  const AppMenuItem(
-                    'Join Space',
-                    'Join Space',
-                    'person.badge.plus',
-                  ),
+          NotificationBell(api: widget.api),
+          AppMenuButton(
+            label: 'Space options',
+            useNative: false,
+            onSelected: _onFabItemTap,
+            items: [
+              if (!widget.readOnly)
                 const AppMenuItem(
-                  'Print Bin Label',
-                  'Print Bin Label',
-                  'qrcode',
+                  'Import Spreadsheet',
+                  'Import Spreadsheet',
+                  'tablecells',
                 ),
-                if (widget.api.inventoryContext == null ||
-                    widget.api.inventoryContext!.isPersonal)
-                  const AppMenuItem('Members', 'Members', 'person.2'),
-              ],
-            ),
-          ],
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-        ),
-        body: Stack(
-          children: [
-            Container(
-              color: AppTheme.bg(context),
-              child: CustomScrollView(
-                controller: _listScrollController,
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height:
-                          MediaQuery.paddingOf(context).top +
-                          kToolbarHeight +
-                          (_syncError == null ? 12 : 56),
-                    ),
+              if (!widget.readOnly &&
+                  (widget.api.inventoryContext == null ||
+                      widget.api.inventoryContext!.isPersonal))
+                const AppMenuItem(
+                  'Share Space',
+                  'Share Space',
+                  'square.and.arrow.up',
+                ),
+              if (widget.api.inventoryContext == null)
+                const AppMenuItem(
+                  'Join Space',
+                  'Join Space',
+                  'person.badge.plus',
+                ),
+              const AppMenuItem('Print Bin Label', 'Print Bin Label', 'qrcode'),
+              if (widget.api.inventoryContext == null ||
+                  widget.api.inventoryContext!.isPersonal)
+                const AppMenuItem('Members', 'Members', 'person.2'),
+            ],
+          ),
+        ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Stack(
+        children: [
+          Container(
+            color: AppTheme.bg(context),
+            child: CustomScrollView(
+              controller: _listScrollController,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height:
+                        MediaQuery.paddingOf(context).top +
+                        kToolbarHeight +
+                        (_syncError == null ? 12 : 56),
                   ),
-                  // Stats bar + action toolbar — scrolls away
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                ),
+                // Stats bar + action toolbar — scrolls away
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                        child: Text(
+                          '${_items.length} items · ${_totalCount()} units',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppTheme.textSecondary(context),
+                              ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: _buildReviewCard(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                          child: Text(
-                            '${_items.length} items · ${_totalCount()} units',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.textSecondary(context),
-                                ),
+                        Expanded(
+                          child: InventoryChatButton(
+                            api: widget.api,
+                            prominent: true,
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          child: _buildReviewCard(),
-                        ),
+                        if (_items.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          IconButton.outlined(
+                            tooltip: 'Sort items',
+                            icon: const Icon(Icons.sort),
+                            onPressed: () => showItemSortSheet(
+                              context,
+                              _sortOption,
+                              (opt) async {
+                                await saveSortPref(opt);
+                                if (mounted) {
+                                  setState(() => _sortOption = opt);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-
+                ),
+                // Search bar + category pills — pinned
+                if (_items.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: Row(
+                    child: Container(
+                      color: AppTheme.adaptive(context, Colors.black),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: InventoryChatButton(
-                              api: widget.api,
-                              prominent: true,
+                          // Category filter pills
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: SizedBox(
+                              height: 68,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                physics: const BouncingScrollPhysics(),
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 8),
+                                itemCount: _sortedCategoryPills().length,
+                                itemBuilder: (_, i) {
+                                  final pills = _sortedCategoryPills();
+                                  final label = pills[i];
+                                  final isActive = _selectedCategory == label;
+                                  return GestureDetector(
+                                    onTap: () => _onCategoryPillTapped(label),
+                                    child: GlassControl(
+                                      radius: 20,
+                                      selected: isActive,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: AppText(
+                                            label,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: isActive
+                                                  ? AppTheme.accentForeground(
+                                                      context,
+                                                    )
+                                                  : AppTheme.foreground(
+                                                      context,
+                                                      const Color(0x73FFFFFF),
+                                                    ),
+                                              fontSize: 13,
+                                              fontWeight: isActive
+                                                  ? FontWeight.w400
+                                                  : FontWeight.w400,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                          if (_items.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            IconButton.outlined(
-                              tooltip: 'Sort items',
-                              icon: const Icon(Icons.sort),
-                              onPressed: () => showItemSortSheet(
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Empty state or items list
+                if (_items.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_box_outlined,
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                            size: 48,
+                          ),
+                          const SizedBox(height: 16),
+                          AppText(
+                            'This space is empty',
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          AppText(
+                            'Add items here when you are ready.',
+                            style: TextStyle(
+                              color: AppTheme.foreground(
                                 context,
-                                _sortOption,
-                                (opt) async {
-                                  await saveSortPref(opt);
-                                  if (mounted) {
-                                    setState(() => _sortOption = opt);
-                                  }
-                                },
+                                Color(0x73FFFFFF),
+                              ),
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          if (!widget.readOnly && widget.api.canEdit) ...[
+                            const SizedBox(height: 24),
+                            GestureDetector(
+                              onTap: _toggleFab,
+                              child: GlassControl(
+                                radius: 99,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: AppText(
+                                    'Add Item',
+                                    style: TextStyle(
+                                      color: AppTheme.textPrimary(context),
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ],
                       ),
                     ),
-                  ),
-                  // Search bar + category pills — pinned
-                  if (_items.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        color: AppTheme.adaptive(context, Colors.black),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Category filter pills
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: SizedBox(
-                                height: 68,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  physics: const BouncingScrollPhysics(),
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(width: 8),
-                                  itemCount: _sortedCategoryPills().length,
-                                  itemBuilder: (_, i) {
-                                    final pills = _sortedCategoryPills();
-                                    final label = pills[i];
-                                    final isActive = _selectedCategory == label;
-                                    return GestureDetector(
-                                      onTap: () => _onCategoryPillTapped(label),
-                                      child: GlassControl(
-                                        radius: 20,
-                                        selected: isActive,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.transparent,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: AppText(
-                                              label,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: isActive
-                                                    ? AppTheme.accentForeground(
-                                                        context,
-                                                      )
-                                                    : AppTheme.foreground(
-                                                        context,
-                                                        const Color(0x73FFFFFF),
-                                                      ),
-                                                fontSize: 13,
-                                                fontWeight: isActive
-                                                    ? FontWeight.w400
-                                                    : FontWeight.w400,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Empty state or items list
-                  if (_items.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_box_outlined,
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0x4DFFFFFF),
-                              ),
-                              size: 48,
-                            ),
-                            const SizedBox(height: 16),
-                            AppText(
-                              'This space is empty',
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            AppText(
-                              'Add items here when you are ready.',
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0x73FFFFFF),
-                                ),
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            if (!widget.readOnly && widget.api.canEdit) ...[
-                              const SizedBox(height: 24),
-                              GestureDetector(
-                                onTap: _toggleFab,
-                                child: GlassControl(
-                                  radius: 99,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    child: AppText(
-                                      'Add Item',
-                                      style: TextStyle(
-                                        color: AppTheme.textPrimary(context),
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    _buildGroupedList(),
-                ],
-              ),
+                  )
+                else
+                  _buildGroupedList(),
+              ],
             ),
-            // Dark scrim overlay
-            AnimatedOpacity(
-              opacity: _fabOpen ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: IgnorePointer(
-                ignoring: !_fabOpen,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _fabOpen = false);
-                    _fabController.value = 0;
-                  },
-                  child: Container(
-                    color: AppTheme.adaptive(
-                      context,
-                      Colors.black.withValues(alpha: 0.5),
-                    ),
+          ),
+          // Dark scrim overlay
+          AnimatedOpacity(
+            opacity: _fabOpen ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: IgnorePointer(
+              ignoring: !_fabOpen,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() => _fabOpen = false);
+                  _fabController.value = 0;
+                },
+                child: Container(
+                  color: AppTheme.adaptive(
+                    context,
+                    Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-        floatingActionButton: widget.readOnly || !widget.api.canEdit
-            ? null
-            : _buildSpeedDial(),
+          ),
+        ],
       ),
+      floatingActionButton: widget.readOnly || !widget.api.canEdit
+          ? null
+          : _buildSpeedDial(),
     );
   }
 
   void _toggleFab() {
     setState(() => _fabOpen = !_fabOpen);
-    if (_fabOpen) {
-      _fabController.value = 1;
+    if (MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context)) {
+      _fabController.value = _fabOpen ? 1 : 0;
+    } else if (_fabOpen) {
+      _fabController.forward();
     } else {
-      _fabController.value = 0;
+      _fabController.reverse();
     }
   }
 
@@ -1123,38 +1116,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         // Speed dial items (visible when open)
         IgnorePointer(
           ignoring: !_fabOpen,
-          child: AnimatedBuilder(
-            animation: _fabController,
-            builder: (context, _) {
-              return Column(
+          child: FadeTransition(
+            opacity: _fabAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, .06),
+                end: Offset.zero,
+              ).animate(_fabAnimation),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: items.asMap().entries.map((entry) {
-                  final i = entry.key;
-                  final item = entry.value;
-                  final delay = i / items.length;
-                  final end = (i + 1) / items.length;
-                  final anim = CurvedAnimation(
-                    parent: _fabController,
-                    curve: Interval(
-                      delay,
-                      end.clamp(0.0, 1.0),
-                      curve: Curves.easeOut,
-                    ),
-                  );
-                  return FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.3),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: _buildFabItemTile(item),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
+                children: items.map(_buildFabItemTile).toList(),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),

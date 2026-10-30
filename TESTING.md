@@ -1,3 +1,18 @@
+## Navigation and Spaces controls (October 29)
+
+Run the full mobile suite and analyzer. `retained_tab_transition_test.dart` covers
+crossfade bounds, rapid retargeting, retained drafts, active-tab input, Reduce
+Motion/Prefer Cross-Fade and cancelled/completed edge-back. Native preference
+channel notifications/resume are covered by `native_motion_preferences_test.dart`.
+`space_directory_test.dart` delays access resolution, then leaves before it ends;
+the route must open immediately and the late response must not reopen it.
+`space_capture_entry_test.dart` checks progressive add-menu animation and reversal.
+Use `integration_test/navigation_controls_test.dart` with the named Motion,
+UIKit motion, Space opens before, Space item request, lazy scrolling and Space
+options cases on iOS. UIKit preference reads run on the actual host; automatic
+control taps use Flutter fallbacks. Simulator checks do not establish physical
+frame-rate/VoiceOver acceptance. No actual accounts/items are changed by fixtures.
+
 ## Spaces without skeletons (October 29)
 
 `space_directory_test.dart` holds directory and item requests pending in both

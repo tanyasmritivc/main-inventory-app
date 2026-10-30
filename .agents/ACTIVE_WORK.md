@@ -1,3 +1,11 @@
+## October 30 — Spaces controls and restrained navigation delivered
+
+Apple acknowledged TestFlight 1.1.1 (161), runtime `0ff52f02acaf8305cbc0c583d5ca39e4b2dfe011`, delivery `bc9b127a-7053-4804-b1a5-7465619c5fde`. Fixed delayed Space opening, snapping add-menu controls, blocked interactive back and excessive scroll-blur passes first. Then added the explicitly requested restrained 160ms crossfade shared by primary tabs and pushed routes, using live UIKit Reduce Motion/Prefer Cross-Fade preferences. No skeletons or artificial loading delays added. Material tab surfaces preserve list tap feedback.
+
+Validation: 1,233 Flutter tests passed with one existing skip, clean analysis, 12 final native iOS simulator checks and all five exact-source CI gates (41016601351). Dark/light screenshots reviewed. Signed archive/export passed 34 device-executable checks each, signature/privacy/configuration/font checks and Apple validation. Normal build161 restored in simulator. Physical smoothness and VoiceOver acceptance remain unverified. Processing was not polled; tester availability is pending. Main unchanged; PR281. See `docs/plans/mobile-navigation-controls-receipt.json`.
+
+Active source is `/Users/tanyasmritivictorcharles/Projects/findez-navigation-controls`. The old temporary checkout lost older files at midnight; source had already been pushed and was restored at the exact commit. Build outside synced Documents: its file-provider metadata interferes with framework signing. No tests were skipped to bypass the initial CI failure; the ColoredBox ink-feedback issue was corrected and all checks passed on the final runtime.
+
 ## October 29 - No skeletons in Spaces or inventory flows
 
 Apple acknowledged TestFlight 1.1.1 (160), runtime `4ef1ef315535496062c231ae7dda105bdfbaedfa`, delivery `45c98b81-d3fa-419a-8c7d-0f4efcfa56bf`. Spaces, nested inventories and related workspace/document/activity/review/project/restock screens no longer show skeletons or shimmer placeholders. Initial requests use a small static status; loaded Spaces remain visible during refresh. Existing short fades and actions remain. Chat initialization/history placeholders are outside this scope.

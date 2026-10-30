@@ -267,11 +267,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.byType(SkeletonPage), findsNothing);
-    // Only the destination paints while the mounted Ask retains its state.
-    expect(heading, findsNothing);
+    // The prior scene remains briefly underneath the destination dissolve.
+    expect(heading.hitTestable(), findsNothing);
     final transition = find.byType(RetainedTabTransition);
     expect(
-      find.descendant(of: transition, matching: find.byType(OrganizationPill)),
+      find
+          .descendant(of: transition, matching: find.byType(OrganizationPill))
+          .hitTestable(),
       findsNothing,
     );
     expect(

@@ -5,6 +5,7 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var nativePresentation: NativePresentation?
+  private var nativeMotion: NativeMotionPreferences?
   private var pushResult: FlutterResult?
   private var pushDartReady = false
   private var pushChannel: FlutterMethodChannel?
@@ -39,6 +40,7 @@ import UserNotifications
     registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     registrar.register(NativeControlFactory(messenger: registrar.messenger()), withId: "com.findez.app/toolbar-control")
     nativePresentation = NativePresentation(messenger: registrar.messenger())
+    nativeMotion = NativeMotionPreferences(messenger: registrar.messenger())
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -325,4 +327,31 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     channel.setMethodCallHandler(nil)
     bar.delegate = nil
   }
+}
+
+// UIKit is the source of truth; Flutter also receives changes while running.
+private final class NativeMotionPreferences {
+  private let channel: FlutterMethodChannel
+  private var observers: [NSObjectProtocol] = []
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "com.findez.app/motion", binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, reply in
+      guard call.method == "preferences" else { reply(FlutterMethodNotImplemented); return }
+      reply(self?.preferences())
+    }
+    for notification in [UIAccessibility.reduceMotionStatusDidChangeNotification,
+                         UIAccessibility.prefersCrossFadeTransitionsStatusDidChange,
+                         UIApplication.didBecomeActiveNotification] {
+      observers.append(NotificationCenter.default.addObserver(forName: notification,
+        object: nil, queue: .main) { [weak self] _ in
+          guard let self = self else { return }
+          self.channel.invokeMethod("changed", arguments: self.preferences())
+        })
+    }
+  }
+  private func preferences() -> [String: Bool] {
+    ["reduceMotion": UIAccessibility.isReduceMotionEnabled,
+     "preferCrossFade": UIAccessibility.prefersCrossFadeTransitions]
+  }
+  deinit { for observer in observers { NotificationCenter.default.removeObserver(observer) } }
 }

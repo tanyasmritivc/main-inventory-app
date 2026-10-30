@@ -20,19 +20,21 @@ class ScrollGlass extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, bounds) => Stack(
                   children: [
-                    // Each non-overlapping strip samples the same backdrop,
+                    // Eight non-overlapping strips keep the blur bounded. A quadratic
+                    // falloff softens the last edge without 24 distinct blur passes.
+                    // Each strip samples the same backdrop,
                     // avoiding feedback seams from previously painted strips.
-                    for (var i = 0; i < 24; i++)
+                    for (var i = 0; i < 8; i++)
                       Positioned(
                         left: 0,
                         right: 0,
-                        top: bounds.maxHeight * (top ? i : 23 - i) / 24,
-                        height: bounds.maxHeight / 24,
+                        top: bounds.maxHeight * (top ? i : 7 - i) / 8,
+                        height: bounds.maxHeight / 8,
                         child: ClipRect(
                           child: BackdropFilter.grouped(
                             filter: ImageFilter.blur(
-                              sigmaX: (24 - i) * .625,
-                              sigmaY: (24 - i) * .625,
+                              sigmaX: 15 * (1 - i / 8) * (1 - i / 8),
+                              sigmaY: 15 * (1 - i / 8) * (1 - i / 8),
                             ),
                             child: const SizedBox.expand(),
                           ),
