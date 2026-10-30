@@ -9,11 +9,12 @@ jest.mock("next/font/google", () => ({ Inter: () => ({variable:"inter"}), Plus_J
 
 test("public navigation links directly to dedicated pages", () => {
  render(<Header/>);
- for (const [name, href] of [["Product", "/product"], ["Solutions", "/solutions"], ["Developers", "/docs/api"], ["Pricing", "/pricing"]]) {
+ for (const [name, href] of [["Solutions", "/solutions"], ["Developers", "/docs/api"], ["Pricing", "/pricing"]]) {
   expect(screen.getByRole("link", {name}).getAttribute("href")).toBe(href);
   expect(screen.queryByRole("button", {name})).toBeNull();
  }
  expect(screen.queryByText("Research")).toBeNull();
+ expect(screen.queryByRole("link", {name:"Product"})).toBeNull();
 });
 
 test("mobile navigation closes after selection, Escape, outside click and focus leave", async () => {
@@ -24,7 +25,7 @@ test("mobile navigation closes after selection, Escape, outside click and focus 
  await userEvent.click(screen.getByRole("link", {name:"Solutions"}));
  closed();
  await open();
- fireEvent.keyDown(screen.getByRole("link", {name:"Product"}), {key:"Escape"});
+ fireEvent.keyDown(screen.getByRole("link", {name:"Solutions"}), {key:"Escape"});
  closed();
  expect(document.activeElement).toBe(screen.getByRole("button", {name:"Menu"}));
  await open();
