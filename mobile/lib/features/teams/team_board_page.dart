@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../notifications/notification_bell.dart';
 import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
@@ -370,7 +370,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           ? GlassFab(onPressed: _createTask, icon: CupertinoIcons.add)
           : null,
       body: _loading
-          ? const SkeletonPage(layout: SkeletonLayout.board)
+          ? const ContentLoading()
           : _error != null
           ? _MessageState(
               title: 'Couldn’t load tasks',

@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/app_theme.dart';
@@ -175,7 +175,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
     body: RefreshIndicator(
       onRefresh: _load,
       child: _loading
-          ? const SkeletonPage(layout: SkeletonLayout.board)
+          ? const ContentLoading()
           : _error != null
           ? ListView(
               children: [

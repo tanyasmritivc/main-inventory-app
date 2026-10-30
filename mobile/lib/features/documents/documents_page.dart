@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
@@ -1096,10 +1096,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: SizedBox(
-                  height: 260,
-                  child: SkeletonPage(layout: SkeletonLayout.documents),
-                ),
+                child: SizedBox(height: 260, child: ContentLoading()),
               )
             else if (_error != null)
               _status(_error!, retry: true)
@@ -1330,11 +1327,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                 const SizedBox(
                   height: 220,
                   child: Center(
-                    child: SkeletonBox(
-                      height: 14,
-                      width: 160,
-                      borderRadius: 10,
-                    ),
+                    child: ContentLoading(label: 'Loading items...'),
                   ),
                 )
               else if (_failed)

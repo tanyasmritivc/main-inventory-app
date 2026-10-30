@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:mobile/core/ui/skeleton.dart';
+import 'package:mobile/core/ui/content_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
@@ -189,30 +190,72 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
-    testWidgets(
-      'Space loader lasts only while its item request is pending $brightness',
-      (tester) async {
-        final loaded = Completer<void>();
-        final respond = f.respond;
-        f.respond = (r) async {
-          if (r.path.endsWith('/search_items')) await loaded.future;
-          return respond(r);
-        };
-        await mount(tester, brightness: brightness);
-        await tester.tap(find.text('Workbench'));
-        for (var i = 0; i < 10; i++) {
-          await tester.pump(const Duration(milliseconds: 30));
-        }
-        expect(find.byType(SkeletonPage), findsOneWidget);
-        loaded.complete();
-        await tester.pumpAndSettle();
-        expect(find.byType(SkeletonPage), findsNothing);
-        expect(find.byType(LocationItemsPage), findsOneWidget);
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        expect(find.byType(SkeletonPage), findsNothing);
-      },
-    );
+    testWidgets('Space item request never shows skeletons $brightness', (
+      tester,
+    ) async {
+      final loaded = Completer<void>();
+      final respond = f.respond;
+      f.respond = (r) async {
+        if (r.path.endsWith('/search_items')) await loaded.future;
+        return respond(r);
+      };
+      await mount(tester, brightness: brightness);
+      await tester.tap(find.text('Workbench'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+      expect(find.byType(SkeletonPage), findsNothing);
+      expect(find.byType(SkeletonShine), findsNothing);
+      expect(find.byType(ContentLoading), findsOneWidget);
+      await spaceAuditCapture?.call('pending-items-${brightness.name}');
+      loaded.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(SkeletonPage), findsNothing);
+      expect(find.byType(LocationItemsPage), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(SkeletonPage), findsNothing);
+    });
+
+    for (final world in [true, false]) {
+      testWidgets(
+        'Spaces pending and refresh stay skeleton-free $world $brightness',
+        (tester) async {
+          var loaded = Completer<void>();
+          final respond = f.respond;
+          f.respond = (r) async {
+            if (r.path.endsWith('/spaces') && r.method == 'GET') {
+              await loaded.future;
+            }
+            return respond(r);
+          };
+          await mount(tester, world: world, brightness: brightness);
+          expect(find.byType(SkeletonPage), findsNothing);
+          expect(find.byType(SkeletonShine), findsNothing);
+          expect(find.text('Loading Spaces...'), findsOneWidget);
+          expect(find.text('No Spaces yet.'), findsNothing);
+          await spaceAuditCapture?.call(
+            'pending-spaces-$world-${brightness.name}',
+          );
+          loaded.complete();
+          await tester.pumpAndSettle();
+          expect(find.text('Workbench'), findsOneWidget);
+          loaded = Completer<void>();
+          final refresh = tester
+              .state<RefreshIndicatorState>(find.byType(RefreshIndicator).first)
+              .show();
+          await tester.pump(const Duration(milliseconds: 500));
+          expect(find.text('Workbench'), findsOneWidget);
+          expect(find.byType(ContentLoading), findsNothing);
+          expect(find.byType(SkeletonShine), findsNothing);
+          loaded.complete();
+          await tester.pumpAndSettle();
+          await refresh;
+          expect(find.text('Workbench'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
 
     testWidgets(
       'Spaces menu is anchored and updates after rename $brightness',

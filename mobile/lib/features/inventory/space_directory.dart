@@ -1,6 +1,6 @@
 import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import 'space_texture.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
@@ -88,7 +88,7 @@ class _DirectorySpacePageState extends State<_DirectorySpacePage> {
                   ),
                 ),
               )
-            : const SkeletonPage(layout: SkeletonLayout.items),
+            : const ContentLoading(label: 'Loading items...'),
       );
     },
   );
@@ -414,68 +414,65 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
             leading: BackButton(onPressed: widget.onBack),
             actions: [NotificationBell(api: widget.api)],
           ),
-          body: _spaces == null && _error == null
-              ? const SkeletonPage(layout: SkeletonLayout.spaces)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      20,
-                      MediaQuery.paddingOf(context).top + kToolbarHeight + 20,
-                      20,
-                      120,
-                    ),
-                    children: [
-                      if (inventory != null)
-                        Text(
-                          inventory.label,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        onChanged: (value) => setState(() => _query = value),
-                        decoration: const InputDecoration(
-                          hintText: 'Search Spaces',
-                          prefixIcon: Icon(CupertinoIcons.search),
-                        ),
-                      ),
-                      if (_error != null) ...[
-                        Text(describeError(_error!).$1),
-                        TextButton(
-                          onPressed: _load,
-                          child: const Text('Retry'),
-                        ),
-                      ] else ...[
-                        const SizedBox(height: 16),
-                        if (rows.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 24),
-                            child: Text(
-                              _query.isEmpty
-                                  ? 'No Spaces yet.'
-                                  : 'No matching Spaces.',
-                            ),
-                          ),
-                        for (final space in rows)
-                          SpaceDirectoryTile(
-                            key: ValueKey(spaceIdentifier(space)),
-                            space: space,
-                            subtitle:
-                                '${space['item_count'] ?? 0} ${space['item_count'] == 1 ? 'item' : 'items'}',
-                            resolveApi: () async => widget.api,
-                            onChanged: _load,
-                          ),
-                      ],
-                      if (widget.api.canEdit)
-                        TextButton.icon(
-                          onPressed: _creating ? null : _create,
-                          icon: const Icon(CupertinoIcons.plus),
-                          label: const Text('New Space'),
-                        ),
-                    ],
+          body: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + 20,
+                20,
+                120,
+              ),
+              children: [
+                if (inventory != null)
+                  Text(
+                    inventory.label,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                const SizedBox(height: 16),
+                TextField(
+                  onChanged: (value) => setState(() => _query = value),
+                  decoration: const InputDecoration(
+                    hintText: 'Search Spaces',
+                    prefixIcon: Icon(CupertinoIcons.search),
                   ),
                 ),
+                if (_error != null) ...[
+                  Text(describeError(_error!).$1),
+                  TextButton(onPressed: _load, child: const Text('Retry')),
+                ] else ...[
+                  const SizedBox(height: 16),
+                  if (_spaces == null)
+                    const ContentLoading(label: 'Loading Spaces...')
+                  else if (rows.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        _query.isEmpty
+                            ? 'No Spaces yet.'
+                            : 'No matching Spaces.',
+                      ),
+                    ),
+                  for (final space in rows)
+                    SpaceDirectoryTile(
+                      key: ValueKey(spaceIdentifier(space)),
+                      space: space,
+                      subtitle:
+                          '${space['item_count'] ?? 0} ${space['item_count'] == 1 ? 'item' : 'items'}',
+                      resolveApi: () async => widget.api,
+                      onChanged: _load,
+                    ),
+                ],
+                if (widget.api.canEdit)
+                  TextButton.icon(
+                    onPressed: _creating || _spaces == null ? null : _create,
+                    icon: const Icon(CupertinoIcons.plus),
+                    label: const Text('New Space'),
+                  ),
+              ],
+            ),
+          ),
         );
       },
     ),

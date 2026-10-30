@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/restock_plan.dart';
 import '../../core/ui/glass_card.dart';
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class _CommandItem {
@@ -244,8 +244,7 @@ class _ActivityPageState extends State<ActivityPage> {
     Widget valueText(String v) =>
         AppText(v, style: tValue, maxLines: 1, overflow: TextOverflow.ellipsis);
 
-    Widget skeletonValue() =>
-        const SkeletonBox(height: 22, width: 90, borderRadius: 10);
+    Widget loadingValue() => valueText('Loading...');
 
     return GlassCard(
       padding: const EdgeInsets.all(14),
@@ -265,14 +264,14 @@ class _ActivityPageState extends State<ActivityPage> {
               stat(
                 label: 'Total items',
                 value: _loading
-                    ? skeletonValue()
+                    ? loadingValue()
                     : valueText('${_totalItems()}'),
               ),
               const SizedBox(width: 12),
               stat(
                 label: 'Categories',
                 value: _loading
-                    ? skeletonValue()
+                    ? loadingValue()
                     : valueText('${_totalCategories()}'),
               ),
             ],
@@ -281,7 +280,7 @@ class _ActivityPageState extends State<ActivityPage> {
           stat(
             label: 'Most used location',
             value: _loading
-                ? const SkeletonBox(height: 18, width: 160, borderRadius: 10)
+                ? loadingValue()
                 : AppText(
                     _mostUsedLocation(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -340,23 +339,7 @@ class _ActivityPageState extends State<ActivityPage> {
             _summaryHeader(),
             const SizedBox(height: 12),
             if (_loading)
-              const GlassCard(
-                padding: EdgeInsets.all(6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SkeletonListTile(),
-                    Divider(height: 1),
-                    SkeletonListTile(),
-                    Divider(height: 1),
-                    SkeletonListTile(),
-                    Divider(height: 1),
-                    SkeletonListTile(),
-                    Divider(height: 1),
-                    SkeletonListTile(),
-                  ],
-                ),
-              )
+              const ContentLoading(label: 'Loading activity...')
             else if (_error != null)
               GlassCard(
                 child: Column(

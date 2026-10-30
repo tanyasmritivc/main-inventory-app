@@ -1,5 +1,6 @@
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import 'package:dio/dio.dart';
 import '../../core/account_refresh.dart';
 import 'native_bottom_tabs.dart';
@@ -408,10 +409,7 @@ class _WorldShellState extends State<WorldShell> {
       );
     }
     if (_spaceGroups == null) {
-      return const SkeletonPage(
-        layout: SkeletonLayout.spaces,
-        padding: EdgeInsets.fromLTRB(20, 82, 20, 100),
-      );
+      return const ContentLoading(label: 'Loading Spaces...');
     }
     final query = _search.text.trim().toLowerCase();
     final rows = <Map<String, dynamic>>[];
