@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import 'package:mobile/core/private_image.dart';
 import 'team_categories.dart';
 import '../../core/app_theme.dart';
@@ -487,7 +487,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
         ],
       ),
       body: _loading
-          ? const SkeletonPage()
+          ? const ContentLoading()
           : _error != null
           ? _WorkspaceMessage(
               title: 'Couldn’t load workspace',
@@ -981,7 +981,7 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
     if (_items == null) {
       return Scaffold(
         appBar: AppBar(title: AppText(name)),
-        body: const SkeletonPage(layout: SkeletonLayout.items),
+        body: const ContentLoading(),
       );
     }
     return LocationItemsPage(
@@ -1214,7 +1214,7 @@ class _TeamSpaceInventoryPageState
         ? GlassFab(onPressed: _add, icon: CupertinoIcons.add)
         : null,
     body: _loading
-        ? const SkeletonPage()
+        ? const ContentLoading()
         : _error != null
         ? _WorkspaceMessage(
             title: 'Couldn’t load Space',
@@ -1463,7 +1463,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
             action: _load,
           )
         : _members == null
-        ? const SkeletonPage()
+        ? const ContentLoading()
         : Column(
             children: [
               if ((widget.currentRole == 'owner' ||
@@ -1601,7 +1601,7 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
             action: _load,
           )
         : _activity == null
-        ? const SkeletonPage()
+        ? const ContentLoading()
         : RefreshIndicator(
             onRefresh: _load,
             child: _activity!.isEmpty

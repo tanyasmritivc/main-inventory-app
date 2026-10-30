@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
@@ -146,7 +146,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
 
   Widget _buildBody() {
     if (_loading && _items.isEmpty) {
-      return const SkeletonPage(layout: SkeletonLayout.items);
+      return const ContentLoading();
     }
     if (_error != null && _items.isEmpty) {
       return ListView(

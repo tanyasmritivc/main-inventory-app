@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 
@@ -141,7 +141,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
           future: _spacesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const SkeletonPage(layout: SkeletonLayout.items);
+              return const ContentLoading();
             }
             if (snapshot.hasError) {
               return _LoadError(

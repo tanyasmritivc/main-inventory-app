@@ -1,3 +1,7 @@
+## October 29 - Spaces loading is static
+
+User rejects skeleton loaders in Spaces and related inventory pages, including actual loading. Use a static loading status for missing data and preserve loaded directories during refresh. Do not reintroduce skeleton rows or shimmer in these flows. Existing short route fades remain.
+
 ## October 29 - Loading motion and readable default
 
 Navigation-only skeletons are removed at the user's request. Page-specific placeholders belong only to real pending requests; no minimum display delay. Default text scales by 1.04 (previously .96), composing with system accessibility scaling and preserving explicit Small/Large/Larger preferences. New-chat suggestion pills are opaque neutral gray with no border, tint or elevation.

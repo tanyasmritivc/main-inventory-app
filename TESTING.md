@@ -1,3 +1,12 @@
+## Spaces without skeletons (October 29)
+
+`space_directory_test.dart` holds directory and item requests pending in both
+themes, checks that no skeletons appear or premature empty state is shown, and
+verifies that refresh retains the loaded rows. The existing native
+`fluid_shell_visual_test.dart` harness can run these plus Space scrolling and
+route checks. Its navigation controls use the Flutter fallback; native typography
+and rendering still run on iOS. Verify physical-device motion separately.
+
 ## October 29 mobile loading and navigation correction
 
 Skeletons appear only for real pending data. Run the full mobile suite and analyzer.

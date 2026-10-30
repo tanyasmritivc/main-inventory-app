@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -103,7 +103,7 @@ class _TeamsPageState extends State<TeamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const SkeletonPage();
+    if (_loading) return const ContentLoading();
     if (_error != null) {
       return _TeamsMessage(
         title: 'Couldn’t load teams',

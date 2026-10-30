@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../notifications/notification_bell.dart';
 import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
@@ -298,7 +298,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
             : null,
       ),
       body: _loading
-          ? const SkeletonPage(layout: SkeletonLayout.documents)
+          ? const ContentLoading()
           : _error != null
           ? _ErrorState(message: _error!, onRetry: _load)
           : RefreshIndicator(

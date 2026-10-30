@@ -1,4 +1,4 @@
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -356,7 +356,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       ),
     ];
     final body = _loading
-        ? const SkeletonPage(layout: SkeletonLayout.items)
+        ? const ContentLoading()
         : RefreshIndicator(
             onRefresh: _load,
             child: ListView(

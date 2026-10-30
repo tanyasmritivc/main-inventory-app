@@ -1,3 +1,7 @@
+## October 29 - No skeletons in Spaces or inventory flows
+
+`fix/mobile-spaces-no-skeleton` removes skeleton rows and shimmer from Spaces, nested inventory and related workspace, document, activity, review and project/restock screens. Pending data uses a quiet static status; retained Spaces stay mounted during refresh. Preparing TestFlight160. Mobile only.
+
 ## October 29 — Mobile loading and motion delivered to TestFlight159
 
 Apple acknowledged 1.1.1 (159), runtime `f8f49e4`, delivery

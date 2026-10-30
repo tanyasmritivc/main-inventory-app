@@ -30,7 +30,7 @@ import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
-import '../../core/ui/skeleton.dart';
+import '../../core/ui/content_loading.dart';
 import '../../core/ui/glass_fab.dart';
 import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
@@ -3521,33 +3521,7 @@ class _InventoryPageState extends State<InventoryPage>
                 ),
                 Expanded(
                   child: _loading && _items.isEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0xFF171717),
-                              ),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: ListView.separated(
-                              itemCount: 8,
-                              separatorBuilder: (context, index) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, index) =>
-                                  const SkeletonListTile(),
-                            ),
-                          ),
-                        )
+                      ? const ContentLoading(label: 'Loading inventory...')
                       : (_error != null && _items.isEmpty)
                       ? _buildErrorState()
                       : ValueListenableBuilder<Map<String, int>>(
