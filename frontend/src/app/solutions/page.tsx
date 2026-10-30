@@ -54,7 +54,6 @@ export default function SolutionsPage() {
     <h1><BlurText>Know what you have.<br/>Find it when you need it.</BlurText></h1>
     <RotatingText words={solutions.map(solution => solution.audience)}/>
     <p>Organize belongings, supplies, and shared equipment - from your home to your team&apos;s workspace.</p>
-    <div className="public-actions"><Link className="public-primary" href="/signup">Get started</Link></div>
    </header>
    <div className="pages-column">
     <nav className="public-sections" aria-label="On this page">
