@@ -1,3 +1,10 @@
+## October 29 - Public primary navigation
+
+Use Solutions, Developers and Pricing as the primary marketing navigation.
+Product is no longer linked in the public header/footer. The direct product route
+is preserved for existing links; Solutions content changes require the user's
+content direction and are not part of this navigation edit.
+
 ## October 26 - Monochrome app with selected blue accents
 
 Tanya confirmed the web app should stay primarily monochrome. Notification previews use neutral grayscale throughout. Keep baby blue limited to explicitly requested accents (Upgrade and chat resource links); do not spread blue to general controls or surfaces.

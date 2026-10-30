@@ -1,3 +1,15 @@
+## October 29 - Simplified public navigation delivered
+
+Removed Product from the shared public header/footer. Main links are Solutions,
+Developers and Pricing; existing direct routes and Solutions copy are preserved.
+Runtime `5fe1841` (PR277) is live in `primary-nav-20261029/frontend`, build
+`8NRcsyXVKUBixUWxJL3ql`. All 649 web tests, TypeScript, lint (0 errors/52 existing
+warnings), five CI gates (41006668288), production build and 32 staged/live routes
+passed. Safari desktop/390px menu and public HTTPS navigation verified. Backend
+and previous compiled release preserved. Solutions content recommendations are
+proposals, not published changes. Receipt:
+`docs/plans/landing-primary-navigation-receipt.json`.
+
 ## October 29 — Landing section removal delivered
 
 Homepage Features and Audiences sections removed, including the four small feature cards, from runtime `628d26b` in `landing-remove-20261029/frontend` (PR275). All 649 web tests, TypeScript, lint with no errors, five CI gates (41001838140), production build, 32 staged/live routes and Safari desktop/phone checks passed. Public HTTPS verified. Dedicated pages, backend and previous release preserved. Receipt: `docs/plans/landing-remove-sections-receipt.json`.
