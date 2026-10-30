@@ -711,7 +711,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
         style: TextStyle(
           fontSize: 36,
           height: 1.05,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: -1.5,
         ),
       ),
@@ -735,7 +735,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           style: TextStyle(
             fontSize: 36,
             height: 1.05,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -1.5,
           ),
         ),
@@ -776,7 +776,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   text: 'Sign in',
                   style: TextStyle(
                     color: trialInk,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -795,7 +795,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
         icon: Icon(icon, size: 14),
         label: Text(
           title,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: trialInk,
@@ -912,7 +912,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   message.location!,
                   style: const TextStyle(
                     fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: Color(0xFF595959),
                   ),
                 ),
@@ -930,7 +930,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
         (e) => TextSpan(
           text: e.value,
           style: e.key.isOdd
-              ? const TextStyle(fontWeight: FontWeight.w600)
+              ? const TextStyle(fontWeight: FontWeight.w400)
               : null,
         ),
       )
@@ -953,7 +953,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                 child: Text(
                   _draft.space,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     fontSize: 14,
                   ),
                 ),
@@ -1179,7 +1179,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   : 'Keep these ${_draft.items.length} items',
               style: const TextStyle(
                 fontSize: 28,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 letterSpacing: -1,
               ),
             ),
@@ -1247,7 +1247,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               : Icon(icon, size: 20),
           label: Text(
             label,
-            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w400),
           ),
         ),
       );
@@ -1505,7 +1505,7 @@ class _TrialChipState extends State<TrialChip>
         ),
         child: Text(
           widget.text,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         ),
       ),
     ),

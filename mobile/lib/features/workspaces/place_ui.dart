@@ -37,15 +37,15 @@ abstract final class PlaceTokens {
     letterSpacing: spacing,
   );
   static TextStyle get title =>
-      text(24, weight: FontWeight.w600, spacing: -.6).copyWith(height: 1.2);
+      text(24, weight: FontWeight.w400, spacing: -.6).copyWith(height: 1.2);
   static TextStyle get rowTitle =>
-      text(16, weight: FontWeight.w500, spacing: -.24).copyWith(height: 1.2);
+      text(16, weight: FontWeight.w400, spacing: -.24).copyWith(height: 1.2);
   static TextStyle get subtitle =>
       text(13, color: secondary).copyWith(height: 1.2);
   static TextStyle get section => const TextStyle(
     fontFamily: 'CupertinoSystemText',
     fontSize: 11,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w400,
     letterSpacing: .66,
     height: 1.4,
     color: label,
@@ -141,7 +141,7 @@ class PlaceTheme extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: p.darkOrange,
             foregroundColor: Colors.white,
-            textStyle: p.text(14, weight: FontWeight.w500),
+            textStyle: p.text(14, weight: FontWeight.w400),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -153,7 +153,7 @@ class PlaceTheme extends StatelessWidget {
             foregroundColor: p.primary,
             backgroundColor: p.card,
             side: BorderSide(color: p.outline),
-            textStyle: p.text(14, weight: FontWeight.w500),
+            textStyle: p.text(14, weight: FontWeight.w400),
           ),
         ),
         appBarTheme: AppBarTheme(
@@ -262,7 +262,7 @@ class PlaceBadge extends StatelessWidget {
         textScaler: TextScaler.noScaling,
         style: PlaceTokens.text(
           14,
-          weight: FontWeight.w600,
+          weight: FontWeight.w400,
           color: type == 'personal'
               ? PlaceTokens.greenText
               : type == 'organization'
@@ -296,7 +296,7 @@ class RoleTag extends StatelessWidget {
       ),
       child: Text(
         name,
-        style: PlaceTokens.text(12, weight: FontWeight.w600, color: fg),
+        style: PlaceTokens.text(12, weight: FontWeight.w400, color: fg),
       ),
     );
   }
@@ -330,7 +330,7 @@ class PlaceAvatar extends StatelessWidget {
         child: Text(
           name.isEmpty ? '' : name.characters.first.toUpperCase(),
           textScaler: TextScaler.noScaling,
-          style: PlaceTokens.text(13, weight: FontWeight.w600, color: fg),
+          style: PlaceTokens.text(13, weight: FontWeight.w400, color: fg),
         ),
       ),
     );

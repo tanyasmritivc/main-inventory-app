@@ -611,7 +611,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             style: TextStyle(
               color: AppTheme.foreground(ctx, Colors.white),
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           content: Column(
@@ -728,7 +728,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             style: TextStyle(
                               color: AppTheme.foreground(ctx, Colors.white),
                               fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -886,7 +886,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       'Check Out',
                       style: TextStyle(
                         color: AppTheme.foreground(ctx, Colors.white),
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
             ),
@@ -977,7 +977,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -1357,7 +1357,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -1391,7 +1391,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x8030D158)),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -1429,7 +1429,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1463,7 +1463,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0xFF64D2FF)),
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 0.5,
               ),
             ),
@@ -1516,7 +1516,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                         Colors.white,
                                       ),
                                       fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -1630,7 +1630,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 if (canEdit) ...[
@@ -1916,7 +1916,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -2036,7 +2036,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   children: [
                     const AppText(
                       'Price, expiry and reordering',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(fontWeight: FontWeight.w400),
                     ),
                     const SizedBox(height: 8),
                     if (item.unitPrice != null)
@@ -2069,15 +2069,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       Expanded(
                         child: AppText(
-                          'CHECK OUT',
+                          'Check out',
                           style: TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x4DFFFFFF),
+                              Color(0x99FFFFFF),
                             ),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.6,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -2088,7 +2088,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
-                              vertical: 5,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: AppTheme.adaptive(
@@ -2108,7 +2108,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               style: TextStyle(
                                 color: AppTheme.foreground(
                                   context,
-                                  Color(0x73FFFFFF),
+                                  Color(0xB3FFFFFF),
                                 ),
                                 fontSize: 12,
                               ),
@@ -2147,7 +2147,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               context,
                               const Color(0x0A30D158),
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: AppTheme.adaptive(
                                 context,
@@ -2190,7 +2190,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             context,
                             const Color(0x0AFBBF24),
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: AppTheme.adaptive(
                               context,
@@ -2218,7 +2218,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     Color(0xFFFBBF24),
                                   ),
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -2235,7 +2235,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                       Colors.white,
                                     ),
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
@@ -2258,15 +2258,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Row(
                     children: [
                       AppText(
-                        'NOTES',
+                        'Notes',
                         style: TextStyle(
                           color: AppTheme.foreground(
                             context,
-                            Color(0x4DFFFFFF),
+                            Color(0x99FFFFFF),
                           ),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0,
                         ),
                       ),
                       const Spacer(),
@@ -2284,7 +2284,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                       Colors.white,
                                     ),
                                     fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               )
@@ -2330,13 +2330,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                             decoration: InputDecoration(
                               border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
                               hintText: 'Add notes about this item...',
                               hintStyle: AppTypography.bodyStyleOf(
                                 context,
                                 TextStyle(
                                   color: AppTheme.foreground(
                                     context,
-                                    Color(0x33FFFFFF),
+                                    Color(0x99FFFFFF),
                                   ),
                                   fontSize: 14,
                                 ),
@@ -2358,11 +2365,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 color: _notesCtrl.text.isNotEmpty
                                     ? AppTheme.foreground(
                                         context,
-                                        const Color(0x73FFFFFF),
+                                        const Color(0xB3FFFFFF),
                                       )
                                     : AppTheme.foreground(
                                         context,
-                                        const Color(0x33FFFFFF),
+                                        const Color(0x99FFFFFF),
                                       ),
                                 fontSize: 14,
                                 height: 1.5,
@@ -2385,15 +2392,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       Expanded(
                         child: AppText(
-                          'DOCUMENTS',
+                          'Documents',
                           style: TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x4DFFFFFF),
+                              Color(0x99FFFFFF),
                             ),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.6,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -2404,7 +2411,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 6,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: AppTheme.adaptive(
@@ -2427,7 +2434,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   Icons.add,
                                   color: AppTheme.foreground(
                                     context,
-                                    Color(0x73FFFFFF),
+                                    Color(0xB3FFFFFF),
                                   ),
                                   size: 14,
                                 ),
@@ -2437,7 +2444,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   style: TextStyle(
                                     color: AppTheme.foreground(
                                       context,
-                                      Color(0x73FFFFFF),
+                                      Color(0xB3FFFFFF),
                                     ),
                                     fontSize: 13,
                                   ),
@@ -2483,7 +2490,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             style: TextStyle(
                               color: AppTheme.foreground(
                                 context,
-                                Color(0x33FFFFFF),
+                                Color(0x99FFFFFF),
                               ),
                               fontSize: 13,
                             ),
@@ -2534,7 +2541,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                       : Icons.image_outlined,
                                   color: AppTheme.foreground(
                                     context,
-                                    const Color(0x73FFFFFF),
+                                    const Color(0xB3FFFFFF),
                                   ),
                                   size: 20,
                                 ),
@@ -2552,7 +2559,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   Icons.arrow_forward_ios,
                                   color: AppTheme.foreground(
                                     context,
-                                    Color(0x33FFFFFF),
+                                    Color(0x99FFFFFF),
                                   ),
                                   size: 12,
                                 ),
@@ -2592,10 +2599,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 child: AppText(
                   'TAGS',
                   style: TextStyle(
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
+                    color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0,
                   ),
                 ),
               ),
@@ -2631,7 +2638,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             style: TextStyle(
                               color: AppTheme.foreground(
                                 context,
-                                Color(0x73FFFFFF),
+                                Color(0xB3FFFFFF),
                               ),
                               fontSize: 13,
                             ),
@@ -2651,18 +2658,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 children: [
                   const SizedBox(height: 20),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
+                      Flexible(
                         child: AppText(
-                          'WHERE TO BUY',
+                          'Where to buy',
                           style: TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x4DFFFFFF),
+                              Color(0x99FFFFFF),
                             ),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.6,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -2673,7 +2681,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
-                              vertical: 5,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: AppTheme.adaptive(
@@ -2696,7 +2704,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   size: 11,
                                   color: AppTheme.foreground(
                                     context,
-                                    Color(0x73FFFFFF),
+                                    Color(0xB3FFFFFF),
                                   ),
                                 ),
                                 SizedBox(width: 4),
@@ -2706,7 +2714,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     style: TextStyle(
                                       color: AppTheme.foreground(
                                         context,
-                                        Color(0x73FFFFFF),
+                                        Color(0xB3FFFFFF),
                                       ),
                                       fontSize: 12,
                                     ),
@@ -2727,7 +2735,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         context,
                         const Color(0xFF171717),
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: AppTheme.adaptive(
                           context,
@@ -2758,13 +2766,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                         hintText: 'Where to buy this item...',
                         hintStyle: AppTypography.bodyStyleOf(
                           context,
                           TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x33FFFFFF),
+                              Color(0x99FFFFFF),
                             ),
                             fontSize: 14,
                           ),
@@ -2814,12 +2829,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 children: [
                   const SizedBox(height: 20),
                   AppText(
-                    'ITEM QR CODE',
+                    'Item QR code',
                     style: TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
+                      color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -2856,7 +2871,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   style: TextStyle(
                                     color: Colors.black,
                                     fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -2882,8 +2897,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   'FindEZ AI',
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 0.3,
                                   ),
                                 ),
@@ -2905,8 +2920,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   AppText(
                     'Scan this code to quickly find this item in FindEZ',
                     style: TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                      fontSize: 11,
+                      color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                      fontSize: 13,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -2915,7 +2930,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 6,
+                        vertical: 10,
                       ),
                       decoration: BoxDecoration(
                         color: AppTheme.adaptive(
@@ -2938,7 +2953,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             size: 12,
                             color: AppTheme.foreground(
                               context,
-                              Color(0x73FFFFFF),
+                              Color(0xB3FFFFFF),
                             ),
                           ),
                           SizedBox(width: 6),
@@ -2948,7 +2963,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               style: TextStyle(
                                 color: AppTheme.foreground(
                                   context,
-                                  Color(0x73FFFFFF),
+                                  Color(0xB3FFFFFF),
                                 ),
                                 fontSize: 12,
                               ),
@@ -2970,12 +2985,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 children: [
                   const SizedBox(height: 20),
                   AppText(
-                    'ALERT ME AT OR BELOW',
+                    'Alert me at or below',
                     style: TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
+                      color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -3017,13 +3032,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                         hintText: 'Quantity threshold',
                         hintStyle: AppTypography.bodyStyleOf(
                           context,
                           TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x33FFFFFF),
+                              Color(0x99FFFFFF),
                             ),
                             fontSize: 14,
                           ),

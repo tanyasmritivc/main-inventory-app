@@ -1,4 +1,7 @@
+import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
+import '../../core/ui/skeleton.dart';
+import 'space_texture.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -7,7 +10,6 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/ui/liquid_surface.dart';
 import '../notifications/notification_bell.dart';
 import '../workspaces/resource_removal.dart';
 import '../world/world_style.dart';
@@ -21,32 +23,74 @@ Future<void> openDirectorySpace(
   ApiClient api,
   Map<String, dynamic> space,
 ) async {
-  final result = await api.searchItems(query: '');
-  final thresholds = await LowStockPrefs.loadAll();
-  if (!context.mounted) return;
-  api.assertCurrentContext();
-  final name = space['name'].toString();
-  final id = spaceIdentifier(space);
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => WorldStyle(
-        child: LocationItemsPage(
-          api: api,
-          location: name,
-          spaceId: id,
-          items: result.items
-              .where(
-                (item) => item.spaceId != null
-                    ? item.spaceId == id
-                    : item.location == name,
-              )
-              .toList(),
-          allItems: result.items,
-          thresholds: thresholds,
-          readOnly: !api.canEdit,
-        ),
-      ),
+      builder: (_) => _DirectorySpacePage(api: api, space: space),
     ),
+  );
+}
+
+class _DirectorySpacePage extends StatefulWidget {
+  const _DirectorySpacePage({required this.api, required this.space});
+  final ApiClient api;
+  final Map<String, dynamic> space;
+  @override
+  State<_DirectorySpacePage> createState() => _DirectorySpacePageState();
+}
+
+class _DirectorySpacePageState extends State<_DirectorySpacePage> {
+  late Future<Widget> _page = _load();
+  Future<Widget> _load() async {
+    final result = await widget.api.searchItems(query: '');
+    final thresholds = await LowStockPrefs.loadAll();
+    widget.api.assertCurrentContext();
+    final name = widget.space['name'].toString();
+    final id = spaceIdentifier(widget.space);
+    return WorldStyle(
+      child: LocationItemsPage(
+        api: widget.api,
+        location: name,
+        spaceId: id,
+        items: result.items
+            .where(
+              (item) => item.spaceId != null
+                  ? item.spaceId == id
+                  : item.location == name,
+            )
+            .toList(),
+        allItems: result.items,
+        thresholds: thresholds,
+        readOnly: !widget.api.canEdit,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Widget>(
+    future: _page,
+    builder: (context, snapshot) {
+      if (snapshot.hasData) return snapshot.data!;
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.space['name'].toString())),
+        body: snapshot.hasError
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(describeError(snapshot.error!).$1),
+                      TextButton(
+                        onPressed: () => setState(() => _page = _load()),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : const SkeletonPage(),
+      );
+    },
   );
 }
 
@@ -192,16 +236,7 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
   @override
   Widget build(BuildContext context) => ListTile(
     contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-    leading: LiquidSurface(
-      radius: 18,
-      quiet: true,
-      shadow: false,
-      child: const SizedBox(
-        width: 52,
-        height: 52,
-        child: Icon(CupertinoIcons.archivebox, size: 24),
-      ),
-    ),
+    leading: SpaceTexture(identity: id.isEmpty ? name : id),
     title: Text(name),
     subtitle: Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -358,22 +393,39 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
             )
             .toList();
         return Scaffold(
+          extendBodyBehindAppBar: true,
+          extendBody: true,
+          bottomNavigationBar: IgnorePointer(
+            child: ScrollGlass(
+              top: false,
+              child: SizedBox(
+                height: 24 + MediaQuery.paddingOf(context).bottom,
+              ),
+            ),
+          ),
           floatingActionButton: InventoryChatButton(api: widget.api),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
               ? Colors.black
               : const Color(0xFFFFFFFF),
           appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
             title: const Text('Spaces'),
             leading: BackButton(onPressed: widget.onBack),
             actions: [NotificationBell(api: widget.api)],
           ),
           body: _spaces == null && _error == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonPage()
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      MediaQuery.paddingOf(context).top + kToolbarHeight + 20,
+                      20,
+                      120,
+                    ),
                     children: [
                       if (inventory != null)
                         Text(

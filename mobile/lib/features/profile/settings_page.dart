@@ -38,7 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 10,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w400,
         letterSpacing: 0.6,
       ),
     ),
@@ -238,7 +238,7 @@ class _SettingsPageState extends State<SettingsPage> {
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
             fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
         actions: [if (widget.api != null) NotificationBell(api: widget.api!)],

@@ -91,7 +91,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               'Return',
               style: TextStyle(
                 color: AppTheme.textPrimary(ctx),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -164,7 +164,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           'Check-Out Tracker',
           style: TextStyle(
             color: AppTheme.textPrimary(context),
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w400,
             fontSize: 18,
           ),
         ),
@@ -217,7 +217,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       style: TextStyle(
                         color: AppTheme.textPrimary(context),
                         fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -270,7 +270,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             style: TextStyle(
                               color: AppTheme.textPrimary(context),
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -309,7 +309,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 10,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w400,
         letterSpacing: 1.4,
       ),
     ),
@@ -356,7 +356,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   fontSize: 16,
                 ),
               ),
@@ -372,7 +372,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   style: TextStyle(
                     color: AppTheme.textPrimary(context),
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -408,7 +408,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                         fontSize: 10,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -440,7 +440,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               const Color(0xFFFBBF24),
                             ),
                       fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
               ],
@@ -460,7 +460,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 style: TextStyle(
                   color: AppTheme.textPrimary(context),
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),

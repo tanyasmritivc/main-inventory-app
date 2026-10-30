@@ -1,3 +1,5 @@
+import 'voice_recording_overlay.dart';
+import '../../core/ui/photo_source_sheet.dart';
 import 'extraction_progress_panel.dart';
 import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
@@ -328,8 +330,21 @@ class _ChatPageState extends State<ChatPage>
     },
   )..addListener(_voiceChanged);
   bool get _isListening => _voice.active;
+  OverlayEntry? _voiceOverlay;
   void _voiceChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_voice.active && _voiceOverlay == null) {
+      _focusNode.unfocus();
+      _voiceOverlay = OverlayEntry(
+        builder: (_) => VoiceRecordingOverlay(voice: _voice),
+      );
+      Overlay.of(context, rootOverlay: true).insert(_voiceOverlay!);
+    } else if (!_voice.active && _voiceOverlay != null) {
+      _voiceOverlay!.remove();
+      _voiceOverlay!.dispose();
+      _voiceOverlay = null;
+    }
+    setState(() {});
   }
 
   List<DocumentEntry>? _pendingDocChoices;
@@ -2378,12 +2393,15 @@ class _ChatPageState extends State<ChatPage>
     if (_voice.active) {
       unawaited(_voice.release());
     } else {
-      unawaited(_voice.start());
+      unawaited(_voice.start(autoSend: true));
     }
   }
 
   @override
   void dispose() {
+    _voiceOverlay?.remove();
+    _voiceOverlay?.dispose();
+    _voiceOverlay = null;
     _requestGeneration++;
     final active = _activeReply;
     if (active != null) unawaited(active.cancel());
@@ -2549,7 +2567,7 @@ class _ChatPageState extends State<ChatPage>
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
         fontSize: 18,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w400,
         letterSpacing: 0,
         height: 1.2,
       ),
@@ -2638,7 +2656,7 @@ class _ChatPageState extends State<ChatPage>
           style: TextStyle(
             color: AppTheme.textPrimary(context),
             fontSize: widget.worldHeading == null ? 22 : 24,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             fontFamily: 'CupertinoSystemText',
             letterSpacing: widget.worldHeading == null ? null : -0.6,
             height: 1.25,
@@ -2903,28 +2921,7 @@ class _ChatPageState extends State<ChatPage>
     if (_sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
-    final camera =
-        source ??
-        await showModalBottomSheet<bool>(
-          context: context,
-          showDragHandle: true,
-          backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
-          builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const AppText('Take photo'),
-                  onTap: () => Navigator.pop(context, true),
-                ),
-                ListTile(
-                  title: const AppText('Choose photo'),
-                  onTap: () => Navigator.pop(context, false),
-                ),
-              ],
-            ),
-          ),
-        );
+    final camera = source ?? await showPhotoSourceSheet(context);
     if (camera == null || !mounted || generation != _requestGeneration) return;
     if (camera && !await _consumeCameraHint()) return;
     if (!mounted || generation != _requestGeneration) return;
@@ -3117,7 +3114,7 @@ class _ChatPageState extends State<ChatPage>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 17,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -3398,6 +3395,42 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
+  Widget _newChatSuggestions() => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        for (final prompt in const [
+          'What is running low?',
+          'What did I add recently?',
+        ])
+          ActionChip(
+            label: Text(
+              prompt,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+            ),
+            backgroundColor: Colors.transparent,
+            side: BorderSide(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: .12),
+            ),
+            shape: const StadiumBorder(),
+            onPressed: () {
+              _controller.text = prompt;
+              _controller.selection = TextSelection.collapsed(
+                offset: prompt.length,
+              );
+              _focusNode.requestFocus();
+              setState(() {});
+            },
+          ),
+      ],
+    ),
+  );
+
   Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
     builder: (context, bounds) {
       return SingleChildScrollView(
@@ -3446,6 +3479,10 @@ class _ChatPageState extends State<ChatPage>
                       listening: _isListening,
                       compact: compact,
                     ),
+                    if (_controller.text.trim().isEmpty &&
+                        _photo == null &&
+                        !compact)
+                      _newChatSuggestions(),
                   ],
                 ),
               ),
@@ -3574,7 +3611,12 @@ class _ChatPageState extends State<ChatPage>
                           photoBytes: message.photo?.bytes,
                           photoUrl: message.photoUrl,
                         )
-                      : _buildAssistantMessage(message, message.isStreaming),
+                      : _buildAssistantMessage(
+                          message,
+                          message.isStreaming ||
+                              _session.messages.indexOf(message) ==
+                                  _fakeTypingAssistantIndex,
+                        ),
                 ),
               ),
           ],
@@ -3619,303 +3661,213 @@ class _ChatPageState extends State<ChatPage>
       );
     }
     return Scaffold(
-      // MainShell already resizes its PageView for the keyboard.
       resizeToAvoidBottomInset: !widget.inPageView,
-      backgroundColor: widget.worldHeading != null || widget.contextual
+      backgroundColor: widget.contextual
           ? Colors.transparent
-          : AppTheme.adaptive(context, const Color(0xFF09090B)),
-
-      body: Container(
-        color: Colors.transparent,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            18,
-            16,
-            // MainShell reserves space for its pill below the page.
-            keyboardVisible || widget.inPageView || widget.contextual
-                ? 12
-                : 110,
-          ),
-          child: Column(
-            children: [
-              if ((widget.contextual || _session.messages.isNotEmpty) &&
-                  (widget.worldHeading == null || !_worldHome)) ...[
-                _buildHeader(),
-                const SizedBox(height: 12),
-              ],
-              if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty) &&
-                  _previewDraft == null &&
-                  !_scanningPreview)
-                const Spacer(flex: 2),
-              if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty) &&
-                  _previewDraft == null &&
-                  !_scanningPreview)
-                _buildEmptyState()
-              else
-                Expanded(
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(top: 4, bottom: 16),
-                    itemCount: _session.messages.isEmpty
-                        ? 1
-                        : _session.messages.length,
-                    separatorBuilder: (context, index) {
-                      final curr = _session.messages[index];
-                      final next = _session.messages[index + 1];
-                      return SizedBox(height: curr.role == next.role ? 12 : 8);
-                    },
-                    itemBuilder: (context, index) {
-                      if (_session.messages.isEmpty) {
-                        if (widget.contextual && keyboardVisible) {
-                          return const SizedBox.shrink();
-                        }
-                        return _buildEmptyState();
-                      }
-                      final messageIndex = index;
-                      final m = _session.messages[messageIndex];
-                      final isUser = m.role == 'user';
-                      final isTyping =
-                          !isUser &&
-                          (m.isStreaming ||
-                              messageIndex == _fakeTypingAssistantIndex ||
-                              m.content == 'Typing…' ||
-                              m.content == 'Thinking…' ||
-                              m.content == 'Thinking...');
-                      if (!isUser) {
-                        return _messageEntrance(
-                          m,
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: _buildAssistantMessage(m, isTyping),
-                          ),
-                        );
-                      }
-                      return _messageEntrance(
-                        m,
-                        AskQuestionCard(
-                          compact: widget.worldHeading != null,
-                          question: m.content,
-                          photoBytes: m.photo?.bytes,
-                          photoUrl: m.photoUrl,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              if (_sending &&
-                  _progress != null &&
-                  !_session.messages.any((message) => message.isStreaming)) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: ChatProgress(message: _progress!),
-                ),
-                const SizedBox(height: 10),
-              ],
-              if (_previewDraft != null || _scanningPreview) _capturePreview(),
-              if (_photo != null) _photoPreview(),
-              if (widget.worldHeading != null)
-                WorldComposer(
-                  onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
-                      ? _firstCamera
-                      : null,
-                  sourceChips: _sourceChips,
-                  menuOpen: _sourceMenuOpen,
-                  attachmentKey: _attachmentAnchor,
-                  onSourceSelected: (value) =>
-                      unawaited(_selectChatSource(value)),
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  onChanged: (_) => setState(() {}),
-                  onAttach: _sending || _pickingPhoto
-                      ? null
-                      : _worldAttachmentMenu,
-                  onVoice: _sending ? null : _toggleListening,
-                  onVoiceStart: _sending
-                      ? null
-                      : () => unawaited(_voice.start()),
-                  onVoiceEnd: () => unawaited(_voice.release()),
-                  onVoiceCancel: _voice.cancel,
-                  voiceTranscript: _voice.transcript,
-                  onSend: canSend
-                      ? () => unawaited(_submit(_controller.text))
-                      : null,
-                  busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
-                  listening: _isListening,
-                  compact: keyboardVisible || compactComposer || !_worldHome,
-                )
-              else
-                Container(
-                  constraints: const BoxConstraints(
-                    minHeight: 48,
-                    maxHeight: 150,
-                  ),
-                  padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.adaptive(context, const Color(0xFF171719)),
-                    borderRadius: BorderRadius.circular(
-                      widget.worldHeading != null ? 28 : 18,
-                    ),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: .08),
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        tooltip: widget.worldHeading != null
-                            ? 'Capture or attach'
-                            : 'Attach photo',
-                        onPressed: _sending || _pickingPhoto
-                            ? null
-                            : widget.worldHeading != null
-                            ? _worldAttachmentMenu
-                            : _attachPhoto,
-                        icon: _pickingPhoto
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                ),
-                              )
-                            : Icon(
-                                Icons.add_rounded,
-                                color: _sending
-                                    ? AppTheme.textSecondary(context)
-                                    : AppTheme.accentForeground(context),
-                                size: 22,
-                              ),
+          : AppTheme.bg(context),
+      body: ChatViewport(
+        header: widget.contextual || _session.messages.isNotEmpty
+            ? _buildHeader()
+            : const SizedBox.shrink(),
+        controller: _scrollController,
+        preview: _previewDraft != null || _scanningPreview
+            ? _capturePreview()
+            : null,
+        messages: [
+          if (_session.messages.isEmpty &&
+              !(widget.contextual && keyboardVisible)) ...[
+            _buildEmptyState(),
+            if (_controller.text.trim().isEmpty) _newChatSuggestions(),
+          ],
+          for (final message in _session.messages)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _messageEntrance(
+                message,
+                message.role == 'user'
+                    ? AskQuestionCard(
+                        question: message.content,
+                        photoBytes: message.photo?.bytes,
+                        photoUrl: message.photoUrl,
+                      )
+                    : _buildAssistantMessage(
+                        message,
+                        message.isStreaming ||
+                            _session.messages.indexOf(message) ==
+                                _fakeTypingAssistantIndex,
                       ),
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          minLines:
-                              widget.worldHeading != null &&
-                                  (_worldHome || _session.messages.isEmpty) &&
-                                  !keyboardVisible &&
-                                  !compactComposer
-                              ? 3
-                              : 1,
-                          maxLines: compactComposer ? 1 : 4,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          onChanged: (_) => setState(() {}),
-                          style: AppTypography.bodyStyleOf(
-                            context,
-                            TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 16,
-                            ),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: compactComposer
-                                ? 'Ask...'
-                                : widget.worldHeading != null
-                                ? 'Describe your world...'
-                                : 'Ask a question',
-                            hintMaxLines: 1,
-                            isDense: true,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            filled: false,
-                            contentPadding: EdgeInsets.zero,
-                            hintStyle: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                fontSize: 16,
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0xFF636366),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(
-                          width: 38,
-                          height: 38,
-                        ),
-                        icon: Icon(
-                          _isListening
-                              ? Icons.mic_rounded
-                              : Icons.mic_none_rounded,
-                          color: _isListening
-                              ? AppTheme.foreground(
-                                  context,
-                                  const Color(0xFFF2F2F7),
-                                )
-                              : AppTheme.foreground(context, Colors.white38),
-                          size: 21,
-                        ),
-                        onPressed: _toggleListening,
-                      ),
-                      GestureDetector(
-                        onTap: canSend
-                            ? () => unawaited(_submit(_controller.text))
-                            : null,
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _sending && !_canQueueFollowUp
-                                ? AppTheme.adaptive(
-                                    context,
-                                    const Color(0xFF2C2C2E),
-                                  )
-                                : canSend
-                                ? AppTheme.action
-                                : AppTheme.adaptive(
-                                    context,
-                                    const Color(0xFF2C2C2E),
-                                  ),
-                          ),
-                          child: _sending && !_canQueueFollowUp
-                              ? Padding(
-                                  padding: EdgeInsets.all(9),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.7,
-                                    color: AppTheme.adaptive(
-                                      context,
-                                      Color(0xFF8E8E93),
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: canSend
-                                      ? AppTheme.onAction
-                                      : AppTheme.foreground(
-                                          context,
-                                          const Color(0xFF636366),
-                                        ),
-                                  size: 20,
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty) &&
-                  _previewDraft == null &&
-                  !_scanningPreview)
-                const Spacer(flex: 3),
+              ),
+            ),
+        ],
+        footer: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_sending &&
+                _progress != null &&
+                !_session.messages.any((message) => message.isStreaming)) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ChatProgress(message: _progress!),
+              ),
+              const SizedBox(height: 10),
             ],
-          ),
+            if (_photo != null) _photoPreview(),
+            Container(
+              constraints: const BoxConstraints(minHeight: 48, maxHeight: 150),
+              padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
+              decoration: BoxDecoration(
+                color: AppTheme.adaptive(context, const Color(0xFF171719)),
+                borderRadius: BorderRadius.circular(
+                  widget.worldHeading != null ? 28 : 18,
+                ),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: .08),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: widget.worldHeading != null
+                        ? 'Capture or attach'
+                        : 'Attach photo',
+                    onPressed: _sending || _pickingPhoto
+                        ? null
+                        : widget.worldHeading != null
+                        ? _worldAttachmentMenu
+                        : _attachPhoto,
+                    icon: _pickingPhoto
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                          )
+                        : Icon(
+                            Icons.add_rounded,
+                            color: _sending
+                                ? AppTheme.textSecondary(context)
+                                : AppTheme.accentForeground(context),
+                            size: 22,
+                          ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      minLines:
+                          widget.worldHeading != null &&
+                              (_worldHome || _session.messages.isEmpty) &&
+                              !keyboardVisible &&
+                              !compactComposer
+                          ? 3
+                          : 1,
+                      maxLines: compactComposer ? 1 : 4,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      onChanged: (_) => setState(() {}),
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 16,
+                        ),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: compactComposer
+                            ? 'Ask...'
+                            : widget.worldHeading != null
+                            ? 'Describe your world...'
+                            : 'Ask a question',
+                        hintMaxLines: 1,
+                        isDense: true,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: EdgeInsets.zero,
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFF636366),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 38,
+                      height: 38,
+                    ),
+                    icon: Icon(
+                      _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                      color: _isListening
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0xFFF2F2F7),
+                            )
+                          : AppTheme.foreground(context, Colors.white38),
+                      size: 21,
+                    ),
+                    onPressed: _toggleListening,
+                  ),
+                  GestureDetector(
+                    onTap: canSend
+                        ? () => unawaited(_submit(_controller.text))
+                        : null,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _sending && !_canQueueFollowUp
+                            ? AppTheme.adaptive(
+                                context,
+                                const Color(0xFF2C2C2E),
+                              )
+                            : canSend
+                            ? AppTheme.action
+                            : AppTheme.adaptive(
+                                context,
+                                const Color(0xFF2C2C2E),
+                              ),
+                      ),
+                      child: _sending && !_canQueueFollowUp
+                          ? Padding(
+                              padding: EdgeInsets.all(9),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.7,
+                                color: AppTheme.adaptive(
+                                  context,
+                                  Color(0xFF8E8E93),
+                                ),
+                              ),
+                            )
+                          : Icon(
+                              Icons.arrow_upward_rounded,
+                              color: canSend
+                                  ? AppTheme.onAction
+                                  : AppTheme.foreground(
+                                      context,
+                                      const Color(0xFF636366),
+                                    ),
+                              size: 20,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

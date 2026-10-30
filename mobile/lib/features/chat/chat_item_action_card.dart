@@ -106,7 +106,7 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                     _ => 'Changes saved',
                   }
                 : 'Cancelled',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w400),
           ),
           if (_action.destinationLabel != null) ...[
             const SizedBox(height: 8),

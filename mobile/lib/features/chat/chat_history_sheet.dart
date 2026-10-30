@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -257,7 +258,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                     ),
                   )
                 : _rows == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonPage()
                 : rows.isEmpty
                 ? Center(
                     child: Text(

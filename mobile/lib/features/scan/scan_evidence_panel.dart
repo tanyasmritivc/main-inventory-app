@@ -58,7 +58,7 @@ class ScanEvidencePanel extends StatelessWidget {
                 ? AppTheme.foreground(context, const Color(0xFFF5A623))
                 : AppTheme.foreground(context, Colors.white),
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         subtitle: AppText(
@@ -183,7 +183,7 @@ class _EvidenceRow extends StatelessWidget {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
                   ),
                 ),

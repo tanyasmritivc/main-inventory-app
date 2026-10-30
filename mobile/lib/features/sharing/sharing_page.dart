@@ -192,7 +192,7 @@ class _SharingPageState extends State<SharingPage> {
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
             fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
         centerTitle: true,
@@ -244,7 +244,7 @@ class _SharingPageState extends State<SharingPage> {
                                   Colors.white,
                                 ),
                                 fontSize: 15,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -286,7 +286,7 @@ class _SharingPageState extends State<SharingPage> {
                                             Colors.white,
                                           ),
                                           fontSize: 16,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w400,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -326,7 +326,7 @@ class _SharingPageState extends State<SharingPage> {
                                                   Colors.white,
                                                 ),
                                                 fontSize: 13,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w400,
                                                 letterSpacing: 2,
                                               ),
                                             ),
@@ -444,7 +444,7 @@ class _SharingPageState extends State<SharingPage> {
                           '+ Create Share',
                           style: TextStyle(
                             fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
@@ -467,7 +467,7 @@ class _SharingPageState extends State<SharingPage> {
                                   Colors.white,
                                 ),
                                 fontSize: 15,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -519,7 +519,7 @@ class _SharingPageState extends State<SharingPage> {
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
                           fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -548,7 +548,7 @@ class _SharingPageState extends State<SharingPage> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 4),
@@ -661,7 +661,7 @@ class _SharingPageState extends State<SharingPage> {
                                   ctx,
                                   Color(0xFFEF4444),
                                 ),
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -699,7 +699,7 @@ class _SharingPageState extends State<SharingPage> {
                     'Leave',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0xFFEF4444)),
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       fontSize: 13,
                     ),
                   ),
@@ -719,7 +719,7 @@ class _SharingPageState extends State<SharingPage> {
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 11,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w400,
         letterSpacing: 0.8,
       ),
     ),
@@ -856,7 +856,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 20),
@@ -952,7 +952,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                         'Create Share',
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
               ),
@@ -997,7 +997,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                     ? AppTheme.foreground(context, Colors.white)
                     : AppTheme.foreground(context, const Color(0x73FFFFFF)),
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 3),
@@ -1021,7 +1021,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
     style: TextStyle(
       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
       fontSize: 11,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w400,
       letterSpacing: 0.8,
     ),
   );
@@ -1055,7 +1055,7 @@ class _ShareCodeSheet extends StatelessWidget {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 6),
@@ -1084,7 +1084,7 @@ class _ShareCodeSheet extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'CupertinoSystemText',
                   fontSize: 32,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Colors.white),
                   letterSpacing: 10,
                 ),
@@ -1114,7 +1114,7 @@ class _ShareCodeSheet extends StatelessWidget {
               ),
               child: const AppText(
                 'Copy Code',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
               ),
             ),
           ),
@@ -1135,7 +1135,7 @@ class _ShareCodeSheet extends StatelessWidget {
               ),
               child: const AppText(
                 'Done',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
               ),
             ),
           ),
@@ -1238,7 +1238,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 6),
@@ -1263,7 +1263,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                 TextStyle(
                   fontFamily: 'CupertinoSystemText',
                   fontSize: 28,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Colors.white),
                   letterSpacing: 8,
                 ),
@@ -1340,7 +1340,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                         'Join',
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
               ),
@@ -1427,7 +1427,7 @@ class _MembersSheetState extends State<_MembersSheet> {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 16),

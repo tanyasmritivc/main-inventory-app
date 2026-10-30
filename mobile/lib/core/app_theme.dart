@@ -1,3 +1,4 @@
+import 'ui/page_arrival.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -73,6 +74,13 @@ class AppTheme {
           );
 
     return ThemeData(
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: PageArrivalTransitions(),
+          TargetPlatform.android: PageArrivalTransitions(),
+          TargetPlatform.macOS: PageArrivalTransitions(),
+        },
+      ),
       brightness: brightness,
       colorScheme: scheme,
       useMaterial3: true,
@@ -82,20 +90,20 @@ class AppTheme {
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: -0.4,
         ),
         titleLarge: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: -0.3,
         ),
         titleMedium: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
           letterSpacing: -0.1,
         ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         bodyLarge: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
@@ -113,7 +121,7 @@ class AppTheme {
         ),
         labelLarge: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
           letterSpacing: 0.1,
         ),
       ).apply(fontFamily: 'CupertinoSystemText'),
@@ -128,7 +136,7 @@ class AppTheme {
         actionsIconTheme: IconThemeData(color: adapt(AppColors.muted)),
         titleTextStyle: TextStyle(
           fontSize: 17,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
           color: adapt(Colors.white),
           letterSpacing: 0,
         ),
@@ -185,7 +193,7 @@ class AppTheme {
             return TextStyle(
               color: navigationForegroundFor(brightness),
               fontSize: 11,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               letterSpacing: 0.2,
             );
           }
@@ -223,7 +231,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
         ).copyWith(backgroundBuilder: glassBackground),
@@ -252,7 +260,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: adapt(AppColors.primaryText),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
         ),
@@ -267,7 +275,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
         ),
         contentTextStyle: TextStyle(
           color: adapt(AppColors.muted),
@@ -296,7 +304,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 15,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
         subtitleTextStyle: TextStyle(
           color: adapt(AppColors.muted),
@@ -315,7 +323,7 @@ class AppTheme {
         textStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -328,7 +336,7 @@ class AppTheme {
         unselectedLabelColor: adapt(AppColors.muted),
         indicatorColor: accentForegroundFor(brightness),
         dividerColor: adapt(AppColors.border),
-        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
         unselectedLabelStyle: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
@@ -345,12 +353,12 @@ class AppTheme {
         labelStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 13,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
         secondaryLabelStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 13,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
     );

@@ -161,7 +161,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
         child: Text(
           name,
           style: TextStyle(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
           ),
         ),
       ),
@@ -310,7 +310,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
                 overflow: TextOverflow.ellipsis,
                 style:
                     widget.labelStyle ??
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(width: 6),

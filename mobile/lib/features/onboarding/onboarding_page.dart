@@ -493,7 +493,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           style: const TextStyle(
             fontFamily: 'CupertinoSystemText',
             fontSize: 34,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -1.19,
             height: 1.04,
             color: worldInk,
@@ -545,7 +545,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 const TextStyle(
                   fontFamily: 'CupertinoSystemText',
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
                 math.min(300, width - 48) - 38,
               ),
@@ -562,7 +562,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           style: const TextStyle(
             fontFamily: 'CupertinoSystemText',
             fontSize: 14.5,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0,
           ),
         ),
@@ -597,7 +597,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               const TextStyle(
                 fontFamily: 'CupertinoSystemText',
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 letterSpacing: -.24,
               ),
               width,
@@ -649,7 +649,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           const TextStyle(
             fontFamily: 'CupertinoSystemText',
             fontSize: 34,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -1.19,
             height: 1.04,
           ),
@@ -1090,7 +1090,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         style: const TextStyle(
           fontFamily: 'CupertinoSystemText',
           fontSize: 22,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: -.44,
           height: 1.2,
           color: worldInk,
@@ -1284,7 +1284,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                       style: const TextStyle(
                         fontFamily: 'CupertinoSystemText',
                         fontSize: 14.5,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0,
                       ),
                     ),
@@ -1324,7 +1324,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 style: const TextStyle(
                   fontFamily: 'CupertinoSystemText',
                   fontSize: 10.5,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: .84,
                   color: Color(0xFF979797),
                 ),
@@ -1335,7 +1335,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 style: const TextStyle(
                   fontFamily: 'CupertinoSystemText',
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: -.24,
                   color: worldInk,
                 ),
@@ -1374,7 +1374,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               style: const TextStyle(
                 fontFamily: 'CupertinoSystemText',
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 letterSpacing: -.17,
               ),
             ),

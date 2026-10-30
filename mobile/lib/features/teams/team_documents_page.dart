@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../notifications/notification_bell.dart';
 import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
@@ -297,7 +298,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
             : null,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonPage()
           : _error != null
           ? _ErrorState(message: _error!, onRetry: _load)
           : RefreshIndicator(
@@ -391,7 +392,7 @@ class _DocumentRow extends StatelessWidget {
           _filename,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w400),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +464,7 @@ class _EmptyState extends StatelessWidget {
       const AppText(
         'No files yet',
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
       ),
       const SizedBox(height: 8),
       AppText(
@@ -500,7 +501,7 @@ class _ErrorState extends StatelessWidget {
         children: [
           const AppText(
             'Couldn’t load files',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 8),
           AppText(

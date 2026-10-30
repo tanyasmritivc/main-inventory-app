@@ -1,3 +1,13 @@
+## October 29 — Mobile fluid surfaces prepared for build158
+
+`fix/mobile-fluid-surfaces` adds regular SF Pro, diagonal arrival/loading skeletons,
+small new-chat suggestions, supplied gradient Space thumbnails, compact photo
+sheets, tap-to-speak recording feedback, lower item-info field polish and blurred
+scroll edges. Spaces/More top headings retain their prior style. All 1,222 host
+tests pass (one existing skip) and analysis is clean. Signing, exact-source CI and
+upload are pending. Main/web/API/database unchanged; physical acceptance remains
+unverified. See `docs/plans/mobile-fluid-surfaces.md`.
+
 ## October 28 — Inter throughout mobile delivered to TestFlight154
 
 `style/mobile-inter` replaces Jakarta/Geist text overrides with bundled Inter across Flutter pages, shared controls, AI Markdown and app-owned UIKit lists/search. Sizes, weights, colors, scaling and semantics are retained. The existing onboarding Inter asset and license are bundled offline with regular/medium/semibold mappings. Host tests now load the real font rather than Ahem. All 1,204 tests pass (one existing skip), analysis is clean; nine native iOS checks and all five CI gates (40818486949) passed. Apple acknowledged TestFlight1.1.1(154), source088950f, delivery59e983a4-81ed-4d08-b968-d495545cfe71. All 34 archive/export device binaries, signing, 26 privacy manifests, bundled Inter/license and Apple validation passed. Processing/tester availability remains pending; physical acceptance unverified. Web/API/main unchanged. See `docs/plans/mobile-inter.md`.

@@ -1381,7 +1381,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 'Leave workspace',
                 style: PlacePalette.of(context).text(
                   16,
-                  weight: FontWeight.w500,
+                  weight: FontWeight.w400,
                   color: PlacePalette.of(context).destructive,
                 ),
               ),

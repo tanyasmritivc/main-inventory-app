@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-bool get usesNativeBottomTabs => !kIsWeb && Platform.isIOS;
+@visibleForTesting
+bool? debugNativeBottomTabsOverride;
+bool get usesNativeBottomTabs =>
+    debugNativeBottomTabsOverride ?? (!kIsWeb && Platform.isIOS);
 
 /// Hosts the system UITabBar. iOS owns Liquid Glass and touch motion.
 class NativeBottomTabs extends StatefulWidget {

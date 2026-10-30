@@ -118,7 +118,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     style: TextStyle(
                       color: AppTheme.textPrimary(context),
                       fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -284,7 +284,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                         ),
                                   fontSize: 12,
                                   fontWeight: isActive
-                                      ? FontWeight.w500
+                                      ? FontWeight.w400
                                       : FontWeight.w400,
                                 ),
                               ),
@@ -416,7 +416,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                               ),
                                         fontSize: 12,
                                         fontWeight: _location.text == loc
-                                            ? FontWeight.w600
+                                            ? FontWeight.w400
                                             : FontWeight.w400,
                                       ),
                                     ),
@@ -584,7 +584,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                             ctx,
                                             Colors.white,
                                           ),
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w400,
                                         ),
                                       ),
                                     ),
@@ -645,7 +645,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                           'Save',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),

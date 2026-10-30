@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/app_theme.dart';
@@ -174,7 +175,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
     body: RefreshIndicator(
       onRefresh: _load,
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonPage()
           : _error != null
           ? ListView(
               children: [
@@ -205,7 +206,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 22,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -243,7 +244,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                       kit.name,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     subtitle: AppText(
@@ -431,7 +432,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 42,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   AppText(
@@ -552,7 +553,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
               isThreeLine: identity.isNotEmpty,
               trailing: AppText(
                 '${item.availableQuantity}/${item.requiredQuantity}',
-                style: TextStyle(color: color, fontWeight: FontWeight.w700),
+                style: TextStyle(color: color, fontWeight: FontWeight.w400),
               ),
             );
           }),

@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 
@@ -108,7 +109,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
           children: [
             const AppText(
               'Create a Space',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -140,7 +141,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
           future: _spacesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
+              return const SkeletonPage();
             }
             if (snapshot.hasError) {
               return _LoadError(
@@ -162,7 +163,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -195,7 +196,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.7,
                     ),
                   ),

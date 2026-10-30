@@ -23,7 +23,7 @@ class WorldStyle extends StatelessWidget {
       height: 1.35,
       color: secondary ? muted : ink,
     );
-    final title = text(30, weight: FontWeight.w600).copyWith(
+    final title = text(30, weight: FontWeight.w400).copyWith(
       fontFamily: 'CupertinoSystemText',
       letterSpacing: -.7,
       height: 1.15,
@@ -38,13 +38,13 @@ class WorldStyle extends StatelessWidget {
           textTheme: theme.textTheme.copyWith(
             headlineLarge: title,
             headlineMedium: title.copyWith(fontSize: 26),
-            titleLarge: text(20, weight: FontWeight.w600),
-            titleMedium: text(17, weight: FontWeight.w500),
-            titleSmall: text(15, weight: FontWeight.w500),
+            titleLarge: text(20, weight: FontWeight.w400),
+            titleMedium: text(17, weight: FontWeight.w400),
+            titleSmall: text(15, weight: FontWeight.w400),
             bodyLarge: text(16),
             bodyMedium: text(15),
             bodySmall: text(13, secondary: true),
-            labelLarge: text(15, weight: FontWeight.w500),
+            labelLarge: text(15, weight: FontWeight.w400),
           ),
           iconTheme: IconThemeData(color: ink, size: 22),
           listTileTheme: ListTileThemeData(

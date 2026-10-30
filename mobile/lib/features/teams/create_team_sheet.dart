@@ -91,7 +91,7 @@ class _CreateTeamSheetState extends State<CreateTeamSheet> {
               children: [
                 const AppText(
                   'Create Team',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 8),
                 AppText(

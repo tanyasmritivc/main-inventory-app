@@ -1,3 +1,5 @@
+import 'package:mobile/core/ui/native_presentation.dart';
+import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -24,6 +26,10 @@ Future<void> capture(String key, String name) async {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // The test driver cannot tap embedded UIKit views. Use Flutter controls for
+  // automated navigation; real UIKit layout is covered by world_audit_test.
+  debugNativePresentationOverride = false;
+  debugNativeBottomTabsOverride = false;
   world.worldAuditCapture = (name) => capture('world-audit-frame', name);
   spaces.spaceAuditCapture = (name) => capture('spaces-audit-frame', name);
   scroll.spaceScrollCapture = (name) => capture('space-scroll-frame', name);

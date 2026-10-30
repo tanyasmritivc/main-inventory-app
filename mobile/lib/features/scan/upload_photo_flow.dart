@@ -154,7 +154,7 @@ void _showSaveFailureSummary({
         style: TextStyle(
           color: AppTheme.foreground(ctx, Colors.white),
           fontSize: 17,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
         ),
       ),
       content: Column(

@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../notifications/notification_bell.dart';
 import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
@@ -136,7 +137,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               children: [
                 const AppText(
                   'New task',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 16),
                 SegmentedButton<String>(
@@ -369,7 +370,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           ? GlassFab(onPressed: _createTask, icon: CupertinoIcons.add)
           : null,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonPage()
           : _error != null
           ? _MessageState(
               title: 'Couldn’t load tasks',
@@ -412,7 +413,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                       _team!['name']?.toString() ?? 'Team',
                       style: const TextStyle(
                         fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -511,7 +512,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     AppText(
                       task['title']?.toString() ?? 'Task',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         decoration: done ? TextDecoration.lineThrough : null,
                       ),
                     ),
@@ -566,7 +567,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                           ? AppTheme.foreground(context, AppColors.danger)
                           : AppTheme.foreground(context, AppColors.warning),
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -647,7 +648,7 @@ class _TaskSection extends StatelessWidget {
             style: TextStyle(
               color: sectionColor,
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               letterSpacing: .5,
             ),
           ),
@@ -689,7 +690,7 @@ class _BoardEmpty extends StatelessWidget {
           const SizedBox(height: 14),
           AppText(
             completed ? 'Nothing completed yet' : 'No open tasks',
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 7),
           AppText(
@@ -739,7 +740,7 @@ class _MessageState extends StatelessWidget {
             AppText(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
             ),
             const SizedBox(height: 8),
             AppText(

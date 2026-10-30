@@ -59,7 +59,7 @@ Future<void> runSpaceBarcodeFlow({
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 21,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 8),

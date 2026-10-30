@@ -1,3 +1,4 @@
+import 'package:mobile/features/world/world_style.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -92,6 +93,7 @@ class _Api extends ApiClient {
 }
 
 final _visualBoundary = GlobalKey();
+Future<void> Function(String, Uint8List)? itemDetailCapture;
 final _scroll = find.byKey(const ValueKey('item-detail-scroll'));
 final _handle = find.byKey(const ValueKey('item-detail-drag-handle'));
 final _notes = find.byKey(const ValueKey('item-detail-notes'));
@@ -106,6 +108,7 @@ Future<void> _open(
   double keyboard = 0,
   ValueChanged<int?>? onThresholdChanged,
   Brightness brightness = Brightness.dark,
+  bool styled = false,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
@@ -137,7 +140,7 @@ Future<void> _open(
             viewInsets: EdgeInsets.only(bottom: keyboard),
             padding: const EdgeInsets.only(top: 47, bottom: 34),
           ),
-          child: child!,
+          child: styled ? WorldStyle(child: child!) : child!,
         ),
         home: Builder(
           builder: (context) => Scaffold(
@@ -193,6 +196,55 @@ Future<void> _editNotes(WidgetTester tester, String text) async {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('lower item info uses one field surface ${brightness.name}', (
+      tester,
+    ) async {
+      await _open(tester, _Api(), brightness: brightness, styled: true);
+      for (final key in [
+        'item-detail-purchase-source',
+        'item-detail-threshold',
+      ]) {
+        final field = tester.widget<TextField>(find.byKey(ValueKey(key)));
+        expect(field.decoration!.filled, false);
+        expect(field.decoration!.enabledBorder, InputBorder.none);
+        expect(field.decoration!.focusedBorder, InputBorder.none);
+      }
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('item-detail-purchase-source')),
+      );
+      await tester.pumpAndSettle();
+      if (itemDetailCapture != null) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(_visualBoundary),
+        );
+        final image = await boundary.toImage(pixelRatio: 2);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        await itemDetailCapture!(
+          'item-details-${brightness.name}',
+          data!.buffer.asUint8List(),
+        );
+        image.dispose();
+      }
+      _controller(tester).jumpTo(_controller(tester).position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      expect(find.text('Close').hitTestable(), findsOneWidget);
+      if (itemDetailCapture != null) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(_visualBoundary),
+        );
+        final image = await boundary.toImage(pixelRatio: 2);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        await itemDetailCapture!(
+          'item-details-bottom-${brightness.name}',
+          data!.buffer.asUint8List(),
+        );
+        image.dispose();
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final brightness in Brightness.values) {
     testWidgets(
       '${brightness.name} Viewer can swipe from crop to original in item info',

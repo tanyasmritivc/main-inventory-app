@@ -13,7 +13,7 @@ import 'package:mobile/core/ui/app_text.dart';
 TextStyle _kLabelStyle(BuildContext context) => TextStyle(
   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
   fontSize: 11,
-  fontWeight: FontWeight.w600,
+  fontWeight: FontWeight.w400,
   letterSpacing: 0.6,
 );
 
@@ -396,7 +396,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                             Color(0xFF30D158),
                           ),
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -606,7 +606,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0xFF30D158)),
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -755,7 +755,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -829,7 +829,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                             style: TextStyle(
                               color: AppTheme.textPrimary(context),
                               fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),

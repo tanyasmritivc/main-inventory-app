@@ -98,7 +98,7 @@ void main() {
     );
     update(() => selected = 1);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.tapAt(tester.getCenter(find.byType(RetainedTabTransition)));
     expect(oldTaps, 0);
     expect(newTaps, 1);

@@ -832,7 +832,7 @@ class _AuthPageState extends State<AuthPage> {
       textStyle: const TextStyle(
         fontFamily: 'CupertinoSystemText',
         fontSize: 18,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w400,
       ),
     ),
   );
@@ -876,7 +876,7 @@ class _AuthPageState extends State<AuthPage> {
           style: const TextStyle(
             fontFamily: 'CupertinoSystemText',
             fontSize: 30,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -.75,
             height: 1.12,
             color: Color(0xFF303030),
@@ -1242,7 +1242,7 @@ class _AuthPageState extends State<AuthPage> {
           textStyle: const TextStyle(
             fontFamily: 'CupertinoSystemText',
             fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1345,7 +1345,7 @@ class _AuthPageState extends State<AuthPage> {
                                 style: TextStyle(
                                   fontFamily: 'CupertinoSystemText',
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -1363,7 +1363,7 @@ class _AuthPageState extends State<AuthPage> {
                               style: const TextStyle(
                                 fontFamily: 'CupertinoSystemText',
                                 fontSize: 18,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                                 color: Color(0xFF303030),
                               ),
                             ),

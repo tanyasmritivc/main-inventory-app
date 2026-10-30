@@ -1,3 +1,5 @@
+import '../../core/ui/scroll_glass.dart';
+import '../../core/ui/skeleton.dart';
 import 'package:dio/dio.dart';
 import '../../core/account_refresh.dart';
 import 'native_bottom_tabs.dart';
@@ -406,7 +408,7 @@ class _WorldShellState extends State<WorldShell> {
       );
     }
     if (_spaceGroups == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const SkeletonPage();
     }
     final query = _search.text.trim().toLowerCase();
     final rows = <Map<String, dynamic>>[];
@@ -422,7 +424,7 @@ class _WorldShellState extends State<WorldShell> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 82, 20, 100),
         children: [
           if (_searchingSpaces)
             LiquidSurface(
@@ -588,11 +590,14 @@ class _WorldShellState extends State<WorldShell> {
       children: [
         Expanded(
           child: Align(
+            heightFactor: 1,
             alignment: Alignment.centerLeft,
             child: index != 0
                 ? Text(
                     index == 1 ? 'Spaces' : 'More',
-                    style: Theme.of(context).textTheme.headlineLarge,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   )
                 : OrganizationPill(
                     api: widget.session.api,
@@ -601,7 +606,7 @@ class _WorldShellState extends State<WorldShell> {
                     glass: true,
                     labelStyle: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: -0.2,
                     ),
                     onSelected: widget.session.selectOrganization,
@@ -658,7 +663,7 @@ class _WorldShellState extends State<WorldShell> {
         body: SafeArea(
           child: Center(
             child: widget.session.error == null
-                ? const CircularProgressIndicator()
+                ? const SkeletonPage()
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -736,26 +741,45 @@ class _WorldShellState extends State<WorldShell> {
                         ),
                       ],
                     ),
-                    Column(
+                    Stack(
                       children: [
-                        _tabHeader(context, 1),
-                        Expanded(child: _spaces(context)),
+                        Positioned.fill(child: _spaces(context)),
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: ScrollGlass(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _tabHeader(context, 1),
+                            ),
+                          ),
+                        ),
                         if (!keyboard &&
                             _inventories.any((row) => row['can_edit'] == true))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8, bottom: 12),
-                            child: LiquidSurface(
-                              radius: 28,
-                              child: TextButton.icon(
-                                onPressed: _creatingSpace ? null : _newSpace,
-                                icon: const Icon(CupertinoIcons.plus, size: 19),
-                                label: Text(
-                                  _creatingSpace ? 'Creating...' : 'New space',
-                                ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 22,
-                                    vertical: 12,
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: 8,
+                                bottom: 12,
+                              ),
+                              child: LiquidSurface(
+                                radius: 28,
+                                child: TextButton.icon(
+                                  onPressed: _creatingSpace ? null : _newSpace,
+                                  icon: const Icon(
+                                    CupertinoIcons.plus,
+                                    size: 19,
+                                  ),
+                                  label: Text(
+                                    _creatingSpace
+                                        ? 'Creating...'
+                                        : 'New space',
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 22,
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),

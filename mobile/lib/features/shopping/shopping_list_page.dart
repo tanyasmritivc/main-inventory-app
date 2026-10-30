@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -355,7 +356,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       ),
     ];
     final body = _loading
-        ? const Center(child: CircularProgressIndicator())
+        ? const SkeletonPage()
         : RefreshIndicator(
             onRefresh: _load,
             child: ListView(
@@ -406,7 +407,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                       'To buy',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         color: RestockStatusColors.toBuy(context),
                       ),
                     ),
@@ -418,7 +419,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                       'On order',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         color: RestockStatusColors.onOrder(context),
                       ),
                     ),
@@ -430,7 +431,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                       'Tracked stock',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     for (final item in tracked) _trackedCard(item),
@@ -491,7 +492,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                         item.displayName,
                         style: const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -624,7 +625,7 @@ class _InventoryPickerState extends State<_InventoryPicker> {
                 padding: EdgeInsets.all(16),
                 child: AppText(
                   'Choose an inventory item',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 ),
               ),
               Padding(

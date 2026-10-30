@@ -559,7 +559,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                             'Inventories',
                             style: PlacePalette.of(
                               context,
-                            ).text(20, weight: FontWeight.w600),
+                            ).text(20, weight: FontWeight.w400),
                           ),
                         ),
                         IconButton(

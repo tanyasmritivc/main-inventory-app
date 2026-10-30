@@ -240,7 +240,7 @@ class _ReadyView extends StatelessWidget {
           style: TextStyle(
             color: AppTheme.textPrimary(context),
             fontSize: 24,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         const SizedBox(height: 28),
@@ -314,7 +314,7 @@ class _UploadingView extends StatelessWidget {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 8),

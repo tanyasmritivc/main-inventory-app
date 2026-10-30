@@ -1,3 +1,4 @@
+import '../../core/ui/photo_source_sheet.dart';
 import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
@@ -316,64 +317,12 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<ImageSource?> _pickPhotoSource() async {
     if (!mounted) return null;
-    return showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                    width: 0.5,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      leading: Icon(
-                        Icons.photo_camera_outlined,
-                        color: AppTheme.foreground(context, Colors.white),
-                      ),
-                      title: AppText(
-                        'Take Photo',
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                        ),
-                      ),
-                      onTap: () =>
-                          Navigator.of(context).pop(ImageSource.camera),
-                    ),
-                    ListTile(
-                      leading: Icon(
-                        Icons.photo_outlined,
-                        color: AppTheme.foreground(context, Colors.white),
-                      ),
-                      title: AppText(
-                        'Choose from Library',
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                        ),
-                      ),
-                      onTap: () =>
-                          Navigator.of(context).pop(ImageSource.gallery),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    final camera = await showPhotoSourceSheet(context);
+    return camera == null
+        ? null
+        : camera
+        ? ImageSource.camera
+        : ImageSource.gallery;
   }
 
   Future<void> _startAutoExtract() async {
@@ -468,7 +417,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -478,7 +427,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -522,7 +471,7 @@ class _ScanPageState extends State<ScanPage> {
                     ),
                     child: const AppText(
                       'View Item',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w400),
                     ),
                   ),
                 ),
@@ -723,7 +672,7 @@ class _ScanPageState extends State<ScanPage> {
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 21,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 8),
@@ -849,7 +798,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0xFF30D158)),
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.4,
                   ),
                 ),
@@ -859,7 +808,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Colors.white),
                     fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 if (location.isNotEmpty) ...[
@@ -878,7 +827,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -923,7 +872,7 @@ class _ScanPageState extends State<ScanPage> {
                         style: TextStyle(
                           color: AppTheme.foreground(ctx, Colors.white),
                           fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -1001,7 +950,7 @@ class _ScanPageState extends State<ScanPage> {
                     child: const AppText(
                       'Update Quantity',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         fontSize: 15,
                       ),
                     ),
@@ -1037,7 +986,7 @@ class _ScanPageState extends State<ScanPage> {
                     child: const AppText(
                       'View Item',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         fontSize: 15,
                       ),
                     ),
@@ -1110,7 +1059,7 @@ class _ScanPageState extends State<ScanPage> {
           style: TextStyle(
             color: AppTheme.foreground(ctx, Colors.white),
             fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         content: AppText(
@@ -1139,7 +1088,7 @@ class _ScanPageState extends State<ScanPage> {
               'Retry',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0xFF6997DD)),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -1400,7 +1349,7 @@ class _ScanPageState extends State<ScanPage> {
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1418,7 +1367,7 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.4,
                   ),
                 ),
@@ -1452,7 +1401,7 @@ class _ScanPageState extends State<ScanPage> {
                                       : AppTheme.foreground(ctx, Colors.white),
                                   fontSize: 13,
                                   fontWeight: _defaultLocation.text == space
-                                      ? FontWeight.w600
+                                      ? FontWeight.w400
                                       : FontWeight.w400,
                                 ),
                               ),
@@ -1469,7 +1418,7 @@ class _ScanPageState extends State<ScanPage> {
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.4,
                 ),
               ),
@@ -1553,7 +1502,7 @@ class _ScanPageState extends State<ScanPage> {
                           'Create',
                           style: TextStyle(
                             color: AppTheme.textPrimary(ctx),
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                             fontSize: 14,
                           ),
                         ),
@@ -1602,7 +1551,7 @@ class _ScanPageState extends State<ScanPage> {
           style: TextStyle(
             color: AppTheme.foreground(ctx, Colors.white),
             fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         content: Column(
@@ -2059,7 +2008,7 @@ class _ScanPageState extends State<ScanPage> {
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0xFF1C1C1E)),
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -2098,7 +2047,7 @@ class _ScanPageState extends State<ScanPage> {
                               return 'Plan a purchase for "$cat"?$locPart';
                             }(),
                             style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                                ?.copyWith(fontWeight: FontWeight.w400),
                           ),
                         ),
                         TextButton(
@@ -2410,7 +2359,7 @@ class _ScanPageState extends State<ScanPage> {
                                     )
                                   : AppTheme.foreground(context, Colors.white),
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -2476,7 +2425,7 @@ class _ScanPageState extends State<ScanPage> {
                                         context,
                                         Color(0xFFAEAEB2),
                                       ),
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
                                   const SizedBox(height: 12),

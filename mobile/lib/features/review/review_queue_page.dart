@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
@@ -145,13 +146,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
 
   Widget _buildBody() {
     if (_loading && _items.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 240),
-          Center(child: CircularProgressIndicator()),
-        ],
-      );
+      return const SkeletonPage();
     }
     if (_error != null && _items.isEmpty) {
       return ListView(
@@ -186,7 +181,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
           AppText(
             'Nothing needs review',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
           ),
           SizedBox(height: 8),
           AppText(
@@ -265,7 +260,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                             fontSize: 15,
                           ),
                         ),
@@ -540,7 +535,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 19,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -566,7 +561,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                       'Review capture',
                       style: TextStyle(
                         fontSize: 19,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -616,7 +611,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white38),
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -653,7 +648,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                             '$_quantity',
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),

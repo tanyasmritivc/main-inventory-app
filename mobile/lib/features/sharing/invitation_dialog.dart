@@ -132,7 +132,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                 name ?? 'Your invitation',
                 style: const TextStyle(
                   fontSize: 26,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: -0.5,
                 ),
               ),

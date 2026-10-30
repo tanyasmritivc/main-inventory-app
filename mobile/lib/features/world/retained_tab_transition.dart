@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import 'package:flutter/material.dart';
 
 /// A subtle settle between mounted tabs, preserving drafts and scroll positions.
@@ -94,6 +95,17 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
                       ),
                     ),
                   ),
+                ),
+              ),
+            ),
+          if (!_reduceMotion &&
+              _controller.isAnimating &&
+              _controller.value < .5)
+            Positioned.fill(
+              child: AbsorbPointer(
+                child: ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: const SkeletonPage(),
                 ),
               ),
             ),

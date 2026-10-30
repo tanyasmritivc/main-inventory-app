@@ -346,7 +346,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
         textStyle: const TextStyle(
           fontFamily: 'CupertinoSystemText',
           fontSize: 15,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
       child: Stack(
@@ -491,7 +491,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                       choice.title,
                       size: 14,
                       color: selected ? Colors.white : _ink,
-                      weight: FontWeight.w500,
+                      weight: FontWeight.w400,
                     )
                   : Row(
                       children: [
@@ -521,7 +521,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                               _text(
                                 choice.title,
                                 size: 15.5,
-                                weight: FontWeight.w500,
+                                weight: FontWeight.w400,
                               ),
                               if (choice.subtitle != null) ...[
                                 const SizedBox(height: 3),
@@ -572,7 +572,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                       _text(
                         'Memory for\nphysical things.',
                         size: 34,
-                        weight: FontWeight.w500,
+                        weight: FontWeight.w400,
                         align: TextAlign.center,
                       ),
                       0,
@@ -635,7 +635,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                                 text: 'Sign in',
                                 style: TextStyle(
                                   color: _ink,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -668,7 +668,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                 _text(
                   "You're all set",
                   size: 26,
-                  weight: FontWeight.w500,
+                  weight: FontWeight.w400,
                   align: TextAlign.center,
                 ),
                 1,
@@ -704,7 +704,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Semantics(
               header: true,
-              child: _text(title, size: 28, weight: FontWeight.w500),
+              child: _text(title, size: 28, weight: FontWeight.w400),
             ),
           ),
           0,
@@ -837,7 +837,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                 child: _text(
                   choices.first.title,
                   size: 14,
-                  weight: FontWeight.w500,
+                  weight: FontWeight.w400,
                   align: TextAlign.right,
                 ),
               ),

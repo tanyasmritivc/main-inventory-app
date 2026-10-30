@@ -194,7 +194,7 @@ class _TagContents extends StatelessWidget {
               fontFamily: 'CupertinoSystemText',
               color: Color(0xFF111112),
               fontSize: 13,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ),

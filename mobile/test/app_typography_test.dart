@@ -59,11 +59,11 @@ void main() {
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
         await tester.pumpWidget(_app(brightness: brightness));
-        expect(_weight(tester, 'Heading'), FontWeight.w600);
+        expect(_weight(tester, 'Heading'), FontWeight.w400);
         expect(_weight(tester, 'Supporting text'), FontWeight.w400);
         expect(_weight(tester, 'Framework body'), FontWeight.w400);
-        expect(_weight(tester, 'Framework toolbar'), FontWeight.w500);
-        expect(_weight(tester, 'Framework button'), FontWeight.w500);
+        expect(_weight(tester, 'Framework toolbar'), FontWeight.w400);
+        expect(_weight(tester, 'Framework button'), FontWeight.w400);
         expect(_weight(tester, 'Field hint'), FontWeight.w400);
         for (final label in [
           'Heading',
@@ -105,7 +105,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(_weight(tester, 'Supporting text'), FontWeight.w400);
         expect(_weight(tester, 'Framework body'), FontWeight.w400);
-        expect(_weight(tester, 'Heading'), FontWeight.w600);
+        expect(_weight(tester, 'Heading'), FontWeight.w400);
         expect(find.text('Retained input'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },

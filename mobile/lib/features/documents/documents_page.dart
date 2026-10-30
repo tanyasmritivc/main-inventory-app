@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import 'package:mobile/core/private_image.dart';
@@ -17,7 +18,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/document_link_prefs.dart';
 import '../../core/config.dart';
-import '../../core/ui/skeleton.dart';
 import '../home/home_overview.dart';
 import 'notes_editor_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -1096,7 +1096,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
+                child: SizedBox(height: 260, child: SkeletonPage()),
               )
             else if (_error != null)
               _status(_error!, retry: true)
@@ -1287,7 +1287,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                 'Link to inventory item',
                 style: Theme.of(
                   context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
