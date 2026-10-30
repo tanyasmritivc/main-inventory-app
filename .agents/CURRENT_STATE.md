@@ -1,3 +1,7 @@
+## October 29 — Solutions duplicate CTA removed
+
+Removed only the Get started CTA beneath the Solutions introduction. Header and closing CTA remain. Published runtime `a192826fd83f5eb163d3f188841ffa36c43a75dc` in `solutions-cta-20261029/frontend`; Safari live page verified. 649 tests, TypeScript, lint (0 errors/52 existing warnings), five exact-source CI gates (41010477332), production build and 32 staged/live routes passed. Backend and previous release preserved; main unchanged. PR280. Receipt: `docs/plans/solutions-hero-cta-receipt.json`.
+
 ## October 29 — Solutions use cases delivered
 
 Runtime `3cf321bfc8c9430403557fe5926f6a20e29217a6` published at https://findez.ai/solutions. Home, Workshops & Robotics, Labs & Classrooms and Small Businesses now have concise explanations and illustrative inventory questions. Five exact-source CI gates passed (41008051987), 649 web tests passed; TypeScript and lint passed with 52 existing warnings. Production build and 32 staged/live routes passed. Public HTTPS and Safari desktop/phone reviewed. Backend and prior release preserved; main unchanged. Receipt: `docs/plans/solutions-use-cases-receipt.json`.

@@ -1,6 +1,6 @@
 ## October 29 — Solutions introduction CTA removal
 
-`fix/solutions-hero-cta` removes only the Get started button beneath the Solutions introduction. Header and closing CTA remain. Checks/publication pending.
+Removed only the Get started CTA beneath the Solutions introduction. Header and closing CTA remain. Published runtime `a192826fd83f5eb163d3f188841ffa36c43a75dc` in `solutions-cta-20261029/frontend`; Safari live page verified. 649 tests, TypeScript, lint (0 errors/52 existing warnings), five exact-source CI gates (41010477332), production build and 32 staged/live routes passed. Backend and previous release preserved; main unchanged. PR280. Receipt: `docs/plans/solutions-hero-cta-receipt.json`.
 
 ## October 29 - Solutions use cases
 
