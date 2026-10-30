@@ -122,7 +122,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
                             ? NavigationMotion.incoming(_controller.value)
                             : NavigationMotion.outgoing(_controller.value),
                         child: RepaintBoundary(
-                          child: ColoredBox(
+                          child: Material(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
                                 ? Colors.black
