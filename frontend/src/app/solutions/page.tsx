@@ -5,18 +5,86 @@ import { BlurText, HeroBackdrop, GradientCard, RotatingText } from "@/components
 import type { CSSProperties } from "react";
 
 export const metadata: Metadata = {
- title: "Solutions", description: "Practical ways to use FindEZ for home storage, workshop parts, robotics projects and shared team equipment.",
- alternates: { canonical: "/solutions" }, openGraph: { title: "Solutions | FindEZ", description: "FindEZ for homes, workshops, robotics and teams.", url: "https://findez.ai/solutions" },
+ title: "Solutions",
+ description: "FindEZ for homes, workshops and robotics, labs and classrooms, and small businesses. Organize belongings, supplies and shared equipment.",
+ alternates: { canonical: "/solutions" },
+ openGraph: { title: "Solutions | FindEZ", description: "Know what you have. Find it when you need it.", url: "https://findez.ai/solutions" },
 };
+
 const solutions = [
- { id: "home", title: "Less searching. Fewer forgotten things.", description: "Boxes, cupboards and spare supplies are easier to manage when you can look up their contents. Keep a record of what you have, where it lives and the details you want to remember.", steps: [["Start with one area", "Photograph a shelf or add the contents of a storage box. Review the items and save them to a Space such as Hall closet."], ["Keep useful details", "Add quantities, photos and notes that distinguish similar items. Update the location when you move something."], ["Look it up later", "Ask where an item is or check the saved quantity before buying another."]], questions: ["Where did I put the spare light bulbs?", "How many AA batteries do I have?", "What is in the hall closet?"], example: "Hall closet / Top shelf", items: ["AA batteries · 12", "LED light bulbs · 4", "Extension cord · 1"] },
- { id: "workshops", title: "Know your parts before you start.", description: "Bring component lists, tools and storage locations together. Find the right record without remembering which spreadsheet or drawer you used last.", steps: [["Bring in your parts", "Import an existing spreadsheet or photograph a parts tray. Check names, specifications and counts before saving."], ["Organize the bench", "Use Spaces for drawers, shelves and bins. Keep part dimensions, models and other useful details in the records."], ["Prepare for the next build", "Use project kits to organize required parts and check readiness. Record quantities as you use or replenish stock."]], questions: ["Where are the M3 screws?", "What parts do we have for this project?", "Which supplies are below their reorder levels?"], example: "Robotics bench / Drawer 2", items: ["M3 × 10 mm screws · 120", "M3 nuts · 80", "USB-C cables · 6"] },
- { id: "teams", title: "Shared equipment. Shared understanding.", description: "Give people a place to find equipment and record changes. Keep work inventories separate from personal belongings, with access assigned to the right people.", steps: [["Set up the shared inventory", "Create an organization and workspace, then organize equipment into inventories and Spaces."], ["Invite the people who need it", "Use invitations and access permissions to control who can view or edit each inventory."], ["Keep the handoff visible", "Record check-outs, returns and quantity changes. Consult activity and low-stock rules to coordinate follow-up."]], questions: ["Where is the shared multimeter?", "Which items are checked out?", "What needs restocking?"], example: "Equipment room / Test instruments", items: ["Digital multimeter · 3", "Bench power supply · 2", "Oscilloscope · 1"] },
+ {
+  id: "home", audience: "Home", tone: "sunset",
+  title: "Find the things you know you own.",
+  description: "Give storage boxes, cupboards and household supplies a searchable home. Save locations, quantities, receipts and manuals so the details are there when you need them.",
+  example: "Hall closet / Top shelf", items: ["Spare charger", "AA batteries: 12", "LED light bulbs: 4"],
+  question: "Where did I put the spare charger?",
+  answer: "Your spare charger is in the cable box on the top shelf of the hall closet.",
+ },
+ {
+  id: "workshops", audience: "Workshops & Robotics", tone: "dusk",
+  title: "Spend more time building, less time searching.",
+  description: "Keep parts, tools and quantities organized by drawer, shelf or bin. Use project kits to check the parts for a build, and low-stock thresholds to see which supplies need attention.",
+  example: "Robotics bench / Drawer 2", items: ["M3 screws: 120", "M3 nuts: 80", "USB-C cables: 6"],
+  question: "How many M3 screws do we have?",
+  answer: "You have 120 M3 screws in Drawer 2 of the robotics bench.",
+ },
+ {
+  id: "labs", audience: "Labs & Classrooms", tone: "sage",
+  title: "Keep shared equipment accounted for.",
+  description: "Give your lab or classroom one place to find equipment and its records. Manage access, record check-outs and returns, and keep useful documents with each item.",
+  example: "Equipment room / Test instruments", items: ["Digital multimeter: checked out", "Bench power supply: available", "Oscilloscope: available"],
+  question: "Which equipment is checked out?",
+  answer: "The digital multimeter is checked out to Alex and is due back Friday.",
+ },
+ {
+  id: "business", audience: "Small Businesses", tone: "moss",
+  title: "Keep the essentials ready for work.",
+  description: "Organize supplies and equipment by location, with shared records your team can update. Set quantity thresholds to spot low stock and keep receipts, manuals and notes alongside each item.",
+  example: "Studio / Supply cabinet", items: ["Packing tape: 2 rolls", "Mailers: 45", "Shipping labels: 200"],
+  question: "What needs restocking?",
+  answer: "Packing tape is below your threshold of 3 rolls. There are 2 rolls left in the studio supply cabinet.",
+ },
 ] as const;
+
 export default function SolutionsPage() {
- return <PagesShell page="solutions"><main className="public-content"><header className="public-intro"><HeroBackdrop/><h1><BlurText>Your things are different.<br/>The need to find them is not.</BlurText></h1><RotatingText words={["Home","Workshops & robotics","Teams"]}/><p>Start with a shelf, a workbench or a team equipment room. FindEZ gives the physical things you manage a searchable home.</p><div className="public-actions"><Link className="public-primary" href="/signup">Get started free</Link><Link className="public-secondary" href="/product">See how it works</Link></div></header>
- <div className="pages-column"><nav className="public-sections" aria-label="On this page"><a href="#home">Home</a><a href="#workshops">Workshops & robotics</a><a href="#teams">Teams</a></nav>
- <div className="pages-stack-list">{solutions.map((solution,index) => <section className="solution-stack" data-stack style={{"--stack-index":index} as CSSProperties} id={solution.id} key={solution.id}><div className="public-split"><div className="solution-copy"><div className="public-section-heading"><h2>{solution.title}</h2><p>{solution.description}</p></div><ol className="public-workflow">{solution.steps.map(([title, detail], index) => <li key={title}><span>{`0${index + 1}`}</span><div><h3>{title}</h3><p>{detail}</p></div></li>)}</ol></div><GradientCard tone={["sunset","dusk","sage"][index]}><aside className="public-example"><h3>{solution.example}</h3><ul className="public-item-list">{solution.items.map(item => <li key={item}>{item}</li>)}</ul><h4>Questions to try</h4><ul className="public-question-list">{solution.questions.map(question => <li key={question}>{question}</li>)}</ul><p className="public-example-note">Examples shown for illustration. Answers use your saved records and available access.</p></aside></GradientCard></div></section>)}</div>
- <section className="public-end"><GradientCard tone="moss" className="pages-closing"><h2>Start small. Keep it useful.</h2><p>Add one Space, save a few items and try your first question.</p><div className="public-actions"><Link className="public-primary" href="/signup">Get started free</Link><Link className="public-secondary" href="/pricing">Compare plans</Link></div></GradientCard></section>
- </div></main></PagesShell>;
+ return <PagesShell page="solutions">
+  <main className="public-content">
+   <header className="public-intro">
+    <HeroBackdrop/>
+    <h1><BlurText>Know what you have.<br/>Find it when you need it.</BlurText></h1>
+    <RotatingText words={solutions.map(solution => solution.audience)}/>
+    <p>Organize belongings, supplies, and shared equipment - from your home to your team&apos;s workspace.</p>
+    <div className="public-actions"><Link className="public-primary" href="/signup">Get started</Link></div>
+   </header>
+   <div className="pages-column">
+    <nav className="public-sections" aria-label="On this page">
+     {solutions.map(solution => <a href={`#${solution.id}`} key={solution.id}>{solution.audience}</a>)}
+    </nav>
+    <div className="pages-stack-list">
+     {solutions.map((solution,index) => <section className="solution-stack" data-stack style={{"--stack-index":index} as CSSProperties} id={solution.id} aria-label={solution.audience} key={solution.id}>
+      <div className="public-split">
+       <div className="solution-copy">
+        <div className="public-section-heading"><h2>{solution.title}</h2><p>{solution.description}</p></div>
+       </div>
+       <GradientCard tone={solution.tone}>
+        <aside className="public-example" aria-label={`${solution.audience} example`}>
+         <h3>{solution.example}</h3>
+         <ul className="public-item-list">{solution.items.map(item => <li key={item}>{item}</li>)}</ul>
+         <h4>Ask FindEZ</h4>
+         <div className="public-question">{solution.question}</div>
+         <p>{solution.answer}</p>
+         <p className="public-example-note">Illustrative example. Answers use your saved records and available access.</p>
+        </aside>
+       </GradientCard>
+      </div>
+     </section>)}
+    </div>
+    <section className="public-end"><GradientCard tone="moss" className="pages-closing">
+     <h2>Start with one Space.</h2>
+     <p>Add a few items, save where they belong, and try your first question.</p>
+     <div className="public-actions"><Link className="public-primary" href="/signup">Get started</Link></div>
+    </GradientCard></section>
+   </div>
+  </main>
+ </PagesShell>;
 }

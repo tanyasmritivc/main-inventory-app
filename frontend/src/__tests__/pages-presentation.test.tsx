@@ -4,7 +4,7 @@ import path from "node:path";
 import ts from "typescript";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import Product from "@/app/product/page";
 import Solutions from "@/app/solutions/page";
 import Research from "@/app/research/page";
@@ -29,10 +29,21 @@ function content(component:React.ReactNode){
 }
 test.each([
  ["frontend/src/app/product/page.tsx",Product,"default"],
- ["frontend/src/app/solutions/page.tsx",Solutions,"default"],
  ["frontend/src/components/site/pricing-client.tsx",PricingClient,"PricingClient"],
 ] as const)("preserves content and destinations apart from approved eyebrow removal: %s",(file,Current,name)=>{
  const Previous=oldComponent(file,name);expect(content(<Current/>)).toEqual(content(<Previous/>));
+});
+test("Solutions offers four reachable use cases with clearly illustrative examples",()=>{
+ render(<Solutions/>);
+ const main=within(screen.getByRole("main"));
+ for(const name of ["Home","Workshops & Robotics","Labs & Classrooms","Small Businesses"]){
+  const href=main.getByRole("link",{name}).getAttribute("href")!;
+  const section=document.getElementById(href.slice(1))!;
+  expect(section.getAttribute("aria-label")).toBe(name);
+  expect(within(section).getByText(/Illustrative example/)).toBeTruthy();
+ }
+ expect(main.queryByRole("link",{name:"See how it works"})).toBeNull();
+ for(const link of main.getAllByRole("link",{name:"Get started"}))expect(link.getAttribute("href")).toBe("/signup");
 });
 test("research contains only the already-public FIND content",()=>{
  const Previous=oldComponent("frontend/src/components/landing-v5/Research.tsx","Research");

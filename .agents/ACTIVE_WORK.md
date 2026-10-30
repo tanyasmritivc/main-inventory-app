@@ -1,3 +1,7 @@
+## October 29 - Solutions use cases
+
+`feat/solutions-use-cases` updates only Solutions to the approved four audiences, concise explanations and illustrative inventory questions. Web checks/publication pending.
+
 ## October 29 - Simplified public navigation delivered
 
 Removed Product from the shared public header/footer. Main links are Solutions,

@@ -43,7 +43,7 @@ test("public pages have reachable sections, examples and independent metadata ro
  expect(screen.queryByText("Illustrative conversation")).toBeNull();
  product.unmount();
  render(<SolutionsPage/>);
- for(const id of ["home","workshops","teams"]) expect(document.getElementById(id)).toBeTruthy();
+ for(const id of ["home","workshops","labs","business"]) expect(document.getElementById(id)).toBeTruthy();
  const footer=within(screen.getByRole("navigation",{name:"Footer navigation"}));
  expect(footer.getByRole("link",{name:"Research"}).getAttribute("href")).toBe("/research");
  const routes=sitemap().map(item=>item.url);
