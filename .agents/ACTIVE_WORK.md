@@ -1,6 +1,8 @@
 ## October 29 - No skeletons in Spaces or inventory flows
 
-`fix/mobile-spaces-no-skeleton` removes skeleton rows and shimmer from Spaces, nested inventory and related workspace, document, activity, review and project/restock screens. Pending data uses a quiet static status; retained Spaces stay mounted during refresh. Preparing TestFlight160. Mobile only.
+Apple acknowledged TestFlight 1.1.1 (160), runtime `4ef1ef315535496062c231ae7dda105bdfbaedfa`, delivery `45c98b81-d3fa-419a-8c7d-0f4efcfa56bf`. Spaces, nested inventories and related workspace/document/activity/review/project/restock screens no longer show skeletons or shimmer placeholders. Initial requests use a small static status; loaded Spaces remain visible during refresh. Existing short fades and actions remain. Chat initialization/history placeholders are outside this scope.
+
+Validation: 1,229 Flutter tests passed, one existing skip; analysis clean; 12 native iOS simulator checks and all five exact-source CI gates passed (41009171988). Dark/light pending and loaded screenshots reviewed. Signed archive/export passed 34 device-executable checks each, signature/privacy/configuration/font checks and Apple validation. Normal build160 restored in the simulator. Apple processing was not polled; tester availability and physical-device acceptance remain unverified. Main unchanged; PR279. See `docs/plans/mobile-spaces-no-skeleton-receipt.json`.
 
 ## October 29 — Mobile loading and motion delivered to TestFlight159
 
