@@ -1,12 +1,20 @@
-## October 29 — Mobile fluid surfaces prepared for build158
+## October 29 — Mobile fluid surfaces delivered to TestFlight158
 
-`fix/mobile-fluid-surfaces` adds regular SF Pro, diagonal arrival/loading skeletons,
-small new-chat suggestions, supplied gradient Space thumbnails, compact photo
-sheets, tap-to-speak recording feedback, lower item-info field polish and blurred
-scroll edges. Spaces/More top headings retain their prior style. All 1,222 host
-tests pass (one existing skip) and analysis is clean. Signing, exact-source CI and
-upload are pending. Main/web/API/database unchanged; physical acceptance remains
-unverified. See `docs/plans/mobile-fluid-surfaces.md`.
+Apple acknowledged 1.1.1 (158), source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, delivery
+`5c865baf-4d60-4060-a12b-01f1895f46f9`. PR274 remains isolated from main. Regular SF Pro
+retains the top Spaces/More heading exceptions; diagonal shimmer, compact
+suggestions, supplied gradient thumbnails, photo sheets, recording feedback,
+lower item-info polish and blurred scrolling are included. Existing features,
+web, APIs and database remain unchanged except the requested tap-to-speak flow.
+
+All 1,222 host tests passed (one existing skip), analysis is clean, 26 targeted
+native iOS checks passed and all five exact-source CI jobs passed (41000230537).
+Automated navigation uses Flutter fallback controls; UIKit Ask layout was checked
+separately. Archive/export device platforms, signing, privacy, production config,
+font packaging and Apple validation passed. IPA/archive/screenshots are preserved.
+Processing and tester availability are pending and were not polled. Physical
+camera/microphone, VoiceOver and final-device acceptance remain unverified.
+Public App Store submission remains held. See `docs/plans/mobile-fluid-surfaces-receipt.json`.
 
 ## October 28 — Inter throughout mobile delivered to TestFlight154
 

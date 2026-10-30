@@ -1,7 +1,7 @@
 # Mobile fluid surfaces, October 29
 
 Mobile-only follow-up to TestFlight157, branch `fix/mobile-fluid-surfaces`.
-Build158 is pending signed export, CI and upload. Main, web, APIs and database unchanged.
+Apple acknowledged TestFlight1.1.1(158); processing/tester availability is pending. Main, web, APIs and database unchanged.
 
 - App-owned Flutter and UIKit text uses regular SF Pro. Top Spaces and More
   headings retain their previous size/weight. Existing text scaling remains.
@@ -40,3 +40,7 @@ cannot tap embedded UIKit views; this is not physical-device acceptance.
 Six native navigation/scroll checks pass with those fallback controls. The
 conversation test now checks an empty usable composer instead of assuming the
 rotating placeholder remains on its first frame.
+
+Delivery: source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, PR274, all five CI gates passed.
+Apple delivery `5c865baf-4d60-4060-a12b-01f1895f46f9`. IPA/archive preserved; no processing
+poll or public submission. Receipt: `mobile-fluid-surfaces-receipt.json`.

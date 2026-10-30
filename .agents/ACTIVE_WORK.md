@@ -1,6 +1,20 @@
-## October 29 - Mobile fluid surfaces (active)
+## October 29 — Mobile fluid surfaces delivered to TestFlight158
 
-Mobile-only branch `fix/mobile-fluid-surfaces` in `/private/tmp/findez-prelaunch-mobile`, based on delivered157. Regular text with Spaces/More heading exceptions, diagonal arrival/loading skeletons, stable supplied Space textures, compact photo menus, recording feedback, item-info lower-section polish and scrolling blur. Build158 pending final checks/CI/signing. No web/API/schema/main changes. See `docs/plans/mobile-fluid-surfaces.md`.
+Apple acknowledged 1.1.1 (158), source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, delivery
+`5c865baf-4d60-4060-a12b-01f1895f46f9`. PR274 remains isolated from main. Regular SF Pro
+retains the top Spaces/More heading exceptions; diagonal shimmer, compact
+suggestions, supplied gradient thumbnails, photo sheets, recording feedback,
+lower item-info polish and blurred scrolling are included. Existing features,
+web, APIs and database remain unchanged except the requested tap-to-speak flow.
+
+All 1,222 host tests passed (one existing skip), analysis is clean, 26 targeted
+native iOS checks passed and all five exact-source CI jobs passed (41000230537).
+Automated navigation uses Flutter fallback controls; UIKit Ask layout was checked
+separately. Archive/export device platforms, signing, privacy, production config,
+font packaging and Apple validation passed. IPA/archive/screenshots are preserved.
+Processing and tester availability are pending and were not polled. Physical
+camera/microphone, VoiceOver and final-device acceptance remain unverified.
+Public App Store submission remains held. See `docs/plans/mobile-fluid-surfaces-receipt.json`.
 
 ## October 28 — Inter throughout mobile delivered to TestFlight154
 
