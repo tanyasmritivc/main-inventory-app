@@ -25,7 +25,7 @@ test("homepage preserves the requested copy, sections, metadata and destinations
   render(await LandingPage());
   expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
   expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
-  for (const id of ["hero", "build", "s2", "s4", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
+  for (const id of ["hero", "build", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
   expect(document.querySelectorAll("#prows .pr")).toHaveLength(12);
   const header = within(screen.getByRole("banner"));
   expect(header.getByRole("link", {name: "Get started"}).getAttribute("href")).toBe("/signup");
