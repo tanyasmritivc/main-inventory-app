@@ -1,3 +1,7 @@
+## October 30 - Public App Store audit in progress
+
+User explicitly authorized public App Store review after broad checks and fixes. Active lane `fix/mobile-release-audit-162`, Projects checkout. Core native audit: 172 passed. Extended matrix and physical build161 navigation in progress. Correct stale review onboarding instructions, verify dedicated review login/listing assets, then submit the final verified candidate. Preserve main and existing features. See `docs/plans/release-audit-20261030.md`.
+
 ## October 30 — Spaces controls and restrained navigation delivered
 
 Apple acknowledged TestFlight 1.1.1 (161), runtime `0ff52f02acaf8305cbc0c583d5ca39e4b2dfe011`, delivery `bc9b127a-7053-4804-b1a5-7465619c5fde`. Fixed delayed Space opening, snapping add-menu controls, blocked interactive back and excessive scroll-blur passes first. Then added the explicitly requested restrained 160ms crossfade shared by primary tabs and pushed routes, using live UIKit Reduce Motion/Prefer Cross-Fade preferences. No skeletons or artificial loading delays added. Material tab surfaces preserve list tap feedback.
