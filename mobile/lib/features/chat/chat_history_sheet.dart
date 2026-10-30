@@ -258,7 +258,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                     ),
                   )
                 : _rows == null
-                ? const SkeletonPage()
+                ? const SkeletonPage(layout: SkeletonLayout.history)
                 : rows.isEmpty
                 ? Center(
                     child: Text(

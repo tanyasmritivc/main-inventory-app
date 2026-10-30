@@ -1,3 +1,16 @@
+## October 29 mobile loading and navigation correction
+
+Skeletons appear only for real pending data. Run the full mobile suite and analyzer.
+`retained_tab_transition_test.dart` covers immediate interaction, rapid switching,
+retained drafts, Reduce Motion and iOS edge-back with no navigation placeholder.
+`space_directory_test.dart` holds an item request pending and verifies the loader
+ends on completion and does not return on Back. Appearance tests verify the 1.04
+Default factor and saved preferences. World layout tests compose the production
+Default factor with system scaling, including small phones and both themes.
+Run `monochrome_motion_test.dart`, selected `fluid_shell_visual_test.dart` cases,
+and `world_audit_test.dart --plain-name "Ask layout"` on the iOS simulator.
+Physical TestFlight smoothness and VoiceOver acceptance remain device checks.
+
 ## Mobile signup plans (October 26)
 
 Run `flutter test test/plan_introduction_test.dart test/plans_page_test.dart`,

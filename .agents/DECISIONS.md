@@ -1,6 +1,10 @@
+## October 29 - Loading motion and readable default
+
+Navigation-only skeletons are removed at the user's request. Page-specific placeholders belong only to real pending requests; no minimum display delay. Default text scales by 1.04 (previously .96), composing with system accessibility scaling and preserving explicit Small/Large/Larger preferences. New-chat suggestion pills are opaque neutral gray with no border, tint or elevation.
+
 ## October 29 - Mobile textures and navigation loading
 
-User permits the four supplied colored textures only for Space thumbnails; other interface chrome remains monochrome. Stable Space identifiers determine the texture without storing server fields. Arrival skeletons run within existing transition time, while actual data waits retain their loader; no artificial response/data delay. Regular text is the default, with the top Spaces and More headings preserved. Voice tap auto-submits only a final transcript; cancellation invalidates late results.
+User permits the four supplied colored textures only for Space thumbnails; other interface chrome remains monochrome. Stable Space identifiers determine the texture without storing server fields. Skeletons are driven only by pending page data, never navigation or a fixed timer. Ready pages use a short stationary fade; tab state and iOS edge-back remain intact. Regular text is the default, with the top Spaces and More headings preserved. Voice tap auto-submits only a final transcript; cancellation invalidates late results.
 
 ## October 28 — Mobile typography is Inter
 

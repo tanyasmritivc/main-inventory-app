@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:mobile/core/appearance_controller.dart';
+import 'package:mobile/core/ui/skeleton.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -61,7 +63,10 @@ void main() {
             data: MediaQuery.of(context).copyWith(
               padding: const EdgeInsets.only(top: 44, bottom: 34),
               viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
-              textScaler: TextScaler.linear(scale),
+              textScaler: AppTextScaler(
+                TextScaler.linear(scale),
+                AppTextSize.standard.factor,
+              ),
               boldText: bold,
               viewInsets: EdgeInsets.only(bottom: keyboard),
             ),
@@ -171,7 +176,7 @@ void main() {
         MediaQuery.textScalerOf(
           tester.element(find.byType(WorldComposer)),
         ).scale(17),
-        17,
+        closeTo(17.68, .001),
       );
       expect(tester.takeException(), isNull);
       await worldAuditCapture?.call('typography-${brightness.name}');
@@ -261,6 +266,7 @@ void main() {
     await tester.tap(find.byTooltip('Spaces'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byType(SkeletonPage), findsNothing);
     // Only the destination paints while the mounted Ask retains its state.
     expect(heading, findsNothing);
     final transition = find.byType(RetainedTabTransition);

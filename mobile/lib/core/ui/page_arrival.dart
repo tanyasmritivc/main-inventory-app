@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'skeleton.dart';
+import 'package:flutter/cupertino.dart' show CupertinoRouteTransitionMixin;
 
-/// Shows the navigation placeholder during the existing route transition only.
-/// Does not delay a route or issue a request; real loaders take over if needed.
+/// Navigation never pretends to load data. Each page owns its real loading state.
 class PageArrivalTransitions extends PageTransitionsBuilder {
   const PageArrivalTransitions();
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 160);
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 160);
+
   @override
   Widget buildTransitions<T>(
     PageRoute<T> route,
@@ -14,37 +18,22 @@ class PageArrivalTransitions extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final content = AnimatedBuilder(
-      animation: animation,
-      child: child,
-      builder: (context, child) {
-        final show =
-            animation.status == AnimationStatus.forward &&
-            animation.value < .75 &&
-            !MediaQuery.disableAnimationsOf(context) &&
-            !MediaQuery.accessibleNavigationOf(context);
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            child!,
-            if (show)
-              Positioned.fill(
-                child: AbsorbPointer(
-                  child: ColoredBox(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: const SafeArea(child: SkeletonPage()),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
+    final reduced =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final content = reduced
+        ? child
+        : FadeTransition(
+            opacity: animation.drive(CurveTween(curve: Curves.easeOutCubic)),
+            child: child,
+          );
+    // Retain Flutter's iOS edge-back gesture and route lifecycle. Stationary
+    // Cupertino animations avoid combining a slide with the short fade.
     return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
       route,
       context,
-      animation,
-      secondaryAnimation,
+      const AlwaysStoppedAnimation<double>(1),
+      const AlwaysStoppedAnimation<double>(0),
       content,
     );
   }

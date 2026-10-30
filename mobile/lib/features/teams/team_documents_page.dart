@@ -298,7 +298,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
             : null,
       ),
       body: _loading
-          ? const SkeletonPage()
+          ? const SkeletonPage(layout: SkeletonLayout.documents)
           : _error != null
           ? _ErrorState(message: _error!, onRetry: _load)
           : RefreshIndicator(

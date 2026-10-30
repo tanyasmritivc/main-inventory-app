@@ -146,7 +146,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
 
   Widget _buildBody() {
     if (_loading && _items.isEmpty) {
-      return const SkeletonPage();
+      return const SkeletonPage(layout: SkeletonLayout.items);
     }
     if (_error != null && _items.isEmpty) {
       return ListView(

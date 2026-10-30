@@ -356,7 +356,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       ),
     ];
     final body = _loading
-        ? const SkeletonPage()
+        ? const SkeletonPage(layout: SkeletonLayout.items)
         : RefreshIndicator(
             onRefresh: _load,
             child: ListView(

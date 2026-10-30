@@ -981,7 +981,7 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
     if (_items == null) {
       return Scaffold(
         appBar: AppBar(title: AppText(name)),
-        body: const SkeletonPage(),
+        body: const SkeletonPage(layout: SkeletonLayout.items),
       );
     }
     return LocationItemsPage(

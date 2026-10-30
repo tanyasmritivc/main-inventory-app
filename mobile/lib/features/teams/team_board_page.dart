@@ -370,7 +370,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           ? GlassFab(onPressed: _createTask, icon: CupertinoIcons.add)
           : null,
       body: _loading
-          ? const SkeletonPage()
+          ? const SkeletonPage(layout: SkeletonLayout.board)
           : _error != null
           ? _MessageState(
               title: 'Couldn’t load tasks',

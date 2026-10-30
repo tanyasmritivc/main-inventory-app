@@ -88,7 +88,7 @@ class _DirectorySpacePageState extends State<_DirectorySpacePage> {
                   ),
                 ),
               )
-            : const SkeletonPage(),
+            : const SkeletonPage(layout: SkeletonLayout.items),
       );
     },
   );
@@ -415,7 +415,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
             actions: [NotificationBell(api: widget.api)],
           ),
           body: _spaces == null && _error == null
-              ? const SkeletonPage()
+              ? const SkeletonPage(layout: SkeletonLayout.spaces)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(

@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppTextSize {
   small('Small', 0.8),
-  standard('Default', 0.96),
+  standard('Default', 1.04),
   large('Large', 1.15),
   larger('Larger', 1.3);
 

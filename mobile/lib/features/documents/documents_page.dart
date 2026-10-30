@@ -1096,7 +1096,10 @@ class _DocumentsPageState extends State<DocumentsPage> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: SizedBox(height: 260, child: SkeletonPage()),
+                child: SizedBox(
+                  height: 260,
+                  child: SkeletonPage(layout: SkeletonLayout.documents),
+                ),
               )
             else if (_error != null)
               _status(_error!, retry: true)

@@ -1,8 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/skeleton.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 
 void main() {
+  testWidgets('ready pushed pages never show a loader and keep edge-back', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.create(
+          Brightness.dark,
+        ).copyWith(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      const Scaffold(body: Center(child: Text('Ready detail'))),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    expect(find.byType(SkeletonPage), findsNothing);
+    await tester.pump(const Duration(milliseconds: 170));
+    expect(find.text('Ready detail'), findsOneWidget);
+    await tester.dragFrom(const Offset(1, 200), const Offset(700, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Open'), findsOneWidget);
+    expect(find.text('Ready detail'), findsNothing);
+  });
+
   testWidgets(
     'subtle page settle preserves drafts and follows the faster tab indicator',
     (tester) async {
@@ -28,14 +64,14 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Keep my draft');
       final original = tester.state(find.byType(TextField));
       List<double> opacity() => tester
-          .widgetList<Opacity>(
+          .widgetList<FadeTransition>(
             find.descendant(
               of: find.byType(RetainedTabTransition),
-              matching: find.byType(Opacity, skipOffstage: false),
+              matching: find.byType(FadeTransition, skipOffstage: false),
               skipOffstage: false,
             ),
           )
-          .map((o) => o.opacity)
+          .map((o) => o.opacity.value)
           .toList();
       update(() => selected = 1);
       await tester.pump();
@@ -44,10 +80,10 @@ void main() {
       expect(opacity()[0], 0);
       expect(opacity()[1], inExclusiveRange(.94, 1));
       // The indicator finishes before the restrained page settle.
-      expect(RetainedTabTransition.duration, const Duration(milliseconds: 140));
+      expect(RetainedTabTransition.duration, const Duration(milliseconds: 100));
       expect(
         RetainedTabTransition.pageDuration,
-        const Duration(milliseconds: 360),
+        const Duration(milliseconds: 160),
       );
       final before = opacity();
       update(() => selected = 2);
@@ -98,7 +134,8 @@ void main() {
     );
     update(() => selected = 1);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    // The new page is usable on the first transition frame.
+    await tester.pump(const Duration(milliseconds: 10));
     await tester.tapAt(tester.getCenter(find.byType(RetainedTabTransition)));
     expect(oldTaps, 0);
     expect(newTaps, 1);

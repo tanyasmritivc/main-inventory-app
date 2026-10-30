@@ -1,3 +1,23 @@
+## October 29 — Mobile loading and motion delivered to TestFlight159
+
+Apple acknowledged 1.1.1 (159), runtime `f8f49e4`, delivery
+`8a2b819a-f10f-46d5-9d5c-7e6921b17539`. PR276 stays isolated from main.
+Navigation-only skeletons are removed; real pending data uses content-shaped
+placeholders. Ready routes/tabs use short stationary fades while preserving drafts,
+scroll positions and iOS edge-back. New-chat suggestions are flat opaque gray;
+Default text is about 8% larger with existing size choices/system scaling retained.
+
+1,225 Flutter tests passed (one existing skip), analysis is clean, 22 native iOS
+simulator checks and all five exact-source CI jobs passed (41004563323). Native
+coverage includes ten UIKit Ask layouts, eight navigation/composer checks and four
+real-loading/retained-page checks with Flutter controls. A clean rebuild removed a
+cached simulator framework caught in the first package. All 34 archive/export device
+executables, strict signing, 26 privacy manifests, production config, SF Pro
+packaging and Apple validation passed. IPA/archive/screenshots are preserved.
+Processing/tester availability is pending and was not polled. Physical-device
+motion and VoiceOver acceptance remain unverified. No web/API/schema changes or
+public App Store submission. See `docs/plans/mobile-loading-motion-receipt.json`.
+
 ## October 29 — Mobile fluid surfaces delivered to TestFlight158
 
 Apple acknowledged 1.1.1 (158), source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, delivery
