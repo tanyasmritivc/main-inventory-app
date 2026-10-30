@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'skeleton.dart';
 
 /// Shows the navigation placeholder during the existing route transition only.
@@ -39,7 +40,7 @@ class PageArrivalTransitions extends PageTransitionsBuilder {
         );
       },
     );
-    return const CupertinoPageTransitionsBuilder().buildTransitions(
+    return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
       route,
       context,
       animation,
