@@ -19,9 +19,16 @@ switches immediately; explicit Cross-Fade permits the non-spatial dissolve.
 Native sheets remain UIKit-owned. Apple API reference:
 https://developer.apple.com/documentation/uikit/uiaccessibility/preferscrossfadetransitions
 
-Final checks: 1,232 full-suite tests passed with one existing skip, plus the
-separately added rapid add-menu reversal test. All 12 final native iOS simulator
+Final checks: 1,233 full-suite tests passed with one existing skip, including the
+rapid add-menu reversal test. All 12 final native iOS simulator
 checks passed, including UIKit preference reads and cancelled/completed edge-back.
-Dark/light pending and scrolled screens reviewed. Build161 delivery pending.
+Dark/light pending and scrolled screens reviewed; analysis clean. All five CI
+gates passed for runtime `0ff52f02acaf8305cbc0c583d5ca39e4b2dfe011`
+(run 41016601351). CI caught an opaque ColoredBox obscuring list ink feedback;
+the corrected surface uses Material and passed the full local/CI suites.
+Apple acknowledged build161 upload, delivery `bc9b127a-7053-4804-b1a5-7465619c5fde`. Processing was not polled; tester availability is pending. See `mobile-navigation-controls-receipt.json`. The source is preserved in
+`/Users/tanyasmritivictorcharles/Projects/findez-navigation-controls` after the
+temporary checkout lost older files at midnight. Build outside synced Documents
+to avoid file-provider metadata on signed frameworks.
 Physical smoothness is unverified.
 No web, backend, permissions, data contracts or customer data changes.
