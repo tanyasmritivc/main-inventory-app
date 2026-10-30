@@ -54,7 +54,7 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                         style: TextStyle(
                           fontFamily: 'CupertinoSystemText',
                           fontSize: 34,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 20),

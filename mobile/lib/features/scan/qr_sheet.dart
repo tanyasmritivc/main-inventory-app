@@ -55,7 +55,7 @@ class QrOfferSheet extends StatelessWidget {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 6),
@@ -129,7 +129,7 @@ class QrOfferSheet extends StatelessWidget {
                           style: TextStyle(
                             color: AppTheme.textPrimary(context),
                             fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
@@ -225,7 +225,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 20),
@@ -273,7 +273,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -303,7 +303,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                               style: TextStyle(
                                 color: Color(0xFF999999),
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -490,7 +490,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 6),
@@ -591,7 +591,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                         ? AppTheme.foreground(context, const Color(0x4DFFFFFF))
                         : AppTheme.foreground(context, Colors.black),
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -674,7 +674,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 6),
@@ -725,7 +725,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
                       style: TextStyle(
                         color: AppTheme.textPrimary(context),
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -831,7 +831,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -861,7 +861,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                               style: TextStyle(
                                 color: Color(0xFF999999),
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                                 letterSpacing: 0.5,
                               ),
                             ),

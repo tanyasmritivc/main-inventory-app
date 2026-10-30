@@ -239,7 +239,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
       textAlign: TextAlign.center,
       style: const TextStyle(
         fontFamily: 'CupertinoSystemText',
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w400,
         fontSize: 16,
         color: Colors.white,
       ),

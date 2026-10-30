@@ -70,9 +70,9 @@ void main() {
       ),
     );
     final gesture = await tester.startGesture(
-      tester.getCenter(find.byTooltip('Hold to speak')),
+      tester.getCenter(find.byTooltip('Tap to speak')),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
     recorder.result!('Find my drill', false);
     expect(sent, isEmpty);
     await gesture.up();
@@ -103,6 +103,19 @@ void main() {
       expect(secondErrors, 1);
       await device.cancel();
       messenger.setMockMethodCallHandler(channel, null);
+    },
+  );
+  test(
+    'tap recording automatically sends a final result exactly once',
+    () async {
+      await voice.start(autoSend: true);
+      recorder.result!('Where is my drill?', false);
+      expect(sent, isEmpty);
+      recorder.result!('Where is my drill?', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(sent, ['Where is my drill?']);
+      recorder.result!('late duplicate', true);
+      expect(sent, hasLength(1));
     },
   );
   test('release waits for final words and sends exactly once', () async {

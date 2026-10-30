@@ -62,7 +62,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
         style: TextStyle(
           color: AppTheme.textPrimary(context),
           fontSize: 15,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
       const SizedBox(height: 10),
@@ -97,7 +97,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                           ? AppTheme.accentForeground(context)
                           : AppTheme.textPrimary(context),
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                     side: BorderSide.none,
                     padding: const EdgeInsets.symmetric(

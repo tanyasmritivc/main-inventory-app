@@ -66,7 +66,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
               widget.spaceName,
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
                 fontSize: 17,
               ),
             ),
@@ -94,7 +94,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.4,
                   ),
                 ),
@@ -143,7 +143,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                         Colors.white,
                                       ),
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -164,7 +164,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                         style: TextStyle(
                                           color: AppTheme.textPrimary(context),
                                           fontSize: 9,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w400,
                                         ),
                                       ),
                                     ),

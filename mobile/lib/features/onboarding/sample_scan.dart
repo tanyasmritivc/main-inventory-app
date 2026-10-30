@@ -236,7 +236,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],
@@ -267,7 +267,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],

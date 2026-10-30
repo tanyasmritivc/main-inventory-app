@@ -241,7 +241,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                 : invite['permission'] == 'edit'
                 ? 'Can edit inventory'
                 : 'View-only access',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 8),
           AppText(
@@ -323,7 +323,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                       widget.spaceName,
                       style: const TextStyle(
                         fontSize: 24,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -368,7 +368,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                           'Invite people to this space',
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 10),

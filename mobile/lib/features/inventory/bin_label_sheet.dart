@@ -121,7 +121,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const Spacer(),
@@ -206,7 +206,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 22,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w400,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -244,7 +244,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                             style: TextStyle(
                                               color: Colors.black,
                                               fontSize: 11,
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: FontWeight.w400,
                                             ),
                                           ),
                                         ),
@@ -277,7 +277,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                   style: TextStyle(
                                     color: Color(0xFF999999),
                                     fontSize: 9,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
@@ -367,7 +367,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                           context,
                                           Colors.white,
                                         ),
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w400,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -404,7 +404,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
                           fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),

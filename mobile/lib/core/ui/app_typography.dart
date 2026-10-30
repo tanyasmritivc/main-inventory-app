@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Native iOS SF Pro (Flutter's Apple system-font alias) for every app surface.
 /// One weight policy for app text, framework controls and editable text.
-/// Weights stay regular, medium or semibold regardless of OS Bold Text. Other
+/// Weights stay regular regardless of OS Bold Text. Other
 /// accessibility preferences and text scaling stay intact.
 class AppTypography extends StatelessWidget {
   const AppTypography({super.key, required this.child});
@@ -10,9 +10,7 @@ class AppTypography extends StatelessWidget {
   final Widget child;
 
   static FontWeight _weight(TextStyle style, {bool body = false}) {
-    if (body) return FontWeight.w400;
-    final normal = style.fontWeight ?? FontWeight.w400;
-    return normal.value > FontWeight.w600.value ? FontWeight.w600 : normal;
+    return FontWeight.w400;
   }
 
   static TextStyle styleOf(BuildContext context, TextStyle? style) {

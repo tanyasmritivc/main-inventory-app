@@ -100,7 +100,7 @@ class _ChatPhotoAttachmentCardState extends State<ChatPhotoAttachmentCard> {
                 : similar
                 ? 'Did you mean…?'
                 : 'Choose the item for this photo',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 8),
           if (saved)

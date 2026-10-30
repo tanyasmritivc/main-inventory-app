@@ -244,34 +244,25 @@ class _WorldComposerState extends State<WorldComposer>
                     onPressed: widget.focusNode.unfocus,
                     icon: const Icon(Icons.keyboard_hide_outlined, size: 21),
                   ),
-                Semantics(
-                  button: true,
-                  label: widget.listening
+                Tooltip(
+                  message: widget.listening
                       ? 'Send voice message'
-                      : 'Voice input. Hold to speak, release to send',
-                  onTap: widget.onVoice,
-                  child: Listener(
-                    onPointerDown: widget.onVoiceStart == null
+                      : 'Tap to speak',
+                  triggerMode: TooltipTriggerMode.manual,
+                  child: GestureDetector(
+                    onLongPressStart: widget.onVoiceStart == null
                         ? null
                         : (_) => widget.onVoiceStart!(),
-                    onPointerUp: widget.onVoiceStart == null
+                    onLongPressEnd: widget.onVoiceEnd == null
                         ? null
-                        : (_) => widget.onVoiceEnd?.call(),
-                    onPointerCancel: (_) => widget.onVoiceCancel?.call(),
-                    child: ExcludeSemantics(
-                      child: AbsorbPointer(
-                        child: IconButton(
-                          tooltip: widget.listening
-                              ? 'Release to send'
-                              : 'Hold to speak',
-                          onPressed: widget.onVoice,
-                          icon: Icon(
-                            widget.listening
-                                ? CupertinoIcons.mic_fill
-                                : CupertinoIcons.mic,
-                            size: 21,
-                          ),
-                        ),
+                        : (_) => widget.onVoiceEnd!(),
+                    child: IconButton(
+                      onPressed: widget.onVoice,
+                      icon: Icon(
+                        widget.listening
+                            ? CupertinoIcons.mic_fill
+                            : CupertinoIcons.mic,
+                        size: 21,
                       ),
                     ),
                   ),

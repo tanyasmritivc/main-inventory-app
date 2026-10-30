@@ -521,7 +521,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                         ),
                         child: AppText(
                           _saving ? 'Saving...' : 'Save changes',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          style: const TextStyle(fontWeight: FontWeight.w400),
                         ),
                       ),
                     ],

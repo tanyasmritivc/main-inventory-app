@@ -113,7 +113,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             children: [
               const Text(
                 'Save to a Space',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -124,7 +124,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   padding: const EdgeInsets.only(top: 20, bottom: 4),
                   child: Text(
                     '${group['workspace_name']} · ${group['name']}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontWeight: FontWeight.w400),
                   ),
                 ),
                 if ((group['spaces'] as List? ?? []).isEmpty)
@@ -199,7 +199,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 children: [
                   const Text(
                     'Edit item',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                   ),
                   for (final field in [
                     ('name', 'Name'),
@@ -350,7 +350,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                     'How many ${row['item']['name']}?',
                     style: const TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -472,7 +472,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 padding: EdgeInsets.all(16),
                 child: Text(
                   'Extraction details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 ),
               ),
               Expanded(
@@ -540,7 +540,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               style: TextStyle(
                 fontSize: widget.embedded ? 13 : 17,
                 color: widget.embedded ? AppTheme.textSecondary(context) : null,
-                fontWeight: widget.embedded ? FontWeight.w400 : FontWeight.w600,
+                fontWeight: widget.embedded ? FontWeight.w400 : FontWeight.w400,
               ),
             ),
           ),
@@ -619,7 +619,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       row['item']['name'] as String,
                       style: const TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         height: 1.25,
                       ),
                     ),
@@ -646,7 +646,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                           'Needs Review',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                             color: AppTheme.textSecondary(context),
                           ),
                         ),

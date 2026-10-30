@@ -224,7 +224,7 @@ class _ActivityPageState extends State<ActivityPage> {
     ).textTheme.bodySmall?.copyWith(color: muted);
     final tValue = Theme.of(
       context,
-    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
+    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w400);
 
     Widget stat({required String label, required Widget value}) {
       return Flexible(
@@ -257,7 +257,7 @@ class _ActivityPageState extends State<ActivityPage> {
             'Command Center',
             style: Theme.of(
               context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 12),
           Row(
@@ -285,7 +285,7 @@ class _ActivityPageState extends State<ActivityPage> {
                 : AppText(
                     _mostUsedLocation(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -299,7 +299,7 @@ class _ActivityPageState extends State<ActivityPage> {
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
       color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w400,
     );
   }
 

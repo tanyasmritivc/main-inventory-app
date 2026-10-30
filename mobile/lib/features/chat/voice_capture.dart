@@ -14,12 +14,15 @@ class DeviceVoiceRecorder implements VoiceRecorder {
   DeviceVoiceRecorder({SpeechToText? speech})
     : _speech = speech ?? SpeechToText();
   final SpeechToText _speech;
+  final soundLevel = ValueNotifier<double>(0);
   @override
   Future<bool> start(VoiceResult onResult, VoidCallback onError) async {
+    soundLevel.value = 0;
     // initialize caches its first callback. Rebind each recording explicitly.
     _speech.errorListener = (_) => onError();
     if (!await _speech.initialize(onError: _speech.errorListener)) return false;
     await _speech.listen(
+      onSoundLevelChange: (value) => soundLevel.value = value,
       onResult: (result) =>
           onResult(result.recognizedWords, result.finalResult),
       listenFor: const Duration(seconds: 60),
@@ -46,16 +49,23 @@ class VoiceCapture extends ChangeNotifier {
   final void Function(String) onSend;
   final VoidCallback onError;
   bool active = false;
+  bool ready = false;
+  bool _autoSend = false;
+  ValueListenable<double>? get soundLevel => recorder is DeviceVoiceRecorder
+      ? (recorder as DeviceVoiceRecorder).soundLevel
+      : null;
   bool _released = false, _disposed = false;
   int _generation = 0;
   String transcript = '';
   Completer<void>? _final;
   Future<bool>? _starting;
 
-  Future<void> start() async {
+  Future<void> start({bool autoSend = false}) async {
     if (active || _disposed) return;
     final generation = ++_generation;
     active = true;
+    ready = false;
+    _autoSend = autoSend;
     _released = false;
     transcript = '';
     _final = Completer<void>();
@@ -65,6 +75,7 @@ class VoiceCapture extends ChangeNotifier {
       transcript = words;
       if (finalResult && !_final!.isCompleted) _final!.complete();
       notifyListeners();
+      if (finalResult && _autoSend) unawaited(release());
     }, () => _fail(generation));
     try {
       final available = await _starting!;
@@ -72,7 +83,12 @@ class VoiceCapture extends ChangeNotifier {
         await recorder.cancel();
         return;
       }
-      if (!available) _fail(generation);
+      if (!available) {
+        _fail(generation);
+      } else {
+        ready = true;
+        notifyListeners();
+      }
     } catch (_) {
       _fail(generation);
     }
@@ -110,6 +126,7 @@ class VoiceCapture extends ChangeNotifier {
   void cancel() {
     _generation++;
     active = false;
+    ready = false;
     transcript = '';
     unawaited(recorder.cancel().catchError((Object _) {}));
     if (!_disposed) notifyListeners();

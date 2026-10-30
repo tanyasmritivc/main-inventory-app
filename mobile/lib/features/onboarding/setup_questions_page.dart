@@ -489,7 +489,7 @@ class _SetupQuestionsPageState extends State<SetupQuestionsPage> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               height: 1.12,
               letterSpacing: -.4,
               color: AppTheme.textPrimary(context),
@@ -589,7 +589,7 @@ class _SetupQuestionsPageState extends State<SetupQuestionsPage> {
                                   entry.value,
                                   style: TextStyle(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w400,
                                     height: 1.35,
                                     color: AppTheme.textPrimary(context),
                                   ),

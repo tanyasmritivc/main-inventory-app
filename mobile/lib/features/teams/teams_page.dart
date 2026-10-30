@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -102,7 +103,7 @@ class _TeamsPageState extends State<TeamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const SkeletonPage();
     if (_error != null) {
       return _TeamsMessage(
         title: 'Couldn’t load teams',
@@ -149,7 +150,7 @@ class _TeamsPageState extends State<TeamsPage> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 10),
@@ -219,7 +220,7 @@ class _TeamAction extends StatelessWidget {
               Expanded(
                 child: AppText(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w400),
                 ),
               ),
             ],
@@ -252,7 +253,7 @@ class _TeamRow extends StatelessWidget {
       ),
       title: AppText(
         team['name']?.toString() ?? 'Team',
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: const TextStyle(fontWeight: FontWeight.w400),
       ),
       subtitle: AppText(
         [
@@ -292,7 +293,7 @@ class _TeamsMessage extends StatelessWidget {
           AppText(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 8),
           AppText(

@@ -1,3 +1,21 @@
+## October 29 — Mobile fluid surfaces delivered to TestFlight158
+
+Apple acknowledged 1.1.1 (158), source `d24cce39dfda8d92965f02bd0e8d701abbe37278`, delivery
+`5c865baf-4d60-4060-a12b-01f1895f46f9`. PR274 remains isolated from main. Regular SF Pro
+retains the top Spaces/More heading exceptions; diagonal shimmer, compact
+suggestions, supplied gradient thumbnails, photo sheets, recording feedback,
+lower item-info polish and blurred scrolling are included. Existing features,
+web, APIs and database remain unchanged except the requested tap-to-speak flow.
+
+All 1,222 host tests passed (one existing skip), analysis is clean, 26 targeted
+native iOS checks passed and all five exact-source CI jobs passed (41000230537).
+Automated navigation uses Flutter fallback controls; UIKit Ask layout was checked
+separately. Archive/export device platforms, signing, privacy, production config,
+font packaging and Apple validation passed. IPA/archive/screenshots are preserved.
+Processing and tester availability are pending and were not polled. Physical
+camera/microphone, VoiceOver and final-device acceptance remain unverified.
+Public App Store submission remains held. See `docs/plans/mobile-fluid-surfaces-receipt.json`.
+
 ## October 28 — Inter throughout mobile delivered to TestFlight154
 
 `style/mobile-inter` replaces Jakarta/Geist text overrides with bundled Inter across Flutter pages, shared controls, AI Markdown and app-owned UIKit lists/search. Sizes, weights, colors, scaling and semantics are retained. The existing onboarding Inter asset and license are bundled offline with regular/medium/semibold mappings. Host tests now load the real font rather than Ahem. All 1,204 tests pass (one existing skip), analysis is clean; nine native iOS checks and all five CI gates (40818486949) passed. Apple acknowledged TestFlight1.1.1(154), source088950f, delivery59e983a4-81ed-4d08-b968-d495545cfe71. All 34 archive/export device binaries, signing, 26 privacy manifests, bundled Inter/license and Apple validation passed. Processing/tester availability remains pending; physical acceptance unverified. Web/API/main unchanged. See `docs/plans/mobile-inter.md`.

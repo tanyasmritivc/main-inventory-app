@@ -1,3 +1,4 @@
+import '../../core/ui/skeleton.dart';
 import 'package:mobile/core/private_image.dart';
 import 'team_categories.dart';
 import '../../core/app_theme.dart';
@@ -486,7 +487,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonPage()
           : _error != null
           ? _WorkspaceMessage(
               title: 'Couldn’t load workspace',
@@ -634,7 +635,7 @@ class _WorkspaceRow extends StatelessWidget {
         ),
         title: AppText(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w400),
         ),
         subtitle: AppText(subtitle),
         trailing: Icon(
@@ -691,7 +692,7 @@ class _InviteCodeCard extends StatelessWidget {
                   style: TextStyle(
                     color: AppTheme.foreground(context, AppColors.muted),
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: .5,
                   ),
                 ),
@@ -700,7 +701,7 @@ class _InviteCodeCard extends StatelessWidget {
                   code,
                   style: const TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 2,
                   ),
                 ),
@@ -980,7 +981,7 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
     if (_items == null) {
       return Scaffold(
         appBar: AppBar(title: AppText(name)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const SkeletonPage(),
       );
     }
     return LocationItemsPage(
@@ -1075,7 +1076,7 @@ class _TeamSpaceInventoryPageState
             children: [
               const AppText(
                 'Add Item',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
               ),
               const SizedBox(height: 18),
               TextField(
@@ -1213,7 +1214,7 @@ class _TeamSpaceInventoryPageState
         ? GlassFab(onPressed: _add, icon: CupertinoIcons.add)
         : null,
     body: _loading
-        ? const Center(child: CircularProgressIndicator())
+        ? const SkeletonPage()
         : _error != null
         ? _WorkspaceMessage(
             title: 'Couldn’t load Space',
@@ -1263,7 +1264,7 @@ class _TeamSpaceInventoryPageState
                         ),
                         trailing: AppText(
                           '${item.quantity}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontWeight: FontWeight.w400),
                         ),
                         onTap: () => _open(item),
                       );
@@ -1414,7 +1415,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                           style: TextStyle(
                             color: AppTheme.foreground(context, Colors.white),
                             fontSize: 22,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1462,7 +1463,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
             action: _load,
           )
         : _members == null
-        ? const Center(child: CircularProgressIndicator())
+        ? const SkeletonPage()
         : Column(
             children: [
               if ((widget.currentRole == 'owner' ||
@@ -1537,7 +1538,7 @@ class _MemberProfileDetail extends StatelessWidget {
         style: TextStyle(
           color: AppTheme.foreground(context, Color(0x80FFFFFF)),
           fontSize: 13,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
       const SizedBox(height: 3),
@@ -1600,7 +1601,7 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
             action: _load,
           )
         : _activity == null
-        ? const Center(child: CircularProgressIndicator())
+        ? const SkeletonPage()
         : RefreshIndicator(
             onRefresh: _load,
             child: _activity!.isEmpty
@@ -1673,7 +1674,7 @@ class _WorkspaceMessage extends StatelessWidget {
         AppText(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
         ),
         const SizedBox(height: 8),
         AppText(

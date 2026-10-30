@@ -378,7 +378,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                 title: AppText(
                   description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: unread ? FontWeight.w500 : FontWeight.w400,
+                    fontWeight: unread ? FontWeight.w400 : FontWeight.w400,
                   ),
                 ),
                 subtitle: details.isEmpty

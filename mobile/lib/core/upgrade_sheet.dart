@@ -95,7 +95,7 @@ class _LimitSheet extends StatelessWidget {
                     style: TextStyle(
                       color: AppTheme.textPrimary(context),
                       fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -165,7 +165,7 @@ class _LimitSheet extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                     fontSize: 15,
                   ),
                 ),
@@ -274,7 +274,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
         'Join a team',
         style: TextStyle(
           color: AppTheme.foreground(context, Colors.white),
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
         ),
       ),
       content: Column(
@@ -356,7 +356,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
                   'Join',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFFA78BFA)),
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
         ),

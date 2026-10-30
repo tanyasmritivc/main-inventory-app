@@ -267,7 +267,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     TextStyle(
                       color: primary,
                       fontSize: widget.refined ? 16 : 17,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   listBullet: AppTypography.styleOf(

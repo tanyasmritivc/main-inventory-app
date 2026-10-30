@@ -1157,3 +1157,17 @@ actions on roomy layouts, and stopping extraction without dropping a draft.
 `chat_capture_card_test.dart` keeps selection, edit, destination and save/retry
 contracts covered. Run `integration_test/extraction_keyboard_audit_test.dart`
 filtered to `extraction keeps composer|scanning preview` for native visual checks.
+
+## October 29 mobile fluid surfaces
+
+Run the full Flutter suite and analyzer. `fluid_surfaces_test.dart` covers photo
+choices, recording cancellation, large text, texture stability and reduced-motion
+skeletons. `voice_capture_test.dart` verifies tap final-result submission exactly
+once and hold/release. `chat_viewport_test.dart` verifies scroll-under controls and
+last-message reachability. Item-detail tests retain all write/dismissal guards and
+check single-surface fields under WorldStyle. Native audits are
+`fluid_surfaces_audit_test.dart`, `item_detail_ui_audit_test.dart --name "lower item info"`
+and `fluid_shell_visual_test.dart`. The latter uses Flutter control fallbacks for
+automated taps on iOS; `world_audit_test.dart` retains real UIKit rendering checks.
+Physical microphone/camera/VoiceOver acceptance is still required before claiming
+those behaviors are verified on-device.

@@ -107,7 +107,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
               style: const TextStyle(
                 fontFamily: 'CupertinoSystemText',
                 fontSize: 22,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 24),

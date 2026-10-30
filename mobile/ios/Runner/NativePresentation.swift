@@ -215,7 +215,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     } else { tableView.backgroundView = visibleSections.allSatisfy { ($0["rows"] as? [[String: Any]] ?? []).isEmpty } ? label : nil }
     if page["textSizeFactor"] != nil {
       navigationController?.navigationBar.titleTextAttributes = [
-        .font: appFont(17, style: .headline, weight: .medium)
+        .font: appFont(17, style: .headline, weight: .regular)
       ]
       search?.searchBar.searchTextField.font = appFont(15, style: .body)
       search?.searchBar.searchTextField.adjustsFontForContentSizeCategory = true
@@ -224,18 +224,11 @@ private final class NativeListController: UITableViewController, UISearchResults
   }
   // Match Flutter's 15pt body / 13pt detail at the same app-size factor.
   // UIFontMetrics applies the system Dynamic Type curve exactly once.
-  private static let registerBrandFont: Void = {
-    if let url = Bundle.main.url(forResource: "Frameworks/App.framework/flutter_assets/assets/fonts/inter/Inter", withExtension: "ttf") {
-      CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-    }
-  }()
   private func appFont(_ size: CGFloat, style: UIFont.TextStyle,
                        weight: UIFont.Weight = .regular) -> UIFont {
     let factor = min(1.3, max(0.8, (page["textSizeFactor"] as? NSNumber)?.doubleValue ?? 1))
-    _ = Self.registerBrandFont
     let pointSize = size * CGFloat(factor)
-    let base = UIFont(name: "Inter-Regular", size: pointSize)
-      ?? .systemFont(ofSize: pointSize, weight: weight)
+    let base = UIFont.systemFont(ofSize: pointSize, weight: .regular)
     let descriptor = base.fontDescriptor.addingAttributes([
       .traits: [UIFontDescriptor.TraitKey.weight: weight]
     ])
@@ -251,7 +244,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   }
   override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
     guard page["textSizeFactor"] != nil, let header = view as? UITableViewHeaderFooterView else { return }
-    header.textLabel?.font = appFont(13, style: .footnote, weight: .medium)
+    header.textLabel?.font = appFont(13, style: .footnote, weight: .regular)
     header.textLabel?.adjustsFontForContentSizeCategory = true
   }
   override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {

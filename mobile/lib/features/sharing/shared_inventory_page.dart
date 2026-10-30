@@ -451,7 +451,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             onPressed: () => Navigator.pop(ctx, true),
             child: const AppText(
               'Return',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w400),
             ),
           ),
         ],
@@ -821,7 +821,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                                   ),
                             fontSize: 13,
                             fontWeight: isActive
-                                ? FontWeight.w500
+                                ? FontWeight.w400
                                 : FontWeight.w400,
                           ),
                         ),
@@ -873,7 +873,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -1022,7 +1022,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
               fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.5,
             ),
           ),
@@ -1222,7 +1222,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -1311,7 +1311,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   SizedBox(height: 3),
@@ -1363,7 +1363,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Colors.white),
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 subtitle: AppText(
@@ -1514,7 +1514,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.4,
                 ),
               ),
@@ -1566,7 +1566,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1596,7 +1596,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                                   const Color(0x73FFFFFF),
                                 ),
                           fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -1656,7 +1656,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                             Color(0xFFFF453A),
                           ),
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -1694,7 +1694,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 6),
@@ -1759,7 +1759,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         style: TextStyle(
           color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
           fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: 1.4,
         ),
       ),
@@ -1816,7 +1816,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: isReturned
                       ? AppTheme.foreground(context, const Color(0x99FFFFFF))
                       : AppTheme.foreground(context, Colors.white),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   fontSize: 14,
                 ),
               ),
@@ -1834,7 +1834,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         ? AppTheme.foreground(context, const Color(0x99FFFFFF))
                         : AppTheme.foreground(context, Colors.white),
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1852,7 +1852,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0xFF30D158)),
                       fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ] else if (!isReturned && dueBackAt != null) ...[
@@ -1872,7 +1872,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                               const Color(0xFFFBBF24),
                             ),
                       fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -1901,7 +1901,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1936,7 +1936,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             SizedBox(height: 6),
@@ -1967,7 +1967,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.4,
                 ),
               ),
@@ -2066,7 +2066,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
             fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
         actions: [
@@ -2171,7 +2171,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           ),
           labelStyle: const TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
           unselectedLabelStyle: const TextStyle(
             fontSize: 13,
@@ -2243,7 +2243,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         style: TextStyle(
           color: textColor,
           fontSize: 11,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
     );
@@ -2433,7 +2433,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
             textAlign: TextAlign.center,
           ),
@@ -2521,7 +2521,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
               ),
               child: const AppText(
                 'Save',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
               ),
             ),
           ),
@@ -2680,7 +2680,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -2759,7 +2759,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0.6,
                       ),
                     ),
@@ -2822,7 +2822,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                       'Edit',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -2854,7 +2854,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                       'Check Out',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -3003,7 +3003,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
@@ -3137,7 +3137,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         'Save',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
               ),

@@ -1,3 +1,7 @@
+## October 29 - Mobile textures and navigation loading
+
+User permits the four supplied colored textures only for Space thumbnails; other interface chrome remains monochrome. Stable Space identifiers determine the texture without storing server fields. Arrival skeletons run within existing transition time, while actual data waits retain their loader; no artificial response/data delay. Regular text is the default, with the top Spaces and More headings preserved. Voice tap auto-submits only a final transcript; cancellation invalidates late results.
+
 ## October 28 — Mobile typography is Inter
 
 Use bundled Inter for all app-owned mobile text, including labels/codes, chat, onboarding/auth, framework controls and UIKit inventory lists. Preserve existing sizes/weights and accessibility scaling; do not reintroduce Jakarta/Geist overrides. OS-owned permission/auth/camera sheets retain system typography. The Inter asset is bundled, so no font download is required. Web typography is outside this change.

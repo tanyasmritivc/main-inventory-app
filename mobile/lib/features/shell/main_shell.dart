@@ -863,7 +863,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
       color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w400,
     );
   }
 
@@ -892,7 +892,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
                 context,
                 Colors.white.withValues(alpha: 0.70),
               ),
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -943,7 +943,7 @@ class _ProfileSupportSection extends StatelessWidget {
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
       color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w400,
     );
   }
 
@@ -1067,7 +1067,7 @@ class _ProfilePage extends StatelessWidget {
                   context,
                   Colors.white.withValues(alpha: 0.70),
                 ),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 10),
@@ -1146,7 +1146,7 @@ class _ProfilePage extends StatelessWidget {
                   context,
                   Colors.white.withValues(alpha: 0.70),
                 ),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 10),
@@ -1265,7 +1265,7 @@ class _ProfilePage extends StatelessWidget {
                   context,
                   Colors.white.withValues(alpha: 0.70),
                 ),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 10),

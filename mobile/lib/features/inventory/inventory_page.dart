@@ -1,3 +1,4 @@
+import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/ui/native_menu_button.dart';
@@ -354,7 +355,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -757,8 +758,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        bottomNavigationBar: IgnorePointer(
+          child: ScrollGlass(
+            top: false,
+            child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
+          ),
+        ),
         backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
+          flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
           title: _searchOpen
               ? TextField(
                   controller: _spaceSearchController,
@@ -833,7 +843,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               ],
             ),
           ],
-          backgroundColor: AppTheme.bg(context),
+          backgroundColor: Colors.transparent,
           elevation: 0,
           surfaceTintColor: Colors.transparent,
         ),
@@ -846,6 +856,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height:
+                          MediaQuery.paddingOf(context).top +
+                          kToolbarHeight +
+                          (_syncError == null ? 12 : 56),
+                    ),
+                  ),
                   // Stats bar + action toolbar — scrolls away
                   SliverToBoxAdapter(
                     child: Column(
@@ -960,7 +978,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                                       ),
                                                 fontSize: 13,
                                                 fontWeight: isActive
-                                                    ? FontWeight.w500
+                                                    ? FontWeight.w400
                                                     : FontWeight.w400,
                                               ),
                                             ),
@@ -1002,7 +1020,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                   Colors.white,
                                 ),
                                 fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -1036,7 +1054,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                       'Add Item',
                                       style: TextStyle(
                                         color: AppTheme.textPrimary(context),
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w400,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -1180,7 +1198,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -1343,7 +1361,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     title,
                     style: const TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -2246,7 +2264,7 @@ class _InventoryPageState extends State<InventoryPage>
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 8),
@@ -2428,7 +2446,7 @@ class _InventoryPageState extends State<InventoryPage>
                           style: TextStyle(
                             color: AppTheme.foreground(context, Colors.white),
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -2513,7 +2531,7 @@ class _InventoryPageState extends State<InventoryPage>
                                             ),
                                             fontSize: 16,
                                             height: 1.2,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w400,
                                             letterSpacing: -0.2,
                                           ),
                                           maxLines: 2,
@@ -2562,7 +2580,7 @@ class _InventoryPageState extends State<InventoryPage>
                                                         context,
                                                       ),
                                                   fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
+                                                  fontWeight: FontWeight.w400,
                                                 ),
                                               ),
                                             ],
@@ -2701,7 +2719,7 @@ class _InventoryPageState extends State<InventoryPage>
                 'JOINED SPACES',
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   letterSpacing: 1.5,
                 ),
@@ -2757,7 +2775,7 @@ class _InventoryPageState extends State<InventoryPage>
                                         Colors.white,
                                       ),
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                       letterSpacing: -0.2,
                                     ),
                                     maxLines: 2,
@@ -2848,7 +2866,7 @@ class _InventoryPageState extends State<InventoryPage>
                                 AppColors.muted,
                               ),
                               fontSize: 9,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -2977,7 +2995,7 @@ class _InventoryPageState extends State<InventoryPage>
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
                         fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -3340,7 +3358,7 @@ class _InventoryPageState extends State<InventoryPage>
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -3371,7 +3389,7 @@ class _InventoryPageState extends State<InventoryPage>
                                 style: TextStyle(
                                   color: AppTheme.onAction,
                                   fontSize: 9,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -3483,7 +3501,7 @@ class _InventoryPageState extends State<InventoryPage>
                                             onOrder: _onOrderCount(),
                                             style: const TextStyle(
                                               fontSize: 13,
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: FontWeight.w400,
                                             ),
                                           ),
                                   ),
@@ -3879,7 +3897,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -4132,7 +4150,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
             textAlign: TextAlign.center,
           ),
@@ -4219,7 +4237,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               ),
               child: const AppText(
                 'Save',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
               ),
             ),
           ),

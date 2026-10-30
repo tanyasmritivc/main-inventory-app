@@ -66,7 +66,7 @@ class InventoryChatButton extends StatelessWidget {
                                         'Ask FindEZ',
                                         style: TextStyle(
                                           fontSize: 17,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.w400,
                                         ),
                                       ),
                                       const SizedBox(height: 3),
@@ -145,7 +145,7 @@ class InventoryChatButton extends StatelessWidget {
                       'Ask FindEZ',
                       style: TextStyle(
                         color: colors.onSurface,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),

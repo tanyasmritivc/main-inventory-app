@@ -169,7 +169,7 @@ void showItemSortSheet(
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Colors.white),
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -203,7 +203,7 @@ void showItemSortSheet(
                                 ),
                           fontSize: 15,
                           fontWeight: option == current
-                              ? FontWeight.w600
+                              ? FontWeight.w400
                               : FontWeight.w400,
                         ),
                       ),

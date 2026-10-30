@@ -588,7 +588,7 @@ class _TooltipCard extends StatelessWidget {
                           config.title,
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                             color: AppTheme.textPrimary(context),
                           ),
                         ),
