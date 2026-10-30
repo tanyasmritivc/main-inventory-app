@@ -20,19 +20,27 @@ String spaceIdentifier(Map<String, dynamic> space) =>
 
 Future<void> openDirectorySpace(
   BuildContext context,
-  ApiClient api,
-  Map<String, dynamic> space,
-) async {
+  ApiClient? api,
+  Map<String, dynamic> space, {
+  Future<ApiClient> Function()? resolveApi,
+}) async {
+  assert(api != null || resolveApi != null);
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => _DirectorySpacePage(api: api, space: space),
+      builder: (_) =>
+          _DirectorySpacePage(api: api, space: space, resolveApi: resolveApi),
     ),
   );
 }
 
 class _DirectorySpacePage extends StatefulWidget {
-  const _DirectorySpacePage({required this.api, required this.space});
-  final ApiClient api;
+  const _DirectorySpacePage({
+    required this.api,
+    required this.space,
+    this.resolveApi,
+  });
+  final ApiClient? api;
+  final Future<ApiClient> Function()? resolveApi;
   final Map<String, dynamic> space;
   @override
   State<_DirectorySpacePage> createState() => _DirectorySpacePageState();
@@ -41,14 +49,18 @@ class _DirectorySpacePage extends StatefulWidget {
 class _DirectorySpacePageState extends State<_DirectorySpacePage> {
   late Future<Widget> _page = _load();
   Future<Widget> _load() async {
-    final result = await widget.api.searchItems(query: '');
+    final api = widget.api ?? await widget.resolveApi!();
+    if (!mounted) return const SizedBox.shrink();
+    api.assertCurrentContext();
+    final result = await api.searchItems(query: '');
     final thresholds = await LowStockPrefs.loadAll();
-    widget.api.assertCurrentContext();
+    if (!mounted) return const SizedBox.shrink();
+    api.assertCurrentContext();
     final name = widget.space['name'].toString();
     final id = spaceIdentifier(widget.space);
     return WorldStyle(
       child: LocationItemsPage(
-        api: widget.api,
+        api: api,
         location: name,
         spaceId: id,
         items: result.items
@@ -60,7 +72,7 @@ class _DirectorySpacePageState extends State<_DirectorySpacePage> {
             .toList(),
         allItems: result.items,
         thresholds: thresholds,
-        readOnly: !widget.api.canEdit,
+        readOnly: !api.canEdit,
       ),
     );
   }
@@ -130,14 +142,11 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
   String get name => widget.space['name'].toString();
   String get id => spaceIdentifier(widget.space);
 
-  Future<void> _run(Future<void> Function(ApiClient) action) async {
+  Future<void> _run(Future<void> Function() action) async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final api = await widget.resolveApi();
-      if (!mounted) return;
-      api.assertCurrentContext();
-      await action(api);
+      await action();
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -182,7 +191,6 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
               origin & box.size,
               Offset.zero & overlay.size,
             ),
-            popUpAnimationStyle: AnimationStyle.noAnimation,
             items: [
               const PopupMenuItem(
                 value: 'open',
@@ -245,10 +253,28 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
     trailing: IconButton(
       key: _anchor,
       tooltip: 'Options for $name',
-      onPressed: _busy ? null : () => _run(_menu),
+      onPressed: _busy
+          ? null
+          : () => _run(() async {
+              final api = await widget.resolveApi();
+              if (!mounted) return;
+              api.assertCurrentContext();
+              await _menu(api);
+            }),
       icon: const Icon(CupertinoIcons.ellipsis),
     ),
-    onTap: _busy ? null : () => _run(_open),
+    onTap: _busy
+        ? null
+        : () => _run(() async {
+            // Show the destination immediately, while its authorized data is resolved.
+            await openDirectorySpace(
+              context,
+              null,
+              widget.space,
+              resolveApi: widget.resolveApi,
+            );
+            if (mounted) await widget.onChanged();
+          }),
   );
 }
 

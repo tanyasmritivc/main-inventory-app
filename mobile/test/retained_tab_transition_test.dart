@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 
 void main() {
-  testWidgets('ready pushed pages never show a loader and keep edge-back', (
+  testWidgets('pushed pages stay opaque and use interactive native back', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -31,7 +31,24 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pump();
     expect(find.byType(SkeletonPage), findsNothing);
-    await tester.pump(const Duration(milliseconds: 170));
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      find.ancestor(
+        of: find.text('Ready detail'),
+        matching: find.byType(FadeTransition),
+      ),
+      findsNothing,
+    );
+    expect(tester.getTopLeft(find.byType(Scaffold).last).dx, greaterThan(0));
+    await tester.pumpAndSettle();
+    expect(find.text('Ready detail'), findsOneWidget);
+    // A cancelled edge swipe keeps the detail visible and returns it to rest.
+    final gesture = await tester.startGesture(const Offset(1, 200));
+    await gesture.moveBy(const Offset(90, 0));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await gesture.up();
+    await tester.pumpAndSettle();
     expect(find.text('Ready detail'), findsOneWidget);
     await tester.dragFrom(const Offset(1, 200), const Offset(700, 0));
     await tester.pumpAndSettle();
@@ -39,67 +56,50 @@ void main() {
     expect(find.text('Ready detail'), findsNothing);
   });
 
-  testWidgets(
-    'subtle page settle preserves drafts and follows the faster tab indicator',
-    (tester) async {
-      var selected = 0;
-      late StateSetter update;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: StatefulBuilder(
-            builder: (context, setState) {
-              update = setState;
-              return RetainedTabTransition(
-                index: selected,
-                children: const [
-                  Material(child: TextField()),
-                  Center(child: Text('Spaces')),
-                  Center(child: Text('More')),
-                ],
-              );
-            },
-          ),
+  testWidgets('tabs switch immediately without opacity and preserve drafts', (
+    tester,
+  ) async {
+    var selected = 0;
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return RetainedTabTransition(
+              index: selected,
+              children: const [
+                Material(child: TextField()),
+                Center(child: Text('Spaces')),
+                Center(child: Text('More')),
+              ],
+            );
+          },
         ),
-      );
-      await tester.enterText(find.byType(TextField), 'Keep my draft');
-      final original = tester.state(find.byType(TextField));
-      List<double> opacity() => tester
-          .widgetList<FadeTransition>(
-            find.descendant(
-              of: find.byType(RetainedTabTransition),
-              matching: find.byType(FadeTransition, skipOffstage: false),
-              skipOffstage: false,
-            ),
-          )
-          .map((o) => o.opacity.value)
-          .toList();
-      update(() => selected = 1);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
-      // The selected page is almost opaque; no whole-page dissolve.
-      expect(opacity()[0], 0);
-      expect(opacity()[1], inExclusiveRange(.94, 1));
-      // The indicator finishes before the restrained page settle.
-      expect(RetainedTabTransition.duration, const Duration(milliseconds: 100));
-      expect(
-        RetainedTabTransition.pageDuration,
-        const Duration(milliseconds: 160),
-      );
-      final before = opacity();
-      update(() => selected = 2);
-      await tester.pump();
-      // Live native frames may advance between selection and the next pump.
-      expect(opacity()[2], inInclusiveRange(before[1], 1));
-      expect(opacity()[1], 0);
-      await tester.pumpAndSettle();
-      expect(opacity(), [0, 0, 1]);
-      update(() => selected = 0);
-      await tester.pumpAndSettle();
-      expect(find.text('Keep my draft'), findsOneWidget);
-      expect(tester.state(find.byType(TextField)), same(original));
-      expect(tester.takeException(), isNull);
-    },
-  );
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'Keep my draft');
+    final original = tester.state(find.byType(TextField));
+    update(() => selected = 1);
+    await tester.pump();
+    expect(find.text('Spaces'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(RetainedTabTransition),
+        matching: find.byType(FadeTransition),
+      ),
+      findsNothing,
+    );
+    update(() => selected = 2);
+    await tester.pump();
+    expect(find.text('More'), findsOneWidget);
+    expect(find.text('Spaces'), findsNothing);
+    update(() => selected = 0);
+    await tester.pumpAndSettle();
+    expect(find.text('Keep my draft'), findsOneWidget);
+    expect(tester.state(find.byType(TextField)), same(original));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('only selected tab can receive taps during page settle', (
     tester,
@@ -146,7 +146,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Reduce Motion changes immediately and stops an in-flight fade', (
+  testWidgets('Reduce Motion and rapid selection never schedule a page fade', (
     tester,
   ) async {
     var selected = 0;

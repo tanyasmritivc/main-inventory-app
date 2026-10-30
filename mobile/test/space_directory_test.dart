@@ -189,6 +189,30 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets(
+    'Space opens before access request finishes and Back stays responsive',
+    (tester) async {
+      await mount(tester);
+      delayed = Completer<void>();
+      await tester.tap(find.text('Workbench'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContentLoading), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
+      expect(
+        f.requests.where((r) => r.path.endsWith('/search_items')),
+        isEmpty,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(ContentLoading), findsNothing);
+      delayed!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(LocationItemsPage), findsNothing);
+      expect(find.text('Workbench'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
   for (final brightness in Brightness.values) {
     testWidgets('Space item request never shows skeletons $brightness', (
       tester,

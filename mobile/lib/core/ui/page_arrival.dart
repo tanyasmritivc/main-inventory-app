@@ -6,9 +6,9 @@ class PageArrivalTransitions extends PageTransitionsBuilder {
   const PageArrivalTransitions();
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 160);
+  Duration get transitionDuration => const Duration(milliseconds: 300);
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 160);
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 300);
 
   @override
   Widget buildTransitions<T>(
@@ -21,20 +21,14 @@ class PageArrivalTransitions extends PageTransitionsBuilder {
     final reduced =
         MediaQuery.disableAnimationsOf(context) ||
         MediaQuery.accessibleNavigationOf(context);
-    final content = reduced
-        ? child
-        : FadeTransition(
-            opacity: animation.drive(CurveTween(curve: Curves.easeOutCubic)),
-            child: child,
-          );
-    // Retain Flutter's iOS edge-back gesture and route lifecycle. Stationary
-    // Cupertino animations avoid combining a slide with the short fade.
+    // Use the route's real animation, including interactive back gestures.
+    // Whole-page opacity also causes expensive compositing of glass/platform views.
     return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
       route,
       context,
-      const AlwaysStoppedAnimation<double>(1),
-      const AlwaysStoppedAnimation<double>(0),
-      content,
+      reduced ? const AlwaysStoppedAnimation<double>(1) : animation,
+      reduced ? const AlwaysStoppedAnimation<double>(0) : secondaryAnimation,
+      child,
     );
   }
 }

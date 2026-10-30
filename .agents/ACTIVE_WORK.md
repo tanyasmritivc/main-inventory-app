@@ -1,3 +1,7 @@
+## October 29 — Navigation and Spaces controls
+
+`fix/mobile-navigation-controls` removes page fades throughout mobile, restores native route motion, makes Space opening respond before its access request, reduces progressive blur passes and repairs snapping add-menu motion. Preparing build161; validation pending. No skeletons added.
+
 ## October 29 - No skeletons in Spaces or inventory flows
 
 Apple acknowledged TestFlight 1.1.1 (160), runtime `4ef1ef315535496062c231ae7dda105bdfbaedfa`, delivery `45c98b81-d3fa-419a-8c7d-0f4efcfa56bf`. Spaces, nested inventories and related workspace/document/activity/review/project/restock screens no longer show skeletons or shimmer placeholders. Initial requests use a small static status; loaded Spaces remain visible during refresh. Existing short fades and actions remain. Chat initialization/history placeholders are outside this scope.

@@ -1,3 +1,7 @@
+## October 29 — No custom page fades
+
+User explicitly rejects the dramatic fade throughout the app. Tabs select immediately while keeping their state; pushed pages use standard route motion with interactive back. Do not reintroduce whole-page opacity transitions. Spaces stays skeleton-free.
+
 ## October 29 - Spaces loading is static
 
 User rejects skeleton loaders in Spaces and related inventory pages, including actual loading. Use a static loading status for missing data and preserve loaded directories during refresh. Do not reintroduce skeleton rows or shimmer in these flows. Existing short route fades remain.
