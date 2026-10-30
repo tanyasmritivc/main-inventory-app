@@ -1,3 +1,7 @@
+## October 29 - Landing section removal
+
+Completed on `fix/landing-remove-sections`, PR275. Runtime `628d26b66167acdd625c494759091a9ff600fae9` is live in `landing-remove-20261029/frontend`, build `x4bVR0G6sY3Dm0ZehzLFG`. Removed only the homepage Features and Audiences sections shown by the user, including the four small feature cards. Remaining landing sections and dedicated public pages are preserved. All 649 web tests, TypeScript, lint (0 errors/52 existing warnings), five CI gates (41001838140), production build and 32 staged/live routes passed. Safari desktop/390px preview and live page verified; public HTTPS confirms the removed sections are absent. Backend and prior release preserved. Receipt: `docs/plans/landing-remove-sections-receipt.json`.
+
 ## October 28 — Contextual chat and immediate streaming
 
 `feat/web-context-chat`: implementation and host checks complete; isolated inventory chat on work pages, immediate delta rendering on main and contextual chat. Live from `cadfb72` in `context-chat-20261028/frontend` after 648 tests, five CI gates (40813683381), production build and 32 staged/live route checks. Previous release and backend preserved. See `docs/plans/context-chat-web.md` and its deployment receipt.
