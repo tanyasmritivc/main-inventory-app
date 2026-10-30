@@ -112,6 +112,49 @@ void main() {
     },
   );
 
+  testWidgets('native tab changes dismiss the previous page tooltip', (
+    tester,
+  ) async {
+    var selected = 0;
+    late StateSetter update;
+    final tooltip = GlobalKey<TooltipState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (_, setState) {
+            update = setState;
+            return RetainedTabTransition(
+              index: selected,
+              children: [
+                Center(
+                  child: Tooltip(
+                    key: tooltip,
+                    message: 'Search Spaces hint',
+                    showDuration: const Duration(seconds: 30),
+                    child: const Icon(Icons.search),
+                  ),
+                ),
+                const Center(child: Text('More destination')),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+    tooltip.currentState!.ensureTooltipVisible();
+    await tester.pumpAndSettle();
+    expect(find.text('Search Spaces hint'), findsOneWidget);
+    // Native tab callbacks do not send a Flutter pointer event to dismiss hints.
+    update(() => selected = 1);
+    await tester.pumpAndSettle();
+    expect(find.text('More destination'), findsOneWidget);
+    expect(find.text('Search Spaces hint'), findsNothing);
+    update(() => selected = 0);
+    await tester.pumpAndSettle();
+    expect(find.text('Search Spaces hint'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('only selected tab can receive taps during page settle', (
     tester,
   ) async {
