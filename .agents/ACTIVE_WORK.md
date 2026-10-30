@@ -1,3 +1,7 @@
+## October 29 - Solutions use cases
+
+Runtime `3cf321bfc8c9430403557fe5926f6a20e29217a6` published at https://findez.ai/solutions. Home, Workshops & Robotics, Labs & Classrooms and Small Businesses now have concise explanations and illustrative inventory questions. Five exact-source CI gates passed (41008051987), 649 web tests passed; TypeScript and lint passed with 52 existing warnings. Production build and 32 staged/live routes passed. Public HTTPS and Safari desktop/phone reviewed. Backend and prior release preserved; main unchanged. Receipt: `docs/plans/solutions-use-cases-receipt.json`.
+
 ## October 29 - Simplified public navigation delivered
 
 Removed Product from the shared public header/footer. Main links are Solutions,
