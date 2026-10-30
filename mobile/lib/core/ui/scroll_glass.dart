@@ -16,47 +16,48 @@ class ScrollGlass extends StatelessWidget {
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: LayoutBuilder(
-              builder: (context, bounds) => Stack(
-                children: [
-                  // Separate clipped backdrop bands preserve access to the scene
-                  // behind this overlay; a ShaderMask would isolate that backdrop.
-                  for (var i = 0; i < 12; i++)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: bounds.maxHeight * (top ? i : 11 - i) / 12,
-                      height: bounds.maxHeight / 12 + .5,
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(
-                            sigmaX: (12 - i) * 1.25,
-                            sigmaY: (12 - i) * 1.25,
-                          ),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: top
-                                    ? Alignment.topCenter
-                                    : Alignment.bottomCenter,
-                                end: top
-                                    ? Alignment.bottomCenter
-                                    : Alignment.topCenter,
-                                colors: [
-                                  background.withValues(
-                                    alpha: .85 * (1 - i / 12),
-                                  ),
-                                  background.withValues(
-                                    alpha: .85 * (1 - (i + 1) / 12),
-                                  ),
-                                ],
-                              ),
+            child: BackdropGroup(
+              child: LayoutBuilder(
+                builder: (context, bounds) => Stack(
+                  children: [
+                    // Each non-overlapping strip samples the same backdrop,
+                    // avoiding feedback seams from previously painted strips.
+                    for (var i = 0; i < 24; i++)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: bounds.maxHeight * (top ? i : 23 - i) / 24,
+                        height: bounds.maxHeight / 24,
+                        child: ClipRect(
+                          child: BackdropFilter.grouped(
+                            filter: ImageFilter.blur(
+                              sigmaX: (24 - i) * .625,
+                              sigmaY: (24 - i) * .625,
                             ),
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                      ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: top
+                                ? Alignment.topCenter
+                                : Alignment.bottomCenter,
+                            end: top
+                                ? Alignment.bottomCenter
+                                : Alignment.topCenter,
+                            colors: [
+                              background.withValues(alpha: .85),
+                              background.withValues(alpha: 0),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -22,6 +22,8 @@ Future<void> capture(String key, String name) async {
   await File(path).writeAsBytes(bytes);
   frame.dispose();
   debugPrint('FLUID_VISUAL $path');
+  // Give the host screenshot collector time before iOS deletes test temp files.
+  await Future<void>.delayed(const Duration(seconds: 2));
 }
 
 void main() {
