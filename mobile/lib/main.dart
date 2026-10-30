@@ -16,6 +16,7 @@ import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
+import 'core/ui/navigation_motion.dart';
 import 'core/ui/findez_wordmark.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
@@ -81,6 +82,7 @@ Future<void> main() async {
     return;
   }
 
+  await NativeMotionPreferences.instance.initialize();
   final appearance = AppearanceController();
   await appearance.load();
   runApp(MyApp(appearance: appearance));

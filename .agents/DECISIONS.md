@@ -1,6 +1,13 @@
-## October 29 — No custom page fades
+## October 29 — Restrained native-style crossfade after control fixes
 
-User explicitly rejects the dramatic fade throughout the app. Tabs select immediately while keeping their state; pushed pages use standard route motion with interactive back. Do not reintroduce whole-page opacity transitions. Spaces stays skeleton-free.
+Repair Spaces interaction regressions before changing motion. Shared primary tabs
+and routes use a short stationary crossfade with modest staggering, no scale or
+automatic translation and no blank-frame fade. The outgoing scene remains behind
+an opaque incoming surface. UIKit Reduce Motion and Prefer Cross-Fade preferences
+are read at launch, on native notifications and on resume. Reduce Motion without
+explicit Prefer Cross-Fade switches immediately. UIKit-owned sheets keep system
+animation handling. Interactive edge-back remains driven by the route gesture.
+Spaces remains skeleton-free.
 
 ## October 29 - Spaces loading is static
 

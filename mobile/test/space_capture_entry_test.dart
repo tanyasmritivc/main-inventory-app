@@ -115,6 +115,33 @@ void main() {
     expect(find.byType(ItemEditorSheet), findsNothing);
   }
 
+  testWidgets('Space add menu opens progressively and handles rapid reversal', (
+    tester,
+  ) async {
+    await mount(tester);
+    final button = find.byType(FloatingActionButton);
+    await tester.tap(button);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    final fade = tester
+        .widgetList<FadeTransition>(
+          find.ancestor(
+            of: find.text('Scan Photo'),
+            matching: find.byType(FadeTransition),
+          ),
+        )
+        .first;
+    expect(fade.opacity.value, inExclusiveRange(0, 1));
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(find.text('Scan Photo').hitTestable(), findsNothing);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expectChoices();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets(
     'Space options use the Flutter menu on iOS and retain import scope',
     (tester) async {

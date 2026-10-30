@@ -1,6 +1,6 @@
 ## October 29 — Navigation and Spaces controls
 
-`fix/mobile-navigation-controls` removes page fades throughout mobile, restores native route motion, makes Space opening respond before its access request, reduces progressive blur passes and repairs snapping add-menu motion. Preparing build161; validation pending. No skeletons added.
+`fix/mobile-navigation-controls` first repaired delayed Space opening, snapping add-menu animation and costly scroll-blur passes (d7c22fa; 63 focused checks, 10 native simulator checks). Then adds the explicitly requested restrained crossfade and UIKit motion preference bridge. Final build161 checks/delivery pending. No skeletons added.
 
 ## October 29 - No skeletons in Spaces or inventory flows
 

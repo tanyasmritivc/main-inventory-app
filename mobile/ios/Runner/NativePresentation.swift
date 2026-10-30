@@ -63,7 +63,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     // UIAlertController owns its presentation delegate and asserts if replaced.
     // Only our sheet navigation controller needs interactive-dismiss callbacks.
     if controller is UINavigationController { controller.presentationController?.delegate = self }
-    parent.present(controller, animated: !UIAccessibility.isReduceMotionEnabled) { [weak self] in
+    parent.present(controller, animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions)) { [weak self] in
       guard let self = self, self.model["load"] as? Bool == true else { return }
       self.perform(["id": "load", "close": false])
     }
@@ -104,7 +104,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       let alert = makeAlert(confirmation) { [weak self] response in
         if response != nil { self?.perform(approved, value: value) }
       }
-      controller?.present(alert, animated: !UIAccessibility.isReduceMotionEnabled)
+      controller?.present(alert, animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions))
       return
     }
     if row["close"] as? Bool != false {
@@ -149,7 +149,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     let alert = UIAlertController(title: "Please try again", message: message, preferredStyle: .alert)
     alert.overrideUserInterfaceStyle = controller?.overrideUserInterfaceStyle ?? .unspecified
     alert.addAction(UIAlertAction(title: "OK", style: .default))
-    controller?.present(alert, animated: !UIAccessibility.isReduceMotionEnabled)
+    controller?.present(alert, animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions))
   }
 
   func close() { if !busy { finish(nil) } }
@@ -157,7 +157,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
   private func finish(_ value: [String: Any]?) {
     guard let current = controller else { complete(value); return }
     // Complete after dismissal; Flutter can safely open the selected destination.
-    current.dismiss(animated: !UIAccessibility.isReduceMotionEnabled) { [weak self] in self?.complete(value) }
+    current.dismiss(animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions)) { [weak self] in self?.complete(value) }
   }
   private func complete(_ value: [String: Any]?) {
     let reply = result
@@ -305,7 +305,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     let data = row(indexPath)
     if data["value"] is Bool { return }
     if let child = data["children"] as? [String: Any], let owner = owner {
-      navigationController?.pushViewController(NativeListController(page: child, owner: owner), animated: !UIAccessibility.isReduceMotionEnabled)
+      navigationController?.pushViewController(NativeListController(page: child, owner: owner), animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions))
     } else { owner?.perform(data) }
   }
   override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
