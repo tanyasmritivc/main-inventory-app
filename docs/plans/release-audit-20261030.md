@@ -30,3 +30,9 @@ show the retired orange/cream interface and need current native captures.
 Remaining: final native/device checks, current listing/screenshots, exact-source
 CI, signed build and guarded App Store submission.
 Do not claim camera, speech, APNs or OAuth acceptance from synthetic tests.
+
+## November 1 continuation
+
+All seven final native navigation/preference checks passed. Five exact-source CI gates passed on `eb48aba` (41090924534). Build162 was cleanly rebuilt after package verification rejected a cached simulator framework. The final package passed 34 archive/export iOS executable checks each, strict signing, privacy/configuration/font checks and Apple validation. Apple acknowledged upload: `a79a77bb-80f9-4a4f-aa78-154932b99a5f`.
+
+Dedicated review login, authenticated workspace read, backend/database health and legal links passed again. The real review account opens the current app on the iPhone17 Pro Max simulator. Corrected review instructions and What's New are saved and verified in App Store Connect. Screenshot replacement is prepared but not performed; old assets remain until the complete current set is captured and reviewed. Final TestFlight162/device acceptance and public review submission remain pending.
