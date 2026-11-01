@@ -1,13 +1,15 @@
 ## November 1 — FIND public research wording
 
-In progress on `content/find-research-20261101` in `Projects/findez-research`.
-Research page and homepage FIND section now share public copy distinguishing
-current FindEZ perception from exploratory robotics work (generalization,
-recovery, evaluation). Contact wording is “Start a conversation.” Private source
-material, implementation details and commercial plans are excluded from source
-control and publication. Local checks: 649 tests, TypeScript and lint pass
-(0 errors; 52 existing warnings). Publication awaits exact-source CI and staged
-production checks.
+Published runtime `9f10f576890d03c9363b56dccfd2774e46336b66` at
+https://findez.ai/research in `research-20261101/frontend`. Research page and
+homepage FIND section share copy distinguishing current FindEZ perception from
+robotics research into generalization, recovery and evaluation. Contact wording
+is “Start a conversation.” Private source material and implementation/commercial
+details were excluded. 649 web tests, TypeScript, lint (0 errors/52 existing
+warnings), five CI gates (41356753423), production build and 32 staged/live routes
+passed. Desktop/390px previews and public HTTPS verified. Backend and previous
+release preserved; main unchanged. PR283. Receipt:
+`docs/plans/find-research-receipt.json`.
 
 ## October 29 — Solutions introduction CTA removal
 

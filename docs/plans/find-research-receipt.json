@@ -1,0 +1,65 @@
+{
+  "published": true,
+  "source": "9f10f576890d03c9363b56dccfd2774e46336b66",
+  "checks": {
+    "/brand/findez-header-wordmark.svg": 200,
+    "/brand/findez-petals.ico": 200,
+    "/brand/findez-petals.svg": 200,
+    "/brand/findez-petals-96.png": 200,
+    "/brand/findez-petals-180.png": 200,
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/pricing": 200,
+    "/product": 200,
+    "/solutions": 200,
+    "/research": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/worlds/personal": 200,
+    "/favicon.ico": 200,
+    "/brand/findez-favicon-32.png": 200,
+    "/brand/findez-favicon.svg": 200,
+    "/brand/findez-favicon-16.png": 200,
+    "/brand/findez-app-icon-180.png": 200,
+    "/brand/findez-wordmark.svg": 200,
+    "/brand/findez-wordmark-white.svg": 200,
+    "/sitemap.xml": 200,
+    "/mascot/pip.svg": 200,
+    "/settings/plans": 200,
+    "/settings/appearance": 200,
+    "/settings/memory": 200,
+    "/notifications": 200,
+    "/inventory": 200,
+    "/review": 200,
+    "/documents": 200
+  },
+  "backend_unchanged": true,
+  "old_release_preserved": true,
+  "validation": {
+    "source": "9f10f576890d03c9363b56dccfd2774e46336b66",
+    "tests": 649,
+    "lint_errors": 0,
+    "lint_warnings": 52,
+    "typescript": "passed"
+  },
+  "build_id": "PyZ4V8_WpzfjuO7c47w67",
+  "ci_run": 41356753423,
+  "ci_jobs_passed": 5,
+  "pr": 283,
+  "release_directory": "research-20261101/frontend",
+  "visual_review": {
+    "research": [
+      "desktop",
+      "390px"
+    ],
+    "homepage_find_section": [
+      "1440px",
+      "390px"
+    ],
+    "live_research_verified": true
+  },
+  "public_https_copy_verified": true,
+  "build_note": "Initial build stalled on Google Fonts with a legacy TLS 1.2 cap; removed the build-only cap and the unchanged source built successfully with default TLS."
+}
