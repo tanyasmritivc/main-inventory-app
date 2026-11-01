@@ -1,3 +1,13 @@
+## November 1 — Build 162 submitted for public App Review
+
+FindEZ 1.1.1 (162) is WAITING_FOR_REVIEW; release remains MANUAL. Apple acknowledged
+submission `dc875d6d-dc6c-4adf-8468-34e58657670f` at 23:06:10 UTC. All 14 user-supplied
+replacement screenshots from `findez-appstore-nov-2.zip` are COMPLETE (seven per
+iPhone/iPad, hero first). Final physical iPhone smoke checks and dedicated review
+login/live Ask passed. Prior test/package/CI receipts remain valid; no runtime
+changes or new binary. See `docs/plans/release-audit-20261030.md` and
+`docs/plans/mobile-release162-receipt.json`. Main unchanged; PR282.
+
 ## November 1 - App Store build 162 uploaded; submission preparation continues
 
 Apple acknowledged 1.1.1 (162), runtime `eb48aba5521908c24bb4c10064ccad7b1d5d4420`, delivery `a79a77bb-80f9-4a4f-aa78-154932b99a5f`. The native-tab tooltip fix passed 1,234 host tests (one existing skip), clean analysis, seven final native checks, and all five CI gates (41090924534). The broader native audit passed 172 core, 168 extended (one documented skip), and 30 current surface checks.

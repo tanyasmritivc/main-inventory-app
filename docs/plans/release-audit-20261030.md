@@ -36,3 +36,27 @@ Do not claim camera, speech, APNs or OAuth acceptance from synthetic tests.
 All seven final native navigation/preference checks passed. Five exact-source CI gates passed on `eb48aba` (41090924534). Build162 was cleanly rebuilt after package verification rejected a cached simulator framework. The final package passed 34 archive/export iOS executable checks each, strict signing, privacy/configuration/font checks and Apple validation. Apple acknowledged upload: `a79a77bb-80f9-4a4f-aa78-154932b99a5f`.
 
 Dedicated review login, authenticated workspace read, backend/database health and legal links passed again. The real review account opens the current app on the iPhone17 Pro Max simulator. Corrected review instructions and What's New are saved and verified in App Store Connect. Screenshot replacement is prepared but not performed; old assets remain until the complete current set is captured and reviewed. Final TestFlight162/device acceptance and public review submission remain pending.
+
+## November 1 — Submitted to App Review
+
+Apple acknowledged submission `dc875d6d-dc6c-4adf-8468-34e58657670f` at
+23:06:10 UTC. Version 1.1.1 build162 is WAITING_FOR_REVIEW with MANUAL release.
+The user's replacement `findez-appstore-nov-2.zip` supplies seven iPhone and seven
+iPad screenshots, all COMPLETE and ordered hero first, then memory, describe,
+photo, spaces, ask and team. Overview contact sheets were excluded. All 24 prior
+assets were backed up before replacement; obsolete size overrides were removed.
+
+Final physical iPhone acceptance verified the installed TestFlight build162,
+welcome/sign-in with the dedicated review account, Ask/Spaces/More transitions,
+Space search, Sample Workshop (five items/24 units), item details and scrolling,
+Settings, and a live Ask response matching all five sample items and quantities.
+No inventory mutations. Mirrored native tabs needed deliberate taps. Camera,
+microphone, OAuth and APNs were not retested in this smoke check. The tooltip
+regression remains covered by the completed host/native tests.
+
+Review login, backend/database health and public legal links passed again.
+The guarded submission verified exact build/CI/signature receipts, screenshot
+checksums/order, credentials and listing notes before sending. An initial local
+notes comparison stopped on a trailing newline; a read-back confirmed the notes
+matched exactly and the normalized guard passed. No Apple rejection occurred.
+Private credentials and Apple asset URLs remain outside the repository.

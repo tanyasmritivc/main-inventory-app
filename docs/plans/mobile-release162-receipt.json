@@ -7,7 +7,7 @@
   "native_checks_passed": 377,
   "analysis": "passed",
   "uploaded": true,
-  "physical_candidate_acceptance": "pending",
+  "physical_candidate_acceptance": "Passed final physical iPhone smoke check: TestFlight build162 verified, dedicated review sign-in, tabs, Spaces/search, item details, Settings and live Ask. Camera, microphone, OAuth and APNs not retested.",
   "archive_device_executables_verified": 34,
   "export_device_executables_verified": 34,
   "strict_archive_signature_verified": true,
@@ -15,7 +15,7 @@
   "archive_preserved": true,
   "apple_validation": true,
   "validated_ipa_sha256": "c990fb188b9d0f9f7b4f63c0dfb4522f96e8e4ec09a316d2e299deeecbe88d4b",
-  "processing": "pending, not polled",
+  "processing": "VALID",
   "tester_availability": "unverified",
   "delivery_uuid": "a79a77bb-80f9-4a4f-aa78-154932b99a5f",
   "ci_run": 41090924534,
@@ -44,5 +44,19 @@
   "public_submission": "pending current screenshots and final physical acceptance",
   "review_metadata": "updated and read back on November 1",
   "first_archive": "rejected locally: stale simulator objective_c framework; clean rebuild passed all device checks",
-  "artifacts": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.1.1-build162"
+  "artifacts": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.1.1-build162",
+  "app_store_state": "WAITING_FOR_REVIEW",
+  "review_submission_id": "dc875d6d-dc6c-4adf-8468-34e58657670f",
+  "submitted_at": "2026-11-01T23:06:10.624Z",
+  "release_type": "MANUAL",
+  "screenshots": {
+    "source": "findez-appstore-nov-2.zip",
+    "source_sha256": "8907629cc4b0f83074a17ee5daad573b9c6f1bc20213378cc56eb0ae0fbe6dee",
+    "iphone": 7,
+    "ipad": 7,
+    "all_complete": true,
+    "order": "00 hero, 01 memory, 02 describe, 03 photo, 04 spaces, 05 ask, 06 team",
+    "old_assets_backed_up": true,
+    "obsolete_size_overrides_removed": true
+  }
 }
