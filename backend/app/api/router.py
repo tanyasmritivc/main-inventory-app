@@ -31,6 +31,8 @@ from app.api.routes.invitations import router as invitations_router
 from app.api.routes.onboarding import router as onboarding_router
 
 api_router = APIRouter()
+from app.api.routes.voice import router as voice_router
+api_router.include_router(voice_router)
 api_router.include_router(me_router)
 api_router.include_router(items_router)
 api_router.include_router(inventory_router)

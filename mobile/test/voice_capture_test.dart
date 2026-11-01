@@ -1,17 +1,17 @@
-import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_recognition_error.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:mobile/features/world/world_composer.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:record/record.dart';
 import 'package:mobile/features/chat/voice_capture.dart';
 
 class Recorder implements VoiceRecorder {
   VoiceResult? result;
   VoidCallback? error;
   Completer<bool>? permission;
-  int stops = 0;
+  Completer<void>? pendingStop;
+  String words = 'Where are my screws?';
+  int stops = 0, cancels = 0;
   @override
   Future<bool> start(VoiceResult onResult, VoidCallback onError) async {
     result = onResult;
@@ -22,153 +22,194 @@ class Recorder implements VoiceRecorder {
   @override
   Future<void> stop() async {
     stops++;
+    await pendingStop?.future;
+    result!(words, true);
   }
 
   @override
-  Future<void> cancel() async {}
+  Future<void> cancel() async {
+    cancels++;
+  }
+}
+
+class Audio extends AudioRecorder {
+  final stream = StreamController<Uint8List>();
+  Completer<bool>? permission;
+  int starts = 0, disposals = 0;
+  @override
+  Future<bool> hasPermission({bool request = true}) async =>
+      permission == null ? true : permission!.future;
+  @override
+  Future<Stream<Uint8List>> startStream(RecordConfig config) async {
+    expect(config.sampleRate, 16000);
+    expect(config.numChannels, 1);
+    expect(config.encoder, AudioEncoder.pcm16bits);
+    starts++;
+    return stream.stream;
+  }
+
+  @override
+  Stream<Amplitude> onAmplitudeChanged(Duration interval) =>
+      const Stream.empty();
+  @override
+  Future<String?> stop() async {
+    await stream.close();
+    return null;
+  }
+
+  @override
+  Future<void> cancel() async {
+    unawaited(stream.close());
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposals++;
+  }
 }
 
 void main() {
   late Recorder recorder;
   late VoiceCapture voice;
-  late List<String> sent;
+  late List<String> drafts;
   int errors = 0;
   setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('com.llfbandit.record/messages'),
+          (_) async => null,
+        );
     recorder = Recorder();
-    sent = [];
+    drafts = [];
     errors = 0;
     voice = VoiceCapture(
       recorder: recorder,
-      onSend: sent.add,
+      onSend: drafts.add,
       onError: () => errors++,
     );
   });
   tearDown(() => voice.dispose());
-  testWidgets('composer hold and release sends without pressing Send', (
-    tester,
-  ) async {
-    final text = TextEditingController();
-    final focus = FocusNode();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorldComposer(
-            controller: text,
-            focusNode: focus,
-            onChanged: (_) {},
-            onAttach: null,
-            onVoice: () {},
-            onVoiceStart: () => unawaited(voice.start()),
-            onVoiceEnd: () => unawaited(voice.release()),
-            onVoiceCancel: voice.cancel,
-            onSend: null,
-            busy: false,
-            listening: false,
-            compact: false,
-          ),
-        ),
-      ),
-    );
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byTooltip('Tap to speak')),
-    );
-    await tester.pump(const Duration(milliseconds: 600));
-    recorder.result!('Find my drill', false);
-    expect(sent, isEmpty);
-    await gesture.up();
-    await tester.pump();
-    recorder.result!('Find my drill please', true);
-    await tester.pump();
-    expect(sent, ['Find my drill please']);
-    expect(text.text, isEmpty);
-    await tester.pumpWidget(const SizedBox());
-    text.dispose();
-    focus.dispose();
-  });
-  testWidgets(
-    'native cached initialization routes errors to the latest recording',
-    (tester) async {
-      const channel = MethodChannel('plugin.csdcorp.com/speech_to_text');
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      messenger.setMockMethodCallHandler(channel, (_) async => true);
-      final speech = SpeechToText();
-      final device = DeviceVoiceRecorder(speech: speech);
-      var firstErrors = 0, secondErrors = 0;
-      await device.start((_, _) {}, () => firstErrors++);
-      await device.cancel();
-      await device.start((_, _) {}, () => secondErrors++);
-      speech.errorListener!(SpeechRecognitionError('error_network', true));
-      expect(firstErrors, 0);
-      expect(secondErrors, 1);
-      await device.cancel();
-      messenger.setMockMethodCallHandler(channel, null);
-    },
-  );
-  test(
-    'tap recording automatically sends a final result exactly once',
-    () async {
-      await voice.start(autoSend: true);
-      recorder.result!('Where is my drill?', false);
-      expect(sent, isEmpty);
-      recorder.result!('Where is my drill?', true);
-      await Future<void>.delayed(Duration.zero);
-      expect(sent, ['Where is my drill?']);
-      recorder.result!('late duplicate', true);
-      expect(sent, hasLength(1));
-    },
-  );
-  test('release waits for final words and sends exactly once', () async {
+  test('Done waits for transcription and returns exactly one draft', () async {
+    recorder.pendingStop = Completer<void>();
     await voice.start();
-    recorder.result!('Find my', false);
-    final release = voice.release();
+    final finish = voice.release();
     await Future<void>.delayed(Duration.zero);
-    expect(sent, isEmpty);
-    recorder.result!('Find my drill', true);
-    await release;
+    expect(voice.processing, true);
+    expect(drafts, isEmpty);
     await voice.release();
-    recorder.result!('late result', true);
-    expect(sent, ['Find my drill']);
+    recorder.pendingStop!.complete();
+    await finish;
+    expect(drafts, ['Where are my screws?']);
     expect(recorder.stops, 1);
+    expect(voice.active, false);
   });
-  test('release while permission is pending still finishes once', () async {
+  test('cancel during upload ignores late transcription', () async {
+    recorder.pendingStop = Completer<void>();
+    await voice.start();
+    final finish = voice.release();
+    await Future<void>.delayed(Duration.zero);
+    voice.cancel();
+    recorder.pendingStop!.complete();
+    await finish;
+    expect(drafts, isEmpty);
+    expect(errors, 0);
+  });
+  test(
+    'denied permission reports failure and permits another attempt',
+    () async {
+      recorder.permission = Completer<bool>()..complete(false);
+      await voice.start();
+      expect(voice.active, false);
+      expect(errors, 1);
+      recorder.permission = null;
+      await voice.start();
+      await voice.release();
+      expect(drafts, hasLength(1));
+    },
+  );
+  test('cancel before permission resolves cannot return a draft', () async {
     recorder.permission = Completer<bool>();
     final start = voice.start();
-    final release = voice.release();
+    voice.cancel();
     recorder.permission!.complete(true);
     await start;
-    recorder.result!('Where are my screws?', true);
-    await release;
-    expect(sent, ['Where are my screws?']);
-  });
-  test('cancel ignores final results and never sends', () async {
-    await voice.start();
-    recorder.result!('do not send', false);
-    voice.cancel();
-    recorder.result!('do not send', true);
-    await voice.release();
-    expect(sent, isEmpty);
-  });
-  test('empty recording sends nothing', () async {
-    await voice.start();
-    recorder.result!('   ', true);
-    await voice.release();
-    expect(sent, isEmpty);
-  });
-  test('denied permission restores idle and reports error', () async {
-    recorder.permission = Completer<bool>()..complete(false);
-    await voice.start();
-    await voice.release();
     expect(voice.active, false);
-    expect(sent, isEmpty);
-    expect(errors, 1);
+    expect(drafts, isEmpty);
   });
-  test('native error invalidates callbacks', () async {
+  test('empty and failed recordings return no draft', () async {
+    recorder.words = '';
+    await voice.start();
+    await voice.release();
+    expect(drafts, isEmpty);
+    expect(errors, 1);
     await voice.start();
     recorder.error!();
-    recorder.result!('stale words', true);
-    await voice.release();
-    expect(sent, isEmpty);
-    expect(errors, 1);
+    recorder.result!('late', true);
+    expect(drafts, isEmpty);
+    expect(errors, 2);
+  });
+  testWidgets('one-minute limit stops capture once', (t) async {
+    await voice.start();
+    await t.pump(const Duration(seconds: 61));
+    expect(recorder.stops, 1);
+    expect(drafts, hasLength(1));
+  });
+  test('native stream produces WAV and disposes microphone', () async {
+    final audio = Audio();
+    final results = <String>[];
+    final device = DeviceVoiceRecorder(
+      createRecorder: () => audio,
+      transcribe: (wav, token) async {
+        expect(String.fromCharCodes(wav.sublist(0, 4)), 'RIFF');
+        expect(wav.length, 3244);
+        expect(ByteData.sublistView(wav).getUint32(24, Endian.little), 16000);
+        expect(wav.sublist(44), everyElement(1));
+        return 'Find my drill';
+      },
+    );
+    await device.start(
+      (words, _) => results.add(words),
+      () => fail('Unexpected error'),
+    );
+    audio.stream.add(Uint8List.fromList(List.filled(3200, 1)));
+    await device.stop();
+    expect(results, ['Find my drill']);
+    expect(audio.disposals, 1);
+  });
+  test('native cancel prevents microphone after pending permission', () async {
+    final audio = Audio()..permission = Completer<bool>();
+    final device = DeviceVoiceRecorder(
+      createRecorder: () => audio,
+      transcribe: (_, _) async => throw StateError('Unexpected upload'),
+    );
+    final start = device.start((_, _) => fail('Unexpected result'), () {});
+    await Future<void>.delayed(Duration.zero);
+    final cancel = device.cancel();
+    audio.permission!.complete(true);
+    await start;
+    await cancel;
+    expect(audio.starts, 0);
+    expect(audio.disposals, 1);
+  });
+  test('native cancel aborts upload and suppresses response', () async {
+    final audio = Audio();
+    final pending = Completer<String>();
+    bool cancelled = false;
+    final device = DeviceVoiceRecorder(
+      createRecorder: () => audio,
+      transcribe: (_, token) {
+        token.whenCancel.then((_) => cancelled = true);
+        return pending.future;
+      },
+    );
+    await device.start((_, _) => fail('Unexpected result'), () {});
+    audio.stream.add(Uint8List(3200));
+    final stop = device.stop();
+    await Future<void>.delayed(Duration.zero);
+    await device.cancel();
+    pending.complete('late');
+    await stop;
+    expect(cancelled, true);
+    expect(audio.disposals, 1);
   });
 }

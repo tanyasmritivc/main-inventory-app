@@ -1,3 +1,7 @@
+## November 1 - Whisper voice input, next beta
+
+Active lane: `feat/whisper-voice-input-163` in `Projects/findez-voice`. User chose voice input only through their self-hosted Whisper endpoint. Mobile recording returns an editable chat draft; authenticated backend holds the provider credential. No spoken replies. Build162 stays in App Review. No schema change. Implementation and validation in progress.
+
 ## November 1 — Build 162 submitted for public App Review
 
 FindEZ 1.1.1 (162) is WAITING_FOR_REVIEW; release remains MANUAL. Apple acknowledged

@@ -55,7 +55,7 @@ void main() {
             onSend: (_) => sends++,
             onError: () {},
           );
-          await voice.start(autoSend: true);
+          await voice.start();
           await t.pumpWidget(
             RepaintBoundary(
               key: const Key('fluid-frame'),

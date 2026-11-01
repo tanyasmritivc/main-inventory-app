@@ -1,7 +1,7 @@
 
 from functools import lru_cache
 
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, SecretStr
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -36,6 +36,9 @@ class Settings(BaseSettings):
 
     # All language tasks use the self-hosted FTCTools agent gateway. Photo
     # recognition uses FIND below. There is intentionally no external fallback.
+    # Server-only speech-to-text credential; never included in client defines.
+    whisper_api_key: SecretStr | None = None
+
     findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"

@@ -38,7 +38,9 @@ class VoiceRecordingOverlay extends StatelessWidget {
                             Semantics(
                               liveRegion: true,
                               child: Text(
-                                voice.ready
+                                voice.processing
+                                    ? 'Transcribing...'
+                                    : voice.ready
                                     ? 'Now recording'
                                     : 'Starting microphone...',
                                 textAlign: TextAlign.center,
@@ -60,7 +62,9 @@ class VoiceRecordingOverlay extends StatelessWidget {
                             const SizedBox(height: 18),
                             Text(
                               voice.transcript.isEmpty
-                                  ? 'Speak naturally. Your message sends when you finish.'
+                                  ? (voice.processing
+                                        ? 'Turning your recording into text. You can cancel at any time.'
+                                        : 'Speak for up to one minute, then tap Done. Review your words before sending.')
                                   : voice.transcript,
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -80,14 +84,14 @@ class VoiceRecordingOverlay extends StatelessWidget {
                                   child: const Text('Cancel'),
                                 ),
                                 FilledButton.icon(
-                                  onPressed: voice.ready
+                                  onPressed: voice.ready && !voice.processing
                                       ? () => unawaited(voice.release())
                                       : null,
                                   icon: const Icon(
                                     CupertinoIcons.stop_fill,
                                     size: 14,
                                   ),
-                                  label: const Text('Send'),
+                                  label: const Text('Done'),
                                 ),
                               ],
                             ),

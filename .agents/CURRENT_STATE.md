@@ -1,3 +1,9 @@
+## November 1 - Voice input beta163 in validation
+
+Active lane `feat/whisper-voice-input-163`, based on submitted build162. Whisper dictation implementation is complete; release checks and native packaging are in progress. The server credential is stored only in private deployment configuration. Provider acceptance transcribed a generated holiday-lights question correctly. Backend tests: 834 passed. Privacy copy describes both current Whisper and earlier Apple speech recognition. Staged web build preserves the current research release. No schema changes. Do not treat this entry as delivery; see the voice release receipt when available.
+
+Build162 has already been submitted and is WAITING_FOR_REVIEW with manual release; older preparation entries below are historical.
+
 ## November 1 - App Store build 162 uploaded; submission preparation continues
 
 Apple acknowledged 1.1.1 (162), runtime `eb48aba5521908c24bb4c10064ccad7b1d5d4420`, delivery `a79a77bb-80f9-4a4f-aa78-154932b99a5f`. The native-tab tooltip fix passed 1,234 host tests (one existing skip), clean analysis, seven final native checks, and all five CI gates (41090924534). The broader native audit passed 172 core, 168 extended (one documented skip), and 30 current surface checks.

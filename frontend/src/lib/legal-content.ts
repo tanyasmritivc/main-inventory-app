@@ -2,7 +2,7 @@ import type { LegalSection } from "@/components/site/legal-document";
 
 export const LEGAL_VERSION = "2026-10-11";
 export const LEGAL_EFFECTIVE_DATE = "October 11, 2026";
-export const PRIVACY_EFFECTIVE_DATE = "October 12, 2026";
+export const PRIVACY_EFFECTIVE_DATE = "November 1, 2026";
 export const COOKIE_NOTICE_TEXT = "FindEZ uses cookies for sign-in and saves preferences and drafts on this device. No analytics or advertising cookies are enabled.";
 
 export const privacySections: LegalSection[] = [
@@ -43,7 +43,7 @@ export const privacySections: LegalSection[] = [
     "body": [
       "FindEZ's FIND vision pipeline and language model inference run on infrastructure operated for FindEZ. In-app AI requests are not sent to OpenAI for hosted inference. The service processes the image, question, and relevant account records needed for the requested answer.",
       "If you connect an external assistant through an API key or connector, that assistant can receive information allowed by the key's permissions. Its provider controls its own processing. You can revoke the key in Settings.",
-      "Optional iOS voice input uses Apple's speech-recognition services; audio may be processed by Apple to transcribe it. FindEZ receives the transcription to perform your search or request. Typed input remains available.",
+      "In iOS build 163 and later, optional voice input sends your recording through FindEZ to the FTCTools-hosted Whisper transcription service. The transcription returns to an editable draft; your chat request is sent when you choose Send. FindEZ does not save the recording as an inventory file. Earlier iOS builds use Apple's speech-recognition services, which may process audio. Typed input remains available.",
       "AI identifications, quantities, measurements, and inventory matches can be wrong. Review an answer and its source records before saving or acting on it."
     ]
   },
@@ -71,7 +71,7 @@ export const privacySections: LegalSection[] = [
     "id": "permissions",
     "heading": "7. Permissions and choices",
     "body": [
-      "Camera and photo access support the captures and uploads you choose. Microphone and speech recognition support optional voice input. Phone notification permission allows alerts; the in-app team feed remains available without it. FindEZ does not need your device's precise location: inventory locations are names you enter.",
+      "Camera and photo access support the captures and uploads you choose. Microphone access supports optional voice input; earlier iOS builds also request Apple speech-recognition permission. Phone notification permission allows alerts; the in-app team feed remains available without it. FindEZ does not need your device's precise location: inventory locations are names you enter.",
       "You can refuse a permission, revoke it in device settings, use typed input instead of voice, revoke API keys, leave a Team or shared Space, or stop sharing a Space. Refusing one optional permission does not prevent unrelated features."
     ]
   },
