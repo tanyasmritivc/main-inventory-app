@@ -1,3 +1,4 @@
+import { FIND_RESEARCH as research } from "@/lib/find-research";
 
 export function Research() {
  return (<section className="sec" id="s6r">
@@ -11,12 +12,12 @@ export function Research() {
 
 <div data-rv="">
 <p className="p">
-{"FIND is AI Robots Inc.'s proprietary AI pipeline for understanding the physical world. It starts with visual perception inside FindEZ and works toward robots that learn new tasks and adapt to unfamiliar environments with less task-specific training."}
+{research.introduction}
 </p>
 
 <div className="btns" style={{"marginTop":"22px"}}>
-<a className="btn w" href="mailto:info@findez.ai?subject=FIND%20research%20partnership">
-{"Partner with us"}
+<a className="btn w" href={research.contactHref}>
+{research.contactLabel}
 </a>
 </div>
 </div>
@@ -26,87 +27,47 @@ export function Research() {
 
 <div className="fb" style={{"left":"52%","top":"12%","width":"20%","height":"28%"}}>
 <i >
-{"object · 0.97"}
+{research.labels[0]}
 </i>
 </div>
 
 <div className="fb" style={{"left":"77%","top":"8%","width":"17%","height":"22%"}}>
 <i >
-{"label · DC18RC"}
+{research.labels[1]}
 </i>
 </div>
 
 <div className="fb" style={{"left":"66%","top":"46%","width":"15%","height":"16%"}}>
 <i >
-{"count · 14"}
+{research.labels[2]}
 </i>
 </div>
 
 <div className="fhead">
 <h3 >
-{"Robots that learn."}
+{research.heading[0]}
 <br  />
-{"Not just robots that follow."}
+{research.heading[1]}
 </h3>
 </div>
 
 <div className="pillars">
-
-<div >
-<em className="now">
-{"Current focus"}
-</em>
-<b >
-{"Perception"}
-</b>
-<span >
-{"Objects, labels, barcodes and counts from images."}
-</span>
+{research.pillars.map(([label, title, detail], i) => (
+<div key={title}>
+<em className={i === 0 ? "now" : undefined}>{label}</em>
+<b>{title}</b>
+<span>{detail}</span>
 </div>
-
-<div >
-<em >
-{"Research"}
-</em>
-<b >
-{"Learning"}
-</b>
-<span >
-{"Learning from demonstrations and feedback."}
-</span>
-</div>
-
-<div >
-<em >
-{"Research"}
-</em>
-<b >
-{"Adaptation"}
-</b>
-<span >
-{"Less retraining for each new task or place."}
-</span>
-</div>
-
-<div >
-<em >
-{"Research"}
-</em>
-<b >
-{"Robot-agnostic"}
-</b>
-<span >
-{"Designed to work across robot platforms."}
-</span>
-</div>
-
+))}
 </div>
 
 </div>
 
 <p className="note">
-{"FIND is in active development. Learning, adaptation and robot support are research goals, not shipped features."}
+{research.status}
 </p>
+
+<p className="note">{research.invitation}</p>
 
 <span className="tick l">
 

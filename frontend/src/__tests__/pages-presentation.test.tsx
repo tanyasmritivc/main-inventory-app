@@ -8,6 +8,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import Product from "@/app/product/page";
 import Solutions from "@/app/solutions/page";
 import Research from "@/app/research/page";
+import { Research as ResearchSection } from "@/components/landing-v5/Research";
 import { PricingClient } from "@/components/site/pricing-client";
 import { PublicPlanCards } from "@/components/pages-ui/PublicPlanCards";
 import { BILLING_PLANS } from "@/lib/billing-plans";
@@ -45,9 +46,12 @@ test("Solutions offers four reachable use cases with clearly illustrative exampl
  expect(main.queryByRole("link",{name:"See how it works"})).toBeNull();
  for(const link of main.getAllByRole("link",{name:"Get started"}))expect(link.getAttribute("href")).toBe("/signup");
 });
-test("research contains only the already-public FIND content",()=>{
- const Previous=oldComponent("frontend/src/components/landing-v5/Research.tsx","Research");
- expect(content(<Research/>)).toEqual(content(<Previous/>));
+test("research and its homepage section agree on current capabilities and research status",()=>{
+ expect(content(<Research/>)).toEqual(content(<ResearchSection/>));
+ render(<Research/>);
+ const main=within(screen.getByRole("main"));
+ expect(main.getByText(/These are research directions, not released robot capabilities/)).toBeTruthy();
+ expect(main.getByRole("link",{name:"Start a conversation"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FIND%20research");
 });
 test("public plan controls retain the catalog and disabled paid actions",()=>{
  render(<PublicPlanCards/>);

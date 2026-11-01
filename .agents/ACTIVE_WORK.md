@@ -1,3 +1,14 @@
+## November 1 — FIND public research wording
+
+In progress on `content/find-research-20261101` in `Projects/findez-research`.
+Research page and homepage FIND section now share public copy distinguishing
+current FindEZ perception from exploratory robotics work (generalization,
+recovery, evaluation). Contact wording is “Start a conversation.” Private source
+material, implementation details and commercial plans are excluded from source
+control and publication. Local checks: 649 tests, TypeScript and lint pass
+(0 errors; 52 existing warnings). Publication awaits exact-source CI and staged
+production checks.
+
 ## October 29 — Solutions introduction CTA removal
 
 Removed only the Get started CTA beneath the Solutions introduction. Header and closing CTA remain. Published runtime `a192826fd83f5eb163d3f188841ffa36c43a75dc` in `solutions-cta-20261029/frontend`; Safari live page verified. 649 tests, TypeScript, lint (0 errors/52 existing warnings), five exact-source CI gates (41010477332), production build and 32 staged/live routes passed. Backend and previous release preserved; main unchanged. PR280. Receipt: `docs/plans/solutions-hero-cta-receipt.json`.
