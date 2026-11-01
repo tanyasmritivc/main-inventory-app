@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useUpgradePermission } from '@/lib/use-upgrade-permission';
 
 // Shared style constants
 export const DS = {
@@ -155,7 +156,8 @@ interface UpgradeGateProps {
 }
 
 export function UpgradeGate({ open, onClose, feature, limit }: UpgradeGateProps) {
-  if (!open) return null;
+  const permitted = useUpgradePermission(open);
+  if (!permitted) return null;
   return (
     <div
       style={{

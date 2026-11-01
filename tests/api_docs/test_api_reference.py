@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from app.api.routes import api_v1
 from backend.tests.test_integration_api_flow import api, bearer, create  # noqa: F401
@@ -44,7 +44,7 @@ def documented_bodies():
 def test_documented_json_requests_pass_real_request_validation(identity, body):
     method, path = identity.split(" ")
     route = next(route for route in api_v1.router.routes if route.path == path and method in route.methods)
-    route.body_field.type_.model_validate(body)
+    TypeAdapter(route.body_field.field_info.annotation).validate_python(body)
 
 
 @pytest.mark.parametrize("field", ["name", "category", "location", "quantity"])

@@ -111,7 +111,9 @@ async def return_item(
     checkout = checkout_row.data[0]
 
     # Allow: the user who created the checkout, OR any owner/member of the space
-    can_return = user.user_id == checkout.get("user_id")
+    from app.services.inventory_scope import current_inventory
+    scope = current_inventory.get()
+    can_return = scope.can_edit if scope else user.user_id == checkout.get("user_id")
 
     if not can_return:
         space_name = (checkout.get("space_name") or "").strip()

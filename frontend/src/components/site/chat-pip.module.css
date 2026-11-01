@@ -1,0 +1,20 @@
+.pip {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  /* Complete the existing summary gap without changing text/chevron spacing. */
+  margin-right: calc(8px - .4rem);
+  transform-origin: 50% 90%;
+  animation: pipBob .9s ease-in-out infinite;
+}
+
+@keyframes pipBob {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  45% { transform: translateY(-5px) scale(.98, 1.02) rotate(-2deg); }
+  55% { transform: translateY(-5px) scale(.98, 1.02) rotate(2deg); }
+  85% { transform: translateY(0) scale(1.03, .97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pip { animation: none; }
+}

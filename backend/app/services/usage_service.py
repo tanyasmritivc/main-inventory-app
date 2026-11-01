@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import HTTPException
 
 from app.core.config import get_settings
-from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
+from app.services.supabase_client import get_supabase_raw as get_supabase_admin, supabase_execute_with_retry
 
 logger = logging.getLogger(__name__)
 

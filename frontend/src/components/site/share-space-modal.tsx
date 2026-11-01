@@ -5,6 +5,7 @@ import { createShare, deleteShare, getJoinedShares, getMyShares, joinShare } fro
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
+import { invitationUniversalLink } from "@/lib/app-store";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -41,7 +42,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
 
-  const shareLink = useMemo(() => (createdCode ? `https://findez.ai/join/${createdCode}` : ""), [createdCode]);
+  const shareLink = useMemo(() => (createdCode ? invitationUniversalLink("space", createdCode) : ""), [createdCode]);
 
   async function loadShares() {
     if (!token) return;
@@ -151,7 +152,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
 
           {/* Tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", marginBottom: 24 }}>
-            {([{ key: "link", label: "Share Code" }, { key: "joined", label: "Joined Spaces" }] as const).map((tab) => (
+            {([{ key: "link", label: "Invitation links" }, { key: "joined", label: "Joined Spaces" }] as const).map((tab) => (
               <button
                 key={tab.key}
                 type="button"
@@ -210,7 +211,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                 disabled={loading}
                 style={{ width: "100%", background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}
               >
-                {loading ? "Generating…" : "Generate Code"}
+                {loading ? "Creating..." : "Create invitation link"}
               </button>
               {error ? <p style={{ fontSize: 12, color: "var(--danger-ink)", marginTop: 8 }}>{error}</p> : null}
 
@@ -246,6 +247,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                           <span style={badgeStyle}>{displayCode}</span>
                           <span style={{ ...badgeStyle, letterSpacing: 0 }}>{share.permission}</span>
                         </div>
+                        <button type="button" style={ghostBtn} onClick={() => void copyText(invitationUniversalLink("space", displayCode))}>Copy link</button>
                         <button
                           type="button"
                           onClick={() => void handleRevoke(share)}
@@ -306,6 +308,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                       >
                         View
                       </a>
+                      {share.share_code && <button type="button" style={ghostBtn} onClick={() => void copyText(invitationUniversalLink("space", share.share_code!))}>Copy link</button>}
                     </div>
                   );
                 })

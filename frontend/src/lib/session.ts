@@ -12,10 +12,14 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
  * `requireUser()` in `lib/auth-guard.ts` instead.
  */
 export async function getAccessToken(): Promise<string | null> {
+  return (await getAccessSession())?.token ?? null;
+}
+
+export async function getAccessSession(): Promise<{ token: string; accountId: string } | null> {
   try {
     const { data, error } = await createSupabaseBrowserClient().auth.getSession();
     if (error) return null;
-    return data.session?.access_token ?? null;
+    return data.session ? { token: data.session.access_token, accountId: data.session.user.id } : null;
   } catch {
     return null;
   }

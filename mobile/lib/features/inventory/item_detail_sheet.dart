@@ -17,6 +17,9 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import 'item_detail_drag_sheet.dart';
+import 'imported_item_details.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// Opens the comprehensive item detail bottom sheet.
 ///
@@ -39,10 +42,13 @@ Future<void> showItemDetailSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    useSafeArea: true,
+    enableDrag: false,
+    showDragHandle: false,
     builder: (_) => _ItemDetailSheet(
       item: item,
       api: api,
-      permission: permission,
+      permission: api.canEdit ? permission : 'view',
       shareId: shareId,
       initialThreshold: initialThreshold,
       spaceName: spaceName,
@@ -99,10 +105,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final GlobalKey _qrCardKey = GlobalKey();
 
   bool _isEditingNotes = false;
+  bool _notesSaving = false;
+  bool _closing = false;
+  bool _allowPop = false;
+  late String _lastSavedNotes;
+  late String _lastSavedPurchaseSource;
+  Future<bool>? _purchaseSourceSave;
+  Future<bool>? _thresholdSave;
   bool _checkingOut = false;
   bool _purchaseSourceSaveFailed = false;
   bool _photosLoading = true;
   bool _photoSaving = false;
+  bool _documentSaving = false;
+  bool _returnSaving = false;
   int _selectedPhotoIndex = 0;
   Timer? _thresholdDebounce;
   int? _lastSavedThreshold;
@@ -121,15 +136,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     super.initState();
     _item = widget.item;
     _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
+    _lastSavedNotes = _notesCtrl.text.trim();
     _purchaseSourceCtrl = TextEditingController(
       text: widget.item.purchaseSource ?? '',
     );
+    _lastSavedPurchaseSource = _purchaseSourceCtrl.text.trim();
     _thresholdCtrl = TextEditingController(
       text: (widget.initialThreshold != null && widget.initialThreshold! > 0)
           ? widget.initialThreshold.toString()
           : '',
     );
-    _lastSavedThreshold = widget.initialThreshold;
+    _lastSavedThreshold = _parsedThreshold();
     _checkoutNameCtrl = TextEditingController();
     _checkoutNotesCtrl = TextEditingController();
     _checkoutsFuture = _fetchCheckouts();
@@ -151,10 +168,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void dispose() {
     _thresholdDebounce?.cancel();
-    final pendingThreshold = _parsedThreshold();
-    if (pendingThreshold != _lastSavedThreshold) {
-      unawaited(_saveThresholdValue(pendingThreshold));
-    }
+    // All user dismissals flush edits before popping. Never start a write
+    // from dispose, where failures cannot be shown and accounts may have changed.
     _notesCtrl.dispose();
     _purchaseSourceCtrl.dispose();
     _thresholdCtrl.dispose();
@@ -213,7 +228,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Future<void> _addPhoto() async {
-    if (_photoSaving) return;
+    if (_photoSaving || _closing) return;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppTheme.surface2(context),
@@ -226,12 +241,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take Photo'),
+              title: const AppText('Take Photo'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Library'),
+              title: const AppText('Choose from Library'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -246,7 +261,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       maxHeight: 2048,
       imageQuality: 88,
     );
-    if (photo == null || !mounted) return;
+    if (photo == null || !mounted || _closing) return;
 
     setState(() => _photoSaving = true);
     try {
@@ -262,36 +277,36 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _photos = result.photos;
         _selectedPhotoIndex = 0;
       });
-      InventoryCache.updateItem(result.item);
+      InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Photo added')));
+      ).showSnackBar(const SnackBar(content: AppText('Photo added')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _photoSaving = false);
     }
   }
 
   Future<void> _deletePhoto(ItemPhoto photo) async {
-    if (_photoSaving) return;
+    if (_photoSaving || _closing) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete photo?'),
-        content: const Text('This photo will be removed from the item.'),
+        title: const AppText('Delete photo?'),
+        content: const AppText('This photo will be removed from the item.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -313,16 +328,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           _selectedPhotoIndex = _photos.isEmpty ? 0 : _photos.length - 1;
         }
       });
-      InventoryCache.updateItem(result.item);
+      InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Photo deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Photo deleted')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _photoSaving = false);
     }
@@ -330,19 +345,31 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
-  Future<void> _saveNotes() async {
+  Future<bool> _saveNotes() async {
+    if (_notesSaving || widget.permission != 'edit') return false;
     final notes = _notesCtrl.text.trim();
+    setState(() => _notesSaving = true);
     try {
-      await widget.api.updateItem(
+      final updated = await widget.api.updateItem(
         request: UpdateItemRequest(itemId: widget.item.itemId, notes: notes),
       );
-      if (!mounted) return;
-      setState(() => _isEditingNotes = false);
+      if (!mounted) return false;
+      setState(() {
+        _isEditingNotes = false;
+        _lastSavedNotes = notes;
+        _item = updated;
+      });
+      InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
+      widget.onItemUpdated?.call(updated);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save notes. Try again.')),
+        const SnackBar(content: AppText('Could not save notes. Try again.')),
       );
+      return false;
+    } finally {
+      if (mounted) setState(() => _notesSaving = false);
     }
   }
 
@@ -355,16 +382,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   int? _parsedThreshold() {
     final raw = int.tryParse(_thresholdCtrl.text.trim());
-    return (raw != null && raw > 0) ? raw : null;
+    return (raw != null && raw >= 0) ? raw : null;
   }
 
-  Future<void> _saveThresholdNow() async {
+  Future<bool> _saveThresholdNow() {
     _thresholdDebounce?.cancel();
-    await _saveThresholdValue(_parsedThreshold());
+    if (widget.permission != 'edit') return Future.value(true);
+    return _thresholdSave ??= _flushThreshold().whenComplete(() {
+      _thresholdSave = null;
+    });
   }
 
-  Future<void> _saveThresholdValue(int? threshold) async {
-    if (threshold == _lastSavedThreshold) return;
+  Future<bool> _flushThreshold() async {
+    while (mounted) {
+      final threshold = _parsedThreshold();
+      if (threshold == _lastSavedThreshold) return true;
+      if (!await _saveThresholdValue(threshold)) return false;
+    }
+    return false;
+  }
+
+  Future<bool> _saveThresholdValue(int? threshold) async {
     try {
       await LowStockPrefs.setThreshold(
         itemId: widget.item.itemId,
@@ -372,34 +410,133 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       );
       _lastSavedThreshold = threshold;
       widget.onThresholdChanged?.call(threshold);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save the low-stock threshold.')),
+        const SnackBar(
+          content: AppText('Could not save the low-stock threshold.'),
+        ),
       );
+      return false;
     }
   }
 
   void _schedulePurchaseSourceSave() {
     _purchaseSourceDebounce?.cancel();
     _purchaseSourceDebounce = Timer(const Duration(milliseconds: 600), () {
-      _savePurchaseSourceSilent();
+      unawaited(_savePurchaseSourceNow());
     });
   }
 
-  Future<void> _savePurchaseSourceSilent() async {
-    final source = _purchaseSourceCtrl.text.trim();
+  Future<bool> _savePurchaseSourceNow() {
+    _purchaseSourceDebounce?.cancel();
+    if (widget.permission != 'edit') return Future.value(true);
+    return _purchaseSourceSave ??= _flushPurchaseSource().whenComplete(() {
+      _purchaseSourceSave = null;
+    });
+  }
+
+  Future<bool> _flushPurchaseSource() async {
+    while (mounted) {
+      final source = _purchaseSourceCtrl.text.trim();
+      if (source == _lastSavedPurchaseSource) return true;
+      if (!await _persistPurchaseSource(source)) return false;
+    }
+    return false;
+  }
+
+  Future<bool> _persistPurchaseSource(String source) async {
     try {
-      await widget.api.updateItem(
+      final updated = await widget.api.updateItem(
         request: UpdateItemRequest(
           itemId: widget.item.itemId,
-          purchaseSource: source.isEmpty ? null : source,
+          purchaseSource: source,
         ),
       );
-      if (mounted) setState(() => _purchaseSourceSaveFailed = false);
-    } catch (e) {
-      debugPrint('[ItemDetailSheet] _savePurchaseSourceSilent error: $e');
+      _lastSavedPurchaseSource = source;
+      if (mounted) {
+        setState(() {
+          _purchaseSourceSaveFailed = false;
+          _item = updated;
+        });
+        InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
+        widget.onItemUpdated?.call(updated);
+      }
+      return true;
+    } catch (_) {
       if (mounted) setState(() => _purchaseSourceSaveFailed = true);
+      return false;
+    }
+  }
+
+  Future<bool> _requestClose() async {
+    if (_closing || ModalRoute.of(context)?.isCurrent != true) return false;
+    if (_notesSaving ||
+        _photoSaving ||
+        _checkingOut ||
+        _documentSaving ||
+        _returnSaving) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Please wait for the current save to finish.'),
+        ),
+      );
+      return false;
+    }
+    setState(() => _closing = true);
+    try {
+      FocusManager.instance.primaryFocus?.unfocus();
+      if (widget.permission == 'edit') {
+        if (_notesCtrl.text.trim() != _lastSavedNotes) {
+          final choice = await showDialog<String>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const AppText('Save your notes?'),
+              content: const AppText('Your notes have unsaved changes.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const AppText('Keep editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, 'discard'),
+                  child: const AppText('Discard'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, 'save'),
+                  child: const AppText('Save and close'),
+                ),
+              ],
+            ),
+          );
+          if (!mounted || choice == null) return false;
+          if (choice == 'save' && !await _saveNotes()) return false;
+          if (choice == 'discard') {
+            _notesCtrl.text = _lastSavedNotes;
+            setState(() => _isEditingNotes = false);
+          }
+        }
+        if (!await _savePurchaseSourceNow()) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: AppText(
+                  'Could not save the purchase source. Try again before closing.',
+                ),
+              ),
+            );
+          }
+          return false;
+        }
+        if (!await _saveThresholdNow()) return false;
+      }
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
+      setState(() => _allowPop = true);
+      Navigator.pop(context);
+      return true;
+    } finally {
+      if (mounted && !_allowPop) setState(() => _closing = false);
     }
   }
 
@@ -408,7 +545,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       .catchError((_) => <Map<String, dynamic>>[]);
 
   Future<void> _showCheckoutDialog() async {
-    if (_checkingOut) return;
+    if (_checkingOut || _closing) return;
     setState(() => _checkingOut = true);
     debugPrint('[CheckOut] dialog opening for item=${widget.item.itemId}');
 
@@ -446,10 +583,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(ctx),
-          title: Text(
+          title: AppText(
             'Check Out ${widget.item.name}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Colors.white),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -460,15 +597,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               TextField(
                 controller: _checkoutNameCtrl,
                 textInputAction: TextInputAction.next,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                ),
+                decoration: InputDecoration(
                   hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                    ),
+                  ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Colors.white38),
+                    ),
                   ),
                 ),
               ),
@@ -478,15 +627,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                ),
+                decoration: InputDecoration(
                   hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                    ),
+                  ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Colors.white38),
+                    ),
                   ),
                 ),
               ),
@@ -495,9 +656,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    AppText(
                       'How many?',
-                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                      style: TextStyle(
+                        color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                        fontSize: 13,
+                      ),
                     ),
                     Row(
                       children: [
@@ -509,28 +673,37 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                ctx,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  ctx,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
                             child: Icon(
                               Icons.remove,
                               color: dlgQty > 1
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(ctx, Colors.white)
+                                  : AppTheme.foreground(
+                                      ctx,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               size: 16,
                             ),
                           ),
                         ),
                         SizedBox(
                           width: 36,
-                          child: Text(
+                          child: AppText(
                             '$dlgQty',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTheme.foreground(ctx, Colors.white),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -544,17 +717,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                ctx,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  ctx,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
                             child: Icon(
                               Icons.add,
                               color: dlgQty < widget.item.quantity
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(ctx, Colors.white)
+                                  : AppTheme.foreground(
+                                      ctx,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               size: 16,
                             ),
                           ),
@@ -572,8 +754,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     initialDate: DateTime.now().add(const Duration(days: 1)),
                     firstDate: DateTime.now(),
                     lastDate: DateTime.now().add(const Duration(days: 30)),
-                    builder: (context, child) =>
-                        Theme(data: ThemeData.dark(), child: child!),
+                    builder: (context, child) => Theme(
+                      data: ThemeData.dark(),
+                      child: AppTypography(child: child!),
+                    ),
                   );
                   if (picked != null) {
                     setDlgState(() => dueBack = picked);
@@ -585,24 +769,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(ctx, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(
+                      color: AppTheme.adaptive(ctx, const Color(0x14FFFFFF)),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today_outlined,
-                        color: Color(0x73FFFFFF),
+                        color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
                         size: 14,
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         dueBack == null
                             ? 'Set due date (optional)'
                             : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
+                        style: TextStyle(
+                          color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
                           fontSize: 13,
                         ),
                       ),
@@ -618,9 +804,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 debugPrint('[CheckOut] dialog cancelled');
                 Navigator.of(ctx).pop();
               },
-              child: const Text(
+              child: AppText(
                 'Cancel',
-                style: TextStyle(color: Color(0x73FFFFFF)),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                ),
               ),
             ),
             TextButton(
@@ -663,18 +851,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       }
                     },
               child: dlgSubmitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
-                        color: Colors.white,
+                        color: AppTheme.adaptive(ctx, Colors.white),
                       ),
                     )
-                  : const Text(
+                  : AppText(
                       'Check Out',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.foreground(ctx, Colors.white),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -706,7 +894,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       });
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             '${widget.item.name} checked out to $successCheckedOutBy',
           ),
         ),
@@ -714,7 +902,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     } else {
       setState(() => _checkingOut = false);
       if (failureMessage != null) {
-        messenger.showSnackBar(SnackBar(content: Text(failureMessage!)));
+        messenger.showSnackBar(SnackBar(content: AppText(failureMessage!)));
       }
     }
   }
@@ -761,36 +949,42 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
+              child: AppText(
                 'Where to buy "${widget.item.name}"',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text(
+              child: AppText(
                 'Tap to open in browser',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                  fontSize: 12,
+                ),
               ),
             ),
             ...links.map(
               (link) => ListTile(
                 leading: Icon(
                   link['icon'] as IconData,
-                  color: Colors.white70,
+                  color: AppTheme.foreground(ctx, Colors.white70),
                   size: 20,
                 ),
-                title: Text(
+                title: AppText(
                   link['name'] as String,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                    fontSize: 15,
+                  ),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.open_in_new,
-                  color: Color(0x4DFFFFFF),
+                  color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
                   size: 16,
                 ),
                 onTap: () async {
@@ -810,6 +1004,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Future<void> _pickAndUploadDocument() async {
+    if (_documentSaving || _closing) return;
     final choice = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: AppTheme.surface2(context),
@@ -821,24 +1016,24 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_library_outlined,
-                color: Colors.white,
+                color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: const Text(
+              title: AppText(
                 'Choose Photo',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
               onTap: () => Navigator.pop(ctx, 'photo'),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.picture_as_pdf_outlined,
-                color: Colors.white,
+                color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: const Text(
+              title: AppText(
                 'Choose PDF',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
               onTap: () => Navigator.pop(ctx, 'pdf'),
             ),
@@ -873,7 +1068,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       filename = picked.name;
     }
 
-    if (!mounted) return;
+    if (!mounted || _closing) return;
+    setState(() => _documentSaving = true);
     try {
       final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
       await widget.api.uploadDocument(file: file, itemId: widget.item.itemId);
@@ -881,47 +1077,74 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
+        ).showSnackBar(const SnackBar(content: AppText('Document uploaded')));
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Please try again.')),
+        const SnackBar(content: AppText('Upload failed. Please try again.')),
       );
+    } finally {
+      if (mounted) setState(() => _documentSaving = false);
+    }
+  }
+
+  Future<void> _returnCheckout(String checkoutId) async {
+    if (_returnSaving || _closing) return;
+    setState(() => _returnSaving = true);
+    try {
+      await widget.api.returnItem(checkoutId: checkoutId);
+      if (mounted) setState(() => _checkoutsFuture = _fetchCheckouts());
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: AppText('Could not return the item. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _returnSaving = false);
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Widget _infoRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-    child: Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0x73FFFFFF),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
+  Widget _infoRow(String label, String value) {
+    final largeText = MediaQuery.textScalerOf(context).scale(14) > 24;
+    final labelText = AppText(
+      label,
+      style: TextStyle(
+        color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+    final valueText = AppText(
+      value,
+      style: TextStyle(
+        color: AppTheme.foreground(context, Colors.white),
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+      textAlign: largeText ? TextAlign.left : TextAlign.right,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: largeText
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [labelText, const SizedBox(height: 8), valueText],
+            )
+          : Row(
+              children: [
+                Expanded(child: labelText),
+                const SizedBox(width: 16),
+                Expanded(child: valueText),
+              ],
             ),
-            textAlign: TextAlign.right,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 
   List<String> _catalogValues(Map<String, dynamic> metadata) {
     final values = <String>[];
@@ -944,25 +1167,28 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0x1230D158),
+          color: AppTheme.adaptive(context, const Color(0x1230D158)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x4430D158), width: 0.5),
+          border: Border.all(
+            color: AppTheme.adaptive(context, const Color(0x4430D158)),
+            width: 0.5,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.verified_rounded,
-                  color: Color(0xFF30D158),
+                  color: AppTheme.foreground(context, Color(0xFF30D158)),
                   size: 17,
                 ),
                 SizedBox(width: 7),
-                Text(
+                AppText(
                   'Manufacturer verified',
                   style: TextStyle(
-                    color: Color(0xFF30D158),
+                    color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -971,10 +1197,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ),
             if (part.description?.isNotEmpty == true) ...[
               const SizedBox(height: 9),
-              Text(
+              AppText(
                 part.description!,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
                   fontSize: 13,
                   height: 1.35,
                 ),
@@ -982,10 +1208,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ],
             if (specs.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 specs.join(' • '),
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                   fontSize: 12,
                   height: 1.35,
                 ),
@@ -993,19 +1219,22 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ],
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              const Text(
+              AppText(
                 'VERIFIED COMPATIBILITY',
                 style: TextStyle(
-                  color: Color(0x8030D158),
+                  color: AppTheme.foreground(context, Color(0x8030D158)),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
+              AppText(
                 compatibility.join(' • '),
-                style: const TextStyle(color: Color(0xCC30D158), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xCC30D158)),
+                  fontSize: 12,
+                ),
               ),
             ],
             if (part.productUrl?.isNotEmpty == true) ...[
@@ -1021,15 +1250,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Could not open the manufacturer page.'),
+                        content: AppText(
+                          'Could not open the manufacturer page.',
+                        ),
                       ),
                     );
                   }
                 },
-                child: const Text(
+                child: AppText(
                   'View manufacturer source ↗',
                   style: TextStyle(
-                    color: Color(0xFF30D158),
+                    color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1050,26 +1281,32 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0x126997DD),
+          color: AppTheme.adaptive(context, const Color(0x126997DD)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x446997DD), width: 0.5),
+          border: Border.all(
+            color: AppTheme.adaptive(context, const Color(0x446997DD)),
+            width: 0.5,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            AppText(
               'MATCHING INTERFACES',
               style: TextStyle(
-                color: Color(0xFF64D2FF),
+                color: AppTheme.foreground(context, Color(0xFF64D2FF)),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               result.interfaces.join(' • '),
-              style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0xCC64D2FF)),
+                fontSize: 13,
+              ),
             ),
             if (result.matches.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -1091,7 +1328,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
+                                      content: AppText(
                                         'Could not open the manufacturer page.',
                                       ),
                                     ),
@@ -1104,19 +1341,25 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText(
                                     match.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
+                                  AppText(
                                     '${match.brand} • ${match.partNumber}',
-                                    style: const TextStyle(
-                                      color: Color(0x80FFFFFF),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x80FFFFFF),
+                                      ),
                                       fontSize: 11,
                                     ),
                                   ),
@@ -1124,9 +1367,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                             ),
                             if (match.productUrl != null)
-                              const Icon(
+                              Icon(
                                 Icons.open_in_new,
-                                color: Color(0x8064D2FF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x8064D2FF),
+                                ),
                                 size: 15,
                               ),
                           ],
@@ -1134,10 +1380,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                     ),
                   ),
-              const Text(
+              AppText(
                 'Matches share an exact interface published in manufacturer product data. Confirm fit for your application.',
                 style: TextStyle(
-                  color: Color(0x66FFFFFF),
+                  color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                   fontSize: 10,
                   height: 1.3,
                 ),
@@ -1151,7 +1397,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Widget _divider() => Container(
     height: 0.5,
-    color: const Color(0x14FFFFFF),
+    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
     margin: const EdgeInsets.symmetric(horizontal: 18),
   );
 
@@ -1192,34 +1438,43 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           borderRadius: BorderRadius.circular(18),
           child: Container(
             width: double.infinity,
-            height: 150,
+            constraints: const BoxConstraints(minHeight: 150),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0x1FFFFFFF)),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x1FFFFFFF)),
+              ),
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.add_photo_alternate_outlined,
-                  color: Color(0x66FFFFFF),
+                  color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                   size: 34,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   canEdit ? 'Add an item photo' : 'No photos yet',
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (canEdit) ...[
                   const SizedBox(height: 4),
-                  const Text(
+                  AppText(
                     'Take a photo or choose one from your library',
-                    style: TextStyle(color: Color(0x55FFFFFF), fontSize: 12),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x55FFFFFF)),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ],
@@ -1253,7 +1508,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Container(color: const Color(0xFF171717)),
+                        Container(
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0xFF171717),
+                          ),
+                        ),
                         Image.network(
                           photo.imageUrl,
                           fit: BoxFit.cover,
@@ -1265,20 +1525,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     strokeWidth: 2,
                                   ),
                                 ),
-                          errorBuilder: (_, _, _) => const Center(
+                          errorBuilder: (_, _, _) => Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.broken_image_outlined,
-                                  color: Color(0x66FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x66FFFFFF),
+                                  ),
                                   size: 32,
                                 ),
                                 SizedBox(height: 6),
-                                Text(
+                                AppText(
                                   'Photo unavailable',
                                   style: TextStyle(
-                                    color: Color(0x66FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x66FFFFFF),
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1291,8 +1557,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             top: 8,
                             right: 8,
                             child: DecoratedBox(
-                              decoration: const BoxDecoration(
-                                color: Color(0xB3000000),
+                              decoration: BoxDecoration(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  Color(0xB3000000),
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -1300,17 +1569,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onPressed: _photoSaving
                                     ? null
                                     : () => _deletePhoto(photo),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete_outline,
-                                  color: Colors.white,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   size: 20,
                                 ),
                               ),
                             ),
                           ),
                         if (_photoSaving)
-                          const ColoredBox(
-                            color: Color(0x66000000),
+                          ColoredBox(
+                            color: AppTheme.adaptive(
+                              context,
+                              Color(0x66000000),
+                            ),
                             child: Center(
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
@@ -1325,9 +1600,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(
+              AppText(
                 '${_selectedPhotoIndex + 1} of ${_photos.length}',
-                style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                  fontSize: 12,
+                ),
               ),
               const Spacer(),
               if (canEdit)
@@ -1337,7 +1615,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     Icons.add_photo_alternate_outlined,
                     size: 18,
                   ),
-                  label: Text(
+                  label: AppText(
                     _photos.length == 1 ? 'Add another' : 'Add photo',
                   ),
                 ),
@@ -1381,45 +1659,75 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope<void>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_requestClose());
+      },
+      child: ItemDetailDragSheet(
+        onDismiss: _requestClose,
+        builder: (context, scrollController) =>
+            _buildContent(context, scrollController),
+      ),
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
     final item = _item;
     final canEdit = widget.permission == 'edit';
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       child: SingleChildScrollView(
+        key: const ValueKey('item-detail-scroll'),
+        controller: scrollController,
+        physics: const ClampingScrollPhysics(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Drag handle
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
+            Semantics(
+              label: 'Dismiss item details',
+              onDismiss: () => unawaited(_requestClose()),
+              child: Center(
+                child: Container(
+                  key: const ValueKey('item-detail-drag-handle'),
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
             ),
             // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 item.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.5,
@@ -1429,9 +1737,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 item.displayDescription ?? item.category,
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  fontSize: 14,
+                ),
               ),
             ),
             const SizedBox(height: 18),
@@ -1443,10 +1754,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0x14FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
@@ -1487,6 +1798,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
               ),
             ),
+            if (item.importData != null)
+              ImportedItemDetails(data: item.importData!),
             if (_catalogFuture != null)
               FutureBuilder<VerifiedCatalogPart?>(
                 future: _catalogFuture,
@@ -1517,16 +1830,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'CHECK OUT',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      Expanded(
+                        child: AppText(
+                          'CHECK OUT',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       if (canEdit)
                         GestureDetector(
                           onTap: _checkingOut ? null : _showCheckoutDialog,
@@ -1536,16 +1854,25 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
-                            child: const Text(
+                            child: AppText(
                               'Check Out',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 12,
                               ),
                             ),
@@ -1560,10 +1887,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       if (snapshot.hasError) {
                         return Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Text(
+                          child: AppText(
                             "Couldn't load checkout status",
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.35),
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -1576,23 +1906,39 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0x0A30D158),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x0A30D158),
+                            ),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0x1A30D158)),
+                            border: Border.all(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0x1A30D158),
+                              ),
+                            ),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(
                                 Icons.check_circle_outline,
-                                color: Color(0xFF30D158),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFF30D158),
+                                ),
                                 size: 14,
                               ),
                               SizedBox(width: 8),
-                              Text(
-                                'Available — not checked out',
-                                style: TextStyle(
-                                  color: Color(0xFF30D158),
-                                  fontSize: 12,
+                              Expanded(
+                                child: AppText(
+                                  'Available - not checked out',
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0xFF30D158),
+                                    ),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1603,23 +1949,37 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0x0AFBBF24),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x0AFBBF24),
+                          ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x33FBBF24)),
+                          border: Border.all(
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x33FBBF24),
+                            ),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.person_outline,
-                              color: Color(0xFFFBBF24),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFFBBF24),
+                              ),
                               size: 14,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
+                              child: AppText(
                                 'Checked out by ${checkout['checked_out_by']}',
-                                style: const TextStyle(
-                                  color: Color(0xFFFBBF24),
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0xFFFBBF24),
+                                  ),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1627,21 +1987,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                             if (canEdit)
                               GestureDetector(
-                                onTap: () async {
-                                  await widget.api.returnItem(
-                                    checkoutId:
-                                        checkout['checkout_id'] as String,
-                                  );
-                                  if (mounted) {
-                                    setState(() {
-                                      _checkoutsFuture = _fetchCheckouts();
-                                    });
-                                  }
-                                },
-                                child: const Text(
+                                onTap: () => _returnCheckout(
+                                  checkout['checkout_id'] as String,
+                                ),
+                                child: AppText(
                                   'Return',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1665,10 +2020,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
+                      AppText(
                         'NOTES',
                         style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.6,
@@ -1678,11 +2036,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       if (canEdit)
                         _isEditingNotes
                             ? GestureDetector(
-                                onTap: _saveNotes,
-                                child: const Text(
+                                onTap: _notesSaving || _closing
+                                    ? null
+                                    : _saveNotes,
+                                child: AppText(
                                   'Save',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1691,10 +2054,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             : GestureDetector(
                                 onTap: () =>
                                     setState(() => _isEditingNotes = true),
-                                child: const Text(
+                                child: AppText(
                                   'Edit',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -1706,41 +2072,67 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 80),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
                     padding: const EdgeInsets.all(14),
                     child: _isEditingNotes
                         ? TextField(
+                            key: const ValueKey('item-detail-notes'),
+                            readOnly: _notesSaving || _closing,
                             controller: _notesCtrl,
                             maxLines: null,
                             autofocus: true,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              height: 1.5,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Add notes about this item...',
-                              hintStyle: TextStyle(
-                                color: Color(0x33FFFFFF),
-                                fontSize: 14,
+                              hintStyle: AppTypography.bodyStyleOf(
+                                context,
+                                TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x33FFFFFF),
+                                  ),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           )
-                        : Text(
+                        : AppText(
                             _notesCtrl.text.isNotEmpty
                                 ? _notesCtrl.text
                                 : 'Tap Edit to add notes...',
                             style: TextStyle(
                               color: _notesCtrl.text.isNotEmpty
-                                  ? const Color(0x73FFFFFF)
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(
+                                      context,
+                                      const Color(0x73FFFFFF),
+                                    )
+                                  : AppTheme.foreground(
+                                      context,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -1759,16 +2151,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'DOCUMENTS',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      Expanded(
+                        child: AppText(
+                          'DOCUMENTS',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       if (canEdit)
                         GestureDetector(
                           onTap: _pickAndUploadDocument,
@@ -1778,26 +2175,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
                                 width: 0.5,
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.add,
-                                  color: Color(0x73FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
                                   size: 14,
                                 ),
                                 SizedBox(width: 4),
-                                Text(
+                                AppText(
                                   'Add',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -1813,32 +2222,47 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14FFFFFF),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
-                      child: const Column(
+                      child: Column(
                         children: [
                           Icon(
                             Icons.description_outlined,
-                            color: Color(0x20FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x20FFFFFF),
+                            ),
                             size: 28,
                           ),
                           SizedBox(height: 8),
-                          Text(
+                          AppText(
                             'No documents yet',
                             style: TextStyle(
-                              color: Color(0x33FFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x33FFFFFF),
+                              ),
                               fontSize: 13,
                             ),
                           ),
-                          Text(
+                          AppText(
                             'Add receipts, manuals, or warranties',
                             style: TextStyle(
-                              color: Color(0x20FFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x20FFFFFF),
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -1848,10 +2272,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   else
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14FFFFFF),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
@@ -1870,19 +2300,28 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   (doc.mimeType?.contains('pdf') == true)
                                       ? Icons.picture_as_pdf_outlined
                                       : Icons.image_outlined,
-                                  color: const Color(0x73FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    const Color(0x73FFFFFF),
+                                  ),
                                   size: 20,
                                 ),
-                                title: Text(
+                                title: AppText(
                                   doc.displayName ?? doc.filename,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
-                                trailing: const Icon(
+                                trailing: Icon(
                                   Icons.arrow_forward_ios,
-                                  color: Color(0x33FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x33FFFFFF),
+                                  ),
                                   size: 12,
                                 ),
                                 onTap: () {
@@ -1894,7 +2333,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               if (!isLast)
                                 Container(
                                   height: 0.5,
-                                  color: const Color(0x14FFFFFF),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    const Color(0x14FFFFFF),
+                                  ),
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                   ),
@@ -1913,12 +2355,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             // if the field is absent the section simply won't render.
             if (item.tags != null && item.tags!.isNotEmpty) ...[
               const SizedBox(height: 16),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
+                child: AppText(
                   'TAGS',
                   style: TextStyle(
-                    color: Color(0x4DFFFFFF),
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -1939,17 +2381,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             vertical: 7,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0xFF171717),
+                            ),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                              color: const Color(0x14FFFFFF),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0x14FFFFFF),
+                              ),
                               width: 0.5,
                             ),
                           ),
-                          child: Text(
+                          child: AppText(
                             tag,
-                            style: const TextStyle(
-                              color: Color(0x73FFFFFF),
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x73FFFFFF),
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -1969,45 +2420,68 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'WHERE TO BUY',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      Expanded(
+                        child: AppText(
+                          'WHERE TO BUY',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _showStoreLinks,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x14FFFFFF)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 11,
-                                color: Color(0x73FFFFFF),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: _showStoreLinks,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Find stores',
-                                style: TextStyle(
-                                  color: Color(0x73FFFFFF),
-                                  fontSize: 12,
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
                                 ),
                               ),
-                            ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 11,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: AppText(
+                                    'Find stores',
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x73FFFFFF),
+                                      ),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -2017,33 +2491,51 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 4,
                     ),
                     child: TextField(
+                      key: const ValueKey('item-detail-purchase-source'),
                       controller: _purchaseSourceCtrl,
-                      readOnly: !canEdit,
+                      readOnly: !canEdit || _closing,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) async {
-                        await _saveThresholdNow();
+                        if (canEdit) await _savePurchaseSourceNow();
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.5,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Where to buy this item...',
-                        hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
-                          fontSize: 14,
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x33FFFFFF),
+                            ),
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       onChanged: canEdit
@@ -2052,21 +2544,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   if (_purchaseSourceSaveFailed)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 4),
                       child: Row(
                         children: [
                           Icon(
                             Icons.cloud_off_outlined,
                             size: 13,
-                            color: Color(0xFFFF9F0A),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFFFF9F0A),
+                            ),
                           ),
                           SizedBox(width: 5),
-                          Text(
+                          AppText(
                             'Not saved',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFFFF9F0A),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFFF9F0A),
+                              ),
                             ),
                           ),
                         ],
@@ -2083,10 +2581,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text(
+                  AppText(
                     'ITEM QR CODE',
                     style: TextStyle(
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
@@ -2121,9 +2619,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   item.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.black,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -2132,23 +2630,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
+                                AppText(
                                   item.displayDescription ?? item.location,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF666666),
                                     fontSize: 12,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
+                                AppText(
                                   'Qty: ${item.quantity}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF888888),
                                     fontSize: 12,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const Text(
+                                AppText(
                                   'FindEZ AI',
                                   style: TextStyle(
                                     color: Colors.black,
@@ -2157,7 +2655,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     letterSpacing: 0.3,
                                   ),
                                 ),
-                                const Text(
+                                AppText(
                                   'findez.ai',
                                   style: TextStyle(
                                     color: Color(0xFF888888),
@@ -2172,9 +2670,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  AppText(
                     'Scan this code to quickly find this item in FindEZ',
-                    style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                      fontSize: 11,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
@@ -2185,24 +2686,40 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(99),
-                        border: Border.all(color: const Color(0x14FFFFFF)),
+                        border: Border.all(
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
+                        ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.share_outlined,
                             size: 12,
-                            color: Color(0x73FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                           ),
                           SizedBox(width: 6),
-                          Text(
-                            'Share item',
-                            style: TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 12,
+                          Flexible(
+                            child: AppText(
+                              'Share item',
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -2220,10 +2737,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text(
-                    'ALERT ME WHEN BELOW',
+                  AppText(
+                    'ALERT ME AT OR BELOW',
                     style: TextStyle(
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
@@ -2233,10 +2750,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
@@ -2245,23 +2768,33 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       vertical: 4,
                     ),
                     child: TextField(
+                      key: const ValueKey('item-detail-threshold'),
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) =>
                           FocusManager.instance.primaryFocus?.unfocus(),
-                      readOnly: !canEdit,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.5,
+                      readOnly: !canEdit || _closing,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Quantity threshold',
-                        hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
-                          fontSize: 14,
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x33FFFFFF),
+                            ),
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       onChanged: canEdit
@@ -2279,26 +2812,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: () async {
-                  await _saveThresholdNow();
-                  if (context.mounted) Navigator.pop(context);
-                },
+                onTap: () => unawaited(_requestClose()),
                 child: Container(
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Center(
-                    child: Text(
+                  child: Center(
+                    child: AppText(
                       'Close',
                       style: TextStyle(
-                        color: Color(0x73FFFFFF),
+                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),

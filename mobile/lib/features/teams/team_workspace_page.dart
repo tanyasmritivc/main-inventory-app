@@ -1,3 +1,6 @@
+import 'team_categories.dart';
+import '../../core/app_theme.dart';
+import '../inventory/space_icon_picker.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -14,6 +17,7 @@ import '../../core/ui/glass_fab.dart';
 import '../inventory/inventory_page.dart';
 import 'team_board_page.dart';
 import 'team_documents_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamWorkspacePage extends StatefulWidget {
   const TeamWorkspacePage({
@@ -124,8 +128,8 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
             if (_canManage)
               ListTile(
                 leading: const Icon(CupertinoIcons.add_circled),
-                title: const Text('Create Team Space'),
-                subtitle: const Text(
+                title: const AppText('Create Team Space'),
+                subtitle: const AppText(
                   'Create a new Space owned by the team owner',
                 ),
                 onTap: () => Navigator.pop(context, 'create'),
@@ -133,8 +137,8 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
             if (_canEdit)
               ListTile(
                 leading: const Icon(CupertinoIcons.link),
-                title: const Text('Add Existing Space'),
-                subtitle: const Text(
+                title: const AppText('Add Existing Space'),
+                subtitle: const AppText(
                   'Link a Space you own without moving or deleting it',
                 ),
                 onTap: () => Navigator.pop(context, 'attach'),
@@ -152,24 +156,25 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create Team Space'),
+        title: const AppText('Create Team Space'),
         content: TextField(
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(hintText: 'e.g. Workshop'),
+          style: AppTypography.bodyStyleOf(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.isNotEmpty) Navigator.pop(context, value);
             },
-            child: const Text('Create'),
+            child: const AppText('Create'),
           ),
         ],
       ),
@@ -190,7 +195,9 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       if (!mounted) return;
       if (available.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You have no unlinked Spaces to add.')),
+          const SnackBar(
+            content: AppText('You have no unlinked Spaces to add.'),
+          ),
         );
         return;
       }
@@ -200,11 +207,11 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ListTile(title: Text('Add Existing Space')),
+              const ListTile(title: AppText('Add Existing Space')),
               for (final space in available)
                 ListTile(
-                  title: Text(space['name']?.toString() ?? 'Space'),
-                  subtitle: Text('${space['item_count'] ?? 0} items'),
+                  title: AppText(space['name']?.toString() ?? 'Space'),
+                  subtitle: AppText('${space['item_count'] ?? 0} items'),
                   onTap: () => Navigator.pop(context, space['id']?.toString()),
                 ),
             ],
@@ -219,7 +226,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -231,7 +238,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -242,7 +249,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Team join code copied')));
+    ).showSnackBar(const SnackBar(content: AppText('Team join code copied')));
   }
 
   Future<void> _shareInvite() async {
@@ -252,17 +259,22 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       final inviteUrl = invite['invite_url']?.toString() ?? '';
       final code = invite['join_code']?.toString() ?? '';
       if (inviteUrl.isEmpty) throw StateError('Invitation link unavailable');
+      if (!mounted) return;
+      final box = context.findRenderObject() as RenderBox?;
       await SharePlus.instance.share(
         ShareParams(
           subject: 'Join $teamName on FindEZ',
           text: 'Join $teamName on FindEZ.\n$inviteUrl\n\nJoin code: $code',
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
         ),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -271,7 +283,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final email = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Invite by email'),
+        title: const AppText('Invite by email'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -282,18 +294,19 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           onSubmitted: (value) {
             if (value.trim().contains('@')) Navigator.pop(context, value);
           },
+          style: AppTypography.bodyStyleOf(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.contains('@')) Navigator.pop(context, value);
             },
-            child: const Text('Send'),
+            child: const AppText('Send'),
           ),
         ],
       ),
@@ -304,13 +317,13 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       await widget.api.emailTeamInvite(widget.initialTeamId!, email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invitation sent to ${email.trim()}')),
+        SnackBar(content: AppText('Invitation sent to ${email.trim()}')),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -318,18 +331,18 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset invite code?'),
-        content: const Text(
+        title: const AppText('Reset invite code?'),
+        content: const AppText(
           'The current code will stop working immediately. Existing members keep their access.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reset Code'),
+            child: const AppText('Reset Code'),
           ),
         ],
       ),
@@ -339,14 +352,14 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       final code = await widget.api.rotateTeamJoinCode(widget.initialTeamId!);
       if (!mounted) return;
       setState(() => _team = {...?_team, 'join_code': code});
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Old invite code revoked')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('Old invite code revoked')),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -355,20 +368,22 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Team?'),
-        content: Text(
+        title: const AppText('Delete Team?'),
+        content: AppText(
           '“$name” and its Board, People, and Activity will be permanently deleted. Linked Spaces and their items will remain in their owners’ accounts.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: AppText(
               'Delete Team',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -382,7 +397,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -391,20 +406,22 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave Team?'),
-        content: Text(
+        title: const AppText('Leave Team?'),
+        content: AppText(
           'You will lose access to “$name”, its Team Board, and its linked Spaces. Your own Spaces and items will remain yours.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: AppText(
               'Leave Team',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -418,7 +435,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -427,7 +444,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final name = _team?['name']?.toString() ?? 'Team';
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: AppText(name),
         actions: [
           if (!_loading && _error == null)
             PopupMenuButton<String>(
@@ -441,22 +458,26 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                 if (_canManage)
                   const PopupMenuItem(
                     value: 'reset_code',
-                    child: Text('Reset Invite Code'),
+                    child: AppText('Reset Invite Code'),
                   ),
                 if (_role == 'owner')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
-                    child: Text(
+                    child: AppText(
                       'Delete Team',
-                      style: TextStyle(color: AppColors.danger),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.danger),
+                      ),
                     ),
                   ),
                 if (_role != 'owner')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'leave',
-                    child: Text(
+                    child: AppText(
                       'Leave Team',
-                      style: TextStyle(color: AppColors.danger),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.danger),
+                      ),
                     ),
                   ),
               ],
@@ -476,9 +497,11 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 36),
                 children: [
-                  Text(
-                    '${_teamTypeLabel((_team?['program'] ?? '').toString())} · ${_roleLabel(_role)}',
-                    style: const TextStyle(color: AppColors.muted),
+                  AppText(
+                    '${teamCategoryLabel(_team?['program']?.toString(), _team?['custom_category']?.toString())} · ${_roleLabel(_role)}',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.muted),
+                    ),
                   ),
                   if (_canManage &&
                       (_team?['join_code']?.toString().isNotEmpty ??
@@ -592,32 +615,30 @@ class _WorkspaceRow extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  Color get _iconColor => switch (title) {
-    'Spaces' => const Color(0xFF9DD9C7),
-    'Board' => const Color(0xFFF0B58A),
-    'People' => const Color(0xFFB8A8E8),
-    'Documents' => const Color(0xFF9FC3E8),
-    'Activity' => const Color(0xFFE5A8B7),
-    _ => const Color(0xFFB8B8C0),
-  };
-
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(18),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(icon, color: _iconColor, size: 23),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(
+        leading: Icon(
+          icon,
+          color: AppTheme.accentForeground(context),
+          size: 23,
+        ),
+        title: AppText(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: AppText(subtitle),
+        trailing: Icon(
           CupertinoIcons.chevron_forward,
-          color: AppColors.muted,
+          color: AppTheme.foreground(context, AppColors.muted),
           size: 16,
         ),
         onTap: onTap,
@@ -644,29 +665,37 @@ class _InviteCodeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: .12),
+        color: AppTheme.accentTint(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withValues(alpha: .30)),
+        border: Border.all(
+          color: AppTheme.adaptive(
+            context,
+            AppColors.accent.withValues(alpha: .30),
+          ),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
+          Icon(
+            CupertinoIcons.person_badge_plus,
+            color: AppTheme.accentForeground(context),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                AppText(
                   'TEAM INVITE CODE',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: AppTheme.foreground(context, AppColors.muted),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: .5,
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
+                AppText(
                   code,
                   style: const TextStyle(
                     fontSize: 20,
@@ -686,9 +715,12 @@ class _InviteCodeCard extends StatelessWidget {
               if (value == 'copy') unawaited(onCopy());
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'share', child: Text('Share Invite Link')),
-              PopupMenuItem(value: 'email', child: Text('Invite by Email')),
-              PopupMenuItem(value: 'copy', child: Text('Copy Join Code')),
+              PopupMenuItem(
+                value: 'share',
+                child: AppText('Share Invite Link'),
+              ),
+              PopupMenuItem(value: 'email', child: AppText('Invite by Email')),
+              PopupMenuItem(value: 'copy', child: AppText('Copy Join Code')),
             ],
           ),
         ],
@@ -780,16 +812,16 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove from Team?'),
-        content: const Text('The Space and its items will not be deleted.'),
+        title: const AppText('Remove from Team?'),
+        content: const AppText('The Space and its items will not be deleted.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
+            child: const AppText('Remove'),
           ),
         ],
       ),
@@ -802,7 +834,7 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -810,7 +842,7 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Team Spaces'),
+      title: const AppText('Team Spaces'),
       actions: [
         if (widget.role != 'viewer')
           IconButton(
@@ -843,12 +875,14 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
               itemBuilder: (context, index) {
                 final space = _spaces[index];
                 return ListTile(
-                  leading: const Icon(
-                    CupertinoIcons.archivebox,
-                    color: AppColors.accent,
+                  leading: SpaceIconButton(
+                    key: ValueKey('space-icon-button-${space['id']}'),
+                    spaceId: space['id']?.toString() ?? '',
+                    spaceName: space['name']?.toString() ?? 'Space',
+                    fallbackIcon: CupertinoIcons.archivebox,
                   ),
-                  title: Text(space['name']?.toString() ?? 'Space'),
-                  subtitle: Text(
+                  title: AppText(space['name']?.toString() ?? 'Space'),
+                  subtitle: AppText(
                     '${space['item_count'] ?? 0} items${space['owned_by_me'] == true ? ' · You own this Space' : ''}',
                   ),
                   trailing: const Icon(
@@ -934,7 +968,7 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
     final name = widget.space['name']?.toString() ?? 'Team Space';
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: Text(name)),
+        appBar: AppBar(title: AppText(name)),
         body: _WorkspaceMessage(
           title: 'Couldn’t load Space',
           message: _error!,
@@ -944,7 +978,7 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
     }
     if (_items == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(name)),
+        appBar: AppBar(title: AppText(name)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -1038,7 +1072,7 @@ class _TeamSpaceInventoryPageState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              const AppText(
                 'Add Item',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
@@ -1047,24 +1081,27 @@ class _TeamSpaceInventoryPageState
                 controller: name,
                 autofocus: true,
                 decoration: const InputDecoration(labelText: 'Name'),
+                style: AppTypography.bodyStyleOf(context),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: category,
                 decoration: const InputDecoration(labelText: 'Category'),
+                style: AppTypography.bodyStyleOf(context),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: quantity,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Quantity'),
+                style: AppTypography.bodyStyleOf(context),
               ),
               const SizedBox(height: 18),
               FilledButton(
                 onPressed: () {
                   if (name.text.trim().isNotEmpty) Navigator.pop(context, true);
                 },
-                child: const Text('Add Item'),
+                child: const AppText('Add Item'),
               ),
             ],
           ),
@@ -1090,7 +1127,7 @@ class _TeamSpaceInventoryPageState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -1103,8 +1140,8 @@ class _TeamSpaceInventoryPageState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(item.displayName),
-              subtitle: Text(
+              title: AppText(item.displayName),
+              subtitle: AppText(
                 [
                   if (item.displayDescription != null) item.displayDescription!,
                   '${item.quantity}',
@@ -1115,19 +1152,19 @@ class _TeamSpaceInventoryPageState
             if (_canEdit)
               ListTile(
                 leading: const Icon(CupertinoIcons.minus_circle),
-                title: const Text('Decrease quantity'),
+                title: const AppText('Decrease quantity'),
                 onTap: () => Navigator.pop(context, 'decrease'),
               ),
             if (_canEdit)
               ListTile(
                 leading: const Icon(CupertinoIcons.plus_circle),
-                title: const Text('Increase quantity'),
+                title: const AppText('Increase quantity'),
                 onTap: () => Navigator.pop(context, 'increase'),
               ),
             if (_canEdit)
               ListTile(
                 leading: const Icon(CupertinoIcons.delete, color: Colors.red),
-                title: const Text(
+                title: const AppText(
                   'Delete',
                   style: TextStyle(color: Colors.red),
                 ),
@@ -1161,7 +1198,7 @@ class _TeamSpaceInventoryPageState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -1169,7 +1206,7 @@ class _TeamSpaceInventoryPageState
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(widget.space['name']?.toString() ?? 'Team Space'),
+      title: AppText(widget.space['name']?.toString() ?? 'Team Space'),
     ),
     floatingActionButton: _canEdit
         ? GlassFab(onPressed: _add, icon: CupertinoIcons.add)
@@ -1200,20 +1237,30 @@ class _TeamSpaceInventoryPageState
                         const Divider(height: 1, indent: 54),
                     itemBuilder: (context, index) {
                       final item = _items[index];
+                      final imageUrl = (item.imageUrl ?? '').trim();
                       return ListTile(
-                        leading: const Icon(
-                          CupertinoIcons.cube_box,
-                          color: AppColors.accent,
-                        ),
-                        title: Text(item.displayName),
-                        subtitle: Text(
+                        leading: imageUrl.isEmpty
+                            ? null
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Image.network(
+                                  imageUrl,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const SizedBox.shrink(),
+                                ),
+                              ),
+                        title: AppText(item.displayName),
+                        subtitle: AppText(
                           [
                             if (item.displayDescription != null)
                               item.displayDescription!,
                             item.category,
                           ].join(' · '),
                         ),
-                        trailing: Text(
+                        trailing: AppText(
                           '${item.quantity}',
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
@@ -1276,26 +1323,28 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(member['display_name']?.toString() ?? 'Team member'),
-              subtitle: Text(
+              title: AppText(
+                member['display_name']?.toString() ?? 'Team member',
+              ),
+              subtitle: AppText(
                 _roleLabel(member['role']?.toString() ?? 'member'),
               ),
             ),
             if (widget.currentRole == 'owner')
               ListTile(
-                title: const Text('Manager'),
+                title: const AppText('Manager'),
                 onTap: () => Navigator.pop(context, 'mentor'),
               ),
             ListTile(
-              title: const Text('Member'),
+              title: const AppText('Member'),
               onTap: () => Navigator.pop(context, 'member'),
             ),
             ListTile(
-              title: const Text('Viewer'),
+              title: const AppText('Viewer'),
               onTap: () => Navigator.pop(context, 'viewer'),
             ),
             ListTile(
-              title: const Text(
+              title: const AppText(
                 'Remove from Team',
                 style: TextStyle(color: Colors.red),
               ),
@@ -1324,7 +1373,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -1338,7 +1387,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -1359,19 +1408,22 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        AppText(
                           role,
-                          style: const TextStyle(
-                            color: Color(0xB3FFFFFF),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xB3FFFFFF),
+                            ),
                             fontSize: 15,
                           ),
                         ),
@@ -1401,7 +1453,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('People')),
+    appBar: AppBar(title: const AppText('People')),
     body: _error != null
         ? _WorkspaceMessage(
             title: 'Couldn’t load people',
@@ -1443,10 +1495,10 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                         photoUrl: member['avatar_url']?.toString(),
                         colorHex: member['avatar_color']?.toString(),
                       ),
-                      title: Text(
+                      title: AppText(
                         member['display_name']?.toString() ?? 'Team member',
                       ),
-                      subtitle: Text(
+                      subtitle: AppText(
                         [
                           _roleLabel(member['role']?.toString() ?? 'member'),
                           member['profile_role']?.toString() ?? '',
@@ -1479,16 +1531,22 @@ class _MemberProfileDetail extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      AppText(
         label,
-        style: const TextStyle(
-          color: Color(0x80FFFFFF),
+        style: TextStyle(
+          color: AppTheme.foreground(context, Color(0x80FFFFFF)),
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
       ),
       const SizedBox(height: 3),
-      Text(value, style: const TextStyle(color: Colors.white, fontSize: 16)),
+      AppText(
+        value,
+        style: TextStyle(
+          color: AppTheme.foreground(context, Colors.white),
+          fontSize: 16,
+        ),
+      ),
     ],
   );
 }
@@ -1521,7 +1579,7 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Activity')),
+    appBar: AppBar(title: const AppText('Activity')),
     body: _error != null
         ? _WorkspaceMessage(
             title: 'Couldn’t load activity',
@@ -1550,14 +1608,14 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
                     itemBuilder: (context, index) {
                       final row = _activity![index];
                       return ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           CupertinoIcons.clock,
-                          color: AppColors.accent,
+                          color: AppTheme.foreground(context, AppColors.accent),
                         ),
-                        title: Text(
+                        title: AppText(
                           row['summary']?.toString() ?? 'Team activity',
                         ),
-                        subtitle: Text(
+                        subtitle: AppText(
                           _dateLabel(row['created_at']?.toString()),
                         ),
                       );
@@ -1582,22 +1640,25 @@ class _WorkspaceMessage extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        AppText(
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        Text(
+        AppText(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, height: 1.4),
+          style: TextStyle(
+            color: AppTheme.foreground(context, AppColors.muted),
+            height: 1.4,
+          ),
         ),
         if (action != null) ...[
           const SizedBox(height: 18),
           FilledButton(
             onPressed: () => action!(),
-            child: const Text('Try Again'),
+            child: const AppText('Try Again'),
           ),
         ],
       ],
@@ -1610,19 +1671,6 @@ String _roleLabel(String role) => switch (role) {
   'mentor' => 'Manager',
   'viewer' => 'Viewer',
   _ => 'Member',
-};
-
-String _teamTypeLabel(String type) => switch (type) {
-  'ftc' => 'FIRST Tech Challenge',
-  'frc' => 'FIRST Robotics Competition',
-  'fll' => 'FIRST LEGO League',
-  'vex' => 'VEX Robotics',
-  'robotics' => 'Robotics Team',
-  'education' => 'School or Classroom',
-  'makerspace' => 'Makerspace or Workshop',
-  'club' => 'Club or Community Group',
-  'business' => 'Business or Operations',
-  _ => 'Team',
 };
 
 String _dateLabel(String? value) {

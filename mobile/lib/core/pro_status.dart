@@ -2,6 +2,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 
 class ProStatus {
+  /// Display fallback only; billing and access remain controlled by the API.
+  static const defaultPilotNotice =
+      'Unlimited access through November 1, 2026. '
+      'Standard free-plan limits and optional paid plans begin November 2. '
+      'You will not be charged automatically.';
+
   static String _tier = 'free';
   static String? _teamName;
   static bool _isPilotMode = false;
@@ -40,7 +46,8 @@ class ProStatus {
       }
     } catch (_) {
       final prefs = await SharedPreferences.getInstance();
-      _tier = prefs.getString('plan_tier') ??
+      _tier =
+          prefs.getString('plan_tier') ??
           ((prefs.getBool('is_pro') ?? false) ? 'pro' : 'free');
       _teamName = prefs.getString('team_name');
       // Fall back to cached pilot values so we never unexpectedly show a paywall.
@@ -52,7 +59,8 @@ class ProStatus {
 
   static Future<void> loadCached() async {
     final prefs = await SharedPreferences.getInstance();
-    _tier = prefs.getString('plan_tier') ??
+    _tier =
+        prefs.getString('plan_tier') ??
         ((prefs.getBool('is_pro') ?? false) ? 'pro' : 'free');
     _teamName = prefs.getString('team_name');
     _isPilotMode = prefs.getBool('pilot_mode') ?? false;

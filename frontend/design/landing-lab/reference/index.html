@@ -1,0 +1,690 @@
+<!doctype html><html><head><meta charset="utf-8"><title>FindEZ landing reference</title><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#000}a:hover{color:#8C8C8C}
+.mono{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:8px;padding:12px 18px;font-size:15px;text-decoration:none;border:0;font-family:inherit;cursor:pointer}
+.h2{font-weight:400;font-size:clamp(36px,4.6vw,64px);line-height:1.04;letter-spacing:-.025em;margin:0}
+.lede{color:#6B6B6B;font-size:17px;line-height:1.6;margin:18px 0 0;max-width:520px}
+.split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:56px;align-items:center}
+.float{animation:fl 6s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes mq{to{transform:translateX(-50%)}}
+@keyframes mqr{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes blink{50%{opacity:0}}
+@keyframes vpulse{0%{box-shadow:0 0 0 0 rgba(232,89,12,.4)}100%{box-shadow:0 0 0 16px rgba(232,89,12,0)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.marq{display:flex;gap:12px;width:max-content;animation:mq 46s linear infinite}
+.marq.r{animation:mqr 52s linear infinite}
+.pill{white-space:nowrap;border-radius:999px;padding:14px 22px;font-size:18px;letter-spacing:-.01em}
+.caret{display:inline-block;width:2px;height:1em;background:#000;margin-left:2px;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+.fz-phone{container-type:inline-size;box-sizing:border-box}
+.fz-bezel{background:#111112;border-radius:15cqw;padding:3.6cqw;box-shadow:0 40px 80px -30px rgba(17,17,18,.45),inset 0 0 0 1px rgba(255,255,255,.08)}
+.fz-screen{position:relative;aspect-ratio:460/999;border-radius:11.5cqw;overflow:hidden;background:#F4F1EE}
+.fz-screen img{position:absolute;top:0;left:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 0;display:block;margin:0;padding:0;border:0}
+.inp{flex:1;min-width:0;background:none;border:0;outline:0;font:inherit}
+@media (prefers-reduced-motion:reduce){.marq,.float,.caret{animation:none}}
+@media (max-width:860px){.navl{display:none!important}.split{grid-template-columns:minmax(0,1fr)!important;gap:32px}.cols3{grid-template-columns:minmax(0,1fr)!important}.hide-s{display:none!important}.cols5{grid-template-columns:minmax(0,1fr)!important;gap:44px!important}}
+</style>
+</head><body>
+<template id="tpl">
+
+<div style="background:#FFF;color:#000;font-family:Geist,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip">
+
+  <div style="background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px">FindEZ for iPhone is coming soon. <a href="#waitlist" style="color:#A3A3A3">Join the waitlist ›</a></div>
+  <div style="position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)">
+  <header class="wrap" style="height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <a href="#" aria-label="FindEZ home" style="display:flex;align-items:center;text-decoration:none;margin-left:-8px"><svg viewBox="0 0 291.67 96" role="img" aria-label="FindEZ" style="height:34px;width:auto;display:block"><path d="M25.25 40.75H55.25V70.75" stroke="#111112" stroke-width="11.0" fill="none" stroke-linejoin="miter" stroke-linecap="butt"/><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" stroke-width="11.0" fill="none" stroke-linejoin="miter" stroke-linecap="butt"/><g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)"><path d="M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z" fill="#111112"/><path d="M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z" fill="#111112"/><path d="M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z" fill="#111112"/><path d="M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z" fill="#111112"/><path d="M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z" fill="#E8590C"/><path d="M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z" fill="#E8590C"/></g></svg></a>
+    <div style="display:flex;gap:8px;align-items:center"><a href="https://www.findez.ai" style="font-size:14px;color:#8C8C8C;text-decoration:none;padding:8px 14px;border:1px solid #E5E5E5;border-radius:8px">Log in</a><a href="https://www.findez.ai" class="btn" style="background:#000;color:#FFF;padding:9px 14px;font-size:14px">Get started</a></div>
+  </header>
+  <div style="{{progBar}}"></div>
+  </div>
+
+  <!-- HERO · a dark field of objects; a scanning lens follows your cursor and names what it sees -->
+  <section id="hero" style="{{heroSec}}">
+    <div style="{{heroBox}}">
+      <canvas id="fzField" aria-label="A real workbench photo; a scanning lens names the parts it passes over" style="position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+      <div style="position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none"></div>
+      <div style="{{heroCopy}}">
+        <h1 style="font-weight:400;font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-.03em;margin:18px auto 0;max-width:15ch;color:#FFF">Find<span style="color:#E8590C">EZ</span> gives the physical world a memory.</h1>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto">
+          <a href="https://www.findez.ai" class="btn" style="background:#FFF;color:#000">Get started</a>
+          <a href="#waitlist" class="btn" style="border:1px solid rgba(255,255,255,.25);color:#FFF">Join the iPhone waitlist</a>
+        </div>
+      </div>
+      <span class="mono hide-s" style="position:absolute;left:20px;bottom:20px;color:#6B6B6B">Move your cursor to scan</span>
+      <span class="mono" style="position:absolute;right:20px;bottom:20px;color:#6B6B6B">{{scanCount}}</span>
+    </div>
+  </section>
+
+  <!-- STATEMENT · words rise out of blur as you read -->
+  <section id="stmt" class="wrap" style="padding-top:120px;padding-bottom:120px">
+   <div class="split" style="grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr)">
+    <p style="font-size:clamp(32px,4.2vw,60px);line-height:1.1;letter-spacing:-.025em;margin:0;max-width:22ch"><sc-for list="{{words}}" as="w" hint-placeholder-count="14"><span style="{{w.style}}">{{w.t}}</span></sc-for></p>
+    <div style="display:flex;justify-content:center;perspective:1400px">
+      <div class="fz-phone" style="{{phoneA}}"><div class="fz-bezel"><div class="fz-screen"><img src="assets/app-home.jpg" alt="The FindEZ home screen: items that need a decision, recent captures and where things live"></div></div></div>
+    </div>
+   </div>
+  </section>
+
+  <!-- SEE · masks trace each object, fill in, and get counted -->
+  <section id="see" style="{{seeSec}}">
+    <div class="wrap split">
+      <div>
+        <h2 class="h2" style="margin-top:16px">Take a picture. That is it.</h2>
+        <p class="lede">No forms, no categories, no typing. FIND separates every object in the photo, counts it, and tells you how sure it is.</p>
+        <div style="display:flex;gap:28px;margin-top:34px">
+          <div><div style="font-size:48px;letter-spacing:-.03em;line-height:1">{{segCount}}</div><div class="mono" style="color:#8C8C8C;margin-top:8px">Objects found</div></div>
+          <div><div style="font-size:48px;letter-spacing:-.03em;line-height:1;color:#C2410C">{{segReview}}</div><div class="mono" style="color:#8C8C8C;margin-top:8px">Need a look</div></div>
+        </div>
+      </div>
+      <div style="position:relative">
+      <div style="{{benchBox}}">
+        <img src="assets/bench.jpg" alt="A real workbench: a labelled parts cabinet, a battery charger, tape, screws, gears and aluminum housings" style="display:block;width:100%;aspect-ratio:800/520;object-fit:cover">
+        <svg viewBox="0 0 800 520" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%">
+          <mask id="fzHoles"><rect width="800" height="520" fill="#FFFFFF"></rect><sc-for list="{{seg}}" as="g" hint-placeholder-count="13"><rect x="{{g.x}}" y="{{g.y}}" width="{{g.w}}" height="{{g.h}}" rx="6" fill="#000000" style="{{g.hole}}"></rect></sc-for></mask>
+          <rect width="800" height="520" fill="#111112" mask="url(#fzHoles)" style="{{segDim}}"></rect>
+          <sc-for list="{{seg}}" as="g" hint-placeholder-count="13">
+            <rect x="{{g.x}}" y="{{g.y}}" width="{{g.w}}" height="{{g.h}}" rx="6" fill="none" pathLength="1" style="{{g.line}}"></rect>
+          </sc-for>
+          <rect style="{{scanBar}}" y="0" width="2" height="520" fill="rgba(255,255,255,.8)"></rect>
+        </svg>
+        <div style="position:absolute;inset:0;container-type:inline-size;pointer-events:none">
+          <sc-for list="{{seg}}" as="g" hint-placeholder-count="13"><span style="{{g.tag}}">{{g.label}}</span></sc-for>
+        </div>
+      </div>
+      <div class="fz-phone hide-s" style="{{phoneB}}"><div class="fz-bezel"><div class="fz-screen"><img src="assets/app-capture.jpg" alt="The Capture screen listing each object from the photo as its own row"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRAPH · one object, and everything connected to it, drawn in as you scroll -->
+  <section id="graph" style="{{graphSec}}">
+    <div style="{{pinStyle}}">
+      <div class="wrap split" style="height:100%;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:40px">
+        <div>
+          <h2 class="h2" style="margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)">Knowing what it is is useful. Knowing everything around it is memory.</h2>
+          <p class="lede hide-s" style="color:#A3A3A3">The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen.</p>
+        </div>
+        <div class="float" style="position:relative;container-type:inline-size">
+          <svg viewBox="0 0 1000 640" aria-hidden="true" style="display:block;width:100%;height:auto">
+            <sc-for list="{{edges}}" as="e" hint-placeholder-count="6"><path d="{{e.d}}" pathLength="1" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.2" style="{{e.style}}"></path></sc-for>
+            <circle cx="500" cy="320" r="90" fill="none" stroke="rgba(232,89,12,.45)"><animate attributeName="r" values="90;210" dur="3s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="1;0" dur="3s" repeatCount="indefinite"></animate></circle>
+          </svg>
+          <div role="img" aria-label="The battery charger from the bench photo, connected to where it lives, when it was bought, its manual and receipt, the batteries it charges, its project and when it was last seen" style="position:absolute;inset:0">
+            <sc-for list="{{edges}}" as="e" hint-placeholder-count="6"><span style="{{e.lab}}">{{e.rel}}</span></sc-for>
+            <sc-for list="{{nodes}}" as="n" hint-placeholder-count="6"><div style="{{n.box}}"><div style="{{n.ks}}">{{n.k}}</div><div style="font-size:1.6cqw;color:#FFF;margin-top:.35cqw;white-space:nowrap;letter-spacing:-.01em">{{n.v}}</div></div></sc-for>
+            <div style="position:absolute;left:33%;top:41%;width:34%;height:18%;box-sizing:border-box;background:#FFF;border-radius:1.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw">
+              <div style="position:relative;width:9.4cqw;height:9.4cqw;flex:none;border-radius:.9cqw;overflow:hidden;background:#DDD"><img src="assets/bench.jpg" alt="" style="position:absolute;width:347.8%;max-width:none;left:-164.3%;top:-39.1%"></div>
+              <div style="min-width:0"><div style="font-family:'Geist Mono',monospace;font-size:.95cqw;letter-spacing:.05em;color:#8C8C8C">FROM YOUR BENCH PHOTO</div><div style="font-size:2.1cqw;color:#000;margin-top:.5cqw;letter-spacing:-.015em;line-height:1.1">Battery charger, 18V</div><div style="font-family:'Geist Mono',monospace;font-size:.95cqw;letter-spacing:.05em;color:#C2410C;margin-top:.6cqw">CONFIDENCE 0.97</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZOOM · an endless zoom from the whole home down to one socket -->
+  <section id="zoom" style="{{zoomSec}}">
+    <div style="{{pinTop}}">
+      <div class="wrap" style="padding-top:84px;text-align:center">
+        <h2 class="h2" style="margin-top:14px">Not just “Workshop”. Exactly where.</h2>
+      </div>
+      <div style="{{zoomBox}}">
+        <div style="position:relative;border-radius:14px;overflow:hidden;background:#1A1A1A;aspect-ratio:1000/560;container-type:inline-size">
+          <img src="assets/bench-zoom.jpg" alt="Zooming into the workshop photo: the workbench, the parts cabinet, row 5, and drawer PN-F40 labelled Set screw size m4" style="{{zImg}}">
+          <sc-for list="{{zBoxes}}" as="b" hint-placeholder-count="4"><div style="{{b.box}}"><span style="{{b.tag}}">{{b.t}}</span></div></sc-for>
+          <div style="{{zCard}}">
+            <div style="font-family:'Geist Mono',monospace;font-size:1.05cqw;letter-spacing:.05em;color:#C2410C">FOUND</div>
+            <div style="font-size:2.6cqw;letter-spacing:-.02em;margin-top:.5cqw;color:#111112">M4 set screws</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:1.05cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.7cqw">DRAWER PN-F40 · ROW 5 · PARTS CABINET</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin-top:22px;font-size:17px">
+          <sc-for list="{{crumbs}}" as="b" hint-placeholder-count="7"><span style="{{b.style}}">{{b.t}}</span></sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASK · conversations type themselves -->
+  <section id="ask" style="{{askSec}}">
+    <div class="wrap split">
+      <div>
+        <h2 class="h2" style="margin-top:16px">Ask the memory, not a chatbot.</h2>
+        <p class="lede">Every question goes to what FindEZ actually knows about your things. The answer shows what it used.</p>
+        <p class="mono" style="color:#A3A3A3;margin-top:24px">Example conversations</p>
+      </div>
+      <div style="{{askCard}}">
+        <div style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#E5E5E5"></span><span style="width:10px;height:10px;border-radius:50%;background:#E5E5E5"></span><span style="width:10px;height:10px;border-radius:50%;background:#E5E5E5"></span></div>
+        <div style="align-self:flex-end;background:#000;color:#FFF;border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:16px;max-width:80%">{{chatQ}}<sc-if value="{{typingQ}}" hint-placeholder-val="{{false}}"><span class="caret" style="background:#FFF"></span></sc-if></div>
+        <sc-if value="{{thinking}}" hint-placeholder-val="{{false}}"><div class="mono" style="color:#8C8C8C">Searching your memory…</div></sc-if>
+        <div style="font-size:20px;line-height:1.45;letter-spacing:-.01em;min-height:90px">{{chatA}}<sc-if value="{{typingA}}" hint-placeholder-val="{{false}}"><span class="caret"></span></sc-if></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:auto">
+          <sc-for list="{{chatCtx}}" as="x" hint-placeholder-count="3"><span class="mono" style="{{x.style}}">{{x.t}}</span></sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OWN · point the camera at something before you buy it again -->
+  <section id="own" class="wrap" style="padding-top:150px;padding-bottom:140px">
+    <div class="split">
+      <div style="position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size">
+        <svg viewBox="0 0 800 550" role="img" aria-label="A camera recognizing a USB-C hub and finding two similar ones you already own" style="position:absolute;inset:0;width:100%;height:100%">
+          <g stroke="#FFF" stroke-width="2" fill="none" opacity=".8"><path d="M60 100 V60 H100"></path><path d="M700 60 H740 V100"></path><path d="M740 450 V490 H700"></path><path d="M100 490 H60 V450"></path></g>
+          <g style="{{ownProd}}"><rect x="300" y="220" width="200" height="110" rx="16" fill="#3A3A3A"></rect><rect x="320" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="352" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="384" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="416" y="255" width="40" height="12" rx="3" fill="#202020"></rect><rect x="290" y="210" width="220" height="130" rx="20" fill="none" style="{{ownBox}}"></rect></g>
+          <circle cx="400" cy="420" r="38" fill="none" stroke="#333" stroke-width="5"></circle>
+          <circle cx="400" cy="420" r="38" fill="none" stroke="#E8590C" stroke-width="5" pathLength="100" transform="rotate(-90 400 420)" style="{{ownRing}}"></circle>
+          <text x="400" y="182" text-anchor="middle" font-family="Geist Mono, monospace" font-size="12" fill="#A3A3A3" style="{{ownLabel}}">USB-C HUB · 7-PORT</text>
+        </svg>
+        <div style="position:absolute;left:50%;top:76.4%;transform:translate(-50%,-50%);color:#FFF;font-size:2.3cqw">{{ownPct}}</div>
+      </div>
+      <div>
+        <h2 class="h2" style="margin-top:16px">Point. Check. Don't buy it twice.</h2>
+        <p class="lede">Aim the camera at something in a store. FindEZ compares it with everything you own.</p>
+        <div style="{{ownCard}}">
+          <div style="font-size:19px;letter-spacing:-.01em">You already own 2 similar hubs.</div>
+          <div class="mono" style="color:#8C8C8C;margin-top:10px">Workshop › Electronics bin</div>
+          <div class="mono" style="color:#8C8C8C;margin-top:4px">Office › Desk drawer</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO · two rows of people and places, drifting in opposite directions -->
+  <section id="who" style="{{whoSec}}">
+    <div class="wrap" style="text-align:center">
+      <h2 class="h2" style="color:#FFF;max-width:18ch;margin:0 auto">One memory for anyone who owns, shares or manages things.</h2>
+    </div>
+    <div style="margin-top:60px;display:flex;flex-direction:column;gap:12px">
+      <div class="marq">
+        <sc-for list="{{rowA}}" as="t" hint-placeholder-count="10"><span class="pill" style="{{t.s}}">{{t.t}}</span></sc-for>
+      </div>
+      <div class="marq r">
+        <sc-for list="{{rowB}}" as="t" hint-placeholder-count="10"><span class="pill" style="{{t.s}}">{{t.t}}</span></sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- FIND · data flows through the pipeline; unsure items take the longer road -->
+  <section id="find" class="wrap" style="{{findSec}}">
+    <h2 class="h2" style="margin-top:16px;max-width:15ch">Not one giant model. A pipeline.</h2>
+    <p class="lede" style="max-width:600px">Precise tools wherever they work, deeper reasoning only for the hard cases, and every correction you make feeding back into FIND.</p>
+    <div style="margin-top:60px;overflow-x:auto">
+     <div style="position:relative;min-width:640px;container-type:inline-size">
+      <svg viewBox="0 0 1100 320" role="img" aria-label="Objects flow through perceive, identify, confidence, context and memory; uncertain ones take a closer look; corrections loop back" style="display:block;width:100%;height:auto">
+        <path d="M60 150 H1040" stroke="#E5E5E5" stroke-width="2" fill="none"></path>
+        <path d="M520 150 C520 250 710 250 710 150" stroke="#E5E5E5" stroke-width="2" fill="none" stroke-dasharray="4 6"></path>
+        <path d="M900 150 C900 40 140 40 140 150" stroke="#F3C9B1" stroke-width="2" fill="none" stroke-dasharray="4 6"></path>
+        <circle cx="140" cy="150" r="9" fill="#FFF" stroke="#111112" stroke-width="2"></circle>
+        <circle cx="330" cy="150" r="9" fill="#FFF" stroke="#111112" stroke-width="2"></circle>
+        <circle cx="520" cy="150" r="9" fill="#FFF" stroke="#111112" stroke-width="2"></circle>
+        <circle cx="710" cy="150" r="9" fill="#FFF" stroke="#111112" stroke-width="2"></circle>
+        <circle cx="900" cy="150" r="9" fill="#FFF" stroke="#111112" stroke-width="2"></circle>
+        <text x="615" y="262" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10" fill="#79648C">UNSURE · CLOSER LOOK</text>
+        <text x="520" y="58" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10" fill="#C2410C">YOUR CORRECTIONS · FIND LEARNS</text>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-0s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-1s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-2s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-3s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-4s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#111112"><animateMotion dur="6s" begin="-5s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-0s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
+        <circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-4s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
+        <circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-0.0s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
+        <circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-3.5s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
+      </svg>
+      <sc-for list="{{pipeNodes}}" as="n" hint-placeholder-count="5"><div style="{{n.s}}"><div style="font-size:1.55cqw;color:#000">{{n.t}}</div><div style="font-family:'Geist Mono',monospace;font-size:.92cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.5cqw">{{n.d}}</div></div></sc-for>
+     </div>
+    </div>
+  </section>
+
+  <!-- VISION · the road from inventory to action, drawn as you scroll -->
+  <section id="vision" style="{{visSec}}">
+    <div style="max-width:1200px;margin:0 auto;padding:0 24px">
+      <div style="{{visHead}}">
+        <h2 class="h2" style="margin-top:16px;max-width:16ch">From inventory to action.</h2>
+        <p class="lede">Today FindEZ knows what you have and where it is. Next, it learns what everything is for.</p>
+      </div>
+      <div style="position:relative;margin-top:76px">
+        <div class="hide-s" style="position:absolute;left:10%;right:10%;top:15px;height:2px;background:#D4D4D4"><div style="{{roadFill}}"></div><div style="{{roadDot}}"></div></div>
+        <div class="cols5" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:20px">
+          <sc-for list="{{stages}}" as="g" hint-placeholder-count="5">
+            <div style="{{g.wrap}}">
+              <div style="{{g.node}}"></div>
+              <div style="font-size:clamp(22px,2vw,28px);letter-spacing:-.02em;margin-top:26px">{{g.t}}</div>
+              <div style="{{g.chip}}">{{g.st}}</div>
+              <p style="color:#6B6B6B;font-size:15px;line-height:1.55;margin:14px auto 0;max-width:24ch">{{g.d}}</p>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP · the real screens, stacked, then fanning out as you scroll -->
+  <section id="app" style="padding:140px 0 120px;overflow:hidden">
+    <div class="wrap" style="text-align:center">
+      <h2 class="h2" style="margin:16px auto 0;max-width:16ch">Capture. Ask. Find.</h2>
+      <p class="lede" style="margin:18px auto 0">Everything you own, remembered, in one app that stays in sync with the web.</p>
+    </div>
+    <div style="{{fanBox}}">
+      <sc-for list="{{fan}}" as="f" hint-placeholder-count="4">
+        <div style="{{f.wrap}}">
+          <div class="fz-phone" style="width:100%"><div class="fz-bezel"><div class="fz-screen"><img src="{{f.src}}" alt="{{f.alt}}"></div></div></div>
+          <div class="mono" style="{{f.lab}}">{{f.t}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="waitlist" style="padding:12px 0">
+    <div style="{{wlCard}}">
+      <h2 class="h2" style="margin:16px auto 0;max-width:16ch;color:#FFF">Be first on the iPhone app.</h2>
+      <p style="color:#A3A3A3;font-size:17px;line-height:1.55;max-width:460px;margin:16px auto 0">Join the waitlist and we will email you the day FindEZ lands on the App Store.</p>
+      <sc-if value="{{notJoined}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex;gap:8px;max-width:440px;margin:30px auto 0;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:10px;padding:6px 6px 6px 16px">
+          <label for="em" style="position:absolute;left:-9999px">Email address</label>
+          <input id="em" type="email" class="inp" value="{{email}}" onChange="{{onEmail}}" placeholder="you@example.com" style="color:#FFF;font-size:16px;padding:10px 0">
+          <button type="button" class="btn" onClick="{{join}}" style="background:#FFF;color:#000;padding:11px 18px;font-size:14.5px">Join waitlist</button>
+        </div>
+        <sc-if value="{{emailErr}}" hint-placeholder-val="{{false}}"><p style="color:#C9B79C;font-size:14px;margin:10px 0 0">Enter an email address like you@example.com.</p></sc-if>
+      </sc-if>
+      <sc-if value="{{joined}}" hint-placeholder-val="{{false}}">
+        <div style="display:inline-flex;align-items:center;gap:10px;margin-top:30px;background:#1A1A1A;border-radius:10px;padding:14px 20px;font-size:16px;animation:pop .35s ease"><span style="width:8px;height:8px;border-radius:50%;background:#E8590C"></span>You are on the list. We will email {{email}} at launch.</div>
+      </sc-if>
+    </div>
+  </section>
+
+  <footer id="end" style="padding:110px 24px 28px">
+    <div style="max-width:1200px;margin:0 auto">
+      <h2 class="h2" style="max-width:16ch">Take a picture. FindEZ remembers.</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:28px"><a href="https://www.findez.ai" class="btn" style="background:#000;color:#FFF">Try FindEZ on the web</a><a href="#waitlist" class="btn" style="border:1px solid #E5E5E5">Join the iPhone waitlist</a></div>
+      <svg viewBox="123 25 171 46" aria-hidden="true" style="display:block;width:100%;height:auto;margin:90px 0 28px;overflow:visible">
+        <g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)">
+          <sc-for list="{{letters}}" as="L" hint-placeholder-count="6"><path d="{{L.d}}" fill="{{L.fill}}" style="{{L.style}}"></path></sc-for>
+        </g>
+      </svg>
+      <div class="mono" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E5E5E5;padding-top:16px;color:#8C8C8C"><span>© 2026 AI Robots Inc.</span><span>info@findez.ai</span></div>
+    </div>
+  </footer>
+</div>
+</template><div id="root"></div>
+<script>
+(function(global,factory){typeof exports==="object"&&typeof module!=="undefined"?module.exports=factory():typeof define==="function"&&define.amd?define(factory):(global=global||self,global.morphdom=factory())})(this,function(){"use strict";var DOCUMENT_FRAGMENT_NODE=11;function morphAttrs(fromNode,toNode){var toNodeAttrs=toNode.attributes;var attr;var attrName;var attrNamespaceURI;var attrValue;var fromValue;if(toNode.nodeType===DOCUMENT_FRAGMENT_NODE||fromNode.nodeType===DOCUMENT_FRAGMENT_NODE){return}for(var i=toNodeAttrs.length-1;i>=0;i--){attr=toNodeAttrs[i];attrName=attr.name;attrNamespaceURI=attr.namespaceURI;attrValue=attr.value;if(attrNamespaceURI){attrName=attr.localName||attrName;fromValue=fromNode.getAttributeNS(attrNamespaceURI,attrName);if(fromValue!==attrValue){if(attr.prefix==="xmlns"){attrName=attr.name}fromNode.setAttributeNS(attrNamespaceURI,attrName,attrValue)}}else{fromValue=fromNode.getAttribute(attrName);if(fromValue!==attrValue){fromNode.setAttribute(attrName,attrValue)}}}var fromNodeAttrs=fromNode.attributes;for(var d=fromNodeAttrs.length-1;d>=0;d--){attr=fromNodeAttrs[d];attrName=attr.name;attrNamespaceURI=attr.namespaceURI;if(attrNamespaceURI){attrName=attr.localName||attrName;if(!toNode.hasAttributeNS(attrNamespaceURI,attrName)){fromNode.removeAttributeNS(attrNamespaceURI,attrName)}}else{if(!toNode.hasAttribute(attrName)){fromNode.removeAttribute(attrName)}}}}var range;var NS_XHTML="http://www.w3.org/1999/xhtml";var doc=typeof document==="undefined"?undefined:document;var HAS_TEMPLATE_SUPPORT=!!doc&&"content"in doc.createElement("template");var HAS_RANGE_SUPPORT=!!doc&&doc.createRange&&"createContextualFragment"in doc.createRange();function createFragmentFromTemplate(str){var template=doc.createElement("template");template.innerHTML=str;return template.content.childNodes[0]}function createFragmentFromRange(str){if(!range){range=doc.createRange();range.selectNode(doc.body)}var fragment=range.createContextualFragment(str);return fragment.childNodes[0]}function createFragmentFromWrap(str){var fragment=doc.createElement("body");fragment.innerHTML=str;return fragment.childNodes[0]}function toElement(str){str=str.trim();if(HAS_TEMPLATE_SUPPORT){return createFragmentFromTemplate(str)}else if(HAS_RANGE_SUPPORT){return createFragmentFromRange(str)}return createFragmentFromWrap(str)}function compareNodeNames(fromEl,toEl){var fromNodeName=fromEl.nodeName;var toNodeName=toEl.nodeName;var fromCodeStart,toCodeStart;if(fromNodeName===toNodeName){return true}fromCodeStart=fromNodeName.charCodeAt(0);toCodeStart=toNodeName.charCodeAt(0);if(fromCodeStart<=90&&toCodeStart>=97){return fromNodeName===toNodeName.toUpperCase()}else if(toCodeStart<=90&&fromCodeStart>=97){return toNodeName===fromNodeName.toUpperCase()}else{return false}}function createElementNS(name,namespaceURI){return!namespaceURI||namespaceURI===NS_XHTML?doc.createElement(name):doc.createElementNS(namespaceURI,name)}function moveChildren(fromEl,toEl){var curChild=fromEl.firstChild;while(curChild){var nextChild=curChild.nextSibling;toEl.appendChild(curChild);curChild=nextChild}return toEl}function syncBooleanAttrProp(fromEl,toEl,name){if(fromEl[name]!==toEl[name]){fromEl[name]=toEl[name];if(fromEl[name]){fromEl.setAttribute(name,"")}else{fromEl.removeAttribute(name)}}}var specialElHandlers={OPTION:function(fromEl,toEl){var parentNode=fromEl.parentNode;if(parentNode){var parentName=parentNode.nodeName.toUpperCase();if(parentName==="OPTGROUP"){parentNode=parentNode.parentNode;parentName=parentNode&&parentNode.nodeName.toUpperCase()}if(parentName==="SELECT"&&!parentNode.hasAttribute("multiple")){if(fromEl.hasAttribute("selected")&&!toEl.selected){fromEl.setAttribute("selected","selected");fromEl.removeAttribute("selected")}parentNode.selectedIndex=-1}}syncBooleanAttrProp(fromEl,toEl,"selected")},INPUT:function(fromEl,toEl){syncBooleanAttrProp(fromEl,toEl,"checked");syncBooleanAttrProp(fromEl,toEl,"disabled");if(fromEl.value!==toEl.value){fromEl.value=toEl.value}if(!toEl.hasAttribute("value")){fromEl.removeAttribute("value")}},TEXTAREA:function(fromEl,toEl){var newValue=toEl.value;if(fromEl.value!==newValue){fromEl.value=newValue}var firstChild=fromEl.firstChild;if(firstChild){var oldValue=firstChild.nodeValue;if(oldValue==newValue||!newValue&&oldValue==fromEl.placeholder){return}firstChild.nodeValue=newValue}},SELECT:function(fromEl,toEl){if(!toEl.hasAttribute("multiple")){var selectedIndex=-1;var i=0;var curChild=fromEl.firstChild;var optgroup;var nodeName;while(curChild){nodeName=curChild.nodeName&&curChild.nodeName.toUpperCase();if(nodeName==="OPTGROUP"){optgroup=curChild;curChild=optgroup.firstChild;if(!curChild){curChild=optgroup.nextSibling;optgroup=null}}else{if(nodeName==="OPTION"){if(curChild.hasAttribute("selected")){selectedIndex=i;break}i++}curChild=curChild.nextSibling;if(!curChild&&optgroup){curChild=optgroup.nextSibling;optgroup=null}}}fromEl.selectedIndex=selectedIndex}}};var ELEMENT_NODE=1;var DOCUMENT_FRAGMENT_NODE$1=11;var TEXT_NODE=3;var COMMENT_NODE=8;function noop(){}function defaultGetNodeKey(node){if(node){return node.getAttribute&&node.getAttribute("id")||node.id}}function morphdomFactory(morphAttrs){return function morphdom(fromNode,toNode,options){if(!options){options={}}if(typeof toNode==="string"){if(fromNode.nodeName==="#document"||fromNode.nodeName==="HTML"){var toNodeHtml=toNode;toNode=doc.createElement("html");toNode.innerHTML=toNodeHtml}else if(fromNode.nodeName==="BODY"){var toNodeBody=toNode;toNode=doc.createElement("html");toNode.innerHTML=toNodeBody;var bodyElement=toNode.querySelector("body");if(bodyElement){toNode=bodyElement}}else{toNode=toElement(toNode)}}else if(toNode.nodeType===DOCUMENT_FRAGMENT_NODE$1){toNode=toNode.firstElementChild}var getNodeKey=options.getNodeKey||defaultGetNodeKey;var onBeforeNodeAdded=options.onBeforeNodeAdded||noop;var onNodeAdded=options.onNodeAdded||noop;var onBeforeElUpdated=options.onBeforeElUpdated||noop;var onElUpdated=options.onElUpdated||noop;var onBeforeNodeDiscarded=options.onBeforeNodeDiscarded||noop;var onNodeDiscarded=options.onNodeDiscarded||noop;var onBeforeElChildrenUpdated=options.onBeforeElChildrenUpdated||noop;var skipFromChildren=options.skipFromChildren||noop;var addChild=options.addChild||function(parent,child){return parent.appendChild(child)};var childrenOnly=options.childrenOnly===true;var fromNodesLookup=Object.create(null);var keyedRemovalList=[];function addKeyedRemoval(key){keyedRemovalList.push(key)}function walkDiscardedChildNodes(node,skipKeyedNodes){if(node.nodeType===ELEMENT_NODE){var curChild=node.firstChild;while(curChild){var key=undefined;if(skipKeyedNodes&&(key=getNodeKey(curChild))){addKeyedRemoval(key)}else{onNodeDiscarded(curChild);if(curChild.firstChild){walkDiscardedChildNodes(curChild,skipKeyedNodes)}}curChild=curChild.nextSibling}}}function removeNode(node,parentNode,skipKeyedNodes){if(onBeforeNodeDiscarded(node)===false){return}if(parentNode){parentNode.removeChild(node)}onNodeDiscarded(node);walkDiscardedChildNodes(node,skipKeyedNodes)}function indexTree(node){if(node.nodeType===ELEMENT_NODE||node.nodeType===DOCUMENT_FRAGMENT_NODE$1){var curChild=node.firstChild;while(curChild){var key=getNodeKey(curChild);if(key){fromNodesLookup[key]=curChild}indexTree(curChild);curChild=curChild.nextSibling}}}indexTree(fromNode);function handleNodeAdded(el){onNodeAdded(el);var curChild=el.firstChild;while(curChild){var nextSibling=curChild.nextSibling;var key=getNodeKey(curChild);if(key){var unmatchedFromEl=fromNodesLookup[key];if(unmatchedFromEl&&compareNodeNames(curChild,unmatchedFromEl)){curChild.parentNode.replaceChild(unmatchedFromEl,curChild);morphEl(unmatchedFromEl,curChild)}else{handleNodeAdded(curChild)}}else{handleNodeAdded(curChild)}curChild=nextSibling}}function cleanupFromEl(fromEl,curFromNodeChild,curFromNodeKey){while(curFromNodeChild){var fromNextSibling=curFromNodeChild.nextSibling;if(curFromNodeKey=getNodeKey(curFromNodeChild)){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=fromNextSibling}}function morphEl(fromEl,toEl,childrenOnly){var toElKey=getNodeKey(toEl);if(toElKey){delete fromNodesLookup[toElKey]}if(!childrenOnly){var beforeUpdateResult=onBeforeElUpdated(fromEl,toEl);if(beforeUpdateResult===false){return}else if(beforeUpdateResult instanceof HTMLElement){fromEl=beforeUpdateResult;indexTree(fromEl)}morphAttrs(fromEl,toEl);onElUpdated(fromEl);if(onBeforeElChildrenUpdated(fromEl,toEl)===false){return}}if(fromEl.nodeName!=="TEXTAREA"){morphChildren(fromEl,toEl)}else{specialElHandlers.TEXTAREA(fromEl,toEl)}}function morphChildren(fromEl,toEl){var skipFrom=skipFromChildren(fromEl,toEl);var curToNodeChild=toEl.firstChild;var curFromNodeChild=fromEl.firstChild;var curToNodeKey;var curFromNodeKey;var fromNextSibling;var toNextSibling;var matchingFromEl;outer:while(curToNodeChild){toNextSibling=curToNodeChild.nextSibling;curToNodeKey=getNodeKey(curToNodeChild);while(!skipFrom&&curFromNodeChild){fromNextSibling=curFromNodeChild.nextSibling;if(curToNodeChild.isSameNode&&curToNodeChild.isSameNode(curFromNodeChild)){curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling;continue outer}curFromNodeKey=getNodeKey(curFromNodeChild);var curFromNodeType=curFromNodeChild.nodeType;var isCompatible=undefined;if(curFromNodeType===curToNodeChild.nodeType){if(curFromNodeType===ELEMENT_NODE){if(curToNodeKey){if(curToNodeKey!==curFromNodeKey){if(matchingFromEl=fromNodesLookup[curToNodeKey]){if(fromNextSibling===matchingFromEl){isCompatible=false}else{fromEl.insertBefore(matchingFromEl,curFromNodeChild);if(curFromNodeKey){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=matchingFromEl;curFromNodeKey=getNodeKey(curFromNodeChild)}}else{isCompatible=false}}}else if(curFromNodeKey){isCompatible=false}isCompatible=isCompatible!==false&&compareNodeNames(curFromNodeChild,curToNodeChild);if(isCompatible){morphEl(curFromNodeChild,curToNodeChild)}}else if(curFromNodeType===TEXT_NODE||curFromNodeType==COMMENT_NODE){isCompatible=true;if(curFromNodeChild.nodeValue!==curToNodeChild.nodeValue){curFromNodeChild.nodeValue=curToNodeChild.nodeValue}}}if(isCompatible){curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling;continue outer}if(curFromNodeKey){addKeyedRemoval(curFromNodeKey)}else{removeNode(curFromNodeChild,fromEl,true)}curFromNodeChild=fromNextSibling}if(curToNodeKey&&(matchingFromEl=fromNodesLookup[curToNodeKey])&&compareNodeNames(matchingFromEl,curToNodeChild)){if(!skipFrom){addChild(fromEl,matchingFromEl)}morphEl(matchingFromEl,curToNodeChild)}else{var onBeforeNodeAddedResult=onBeforeNodeAdded(curToNodeChild);if(onBeforeNodeAddedResult!==false){if(onBeforeNodeAddedResult){curToNodeChild=onBeforeNodeAddedResult}if(curToNodeChild.actualize){curToNodeChild=curToNodeChild.actualize(fromEl.ownerDocument||doc)}addChild(fromEl,curToNodeChild);handleNodeAdded(curToNodeChild)}}curToNodeChild=toNextSibling;curFromNodeChild=fromNextSibling}cleanupFromEl(fromEl,curFromNodeChild,curFromNodeKey);var specialElHandler=specialElHandlers[fromEl.nodeName];if(specialElHandler){specialElHandler(fromEl,toEl)}}var morphedNode=fromNode;var morphedNodeType=morphedNode.nodeType;var toNodeType=toNode.nodeType;if(!childrenOnly){if(morphedNodeType===ELEMENT_NODE){if(toNodeType===ELEMENT_NODE){if(!compareNodeNames(fromNode,toNode)){onNodeDiscarded(fromNode);morphedNode=moveChildren(fromNode,createElementNS(toNode.nodeName,toNode.namespaceURI))}}else{morphedNode=toNode}}else if(morphedNodeType===TEXT_NODE||morphedNodeType===COMMENT_NODE){if(toNodeType===morphedNodeType){if(morphedNode.nodeValue!==toNode.nodeValue){morphedNode.nodeValue=toNode.nodeValue}return morphedNode}else{morphedNode=toNode}}}if(morphedNode===toNode){onNodeDiscarded(fromNode)}else{if(toNode.isSameNode&&toNode.isSameNode(morphedNode)){return}morphEl(morphedNode,toNode,childrenOnly);if(keyedRemovalList){for(var i=0,len=keyedRemovalList.length;i<len;i++){var elToRemove=fromNodesLookup[keyedRemovalList[i]];if(elToRemove){removeNode(elToRemove,elToRemove.parentNode,false)}}}}if(!childrenOnly&&morphedNode!==fromNode&&fromNode.parentNode){if(morphedNode.actualize){morphedNode=morphedNode.actualize(fromNode.ownerDocument||doc)}fromNode.parentNode.replaceChild(morphedNode,fromNode)}return morphedNode}}var morphdom=morphdomFactory(morphAttrs);return morphdom});
+class DCLogic{constructor(p){this.props=p||{};this.state={};}
+ setState(u){const n=typeof u==='function'?u(this.state):u;this.state=Object.assign({},this.state,n);if(!this._q){this._q=1;queueMicrotask(()=>{this._q=0;render();});}}}
+const TPL=document.getElementById('tpl');
+function look(expr,scope){expr=expr.trim();if(expr==='true')return true;if(expr==='false')return false;return expr.split('.').reduce((o,k)=>o==null?undefined:o[k],scope);}
+function sub(str,scope){const m=str.match(/^\{\{([^}]+)\}\}$/);if(m)return look(m[1],scope);return str.replace(/\{\{([^}]+)\}\}/g,(_,e)=>{const v=look(e,scope);return v==null?'':v;});}
+function build(node,scope,parent){
+ if(node.nodeType===3){parent.appendChild(document.createTextNode(sub(node.nodeValue,scope)));return;}
+ if(node.nodeType!==1)return;
+ const ln=node.localName;
+ if(ln==='sc-for'){const list=sub(node.getAttribute('list'),scope)||[];const as=node.getAttribute('as');list.forEach((it,i)=>{const s=Object.assign({},scope,{[as]:it});node.childNodes.forEach(c=>build(c,s,parent));});return;}
+ if(ln==='sc-if'){if(sub(node.getAttribute('value'),scope))node.childNodes.forEach(c=>build(c,scope,parent));return;}
+ const el=document.createElementNS(node.namespaceURI,node.tagName.toLowerCase()===node.localName?node.localName:node.tagName);
+ for(const a of node.attributes){if(/^on[A-Z]/.test(a.name)||/^on[a-z]+$/.test(a.name)&&a.value.includes('{{')){const f=sub(a.value,scope);if(typeof f==='function')el['on'+a.name.slice(2).toLowerCase()]=f;continue;}
+  if(a.name.startsWith('hint-'))continue;const v=sub(a.value,scope);if(v===false||v==null)continue;el.setAttribute(a.name,v===true?'':v);}
+ (node.content||node).childNodes.forEach(c=>build(c,scope,el));parent.appendChild(el);}
+let comp;const root=document.getElementById('root');
+function render(){const vals=comp.renderVals();const frag=document.createElement('div');frag.id='root';TPL.content.childNodes.forEach(c=>build(c,vals,frag));morphdom(root,frag,{onBeforeElUpdated:(a,b)=>!(a.tagName==='CANVAS')});}
+
+
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { W: 1440, H: 900, still: false, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 0, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1,
+      ci: 0, qn: 999, an: 999, phase: 'hold', askOn: false, seen: 3, email: '', joined: false, err: false };
+    this.onScroll = this.onScroll.bind(this); this.onWheel = this.onWheel.bind(this); this.glide = this.glide.bind(this);
+    this.reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.mouse = null; this.lastMove = 0;
+  }
+  componentDidMount() {
+    window.addEventListener('scroll', this.onScroll, true);
+    window.addEventListener('resize', this.onScroll);
+    // eased scrolling: wheel steps glide to a stop and travel a little less
+    if (!this.reduce && (window.innerHeight || 0) < 2000) window.addEventListener('wheel', this.onWheel, { passive: false });
+    this.onScroll();
+    this.startField();
+    this.chat = setInterval(() => this.chatTick(), 40);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this.onScroll, true);
+    window.removeEventListener('resize', this.onScroll);
+    window.removeEventListener('wheel', this.onWheel); cancelAnimationFrame(this.glideRaf);
+    cancelAnimationFrame(this.fieldLoop); clearInterval(this.chat);
+  }
+
+  /* ---------- hero field: drawn on canvas, a lens names what it passes over ---------- */
+  startField() {
+    let cv = document.getElementById('fzField'); if (!cv) return;
+    let ctx = cv.getContext('2d');
+    const img = new Image(); let ready = false;
+    // objects in the real workbench photo (1448 x 1086): [name, confidence, x, y, w, h]
+    const OBJ = [['needle-nose pliers', .96, 230, 655, 650, 295], ['aluminum standoffs', .91, 175, 460, 230, 240], ['aluminum U-channel', .89, 735, 280, 595, 320],
+      ['socket head screws', .88, 745, 570, 255, 135], ['servo hub', .78, 105, 905, 140, 130], ['crimp terminals', .84, 25, 310, 160, 140],
+      ['rubber O-ring', .76, 300, 385, 155, 135], ['button head screws', .90, 565, 120, 135, 125], ['bagged bearings', .72, 1005, 30, 443, 300],
+      ['hex nuts', .85, 1125, 640, 140, 95], ['cable clamps', .74, 850, 680, 55, 55], ['shipping box', .93, 0, 480, 200, 520],
+      ['parts cabinet', .95, 70, 0, 840, 275], ['hardware pack', .70, 700, 450, 180, 150], ['pillow block bearing', .73, 950, 520, 250, 210], ['clear storage bin', .94, 330, 230, 400, 450]];
+    let W = 0, H = 0, dpr = 1, sc = 1, ox = 0, oy = 0, lens = { x: 0, y: 0 };
+    const build = () => {
+      const r = cv.getBoundingClientRect(); dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr;
+      sc = Math.max(W / 1448, H / 1086); ox = (W - 1448 * sc) / 2; oy = (H - 1086 * sc) * .3;
+      lens.x = W * .5; lens.y = H * .71;
+    };
+    const photo = () => ctx.drawImage(img, ox, oy, 1448 * sc, 1086 * sc);
+    const draw = (now) => {
+      const el = document.getElementById('fzField');
+      if (!el) { this.fieldLoop = requestAnimationFrame(draw); return; }
+      if (el !== cv || Math.abs(el.getBoundingClientRect().width - W) > 1) { if (el !== cv) { cv = el; ctx = cv.getContext('2d'); cv.addEventListener('mousemove', move); cv.addEventListener('touchmove', move, { passive: true }); } build(); }
+      const t = (now || 0) / 1000;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = '#0B0B0B'; ctx.fillRect(0, 0, W, H);
+      const idle = !this.mouse || now - this.lastMove > 2600;
+      const tx = idle ? W * (.5 + .36 * Math.sin(t * .33)) : this.mouse.x, ty = idle ? H * (.71 + .07 * Math.sin(t * .51)) : this.mouse.y;
+      lens.x += (tx - lens.x) * (this.reduce ? 1 : .08); lens.y += (ty - lens.y) * (this.reduce ? 1 : .08);
+      const R = W < 700 ? 95 : 150;
+      let seen = 0;
+      if (ready) {
+        photo(); ctx.fillStyle = 'rgba(11,11,11,.62)'; ctx.fillRect(0, 0, W, H);
+        // inside the lens: the photo at full brightness, with every object it covers outlined
+        ctx.save(); ctx.beginPath(); ctx.arc(lens.x, lens.y, R, 0, 7); ctx.clip(); photo();
+        const hits = [];
+        OBJ.forEach(o => {
+          const x = ox + o[2] * sc, y = oy + o[3] * sc, w = o[4] * sc, h = o[5] * sc;
+          if (Math.hypot(x + w / 2 - lens.x, y + h / 2 - lens.y) < R * .95) {
+            seen++; hits.push([o, x, y, w, h]);
+            const unsure = o[1] < .8;
+            ctx.strokeStyle = unsure ? '#E8590C' : '#FFFFFF'; ctx.lineWidth = 2; ctx.setLineDash(unsure ? [5, 4] : []);
+            ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
+          }
+        });
+        ctx.restore();
+        hits.forEach(([o, x, y, w, h]) => {
+          const lab = o[0] + ' ' + o[1].toFixed(2); ctx.font = '500 11px "Geist Mono", monospace';
+          const lw = ctx.measureText(lab).width + 12;
+          const lx = Math.max(lens.x - R, Math.min(x, lens.x + R - lw)), ly = Math.max(lens.y - R - 10, Math.min(y - 20, lens.y + R - 10));
+          ctx.fillStyle = o[1] < .8 ? '#E8590C' : '#FFFFFF'; ctx.fillRect(lx, ly, lw, 18);
+          ctx.fillStyle = '#111112'; ctx.fillText(lab, lx + 6, ly + 13);
+        });
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(lens.x, lens.y, R, 0, 7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.35)';
+      for (let k = 0; k < 48; k++) { const a = k / 48 * Math.PI * 2 + t * .25, r1 = R + 6, r2 = R + (k % 4 ? 10 : 16);
+        ctx.beginPath(); ctx.moveTo(lens.x + Math.cos(a) * r1, lens.y + Math.sin(a) * r1); ctx.lineTo(lens.x + Math.cos(a) * r2, lens.y + Math.sin(a) * r2); ctx.stroke(); }
+      ctx.strokeStyle = '#E8590C'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(lens.x - 8, lens.y); ctx.lineTo(lens.x + 8, lens.y); ctx.moveTo(lens.x, lens.y - 8); ctx.lineTo(lens.x, lens.y + 8); ctx.stroke();
+      if (seen !== this.state.seen) this.setState({ seen });
+      if (!this.reduce) this.fieldLoop = requestAnimationFrame(draw);
+    };
+    const move = (e) => { const r = cv.getBoundingClientRect(), p = e.touches ? e.touches[0] : e; this.mouse = { x: p.clientX - r.left, y: p.clientY - r.top }; this.lastMove = performance.now(); };
+    cv.addEventListener('mousemove', move); cv.addEventListener('touchmove', move, { passive: true });
+    window.addEventListener('resize', build);
+    img.onload = () => { ready = true; if (this.reduce) draw(performance.now()); };
+    img.src = 'assets/hero.jpg';
+    build(); this.fieldLoop = requestAnimationFrame(draw);
+  }
+
+  /* ---------- the typing conversation ---------- */
+  chatTick() {
+    const S = this.state, C = this.CHATS;
+    if (!C || !S.askOn || this.reduce) return;
+    const cur = C[S.ci];
+    if (S.phase === 'hold') { this.hold = (this.hold || 0) + 1; if (this.hold > 70) { this.hold = 0; this.setState({ ci: (S.ci + 1) % C.length, qn: 0, an: 0, phase: 'q' }); } return; }
+    if (S.phase === 'q') { if (S.qn < cur.q.length) this.setState({ qn: S.qn + 1 }); else { this.wait = 0; this.setState({ phase: 'think' }); } return; }
+    if (S.phase === 'think') { this.wait = (this.wait || 0) + 1; if (this.wait > 18) this.setState({ phase: 'a' }); return; }
+    if (S.phase === 'a') { if (S.an < cur.a.length) this.setState({ an: Math.min(cur.a.length, S.an + 3) }); else this.setState({ phase: 'hold' }); }
+  }
+
+  onWheel(e) {
+    if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    const se = document.scrollingElement || document.documentElement, max = se.scrollHeight - window.innerHeight;
+    if (max <= 0) return;
+    e.preventDefault();
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY;
+    if (!this.gliding) { this.cur = se.scrollTop; this.target = se.scrollTop; }
+    this.target = Math.max(0, Math.min(max, this.target + dy * .8));
+    if (!this.gliding) { this.gliding = true; this.glideRaf = requestAnimationFrame(this.glide); }
+  }
+  glide() {
+    const se = document.scrollingElement || document.documentElement;
+    this.cur += (this.target - this.cur) * .09;
+    if (Math.abs(this.target - this.cur) < .5) { this.cur = this.target; this.gliding = false; }
+    se.scrollTop = this.cur;
+    if (this.gliding) this.glideRaf = requestAnimationFrame(this.glide);
+  }
+
+  onScroll() {
+    if (this.raf) return;
+    this.raf = requestAnimationFrame(() => {
+      this.raf = 0;
+      const H = window.innerHeight || 900, W = window.innerWidth || 1440;
+      const c = (v) => Math.max(0, Math.min(1, v));
+      const r = (id) => { const el = document.getElementById(id); return el ? el.getBoundingClientRect() : null; };
+      // When the board is shown at full height (no real viewport to scroll), show every section in its finished state.
+      if (H >= 2000) { this.setState({ W, H, still: true, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 1, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1, askOn: true, mk: {}, gx: 0 }); return; }
+      const pin = Math.min(H, 860), n = { W, H, still: false };
+      const se = document.scrollingElement || document.documentElement;
+      n.prog = c(se.scrollTop / Math.max(1, se.scrollHeight - H));
+      const h = r('hero'); if (h) n.hp = c(-h.top / (h.height * .8));
+      const s = r('stmt'); if (s) n.sp = s.top < H ? c((H * .9 - s.top) / (s.height * .9)) : 0;
+      const sg = r('see'); if (sg) n.seg = c((H * .85 - sg.top) / (sg.height * .8));
+      const g = r('graph'); if (g) { n.ge = c((H - g.top) / H); n.gp = c(-g.top / Math.max(1, g.height - pin)); }
+      const z = r('zoom'); if (z) n.zp = c(-z.top / Math.max(1, z.height - pin));
+      const a = r('ask'); if (a) { n.askOn = a.top < H && a.bottom > 0; n.ap = c((H - a.top) / (H * .75)); }
+      const o = r('own'); if (o) n.own = c((H * .85 - o.top) / (o.height * .75));
+      const w = r('who'); if (w) n.wp = c((H - w.top) / (H * .9));
+      n.mk = {};
+      ['see', 'ask', 'vision', 'who', 'waitlist', 'find'].forEach(id => { const q = r(id); if (q) n.mk[id] = Math.min(c((H - q.top) / (H * .7)), 1 - c((H * .55 - q.bottom) / (H * .55))); });
+      if (g) n.gx = c((H * .6 - g.bottom) / (H * .6));
+      const fa = r('app'); if (fa) n.fp = c((H * .9 - fa.top) / (H * .75));
+      const v = r('vision'); if (v) n.vp = c((H * .85 - v.top) / (v.height * .8));
+      const e = r('end'); if (e) n.ep = c((H - e.top) / (e.height * .9));
+      this.setState(n);
+    });
+  }
+
+  renderVals() {
+    const S = this.state, W = S.W || 1440, H = S.H || 900, narrow = W < 860;
+    const c = (v) => Math.max(0, Math.min(1, v)), ss = (t) => t * t * (3 - 2 * t), L = (a, b, t) => a + (b - a) * t;
+    const pinH = Math.min(H, 860);
+    const MK = S.mk || {}, kOf = (id) => ss(MK[id] == null ? 1 : MK[id]);
+    const card = (id, bg, pad) => { const k = kOf(id); return 'background:' + bg + ';padding:' + pad + ';margin:0 ' + ((1 - k) * (narrow ? 10 : 72)).toFixed(1) + 'px;border-radius:' + ((1 - k) * 40).toFixed(1) + 'px'; };
+    const rise = (id) => { const k = kOf(id); return 'opacity:' + (.15 + .85 * k).toFixed(3) + ';transform:translateY(' + ((1 - k) * 56).toFixed(1) + 'px)'; };
+    const seeSec = card('see', '#EAEAEA', '130px 0'), askSec = card('ask', '#EAEAEA', '130px 0'), visSec = card('vision', '#EAEAEA', '130px 0');
+    const wlCard = card('waitlist', '#000', '120px 24px') + ';color:#FFF;text-align:center';
+    const findSec = 'padding-top:150px;padding-bottom:130px;' + rise('find');
+
+    /* hero */
+    const hm = ss(c(S.hp * 2.4));
+    const heroSec = 'padding:0 ' + (hm * (narrow ? 12 : 28)).toFixed(1) + 'px';
+    const heroBox = 'position:relative;height:' + (narrow ? 640 : 800) + 'px;border-radius:' + (hm * 28).toFixed(1) + 'px;overflow:hidden;background:#0B0B0B;transform:scale(' + (1 - .05 * S.hp).toFixed(4) + ');transform-origin:50% 0';
+    const progBar = 'height:2px;background:#000;transform-origin:0 50%;transform:scaleX(' + S.prog.toFixed(4) + ')';
+    const heroCopy = 'position:absolute;left:0;right:0;top:' + (narrow ? 70 : 96) + 'px;text-align:center;padding:0 20px;pointer-events:none;opacity:' + (1 - c(S.hp * 1.8)).toFixed(3) + ';transform:translateY(' + (-S.hp * 60).toFixed(1) + 'px)';
+    const scanCount = S.seen + ' object' + (S.seen === 1 ? '' : 's') + ' in view';
+
+    /* statement: words rise out of blur */
+    const text = 'You don\'t organize your physical world for FindEZ. FindEZ organizes it for you.'.split(' ');
+    const lit = S.sp < 0 ? text.length : S.sp * text.length * 1.2;
+    const words = text.map((t, i) => { const o = c(lit - i); return { t, style: 'display:inline-block;margin-right:.24em;transition:all .5s;color:' + (i >= 7 ? '#E8590C' : '#000') + ';opacity:' + (.12 + .88 * o).toFixed(3) + ';filter:blur(' + ((1 - o) * 6).toFixed(1) + 'px);transform:translateY(' + ((1 - o) * 14).toFixed(1) + 'px)' }; });
+
+    /* phones: real app screens */
+    const pa = S.sp < 0 ? 1 : ss(c(S.sp * 1.4));
+    const phoneA = 'width:' + (narrow ? 220 : 280) + 'px;transform-origin:50% 100%;transform:translateY(' + ((1 - pa) * 90).toFixed(1) + 'px) rotateX(' + ((1 - pa) * 18).toFixed(2) + 'deg) rotateZ(' + ((1 - pa) * -6).toFixed(2) + 'deg) scale(' + (.9 + .1 * pa).toFixed(4) + ');opacity:' + (.3 + .7 * pa).toFixed(3);
+    const benchBox = 'position:relative;border-radius:14px;overflow:hidden;background:#E2E2E2;margin-right:' + (narrow ? 0 : 110) + 'px';
+    const pb = ss(c((S.seg - .5) / .4));
+    const phoneB = 'position:absolute;right:0;bottom:-56px;width:172px;transform:translateY(' + ((1 - pb) * 90).toFixed(1) + 'px) rotate(' + ((1 - pb) * 8).toFixed(2) + 'deg);opacity:' + pb.toFixed(3);
+    const FAN = [['assets/app-capture.jpg', 'Capture', 'Capture: every object in the photo becomes its own row'],
+      ['assets/app-review.jpg', 'Review', 'Review: anything uncertain waits for your OK'],
+      ['assets/app-home.jpg', 'Home', 'Home: what needs a decision and where things live'],
+      ['assets/app-ask.jpg', 'Ask', 'Ask: plain questions answered from what you own']];
+    const fanList = narrow ? [FAN[0], FAN[2], FAN[3]] : FAN, nf = fanList.length, mid = (nf - 1) / 2;
+    const pw = narrow ? Math.min(150, (W - 44) / 3.15) : 232, gap = narrow ? 10 : 34, ff = ss(S.fp);
+    const fanBox = 'position:relative;height:' + Math.round(pw * 999 / 460 + 110) + 'px;margin-top:64px';
+    const fan = fanList.map((f, i) => {
+      const d = i - mid, x = L(d * 20, d * (pw + gap), ff), y = L(Math.abs(d) * 14, (i % 2 ? 40 : 0), ff), rot = L(d * 6, 0, ff);
+      return { src: f[0], t: f[1], alt: f[2],
+        wrap: 'position:absolute;left:50%;top:0;width:' + pw.toFixed(0) + 'px;margin-left:' + (-pw / 2).toFixed(0) + 'px;z-index:' + (10 - Math.round(Math.abs(d) * 2)) + ';transform:translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' + rot.toFixed(2) + 'deg)',
+        lab: 'text-align:center;color:#8C8C8C;margin-top:16px;opacity:' + c((S.fp - .75) / .25).toFixed(3) };
+    });
+
+    /* detection on the real workbench photo: [label, confidence, x, y, w, h] in an 800 x 520 frame */
+    const SEG = [
+      ['parts cabinet', 0.96, 105, 4, 420, 170], ['parts cabinet', 0.95, 558, 4, 238, 171],
+      ['battery charger 18V', 0.97, 387, 122, 212, 165], ['duct tape', 0.93, 287, 232, 100, 61],
+      ['socket head screws', 0.91, 240, 285, 172, 143], ['hex nuts', 0.90, 22, 171, 122, 77],
+      ['button head bolts', 0.86, 246, 152, 64, 55], ['steel shafts', 0.88, 489, 287, 83, 69],
+      ['spur gear', 0.84, 196, 303, 44, 23], ['gearbox housings', 0.79, 425, 343, 232, 113],
+      ['timing pulleys', 0.74, 4, 276, 84, 144], ['bagged hardware', 0.70, 92, 258, 98, 92, 92, 355],
+      ['thrust washer', 0.77, 221, 392, 22, 17, 150, 436],
+    ];
+    const NS = SEG.length + 1.5, tkOf = (k) => c(S.seg * NS - k - .3);
+    const seg = SEG.map((g, k) => {
+      const tk = tkOf(k), drawn = ss(c(tk / .55)), filled = ss(c((tk - .45) / .45)), unsure = g[1] < .8;
+      const label = g[0] + ' ' + g[1].toFixed(2), lw = label.length * 6.75 + 12;
+      const inside = g[3] < 26, lx = g[6] != null ? g[6] : Math.min(g[2], 800 - lw - 4), ly = g[7] != null ? g[7] : inside ? g[3] + 8 : g[3] - 24;
+      return { x: g[2], y: g[3], w: g[4], h: g[5], label, lw: lw.toFixed(0), lx, ly, tx: lx + 6, ty: ly + 14,
+        tag: 'position:absolute;left:' + (lx / 8).toFixed(3) + '%;top:' + (ly / 5.2).toFixed(3) + '%;height:2.5cqw;line-height:2.5cqw;padding:0 .75cqw;border-radius:.5cqw;background:' + (unsure ? '#E8590C' : '#FFFFFF') + ';color:#111112;font-family:\'Geist Mono\',monospace;font-size:1.375cqw;white-space:nowrap;opacity:' + filled.toFixed(3) + ';transition:opacity .3s',
+        hole: 'opacity:' + filled.toFixed(3),
+        line: 'stroke:' + (unsure ? '#E8590C' : '#FFFFFF') + ';stroke-width:2.5;stroke-dasharray:1;stroke-dashoffset:' + (1 - drawn).toFixed(3),
+      };
+    });
+    const segDim = 'opacity:' + (.42 * ss(c(S.seg * 4))).toFixed(3);
+    const segCount = SEG.filter((g, k) => tkOf(k) > .6).length, segReview = SEG.filter((g, k) => g[1] < .8 && tkOf(k) > .6).length;
+    const scanBar = 'x:' + (S.seg * 820).toFixed(0) + 'px;opacity:' + (S.seg > .02 && S.seg < .98 ? 1 : 0);
+
+    /* memory graph */
+    const gm = 1 - Math.min(ss(S.ge), 1 - ss(S.gx || 0));
+    const graphSec = 'position:relative;background:#000;margin:0 ' + (gm * (narrow ? 16 : 72)).toFixed(1) + 'px;border-radius:' + (gm * 40).toFixed(1) + 'px;height:' + (S.still ? pinH : pinH + 2300) + 'px';
+    const pinStyle = (S.still ? 'position:relative' : 'position:sticky;top:0') + ';height:' + pinH + 'px;display:flex;flex-direction:column;justify-content:center;overflow:hidden';
+    const pinTop = (S.still ? 'position:relative' : 'position:sticky;top:0') + ';height:' + pinH + 'px;overflow:hidden';
+    const zoomBox = 'position:relative;width:' + Math.min(1100, W - 48, (pinH - 290) * 1000 / 560 + 48).toFixed(0) + 'px;max-width:100%;box-sizing:border-box;margin:28px auto 0;padding:0 24px';
+    const NODES = [['Location', 'Workshop › Workbench', 70, 90, 'lives in'], ['Purchase', 'March · $49', 720, 80, 'bought'], ['Documents', 'Manual · Receipt', 760, 290, 'has'],
+      ['Works with', '18V drill batteries', 700, 500, 'charges'], ['Project', 'Drivetrain rebuild', 90, 500, 'used for'], ['Last seen', 'Today, in your bench photo', 20, 290, 'seen']];
+    const nodes = [], edges = [];
+    NODES.forEach((nd, k) => {
+      const t = ss(c(S.gp * 7.2 - k - .3)), w = Math.max(nd[1].length * 9 + 40, 170);
+      const cx = nd[2] + w / 2, cy = nd[3] + 27;
+      nodes.push({ k: nd[0].toUpperCase(), v: nd[1],
+        ks: 'font-family:\'Geist Mono\',monospace;font-size:1cqw;letter-spacing:.05em;color:' + (k === 1 || k === 3 ? '#F08A4B' : '#8C8C8C'),
+        box: 'position:absolute;left:' + (nd[2] / 10) + '%;top:' + (nd[3] / 6.4) + '%;width:' + (w / 10) + '%;height:' + (54 / 6.4) + '%;box-sizing:border-box;background:#111;border:1px solid rgba(255,255,255,' + (.25 + .35 * t).toFixed(2) + ');border-radius:1cqw;padding:0 1.8cqw;display:flex;flex-direction:column;justify-content:center;opacity:' + t.toFixed(3) + ';transform:scale(' + (.85 + .15 * t).toFixed(3) + ')' });
+      const mx = (cx + 500) / 2, my = (cy + 320) / 2;
+      edges.push({ d: 'M500 320 Q' + mx + ' ' + (my - 40) + ' ' + cx + ' ' + cy, rel: nd[4],
+        lab: 'position:absolute;left:' + (mx / 10) + '%;top:' + ((my - 34) / 6.4) + '%;transform:translate(-50%,-50%);font-family:\'Geist Mono\',monospace;font-size:1.1cqw;color:#8C8C8C;white-space:nowrap;opacity:' + t.toFixed(3),
+        style: 'stroke-dasharray:1;stroke-dashoffset:' + (1 - ss(c(S.gp * 7.2 - k))).toFixed(3) });
+    });
+
+    /* infinite zoom through the location hierarchy */
+    const zoomSec = 'position:relative;height:' + (S.still ? pinH : pinH + 2900) + 'px';
+    // camera stops on the real photo, in a 1600 x 1200 frame: [cx, cy, width]
+    const CAM = [[800, 600, 1600], [760, 470, 1300], [630, 269, 960], [800, 182, 640], [986, 152, 250]];
+    const z = S.zp * 4, zi = Math.min(3, Math.floor(z)), zr = z - zi, zf = ss(c((zr - .3) / .7));
+    const CA = CAM[zi], CB = CAM[zi + 1], lg = Math.log;
+    const cw = Math.exp(L(lg(CA[2]), lg(CB[2]), zf)), ch = cw * .56;
+    const cx = L(CA[0], CB[0], zf), cy = L(CA[1], CB[1], zf), x0 = cx - cw / 2, y0 = cy - ch / 2;
+    const zImg = 'position:absolute;max-width:none;height:auto;width:' + (1600 / cw * 100).toFixed(3) + '%;left:' + (-x0 / cw * 100).toFixed(3) + '%;top:' + (-y0 / ch * 100).toFixed(3) + '%';
+    const TG = [['Workbench', 20, 110, 1560, 980], ['Parts cabinet', 205, 2, 850, 432], ['Row 5', 236, 112, 812, 84], ['Drawer PN-F40', 935, 114, 102, 74]];
+    const zBoxes = TG.map((g, k) => {
+      const vis = k === 3 ? c((z - 2.2) / .5) : c((z - (k - .2)) / .4) * (1 - c((z - (k + .55)) / .3)), last = k === 3;
+      return { t: g[0].toUpperCase(),
+        box: 'position:absolute;box-sizing:border-box;left:' + ((g[1] - x0) / cw * 100).toFixed(3) + '%;top:' + ((g[2] - y0) / ch * 100).toFixed(3) + '%;width:' + (g[3] / cw * 100).toFixed(3) + '%;height:' + (g[4] / ch * 100).toFixed(3) + '%;border:2px solid ' + (last ? '#E8590C' : '#FFFFFF') + ';border-radius:.6cqw;box-shadow:0 0 0 9999px rgba(17,17,18,' + (.4 * vis).toFixed(3) + ');opacity:' + vis.toFixed(3),
+        tag: 'position:absolute;left:-2px;bottom:100%;margin-bottom:.5cqw;white-space:nowrap;font-family:\'Geist Mono\',monospace;font-size:1.15cqw;letter-spacing:.05em;padding:.3cqw .7cqw;border-radius:.4cqw;color:#111112;background:' + (last ? '#E8590C' : '#FFFFFF') };
+    });
+    const zc = c((z - 3.55) / .4);
+    const zCard = 'position:absolute;left:3cqw;bottom:3cqw;background:#FFFFFF;border-radius:1.2cqw;padding:1.6cqw 2cqw;box-shadow:0 20px 40px -20px rgba(0,0,0,.5);opacity:' + zc.toFixed(3) + ';transform:translateY(' + ((1 - zc) * 2).toFixed(2) + 'cqw)';
+    const LV = ['Workshop', 'Workbench', 'Parts cabinet', 'Row 5', 'Drawer PN-F40', 'M4 set screws'];
+    const curLv = z >= 3.85 ? 5 : Math.round(z);
+    const crumbs = [];
+    LV.forEach((t, i) => { const on = i <= curLv; if (i) crumbs.push({ t: '›', style: 'color:#BDBDBD;opacity:' + (on ? 1 : .3) }); crumbs.push({ t, style: 'transition:color .3s;color:' + (i === curLv ? (i === 5 ? '#C2410C' : '#000') : on ? '#6B6B6B' : '#D0D0D0') }); });
+
+    /* typing chat */
+    this.CHATS = [
+      { q: 'Where are my batteries?', a: 'AA batteries in the office desk drawer. The garage pack has 18 left.', ctx: ['Items · 2', 'Spaces · 2', 'Quantities'] },
+      { q: 'Do I already own a USB-C hub?', a: 'Yes. You have two similar hubs, one in the workshop and one in your desk drawer.', ctx: ['Visual match', 'Items · 2'] },
+      { q: 'What do I need to finish my robot?', a: 'You have 18 of the 22 parts. Missing a motor controller and 4 bearings.', ctx: ['Project', 'Requirements', 'Inventory'] },
+      { q: 'When did I buy the battery charger?', a: 'In March, for $49. The receipt and manual are attached to it, and it lives on the workbench.', ctx: ['Purchase', 'Documents', 'Location'] },
+    ];
+    const cur = this.CHATS[S.ci % this.CHATS.length];
+    const chatQ = cur.q.slice(0, S.qn), chatA = S.phase === 'q' || S.phase === 'think' ? '' : cur.a.slice(0, S.an);
+    const ctxOn = S.phase === 'hold';
+    const chatCtx = cur.ctx.map((t, i) => ({ t, style: 'color:#6B6B6B;background:#F2F2F2;border-radius:6px;padding:6px 9px;transition:opacity .3s;opacity:' + (ctxOn ? 1 : 0) }));
+
+    const am = 1 - ss(S.ap);
+    const askCard = 'background:#FFF;border-radius:16px;padding:28px;min-height:360px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 60px -30px rgba(0,0,0,' + (.25 * (1 - am)).toFixed(3) + ');transform:perspective(1400px) rotateX(' + (am * 18).toFixed(2) + 'deg) translateY(' + (am * 60).toFixed(1) + 'px) scale(' + (1 - am * .06).toFixed(4) + ');transform-origin:50% 100%;opacity:' + (.3 + .7 * (1 - am)).toFixed(3);
+    const whoSec = card('who', '#000', '120px 0') + ';color:#FFF';
+
+
+    /* do I own this */
+    const op = S.own, slide = ss(c(op / .35)), match = c((op - .35) / .35), done = c((op - .7) / .2);
+    const ownProd = 'transform:translateX(' + ((1 - slide) * 420).toFixed(1) + 'px);transition:transform .1s';
+    const ownBox = 'stroke:#FFFFFF;stroke-width:1.5;stroke-dasharray:6 5;opacity:' + match.toFixed(3);
+    const ownRing = 'stroke-dasharray:' + (match * 92).toFixed(1) + ' 100';
+    const ownPct = Math.round(match * 92) + '%';
+    const ownLabel = 'opacity:' + match.toFixed(3);
+    const ownCard = 'margin-top:30px;background:#F2F2F2;border-radius:12px;padding:22px 24px;opacity:' + done.toFixed(3) + ';transform:translateY(' + ((1 - done) * 16).toFixed(1) + 'px)';
+
+    /* who rows */
+    const A = ['Families', 'Students', 'Makers', 'Robotics teams', 'Makerspaces', 'Schools', 'Labs', 'Roommates'];
+    const B = ['Small businesses', 'Contractors', 'Warehouses', 'Organizations', 'Studios', 'Workshops', 'Offices', 'Equipment teams'];
+    const tone = ['#1A1A1A', '#E8590C', '#2A2A2A', '#3B3247', '#1A1A1A', '#3A3226'];
+    const row = (arr, off) => arr.concat(arr).map((t, i) => ({ t, s: 'background:' + tone[(i + off) % tone.length] + ';color:' + (tone[(i + off) % tone.length] === '#E8590C' ? '#111112' : '#FFF') }));
+    const rowA = row(A, 0), rowB = row(B, 3);
+
+    /* pipeline flow */
+    const PN = [['Perceive', 'WHAT IS HERE', 140], ['Identify', 'WHAT IS IT', 330], ['Confidence', 'HOW SURE', 520], ['Context', 'WHERE · LINKS', 710], ['Memory', 'SAVED', 900]];
+    const pipeNodes = PN.map(p => ({ t: p[0], d: p[1], s: 'position:absolute;left:' + (p[2] / 11).toFixed(3) + '%;top:' + (172 / 3.2).toFixed(3) + '%;transform:translateX(-50%);text-align:center;white-space:nowrap' }));
+    const MAIN = 'M60 150 H1040', BR = 'M60 150 H520 C520 250 710 250 710 150 H1040', LOOP = 'M900 150 C900 40 140 40 140 150';
+    const flow = [0, 1, 2, 3, 4, 5].map(i => ({ r: 5, c: '#000', path: MAIN, dur: '6s', begin: (-i).toFixed(1) + 's' }))
+      .concat([0, 1].map(i => ({ r: 5, c: '#79648C', path: BR, dur: '8s', begin: (-i * 4).toFixed(1) + 's' })))
+      .concat([0, 1].map(i => ({ r: 4, c: '#A8927C', path: LOOP, dur: '7s', begin: (-i * 3.5).toFixed(1) + 's' })));
+
+    /* roadmap */
+    const ST = [['Inventory', 'Live', 'Every item captured from a photo, counted and placed.'],
+      ['Memory', 'Live', 'Where it lives, when you got it, the manual and its history.'],
+      ['Context', 'Building now', 'Projects, rooms and what belongs together.'],
+      ['Intelligence', 'Next', 'Knows what you will need before you run out.'],
+      ['Action', 'Later', 'Finds things in the room and acts on what it knows.']];
+    const vp = S.vp, visHead = 'opacity:' + (.15 + .85 * ss(c(vp * 3))).toFixed(3) + ';transform:translateY(' + ((1 - ss(c(vp * 3))) * 40).toFixed(1) + 'px)';
+    const stages = ST.map((g, k) => {
+      const t = ss(c(vp * 5 - k * .55 - .6)), done = k < 2, cur = k === 2;
+      return { t: g[0], st: g[1], d: g[2],
+        wrap: 'text-align:center;opacity:' + t.toFixed(3) + ';transform:translateY(' + ((1 - t) * 34).toFixed(1) + 'px)',
+        node: 'position:relative;z-index:1;width:32px;height:32px;margin:0 auto;border-radius:50%;box-sizing:border-box;transform:scale(' + (.5 + .5 * t).toFixed(3) + ');' + (done ? 'background:#E8590C' : cur ? 'background:#FFFFFF;border:2px solid #E8590C;box-shadow:inset 0 0 0 7px #FFFFFF,inset 0 0 0 16px #E8590C' : 'background:#FFFFFF;border:2px solid #CFCFCF'),
+        chip: 'display:inline-block;margin-top:10px;font-family:\'Geist Mono\',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:999px;' + (done ? 'background:#FBE1D2;color:#B33F08' : cur ? 'background:#111112;color:#FFFFFF' : 'background:#E0E0E0;color:#7A7A7A') };
+    });
+    const fill = 50 * ss(c(vp * 2.2 - .5));
+    const roadFill = 'position:absolute;left:0;top:0;height:2px;background:#E8590C;width:' + fill.toFixed(2) + '%';
+    const roadDot = 'position:absolute;top:-6px;left:calc(' + fill.toFixed(2) + '% - 7px);width:14px;height:14px;border-radius:50%;background:#E8590C;opacity:' + c(fill / 10).toFixed(3) + ';animation:vpulse 2s ease-out infinite';
+
+    /* footer wordmark: letters settle in */
+    const GL = [
+      ['M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z', '#111112'],
+      ['M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z', '#111112'],
+      ['M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z', '#111112'],
+      ['M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z', '#111112'],
+      ['M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z', '#E8590C'],
+      ['M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z', '#E8590C']];
+    const letters = GL.map((g, i) => { const t = ss(c((S.ep - .1 - i * .06) / .55)); return { d: g[0], fill: g[1], style: 'opacity:' + (.08 + .92 * t).toFixed(3) + ';transform:translateY(' + ((1 - t) * (700 + i * 160)).toFixed(0) + 'px)' }; });
+    const mk = ss(c(S.ep / .45));
+    const markA = 'stroke-dasharray:1;stroke-dashoffset:' + (1 - mk).toFixed(3), markB = 'stroke-dasharray:1;stroke-dashoffset:' + (1 - ss(c((S.ep - .2) / .4))).toFixed(3);
+
+    const join = () => { const ok = /.+@.+\..+/.test(S.email || ''); this.setState(ok ? { joined: true, err: false } : { err: true }); };
+    return {
+      phoneA, benchBox, phoneB, fanBox, fan, markA, markB,
+      segDim, heroSec, heroBox, heroCopy, progBar, pinTop, zoomBox, askCard, whoSec, scanCount, words, seg, segCount, segReview, scanBar,
+      graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs,
+      chatQ, chatA, chatCtx, typingQ: S.phase === 'q', typingA: S.phase === 'a', thinking: S.phase === 'think',
+      ownProd, ownBox, ownRing, ownPct, ownLabel, ownCard, rowA, rowB, pipeNodes, flow, stages, roadFill, roadDot, visHead, seeSec, askSec, visSec, wlCard, findSec, letters,
+      email: S.email, onEmail: (e) => this.setState({ email: e.target.value, err: false }), join,
+      joined: S.joined, notJoined: !S.joined, emailErr: S.err,
+    };
+  }
+}
+
+comp=new Component({});render();comp.componentDidMount&&comp.componentDidMount();
+</script></body></html>

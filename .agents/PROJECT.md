@@ -2,14 +2,17 @@
 
 ## What FindEZ is
 
-FindEZ turns physical objects into searchable, structured inventory. A user can
-capture a bin or workspace, identify parts, organize them by Space, find them with
-natural language, and coordinate access and work with a team.
+FindEZ's user-supplied product direction is AI memory for the physical world:
+capture, understand, remember, retrieve and act on physical belongings. It serves
+personal homes/workplaces as well as teams, not only parts inventory or robotics.
+The current inventory/Space foundation lets users capture objects, review uncertain
+identifications, save their location/context, ask about saved items and coordinate
+access or work with others.
 
-The product is positioned as an inventory understanding system rather than a
-chatbot layered over a database. The current public message is: turn photos of
-physical objects into searchable inventory, organized by space and ready to answer
-questions.
+The mobile introduction teaches that implemented foundation using account-free
+examples. The broader context graph, camera-based spatial navigation, predictive
+replenishment and other proposed memory capabilities are not all implemented.
+Do not present the vision document or demo graphics as proof of deployed features.
 
 ## Product direction
 
@@ -17,20 +20,24 @@ questions.
 - Preserve trustworthy context about an item, including where it is, what evidence
   identified it, and its history.
 - Serve individual workshops and teams without making robotics the only use case.
-- Keep the product useful under real workshop and competition conditions.
+- Keep the product useful in everyday homes, workplaces, labs, and team operations.
 
 ## Users and markets
 
-Robotics teams are the first and most developed market. The product and data model
-also support schools, makerspaces, clubs, businesses, and other teams with physical
-parts or equipment. The current team context choices include FTC, FRC, FLL, VEX,
-School, Makerspace, Club, Business, and Other.
+FindEZ serves households, small businesses, laboratories, schools, makerspaces,
+clubs, nonprofits, robotics teams, retail, warehouses, factories, and other
+organizations managing physical belongings, supplies, parts, or equipment. Team
+category is descriptive and does not change a plan or access permissions. The
+category expansion supports 29 alphabetically displayed choices, including a
+bounded saved custom label; deploy migration 040 before its dependent clients.
 
 ## Current capabilities
 
 - Personal inventory grouped into persistent Spaces
 - Photo, barcode, manual, spreadsheet, and BOM-based capture
 - FIND photo segmentation, identification, OCR/barcode evidence, and measurement
+- Durable Review for uncertain photo results, with retained source photos and
+  model-neutral scan evidence
 - Search and Ask FindEZ with authenticated inventory tools
 - Space sharing with view or edit permissions
 - Teams, Team Spaces, board work, members, documents, and activity
@@ -60,11 +67,12 @@ School, Makerspace, Club, Business, and Other.
 - **Shared Space**: the older `team_shares` and `team_members` sharing model.
 - **Team**: the newer `teams` and `team_memberships` collaboration and licensing
   model. Both models currently exist.
-- **Scan evidence**: transient FIND reasoning, confidence, OCR, barcode, and
-  measurement information returned before save. It is not a durable evidence
-  record today.
-- **Review queue**: a planned durable queue for unresolved captured objects. The
-  web route exists with an honest empty state, but persistence is not implemented.
+- **Scan evidence**: the public, model-neutral identity, detection, text/barcode,
+  measurement, assumptions, warnings, and review reasons returned by capture.
+  It persists with unresolved Review records; raw masks/geometry do not persist.
+- **Review queue**: durable unresolved photo results in `capture_reviews`, deployed
+  with migration `036`. Confirmation creates one inventory item transactionally;
+  dismissal creates none. Mobile and web provide the review flow.
 
 ## Product invariants
 

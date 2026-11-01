@@ -56,29 +56,33 @@ describe('PILOT_COPY', () => {
     expect(PILOT_COPY.title).toBe('Free Pilot');
   });
 
-  test('notice mentions September 11, 2026', () => {
-    expect(PILOT_COPY.notice).toContain('September 11, 2026');
-  });
-
-  test('notice mentions September 12', () => {
-    expect(PILOT_COPY.notice).toContain('September 12');
+  test('pre-launch access has no quota or automatic cutoff', () => {
+    expect(PILOT_COPY.notice).toContain('Plan quotas are not enforced');
+    expect(PILOT_COPY.notice).toContain('no automatic cutoff date');
+    expect(PILOT_COPY.notice).not.toMatch(/November|Nov\b/);
   });
 
   test('notice says users will not be charged automatically', () => {
     expect(PILOT_COPY.notice).toContain('not be charged automatically');
   });
 
-  test('notice mentions unlimited access', () => {
-    expect(PILOT_COPY.notice).toContain('Unlimited access');
+  test('notice mentions pre-launch access', () => {
+    expect(PILOT_COPY.notice).toContain('pre-launch access');
   });
 
-  test('buttonLabel is defined', () => {
-    expect(typeof PILOT_COPY.buttonLabel).toBe('string');
-    expect(PILOT_COPY.buttonLabel.length).toBeGreaterThan(0);
+  test('buttonLabel does not promise a launch date', () => {
+    expect(PILOT_COPY.buttonLabel).toBe('Coming soon');
   });
 
-  test('pricingNote is defined', () => {
-    expect(typeof PILOT_COPY.pricingNote).toBe('string');
-    expect(PILOT_COPY.pricingNote.length).toBeGreaterThan(0);
+  test('pricingNote does not promise a launch date', () => {
+    expect(PILOT_COPY.pricingNote).toBe(
+      'Plans shown below are for launch. Current pre-launch access is unchanged.',
+    );
+  });
+
+  test('no pilot copy retains the retired September deadline', () => {
+    for (const copy of Object.values(PILOT_COPY)) {
+      expect(copy).not.toMatch(/September|Sept\b/);
+    }
   });
 });

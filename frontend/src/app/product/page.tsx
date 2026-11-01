@@ -1,175 +1,24 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Barcode,
-  Camera,
-  Check,
-  FileSpreadsheet,
-  MapPin,
-  Package,
-  Search,
-  Sparkles,
-  Users,
-} from "lucide-react";
-
-import { MarketingNav } from "@/components/site/marketing-nav";
-import { MarketingFooter } from "@/components/site/product-marketing";
-
-import styles from "./product.module.css";
+import { PagesShell } from "@/components/pages-ui/PagesShell";
+import { BlurText, HeroBackdrop, GradientCard, SpotlightCard, TypedQuestion } from "@/components/pages-ui/cards";
+import { MapPin, Wrench, History } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Product Overview",
-  description: "See how FindEZ turns photos, scans, and spreadsheets into organized inventory your team can search.",
+ title: "Product", description: "See how FindEZ turns photos and lists into an organized inventory you can search, update and share.",
+ alternates: { canonical: "/product" }, openGraph: { title: "Product | FindEZ", description: "Capture, organize, ask and share your physical inventory.", url: "https://findez.ai/product" },
 };
-
-const inputs = [
-  { label: "Photo", detail: "Identify a bin or shelf", icon: Camera },
-  { label: "Barcode", detail: "Look up one item", icon: Barcode },
-  { label: "Spreadsheet", detail: "Import existing rows", icon: FileSpreadsheet },
-];
-
 export default function ProductPage() {
-  return (
-    <div className={styles.page}>
-      <MarketingNav theme="light" />
-
-      <main>
-        <section className={styles.hero}>
-          <div className={styles.heroCopy}>
-            <h1>From a photo to a place you can search.</h1>
-            <p>FindEZ turns physical items into organized inventory—then keeps the item, quantity, and location together.</p>
-            <div className={styles.heroActions}>
-              <Link href="/signup" className={styles.primaryButton}>Start free <ArrowRight size={15} /></Link>
-              <a href="#capture" className={styles.secondaryLink}>See the workflow</a>
-            </div>
-          </div>
-
-          <div className={styles.heroSystem} aria-label="A photo becoming searchable FindEZ inventory">
-            <div className={styles.systemHeader}>
-              <span>New inventory</span>
-              <span className={styles.liveStatus}><i /> Ready</span>
-            </div>
-            <div className={styles.systemBody}>
-              <div className={styles.sourceCard}>
-                <span className={styles.cardLabel}><Camera size={13} /> Source photo</span>
-                <div className={styles.sourcePhoto}>
-                  <Image src="/images/findez-parts-bin.jpg" alt="A workshop parts bin" fill priority sizes="300px" />
-                  <span className={styles.focusBox} />
-                </div>
-              </div>
-
-              <div className={styles.systemPath} aria-hidden="true"><span /><i /></div>
-
-              <div className={styles.recordCard}>
-                <span className={styles.cardLabel}><Sparkles size={13} /> FindEZ record</span>
-                <div className={styles.recordTitle}>
-                  <span><Package size={16} /></span>
-                  <div><strong>608 bearing</strong><small>Part · 2 units</small></div>
-                </div>
-                <div className={styles.recordField}><span>Location</span><strong>Machine shop</strong></div>
-                <div className={styles.recordField}><span>Stored in</span><strong>Drawer A04</strong></div>
-                <div className={styles.recordReady}><Check size={13} /> Searchable by your team</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className={styles.inputRail} aria-label="Ways to add inventory">
-          {inputs.map((input) => {
-            const Icon = input.icon;
-            return (
-              <div key={input.label}>
-                <span><Icon size={17} /></span>
-                <p><strong>{input.label}</strong><small>{input.detail}</small></p>
-              </div>
-            );
-          })}
-        </div>
-
-        <section id="capture" className={`${styles.section} ${styles.captureSection}`}>
-          <div className={styles.sectionCopy}>
-            <span className={styles.stepNumber}>01</span>
-            <h2>Bring in the inventory you already have.</h2>
-            <p>Photograph a group of parts, scan a code, or import a spreadsheet. Review the result before anything is saved.</p>
-            <Link href="/product/capture">Explore capture <ArrowRight size={14} /></Link>
-          </div>
-
-          <div className={styles.captureVisual}>
-            <div className={styles.capturePhoto}>
-              <Image src="/images/findez-parts-bin.jpg" alt="Parts being identified inside a workshop bin" fill sizes="(max-width: 800px) 90vw, 540px" />
-              <span className={`${styles.itemBox} ${styles.boxOne}`}><i>608 bearing</i></span>
-              <span className={`${styles.itemBox} ${styles.boxTwo}`}><i>M8 bolt</i></span>
-              <span className={`${styles.itemBox} ${styles.boxThree}`}><i>XT60</i></span>
-              <span className={styles.captureScan} aria-hidden="true" />
-            </div>
-            <div className={styles.reviewCard}>
-              <header><span>Review</span><b>10 items</b></header>
-              <div><Check size={13} /><strong>608 bearing</strong><span>×2</span></div>
-              <div><Check size={13} /><strong>M8 bolt</strong><span>×7</span></div>
-              <div><Check size={13} /><strong>XT60 connector</strong><span>×1</span></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="organize" className={styles.organizeSection}>
-          <div className={styles.organizeInner}>
-            <div className={styles.organizeGraphic}>
-              <div className={styles.inventoryNode}>
-                <span><Package size={18} /></span>
-                <strong>Your inventory</strong>
-                <small>525 items</small>
-              </div>
-              <span className={styles.treeLine} aria-hidden="true" />
-              <div className={styles.spaceList}>
-                <div><span><MapPin size={15} /></span><p><strong>Machine shop</strong><small>267 items</small></p></div>
-                <div><span><MapPin size={15} /></span><p><strong>Electronics bench</strong><small>168 items</small></p></div>
-                <div><span><MapPin size={15} /></span><p><strong>Competition pit</strong><small>90 items</small></p></div>
-              </div>
-              <div className={styles.teamPill}><Users size={14} /> Shared with Sample Team</div>
-            </div>
-
-            <div className={styles.sectionCopyLight}>
-              <span className={styles.stepNumberLight}>02</span>
-              <h2>Organize it like the real space.</h2>
-              <p>Spaces represent the rooms, shelves, cabinets, and bins where items actually live. Share a Space when other people need the same inventory.</p>
-              <Link href="/product/spaces-and-sharing">Explore Spaces & sharing <ArrowRight size={14} /></Link>
-            </div>
-          </div>
-        </section>
-
-        <section id="find" className={`${styles.section} ${styles.findSection}`}>
-          <div className={styles.sectionCopy}>
-            <span className={styles.stepNumber}>03</span>
-            <h2>Find the answer, not another list.</h2>
-            <p>Search when you know the item. Ask FindEZ when you know the question. Both lead back to the same inventory record and location.</p>
-            <div className={styles.findModes}>
-              <span><Search size={15} /><b>Search</b> names, part numbers, or locations</span>
-              <span><Sparkles size={15} /><b>Ask</b> what you have, how many, and where</span>
-            </div>
-            <Link href="/product/ask">Explore Ask FindEZ <ArrowRight size={14} /></Link>
-          </div>
-
-          <div className={styles.askVisual}>
-            <div className={styles.askBar}><Search size={17} /><span>Where are the 608 bearings?</span></div>
-            <div className={styles.askResult}>
-              <div className={styles.askResultIcon}><MapPin size={20} /></div>
-              <div><small>34 in stock</small><strong>Machine shop · Drawer A04</strong><span>Updated from your shared inventory</span></div>
-            </div>
-            <div className={styles.resultMeta}>
-              <span>608 bearing</span><span>Part #608-ZZ</span><span>Team visible</span>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.finalCta}>
-          <div><h2>Make your inventory useful.</h2><p>Start with one photo, scan, or spreadsheet.</p></div>
-          <Link href="/signup" className={styles.primaryButton}>Start free <ArrowRight size={15} /></Link>
-        </section>
-      </main>
-
-      <MarketingFooter theme="light" />
-    </div>
-  );
+ return <PagesShell page="product"><main className="public-content">
+  <header className="public-intro"><HeroBackdrop/><h1><BlurText>A place for your things.<br/>An easier way to find them.</BlurText></h1><p>FindEZ connects photos, item records and locations, so you can ask about what you own instead of searching through shelves and spreadsheets.</p><div className="public-actions"><Link className="public-primary" href="/signup">Get started free</Link><a className="public-secondary" href="https://apps.apple.com/us/app/findez-ai/id6760401697">Get the iOS app ↗</a></div></header>
+  <div className="pages-column"><nav className="public-sections" aria-label="On this page"><a href="#capture">Capture & organize</a><a href="#ask">Ask your inventory</a><a href="#share">Share & manage</a></nav>
+  <section className="public-section" id="capture"><div className="public-section-heading" data-reveal><h2>Start with what is in front of you.</h2><p>Take a photo, choose one from your library, import a spreadsheet or add an item manually. Auto Extract proposes item details from a photo; you review them before saving.</p></div>
+   <div className="capture-grid"><GradientCard tone="sunset"><figure className="public-photo"><div className="pages-photo-frame"><Image src="/images/landing/workbench.jpg" alt="A workshop bench with a battery charger, containers and mechanical parts" width={1100} height={600} sizes="(max-width:760px) 90vw, 550px"/><span className="pages-detection" aria-hidden="true"/></div><figcaption>A shelf photo gives your inventory a starting point.</figcaption></figure></GradientCard><div className="public-example pages-review" data-loop data-spotlight data-reveal><h3>Check the details. Choose a Space.</h3><dl className="public-record"><div><dt>Item</dt><dd>Battery charger</dd></div><div><dt>Quantity</dt><dd>1</dd></div><div><dt>Space</dt><dd>Robotics bench</dd></div><div><dt>Location note</dt><dd>Back center</dd></div></dl><p>Correct names and counts, keep the photo, and save the record where it belongs. Uncertain identities and quantities need your review.</p></div></div>
+   <ol className="public-steps pages-pipeline" data-reveal><li><span>01</span><h3>Capture</h3><p>Use a photo or an existing list to start building your inventory.</p></li><li><span>02</span><h3>Review</h3><p>Check proposed items and quantities before they become saved records.</p></li><li><span>03</span><h3>Save</h3><p>Choose the inventory and Space. Add notes that help you find it again.</p></li><li><span>04</span><h3>Find</h3><p>Search or ask a question when you need something later.</p></li></ol>
+  </section>
+  <section className="public-section" id="ask"><div className="public-section-heading" data-reveal><h2>Your words.<br/>Your saved records.</h2><p>Ask where something is, what you have or which supplies are running low. FindEZ uses the inventories you can access in the selected organization.</p><p>Item links take you back to the record so you can check the photo, quantity and location. Keep records up to date when you move or use things; FindEZ does not monitor your shelves automatically.</p></div><GradientCard tone="dusk" className="ask-showcase"><div className="public-example public-conversation" data-chat><p className="public-question"><TypedQuestion text="Where is the battery charger?"/></p><div className="pages-typing" aria-hidden="true"><i/><i/><i/></div><p className="chat-response">Battery charger · 1</p><p className="public-answer-location chat-response">Robotics bench · Back center</p><Image src="/images/landing/workbench.jpg" alt="Example source photo from the workshop inventory" width={1100} height={600} sizes="(max-width:760px) 80vw, 460px"/><p className="public-example-note">Answers depend on the details and photos you have saved. Check the source record before acting on an AI answer.</p></div></GradientCard></section>
+  <section className="public-section" id="share"><div className="public-section-heading" data-reveal><h2>One shared view of what is there.</h2><p>Use organizations, workspaces and inventories to separate your personal belongings from team equipment. Invite people to the right places and choose their access.</p></div><div className="public-cards"><SpotlightCard icon={<MapPin size={19}/>}><h3>Spaces & access</h3><p>Group items by where they belong. Share access with the people who need to view or edit the inventory.</p></SpotlightCard><SpotlightCard icon={<Wrench size={19}/>}><h3>Equipment & projects</h3><p>Record check-outs and returns, organize project kits and review the parts your next task needs.</p></SpotlightCard><SpotlightCard icon={<History size={19}/>}><h3>Changes & stock</h3><p>Update quantities, set low-stock rules and consult activity when you need to understand what changed.</p></SpotlightCard></div><p className="public-note">Use the same account on web and iOS to work with your saved inventory. Access follows your organization and inventory permissions.</p></section>
+  <section className="public-end"><GradientCard tone="ember" className="pages-closing"><h2>Make it work for your world.</h2><p>See everyday examples for home, workshops and shared equipment.</p><Link className="public-primary" href="/solutions">Explore solutions →</Link></GradientCard></section>
+ </div></main></PagesShell>;
 }

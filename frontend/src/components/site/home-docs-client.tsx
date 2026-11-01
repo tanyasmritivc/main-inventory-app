@@ -1,7 +1,8 @@
 "use client";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/site/inventory-link";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getAccessToken } from "@/lib/session";
@@ -24,7 +25,7 @@ function apiFetch<T>(path: string, opts: { method?: string; token: string; body?
 }
 
 export function HomeDocsClient() {
-  const router = useRouter();
+  const router = useInventoryRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const fileRef = useRef<HTMLInputElement | null>(null);
 

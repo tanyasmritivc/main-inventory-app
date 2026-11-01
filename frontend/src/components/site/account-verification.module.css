@@ -1,0 +1,6 @@
+.content { display:grid; gap:16px; padding:20px; min-width:0; font-size:14px; line-height:1.6; }
+.content p { margin:0; overflow-wrap:anywhere; }
+.content :global(.product-actions) { display:flex; flex-wrap:wrap; gap:12px; }
+.content button { min-height:40px; }
+.content [role="alert"] { color:var(--danger-ink,#b42318); }
+.panel { scroll-margin-top:90px; }

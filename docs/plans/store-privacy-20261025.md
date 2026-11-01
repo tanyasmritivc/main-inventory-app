@@ -1,0 +1,9 @@
+# Privacy disclosure and Safari proxy correction
+
+Web runtime92a9d66/PR240 deployed to /home/ubuntu/findez-web-releases/store-privacy-20261025/frontend; build a41_Y0f53RTzY0u7_glnV. Updated October25 privacy notice reflects default-on account personalization, review/export/forget/disable, limited activity and response feedback, and sample-first onboarding. Terms unchanged. Four focused legal tests and all five CI gates passed (40276629777); 26 candidate/live route checks passed; unrelated source and backend process preserved.
+
+Safari with an existing signed-in session exposed a separate 502: nginx logged “upstream sent too big header” for /privacy and /signup. Unauthenticated curl had passed, so it was insufficient coverage. Applied only within the existing web location: proxy_buffer_size 32k; proxy_buffers 8 16k; proxy_busy_buffers_size 64k. nginx -t and graceful reload passed. The same Safari session then rendered the current privacy policy including October25, default-on and feedback copy. Authentication, TLS, routes, and API streaming configuration unchanged.
+
+Backup and receipts: nginx-web-before.conf, nginx-buffer-receipt.json and deployment-receipt.json in /home/ubuntu/findez-web-releases/store-privacy-20261025. Restore the backed-up config and nginx -t/reload to roll back the buffer adjustment. The directive controls upstream response-header capacity; see https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffer_size.
+
+App Store Connect privacy purposes updated through Safari: Product Interaction/User ID/Other User Content include Analytics and Product Personalization, Search History includes Product Personalization; existing App Functionality retained. All four explicitly marked linked to identity, not tracking. Final public preview contains only Data Linked to You. No App Review submission performed by this web lane.

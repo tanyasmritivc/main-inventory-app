@@ -1,4 +1,4 @@
-import { createIntegrationKey, listIntegrationKeys, testIntegrationKey } from '../lib/integration-api';
+import { createIntegrationKey, listIntegrationKeys, revokeIntegrationKey, testIntegrationKey } from '../lib/integration-api';
 
 const fetchMock = jest.fn();
 beforeEach(() => { jest.clearAllMocks(); global.fetch = fetchMock; });
@@ -32,4 +32,26 @@ test('structured errors are useful without exposing untrusted backend details', 
   await expect(testIntegrationKey('key')).rejects.toThrow('This API key has been revoked.');
   fetchMock.mockResolvedValueOnce(response({ detail: { message: 'secret traceback' } }, 503));
   await expect(listIntegrationKeys('token')).rejects.toThrow('The request could not be completed.');
+});
+
+
+test('key requests reject redirects and have a bounded timeout', async () => {
+  fetchMock.mockResolvedValue(response({ keys: [] }));
+  await listIntegrationKeys('user-token');
+  expect(fetchMock.mock.calls[0][1]).toMatchObject({ redirect: 'error', signal: expect.any(AbortSignal) });
+});
+
+test('uncertain writes never instruct a blind retry', async () => {
+  fetchMock.mockRejectedValue(new TypeError('network failure'));
+  await expect(revokeIntegrationKey('token', 'key-id')).rejects.toThrow('Refresh the key list');
+});
+
+test.each([{ revoked: false }, {}, { revoked: true, revoked_at: 'invalid' }])('revocation requires a valid receipt: %j', async (receipt) => {
+  fetchMock.mockResolvedValue(response(receipt));
+  await expect(revokeIntegrationKey('token', 'key-id')).rejects.toThrow('may still be active');
+});
+
+test.each([{}, { value: -1 }, { value: '2' }])('connection test cannot claim success for an invalid count: %j', async (count) => {
+  fetchMock.mockResolvedValueOnce(response({ scopes: ['items:read'] })).mockResolvedValueOnce(response(count));
+  await expect(testIntegrationKey('key')).rejects.toThrow('could not be verified');
 });

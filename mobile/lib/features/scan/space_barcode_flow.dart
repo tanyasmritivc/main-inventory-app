@@ -1,10 +1,13 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import 'confirm_scan_sheet.dart';
 import 'upload_photo_flow.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 Future<void> runSpaceBarcodeFlow({
   required BuildContext context,
@@ -25,7 +28,7 @@ Future<void> runSpaceBarcodeFlow({
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     return;
   }
   if (!context.mounted) return;
@@ -35,7 +38,7 @@ Future<void> runSpaceBarcodeFlow({
   if (isUnknown) {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -46,18 +49,21 @@ Future<void> runSpaceBarcodeFlow({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              AppText(
                 'Unknown barcode',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 21,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              AppText(
                 'Photograph the product label so FindEZ can read its manufacturer and part number.',
-                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
+                  fontSize: 15,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -65,14 +71,14 @@ Future<void> runSpaceBarcodeFlow({
                 child: FilledButton.icon(
                   onPressed: () => Navigator.pop(ctx, 'label'),
                   icon: const Icon(Icons.document_scanner_outlined),
-                  label: const Text('Scan Product Label'),
+                  label: const AppText('Scan Product Label'),
                 ),
               ),
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.pop(ctx, 'manual'),
-                  child: const Text('Enter details manually'),
+                  child: const AppText('Enter details manually'),
                 ),
               ),
             ],
@@ -114,8 +120,11 @@ Future<void> runSpaceBarcodeFlow({
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) =>
-        ConfirmScanSheet(items: items, defaultLocation: preselectedSpace),
+    builder: (_) => ConfirmScanSheet(
+      items: items,
+      defaultLocation: preselectedSpace,
+      existingItems: InventoryCache.forContext(api.cacheKey),
+    ),
   );
   if (confirmed == null || confirmed.isEmpty || !context.mounted) return;
 
@@ -145,7 +154,7 @@ Future<void> runSpaceBarcodeFlow({
   if (payload.isEmpty) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Name is required.')));
+    ).showSnackBar(const SnackBar(content: AppText('Name is required.')));
     return;
   }
 
@@ -159,14 +168,14 @@ Future<void> runSpaceBarcodeFlow({
           : 'Could not save this item.';
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(reason)));
+      ).showSnackBar(SnackBar(content: AppText(reason)));
       return;
     }
     await onItemsSaved();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           'Saved ${result.inserted.first.name} to $preselectedSpace',
         ),
       ),
@@ -175,7 +184,7 @@ Future<void> runSpaceBarcodeFlow({
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
   }
 }
 
@@ -206,10 +215,10 @@ class _SpaceBarcodeScannerPageState extends State<_SpaceBarcodeScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Scan Barcode'),
-        backgroundColor: Colors.black,
+        title: const AppText('Scan Barcode'),
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
       ),
       body: MobileScanner(
         controller: _controller,

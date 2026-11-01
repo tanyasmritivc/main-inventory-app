@@ -1,0 +1,158 @@
+import json
+from pathlib import Path
+from collections import defaultdict
+from copy import deepcopy
+from types import SimpleNamespace
+from unittest.mock import patch, Mock
+import pytest
+from app.services import memory_context, ai_agent, inventory_questions
+from app.services.inventory_scope import current_inventory, InventoryScope
+from backend.tests.test_physical_memory_questions import Query
+from backend.tests.test_ask_photo_questions import route_io
+
+A='10000000-0000-0000-0000-000000000001'
+B='10000000-0000-0000-0000-000000000002'
+INV='20000000-0000-0000-0000-000000000001'
+SPACE='30000000-0000-0000-0000-000000000001'
+CASES=json.loads((Path(__file__).parent/'fixtures/account_memory_cases.json').read_text())
+
+
+@pytest.fixture
+def db(monkeypatch):
+    db=SimpleNamespace(rows=defaultdict(list),reads=[],writes=0,failure=False,before_write=None)
+    db.table=lambda table:Query(db,table)
+    monkeypatch.setattr(memory_context,'get_supabase_raw',lambda:db)
+    monkeypatch.setattr('app.services.supabase_client.get_supabase_raw',lambda:db)
+    token=current_inventory.set(InventoryScope(INV,A,B,None,'viewer'))
+    yield db
+    current_inventory.reset(token)
+
+
+def seed(db, *, enabled=True, layout='bullets', length='brief', owner=A, kind='preference', confirmed=True):
+    db.rows['user_memory']=[{'user_id':owner,'key':'__settings_v1','memory_kind':'settings','payload':{'enabled':enabled}},
+        {'user_id':owner,'key':'answer_format','memory_kind':kind,'payload':{'value':layout},'confirmed_at':'2026-10-16' if confirmed else None},
+        {'user_id':owner,'key':'answer_length','memory_kind':kind,'payload':{'value':length},'confirmed_at':'2026-10-16' if confirmed else None}]
+
+
+@pytest.mark.parametrize('case',CASES,ids=lambda c:c['id'])
+def test_explicit_memory_evaluation(case,db):
+    seed(db,enabled=case['enabled'],layout=case.get('format'),length=case.get('length'),kind=case.get('kind','preference'),confirmed=case.get('confirmed',True),owner=B if case.get('foreign') else A)
+    preferences=memory_context.load_preferences(B) # Shared owner must not become personalization identity.
+    answer={'assistant_message':'Saved motor: 4 units in Cabinet. Quantity unknown for the spare. Not physically confirmed.', 'answer_context':{'rows':[{'id':'motor','quantity':4,'location':'Cabinet'}]}}
+    output=memory_context.personalize(answer,preferences)
+    assert output['assistant_message'].startswith(case['expected_prefix'])
+    for fact in ['4 units','Cabinet','Quantity unknown','Not physically confirmed']:
+        assert fact in output['assistant_message']
+    assert ('live inspection' in output['assistant_message'])==case.get('detail',False)
+    assert output['answer_context']==answer['answer_context']
+    assert db.writes==0
+
+
+def test_new_session_refetches_corrections_and_disable_without_cache(db):
+    seed(db)
+    assert memory_context.load_preferences(B)['answer_format']=='bullets'
+    db.rows['user_memory'][1]['payload']['value']='paragraphs'
+    assert memory_context.load_preferences(B)['answer_format']=='paragraphs'
+    db.rows['user_memory'][0]['payload']['enabled']=False
+    assert memory_context.load_preferences(B)=={}
+    db.failure=True
+    assert memory_context.load_preferences(B)=={}
+
+
+@pytest.mark.parametrize('mode',['sync','stream'])
+def test_actual_agent_uses_preference_after_a_new_conversation_with_no_model_for_read(db,mode):
+    seed(db)
+    record={'tool':None,'result':None,'assistant_message':'Motor: 4 units in Cabinet. Quantity unknown for spare.', 'answer_context':{'rows':[{'id':'motor','location':'Cabinet'}]}}
+    with patch.object(ai_agent,'_project_readiness_for_question',return_value=None), patch.object(ai_agent,'answer_question',return_value=record),patch.object(ai_agent,'_get_chat_provider') as provider:
+        kwargs={'user_id':B,'message':'Where is the motor?','first_name':None,'conversation_id':'new-conversation'}
+        if mode=='sync': result=ai_agent.run_ai_command(**kwargs)
+        else:
+            events=list(ai_agent._iter_agent_streaming(**kwargs));result=events[-1]
+            assert events[0]['delta']==result['assistant_message']
+    assert result['assistant_message'].startswith('- Motor: 4 units in Cabinet')
+    assert result['answer_context']==record['answer_context']
+    provider.assert_not_called()
+
+
+@pytest.mark.parametrize('mode',['sync','stream'])
+def test_gateway_receives_only_allowlisted_style_in_both_paths(db,mode):
+    seed(db)
+    create=Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='No saved evidence.',tool_calls=[]))]))
+    provider=ai_agent._ChatProvider(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),model='unchanged-model',conversation_id='new',timezone='UTC')
+    with patch.object(ai_agent,'_project_readiness_for_question',return_value=None),patch.object(ai_agent,'answer_question',return_value=None),patch.object(ai_agent,'_get_chat_provider',return_value=provider),patch.object(ai_agent,'_load_context',return_value={}),patch.object(ai_agent,'_get_state',return_value=ai_agent._SessionState()),patch.object(ai_agent,'_question_history',return_value=[]),patch.object(ai_agent,'_requires_inventory_knowledge',return_value=False),patch.object(ai_agent,'_persist_state'),patch.object(ai_agent,'_update_memory_from_trace'):
+        kwargs={'user_id':B,'message':'Explain the saved evidence','first_name':None}
+        result=ai_agent.run_ai_command(**kwargs) if mode=='sync' else list(ai_agent._iter_agent_streaming(**kwargs))[-1]
+    assert result['assistant_message']=='- No saved evidence.'
+    assert 'Use a bullet list' in create.call_args.kwargs['messages'][0]['content']
+    assert create.call_args.kwargs['model']=='unchanged-model'
+
+
+def test_alias_retrieval_uses_authorized_space_id_not_fuzzy_name(db):
+    seed(db)
+    db.rows['inventory_user_memory']=[{'user_id':A,'inventory_id':INV,'memory_kind':'alias','confirmed_at':'now','payload':{'alias':'bench','space_id':SPACE}},
+        {'user_id':B,'inventory_id':INV,'memory_kind':'alias','confirmed_at':'now','payload':{'alias':'bench','space_id':'FOREIGN'}}]
+    db.rows['spaces']=[{'id':SPACE,'inventory_id':INV,'name':'Cabinet 2'}]
+    db.rows['items']=[{'item_id':'mine','inventory_id':INV,'name':'Motor','quantity':4,'space_id':SPACE,'location':'Cabinet 2'},
+        {'item_id':'wrong-space','inventory_id':INV,'name':'Motor','quantity':99,'space_id':'elsewhere','location':'bench'},
+        {'item_id':'foreign','inventory_id':'OTHER','name':'FOREIGN_SECRET','quantity':900,'space_id':SPACE}]
+    prefs=memory_context.load_preferences(B)
+    answer=inventory_questions.answer_question(user_id=B,message='What items are in bench?',aliases=prefs['aliases'])
+    assert [row['id'] for row in answer['answer_context']['rows']]==['mine']
+    assert 'Cabinet 2' in answer['assistant_message'] and 'FOREIGN_SECRET' not in str(answer)
+    db.rows['spaces']=[]
+    answer=inventory_questions.answer_question(user_id=B,message='What items are in bench?',aliases=prefs['aliases'])
+    assert answer['answer_context'] is None and 'no longer available' in answer['assistant_message']
+
+
+@pytest.mark.parametrize('message',['Remember my short answers preference','Forget my preferences','I prefer brief answers'])
+def test_chat_never_claims_an_unsaved_preference(message,db):
+    seed(db)
+    with patch.object(ai_agent,'_get_chat_provider') as provider:
+        result=ai_agent.run_ai_command(user_id=B,message=message)
+    assert 'Nothing was saved or forgotten' in result['assistant_message']
+    assert db.writes==0
+    provider.assert_not_called()
+
+
+def test_old_background_tasks_do_not_duplicate_private_conversations():
+    import asyncio
+    from app.services.ai_memory import save_conversation, extract_and_save_memory, fetch_similar_history
+    with patch('app.services.supabase_client.create_supabase_admin') as database, patch('app.services.agent_gateway_client.AgentGatewayClient') as gateway:
+        asyncio.run(save_conversation(A,'PRIVATE_QUESTION','PRIVATE_ANSWER'))
+        asyncio.run(extract_and_save_memory(A,'PRIVATE_QUESTION','PRIVATE_ANSWER'))
+        assert asyncio.run(fetch_similar_history(A,'PRIVATE_QUESTION'))==''
+    database.assert_not_called()
+    gateway.assert_not_called()
+
+
+def test_query_signal_omits_content_and_does_not_retry_unknown_inserts():
+    import asyncio
+    import httpx
+    from app.services.ai_memory import log_query
+    query=Mock()
+    query.insert.return_value=query
+    db=Mock();db.table.return_value=query
+    with patch('app.services.supabase_client.create_supabase_admin',return_value=db):
+        asyncio.run(log_query(A,'Where is PRIVATE_OBJECT?'))
+        assert query.insert.call_args.args[0]['query_text']=='[content omitted]'
+        assert query.insert.call_args.args[0]['query_type']=='location_lookup'
+        query.execute.side_effect=httpx.ReadError('Unknown outcome')
+        asyncio.run(log_query(A,'PRIVATE_OBJECT'))
+        assert query.insert.call_count==2
+
+
+def test_photo_chat_applies_preferences_without_changing_saved_evidence(route_io):
+    from backend.tests.test_ask_photo_questions import api_client, image
+    from fastapi.testclient import TestClient
+    from app.api.routes import ai
+    app=api_client().app
+    async def independent_client(scope, receive, send):
+        await app({**scope, 'client': ('memory-photo-test', 50000)}, receive, send)
+    original=deepcopy(route_io.answer.return_value['answer_context'])
+    with patch.object(ai,'load_preferences',return_value={'answer_format':'bullets'}):
+        with TestClient(independent_client) as client:
+            response=client.post('/ai_photo_question',files={'file':('photo.png',image(),'image/png')},data={'message':'What is this?'})
+    assert response.status_code==200
+    saved=[call.args[0] for call in route_io.client.table.return_value.insert.call_args_list if call.args[0].get('role')=='assistant']
+    assert len(saved)==1 and saved[0]['content'].startswith('- ')
+    assert saved[0]['answer_context']==original

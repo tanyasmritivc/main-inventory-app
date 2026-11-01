@@ -1,16 +1,21 @@
-# mobile
+# FindEZ mobile
 
-A new Flutter project.
+Flutter iOS client for AI item recognition and inventory search. FindEZ serves
+households, businesses, labs, schools, teams, and industry.
 
-## Getting Started
+From `mobile/`:
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter analyze --no-pub
+flutter test --no-pub --coverage
+```
 
-A few resources to get you started if this is your first Flutter project:
+Runtime configuration uses `API_BASE_URL`, `SUPABASE_URL`, and
+`SUPABASE_ANON_KEY` Dart defines. Use your isolated development services for
+local work and pass public client values through `--dart-define-from-file`.
+Keep server credentials out of the client. Production builds must use verified
+production origins and must not enable `PREVIEW_ONBOARDING`.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See [TESTING.md](../TESTING.md) for native and physical-device release checks,
+and [the architecture](../.agents/ARCHITECTURE.md) for backend boundaries.

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "FindEZ inventory tools for MCP clients and ChatGPT Actions. No delete operations.",
-  "engines": { "node": ">=20.10.0" },
+  "engines": {
+    "node": ">=20.10.0"
+  },
   "scripts": {
     "generate": "node scripts/generate.mjs",
     "check": "node scripts/generate.mjs --check",
@@ -16,11 +18,13 @@
     "start": "node src/stdio.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1"
   },
-  "overrides": { "tmp": "0.2.7" },
+  "overrides": {
+    "tmp": "0.2.7"
+  },
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",
     "esbuild": "0.28.2",

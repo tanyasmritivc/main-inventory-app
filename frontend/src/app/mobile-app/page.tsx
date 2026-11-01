@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
-import { FindEZMark } from "@/components/site/findez-brand";
+import { FindEZMark, FindEZWordmark } from "@/components/site/findez-brand";
 
 export const metadata: Metadata = {
-  title: "Get the FindEZ app",
-  description: "Use the FindEZ iOS app for inventory, sharing, scanning, and AI tools.",
+  title: "Get the FindEZ AI app",
+  description: "Take your physical memory with you. Scan your things, save their locations in Spaces, and ask FindEZ AI about them on iPhone.",
   robots: { index: false, follow: false },
 };
 
@@ -15,14 +15,14 @@ export default function MobileAppPage() {
   return (
     <main className="mobile-app-page">
       <nav>
-        <Link href="/" className="landing-wordmark"><FindEZMark className="findez-logo" width={28} height={28} /><span>FindEZ</span></Link>
+        <Link href="/" className="landing-wordmark"><FindEZWordmark width={112} height={30}/></Link>
         <Link href="/docs/api">Developers</Link>
       </nav>
       <section className="mobile-app-content">
         <div className="mobile-app-copy">
           <span className="landing-kicker">FindEZ for iPhone</span>
-          <h1>Your inventory goes where the work happens.</h1>
-          <p>Capture a shelf, scan a barcode, check a location, or ask FindEZ from the workshop floor.</p>
+          <h1>A memory for your things, wherever you are.</h1>
+          <p>Take a photo, scan a barcode, save where things belong, and ask FindEZ AI what you have and where it is.</p>
           <a href={APP_STORE_URL}>Open or download FindEZ <ArrowRight size={15} /></a>
           <div><span><Camera size={14} /> Photo capture</span><span><Barcode size={14} /> Barcode lookup</span><span><PackageSearch size={14} /> Inventory search</span></div>
         </div>

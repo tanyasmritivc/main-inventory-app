@@ -1,0 +1,17 @@
+{
+  "published": true,
+  "source": "d537e3018a194c6e44765cfdf55690085567325a",
+  "checks": {
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/pricing": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/worlds/personal": 200,
+    "/favicon.ico": 200
+  },
+  "backend_unchanged": true,
+  "old_release_preserved": true,
+  "build_id": "7YIcfO0FBtR_GUUnTaHy7"
+}

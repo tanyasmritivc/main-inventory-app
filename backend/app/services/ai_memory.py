@@ -1,18 +1,13 @@
-"""Three-layer AI memory system for FindEZ.
+"""Legacy chat analytics helpers and compatibility entry points.
 
-Layer 1 — User Memory: persistent key-value facts extracted from conversations.
-Layer 2 — Query Analytics: classify and log every query.
-Layer 3 — Conversation History RAG: store Q&A pairs and retrieve similar ones.
-
-All functions are async; blocking Supabase and model calls run via asyncio.to_thread
-so they never block the event loop.
+Durable personalization now uses account_memory and memory_context. Automatic
+fact extraction and historical-answer RAG are deliberately disabled; existing
+query signals omit content; historical-answer duplication is disabled. Existing
+owned conversations remain the chat history source.
 """
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timezone
-from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -20,101 +15,18 @@ logger = logging.getLogger(__name__)
 # ── Layer 1: User Memory ─────────────────────────────────────────────────────
 
 async def fetch_user_memory(user_id: str) -> str:
-    """Return a formatted string of known user facts, or '' if none exist yet."""
-    def _sync() -> str:
-        from app.services.supabase_client import create_supabase_admin
-        sb = create_supabase_admin()
-        resp = (
-            sb.table("user_memory")
-            .select("key, value")
-            .eq("user_id", user_id)
-            .execute()
-        )
-        rows = resp.data or []
-        if not rows:
-            return ""
-        parts = [
-            f"{r['key']}: {r['value']}"
-            for r in rows
-            if r.get("key") and r.get("value")
-        ]
-        return ("What I know about this user: " + ", ".join(parts)) if parts else ""
-
-    try:
-        return await asyncio.to_thread(_sync)
-    except Exception:
-        logger.exception("fetch_user_memory failed")
-        return ""
+    """Compatibility entry point; typed context is loaded by both agent paths."""
+    return ""
 
 
 async def extract_and_save_memory(user_id: str, question: str, answer: str) -> None:
-    """Background: extract key facts and upsert them into user_memory."""
-    def _sync() -> None:
-        from app.core.config import get_settings
-        from app.services.supabase_client import create_supabase_admin
-        from app.services.agent_gateway_client import AgentGatewayClient
+    """Legacy automatic extraction is disabled. Explicit memory API owns writes.
 
-        settings = get_settings()
-        client = AgentGatewayClient()
-        kwargs = {
-            "model": settings.findez_agent_model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You extract key facts about a user from their inventory conversations. "
-                        "Output ONLY a JSON object with short key-value pairs. "
-                        "Keys should be snake_case facts like: team_type, main_space_name, "
-                        "frequently_tracked_items, preferred_query_style, organization_name. "
-                        "Max 6 keys. Only include facts that are clearly stated. Output {} if nothing."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": f"Question: {question[:1000]}\nAnswer: {answer[:2000]}",
-                },
-            ],
-            "temperature": 0,
-        }
-        kwargs["max_tokens"] = 200
-        kwargs["extra_headers"] = {
-            "X-Agent-Conversation-ID": f"memory-{uuid4()}",
-            "X-Agent-Timezone": settings.findez_agent_timezone,
-        }
-        resp = client.chat.completions.create(**kwargs)
-        raw = (resp.choices[0].message.content or "{}").strip()
-        # Strip markdown code fences if the model wraps the JSON
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-        try:
-            facts: dict = json.loads(raw)
-        except Exception:
-            return
-        if not isinstance(facts, dict) or not facts:
-            return
-
-        sb = create_supabase_admin()
-        now = datetime.now(timezone.utc).isoformat()
-        for key, value in facts.items():
-            if not isinstance(key, str) or not isinstance(value, (str, int, float, bool)):
-                continue
-            try:
-                sb.table("user_memory").upsert(
-                    {
-                        "user_id": user_id,
-                        "key": str(key)[:100],
-                        "value": str(value)[:500],
-                        "updated_at": now,
-                    },
-                    on_conflict="user_id,key",
-                ).execute()
-            except Exception:
-                logger.exception("Failed to upsert user_memory key=%s", key)
-
-    try:
-        await asyncio.to_thread(_sync)
-    except Exception:
-        logger.exception("extract_and_save_memory failed")
+    Neither assistant text nor uploaded content is evidence of a confirmed user
+    preference. Keep this callable for older route/test contracts, without a model
+    call, write, or deferred candidate that could resurrect forgotten memory.
+    """
+    return None
 
 
 # ── Layer 2: Query Analytics ─────────────────────────────────────────────────
@@ -140,7 +52,7 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
         sb = create_supabase_admin()
         row: dict = {
             "user_id": user_id,
-            "query_text": query_text[:1000],
+            "query_text": "[content omitted]",
             "query_type": _classify_query(query_text),
         }
         if space_id:
@@ -148,9 +60,7 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
         try:
             sb.table("query_logs").insert(row).execute()
         except httpx.ReadError:
-            logger.warning("log_query ReadError — retrying with fresh client")
-            sb = create_supabase_admin()
-            sb.table("query_logs").insert(row).execute()
+            logger.warning("Query signal outcome unknown; not retrying the insert")
 
     try:
         await asyncio.to_thread(_sync)
@@ -160,73 +70,15 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
 
 # ── Layer 3: Conversation History RAG ────────────────────────────────────────
 
-async def fetch_similar_history(
-    user_id: str, current_question: str, limit: int = 3
-) -> str:
-    """Return formatted past Q&A pairs similar to current_question, or ''."""
-    def _sync() -> str:
-        from app.services.supabase_client import create_supabase_admin
-        sb = create_supabase_admin()
-        try:
-            resp = (
-                sb.table("conversation_history")
-                .select("question, answer")
-                .eq("user_id", user_id)
-                .text_search("question", current_question, config="english")
-                .order("created_at", desc=True)
-                .limit(limit)
-                .execute()
-            )
-        except Exception:
-            # Full-text search unavailable — fall back to most recent entries
-            resp = (
-                sb.table("conversation_history")
-                .select("question, answer")
-                .eq("user_id", user_id)
-                .order("created_at", desc=True)
-                .limit(limit)
-                .execute()
-            )
-        rows = resp.data or []
-        if not rows:
-            return ""
-        lines = [
-            f"Q: {r['question']}\nA: {r['answer']}"
-            for r in rows
-            if r.get("question") and r.get("answer")
-        ]
-        return ("Relevant past conversations:\n" + "\n".join(lines)) if lines else ""
-
-    try:
-        return await asyncio.to_thread(_sync)
-    except Exception:
-        logger.exception("fetch_similar_history failed")
-        return ""
+async def fetch_similar_history(user_id: str, current_question: str, limit: int = 3) -> str:
+    """Historical answer text is not durable preference or current item evidence."""
+    return ""
 
 
-async def save_conversation(
-    user_id: str, question: str, answer: str, space_id: str | None = None
-) -> None:
-    """Background: store this Q&A pair in conversation_history."""
-    def _sync() -> None:
-        import httpx
-        from app.services.supabase_client import create_supabase_admin
-        sb = create_supabase_admin()
-        row: dict = {
-            "user_id": user_id,
-            "question": question[:2000],
-            "answer": answer[:4000],
-        }
-        if space_id:
-            row["space_id"] = space_id
-        try:
-            sb.table("conversation_history").insert(row).execute()
-        except httpx.ReadError:
-            logger.warning("save_conversation ReadError — retrying with fresh client")
-            sb = create_supabase_admin()
-            sb.table("conversation_history").insert(row).execute()
+async def save_conversation(user_id: str, question: str, answer: str, space_id: str | None = None) -> None:
+    """Compatibility no-op: owned messages already persist the conversation.
 
-    try:
-        await asyncio.to_thread(_sync)
-    except Exception:
-        logger.exception("save_conversation failed")
+    Do not create another permanent raw Q&A copy for disabled history RAG.
+    Historical rows are retained until an approved retention/deletion operation.
+    """
+    return None

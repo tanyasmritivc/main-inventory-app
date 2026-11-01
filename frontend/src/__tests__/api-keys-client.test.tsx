@@ -25,8 +25,8 @@ const getSession = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session' } } });
-  jest.mocked(useApiSession).mockReturnValue({ token: 'web-session', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
+  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session', user: { id: 'account-a' } } } });
+  jest.mocked(useApiSession).mockReturnValue({ token: 'web-session', accountId: 'account-a', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
   jest.mocked(api.listIntegrationKeys).mockResolvedValue({ keys: [] });
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [{ team_id: 'team-1', name: 'Robotics team' }] });
   jest.mocked(api.createIntegrationKey).mockResolvedValue({ ...metadata, key: rawKey });
@@ -104,8 +104,8 @@ test('successful revocation updates the key status', async () => {
 test('owners with no teams receive an actionable setup path', async () => {
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [] });
   render(<ApiKeysClient />);
-  expect(await screen.findByText('Create a team to use integrations')).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'Open Teams →' }).getAttribute('href')).toBe('/teams');
+  expect(await screen.findByText('Create a workspace to use integrations')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Open your workspaces →' }).getAttribute('href')).toBe('/home');
   expect(screen.queryByRole('button', { name: 'Create key' })).toBeNull();
 });
 
@@ -116,4 +116,32 @@ test('failed loading shows retry and never presents an empty success state', asy
   await user.click(await screen.findByRole('button', { name: 'Retry' }));
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   expect(await screen.findByLabelText('Key name')).toBeTruthy();
+});
+
+
+test('account switch removes the one-time credential and saved metadata', async () => {
+  const user = userEvent.setup(); const { rerender } = render(<ApiKeysClient />);
+  await createKey(user);
+  getSession.mockResolvedValue({ data: { session: { access_token: 'b-token', user: { id: 'account-b' } } } });
+  jest.mocked(useApiSession).mockReturnValue({ token: 'b-token', accountId: 'account-b', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
+  rerender(<ApiKeysClient />);
+  expect(screen.queryByDisplayValue(rawKey)).toBeNull();
+  expect(screen.queryByText(`${metadata.key_prefix}…`)).toBeNull();
+  await screen.findByLabelText('Key name');
+});
+
+test('a changed live account cannot create a key from the previous form', async () => {
+  const user = userEvent.setup(); render(<ApiKeysClient />);
+  await user.type(await screen.findByLabelText('Key name'), 'Reporting');
+  getSession.mockResolvedValue({ data: { session: { access_token: 'b-token', user: { id: 'account-b' } } } });
+  await user.click(screen.getByRole('button', { name: 'Create key' }));
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Your account session changed. Sign in again.');
+  expect(api.createIntegrationKey).not.toHaveBeenCalled();
+});
+
+test('revoking the new key removes its one-time secret', async () => {
+  const user = userEvent.setup(); render(<ApiKeysClient />); await createKey(user);
+  jest.mocked(api.revokeIntegrationKey).mockResolvedValue({ revoked: true, revoked_at: '2026-10-18T00:00:00Z' });
+  await user.click(screen.getByRole('button', { name: 'Revoke Team spreadsheet' }));
+  await screen.findByText('Revoked'); expect(screen.queryByDisplayValue(rawKey)).toBeNull();
 });

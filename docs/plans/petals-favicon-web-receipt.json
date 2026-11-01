@@ -1,0 +1,57 @@
+{
+  "published": true,
+  "source": "c12c0cebb30ab933cd4266d0d20f8b6985ac3686",
+  "checks": {
+    "/brand/findez-petals.ico": 200,
+    "/brand/findez-petals.svg": 200,
+    "/brand/findez-petals-96.png": 200,
+    "/brand/findez-petals-180.png": 200,
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/pricing": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/worlds/personal": 200,
+    "/favicon.ico": 200,
+    "/brand/findez-favicon-32.png": 200,
+    "/brand/findez-favicon.svg": 200,
+    "/brand/findez-favicon-16.png": 200,
+    "/brand/findez-app-icon-180.png": 200,
+    "/brand/findez-wordmark.svg": 200,
+    "/brand/findez-wordmark-white.svg": 200,
+    "/sitemap.xml": 200,
+    "/mascot/pip.svg": 200,
+    "/settings/appearance": 200,
+    "/settings/memory": 200,
+    "/notifications": 200,
+    "/inventory": 200,
+    "/review": 200,
+    "/documents": 200
+  },
+  "backend_unchanged": true,
+  "old_release_preserved": true,
+  "build_id": "Lu2S6k09Rd9HS9ImuqiCa",
+  "ci_run": 40265331908,
+  "ci_all_five_jobs": "passed",
+  "web_tests": 584,
+  "typescript": "passed",
+  "eslint_errors": 0,
+  "eslint_existing_warnings": 52,
+  "public_domains": {
+    "https://findez.ai": {
+      "metadata": true,
+      "crawler_access": true,
+      "asset_hashes": true,
+      "icon_count": 4
+    },
+    "https://www.findez.ai": {
+      "metadata": true,
+      "crawler_access": true,
+      "asset_hashes": true,
+      "icon_count": 4
+    }
+  },
+  "safari_tab_icon": "new Petals mark visually confirmed",
+  "google_indexing": "Homepage request accepted in Search Console; priority crawl queue confirmed. Search favicon refresh pending Google recrawl."
+}

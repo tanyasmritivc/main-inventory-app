@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import re
@@ -6,7 +7,7 @@ from uuid import uuid4
 
 import anyio
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from PIL import Image
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -45,7 +46,6 @@ from app.services.documents_repo import create_activity
 from app.services.items_repo import (
     _merge_by_item_id,
     add_item,
-    bulk_create_items,
     delete_item,
     search_items_basic,
     update_item,
@@ -81,10 +81,15 @@ from app.services.usage_service import (
     increment_usage,
     is_pro_user,
 )
+from app.services.review_queue import enqueue_uncertain_items
+from app.services.capture_previews import preview_uncertain_items
 
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+MAX_SCAN_IMAGE_BYTES = 20 * 1024 * 1024
+MAX_SCAN_IMAGE_PIXELS = 40_000_000
 
 
 @router.get("/inventory/catalog/{catalog_id}", response_model=VerifiedCatalogPart)
@@ -276,6 +281,20 @@ def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
     return image_bytes, filename
 
 
+def _prepare_scan_image(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
+    try:
+        # Check the compressed source before any conversion loads its full
+        # pixel buffer into memory.
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_SCAN_IMAGE_PIXELS:
+                raise ValueError("invalid dimensions")
+            image.verify()
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise bad_request("Upload a valid photo smaller than 40 megapixels.") from exc
+    return _convert_to_jpeg(image_bytes, filename)
+
+
 def _check_not_viewer_for_team_write(requesting_user_id: str, target_user_id: str) -> None:
     """
     If target_user_id differs from requesting_user_id (i.e. write resolves to another
@@ -302,7 +321,8 @@ def _check_not_viewer_for_team_write(requesting_user_id: str, target_user_id: st
 
 def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> str:
     """Return the space owner's user_id if location is a joined edit-access space, else requesting_user_id."""
-    if not location or not location.strip():
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get() or not location or not location.strip():
         return requesting_user_id
     try:
         client = get_supabase_admin()
@@ -379,14 +399,16 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
         if location:
             items = [i for i in items if (i.get("location") or "").lower() == str(location).lower()]
 
-        try:
-            create_activity(
-                user_id=user.user_id,
-                summary=f"Searched inventory: {payload.query}",
-                metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
-                            )
-        except Exception:
-            logger.exception("Failed to write search activity")
+        from app.services.inventory_scope import current_inventory
+        if raw_query or not current_inventory.get():
+            try:
+                create_activity(
+                    user_id=user.user_id,
+                    summary=f"Searched inventory: {payload.query}",
+                    metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
+                                )
+            except Exception:
+                logger.exception("Failed to write search activity")
 
         return SearchItemsResponse(items=items, parsed=parsed)
     except httpx.HTTPError:
@@ -414,6 +436,8 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
         return UpdateItemResponse(item=updated)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
@@ -455,6 +479,8 @@ async def add_item_photo_route(
         raise HTTPException(404, "Item not found") from exc
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Could not add item photo")
         raise service_unavailable("Photo could not be saved. Try again.") from exc
@@ -478,6 +504,8 @@ def delete_item_photo_route(
         return ItemPhotoMutationResponse(item=item, photos=photos)
     except LookupError as exc:
         raise HTTPException(404, "Photo not found") from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Could not delete item photo")
         raise service_unavailable("Photo could not be deleted. Try again.") from exc
@@ -488,11 +516,17 @@ def delete_item_photo_route(
 async def extract_from_image_route(
     request: Request,
     file: UploadFile = File(...),
+    preview_only: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> ExtractFromImageResponse:
-    raw = await file.read()
+    raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
     if not raw:
         raise bad_request("Empty file")
+    if len(raw) > MAX_SCAN_IMAGE_BYTES:
+        raise HTTPException(413, "Photo is too large. Choose a file under 20 MB.")
+
+    filename = file.filename or "upload.png"
+    analysis_bytes, analysis_filename = _prepare_scan_image(raw, filename)
 
     try:
         check_and_increment_scan(user.user_id)
@@ -525,12 +559,12 @@ async def extract_from_image_route(
             },
         )
 
-    filename = file.filename or "upload.png"
+    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
     stored = upload_image(
         user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+        filename=f"capture-{uuid4().hex}-{analysis_filename}",
+        content=analysis_bytes,
     )
-    analysis_bytes, analysis_filename = _convert_to_jpeg(raw, filename)
     try:
         data = await extract_inventory_items_with_find(
             filename=analysis_filename,
@@ -540,13 +574,26 @@ async def extract_from_image_route(
             source_frame_url=stored.url,
         )
         items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-        extracted = items[0] if items else {}
     except FindPipelineError as exc:
         logger.warning("FIND single item extraction failed: %s", exc.public_message)
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
         logger.exception("FIND single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
+
+    try:
+        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+        items = prepare(
+            user_id=user.user_id, source_digest=source_digest, items=items
+        )
+    except Exception as exc:
+        logger.exception("Could not prepare an uncertain capture result")
+        raise service_unavailable(
+            "Photo preview could not be prepared. Please try again."
+            if preview_only is True else
+            "The uncertain item could not be saved for review. Please try again."
+        ) from exc
+    extracted = items[0] if items else {}
 
     return ExtractFromImageResponse(extracted=extracted, image_url=stored.url)
 
@@ -556,11 +603,17 @@ async def extract_from_image_route(
 async def inventory_extract_from_image_route(
     request: Request,
     file: UploadFile = File(...),
+    preview_only: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> MultiExtractFromImageResponse:
-    raw = await file.read()
+    raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
     if not raw:
         raise bad_request("Empty file")
+    if len(raw) > MAX_SCAN_IMAGE_BYTES:
+        raise HTTPException(413, "Photo is too large. Choose a file under 20 MB.")
+
+    filename = file.filename or "upload.png"
+    analysis_bytes, analysis_filename = _prepare_scan_image(raw, filename)
 
     try:
         check_and_increment_scan(user.user_id)
@@ -593,17 +646,17 @@ async def inventory_extract_from_image_route(
             },
         )
 
-    filename = file.filename or "upload.png"
+    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
     stored = upload_image(
         user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+        filename=f"capture-{uuid4().hex}-{analysis_filename}",
+        content=analysis_bytes,
     )
-    raw, filename = _convert_to_jpeg(raw, filename)
 
     try:
         data = await extract_inventory_items_with_find(
-            filename=filename,
-            image_bytes=raw,
+            filename=analysis_filename,
+            image_bytes=analysis_bytes,
             content_type="image/jpeg",
             user_id=user.user_id,
             source_frame_url=stored.url,
@@ -612,7 +665,7 @@ async def inventory_extract_from_image_route(
         logger.warning(
             "FIND inventory extraction failed (file=%s, size=%d, status=%d)",
             file.filename,
-            len(raw),
+            len(analysis_bytes),
             exc.status_code,
         )
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
@@ -620,7 +673,7 @@ async def inventory_extract_from_image_route(
         logger.exception(
             "FIND inventory extraction failed unexpectedly (file=%s, size=%d)",
             file.filename,
-            len(raw),
+            len(analysis_bytes),
         )
         raise HTTPException(
             status_code=503,
@@ -628,6 +681,18 @@ async def inventory_extract_from_image_route(
         )
 
     items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
+    try:
+        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+        items = prepare(
+            user_id=user.user_id, source_digest=source_digest, items=items
+        )
+    except Exception as exc:
+        logger.exception("Could not prepare uncertain capture results")
+        raise service_unavailable(
+            "Photo preview could not be prepared. Please try again."
+            if preview_only is True else
+            "Uncertain items could not be saved for review. Please try again."
+        ) from exc
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
 
     if not isinstance(summary, dict):
@@ -656,45 +721,48 @@ def inventory_bulk_create_route(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BulkCreateResponse:
     items_to_insert = [i.model_dump() for i in payload.items]
-    if not is_pro_user(user.user_id):
+    owners = {
+        _resolve_owner_for_joined_space(user.user_id, (item.get('location') or '').strip())
+        for item in items_to_insert if (item.get('location') or '').strip()
+    }
+    if len(owners) > 1:
+        raise bad_request('Save to one account at a time. Your draft has not changed.')
+    target_user_id = next(iter(owners), user.user_id)
+    slots_remaining = None
+    if not is_pro_user(target_user_id):
         try:
-            count_result = get_supabase_admin().table("items").select("item_id", count="exact").eq("user_id", user.user_id).execute()
-            current = count_result.count or 0
+            client = get_supabase_admin()
+            from app.services.inventory_scope import current_inventory
+            if current_inventory.get():
+                client = client.raw
+            count_result = client.table("items").select("item_id", count="exact").eq("user_id", target_user_id).execute()
+            if count_result.count is None:
+                raise ValueError('Item count unavailable')
+            current = count_result.count
         except Exception:
-            current = 0
-        slots_remaining = FREE_ITEM_LIMIT - current
-        if slots_remaining <= 0:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "item_limit_reached",
-                    "message": "Free plan limit of 30 items reached.",
-                    "upgrade_required": True,
-                },
-            )
-        items_to_insert = items_to_insert[:slots_remaining]
-    # Resolve target user_id for joined spaces (all items share one location in photo-upload flow)
-    bulk_location = ""
-    for it in items_to_insert:
-        loc = (it.get("location") or "").strip()
-        if loc:
-            bulk_location = loc
-            break
-    target_user_id = _resolve_owner_for_joined_space(user.user_id, bulk_location)
+            raise service_unavailable('Your item limit could not be checked. Please try again.')
+        slots_remaining = max(0, FREE_ITEM_LIMIT - current)
 
     try:
-        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
+        from app.services.capture_save import save_capture_items
+        inserted, failures = save_capture_items(user_id=target_user_id, items=items_to_insert, max_new_items=slots_remaining)
 
         try:
             create_activity(
                 user_id=user.user_id,
-                summary=f"Saved {len(inserted)} scanned items to inventory",
+                summary=f"Confirmed {len(inserted)} saved capture records",
                 metadata={"type": "bulk_create", "inserted": len(inserted), "failures": len(failures)},
                             )
         except Exception:
             logger.exception("Failed to write bulk create activity")
 
-        return BulkCreateResponse(inserted=inserted, failures=failures)
+        failed_indices = {failure['index'] for failure in failures}
+        return BulkCreateResponse(
+            inserted=inserted, failures=failures,
+            accepted_indices=[index for index in range(len(items_to_insert)) if index not in failed_indices],
+        )
+    except SpaceLimitExceeded:
+        raise HTTPException(403, 'FREE_TIER_SPACE_LIMIT')
     except httpx.HTTPError:
         logger.exception("Upstream error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")

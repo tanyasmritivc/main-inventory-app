@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin
 
@@ -29,14 +28,18 @@ def barcode_candidates(value: str) -> list[str]:
     """
     raw = value.strip()
     candidates = [raw] if raw else []
-    if raw.isdigit() and len(raw) in (13, 14):
-        unpadded = raw.lstrip("0")
-        if len(unpadded) == 12 and unpadded not in candidates:
-            candidates.append(unpadded)
-    if raw.isdigit() and len(raw) == 12:
-        ean = f"0{raw}"
-        if ean not in candidates:
-            candidates.append(ean)
+    upc = None
+    if raw.isascii() and raw.isdigit():
+        if len(raw) == 12:
+            upc = raw
+        elif len(raw) == 13 and raw.startswith("0"):
+            upc = raw[1:]
+        elif len(raw) == 14 and raw.startswith("00"):
+            upc = raw[2:]
+    if upc:
+        for equivalent in (upc, f"0{upc}", f"00{upc}"):
+            if equivalent not in candidates:
+                candidates.append(equivalent)
     return candidates
 
 
@@ -125,46 +128,16 @@ def verified_catalog_id_for_identity(*, brand: str | None, part_number: str | No
 def link_verified_barcode_alias(*, barcode: str, catalog_id: str) -> bool:
     """Attach a confirmed scan code without ever stealing another part's barcode.
 
-    The caller must resolve ``catalog_id`` server-side from an exact verified
-    manufacturer + part number before calling this function.
+    The caller resolves the identity server-side; the service-only transaction
+    rechecks verification and serializes assignment with community writes.
     """
     wanted_barcode = barcode.strip()
     if not wanted_barcode or not catalog_id:
         return False
 
-    client = get_supabase_admin()
-    canonical_owner = (
-        client.table("parts_catalog")
-        .select("catalog_id")
-        .eq("barcode", wanted_barcode)
-        .limit(1)
-        .execute()
-    )
-    canonical_rows = canonical_owner.data or []
-    if canonical_rows and str(canonical_rows[0].get("catalog_id")) != catalog_id:
-        logger.warning("Refusing to reassign canonical barcode %s", wanted_barcode)
-        return False
-
-    alias_owner = (
-        client.table("part_catalog_barcodes")
-        .select("catalog_id")
-        .eq("barcode", wanted_barcode)
-        .limit(1)
-        .execute()
-    )
-    alias_rows = alias_owner.data or []
-    if alias_rows:
-        if str(alias_rows[0].get("catalog_id")) != catalog_id:
-            logger.warning("Refusing to reassign barcode alias %s", wanted_barcode)
-            return False
-        return True
-
-    client.table("part_catalog_barcodes").insert({
-        "barcode": wanted_barcode,
-        "catalog_id": catalog_id,
-        "source": "user_confirmed_label",
-    }).execute()
-    return True
+    return get_supabase_admin().rpc("findez_link_verified_barcode_alias", {
+        "p_barcode": wanted_barcode, "p_catalog_id": catalog_id,
+    }).execute().data is True
 
 
 def enrich_scan_items_from_verified_catalog(items: list[dict]) -> list[dict]:
@@ -253,37 +226,21 @@ def get_compatible_catalog_parts(catalog_id: str, *, limit: int = 12) -> dict:
     return {"interfaces": [key.split(":", 1)[-1] for key in keys], "matches": matches}
 
 
-def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
-    """Upsert a confirmed part into parts_catalog. Never raises — silent fail."""
+def save_to_catalog(barcode: str, data: dict, source: str = "user") -> bool:
+    """Best-effort community lookup cache, never an authoritative item save.
+
+    Only the service-only transaction can write; verified identities and existing
+    aliases are protected there even when a caller supplies untrusted fields.
+    """
     try:
         if not barcode or not data.get("name"):
-            return
-        supabase = get_supabase_admin()
-        existing_result = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).execute()
-        existing_rows = existing_result.data if existing_result else []
-        if existing_rows:
-            existing = existing_rows[0]
-            count = (existing.get("confirmation_count") or 1) + 1
-            supabase.table("parts_catalog").update({
-                "canonical_name": data.get("name"),
-                "brand": data.get("brand"),
-                "category": data.get("category"),
-                "subcategory": data.get("subcategory"),
-                "part_number": data.get("part_number"),
-                "source": source,
-                "confirmation_count": count,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }).eq("barcode", barcode).execute()
-        else:
-            supabase.table("parts_catalog").insert({
-                "barcode": barcode,
-                "canonical_name": data.get("name"),
-                "brand": data.get("brand"),
-                "category": data.get("category"),
-                "subcategory": data.get("subcategory"),
-                "part_number": data.get("part_number"),
-                "source": source,
-                "confirmation_count": 1
-            }).execute()
+            return False
+        fields = {field: data.get(field) for field in (
+            "name", "brand", "category", "subcategory", "part_number",
+        )}
+        return get_supabase_admin().rpc("findez_save_community_catalog", {
+            "p_barcode": barcode, "p_data": fields, "p_source": source,
+        }).execute().data is True
     except Exception:
-        logger.error("Catalog save error", exc_info=True)
+        logger.warning("Community catalog update unavailable; inventory data unchanged")
+        return False

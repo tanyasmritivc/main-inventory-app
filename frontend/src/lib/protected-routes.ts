@@ -5,7 +5,11 @@
  * `requireUser()` on the server; a test keeps this list and those pages in sync.
  */
 export const PROTECTED_ROUTE_PREFIXES = [
+  "/agent-approvals",
   "/assist",
+  "/spaces",
+  "/restock",
+  "/activity",
   "/checkout",
   "/collections",
   "/documents",
@@ -20,8 +24,15 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/settings",
   "/sharing",
   "/teams",
+  "/organizations",
+  "/worlds",
+  "/inventory-access",
+  "/inventory-access-request",
+  "/workspaces",
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return PROTECTED_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }

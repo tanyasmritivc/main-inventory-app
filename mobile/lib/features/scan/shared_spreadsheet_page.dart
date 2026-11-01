@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import 'import_sheet_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SharedSpreadsheetPage extends StatefulWidget {
   const SharedSpreadsheetPage({
@@ -81,7 +83,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
       final message = describeError(error).$1;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ).showSnackBar(SnackBar(content: AppText(message)));
     } finally {
       if (mounted) setState(() => _creatingSpace = false);
     }
@@ -92,7 +94,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.fromLTRB(
           20,
@@ -104,7 +106,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            const AppText(
               'Create a Space',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
@@ -115,11 +117,12 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _createSpace(),
               decoration: const InputDecoration(hintText: 'Space name'),
+              style: AppTypography.bodyStyleOf(context),
             ),
             const SizedBox(height: 14),
             FilledButton(
               onPressed: _creatingSpace ? null : _createSpace,
-              child: const Text('Create and Import'),
+              child: const AppText('Create and Import'),
             ),
           ],
         ),
@@ -130,8 +133,8 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Import to FindEZ')),
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
+      appBar: AppBar(title: const AppText('Import to FindEZ')),
       body: SafeArea(
         child: FutureBuilder<List<String>>(
           future: _spacesFuture,
@@ -152,39 +155,45 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
-                Text(
+                AppText(
                   _filename,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                AppText(
                   'Choose where these items should be saved.',
-                  style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 22),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  tileColor: const Color(0xFF1C1C1E),
+                  tileColor: AppTheme.adaptive(
+                    context,
+                    const Color(0xFF1C1C1E),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                   leading: const Icon(Icons.add_rounded),
-                  title: const Text('Create New Space'),
+                  title: const AppText('Create New Space'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _showCreateSpace,
                 ),
                 if (spaces.isNotEmpty) ...[
                   const SizedBox(height: 22),
-                  const Text(
+                  AppText(
                     'EXISTING SPACES',
                     style: TextStyle(
-                      color: Color(0x66FFFFFF),
+                      color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.7,
@@ -198,12 +207,15 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                         ),
-                        tileColor: const Color(0xFF111111),
+                        tileColor: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF111111),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                         leading: const Icon(Icons.inventory_2_outlined),
-                        title: Text(space),
+                        title: AppText(space),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => _importInto(space),
                       ),
@@ -233,9 +245,9 @@ class _LoadError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center),
+            AppText(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Try Again')),
+            FilledButton(onPressed: onRetry, child: const AppText('Try Again')),
           ],
         ),
       ),
