@@ -394,6 +394,14 @@ export function AppShell({
       {!accountPage && <AccountVerification prompt />}
       {userId && /^\/worlds\/[^/]+$/.test(pathname) && <PlanIntroduction key={userId} accountId={userId} />}
       <div
+        onPointerMove={(event) => {
+          if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+          const card = (event.target as HTMLElement).closest<HTMLElement>(".theme-card,.context-card,.inventory-space-card");
+          if (!card) return;
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+          card.style.setProperty("--my", `${event.clientY - rect.top}px`);
+        }}
         className={`app-frame ${shellStyles.shell} ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" || (pathname.startsWith("/worlds/") && context?.activeRoute === context?.homeHref) ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">

@@ -1,4 +1,5 @@
 "use client";
+import { ResourceArt, PageHeader } from "./app-theme-ui";
 import Link from "next/link";
 import { rememberWorld } from "@/lib/world-entry";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
@@ -237,7 +238,7 @@ function WorldContent({
         />
       ) : (
         <section className={styles.page}>
-          <header className={styles.header}>
+          <PageHeader className={styles.header}>
             <div>
               <h1>
                 {chosen === "spaces"
@@ -290,7 +291,7 @@ function WorldContent({
                 </Link>
               )}
             </div>
-          </header>
+          </PageHeader>
           {chosen === "spaces" && (
             <>
               <input
@@ -311,19 +312,15 @@ function WorldContent({
                     <div className={styles.grid}>
                       {g.spaces.map((s) => (
                         <Link
-                          className={styles.card}
+                          className={`${styles.card} ${styles.resource} theme-card`}
                           key={s.id}
                           href={`/inventory?${new URLSearchParams({ inventory: g.inventory_id, space: s.name })}`}
                         >
-                          <MapPin size={20} />
-                          <div>
+                          <ResourceArt id={s.id}>{s.item_count == null ? "View items" : `${s.item_count} ${s.item_count === 1 ? "item" : "items"}`}</ResourceArt>
+                          <div className={styles.caption}>
+                            <MapPin size={16} />
                             <strong>{s.name}</strong>
-                            <small>
-                              {s.item_count == null
-                                ? "View items"
-                                : `${s.item_count} ${s.item_count === 1 ? "item" : "items"}`}
-                              {!g.can_edit ? " · View only" : ""}
-                            </small>
+                            {!g.can_edit && <small>View only</small>}
                           </div>
                         </Link>
                       ))}
@@ -343,11 +340,11 @@ function WorldContent({
                 <div className={styles.grid}>
                   {inventories.map((i) => (
                     <Link
-                      className={styles.card}
+                      className={`${styles.card} theme-card`}
                       key={i.inventory_id}
                       href={`/inventory?inventory=${encodeURIComponent(i.inventory_id)}`}
                     >
-                      <Boxes size={20} />
+                      <ResourceArt id={i.inventory_id} tile><Boxes size={18} /></ResourceArt>
                       <div>
                         <strong>{i.name}</strong>
                         <small>{i.workspace_name} · All items</small>
@@ -362,12 +359,13 @@ function WorldContent({
             <div className={styles.grid}>
               {directory.workspaces.map((w) => (
                 <Link
-                  className={styles.card}
+                  className={`${styles.card} ${styles.resource} theme-card`}
                   key={w.workspace_id}
                   href={`/workspaces/${encodeURIComponent(w.workspace_id)}`}
                 >
-                  <FolderKanban size={20} />
-                  <div>
+                  <ResourceArt id={w.workspace_id} />
+                  <div className={styles.caption}>
+                    <FolderKanban size={16} />
                     <strong>{w.name}</strong>
                     <small>Inventories, people, tasks and files</small>
                   </div>

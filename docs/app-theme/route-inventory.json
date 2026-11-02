@@ -1,0 +1,126 @@
+[
+  {
+    "route": "/organizations",
+    "file": "frontend/src/app/organizations/page.tsx"
+  },
+  {
+    "route": "/worlds",
+    "file": "frontend/src/app/worlds/page.tsx"
+  },
+  {
+    "route": "/workspaces",
+    "file": "frontend/src/app/workspaces/page.tsx"
+  },
+  {
+    "route": "/workspaces/[workspaceId]",
+    "file": "frontend/src/app/workspaces/[workspaceId]/page.tsx"
+  },
+  {
+    "route": "/worlds/[worldId]",
+    "file": "frontend/src/app/worlds/[worldId]/page.tsx"
+  },
+  {
+    "route": "/join/access",
+    "file": "frontend/src/app/join/access/page.tsx"
+  },
+  {
+    "route": "/inventory-access-request/[inventoryId]",
+    "file": "frontend/src/app/inventory-access-request/[inventoryId]/page.tsx"
+  },
+  {
+    "route": "/organizations/[organizationId]",
+    "file": "frontend/src/app/organizations/[organizationId]/page.tsx"
+  },
+  {
+    "route": "/settings",
+    "file": "frontend/src/app/(workspace)/settings/page.tsx"
+  },
+  {
+    "route": "/home",
+    "file": "frontend/src/app/(workspace)/home/page.tsx"
+  },
+  {
+    "route": "/assist",
+    "file": "frontend/src/app/(workspace)/assist/page.tsx"
+  },
+  {
+    "route": "/activity",
+    "file": "frontend/src/app/(workspace)/activity/page.tsx"
+  },
+  {
+    "route": "/spaces",
+    "file": "frontend/src/app/(workspace)/spaces/page.tsx"
+  },
+  {
+    "route": "/labels",
+    "file": "frontend/src/app/(workspace)/labels/page.tsx"
+  },
+  {
+    "route": "/inventory-access",
+    "file": "frontend/src/app/(workspace)/inventory-access/page.tsx"
+  },
+  {
+    "route": "/scan",
+    "file": "frontend/src/app/(workspace)/scan/page.tsx"
+  },
+  {
+    "route": "/checkout",
+    "file": "frontend/src/app/(workspace)/checkout/page.tsx"
+  },
+  {
+    "route": "/project-kits",
+    "file": "frontend/src/app/(workspace)/project-kits/page.tsx"
+  },
+  {
+    "route": "/review",
+    "file": "frontend/src/app/(workspace)/review/page.tsx"
+  },
+  {
+    "route": "/inventory",
+    "file": "frontend/src/app/(workspace)/inventory/page.tsx"
+  },
+  {
+    "route": "/teams",
+    "file": "frontend/src/app/(workspace)/teams/page.tsx"
+  },
+  {
+    "route": "/documents",
+    "file": "frontend/src/app/(workspace)/documents/page.tsx"
+  },
+  {
+    "route": "/restock",
+    "file": "frontend/src/app/(workspace)/restock/page.tsx"
+  },
+  {
+    "route": "/collections",
+    "file": "frontend/src/app/(workspace)/collections/page.tsx"
+  },
+  {
+    "route": "/notifications",
+    "file": "frontend/src/app/(workspace)/notifications/page.tsx"
+  },
+  {
+    "route": "/agent-approvals/[approvalId]",
+    "file": "frontend/src/app/(workspace)/agent-approvals/[approvalId]/page.tsx"
+  },
+  {
+    "route": "/sharing/[shareId]",
+    "file": "frontend/src/app/(workspace)/sharing/[shareId]/page.tsx"
+  },
+  {
+    "route": "/settings/organizations",
+    "file": "frontend/src/app/(workspace)/settings/organizations/page.tsx"
+  },
+  {
+    "route": "/settings/[section]",
+    "file": "frontend/src/app/(workspace)/settings/[section]/page.tsx"
+  },
+  {
+    "route": "/settings/plans",
+    "file": "frontend/src/app/(workspace)/settings/plans/page.tsx"
+  },
+  {
+    "route": "/settings/api-keys",
+    "file": "frontend/src/app/(workspace)/settings/api-keys/page.tsx"
+  }
+]

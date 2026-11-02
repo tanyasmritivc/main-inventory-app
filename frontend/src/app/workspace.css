@@ -1,14 +1,5 @@
 /* Authenticated FindEZ only. Public pages retain their existing design. */
 .app-frame {
-  --app-bg: #fafafa;
-  --app-surface: #fff;
-  --app-surface-2: #f3f3f3;
-  --app-text: #161616;
-  --app-muted: #747474;
-  --app-border: #e4e4e4;
-  --app-accent: #e8590c;
-  --app-accent-soft: #ffe8da;
-  --app-radius: 10px;
   background: var(--app-bg);
   color: var(--app-text);
   font-family: var(--font-main);
@@ -18,13 +9,6 @@
 }
 
 html.dark .app-frame {
-  --app-bg: #101011;
-  --app-surface: #171718;
-  --app-surface-2: #222224;
-  --app-text: #f3f3f2;
-  --app-muted: #a0a0a6;
-  --app-border: #303033;
-  --app-accent-soft: #2b1c13;
 }
 .app-frame h1,
 .app-frame h2,
@@ -269,7 +253,7 @@ html.dark .app-frame {
 }
 .app-frame :is(a, button, input, textarea, select):focus-visible,
 .workspace-dialog :is(a, button, input, textarea, select):focus-visible {
-  outline: 2px solid #e8590c;
+  outline: 2px solid var(--text);
   outline-offset: 3px;
 }
 .app-frame .app-sidebar-scrim {
@@ -304,7 +288,7 @@ html.dark .app-frame {
   gap: 7px;
   border: 1px solid var(--app-border, #ddd);
   background: var(--app-surface, #fff);
-  color: var(--app-text, #161616);
+  color: var(--app-text, var(--text));
   border-radius: 7px;
   padding: 8px 12px;
   font-size: 13px;
@@ -315,9 +299,9 @@ html.dark .app-frame {
 }
 .app-frame .workspace-button.primary,
 .workspace-dialog .workspace-button.primary {
-  background: #e8590c;
-  color: #fff;
-  border-color: #e8590c;
+  background: var(--text);
+  color: var(--primary-ink);
+  border-color: var(--text);
 }
 .app-frame .workspace-button:disabled,
 .workspace-dialog .workspace-button:disabled {
@@ -360,12 +344,12 @@ html.dark .app-frame {
 }
 .app-frame .workspace-error,
 .workspace-dialog .workspace-error {
-  border: 1px solid #e8590c55;
-  background: var(--app-accent-soft, #fff0e6);
+  border: 1px solid var(--focus-color);
+  background: var(--app-accent-soft, var(--surf2));
   padding: 12px 15px;
   border-radius: 8px;
   font-size: 13px;
-  color: var(--app-text, #161616);
+  color: var(--app-text, var(--text));
   margin: 12px 0;
 }
 .app-frame .workspace-input,
@@ -373,7 +357,7 @@ html.dark .app-frame {
   width: 100%;
   border: 1px solid var(--app-border, #ddd);
   background: var(--app-surface, #fff);
-  color: var(--app-text, #161616);
+  color: var(--app-text, var(--text));
   border-radius: 8px;
   padding: 10px 12px;
   font: inherit;
@@ -666,10 +650,6 @@ html.dark .app-frame {
   line-height: 1.65;
 }
 .workspace-dialog {
-  --app-text: #161616;
-  --app-surface: #fff;
-  --app-muted: #747474;
-  --app-border: #e4e4e4;
   background: var(--app-surface);
   color: var(--app-text);
   border: 1px solid var(--app-border);
@@ -681,10 +661,6 @@ html.dark .app-frame {
   font-family: var(--font-main);
 }
 .dark .workspace-dialog {
-  --app-text: #f3f3f2;
-  --app-surface: #171718;
-  --app-muted: #a0a0a6;
-  --app-border: #303033;
 }
 .workspace-dialog h2 {
   font-size: 20px;
@@ -723,10 +699,10 @@ html.dark .app-frame {
   gap: 0;
   width: min(560px, calc(100vw - 32px)) !important;
   padding: 0 !important;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
-  color: #161616;
+  background: var(--surf);
+  color: var(--text);
   max-height: min(560px, calc(100dvh - var(--command-top) - 16px));
   overflow: hidden;
   box-shadow: 0 20px 80px #0003;
@@ -773,9 +749,9 @@ html.dark .app-frame {
   .app-frame .app-inventory-switcher a { max-width: 100%; }
 }
 .dark .command-panel {
-  background: #171718;
-  color: #f3f3f2;
-  border-color: #303033;
+  background: var(--surf);
+  color: var(--text);
+  border-color: var(--line2);
 }
 .command-panel .command-input-row {
   flex-shrink: 0;
@@ -977,7 +953,7 @@ html.dark .app-frame {
 .app-frame .product-button.primary {
   background: var(--app-accent);
   border-color: var(--app-accent);
-  color: #fff;
+  color: var(--primary-ink);
 }
 .app-frame .product-card,
 .app-frame .settings-panel {
@@ -1058,8 +1034,6 @@ html.dark .app-frame {
 }
 .app-frame .is-team-workspace,
 .app-frame.is-team-workspace {
-  --app-accent: var(--app-text);
-  --app-accent-soft: var(--app-surface-2);
 }
 .app-frame.is-team-workspace .product-button.primary {
   background: var(--app-text);
@@ -1204,8 +1178,8 @@ html.dark .app-frame {
 }
 .app-frame .product-button.primary,
 .app-frame .product-button.primary:hover {
-  background: var(--app-accent) !important;
-  color: #fff !important;
+  background: var(--primary-fill) !important;
+  color: var(--primary-ink) !important;
 }
 .app-frame.is-team-workspace .product-button.primary,
 .app-frame.is-team-workspace .product-button.primary:hover {
@@ -1290,19 +1264,16 @@ html.dark .app-frame {
 
 /* The small controls use accessible derivatives of the mobile brand orange. */
 .app-frame {
-  --app-accent-text: #b8430b;
-  --app-primary: #c4470a;
 }
 html.dark .app-frame {
-  --app-accent-text: #ff7a33;
 }
 .app-frame .app-sidebar .app-nav-section > a.is-active {
   color: var(--app-accent-text);
 }
 .app-frame .workspace-button.primary,
 .workspace-dialog .workspace-button.primary {
-  background: #c4470a;
-  border-color: #c4470a;
+  background: var(--text2);
+  border-color: var(--text2);
 }
 .app-frame .product-button.primary,
 .app-frame .product-button.primary:hover {
@@ -1310,8 +1281,6 @@ html.dark .app-frame {
   border-color: var(--app-primary);
 }
 .app-frame.is-team-workspace {
-  --app-primary: var(--app-text);
-  --app-accent-text: var(--app-text);
 }
 .app-frame .workspace-badge.low,
 .app-frame .workspace-badge.missing {
@@ -1319,10 +1288,6 @@ html.dark .app-frame {
 }
 
 html .app-frame.is-team-workspace {
-  --app-accent: var(--app-text);
-  --app-accent-soft: var(--app-surface-2);
-  --app-accent-text: var(--app-text);
-  --app-primary: var(--app-text);
 }
 
 /* A stable icon rail lets hover reveal labels without moving page content. */
@@ -1723,14 +1688,14 @@ html .app-frame.is-team-workspace {
   flex-direction: column;
   padding: 22px clamp(20px, 4vw, 48px) 32px;
   background:
-    radial-gradient(ellipse at 22% 70%, rgba(105, 150, 128, .075), transparent 60%),
-    radial-gradient(ellipse at 82% 35%, rgba(145, 130, 177, .065), transparent 60%),
+    radial-gradient(ellipse at 22% 70%, var(--surf2), transparent 60%),
+    radial-gradient(ellipse at 82% 35%, var(--surf2), transparent 60%),
     var(--app-bg);
 }
 html.dark .app-frame .ask-workspace {
   background:
-    radial-gradient(ellipse at 22% 70%, rgba(105, 150, 128, .09), transparent 60%),
-    radial-gradient(ellipse at 82% 35%, rgba(145, 130, 177, .085), transparent 60%),
+    radial-gradient(ellipse at 22% 70%, var(--surf2), transparent 60%),
+    radial-gradient(ellipse at 82% 35%, var(--surf2), transparent 60%),
     var(--app-bg);
 }
 .app-frame .ask-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
@@ -1831,8 +1796,8 @@ html.dark .app-frame .ask-workspace {
 .app-frame .organization-actions-trigger:focus-visible { outline:2px solid var(--app-text); outline-offset:2px; }
 .app-frame .context-organization-card .organization-actions { position:absolute; top:12px; right:12px; }
 .app-frame .context-organization-card .context-card-link { padding-right:64px; }
-.workspace-dialog .organization-delete-submit { color:var(--danger-ink,#b42318)!important; }
-.organization-actions-menu [data-variant="destructive"] { color:var(--danger-ink,#b42318); }
+.workspace-dialog .organization-delete-submit { color:var(--danger-ink,var(--danger))!important; }
+.organization-actions-menu [data-variant="destructive"] { color:var(--danger-ink,var(--danger)); }
 .app-frame .context-people-list { border-top: 1px solid var(--app-border); }
 .app-frame .context-person { display: flex; align-items: center; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--app-border); }
 .app-frame .context-person strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
@@ -1863,8 +1828,8 @@ html.dark .app-frame .ask-workspace {
 
 .app-frame.is-context-management .app-sidebar-nav a.is-active { color: var(--app-text); background: var(--app-surface-2); }
 
-.invitation-review { --app-text:#161616; --app-muted:#747474; --app-border:#e4e4e4; --app-surface:#fafafa; min-height:100dvh; display:grid; align-items:center; padding:48px 24px; background:var(--app-surface); color:var(--app-text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-.dark .invitation-review { --app-text:#f3f3f2; --app-muted:#a0a0a6; --app-border:#303033; --app-surface:#171718; }
+.invitation-review { --app-text:var(--text); --app-muted:var(--text2); --app-border:var(--line); --app-surface:var(--bg); min-height:100dvh; display:grid; align-items:center; padding:48px 24px; background:var(--app-surface); color:var(--app-text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.dark .invitation-review { --app-text:var(--text); --app-muted:var(--text2); --app-border:var(--line2); --app-surface:var(--surf); }
 .invitation-review > section { width:100%; max-width:440px; margin:auto; display:grid; gap:24px; }
 .invitation-review .invitation-brand { color:var(--app-muted); text-decoration:none; font-size:15px; }
 .invitation-review h1 { font-size:32px; font-weight:500; letter-spacing:-.04em; line-height:1.2; overflow-wrap:anywhere; margin:12px 0 0; }

@@ -1,4 +1,5 @@
 "use client";
+import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, BriefcaseBusiness, Layers, Tag, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { InventoryChatArchive } from "./inventory-chat-archive";
@@ -16,6 +17,7 @@ const tools = [
   ["Labels", "Print and identify items", "/labels"],
   ["Inventory settings", "Access and preferences", "/inventory-access"],
 ] as const;
+const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, BriefcaseBusiness, Layers, Tag, SlidersHorizontal];
 type Inventory = { inventory_id: string; name: string; workspace_name: string; can_edit: boolean };
 export function WorldTools({accountId, inventories}: {accountId: string; inventories: Inventory[]}) {
   const [selected, setSelected] = useState("");
@@ -32,9 +34,9 @@ export function WorldTools({accountId, inventories}: {accountId: string; invento
       <InventoryChatArchive key={inventory.inventory_id} accountId={accountId} inventoryId={inventory.inventory_id} name={inventory.name} />
     </div>
     <div className={styles.grid}>
-      {tools.map(([label, detail, path]) => <Link key={path} className={styles.card} href={`${path}?inventory=${encodeURIComponent(inventory.inventory_id)}`}>
-        <span><strong>{label}</strong><small>{detail}</small></span>
-      </Link>)}
+      {tools.map(([label, detail, path], index) => { const Icon = toolIcons[index]; return <Link key={path} className={`${styles.card} theme-card`} href={`${path}?inventory=${encodeURIComponent(inventory.inventory_id)}`}>
+        <span className="theme-tool-icon"><Icon size={18} aria-hidden="true" /></span><span><strong>{label}</strong><small>{detail}</small></span>
+      </Link>; })}
     </div>
   </div>;
 }

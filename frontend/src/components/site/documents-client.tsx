@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import documentStyles from "./documents-list.module.css";
 import { activeInventory, canEditInventory } from "@/lib/inventory-selection";
@@ -361,7 +363,7 @@ function DocumentsClientWorkspace({
   );
   return (
     <section>
-      <header className="workspace-heading">
+      <PageHeader className="workspace-heading">
         <div>
           <h1>Documents and notes</h1>
           <p>
@@ -405,7 +407,7 @@ function DocumentsClientWorkspace({
             Upload
           </button>
         </div>
-      </header>
+      </PageHeader>
       <input
         ref={fileInput}
         type="file"

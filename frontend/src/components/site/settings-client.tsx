@@ -1,4 +1,5 @@
 "use client";
+import { AVATAR_PALETTE, avatarPresentationColor } from "./app-theme-ui";
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
@@ -33,16 +34,7 @@ const THEME_CHOICES: { value: AppThemeChoice; label: string }[] = [
   { value: "system", label: "System" },
 ];
 
-const AVATAR_COLORS = [
-  "#3A1230",
-  "#6B1C3C",
-  "#8E2F3A",
-  "#A93454",
-  "#B2452F",
-  "#AC4A61",
-  "#8D4A61",
-  "#7A3B50",
-];
+const AVATAR_COLORS = AVATAR_PALETTE;
 
 type Profile = {
   display_name: string;
@@ -280,7 +272,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
             onClick={() => photoRef.current?.click()}
             aria-label="Change profile photo"
             style={{
-              backgroundColor: profile?.avatar_color ?? "#3A1230",
+              backgroundColor: avatarPresentationColor(profile?.avatar_color),
               backgroundImage: profile?.avatar_url
                 ? `url(${profile.avatar_url})`
                 : undefined,
@@ -375,7 +367,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
                 key={color}
                 type="button"
                 aria-label={`Use avatar color ${color}`}
-                aria-pressed={profile?.avatar_color === color}
+                aria-pressed={avatarPresentationColor(profile?.avatar_color) === color}
                 onClick={() => void changeAvatarColor(color)}
                 style={{ background: color }}
               />

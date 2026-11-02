@@ -35,8 +35,8 @@
 .card ul { display:flex; flex-direction:column; gap:12px; list-style:none; padding:20px 0; margin:0; flex:1; font-size:12px; line-height:1.5; }
 .card li { display:flex; gap:8px; align-items:flex-start; }
 .card li svg { flex-shrink:0; margin-top:2px; }
-.primary, .secondary { display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; min-height:42px; padding:10px 14px; border-radius:9px; border:1px solid var(--light-line-strong); font-size:13px; line-height:1.4; cursor:pointer; }
-.primary { background:var(--control-primary); color:var(--control-on-primary); border-color:var(--control-primary); }
+.primary, .secondary { display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; min-height:42px; padding:10px 14px; border-radius:999px; border:1px solid var(--light-line-strong); font-size:13px; line-height:1.4; cursor:pointer; }
+.primary { background:var(--primary-fill); color:var(--primary-ink); border-color:transparent; box-shadow:var(--primary-shadow); }
 .secondary { background:var(--light-panel); color:var(--ink); }
 .secondary:disabled { background:var(--light-raised); color:var(--light-muted); cursor:default; }
 .footnote { margin:16px 0 0; color:var(--light-muted); font-size:12px; line-height:1.6; }
@@ -55,7 +55,7 @@
 @media(max-width:680px) { .statValue[data-unmetered] { font-size:20px; letter-spacing:-.3px; } }
 
 .upgradeDialog .card { border-radius:18px; }
-.upgradeDialog .card:nth-child(2) { border-color:#8bc8ed; background:linear-gradient(150deg,#bde7ff18,transparent 65%),var(--light-panel); box-shadow:inset 0 1px 0 #d5f0ff44; }
-.upgradeDialog .primary { background:linear-gradient(115deg,#e3f4ff,#b9e2fc); color:#183d59; border-color:#abd8f5; box-shadow:inset 0 1px 0 #ffffffa0; }
+.upgradeDialog .card:nth-child(2) { border-color:var(--line2); background:linear-gradient(150deg,var(--surf2),transparent 65%),var(--light-panel); box-shadow:inset 0 1px 0 var(--line); }
+.upgradeDialog .primary { background:var(--primary-fill); color:var(--primary-ink); border-color:transparent; box-shadow:var(--primary-shadow); }
 .upgradeFooter { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-top:20px; }
 .fullPlans { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-size:13px; color:var(--ink); text-decoration:underline; text-underline-offset:4px; }

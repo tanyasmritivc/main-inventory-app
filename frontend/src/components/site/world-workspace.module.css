@@ -12,8 +12,9 @@
 }
 .header h1 {
   margin: 0;
-  font-size: 26px;
-  font-weight: 600;
+  font-family: var(--font-app-title);
+  font-size: 36px;
+  font-weight: 400;
   letter-spacing: -0.035em;
 }
 .header p {
@@ -22,7 +23,7 @@
   font-size: 13px;
 }
 .search {
-  width: min(100%, 440px);
+  width: 100%;
   min-height: 40px;
   border: 1px solid var(--app-border);
   background: var(--app-surface);
@@ -32,7 +33,7 @@
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(0, 325px));
   gap: 14px;
 }
 .card {
@@ -41,7 +42,7 @@
   gap: 14px;
   padding: 20px;
   border: 1px solid var(--app-border);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--app-surface);
   color: var(--app-text);
   text-decoration: none;
@@ -87,7 +88,7 @@
   text-align: center;
   color: var(--app-muted);
   border: 1px dashed var(--app-border);
-  border-radius: 12px;
+  border-radius: 16px;
 }
 .tools {
   display: flex;
@@ -106,3 +107,8 @@
     transition: none;
   }
 }
+
+.resource { display:flex; flex-direction:column; align-items:stretch; gap:0; padding:0; overflow:hidden; }
+.caption { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:14px 16px; }
+.caption small { flex-basis:100%; margin:0; }
+@media(max-width:600px) { .grid { grid-template-columns:minmax(0,1fr); } }

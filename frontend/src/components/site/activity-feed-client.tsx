@@ -1,5 +1,7 @@
 "use client";
 
+
+import { PageHeader } from "./app-theme-ui";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, History, RefreshCw } from "lucide-react";
@@ -141,7 +143,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
   const Icon = mode === "notifications" ? Bell : History;
   return (
     <section className="product-page">
-      <header className="product-page-header">
+      <PageHeader className="product-page-header">
         <h1>{mode === "notifications" ? "Notifications" : "Activity"}</h1>
         <div className="product-actions">
           {mode === "notifications" && <Link className="product-button" href="/join/access">Enter invitation code</Link>}
@@ -164,7 +166,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
             <RefreshCw size={16} />
           </button>
         </div>
-      </header>
+      </PageHeader>
       {(error || sessionError) && (
         <div className="notice-error" role="alert">
           {error || sessionError}

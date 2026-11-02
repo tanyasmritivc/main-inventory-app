@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import scanStyles from "./scan-methods.module.css";
 import { privateImageSrc } from "@/lib/private-image";
@@ -198,14 +200,14 @@ export function ScanCenterClient() {
 
   return (
     <section className="product-page scan-page">
-      <header className="product-page-header">
+      <PageHeader className="product-page-header">
         <h1>Capture</h1>
         {canWrite && <div className="scan-destination">
           <label htmlFor="scan-destination">Save to</label>
           <select id="scan-destination" className="product-select" disabled={working} value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted</option></select>
           <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
         </div>}
-      </header>
+      </PageHeader>
       {error && <div className="notice-error">{error}</div>}
       {saved && <div className="notice-success">{saved}</div>}
       {!canWrite && <p className="workspace-muted">Inspect photos and barcodes. Saving requires Editor access.</p>}

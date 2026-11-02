@@ -3,7 +3,7 @@
 .trigger:hover, .trigger[data-state="open"] { background:var(--light-hover); }
 .trigger:focus-visible { outline:2px solid var(--app-accent); outline-offset:3px; }
 .trigger:disabled { cursor:wait; opacity:.6; }
-.avatar { width:28px; height:28px; border-radius:8px; flex:0 0 28px; display:grid; place-items:center; background:#ffe8da; color:#c2410c; font-size:12px; font-weight:600; }
+.avatar { width:28px; height:28px; border-radius:8px; flex:0 0 28px; display:grid; place-items:center; background:var(--avatar-default); color:var(--on-art); font-size:12px; font-weight:600; }
 .name { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:500; }
 .chevron { flex-shrink:0; color:var(--app-muted); transition:transform 160ms ease; }
 .trigger[data-state="open"] .chevron { transform:rotate(180deg); }
@@ -17,6 +17,6 @@
 .rowCopy small { font-size:11px; color:var(--light-muted); }
 .check { margin-left:auto; flex-shrink:0; }
 .message { font-size:12px; padding:10px; color:var(--light-muted); line-height:1.6; }
-:global(.dark) .menu { color:#f3f3f2; box-shadow:0 12px 40px #00000040; }
-:global(.dark) .avatar { background:#362319; color:#ff995f; }
+:global(.dark) .menu { color:var(--text); box-shadow:0 12px 40px #00000040; }
+:global(.dark) .avatar { background:var(--avatar-default); color:var(--on-art); }
 @media(prefers-reduced-motion:reduce) { .trigger, .chevron, .menu { transition:none; animation:none; } }

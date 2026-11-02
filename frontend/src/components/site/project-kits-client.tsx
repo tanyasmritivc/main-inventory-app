@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { canEditInventory } from "@/lib/inventory-selection";
 
@@ -89,7 +91,7 @@ export function ProjectKitsClient({initialKit}:{initialKit?:string} = {}) {
   const summary = selected?.summary;
   return (
     <section className="product-page">
-      <header className="product-page-header"><h1>Project kits</h1><div className="product-actions"><button className="app-icon-button" aria-label="Refresh project kits" onClick={() => void load()} disabled={!location}><RefreshCw size={15} /></button><button className="product-button primary" onClick={() => setCreating(true)} disabled={!location || !canEditInventory()}><Plus size={15} />New kit</button></div></header>
+      <PageHeader className="product-page-header"><h1>Project kits</h1><div className="product-actions"><button className="app-icon-button" aria-label="Refresh project kits" onClick={() => void load()} disabled={!location}><RefreshCw size={15} /></button><button className="product-button primary" onClick={() => setCreating(true)} disabled={!location || !canEditInventory()}><Plus size={15} />New kit</button></div></PageHeader>
       {error && <div className="notice-error">{error}</div>}
       <div className="kit-filter-bar"><select className="product-select" aria-label="Inventory Space" value={location} onChange={(event) => { setLocation(event.target.value); setSelected(null); setKits([]); }}><option value="">Choose a Space</option>{spaces.filter((space) => space !== "Unsorted").map((space) => <option key={space} value={space}>{space}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>{location && <span>{kits.length} kit{kits.length === 1 ? "" : "s"}</span>}</div>
       {creating && <div className="kit-create product-card"><h2>New kit</h2><input className="product-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Project name" maxLength={120} /><button className="product-button primary" disabled={!name.trim() || working} onClick={() => fileRef.current?.click()}><FileSpreadsheet size={15} />Choose BOM</button><button className="product-button" onClick={() => setCreating(false)}>Cancel</button><input ref={fileRef} hidden type="file" accept=".xlsx,.xls,.csv" onChange={(event) => void create(event)} /></div>}

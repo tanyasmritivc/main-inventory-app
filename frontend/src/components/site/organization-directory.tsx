@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { MemberAvatar, type MemberIdentity } from "./member-avatar";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "next/link";
@@ -379,7 +381,7 @@ function Directory({
     : undefined;
   const content = (
     <section className={`product-page context-directory ${styles.flow}`}>
-      <header className="product-page-header">
+      <PageHeader className="product-page-header">
         <div>
           <span className={styles.eyebrow}>
             {organizationId ? "Organization" : "Your places"}
@@ -442,7 +444,7 @@ function Directory({
             </>
           )}
         </div>
-      </header>
+      </PageHeader>
       {!mode && (error || sessionError) && (
         <p role="alert" className="notice-error">
           {error || sessionError}{" "}

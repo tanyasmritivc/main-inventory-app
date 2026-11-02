@@ -2,15 +2,15 @@
 .shell :global(.app-frame) { --font-main:var(--font-inter),Arial,sans-serif; }
 .flow { width:100%; max-width:1160px; margin:0 auto; padding:0 0 32px; gap:20px; font-family:var(--font-inter),Arial,sans-serif; color:var(--app-text,#171717); }
 .flow :global(.product-page-header) { align-items:center; gap:20px; margin-bottom:4px; }
-.flow :global(h1) { font-size:26px; font-weight:600; letter-spacing:-.8px; line-height:1.25; }
+.flow :global(h1) { font-family:var(--font-app-title); font-size:36px; font-weight:400; letter-spacing:-.8px; line-height:1.25; }
 .eyebrow { display:block; margin:0 0 7px; font-size:12px; color:var(--app-muted,#737373); }
-.flow :global(.directory-search) { max-width:420px; height:38px; margin-bottom:0; border-radius:7px; font-size:13px; }
-.flow :global(.product-button) { min-height:36px; padding:8px 13px; border:1px solid var(--app-border,#dedede); border-radius:7px; background:var(--app-surface,#fff); font-size:13px; font-weight:500; }
-.flow :global(.product-page-header .product-actions > .product-button:last-child) { background:#c2410c; border-color:#c2410c; color:white; }
-.flow :global(.context-card-grid) { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); gap:16px; }
+.flow :global(.directory-search) { max-width:420px; height:38px; margin-bottom:0; border-radius:999px; font-size:13px; }
+.flow :global(.product-button) { min-height:36px; padding:8px 13px; border:1px solid var(--app-border,#dedede); border-radius:999px; background:var(--app-surface,#fff); font-size:13px; font-weight:500; }
+.flow :global(.product-page-header .product-actions > .product-button:last-child) { background:var(--primary-fill); border-color:transparent; color:var(--primary-ink); box-shadow:var(--primary-shadow); }
+.flow :global(.context-card-grid) { display:grid; grid-template-columns:repeat(auto-fill,minmax(0,325px)); gap:16px; }
 .flow :global(.context-card) { position:relative; min-height:168px; border:1px solid var(--app-border,#e2e2e2); border-radius:10px; background:var(--app-surface,#fff); padding:0; transition:border-color .15s,background .15s; overflow:hidden; }
 .flow :global(a.context-card) { padding:24px; }
-.flow :global(.context-card:hover) { border-color:#b7b7b7; }
+.flow :global(.context-card:hover) { border-color:var(--line2); }
 .flow :global(.context-card-link) { display:flex; flex-direction:column; align-items:flex-start; gap:8px; min-height:168px; padding:24px 46px 24px 24px; text-decoration:none; }
 .flow :global(.context-card strong) { font-size:15px; font-weight:500; line-height:1.5; overflow-wrap:anywhere; }
 .flow :global(.context-card span) { font-size:13px; line-height:1.5; color:var(--app-muted,#737373); }
@@ -71,3 +71,12 @@
 .flow :global(.context-person .product-select) { max-width:150px; }
 .flow :global(.workspace-settings) { background:var(--app-surface); }
 @media(prefers-reduced-motion:reduce) { .flow :global(.context-card) { transition:none; } }
+
+.flow :global(.context-card-link) { padding:0 0 14px; gap:8px; min-height:0; }
+.flow :global(.context-card-link > strong), .flow :global(.context-card-link > .directory-description), .flow :global(.context-card-link > span:not(.resource-art)) { margin-inline:16px; }
+.flow :global(.context-card-link > .resource-art) { flex-basis:auto; margin:0 0 4px; }
+.flow :global(.context-card-link > .resource-art .resource-count) { color:var(--on-art); font-size:11px; }
+.flow :global(.context-card-link) .cardIcon { display:inline-flex; width:20px; height:20px; padding:0; background:none; margin:0 16px; }
+.flow :global(.context-card-link:hover) { background:transparent; }
+.flow :global(.context-inventory-card .organization-actions > button) { background:var(--art-chip); color:var(--on-art); border-color:transparent; }
+@media(max-width:600px) { .flow :global(.context-card-grid) { grid-template-columns:minmax(0,1fr); } }

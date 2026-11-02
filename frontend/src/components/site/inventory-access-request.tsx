@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/site/app-shell";
@@ -37,7 +39,7 @@ function RequestScreen({inventoryId}:{inventoryId:string}) {
   finally{if(live.current)setBusy(false);}
  }
  return <AppShell context={data?workspaceNavigation(data.workspace,"inventories"):undefined}><section className="product-page restricted-inventory">
-  <header className="product-page-header"><h1>{data?.inventory.can_open?data.inventory.name:"Inventory access"}</h1></header>
+  <PageHeader className="product-page-header"><h1>{data?.inventory.can_open?data.inventory.name:"Inventory access"}</h1></PageHeader>
   {error&&<p role="alert" className="notice-error">{error} <button className="product-button" onClick={()=>setRevision(v=>v+1)}>Retry</button></p>}
   {!data&&!error?<p role="status">Checking access...</p>:data&&<>
    {data.inventory.can_open?<Link className="product-button" href={`/home?inventory=${encodeURIComponent(inventoryId)}`}>Open inventory</Link>:<>

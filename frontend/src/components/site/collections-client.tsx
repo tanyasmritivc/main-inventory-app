@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import Link from "@/components/site/inventory-link";
 import { useEffect, useRef, useState } from "react";
 import { Search, ShoppingCart, Camera } from "lucide-react";
@@ -65,12 +67,12 @@ function CollectionsWorkspace() {
   }
   return (
     <section>
-      <header className="workspace-heading">
+      <PageHeader className="workspace-heading">
         <div>
           <h1>Smart collections</h1>
           <p>Check what you own and plan what to buy.</p>
         </div>
-      </header>
+      </PageHeader>
       <section className="workspace-section">
         <div className="workspace-section-heading">
           <h2>Before I buy</h2>

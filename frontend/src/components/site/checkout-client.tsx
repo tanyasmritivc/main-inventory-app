@@ -1,4 +1,6 @@
 'use client';
+
+import { PageHeader } from "./app-theme-ui";
 import { usePermissionRefresh } from '@/lib/use-permission-refresh';
 import { userFacingError } from '@/lib/user-facing-error';
 import Link from '@/components/site/inventory-link';
@@ -95,10 +97,10 @@ export function CheckoutClient() {
   return (
     <>
       <section className="product-page checkout-page">
-        <header className="product-page-header">
+        <PageHeader className="product-page-header">
           <h1>Check-outs</h1>
           <button className="app-icon-button" aria-label="Refresh check-outs" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /></button>
-        </header>
+        </PageHeader>
 
         {error && <div className="notice-error" role="alert">{error} {signedOut ? <Link className="product-button" href="/signin?redirect=/checkout">Sign in</Link> : <button className="product-button" onClick={() => void load()}>Try again</button>}</div>}
         {error ? null : loading ? (

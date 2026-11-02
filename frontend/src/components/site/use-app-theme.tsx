@@ -91,7 +91,9 @@ export function AppThemeDocument() {
     if (interior && !ready) return;
     const dark = interior && value.resolvedTheme === "dark";
     document.documentElement.classList.toggle("dark", dark);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b0b0d" : "#ffffff");
+    if (interior) document.documentElement.dataset.appTheme = value.resolvedTheme;
+    else delete document.documentElement.dataset.appTheme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0d0d0f" : "#ffffff");
   }, [pathname, ready, value.resolvedTheme]);
   return null;
 }

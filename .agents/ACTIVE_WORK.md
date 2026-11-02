@@ -1371,3 +1371,10 @@ preflight evidence and blockers are in `CURRENT_STATE.md` and the release checkl
 Lane fix/web-scan-save-return-20261018 from 8553ad4. Confirmed Capture saves return
 to the inventory-scoped Items route; failed drafts stay for retry. Original photo
 retention/order is API-owned; existing galleries remain private. Dashboard untouched.
+
+## November 1 — authenticated web theme
+- Owner: Codex; branch `feat/app-theme`, isolated worktree `findez-app-theme`.
+- Apply supplied theme to all signed-in web routes, preserve behavior and public pages.
+- User’s subsequent instruction explicitly authorizes direct deployment to the self-hosted site; supersedes attachment’s no-push instruction.
+- Baseline: current deployed frontend captured in commit 1263e02.
+- Implementation and validation complete; publishing exact staged build `QAWxphsKffeBp4ydhcQIE`. Full inherited Jest failures and UI coverage limits are recorded in `docs/app-theme/IMPLEMENTATION.md`.

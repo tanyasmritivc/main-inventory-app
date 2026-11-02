@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -236,7 +238,7 @@ function RestockClientWorkspace() {
   }
   return (
     <section>
-      <header className="workspace-heading">
+      <PageHeader className="workspace-heading">
         <div>
           <h1>Restock</h1>
           <p>Plan what to buy and confirm stock when it arrives.</p>
@@ -259,7 +261,7 @@ function RestockClientWorkspace() {
             Add item
           </button>
         </div>
-      </header>
+      </PageHeader>
       <p className="workspace-muted">
         Your purchase plan is saved for this account in this browser. Inventory
         counts sync with your other devices.

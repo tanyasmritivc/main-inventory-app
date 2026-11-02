@@ -1,4 +1,7 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
+import { ResourceArt, ThemeCard } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 
 import Link from "next/link";
@@ -119,25 +122,25 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const choosing = !workspaceId || view === "inventories";
   return <div className={styles.shell}><AppShell context={selectedWorkspace ? workspaceNavigation(selectedWorkspace, view) : undefined}>
     <section className={`product-page context-directory ${styles.flow}`}>
-      <header className="product-page-header"><div><span className={styles.eyebrow}>{workspaceId ? selectedWorkspace?.kind === "personal" ? "Your inventories" : "Workspace" : "Your workspaces"}</span><h1>{workspaceId && (choosing || view === "overview") ? page?.workspace.name || selectedWorkspace?.name || "Workspace" : workspaceId ? titles[view] : "All workspaces"}</h1></div>
+      <PageHeader className="product-page-header"><div><span className={styles.eyebrow}>{workspaceId ? selectedWorkspace?.kind === "personal" ? "Your inventories" : "Workspace" : "Your workspaces"}</span><h1>{workspaceId && (choosing || view === "overview") ? page?.workspace.name || selectedWorkspace?.name || "Workspace" : workspaceId ? titles[view] : "All workspaces"}</h1></div>
         <div className="product-actions">
           {accountId && selectedWorkspace && canRenameWorkspace(selectedWorkspace) && <WorkspaceManagementActions canDelete={canDeleteWorkspace(selectedWorkspace, accountId)} id={selectedWorkspace.workspace_id} name={selectedWorkspace.name} accountId={accountId} onRenamed={()=>setReload(v=>v+1)} onDeleted={()=>router.replace("/workspaces")} />}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
           {(choosing || view === "overview") && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
-      </header>
+      </PageHeader>
 
       {deletionNotice&&<p role="status">{deletionNotice}</p>}
       {choosing && <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />}
       {!mode && (error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} {sessionError ? <Link className="product-button" href={`/signin?redirect=${encodeURIComponent(workspaceId ? `/workspaces/${workspaceId}` : "/workspaces")}`}>Sign in</Link> : <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button>}</div>}
       {sessionError ? null : loading && !page && !workspaces.length ? <p className="workspace-muted" role="status">{workspaceId ? "Loading inventories…" : "Loading workspaces…"}</p> : choosing ? <>
         <div className="context-card-grid">
-          {workspaceId ? page?.inventories.map((inventory) => <div className="context-card context-inventory-card" key={inventory.inventory_id}>
-            <Link className="context-card-link" href={directoryInventoryHref(inventory)}><span className={styles.cardIcon}><Boxes size={20} aria-hidden="true" /></span><strong>{inventory.name}</strong>{inventory.description && <span className="directory-description">{inventory.description}</span>}<span>{inventory.can_open === false ? "Access restricted" : typeof inventory.item_count === "number" ? `${inventory.item_count.toLocaleString()} items` : "Open inventory"}</span></Link>
+          {workspaceId ? page?.inventories.map((inventory) => <ThemeCard className="context-card context-inventory-card" key={inventory.inventory_id}>
+            <Link className="context-card-link" href={directoryInventoryHref(inventory)}><ResourceArt id={inventory.inventory_id}>{inventory.can_open === false ? "Access restricted" : typeof inventory.item_count === "number" ? `${inventory.item_count.toLocaleString()} items` : "Open inventory"}</ResourceArt><span className={styles.cardIcon}><Boxes size={20} aria-hidden="true" /></span><strong>{inventory.name}</strong>{inventory.description && <span className="directory-description">{inventory.description}</span>}</Link>
             {(inventory.can_rename || inventory.can_manage) && <InventoryManagementActions inventory={inventory} onRename={() => { open("rename"); setRenaming(inventory); setName(inventory.name); }} onDelete={()=>setDeleting(inventory)} />}
-          </div>) : visible.map((workspace) => <div className="context-card context-inventory-card" key={workspace.workspace_id}><Link className="context-card-link" href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
+          </ThemeCard>) : visible.map((workspace) => <ThemeCard className="context-card context-inventory-card" key={workspace.workspace_id}><Link className="context-card-link" href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}><ResourceArt id={workspace.workspace_id} />
             <span className={styles.cardIcon}>{workspace.kind === "personal" ? <UserRound size={20} aria-hidden="true" /> : <FolderKanban size={20} aria-hidden="true" />}</span><strong>{workspace.name}</strong><span>{workspace.kind === "personal" ? "Private" : workspace.organization_name || (workspace.role === "viewer" ? "View only" : "Workspace")}</span>
-          </Link>{accountId && canRenameWorkspace(workspace) && <div className={styles.actions}><WorkspaceManagementActions canDelete={canDeleteWorkspace(workspace, accountId)} id={workspace.workspace_id} name={workspace.name} accountId={accountId} onRenamed={()=>setReload(v=>v+1)} onDeleted={()=>setReload(v=>v+1)} /></div>}</div>)}
+          </Link>{accountId && canRenameWorkspace(workspace) && <div className={styles.actions}><WorkspaceManagementActions canDelete={canDeleteWorkspace(workspace, accountId)} id={workspace.workspace_id} name={workspace.name} accountId={accountId} onRenamed={()=>setReload(v=>v+1)} onDeleted={()=>setReload(v=>v+1)} /></div>}</ThemeCard>)}
         </div>
         {workspaceId && !page?.inventories.length && !error && <div className={styles.empty}><h2>{query ? "No matching inventories" : "No inventories yet"}</h2><p>{query ? "Try another name." : canCreate ? "Create a collection for this workspace." : "An inventory will appear here when shared with you."}</p>{canCreate && !query && <button className="product-button" onClick={()=>open("inventory")}>Create inventory</button>}</div>}
         {!workspaceId && !visible.length && !error && <p className="workspace-muted">No matching workspaces.</p>}

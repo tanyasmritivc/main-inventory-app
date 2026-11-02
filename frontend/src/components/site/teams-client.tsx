@@ -1,5 +1,7 @@
 "use client";
 
+
+import { PageHeader } from "./app-theme-ui";
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive, Clipboard, FileText, History, Link2, MoreHorizontal, Plus,
@@ -220,7 +222,7 @@ function TeamsClientWorkspace({ selectedTeamId, panel }: { selectedTeamId?: stri
 
   if (selectedTeamId && !selectedId && !loading) return <section className="product-page"><h1>Workspace settings</h1>{error && <p role="alert" className="notice-error">{error}</p>}<Link className="product-button" href="/workspaces">Choose a workspace</Link></section>;
 
-  if (!selectedId && !loading) return <section className="product-page"><header className="product-page-header"><h1>Team</h1><div className="product-actions"><button className="product-button" onClick={() => setCreateMode("join")}>Join</button><button className="product-button primary" onClick={() => setCreateMode("team")}><Plus size={15} />New team</button></div></header>{createMode && <TeamCreateForm mode={createMode} form={form} setForm={setForm} onSubmit={submitCreate} onCancel={() => setCreateMode(null)} working={working} />}{error && <div className="notice-error">{error}</div>}<div className="bare-empty"><Users size={24} /><strong>No teams</strong></div></section>;
+  if (!selectedId && !loading) return <section className="product-page"><PageHeader className="product-page-header"><h1>Team</h1><div className="product-actions"><button className="product-button" onClick={() => setCreateMode("join")}>Join</button><button className="product-button primary" onClick={() => setCreateMode("team")}><Plus size={15} />New team</button></div></PageHeader>{createMode && <TeamCreateForm mode={createMode} form={form} setForm={setForm} onSubmit={submitCreate} onCancel={() => setCreateMode(null)} working={working} />}{error && <div className="notice-error">{error}</div>}<div className="bare-empty"><Users size={24} /><strong>No teams</strong></div></section>;
 
   return (
     <section className={`teams-page product-page ${panel ? "context-embedded" : ""}`}>

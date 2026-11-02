@@ -1,0 +1,491 @@
+frontend/src/components/site/organization-switcher.module.css:10:.menu { z-index:100; width:300px; max-width:calc(100vw - 24px); padding:6px; border:1px solid var(--light-line); border-radius:12px; background:var(--light-panel); color:var(--ink); box-shadow:0 12px 40px #00000018; font-family:var(--font-main); }
+frontend/src/components/site/organization-switcher.module.css:20::global(.dark) .menu { color:var(--text); box-shadow:0 12px 40px #00000040; }
+frontend/src/components/site/notification-preview.module.css:1:.panel { --panel-text:var(--text); --panel-muted:var(--text2); --panel-bg:var(--surf); --panel-hover:var(--hover); --panel-border:var(--line); width:380px; max-width:calc(100vw - 24px); max-height: min(560px,var(--radix-dropdown-menu-content-available-height)); overflow-y:auto; padding:8px; border:1px solid var(--panel-border); border-radius:18px; color:var(--panel-text); background:var(--panel-bg); box-shadow:0 16px 48px #0002; z-index:140; animation:none !important; transition:none !important; }
+frontend/src/components/site/chat-progress.module.css:2:  --status-base: #626269;
+frontend/src/components/site/chat-progress.module.css:3:  --status-shine: #19191d;
+frontend/src/components/site/chat-progress.module.css:10:  --status-base: #b5b5b5;
+frontend/src/components/site/chat-progress.module.css:11:  --status-shine: #fff;
+frontend/src/components/site/chat-progress.module.css:29:.heading { --status-base: #242424; --status-shine: #767676; }
+frontend/src/components/site/chat-progress.module.css:31:  --status-base: #bdbdbd;
+frontend/src/components/site/chat-progress.module.css:32:  --status-shine: #fff;
+frontend/src/components/site/landing-lab.tsx:28:    <a href={signedIn ? "/home" : "/signup"} className="btn fzl-site-cta"><span>{signedIn ? "Dashboard" : "Get started"}</span><span aria-hidden="true">&#8599;</span></a>
+frontend/src/components/site/landing-lab.tsx:45:  return (<><div style={css("background:#F7F5F1;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${className}`} ref={rootRef}>
+frontend/src/components/site/landing-lab.tsx:46:{!siteNavigation && <div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>}
+frontend/src/components/site/landing-lab.tsx:47:<div className={siteNavigation ? "fzl-scroll-header" : undefined} style={css(`${siteNavigation ? "position:relative" : "position:sticky;top:0"};z-index:50;background:rgba(247,245,241,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)`)}>
+frontend/src/components/site/landing-lab.tsx:49:<a href="#" aria-label="FindEZ home" style={css("display:flex;align-items:center;text-decoration:none;margin-left:-8px")}><svg viewBox="0 0 291.67 96" role="img" aria-label="FindEZ" style={css("height:34px;width:auto;display:block")}><path d="M25.25 40.75H55.25V70.75" stroke="#111112" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)"><path d="M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z" fill="#111112"></path><path d="M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z" fill="#111112"></path><path d="M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z" fill="#111112"></path><path d="M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z" fill="#111112"></path><path d="M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z" fill="#E8590C"></path><path d="M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z" fill="#E8590C"></path></g></svg></a>
+frontend/src/components/site/landing-lab.tsx:50:{siteNavigation ? <SiteActions initialSignedIn={initialSignedIn} /> : <div style={css("display:flex;gap:8px;align-items:center")}><a href="/signin" style={css("font-size:14px;color:#8C8C8C;text-decoration:none;padding:8px 14px;border:1px solid #E5E5E5;border-radius:8px")}>{"Log in"}</a><a href="/signup" className="btn" style={css("background:#000;color:#FFF;padding:9px 14px;font-size:14px")}>{"Get started"}</a></div>}
+frontend/src/components/site/landing-lab.tsx:63:<h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
+frontend/src/components/site/landing-lab.tsx:64:<p className="lede hide-s" style={css("color:#A3A3A3")}>{"Keep the charger from your bench photo with its saved location, notes and documents. Ask FindEZ about the details you have recorded. The illustration shows how that context can fit together."}</p>
+frontend/src/components/site/landing-lab.tsx:68:{v.edges.map((e, i) => <Fragment key={i}><path d={e.d} data-lab-d={`edges.${i}.d`} pathLength="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.2" style={css(e.style)} data-lab-style={`edges.${i}.style`} data-lab-row={`edges.${i}`}></path></Fragment>)}
+frontend/src/components/site/landing-lab.tsx:69:<circle cx="500" cy="320" r="90" fill="none" stroke="rgba(232,89,12,.45)"><animate attributeName="r" values="90;210" dur="3s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="1;0" dur="3s" repeatCount="indefinite"></animate></circle>
+frontend/src/components/site/landing-lab.tsx:73:{v.nodes.map((n, i) => <Fragment key={i}><div style={css(n.box)} data-lab-style={`nodes.${i}.box`} data-lab-row={`nodes.${i}`}><div style={css(n.ks)} data-lab-style={`nodes.${i}.ks`}><span data-lab-text={`nodes.${i}.k`}>{n.k}</span></div><div style={css("font-size:1.6cqw;color:#FFF;margin-top:.35cqw;white-space:nowrap;letter-spacing:-.01em")}><span data-lab-text={`nodes.${i}.v`}>{n.v}</span></div></div></Fragment>)}
+frontend/src/components/site/landing-lab.tsx:74:<div style={css("position:absolute;left:33%;top:41%;width:34%;height:18%;box-sizing:border-box;background:#FFF;border-radius:1.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw")}>
+frontend/src/components/site/landing-lab.tsx:75:<div style={css("position:relative;width:9.4cqw;height:9.4cqw;flex:none;border-radius:.9cqw;overflow:hidden;background:#DDD")}><img src="/images/landing-lab/bench.jpg" alt="" style={css("position:absolute;width:347.8%;max-width:none;left:-164.3%;top:-39.1%")} /></div>
+frontend/src/components/site/landing-lab.tsx:76:<div style={css("min-width:0")}><div style={css("font-family:var(--fzl-mono),monospace;font-size:.95cqw;letter-spacing:.05em;color:#8C8C8C")}>{"FROM YOUR BENCH PHOTO"}</div><div style={css("font-size:2.1cqw;color:#000;margin-top:.5cqw;letter-spacing:-.015em;line-height:1.1")}>{"Battery charger, 18V"}</div><div style={css("font-family:var(--fzl-mono),monospace;font-size:.95cqw;letter-spacing:.05em;color:#C2410C;margin-top:.6cqw")}>{"CONFIDENCE 0.97"}</div></div>
+frontend/src/components/site/landing-lab.tsx:92:<div style={css("position:relative;border-radius:14px;overflow:hidden;background:#1A1A1A;aspect-ratio:1000/560;container-type:inline-size")}>
+frontend/src/components/site/landing-lab.tsx:96:<div style={css("font-family:var(--fzl-mono),monospace;font-size:1.05cqw;letter-spacing:.05em;color:#C2410C")}>{"FOUND"}</div>
+frontend/src/components/site/landing-lab.tsx:97:<div style={css("font-size:2.6cqw;letter-spacing:-.02em;margin-top:.5cqw;color:#111112")}>{"M4 set screws"}</div>
+frontend/src/components/site/landing-lab.tsx:98:<div style={css("font-family:var(--fzl-mono),monospace;font-size:1.05cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.7cqw")}>{"DRAWER PN-F40 \u00b7 ROW 5 \u00b7 PARTS CABINET"}</div>
+frontend/src/components/site/landing-lab.tsx:114:<p className="mono" style={css("color:#A3A3A3;margin-top:24px")}>{"Example conversations"}</p>
+frontend/src/components/site/landing-lab.tsx:117:<div style={css("display:flex;gap:6px")}><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span></div>
+frontend/src/components/site/landing-lab.tsx:118:<div style={css("align-self:flex-end;background:#000;color:#FFF;border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:16px;max-width:80%")}><span data-lab-text="chatQ">{v.chatQ}</span><span className="caret" style={css("background:#FFF")} data-lab-show="typingQ" hidden={!v.typingQ}></span></div>
+frontend/src/components/site/landing-lab.tsx:119:<div className="mono" style={css("color:#8C8C8C")} data-lab-show="thinking" hidden={!v.thinking}>{"Searching your memory\u2026"}</div>
+frontend/src/components/site/landing-lab.tsx:130:<div style={css("position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size")}>
+frontend/src/components/site/landing-lab.tsx:132:<g stroke="#FFF" strokeWidth="2" fill="none" opacity=".8"><path d="M60 100 V60 H100"></path><path d="M700 60 H740 V100"></path><path d="M740 450 V490 H700"></path><path d="M100 490 H60 V450"></path></g>
+frontend/src/components/site/landing-lab.tsx:133:<g style={css(v.ownProd)} data-lab-style="ownProd"><rect x="300" y="220" width="200" height="110" rx="16" fill="#3A3A3A"></rect><rect x="320" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="352" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="384" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="416" y="255" width="40" height="12" rx="3" fill="#202020"></rect><rect x="290" y="210" width="220" height="130" rx="20" fill="none" style={css(v.ownBox)} data-lab-style="ownBox"></rect></g>
+frontend/src/components/site/landing-lab.tsx:134:<circle cx="400" cy="420" r="38" fill="none" stroke="#333" strokeWidth="5"></circle>
+frontend/src/components/site/landing-lab.tsx:135:<circle cx="400" cy="420" r="38" fill="none" stroke="#E8590C" strokeWidth="5" pathLength="100" transform="rotate(-90 400 420)" style={css(v.ownRing)} data-lab-style="ownRing"></circle>
+frontend/src/components/site/landing-lab.tsx:136:<text x="400" y="182" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="12" fill="#A3A3A3" style={css(v.ownLabel)} data-lab-style="ownLabel">{"USB-C HUB \u00b7 7-PORT"}</text>
+frontend/src/components/site/landing-lab.tsx:138:<div style={css("position:absolute;left:50%;top:76.4%;transform:translate(-50%,-50%);color:#FFF;font-size:2.3cqw")}><span data-lab-text="ownPct">{v.ownPct}</span></div>
+frontend/src/components/site/landing-lab.tsx:145:<div className="mono" style={css("color:#8C8C8C;margin-top:10px")}>{"Workshop \u203a Electronics bin"}</div>
+frontend/src/components/site/landing-lab.tsx:146:<div className="mono" style={css("color:#8C8C8C;margin-top:4px")}>{"Office \u203a Desk drawer"}</div>
+frontend/src/components/site/landing-lab.tsx:154:<h2 className="h2" style={css("color:#FFF;max-width:18ch;margin:0 auto")}>{"One memory for anyone who owns, shares or manages things."}</h2>
+frontend/src/components/site/landing-lab.tsx:175:<div className="hide-s" style={css("position:absolute;left:10%;right:10%;top:15px;height:2px;background:#D4D4D4")}><div style={css(v.roadFill)} data-lab-style="roadFill"></div><div style={css(v.roadDot)} data-lab-style="roadDot"></div></div>
+frontend/src/components/site/landing-lab.tsx:182:<p style={css("color:#6B6B6B;font-size:15px;line-height:1.55;margin:14px auto 0;max-width:24ch")}><span data-lab-text={`stages.${i}.d`}>{g.d}</span></p>
+frontend/src/components/site/landing-lab.tsx:206:<h2 className="h2" style={css("margin:16px auto 0;max-width:16ch;color:#FFF")}>{"Your things, remembered. Anywhere."}</h2>
+frontend/src/components/site/landing-lab.tsx:207:<p style={css("color:#A3A3A3;font-size:17px;line-height:1.55;max-width:460px;margin:16px auto 0")}>{"Capture on your iPhone. Review, organize and ask on the web. Sign in with the same account to use your saved inventory on both."}</p>
+frontend/src/components/site/landing-lab.tsx:208:<a href="https://apps.apple.com/us/app/findez-ai/id6760401697" className="btn" style={css("background:#FFF;color:#000;margin-top:30px;padding:14px 20px")}>{"Get FindEZ for iPhone"}</a>
+frontend/src/components/site/landing-lab.tsx:214:<div style={css("display:flex;gap:10px;flex-wrap:wrap;margin-top:28px")}><a href="/signup" className="btn" style={css("background:#000;color:#FFF")}>{"Try FindEZ on the web"}</a><a href="https://apps.apple.com/us/app/findez-ai/id6760401697" className="btn" style={css("border:1px solid #E5E5E5")}>{"Get the iPhone app"}</a></div>
+frontend/src/components/site/landing-lab.tsx:227:</div> : <div className="mono" style={css("display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E5E5E5;padding-top:16px;color:#8C8C8C")}><span>{"\u00a9 2026 AI Robots Inc."}</span><span>{"info@findez.ai"}</span></div>}
+frontend/src/components/site/landing-learning.tsx:9:          Business inquiries<span aria-hidden="true">&#8599;</span>
+frontend/src/components/site/landing-learning.tsx:14:          <circle cx="240" cy="240" r="208" stroke="#E3E3E1" />
+frontend/src/components/site/landing-learning.tsx:15:          <circle cx="240" cy="240" r="168" stroke="#D5D3CD" strokeDasharray="2 10" />
+frontend/src/components/site/landing-learning.tsx:16:          <circle cx="240" cy="240" r="126" stroke="#E8590C" strokeOpacity=".18" />
+frontend/src/components/site/landing-learning.tsx:18:            <path d="M240 32a208 208 0 0 1 208 208" stroke="#E8590C" strokeWidth="2" />
+frontend/src/components/site/landing-learning.tsx:19:            <circle cx="240" cy="32" r="7" fill="#E8590C" />
+frontend/src/components/site/landing-learning.tsx:20:            <circle cx="448" cy="240" r="5" fill="#111112" />
+frontend/src/components/site/landing-learning.tsx:21:            <circle cx="240" cy="408" r="5" fill="#E8590C" />
+frontend/src/components/site/landing-learning.tsx:22:            <circle cx="72" cy="240" r="4" fill="#C9C6C0" />
+frontend/src/components/site/landing-learning.tsx:25:          <path d="M184 208v-12a12 12 0 0 1 12-12h12m64 0h12a12 12 0 0 1 12 12v12m0 64v12a12 12 0 0 1-12 12h-12m-64 0h-12a12 12 0 0 1-12-12v-12" stroke="#E8590C" strokeWidth="2" />
+frontend/src/components/site/app-theme-ui.tsx:22:export const AVATAR_PALETTE = ["#3A3A40", "#6B6B70", "#8C7B6B", "#4E5878", "#46565F", "#3E5A4C", "#6B5486", "#A7808F"] as const;
+frontend/src/components/site/upgrade-gate.tsx:33:        background: 'rgba(0,0,0,0.75)',
+frontend/src/components/site/upgrade-gate.tsx:45:          border: '1px solid rgba(0,0,0,0.10)',
+frontend/src/components/site/upgrade-gate.tsx:51:          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.05)',
+frontend/src/components/site/upgrade-gate.tsx:60:          background: 'rgba(255,214,10,0.10)',
+frontend/src/components/site/upgrade-gate.tsx:61:          border: '1px solid rgba(255,214,10,0.20)',
+frontend/src/components/site/upgrade-gate.tsx:86:          height: '4px', background: 'rgba(0,0,0,0.08)',
+frontend/src/components/site/upgrade-gate.tsx:99:        <div style={{ height: '1px', background: 'rgba(0,0,0,0.07)', margin: '0 0 18px' }} />
+frontend/src/components/site/upgrade-gate.tsx:113:              borderBottom: '1px solid rgba(0,0,0,0.04)',
+frontend/src/components/site/upgrade-gate.tsx:150:            background: 'rgba(0,0,0,0.05)',
+frontend/src/components/site/upgrade-gate.tsx:151:            border: '1px solid rgba(0,0,0,0.10)',
+frontend/src/components/site/upgrade-gate.tsx:161:          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.09)'}
+frontend/src/components/site/upgrade-gate.tsx:162:          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+frontend/src/components/site/member-avatar.tsx:17:    width: size, height: size, borderRadius: "50%", overflow: "hidden", background: color, color: "#fff", fontSize: size * .4 }}>
+frontend/src/components/site/checkout-client.tsx:16:const AVATAR_COLORS = ['#212121', '#3f3f3f', '#575757', '#6f6f6f', '#7d7d7d', '#929292'];
+frontend/src/components/site/checkout-client.tsx:130:                  <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#929292', color: '#ffffff' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
+frontend/src/components/site/landing-morph.tsx:30:const arrow = <em className="arw" style={{ fontStyle: "normal" }}>&#8599;</em>;
+frontend/src/components/site/landing-morph.tsx:160:                  <span className="pr">&#9906;</span>
+frontend/src/components/site/message-actions.module.css:1:.row { display:flex; align-items:center; gap:2px; margin-top:6px; color:var(--muted-foreground, #777); flex-wrap:wrap; }
+frontend/src/components/site/message-actions.module.css:3:.row button:hover, .row button[aria-pressed="true"] { color:var(--foreground); background:var(--muted, #8882); }
+frontend/src/components/site/message-actions.module.css:7:.details { border:1px solid var(--border, #8884); border-radius:12px; padding:12px; margin-top:6px; max-width:380px; display:grid; gap:8px; font-size:13px; }
+frontend/src/components/site/message-actions.module.css:8:.details select, .details textarea { width:100%; padding:8px; border:1px solid var(--border, #8884); border-radius:8px; color:inherit; background:var(--background); }
+frontend/src/components/site/usage-onboarding-client.tsx:215:        <div style={{ height: 3, width: "100%", overflow: "hidden", borderRadius: "20px 20px 0 0", background: "rgba(0,0,0,0.07)" }}>
+frontend/src/components/site/usage-onboarding-client.tsx:263:                              background: sel ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.06)",
+frontend/src/components/site/usage-onboarding-client.tsx:307:                      background: "rgba(0,0,0,0.06)",
+frontend/src/components/site/usage-onboarding-client.tsx:308:                      border: "1px solid rgba(0,0,0,0.22)",
+frontend/src/components/site/usage-onboarding-client.tsx:329:                                color: "var(--ink)", background: "rgba(0,0,0,0.07)",
+frontend/src/components/site/usage-onboarding-client.tsx:330:                                border: "1px solid rgba(0,0,0,0.15)", borderRadius: 10,
+frontend/src/components/site/usage-onboarding-client.tsx:377:                              border: "1px solid rgba(0,0,0,0.12)",
+frontend/src/components/site/usage-onboarding-client.tsx:441:                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)", background: "rgba(0,0,0,0.04)", color: "var(--ink)", font: "inherit" }}
+frontend/src/components/site/usage-onboarding-client.tsx:459:                      width: "100%", padding: "0.75rem 0", borderRadius: 12, border: "1px solid rgba(0,0,0,0.11)",
+frontend/src/components/site/usage-onboarding-client.tsx:460:                      background: "rgba(0,0,0,0.03)", color: "var(--text-secondary)",
+frontend/src/components/site/usage-onboarding-client.tsx:489:                  background: "rgba(0,0,0,0.03)",
+frontend/src/components/site/usage-onboarding-client.tsx:490:                  border: "1px solid rgba(0,0,0,0.09)",
+frontend/src/components/site/hero-morph.tsx:19:          <h1 className="fzh-h1">FindEZ gives the physical world <span className="fzh-orange">a memory.</span></h1>
+frontend/src/components/site/hero-morph.tsx:24:              <svg width="11" height="16" viewBox="0 0 11 16" fill="none" stroke="#111112" strokeWidth="1.5" aria-hidden="true"><rect x=".75" y=".75" width="9.5" height="14.5" rx="2.4" /><path d="M4.2 12.8h2.6" strokeLinecap="round" /></svg>
+frontend/src/components/site/hero-morph.tsx:32:          <h2 className="fzh-h2">Take a picture.<br /><span className="fzh-orange">Review. Save.</span></h2>
+frontend/src/components/site/hero-morph.tsx:36:            <div><div className="fzh-num fzh-orange fzh-needs">0</div><div className="fzh-statlabel fzh-mono">Needs a look</div></div>
+frontend/src/components/site/hero-morph.tsx:62:            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6B6B6B" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5.2" /><path d="m11 11 3.5 3.5" /></svg>
+frontend/src/components/site/hero-morph.tsx:69:          <span className="vf" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="#111112" strokeWidth="1.9" strokeLinecap="round"><path d="M1.5 7V4a2.5 2.5 0 0 1 2.5-2.5h3M15 1.5h3A2.5 2.5 0 0 1 20.5 4v3M20.5 15v3a2.5 2.5 0 0 1-2.5 2.5h-3M7 20.5H4A2.5 2.5 0 0 1 1.5 18v-3" /></svg><i /></span>
+frontend/src/components/site/public-nav.module.css:1:.header { display:flex; justify-content:space-between; align-items:center; gap:24px; width:min(1120px,100%); margin:auto; padding:22px 28px; background:#fff; color:#171717; }
+frontend/src/components/site/public-nav.module.css:4:.header nav a { text-decoration:none; color:#454545; }
+frontend/src/components/site/public-nav.module.css:5:.header a:hover { color:#a64414; }
+frontend/src/components/site/public-nav.module.css:6:.header a:focus-visible { outline:2px solid #a64414; outline-offset:5px; }
+frontend/src/components/site/onboarding/web-onboarding.tsx:199:  const legend = [[team ? "Organization" : "Personal", team ? draft.orgName : "Only you", team ? "#E8590C" : "#3E9B63"], ["Workspace", draft.purpose, "#A3B8E2"], ["Inventory", draft.inventory, "#EDBB9C"]];
+frontend/src/components/site/label-studio-client.tsx:104:        color: { dark: "#050505", light: "#ffffff" },
+frontend/src/components/site/use-app-theme.tsx:96:    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0d0d0f" : "#ffffff");
+frontend/src/components/site/robotics-client.tsx:31:    <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "20px 0" }}>
+frontend/src/components/site/robotics-client.tsx:37:          cursor: "pointer", color: "#f2eee7",
+frontend/src/components/site/robotics-client.tsx:46:            color: "rgba(255,255,255,0.3)", fontSize: 18, flexShrink: 0,
+frontend/src/components/site/robotics-client.tsx:55:        <p style={{ marginTop: 12, fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>{a}</p>
+frontend/src/components/site/robotics-client.tsx:73:    <div style={{ background: "#0b0b09", minHeight: "100vh", color: "#f2eee7", fontFamily: font }}>
+frontend/src/components/site/robotics-client.tsx:81:        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#f2eee7", margin: 0 }}>
+frontend/src/components/site/robotics-client.tsx:84:        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", marginTop: 18, lineHeight: 1.6, maxWidth: 480, margin: "18px auto 0" }}>
+frontend/src/components/site/robotics-client.tsx:90:            style={{ background: "#f2eee7", color: "#15130f", textDecoration: "none", borderRadius: 7, padding: "13px 28px", fontSize: 14, fontWeight: 700 }}
+frontend/src/components/site/robotics-client.tsx:103:              background: "rgba(255,255,255,0.02)",
+frontend/src/components/site/robotics-client.tsx:104:              border: "1px solid rgba(255,255,255,0.07)",
+frontend/src/components/site/robotics-client.tsx:110:            <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 6 }}>{f.title}</div>
+frontend/src/components/site/robotics-client.tsx:111:            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>{f.desc}</div>
+frontend/src/components/site/robotics-client.tsx:123:        <h2 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", color: "#fff", marginBottom: 32 }}>
+frontend/src/components/site/robotics-client.tsx:129:        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+frontend/src/components/site/landing-scenes.css:4:  background-color:rgba(246,246,244,calc(1 - var(--scene-shape)));
+frontend/src/components/site/landing-scenes.css:16:  background:#F6F6F4;
+frontend/src/components/site/landing-scenes.css:41:  color:#111112;
+frontend/src/components/site/landing-scenes.css:43:.fzLab .fzl-learning h2 span { color:#E8590C; }
+frontend/src/components/site/landing-scenes.css:47:  color:#6B6B6B;
+frontend/src/components/site/landing-scenes.css:51:.fzLab .fzl-learning .fzl-learning-inquiry { margin-top:24px; color:#3F3D39; font-size:16px; }
+frontend/src/components/site/landing-scenes.css:62:  background:#111112;
+frontend/src/components/site/landing-scenes.css:67:.fzLab a.fzl-learning-cta:hover { background:#C2410C; color:white; }
+frontend/src/components/site/landing-scenes.css:68:.fzLab a.fzl-learning-cta:focus-visible { outline:2px solid #E8590C; outline-offset:5px; }
+frontend/src/components/site/landing-scenes.css:76:.fzLab .fzl-learning-word { font-size:36px; fill:#111112; font-weight:400; letter-spacing:-.04em; }
+frontend/src/components/site/landing-scenes.css:77:.fzLab .fzl-learning-note { display:block; margin-top:16px; font-family:var(--fzl-mono),monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:#8C8C8C; }
+frontend/src/components/site/api-keys-client.module.css:9:.page input:not([type=checkbox]), .page select { width: 100%; color: var(--ink); background: var(--light-panel); border: 1px solid rgba(0,0,0,.14); border-radius: 7px; padding: 10px 12px; min-height: 44px; }
+frontend/src/components/site/api-keys-client.module.css:17:.page button { border: 1px solid rgba(0,0,0,.14); border-radius: 7px; min-height: 40px; padding: 9px 14px; font-size: 13px; color: var(--ink); background: var(--light-raised); cursor: pointer; }
+frontend/src/components/site/api-keys-client.module.css:20:.page button.primary { background: var(--control-primary); border-color: transparent; color: #000000; font-weight: 600; }
+frontend/src/components/site/api-keys-client.module.css:25:.page p.error { color: var(--danger-ink); background: rgba(229,72,77,.08); border: 1px solid rgba(229,72,77,.3); border-radius: 10px; padding: 14px; }
+frontend/src/components/site/context-chat.module.css:1:.launcher { position:fixed; right:24px; bottom:24px; z-index:50; display:flex; align-items:center; gap:9px; padding:13px 18px; border:1px solid var(--app-border); border-radius:999px; background:color-mix(in srgb,var(--app-surface) 86%,transparent); color:var(--app-text); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); box-shadow:0 8px 32px #00000016; font-size:14px; cursor:pointer; }
+frontend/src/components/site/context-chat.module.css:3:.panel { position:fixed; right:24px; bottom:24px; width:min(460px,calc(100vw - 32px)); height:min(680px,calc(100dvh - 100px)); z-index:80; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--app-border); border-radius:24px; background:color-mix(in srgb,var(--app-surface) 88%,transparent); color:var(--app-text); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); box-shadow:0 18px 70px #00000026; outline:none; }
+frontend/src/components/site/directory-design.module.css:3:.flow { width:100%; max-width:1160px; margin:0 auto; padding:0 0 32px; gap:20px; font-family:var(--font-inter),Arial,sans-serif; color:var(--app-text,#171717); }
+frontend/src/components/site/directory-design.module.css:6:.eyebrow { display:block; margin:0 0 7px; font-size:12px; color:var(--app-muted,#737373); }
+frontend/src/components/site/directory-design.module.css:8:.flow :global(.product-button) { min-height:36px; padding:8px 13px; border:1px solid var(--app-border,#dedede); border-radius:999px; background:var(--app-surface,#fff); font-size:13px; font-weight:500; }
+frontend/src/components/site/directory-design.module.css:11:.flow :global(.context-card) { position:relative; min-height:168px; border:1px solid var(--app-border,#e2e2e2); border-radius:10px; background:var(--app-surface,#fff); padding:0; transition:border-color .15s,background .15s; overflow:hidden; }
+frontend/src/components/site/directory-design.module.css:16:.flow :global(.context-card span) { font-size:13px; line-height:1.5; color:var(--app-muted,#737373); }
+frontend/src/components/site/directory-design.module.css:20:.empty { padding:40px 24px; border:1px dashed var(--app-border,#dedede); border-radius:10px; text-align:center; background:var(--app-surface,#fff); }
+frontend/src/components/site/directory-design.module.css:22:.empty p { color:var(--app-muted,#737373); font-size:13px; margin:0 0 18px; }
+frontend/src/components/site/directory-design.module.css:26:.flow :global(.context-people-list) { border:1px solid var(--app-border,#dedede); border-radius:9px; overflow:hidden; }
+frontend/src/components/site/directory-design.module.css:27:.flow :global(.context-person) { padding:18px 22px; border-bottom:1px solid var(--app-border,#ededed); }
+frontend/src/components/site/directory-design.module.css:53:.flow :global(.resource-danger .product-button) { color:var(--danger-ink,#b42318); }
+frontend/src/components/site/directory-design.module.css:61:.flow :global(.workspace-settings) { max-width:760px; border:1px solid var(--app-border,#dedede); border-radius:10px; padding:24px; }
+frontend/src/components/site/api-docs.module.css:6:.header { position: sticky; top: 0; z-index: 10; background: #fff; color: #111; border-bottom: 1px solid #e8e7e4; min-height: 64px; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+frontend/src/components/site/api-docs.module.css:9:.header a, .header a:hover { color: #111; }
+frontend/src/components/site/api-docs.module.css:10:.header :is(a, button):focus-visible { outline-color: #111; }
+frontend/src/components/site/api-docs.module.css:13:.sidebar { border-right: 1px solid rgba(0,0,0,.09); padding: 28px 20px; background: var(--light-panel); }
+frontend/src/components/site/api-docs.module.css:16:.navigation input[type="search"] { font-size: 13px; margin-bottom: 15px; background: var(--light-panel); border-color: rgba(0,0,0,.14); color: var(--ink); }
+frontend/src/components/site/api-docs.module.css:23:.navigation button, .codeToolbar button { padding: 5px 10px; border: 1px solid rgba(0,0,0,.14); border-radius: 6px; background: var(--light-raised); color: var(--ink); font-size: 12px; cursor: pointer; }
+frontend/src/components/site/api-docs.module.css:25:.content section { scroll-margin-top: 100px; border-top: 1px solid rgba(0,0,0,.09); padding: 38px 0; }
+frontend/src/components/site/api-docs.module.css:36:.baseUrl { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: var(--light-panel); border: 1px solid rgba(0,0,0,.24); border-radius: 8px; padding: 15px 18px; margin-top: 25px; }
+frontend/src/components/site/api-docs.module.css:40:.tableWrap { max-width: 100%; overflow-x: auto; margin: 22px 0; border: 1px solid rgba(0,0,0,.1); border-radius: 8px; }
+frontend/src/components/site/api-docs.module.css:42:.tableWrap caption { text-align: left; font-weight: 600; padding: 12px 15px; background: var(--light-raised); color: var(--ink); border-bottom: 1px solid rgba(0,0,0,.1); }
+frontend/src/components/site/api-docs.module.css:43:.tableWrap :is(th, td) { padding: 12px 15px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,.075); min-width: 90px; overflow-wrap: anywhere; }
+frontend/src/components/site/api-docs.module.css:49:.codeExample { margin: 22px 0; border: 1px solid rgba(0,0,0,.11); border-radius: 8px; overflow: hidden; background: var(--light-panel); }
+frontend/src/components/site/api-docs.module.css:50:.codeToolbar { background: var(--light-raised); padding: 10px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,.1); }
+frontend/src/components/site/api-docs.module.css:52:.codeToolbar select { height: 31px; min-height: 31px; font-size: 11px; border-color: rgba(0,0,0,.16); background: var(--light-panel); color: var(--ink); }
+frontend/src/components/site/api-docs.module.css:58:.endpointPath > span { color: var(--copper); background: rgba(0,0,0,.13); border: 1px solid rgba(0,0,0,.3); padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 650; }
+frontend/src/components/site/api-docs.module.css:61:.responseFields { border: 1px solid rgba(0,0,0,.1); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+frontend/src/components/site/api-docs.module.css:68:  .header a, .header a:hover { color: #111; }
+frontend/src/components/site/api-docs.module.css:69:.header :is(a, button):focus-visible { outline-color: #111; }
+frontend/src/components/site/api-docs.module.css:73:  .sidebar { border-right: 0; border-bottom: 1px solid rgba(0,0,0,.09); padding: 20px; }
+frontend/src/components/site/api-docs.module.css:83:  .page { color: #111; background: #fff; }
+frontend/src/components/site/api-docs.module.css:87:  .page :is(h1, h2, h3, p, code, strong, a) { color: #111; }
+frontend/src/components/site/api-docs.module.css:88:  .codeExample, .codeToolbar, .tableWrap, .tableWrap caption, .tableWrap th { background: #f4f4f4; color: #111; }
+frontend/src/components/site/plans-usage.module.css:27:.period button[aria-pressed=true] { color:var(--ink); background:var(--light-panel); box-shadow:0 1px 4px #00000012; }
+frontend/src/components/site/product-detail.module.css:2:  --green: #153d2c;
+frontend/src/components/site/product-detail.module.css:3:  --green-deep: #0f2f21;
+frontend/src/components/site/product-detail.module.css:4:  --green-soft: #dce9df;
+frontend/src/components/site/product-detail.module.css:5:  --paper: #f3f4f0;
+frontend/src/components/site/product-detail.module.css:6:  --white: #fbfcf9;
+frontend/src/components/site/product-detail.module.css:7:  --ink: #111713;
+frontend/src/components/site/product-detail.module.css:8:  --muted: #68716b;
+frontend/src/components/site/product-detail.module.css:9:  --line: rgba(21, 61, 44, 0.12);
+frontend/src/components/site/product-detail.module.css:29:.heroCopy > span { color: #49785a; font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+frontend/src/components/site/product-detail.module.css:45:  color: #fff;
+frontend/src/components/site/product-detail.module.css:49:  box-shadow: 0 8px 24px rgba(21,61,44,.14);
+frontend/src/components/site/product-detail.module.css:53:.primaryButton:hover { background: var(--green-deep); box-shadow: 0 12px 30px rgba(21,61,44,.2); transform: translateY(-2px); }
+frontend/src/components/site/product-detail.module.css:56:.textLink { color: #39463e; font-size: 13px; font-weight: 550; text-decoration: none; border-bottom: 1px solid rgba(21,61,44,.25); }
+frontend/src/components/site/product-detail.module.css:67:.sectionHeader > span { color: #4d795e; font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+frontend/src/components/site/product-detail.module.css:78:.greenSection { padding: clamp(95px, 10vw, 145px) 24px; background: var(--green); color: #fff; }
+frontend/src/components/site/product-detail.module.css:81:.greenCopy > span { color: #9bc5aa; font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+frontend/src/components/site/product-detail.module.css:83:.greenCopy p { margin: 21px 0 0; color: rgba(247,251,248,.65); font-size: 15px; line-height: 1.65; }
+frontend/src/components/site/product-detail.module.css:85:.cta { width: min(1240px,calc(100% - 48px)); margin: 110px auto; padding: 46px 50px; display: flex; align-items: center; justify-content: space-between; gap: 30px; border: 1px solid var(--line); border-radius: 20px; background: #e9eee9; }
+frontend/src/components/site/landing-lab.css:2:.fzLab { background:#FFF; color:#000; font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif; font-size:16px; line-height:normal; font-weight:400; letter-spacing:normal; text-align:start; color-scheme:light; font-feature-settings:normal; text-rendering:auto; }
+frontend/src/components/site/landing-lab.css:13:.fzLab a{color:#000}.fzLab a:hover{color:#8C8C8C}
+frontend/src/components/site/landing-lab.css:18:.fzLab .lede{color:#6B6B6B;font-size:17px;line-height:1.6;margin:18px 0 0;max-width:520px}
+frontend/src/components/site/landing-lab.css:25:@keyframes fzl-vpulse{0%{box-shadow:0 0 0 0 rgba(232,89,12,.4)}100%{box-shadow:0 0 0 16px rgba(232,89,12,0)}}
+frontend/src/components/site/landing-lab.css:30:.fzLab .caret{display:inline-block;width:2px;height:1em;background:#000;margin-left:2px;vertical-align:-2px;animation:fzl-blink 1s steps(1) infinite}
+frontend/src/components/site/landing-lab.css:32:.fzLab .fz-bezel{background:#111112;border-radius:15cqw;padding:3.6cqw;box-shadow:0 40px 80px -30px rgba(17,17,18,.45),inset 0 0 0 1px rgba(255,255,255,.08)}
+frontend/src/components/site/landing-lab.css:33:.fzLab .fz-screen{position:relative;aspect-ratio:460/999;border-radius:11.5cqw;overflow:hidden;background:#F4F1EE}
+frontend/src/components/site/landing-lab.css:48:.fzLab .fzl-site-actions a { color:#111112; text-decoration:none; }
+frontend/src/components/site/landing-lab.css:49:.fzLab .fzl-site-actions .fzl-site-cta { display:inline-flex; align-items:center; gap:20px; background:#EAEAEA; color:#111112; padding:10px 16px; font-size:14px; }
+frontend/src/components/site/landing-lab.css:50:.fzLab .fzl-site-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:24px; border-top:1px solid #E5E5E5; padding:24px 0 4px; color:#6B6B6B; font-size:14px; }
+frontend/src/components/site/landing-lab.css:53:.fzLab .fzl-site-actions a:hover,.fzLab .fzl-site-footer a:hover { color:#C2410C; }
+frontend/src/components/site/auth-form.tsx:488:                fill="#FFC107"
+frontend/src/components/site/auth-form.tsx:492:                fill="#FF3D00"
+frontend/src/components/site/auth-form.tsx:496:                fill="#4CAF50"
+frontend/src/components/site/auth-form.tsx:500:                fill="#1976D2"
+frontend/src/components/site/auth-form.tsx:561:        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+frontend/src/components/site/auth-form.tsx:562:        -webkit-text-fill-color: #000000 !important;
+frontend/src/components/site/auth-form.tsx:563:        caret-color: #000000;
+frontend/src/components/site/auth-form.tsx:564:        border: 1px solid rgba(0,0,0,0.13) !important;
+frontend/src/components/site/auth-form.tsx:568:        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+frontend/src/components/site/auth-form.tsx:569:        border: 1px solid rgba(0,0,0,0.4) !important;
+frontend/src/components/site/auth-form.tsx:810:              color: "#000000",
+frontend/src/components/site/billing-success-client.tsx:84:            border: "2px solid rgba(0,0,0,0.08)",
+frontend/src/components/site/billing-success-client.tsx:144:            background: "rgba(48,209,88,0.1)",
+frontend/src/components/site/billing-success-client.tsx:145:            border: "1px solid rgba(48,209,88,0.25)",
+frontend/src/components/site/billing-success-client.tsx:167:            background: "rgba(0,0,0,0.04)",
+frontend/src/components/site/billing-success-client.tsx:168:            border: "1px solid rgba(0,0,0,0.12)",
+frontend/src/components/site/billing-success-client.tsx:196:            background: copied ? "rgba(48,209,88,0.15)" : "rgba(0,0,0,0.08)",
+frontend/src/components/site/billing-success-client.tsx:198:            border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(0,0,0,0.12)"}`,
+frontend/src/components/site/landing-morph.css:8:    --cream:#FFFFFF;
+frontend/src/components/site/landing-morph.css:9:    --cream-2:#F5F5F5;
+frontend/src/components/site/landing-morph.css:10:    --ink:#000000;
+frontend/src/components/site/landing-morph.css:11:    --ink-soft:#575757;
+frontend/src/components/site/landing-morph.css:12:    --forest:#212121;
+frontend/src/components/site/landing-morph.css:13:    --forest-deep:#000000;
+frontend/src/components/site/landing-morph.css:14:    --sage:#929292;
+frontend/src/components/site/landing-morph.css:15:    --sage-2:#C7C7C7;
+frontend/src/components/site/landing-morph.css:16:    --hair:#EAEAEA;
+frontend/src/components/site/landing-morph.css:17:    --hair-lite:rgba(255,255,255,.18);
+frontend/src/components/site/landing-morph.css:18:    --white:#FFFFFF;
+frontend/src/components/site/landing-morph.css:55:  .fzL .rail{position:fixed;left:0;top:0;bottom:0;width:2px;z-index:45;background:rgba(19,19,19,.08);pointer-events:none}
+frontend/src/components/site/landing-morph.css:67:  .fzL header.on-dark.stuck{background:rgba(11,37,25,.72);border-bottom-color:var(--hair-lite)}
+frontend/src/components/site/landing-morph.css:141:    white-space:nowrap;border-block:1px solid rgba(147,171,158,.18)}
+frontend/src/components/site/landing-morph.css:145:  .fzL .ticker span::after{content:"/";color:rgba(147,171,158,.4);padding-left:20px}
+frontend/src/components/site/landing-morph.css:191:    background:linear-gradient(to bottom,rgba(21,65,48,0),rgba(21,65,48,.22) 60%,rgba(255,255,255,.62) 96%,rgba(255,255,255,0));
+frontend/src/components/site/landing-morph.css:195:  .fzL .ghostbox{position:absolute;border:1.5px solid rgba(255,255,255,.95);outline:1px solid rgba(0,0,0,.30);z-index:3;pointer-events:none}
+frontend/src/components/site/landing-morph.css:196:  .fzL .ghostbox u{position:absolute;left:-1px;bottom:100%;background:rgba(241,241,239,.92);color:var(--ink);
+frontend/src/components/site/landing-morph.css:199:  .fzL #mFrame{z-index:4;overflow:hidden;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,0)}
+frontend/src/components/site/landing-morph.css:266:  .fzL .console{border:1px solid var(--hair-lite);background:rgba(241,241,239,.035);padding:clamp(20px,2.6vw,34px)}
+frontend/src/components/site/landing-morph.css:329:  --signal:#E8590C;
+frontend/src/components/site/landing-morph.css:330:  --grad-warm:#EAEAEA;
+frontend/src/components/site/landing-morph.css:331:  --grad-dark:#000000;
+frontend/src/components/site/landing-morph.css:332:  --grad-light:#FFFFFF;
+frontend/src/components/site/landing-morph.css:342:    repeating-linear-gradient(to right,rgba(255,255,255,.05) 0 1px,transparent 1px 72px),
+frontend/src/components/site/landing-morph.css:343:    repeating-linear-gradient(to bottom,rgba(255,255,255,.05) 0 1px,transparent 1px 72px);
+frontend/src/components/site/landing-morph.css:347:  background:#000000;
+frontend/src/components/site/landing-morph.css:349:  border-block-color:rgba(255,255,255,.18);
+frontend/src/components/site/landing-morph.css:351:.fzL .ticker span::after{color:rgba(255,255,255,.26)}
+frontend/src/components/site/landing-morph.css:355:.fzL .cta::after{background:#C7C7C7}
+frontend/src/components/site/landing-morph.css:357:.fzL header.on-dark .cta.sm::after{background:#EAEAEA}
+frontend/src/components/site/landing-morph.css:359:.fzL header.on-dark.stuck{background:#000000}
+frontend/src/components/site/landing-morph.css:367:.fzL #mResult{background:#000000}
+frontend/src/components/site/landing-morph.css:372:.fzL #mPhoto .veil{background:#000000}
+frontend/src/components/site/landing-morph.css:374:  background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.22) 60%,rgba(255,255,255,.80) 96%,rgba(255,255,255,0));
+frontend/src/components/site/landing-morph.css:376:.fzL ::selection{background:#000000;color:#FFFFFF}
+frontend/src/components/site/ui-system.tsx:13:  b1: 'rgba(0,0,0,0.08)',
+frontend/src/components/site/ui-system.tsx:14:  b2: 'rgba(0,0,0,0.14)',
+frontend/src/components/site/ui-system.tsx:15:  b3: 'rgba(0,0,0,0.22)',
+frontend/src/components/site/ui-system.tsx:20:  white: '#ffffff',
+frontend/src/components/site/ui-system.tsx:21:  green: '#8fa078',
+frontend/src/components/site/ui-system.tsx:33:    border: '1px solid rgba(0,0,0,0.10)',
+frontend/src/components/site/ui-system.tsx:39:    border: '1px solid rgba(0,0,0,0.14)',
+frontend/src/components/site/ui-system.tsx:70:    border: '1px solid rgba(0,0,0,0.12)',
+frontend/src/components/site/ui-system.tsx:116:    border: '1px solid rgba(0,0,0,0.14)',
+frontend/src/components/site/ui-system.tsx:119:    boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
+frontend/src/components/site/ui-system.tsx:132:    background: 'rgba(0,0,0,0.08)',
+frontend/src/components/site/ui-system.tsx:140:    border: active ? '1px solid rgba(0,0,0,0.34)' : '1px solid rgba(0,0,0,0.08)',
+frontend/src/components/site/ui-system.tsx:165:        background: 'rgba(0,0,0,0.7)',
+frontend/src/components/site/ui-system.tsx:184:          background: 'rgba(255,214,10,0.10)',
+frontend/src/components/site/ui-system.tsx:185:          border: '1px solid rgba(255,214,10,0.20)',
+frontend/src/components/site/account-verification.module.css:5:.content [role="alert"] { color:var(--danger-ink,#b42318); }
+frontend/src/components/site/legal-document.module.css:1:.document { width:min(760px,100%); margin:auto; padding:64px 28px 48px; color:#242424; font-size:15px; line-height:1.8; }
+frontend/src/components/site/legal-document.module.css:4:.date { color:#666; font-size:13px; }
+frontend/src/components/site/legal-document.module.css:6:.contents a,.footer a { color:#555; text-decoration:underline; text-underline-offset:3px; }
+frontend/src/components/site/legal-document.module.css:11:.footer { display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; margin-top:52px; font-size:12px; color:#666; }
+frontend/src/components/site/legal-document.module.css:12:.document a:focus-visible { outline:2px solid #a64414; outline-offset:4px; }
+frontend/src/components/site/legal-document.module.css:14:@media print { .contents {display:none;} .document {width:100%;padding:0;font-size:11pt;color:#000;} .footer {margin-top:24px;} }
+frontend/src/components/site/legal-document.module.css:15:.page { min-height:100dvh; background:#fff; color:#242424; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:3:  --line: #e3e0da;
+frontend/src/components/site/onboarding/web-onboarding.module.css:4:  --muted: #6b6965;
+frontend/src/components/site/onboarding/web-onboarding.module.css:5:  --hint: #8a8782;
+frontend/src/components/site/onboarding/web-onboarding.module.css:6:  --accent: #e8590c;
+frontend/src/components/site/onboarding/web-onboarding.module.css:7:  background: #f7f7f6;
+frontend/src/components/site/onboarding/web-onboarding.module.css:8:  color: #111112;
+frontend/src/components/site/onboarding/web-onboarding.module.css:33:.progress i.progressOn { background: #111112; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:35:.skip:hover, .back:hover { color: #111112; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:38:.world { position: relative; min-width: 0; border-radius: clamp(20px, 2.4vw, 32px); background: #f0eeea; overflow: hidden; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:43:.eyebrow { font-family: var(--font-onboarding-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #c2410c; margin-bottom: 18px; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:48:.tile { display: flex; align-items: center; gap: 18px; text-align: left; padding: 20px 22px; border-radius: 22px; border: 1px solid var(--line); background: #fff; color: #111112; transition: border-color .2s, background .2s, box-shadow .2s; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:49:.tile:hover, .chip:hover { border-color: #cfcbc4; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:50:.tile.selectedTile { border: 2px solid var(--accent); padding: 19px 21px; background: #fff8f3; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:57:.input { height: 58px; border-radius: 18px; border: 1px solid var(--line); background: #fff; padding: 0 62px 0 18px; font-size: 18px; font-weight: 400; color: #111112; caret-color: var(--accent); outline: none; width: 100%; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:58:.input::placeholder { color: #b3b0a9; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:62:.tick { position: absolute; right: 9px; top: 50%; width: 40px; height: 40px; margin-top: -20px; border: 0; border-radius: 50%; background: #111112; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0; transition: background .2s, color .2s, transform .15s; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:64:.tick:disabled { background: #eceae6; color: #b3b0a9; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:66:.chip { height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 15px; font-weight: 500; color: #3f3d39; transition: background .15s, color .15s, border-color .15s; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:68:.chip.selectedChip { background: var(--accent); border-color: var(--accent); color: #fff; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:70:.primary { height: 54px; padding: 0 28px; border: 0; border-radius: 16px; background: #111112; color: #fff; font-size: 16.5px; font-weight: 600; transition: background .2s, color .2s; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:71:.primary:disabled { background: var(--line); color: #9a978f; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:77:.legend { display: grid; gap: 0; border-top: 1px solid #eceae6; margin: 28px 0 0; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:78:.legend div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid #eceae6; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:82:.checks { margin-top: 18px; display: grid; gap: 10px; font-size: 15.5px; color: #3f3d39; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:85:.checkIcon { display: grid; place-items: center; background: #111112; color: white; border-radius: 50%; width: 20px; height: 20px; flex: none; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:88:.error { margin: 18px 0 0; font-size: 14px; color: #b42318; line-height: 1.5; }
+frontend/src/components/site/onboarding/web-onboarding.module.css:89:.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100dvh; background: #f7f7f6; color: #111112; padding: 24px; gap: 16px; text-align: center; }
+frontend/src/components/site/chat-sources.module.css:24:  box-shadow: 0 10px 35px #0002;
+frontend/src/components/site/cookie-notice.module.css:1:.notice { position:fixed; z-index:70; inset:auto 20px 20px; max-width:820px; margin:auto; display:flex; align-items:center; gap:20px; padding:16px 20px; background:#fff; color:#222; border-radius:8px; box-shadow:0 3px 22px #0002; font-size:12px; line-height:1.6; }
+frontend/src/components/site/cookie-notice.module.css:3:.notice a { color:#222; text-decoration:underline; text-underline-offset:3px; }
+frontend/src/components/site/cookie-notice.module.css:4:.notice button { flex-shrink:0; padding:8px 12px; color:#fff; background:#272727; border:0; border-radius:5px; cursor:pointer; font:inherit; }
+frontend/src/components/site/cookie-notice.module.css:5:.notice :is(a,button):focus-visible { outline:2px solid #a64414; outline-offset:4px; }
+frontend/src/components/site/reset-password-client.tsx:65:      <section style={{ width: "min(420px, 100%)", padding: 28, border: "1px solid rgba(0,0,0,.1)", borderRadius: 16, background: "var(--light-panel)", boxShadow: "0 25px 70px rgba(0,0,0,.10)" }}>
+frontend/src/components/site/reset-password-client.tsx:66:        <div style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 9, background: "var(--forest)", color: "#fff", fontWeight: 800, marginBottom: 22 }}>F</div>
+frontend/src/components/site/reset-password-client.tsx:82:              <input autoFocus type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(0,0,0,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
+frontend/src/components/site/reset-password-client.tsx:86:              <input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(0,0,0,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
+frontend/src/components/site/nav.module.css:2:  --nav-text: #66555e;
+frontend/src/components/site/nav.module.css:3:  --nav-strong: #000000;
+frontend/src/components/site/nav.module.css:4:  --nav-bg: rgba(255, 250, 246, 0.96);
+frontend/src/components/site/nav.module.css:5:  --nav-line: rgba(0,0,0, 0.13);
+frontend/src/components/site/nav.module.css:6:  --nav-panel: rgba(255, 250, 246, 0.99);
+frontend/src/components/site/nav.module.css:7:  --nav-panel-hover: #fff0e8;
+frontend/src/components/site/nav.module.css:8:  --panel-text: #000000;
+frontend/src/components/site/nav.module.css:9:  --panel-muted: #76646a;
+frontend/src/components/site/nav.module.css:10:  --nav-shadow: 0 22px 54px rgba(0,0,0, 0.13);
+frontend/src/components/site/nav.module.css:23:  --nav-text: #969e98;
+frontend/src/components/site/nav.module.css:24:  --nav-strong: #f2f4f2;
+frontend/src/components/site/nav.module.css:25:  --nav-bg: rgba(12, 15, 13, 0.94);
+frontend/src/components/site/nav.module.css:26:  --nav-line: rgba(233, 240, 235, 0.09);
+frontend/src/components/site/nav.module.css:27:  --nav-panel: rgba(20, 24, 21, 0.99);
+frontend/src/components/site/nav.module.css:28:  --nav-panel-hover: #e7ebe7;
+frontend/src/components/site/nav.module.css:29:  --nav-shadow: 0 24px 58px rgba(0, 0, 0, 0.34);
+frontend/src/components/site/nav.module.css:108:  border-top: 1px solid rgba(0,0,0,.08);
+frontend/src/components/site/nav.module.css:109:  border-bottom: 1px solid rgba(0,0,0,.12);
+frontend/src/components/site/nav.module.css:110:  background: rgba(255,250,246,.985);
+frontend/src/components/site/nav.module.css:111:  box-shadow: 0 25px 55px rgba(0,0,0,.12);
+frontend/src/components/site/nav.module.css:167:  border: 1px solid rgba(0,0,0,.13);
+frontend/src/components/site/nav.module.css:169:  background: #f5f5f5;
+frontend/src/components/site/nav.module.css:170:  color: #212121;
+frontend/src/components/site/nav.module.css:174:  border-color: rgba(0,0,0,.13);
+frontend/src/components/site/nav.module.css:175:  background: #f5f5f5;
+frontend/src/components/site/nav.module.css:176:  color: #212121;
+frontend/src/components/site/nav.module.css:203:.menuItem:hover strong { color: #212121; }
+frontend/src/components/site/nav.module.css:230:  background: #eaeaea;
+frontend/src/components/site/nav.module.css:231:  color: #000000;
+frontend/src/components/site/nav.module.css:238:.cta:hover { background: #d7d7d7; transform: none; }
+frontend/src/components/site/nav.module.css:329:  .mobileActions a:last-child { border-color: #d7d7d7; background: #eaeaea; color: #000000; }
+frontend/src/components/site/hero-morph.css:2:.fzh.fzh { color:#111112; font-family:var(--fzl-geist),-apple-system,system-ui,sans-serif; line-height:normal; }
+frontend/src/components/site/hero-morph.css:4:.fzh.fzh a { color:#111112; text-decoration:none; }
+frontend/src/components/site/hero-morph.css:5:.fzh.fzh a:hover { color:#C2410C; }
+frontend/src/components/site/hero-morph.css:14:.fzh.fzh .fzh-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #8C8C8C; }
+frontend/src/components/site/hero-morph.css:15:.fzh.fzh .fzh-eyebrow i { width: 4px; height: 4px; border-radius: 50%; background: #C9C6C0; display: block; }
+frontend/src/components/site/hero-morph.css:17:.fzh.fzh .fzh-orange { color: #E8590C; }
+frontend/src/components/site/hero-morph.css:18:.fzh.fzh .fzh-sub { margin: 28px 0 0; max-width: 580px; font-size: clamp(19px, 1.45vw, 23px); line-height: 1.45; color: #3F3D39; }
+frontend/src/components/site/hero-morph.css:21:.fzh.fzh .fzh-btn.dark { background: #111112; color: #FFF; }
+frontend/src/components/site/hero-morph.css:22:.fzh.fzh .fzh-btn.line { box-shadow: inset 0 0 0 1px #E3E3E1; padding: 0 22px; }
+frontend/src/components/site/hero-morph.css:25:.fzh.fzh .fzh-body { margin: 22px 0 0; font-size: 17px; line-height: 1.6; color: #6B6B6B; }
+frontend/src/components/site/hero-morph.css:26:.fzh.fzh .fzh-stats { display: flex; gap: 48px; margin-top: 36px; padding-top: 28px; border-top: 1px solid #F1F1F0; }
+frontend/src/components/site/hero-morph.css:28:.fzh.fzh .fzh-statlabel { margin-top: 6px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: #8C8C8C; }
+frontend/src/components/site/hero-morph.css:30:.fzh.fzh .fzh-photo { aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden; background: #2A2724; cursor: crosshair; }
+frontend/src/components/site/hero-morph.css:33:.fzh.fzh .fzh-det { position: absolute; pointer-events: none; transition: opacity .2s; box-shadow: inset 0 0 0 1.5px #E8590C; }
+frontend/src/components/site/hero-morph.css:34:.fzh.fzh .fzh-det.low { box-shadow: inset 0 0 0 1.5px #F5B48A; }
+frontend/src/components/site/hero-morph.css:35:.fzh.fzh .fzh-det span { position: absolute; left: -1.5px; bottom: 100%; height: 20px; padding: 0 6px; background: #E8590C; color: #FFF; display: flex; align-items: center; font-size: 10.5px; white-space: nowrap; }
+frontend/src/components/site/hero-morph.css:36:.fzh.fzh .fzh-det.low span { background: #C2410C; }
+frontend/src/components/site/hero-morph.css:37:.fzh.fzh .fzh-lens { position: absolute; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9); pointer-events: none; }
+frontend/src/components/site/hero-morph.css:38:.fzh.fzh .fzh-lens::before, .fzh.fzh .fzh-lens::after { content: ""; position: absolute; left: 50%; top: 50%; background: #E8590C; }
+frontend/src/components/site/hero-morph.css:41:.fzh.fzh .fzh-corner { position: absolute; bottom: 16px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+frontend/src/components/site/hero-morph.css:43:.fzh.fzh .fzh-card { border-radius: 16px; background: #FFF; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 30px 60px rgba(17,17,18,.18); overflow: hidden; }
+frontend/src/components/site/hero-morph.css:44:.fzh.fzh .fzh-card header { padding: 16px 18px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F1F0; }
+frontend/src/components/site/hero-morph.css:47:.fzh.fzh .fzh-card li + li { border-top: 1px solid #F4F4F2; }
+frontend/src/components/site/hero-morph.css:48:.fzh.fzh .fzh-card li .qty { font-size: 11.5px; color: #8C8C8C; width: 44px; text-align: right; }
+frontend/src/components/site/hero-morph.css:49:.fzh.fzh .fzh-card li .conf { font-size: 11.5px; width: 40px; text-align: right; color: #3F3D39; }
+frontend/src/components/site/hero-morph.css:50:.fzh.fzh .fzh-card li .conf.low { color: #C2410C; }
+frontend/src/components/site/hero-morph.css:51:.fzh.fzh .fzh-ask { margin: 4px 12px 12px; height: 42px; border-radius: 10px; background: #F6F6F4; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 12px; }
+frontend/src/components/site/hero-morph.css:52:.fzh.fzh .fzh-ask .q { font-size: 14px; color: #3F3D39; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+frontend/src/components/site/hero-morph.css:53:.fzh.fzh .fzh-ask .caret { width: 1.5px; height: 16px; background: #111112; margin-left: -6px; animation: fzh-caret 1s steps(1) infinite; }
+frontend/src/components/site/hero-morph.css:54:.fzh.fzh .fzh-ask .a { margin-left: auto; height: 30px; padding: 0 10px; border-radius: 7px; background: #FFF; display: flex; align-items: center; font-size: 12.5px; white-space: nowrap; }
+frontend/src/components/site/hero-morph.css:56:.fzh.fzh .fzh-chip { height: 42px; padding: 0 16px 0 13px; border-radius: 12px; background: #FFF; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 12px 28px rgba(17,17,18,.16); display: flex; align-items: center; gap: 10px; font-size: 14px; white-space: nowrap; }
+frontend/src/components/site/hero-morph.css:58:.fzh.fzh .fzh-chip .vf i { position: absolute; left: 3px; right: 3px; top: 4px; height: 2px; border-radius: 2px; background: #E8590C; animation: fzh-scan 1.6s ease-in-out infinite; }
+frontend/src/components/site/hero-morph.css:79:.fzh.fzh .fzh-today { margin-left:auto; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#8C8C8C; }
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:23:    <a href={signedIn ? "/home" : "/signup"} className="btn fzl-site-cta"><span>{signedIn ? "Dashboard" : "Get started"}</span><span aria-hidden="true">&#8599;</span></a>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:32:  return (<><div style={css("background:#FFF;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${className}`} ref={rootRef}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:33:{!siteNavigation && <div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>}
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:34:<div className={siteNavigation ? "fzl-scroll-header" : undefined} style={css(`${siteNavigation ? "position:relative" : "position:sticky;top:0"};z-index:50;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)`)}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:36:<a href="#" aria-label="FindEZ home" style={css("display:flex;align-items:center;text-decoration:none;margin-left:-8px")}><svg viewBox="0 0 291.67 96" role="img" aria-label="FindEZ" style={css("height:34px;width:auto;display:block")}><path d="M25.25 40.75H55.25V70.75" stroke="#111112" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)"><path d="M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z" fill="#111112"></path><path d="M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z" fill="#111112"></path><path d="M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z" fill="#111112"></path><path d="M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z" fill="#111112"></path><path d="M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z" fill="#E8590C"></path><path d="M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z" fill="#E8590C"></path></g></svg></a>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:37:{siteNavigation ? <SiteActions initialSignedIn={initialSignedIn} /> : <div style={css("display:flex;gap:8px;align-items:center")}><a href="/signin" style={css("font-size:14px;color:#8C8C8C;text-decoration:none;padding:8px 14px;border:1px solid #E5E5E5;border-radius:8px")}>{"Log in"}</a><a href="/signup" className="btn" style={css("background:#000;color:#FFF;padding:9px 14px;font-size:14px")}>{"Get started"}</a></div>}
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:45:<div style={css(siteNavigation ? "position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,11,.25),rgba(11,11,11,.15) 50%,rgba(11,11,11,.25));pointer-events:none" : "position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:47:<h1 className={siteNavigation ? "fzl-hero-headline" : undefined} style={css(`font-weight:400;${siteNavigation ? "" : "font-size:clamp(40px,5.4vw,76px);"}line-height:1.02;letter-spacing:-.03em;margin:${siteNavigation ? "0 auto" : "18px auto 0"};max-width:${siteNavigation ? "none" : "15ch"};color:#FFF`)}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:49:<a href="/signup" className="btn" style={css("background:#FFF;color:#000")}>{"Get started"}</a>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:50:<a href="#waitlist" className="btn" style={css("border:1px solid rgba(255,255,255,.25);color:#FFF")}>{"Join the iPhone waitlist"}</a>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:53:<span className="mono hide-s" style={css("position:absolute;left:20px;bottom:20px;color:#6B6B6B")}>{"Move your cursor to scan"}</span>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:54:<span className="mono" style={css("position:absolute;right:20px;bottom:20px;color:#6B6B6B")}><span data-lab-text="scanCount">{v.scanCount}</span></span>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:73:<div><div style={css("font-size:48px;letter-spacing:-.03em;line-height:1")}><span data-lab-text="segCount">{v.segCount}</span></div><div className="mono" style={css("color:#8C8C8C;margin-top:8px")}>{"Objects found"}</div></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:74:<div><div style={css("font-size:48px;letter-spacing:-.03em;line-height:1;color:#C2410C")}><span data-lab-text="segReview">{v.segReview}</span></div><div className="mono" style={css("color:#8C8C8C;margin-top:8px")}>{"Need a look"}</div></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:81:<mask id="fzHoles"><rect width="800" height="520" fill="#FFFFFF"></rect>{v.seg.map((g, i) => <Fragment key={i}><rect x={g.x} data-lab-x={`seg.${i}.x`} y={g.y} data-lab-y={`seg.${i}.y`} width={g.w} data-lab-width={`seg.${i}.w`} height={g.h} data-lab-height={`seg.${i}.h`} rx="6" fill="#000000" style={css(g.hole)} data-lab-style={`seg.${i}.hole`} data-lab-row={`seg.${i}`}></rect></Fragment>)}</mask>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:82:<rect width="800" height="520" fill="#111112" mask="url(#fzHoles)" style={css(v.segDim)} data-lab-style="segDim"></rect>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:86:<rect style={css(v.scanBar)} data-lab-style="scanBar" y="0" width="2" height="520" fill="rgba(255,255,255,.8)"></rect>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:101:<h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:102:<p className="lede hide-s" style={css("color:#A3A3A3")}>{"The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen."}</p>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:106:{v.edges.map((e, i) => <Fragment key={i}><path d={e.d} data-lab-d={`edges.${i}.d`} pathLength="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.2" style={css(e.style)} data-lab-style={`edges.${i}.style`} data-lab-row={`edges.${i}`}></path></Fragment>)}
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:107:<circle cx="500" cy="320" r="90" fill="none" stroke="rgba(232,89,12,.45)"><animate attributeName="r" values="90;210" dur="3s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="1;0" dur="3s" repeatCount="indefinite"></animate></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:111:{v.nodes.map((n, i) => <Fragment key={i}><div style={css(n.box)} data-lab-style={`nodes.${i}.box`} data-lab-row={`nodes.${i}`}><div style={css(n.ks)} data-lab-style={`nodes.${i}.ks`}><span data-lab-text={`nodes.${i}.k`}>{n.k}</span></div><div style={css("font-size:1.6cqw;color:#FFF;margin-top:.35cqw;white-space:nowrap;letter-spacing:-.01em")}><span data-lab-text={`nodes.${i}.v`}>{n.v}</span></div></div></Fragment>)}
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:112:<div style={css("position:absolute;left:33%;top:41%;width:34%;height:18%;box-sizing:border-box;background:#FFF;border-radius:1.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw")}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:113:<div style={css("position:relative;width:9.4cqw;height:9.4cqw;flex:none;border-radius:.9cqw;overflow:hidden;background:#DDD")}><img src="/images/landing-lab/bench.jpg" alt="" style={css("position:absolute;width:347.8%;max-width:none;left:-164.3%;top:-39.1%")} /></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:114:<div style={css("min-width:0")}><div style={css("font-family:var(--fzl-mono),monospace;font-size:.95cqw;letter-spacing:.05em;color:#8C8C8C")}>{"FROM YOUR BENCH PHOTO"}</div><div style={css("font-size:2.1cqw;color:#000;margin-top:.5cqw;letter-spacing:-.015em;line-height:1.1")}>{"Battery charger, 18V"}</div><div style={css("font-family:var(--fzl-mono),monospace;font-size:.95cqw;letter-spacing:.05em;color:#C2410C;margin-top:.6cqw")}>{"CONFIDENCE 0.97"}</div></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:128:<div style={css("position:relative;border-radius:14px;overflow:hidden;background:#1A1A1A;aspect-ratio:1000/560;container-type:inline-size")}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:132:<div style={css("font-family:var(--fzl-mono),monospace;font-size:1.05cqw;letter-spacing:.05em;color:#C2410C")}>{"FOUND"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:133:<div style={css("font-size:2.6cqw;letter-spacing:-.02em;margin-top:.5cqw;color:#111112")}>{"M4 set screws"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:134:<div style={css("font-family:var(--fzl-mono),monospace;font-size:1.05cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.7cqw")}>{"DRAWER PN-F40 \u00b7 ROW 5 \u00b7 PARTS CABINET"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:149:<p className="mono" style={css("color:#A3A3A3;margin-top:24px")}>{"Example conversations"}</p>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:152:<div style={css("display:flex;gap:6px")}><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span><span style={css("width:10px;height:10px;border-radius:50%;background:#E5E5E5")}></span></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:153:<div style={css("align-self:flex-end;background:#000;color:#FFF;border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:16px;max-width:80%")}><span data-lab-text="chatQ">{v.chatQ}</span><span className="caret" style={css("background:#FFF")} data-lab-show="typingQ" hidden={!v.typingQ}></span></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:154:<div className="mono" style={css("color:#8C8C8C")} data-lab-show="thinking" hidden={!v.thinking}>{"Searching your memory\u2026"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:165:<div style={css("position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size")}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:167:<g stroke="#FFF" strokeWidth="2" fill="none" opacity=".8"><path d="M60 100 V60 H100"></path><path d="M700 60 H740 V100"></path><path d="M740 450 V490 H700"></path><path d="M100 490 H60 V450"></path></g>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:168:<g style={css(v.ownProd)} data-lab-style="ownProd"><rect x="300" y="220" width="200" height="110" rx="16" fill="#3A3A3A"></rect><rect x="320" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="352" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="384" y="255" width="22" height="12" rx="3" fill="#202020"></rect><rect x="416" y="255" width="40" height="12" rx="3" fill="#202020"></rect><rect x="290" y="210" width="220" height="130" rx="20" fill="none" style={css(v.ownBox)} data-lab-style="ownBox"></rect></g>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:169:<circle cx="400" cy="420" r="38" fill="none" stroke="#333" strokeWidth="5"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:170:<circle cx="400" cy="420" r="38" fill="none" stroke="#E8590C" strokeWidth="5" pathLength="100" transform="rotate(-90 400 420)" style={css(v.ownRing)} data-lab-style="ownRing"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:171:<text x="400" y="182" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="12" fill="#A3A3A3" style={css(v.ownLabel)} data-lab-style="ownLabel">{"USB-C HUB \u00b7 7-PORT"}</text>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:173:<div style={css("position:absolute;left:50%;top:76.4%;transform:translate(-50%,-50%);color:#FFF;font-size:2.3cqw")}><span data-lab-text="ownPct">{v.ownPct}</span></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:180:<div className="mono" style={css("color:#8C8C8C;margin-top:10px")}>{"Workshop \u203a Electronics bin"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:181:<div className="mono" style={css("color:#8C8C8C;margin-top:4px")}>{"Office \u203a Desk drawer"}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:189:<h2 className="h2" style={css("color:#FFF;max-width:18ch;margin:0 auto")}>{"One memory for anyone who owns, shares or manages things."}</h2>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:207:<path d="M60 150 H1040" stroke="#E5E5E5" strokeWidth="2" fill="none"></path>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:208:<path d="M520 150 C520 250 710 250 710 150" stroke="#E5E5E5" strokeWidth="2" fill="none" strokeDasharray="4 6"></path>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:209:<path d="M900 150 C900 40 140 40 140 150" stroke="#F3C9B1" strokeWidth="2" fill="none" strokeDasharray="4 6"></path>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:210:<circle cx="140" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:211:<circle cx="330" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:212:<circle cx="520" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:213:<circle cx="710" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:214:<circle cx="900" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:215:<text x="615" y="262" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="10" fill="#79648C">{"UNSURE \u00b7 CLOSER LOOK"}</text>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:216:<text x="520" y="58" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="10" fill="#C2410C">{"YOUR CORRECTIONS \u00b7 FIND LEARNS"}</text>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:217:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-0s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:218:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-1s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:219:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-2s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:220:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-3s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:221:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-4s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:222:<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-5s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:223:<circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-0s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:224:<circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-4s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:225:<circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-0.0s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:226:<circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-3.5s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:228:{v.pipeNodes.map((n, i) => <Fragment key={i}><div style={css(n.s)} data-lab-style={`pipeNodes.${i}.s`} data-lab-row={`pipeNodes.${i}`}><div style={css("font-size:1.55cqw;color:#000")}><span data-lab-text={`pipeNodes.${i}.t`}>{n.t}</span></div><div style={css("font-family:var(--fzl-mono),monospace;font-size:.92cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.5cqw")}><span data-lab-text={`pipeNodes.${i}.d`}>{n.d}</span></div></div></Fragment>)}
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:240:<div className="hide-s" style={css("position:absolute;left:10%;right:10%;top:15px;height:2px;background:#D4D4D4")}><div style={css(v.roadFill)} data-lab-style="roadFill"></div><div style={css(v.roadDot)} data-lab-style="roadDot"></div></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:247:<p style={css("color:#6B6B6B;font-size:15px;line-height:1.55;margin:14px auto 0;max-width:24ch")}><span data-lab-text={`stages.${i}.d`}>{g.d}</span></p>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:271:<h2 className="h2" style={css("margin:16px auto 0;max-width:16ch;color:#FFF")}>{"Be first on the iPhone app."}</h2>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:272:<p style={css("color:#A3A3A3;font-size:17px;line-height:1.55;max-width:460px;margin:16px auto 0")}>{"Join the waitlist and we will email you the day FindEZ lands on the App Store."}</p>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:274:<div style={css("display:flex;gap:8px;max-width:440px;margin:30px auto 0;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:10px;padding:6px 6px 6px 16px")} data-lab-show="notJoined" hidden={!v.notJoined}>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:276:<input id="em" type="email" className="inp" placeholder="you@example.com" style={css("color:#FFF;font-size:16px;padding:10px 0")} defaultValue="" autoComplete="email" />
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:277:<button type="button" className="btn" style={css("background:#FFF;color:#000;padding:11px 18px;font-size:14.5px")} data-lab-join="">{"Join waitlist"}</button>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:279:<p style={css("color:#C9B79C;font-size:14px;margin:10px 0 0")} data-lab-show="emailErr" hidden={!v.emailErr}>{"Enter an email address like you@example.com."}</p>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:282:<div style={css("display:inline-flex;align-items:center;gap:10px;margin-top:30px;background:#1A1A1A;border-radius:10px;padding:14px 20px;font-size:16px;animation:fzl-pop .35s ease")} data-lab-show="joined" hidden={!v.joined}><span style={css("width:8px;height:8px;border-radius:50%;background:#E8590C")}></span>{"You are on the list. We will email "}<span data-lab-text="email">{v.email}</span>{" at launch."}</div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:289:<div style={css("display:flex;gap:10px;flex-wrap:wrap;margin-top:28px")}><a href="/signup" className="btn" style={css("background:#000;color:#FFF")}>{"Try FindEZ on the web"}</a><a href="#waitlist" className="btn" style={css("border:1px solid #E5E5E5")}>{"Join the iPhone waitlist"}</a></div>
+frontend/src/components/site/legacy/landing-lab-before-hero-morph.tsx:302:</div> : <div className="mono" style={css("display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E5E5E5;padding-top:16px;color:#8C8C8C")}><span>{"\u00a9 2026 AI Robots Inc."}</span><span>{"info@findez.ai"}</span></div>}
+frontend/src/components/site/desktop-shell.module.css:48:.shell.shell :global(.ask-composer-box) { border-radius:18px; box-shadow:0 4px 18px #00000006; background:var(--app-surface); }
+frontend/src/components/site/product-marketing.tsx:41:        .product-footer { --footer-bg:#000000; --footer-line:#212121; --footer-text:#929292; --footer-strong:#ffffff; border-top:1px solid var(--footer-line); background:var(--footer-bg); }
+frontend/src/components/site/product-marketing.tsx:42:        .product-footer.is-light { --footer-bg:#ffffff; --footer-line:#eaeaea; --footer-text:#575757; --footer-strong:#000000; }
+frontend/src/components/site/product-marketing.tsx:91:      .product-marketing-shell { min-height:100vh; color:#f5f5f7; background:#090a0d; font-family:var(--font-dm-sans,system-ui,sans-serif); }
+frontend/src/components/site/product-marketing.tsx:93:      .product-hero { position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.07); }
+frontend/src/components/site/product-marketing.tsx:94:      .product-hero__glow { position:absolute; width:720px; height:520px; left:50%; top:-330px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(circle,rgba(20,184,166,.22),rgba(20,184,166,0) 68%); pointer-events:none; }
+frontend/src/components/site/product-marketing.tsx:96:      .product-eyebrow { color:#5eead4; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+frontend/src/components/site/product-marketing.tsx:97:      .product-hero h1 { max-width:900px; margin:18px auto 0; color:#fff; font-family:var(--font-syne,sans-serif); font-size:clamp(42px,7vw,76px); font-weight:650; line-height:1.04; letter-spacing:-.055em; }
+frontend/src/components/site/product-marketing.tsx:98:      .product-hero p { max-width:650px; margin:24px auto 0; color:rgba(255,255,255,.5); font-size:clamp(16px,2vw,19px); line-height:1.6; }
+frontend/src/components/site/product-marketing.tsx:102:      .product-button--primary { color:#07110f; background:#fff; }
+frontend/src/components/site/product-marketing.tsx:103:      .product-button--secondary { color:#fff; border-color:rgba(255,255,255,.13); background:rgba(255,255,255,.05); }
+frontend/src/components/site/product-marketing.tsx:105:      .product-section--bordered { border-top:1px solid rgba(255,255,255,.07); }
+frontend/src/components/site/product-marketing.tsx:107:      .product-section__intro h2,.product-cta h2 { margin:14px 0 0; color:#fff; font-family:var(--font-syne,sans-serif); font-size:clamp(30px,4vw,46px); font-weight:650; line-height:1.12; letter-spacing:-.04em; }
+frontend/src/components/site/product-marketing.tsx:108:      .product-section__intro p { margin:16px 0 0; color:rgba(255,255,255,.46); font-size:16px; line-height:1.65; }
+frontend/src/components/site/product-marketing.tsx:111:      .product-card { min-height:210px; padding:27px; border:1px solid rgba(255,255,255,.08); border-radius:16px; background:rgba(255,255,255,.025); }
+frontend/src/components/site/product-marketing.tsx:112:      .product-card__number { color:rgba(94,234,212,.58); font-family:var(--font-syne,sans-serif); font-size:12px; font-weight:700; }
+frontend/src/components/site/product-marketing.tsx:113:      .product-card h3 { margin:30px 0 0; color:#fff; font-size:18px; font-weight:650; letter-spacing:-.025em; }
+frontend/src/components/site/product-marketing.tsx:114:      .product-card p { margin:9px 0 0; color:rgba(255,255,255,.4); font-size:14px; line-height:1.58; }
+frontend/src/components/site/product-marketing.tsx:115:      .product-card a { display:inline-block; margin-top:22px; color:#5eead4; font-size:12px; font-weight:650; text-decoration:none; }
+frontend/src/components/site/product-marketing.tsx:117:      .product-flow__step { position:relative; min-height:230px; padding:28px; overflow:hidden; border:1px solid rgba(255,255,255,.08); border-radius:17px; background:rgba(255,255,255,.025); counter-increment:flow; }
+frontend/src/components/site/product-marketing.tsx:118:      .product-flow__step::after { content:counter(flow,decimal-leading-zero); position:absolute; right:18px; bottom:-16px; color:rgba(255,255,255,.035); font-family:var(--font-syne,sans-serif); font-size:92px; font-weight:800; }
+frontend/src/components/site/product-marketing.tsx:119:      .product-flow__step h3 { margin:54px 0 0; color:#fff; font-size:18px; font-weight:650; letter-spacing:-.025em; }
+frontend/src/components/site/product-marketing.tsx:120:      .product-flow__step p { position:relative; z-index:1; margin:10px 0 0; color:rgba(255,255,255,.4); font-size:14px; line-height:1.58; }
+frontend/src/components/site/product-marketing.tsx:122:      .product-method { padding:22px 20px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.025); }
+frontend/src/components/site/product-marketing.tsx:123:      .product-method strong { display:block; color:#fff; font-size:14px; line-height:1.35; }
+frontend/src/components/site/product-marketing.tsx:124:      .product-method span { display:block; margin-top:8px; color:rgba(255,255,255,.38); font-size:12px; line-height:1.5; }
+frontend/src/components/site/product-marketing.tsx:125:      .product-demo { padding:28px; border:1px solid rgba(255,255,255,.09); border-radius:20px; background:linear-gradient(145deg,rgba(20,184,166,.08),rgba(255,255,255,.02)); }
+frontend/src/components/site/product-marketing.tsx:126:      .product-demo__bar { display:flex; align-items:center; gap:7px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,.07); }
+frontend/src/components/site/product-marketing.tsx:127:      .product-demo__bar span { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.18); }
+frontend/src/components/site/product-marketing.tsx:129:      .product-demo__prompt { max-width:640px; margin:0 auto; padding:18px 20px; border:1px solid rgba(255,255,255,.13); border-radius:12px; color:rgba(255,255,255,.82); font-size:15px; }
+frontend/src/components/site/product-marketing.tsx:131:      .product-demo__answer { max-width:640px; margin:14px auto 0; padding:18px 20px; color:rgba(255,255,255,.53); font-size:14px; line-height:1.6; }
+frontend/src/components/site/product-marketing.tsx:132:      .product-facts { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; overflow:hidden; border:1px solid rgba(255,255,255,.07); border-radius:16px; background:rgba(255,255,255,.07); }
+frontend/src/components/site/product-marketing.tsx:133:      .product-fact { padding:25px; background:#0d0e12; }
+frontend/src/components/site/product-marketing.tsx:134:      .product-fact strong { display:block; color:#fff; font-size:14px; }
+frontend/src/components/site/product-marketing.tsx:135:      .product-fact span { display:block; margin-top:7px; color:rgba(255,255,255,.36); font-size:12px; line-height:1.45; }
+frontend/src/components/site/product-marketing.tsx:136:      .product-cta { margin-top:30px; margin-bottom:100px; padding:52px; display:flex; align-items:center; justify-content:space-between; gap:30px; border:1px solid rgba(94,234,212,.16); border-radius:22px; background:rgba(20,184,166,.06); }
+frontend/src/components/site/upgrade-modal.tsx:35:        background: 'rgba(0,0,0,0.75)',
+frontend/src/components/site/upgrade-modal.tsx:44:          border: '1px solid rgba(0,0,0,0.10)',
+frontend/src/components/site/upgrade-modal.tsx:96:              border: '1px solid rgba(0,0,0,0.08)',

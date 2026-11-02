@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { AppThemeDocument } from "@/components/site/use-app-theme";
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono, Inter, Inter_Tight } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import { CookieNotice } from "@/components/site/cookie-notice";
 import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
@@ -9,6 +9,7 @@ import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/l
 import "./globals.css";
 import "./app-theme.css";
 import "./workspace.css";
+import "./interior-tokens.css";
 
 // Runs before first paint, on every route, because layout.tsx wraps the
 // whole app. It must stay a no-op outside the interior: it checks the
@@ -18,7 +19,10 @@ import "./workspace.css";
 // system preference or a stored choice from a previous interior visit.
 // The persistent AppThemeDocument maintains this across client navigation.
 // This script covers the first paint of a full document load.
-const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0b0b0d":"#ffffff");}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.appTheme=dark?"dark":"light";if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0d0d0f":"#ffffff");}catch(e){}})();`;
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-app-inter", display: "swap" });
+const tight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-app-tight", display: "swap" });
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-jakarta", display: "swap",
@@ -69,10 +73,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${jakarta.variable} ${mono.variable} ${inter.variable} ${tight.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#ffffff" />
-        <style>{`html { background: #ffffff; } html.dark { background: #0b0b0d; }`}</style>
+        <style>{`html { background: #ffffff; } html.dark { background: #0d0d0f; }`}</style>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${jakarta.className} antialiased`}>

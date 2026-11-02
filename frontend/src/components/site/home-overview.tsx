@@ -1,4 +1,6 @@
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
 import { privateImageSrc } from "@/lib/private-image";
 
 import { canEditInventory } from "@/lib/inventory-selection";
@@ -145,7 +147,7 @@ function HomeOverviewWorkspace() {
   }
   return (
     <section className={styles.overview}>
-      <header className="workspace-heading">
+      <PageHeader className="workspace-heading">
         <div>
           <h1>
             {data.name
@@ -174,7 +176,7 @@ function HomeOverviewWorkspace() {
             {canEditInventory() ? "Capture" : "View inventory"}
           </Link>
         </div>
-      </header>
+      </PageHeader>
       <form className="workspace-search" onSubmit={ask}>
         <Search size={18} />
         <input

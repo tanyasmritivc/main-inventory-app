@@ -34,7 +34,7 @@ const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
 
 const inputStyle = {
   background: 'var(--light-panel)',
-  border: '1px solid rgba(0,0,0,0.12)',
+  border: '1px solid var(--line)',
   borderRadius: 8,
   padding: '10px 12px',
   color: 'var(--text-primary)',
@@ -324,21 +324,21 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.035em', color: 'var(--text-primary)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-app-title)', fontSize: 36, fontWeight: 400, letterSpacing: '-0.02em', color: 'var(--text-primary)', margin: 0 }}>
             {spaceName}
           </h1>
           <span style={{
             fontSize: 10, padding: '3px 10px', borderRadius: 99,
-            background: isOwner ? 'rgba(50,215,75,0.10)' : 'rgba(100,149,237,0.10)',
-            border: `1px solid ${isOwner ? 'rgba(50,215,75,0.20)' : 'rgba(100,149,237,0.20)'}`,
-            color: isOwner ? '#8fa78f' : 'var(--copper)',
+            background: isOwner ? 'var(--surf2)' : 'var(--surf2)',
+            border: `1px solid ${isOwner ? 'var(--line2)' : 'var(--line2)'}`,
+            color: isOwner ? 'var(--text2)' : 'var(--copper)',
           }}>
             {isOwner ? 'shared by me' : 'joined space'}
           </span>
           <span style={{
             fontSize: 10, padding: '3px 10px', borderRadius: 99,
-            background: 'rgba(0,0,0,0.04)',
-            border: '1px solid rgba(0,0,0,0.08)',
+            background: 'var(--surf2)',
+            border: '1px solid var(--line)',
             color: 'var(--text-secondary)',
           }}>
             {permission === 'edit' ? 'Can edit' : 'View only'}
@@ -380,15 +380,15 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 14px',
                     borderRadius: 10,
-                    background: 'rgba(0,0,0,0.02)',
-                    border: '1px solid rgba(0,0,0,0.05)',
+                    background: 'var(--surf2)',
+                    border: '1px solid var(--line)',
                   }}
                 >
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                     background: member.avatar_color ?? 'var(--forest)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 600, color: '#ffffff',
+                    fontSize: 12, fontWeight: 600, color: 'var(--primary-ink)',
                   }}>
                     {getInitials(name)}
                   </div>
@@ -421,13 +421,13 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                       disabled={removingMember === member.member_id}
                       style={{
                         fontSize: 11, color: 'var(--danger-ink)',
-                        background: 'rgba(255,69,58,0.06)', border: '1px solid rgba(255,69,58,0.15)',
+                        background: 'var(--surf2)', border: '1px solid var(--line2)',
                         borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontFamily: FONT, flexShrink: 0,
                         opacity: removingMember === member.member_id ? 0.5 : 1,
                         transition: 'background 0.12s',
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.12)'; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.06)'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surf2)'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surf2)'; }}
                     >
                       {removingMember === member.member_id ? '…' : 'Remove'}
                     </button>
@@ -450,7 +450,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
             placeholder="Search items…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 180, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em' }}
+            style={{ flex: 1, minWidth: 180, background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em' }}
           />
           {permission === 'edit' && (
             <button
@@ -468,7 +468,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
             <button
               type="button"
               onClick={() => setCategoryFilter('')}
-              style={{ background: categoryFilter === '' ? 'var(--light-raised)' : 'rgba(0,0,0,0.03)', color: categoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: `1px solid ${categoryFilter === '' ? 'var(--light-raised)' : 'rgba(0,0,0,0.07)'}`, borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
+              style={{ background: categoryFilter === '' ? 'var(--light-raised)' : 'var(--surf2)', color: categoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: `1px solid ${categoryFilter === '' ? 'var(--light-raised)' : 'var(--line)'}`, borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
             >
               All
             </button>
@@ -477,7 +477,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(cat)}
-                style={{ background: categoryFilter === cat ? 'var(--light-raised)' : 'rgba(0,0,0,0.03)', color: categoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: `1px solid ${categoryFilter === cat ? 'var(--light-raised)' : 'rgba(0,0,0,0.07)'}`, borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
+                style={{ background: categoryFilter === cat ? 'var(--light-raised)' : 'var(--surf2)', color: categoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: `1px solid ${categoryFilter === cat ? 'var(--light-raised)' : 'var(--surf2)'}`, borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
               >
                 {cat}
               </button>
@@ -486,20 +486,20 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         )}
 
         {filteredItems.length === 0 ? (
-          <div style={{ textAlign: 'center' as const, padding: '40px 24px', background: 'rgba(0,0,0,0.02)', borderRadius: 12, border: '1px dashed rgba(0,0,0,0.08)' }}>
+          <div style={{ textAlign: 'center' as const, padding: '40px 24px', background: 'var(--surf2)', borderRadius: 12, border: '1px dashed var(--line)' }}>
             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
               {items.length === 0 ? 'No items in this space yet.' : 'No items match your search.'}
             </div>
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
               {['Part # / Item', 'Category', 'Qty', 'Notes', ...(permission === 'edit' ? ['Actions'] : [])].map((h) => (
                 <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>{h}</div>
               ))}
             </div>
             {filteredItems.map((item: any) => (
-              <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
+              <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--line)', alignItems: 'center' }}>
                 <div style={{ minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>
                     <button type="button" onClick={() => setDetailItem(item)} style={{ background: "transparent", border: 0, color: "inherit", padding: 0, textAlign: "left" }}>{itemDisplayName(item)}</button>
@@ -507,7 +507,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{itemDisplayDescription(item)}</div>}
                 </div>
                 <div>
-                  <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                     {item.category ?? '—'}
                   </span>
                 </div>
@@ -521,7 +521,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button type="button" aria-label={`Actions for ${item.name}`} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button type="button" aria-label={`Actions for ${item.name}`} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surf2)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           <MoreHorizontal size={17} aria-hidden="true" />
                         </button>
                       </DropdownMenuTrigger>
@@ -542,25 +542,25 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
 
 <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Shared item</DialogTitle>{detailItem && <ItemDetails item={detailItem} context={{ kind: "shared", shareId }} canEdit={permission === "edit"} onChanged={next => { setDetailItem(next); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
       <Dialog open={addItemOpen} onOpenChange={(open) => { setAddItemOpen(open); if (!open) setAddItemError(null); }}>
-        <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
+        <DialogContent style={{ background: 'var(--primary-ink)', border: '1px solid var(--line2)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader><DialogTitle style={{ color: 'var(--text-primary)' }}>Add to {spaceName}</DialogTitle></DialogHeader>
           <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
-            <input autoFocus placeholder="Item name" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void handleAddSharedItem(); }} style={{ background: 'var(--light-panel)', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
+            <input autoFocus placeholder="Item name" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void handleAddSharedItem(); }} style={{ background: 'var(--light-panel)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
-              <input placeholder="Category" value={newItemCategory} onChange={(e) => setNewItemCategory(e.target.value)} style={{ background: 'var(--light-panel)', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
-              <input aria-label="Quantity" type="number" min="0" value={newItemQuantity} onChange={(e) => setNewItemQuantity(Number(e.target.value))} style={{ background: 'var(--light-panel)', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
+              <input placeholder="Category" value={newItemCategory} onChange={(e) => setNewItemCategory(e.target.value)} style={{ background: 'var(--light-panel)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
+              <input aria-label="Quantity" type="number" min="0" value={newItemQuantity} onChange={(e) => setNewItemQuantity(Number(e.target.value))} style={{ background: 'var(--light-panel)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontFamily: FONT }} />
             </div>
             {addItemError && <p role="alert" style={{ margin: 0, color: 'var(--danger-ink)', fontSize: 12 }}>{addItemError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-              <button type="button" onClick={() => setAddItemOpen(false)} disabled={addingItem} style={{ background: 'transparent', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-              <button type="button" onClick={() => void handleAddSharedItem()} disabled={addingItem} style={{ background: 'var(--control-primary)', border: 'none', borderRadius: 8, padding: '9px 14px', color: '#000000', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: addingItem ? 0.6 : 1 }}>{addingItem ? 'Adding…' : 'Add item'}</button>
+              <button type="button" onClick={() => setAddItemOpen(false)} disabled={addingItem} style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button type="button" onClick={() => void handleAddSharedItem()} disabled={addingItem} style={{ background: 'var(--primary-fill)', border: 'none', borderRadius: 8, padding: '9px 14px', color: 'var(--text)', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: addingItem ? 0.6 : 1 }}>{addingItem ? 'Adding…' : 'Add item'}</button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={Boolean(editingItem)} onOpenChange={(open) => { if (!open) { setEditingItem(null); setEditItemError(null); } }}>
-        <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
+        <DialogContent style={{ background: 'var(--primary-ink)', border: '1px solid var(--line2)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader><DialogTitle style={{ color: 'var(--text-primary)' }}>Edit item</DialogTitle></DialogHeader>
           <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
             <input autoFocus aria-label="Item name" value={editName} onChange={(event) => setEditName(event.target.value)} style={inputStyle} />
@@ -571,8 +571,8 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
             <textarea aria-label="Notes" placeholder="Notes (optional)" value={editNotes} onChange={(event) => setEditNotes(event.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             {editItemError && <p role="alert" style={{ margin: 0, color: 'var(--danger-ink)', fontSize: 12 }}>{editItemError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-              <button type="button" onClick={() => setEditingItem(null)} disabled={savingItem} style={{ background: 'transparent', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-              <button type="button" onClick={() => void handleSaveItem()} disabled={savingItem} style={{ background: 'var(--control-primary)', border: 'none', borderRadius: 8, padding: '9px 14px', color: '#000000', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: savingItem ? 0.6 : 1 }}>{savingItem ? 'Saving…' : 'Save changes'}</button>
+              <button type="button" onClick={() => setEditingItem(null)} disabled={savingItem} style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button type="button" onClick={() => void handleSaveItem()} disabled={savingItem} style={{ background: 'var(--primary-fill)', border: 'none', borderRadius: 8, padding: '9px 14px', color: 'var(--text)', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: savingItem ? 0.6 : 1 }}>{savingItem ? 'Saving…' : 'Save changes'}</button>
             </div>
           </div>
         </DialogContent>

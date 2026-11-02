@@ -1,5 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
+
+import { PageHeader } from "./app-theme-ui";
+/* eslint-disable @next/next/no-img-element */
+
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare, Printer, Square } from "lucide-react";
@@ -129,7 +132,7 @@ export function LabelStudioClient({ initialItemId }: { initialItemId?: string })
 
   return (
     <section className="product-page label-studio-page">
-      <header className="product-page-header">
+      <PageHeader className="product-page-header">
         <h1>Labels</h1>
         <div className="product-actions">
           {selected.size > 0 && <button className="product-button" onClick={() => setSelected(new Set())}>Clear</button>}
@@ -141,7 +144,7 @@ export function LabelStudioClient({ initialItemId }: { initialItemId?: string })
             <Printer size={14} /> Print{chosen.length > 0 ? ` ${chosen.length}` : ""}
           </button>
         </div>
-      </header>
+      </PageHeader>
 
       {error && <div className="product-notice error">{error}</div>}
 
