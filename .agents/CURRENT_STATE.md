@@ -1,8 +1,10 @@
-## November 1 - Voice input beta163 in validation
+## November 1 - Whisper voice input delivered to TestFlight163
 
-Active lane `feat/whisper-voice-input-163`, based on submitted build162. Whisper dictation implementation is complete; release checks and native packaging are in progress. The server credential is stored only in private deployment configuration. Provider acceptance transcribed a generated holiday-lights question correctly. Backend tests: 834 passed. Privacy copy describes both current Whisper and earlier Apple speech recognition. Staged web build preserves the current research release. No schema changes. Do not treat this entry as delivery; see the voice release receipt when available.
+Apple acknowledged FindEZ 1.1.1 (163), runtime `07a054ebc103ce97304ed7a3e7984a96a81dcbf6`, delivery `8af5f72d-422e-4ff9-92be-305f5eaaedb0`. PR284 remains isolated from main. The user selected voice input only: one-minute in-memory capture, authenticated Whisper transcription, editable draft and explicit Send. Cancellation covers startup, upload, backgrounding and stale accounts. Recording controls stay reachable at large text sizes. No spoken replies or automatic chat submission.
 
-Build162 has already been submitted and is WAITING_FOR_REVIEW with manual release; older preparation entries below are historical.
+Validation: 1,240 Flutter tests passed (one existing skip), 21 final focused checks, clean analysis, 11 native flow and four final native layout checks. All five exact-runtime CI gates passed (41364756914). Backend: 834 tests. Web: 324 tests, final legal checks, TypeScript/lint and staged production build. Live authenticated transcription returned the generated phrase; unauthenticated audio returned401. The additive backend endpoint and privacy copy are deployed, with live health checks and the research page preserved. No schema changes.
+
+The clean signed archive/export passed all 33 device-executable checks each, strict signing, 27 privacy manifests, production configuration, SF Pro packaging, provider-credential scans and Apple validation. IPA/archive and receipts are preserved in `Documents/FindEZ/AppStore/1.1.1-build163`. Processing/tester availability were not polled; physical iPhone microphone/permission acceptance remains pending. Build162 remains in App Review with manual release. See `docs/plans/voice-input163-receipt.json`.
 
 ## November 1 - App Store build 162 uploaded; submission preparation continues
 
