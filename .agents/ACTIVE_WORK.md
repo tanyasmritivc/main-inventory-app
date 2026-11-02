@@ -1,3 +1,7 @@
+## November 1 — Policies and public API audit
+
+Active on `fix/policies-api-current`, based on the deployed organization API contract commit 305e3e0. Updating terms, privacy and API reference against the actual live source. Use a guarded overlay deployment over hero-descender-20261101; preserve all unrelated current web/backend work. Validate live-source HTTP behavior and disposable PostgreSQL permissions. No mobile build or production schema changes.
+
 ## Organization agent management - October 19 (active)
 
 Scope: coordinated backend/web API-key UI, human approvals, documentation and connectors. User authorizes organization/inventory/Space/access management for external agents and inventory-bound Chat Space creation. Deletion requires explicit human confirmation; existing API keys retain their scopes. No mobile changes. The user explicitly approved migrations 062–066 after the fresh restore preserved 87 tables. Deployment is being prepared. Single implementation agent; see docs/plans/agent-management-20261019.md.

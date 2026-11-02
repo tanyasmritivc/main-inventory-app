@@ -350,7 +350,7 @@
           "maxLength": 200,
           "minLength": 1,
           "title": "Location",
-          "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+          "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
         },
         "image_url": {
           "anyOf": [
@@ -363,7 +363,7 @@
             }
           ],
           "title": "Image Url",
-          "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+          "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
         },
         "barcode": {
           "anyOf": [
@@ -513,7 +513,7 @@
             },
             "location": {
               "title": "Location",
-              "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first.",
+              "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first.",
               "type": "string",
               "maxLength": 200,
               "minLength": 1
@@ -529,7 +529,7 @@
                 }
               ],
               "title": "Image Url",
-              "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+              "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
             },
             "barcode": {
               "anyOf": [
@@ -716,7 +716,7 @@
                 "maxLength": 200,
                 "minLength": 1,
                 "title": "Location",
-                "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+                "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
               },
               "image_url": {
                 "anyOf": [
@@ -729,7 +729,7 @@
                   }
                 ],
                 "title": "Image Url",
-                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
               },
               "barcode": {
                 "anyOf": [

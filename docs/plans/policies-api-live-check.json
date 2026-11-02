@@ -1,0 +1,104 @@
+{
+  "checked_at": "2026-11-02T06:24:10Z",
+  "checks": [
+    {
+      "check": "service health",
+      "status": 200
+    },
+    {
+      "check": "database health",
+      "status": 200
+    },
+    {
+      "check": "unissued key rejected",
+      "status": 401
+    },
+    {
+      "check": "owner workspace discovery",
+      "status": 200
+    },
+    {
+      "check": "admin organization discovery",
+      "status": 200
+    },
+    {
+      "check": "key metadata list",
+      "status": 200
+    },
+    {
+      "check": "create empty isolated test organization",
+      "status": 200
+    },
+    {
+      "check": "temporary read-only key issuance",
+      "status": 201
+    },
+    {
+      "check": "integration authentication",
+      "status": 200
+    },
+    {
+      "check": "inventory list",
+      "status": 200
+    },
+    {
+      "check": "inventory locations",
+      "status": 200
+    },
+    {
+      "check": "workspace summary",
+      "status": 200
+    },
+    {
+      "check": "aggregate count",
+      "status": 200
+    },
+    {
+      "check": "aggregate sum_quantity",
+      "status": 200
+    },
+    {
+      "check": "filtered inventory",
+      "status": 200
+    },
+    {
+      "check": "invalid page rejected",
+      "status": 422
+    },
+    {
+      "check": "read key cannot create items",
+      "status": 403
+    },
+    {
+      "check": "bound organization",
+      "status": 200
+    },
+    {
+      "check": "workspace directory",
+      "status": 200
+    },
+    {
+      "check": "organization members",
+      "status": 200
+    },
+    {
+      "check": "organization invitations",
+      "status": 200
+    },
+    {
+      "check": "audit key revoked",
+      "status": 200
+    },
+    {
+      "check": "revoked credential rejected",
+      "status": 401
+    },
+    {
+      "check": "empty test organization removed",
+      "status": 200
+    }
+  ],
+  "inventory_mutations": false,
+  "temporary_keys": 1,
+  "credentials_logged": false
+}

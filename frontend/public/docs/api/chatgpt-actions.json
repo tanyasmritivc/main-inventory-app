@@ -39,7 +39,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -116,7 +116,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -159,7 +159,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -204,7 +204,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -239,7 +239,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -274,7 +274,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -331,7 +331,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -376,7 +376,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -411,7 +411,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -502,7 +502,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -586,7 +586,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -670,7 +670,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -715,7 +715,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -760,7 +760,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -807,7 +807,7 @@
             }
           },
           "default": {
-            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.",
             "content": {
               "application/json": {
                 "schema": {
@@ -964,14 +964,14 @@
           },
           "location": {
             "type": "string",
-            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
           },
           "image_url": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
           },
           "barcode": {
             "type": [
@@ -1097,7 +1097,7 @@
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
           },
           "image_url": {
             "anyOf": [
@@ -1109,7 +1109,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
           },
           "barcode": {
             "anyOf": [
@@ -1245,14 +1245,14 @@
               },
               "location": {
                 "type": "string",
-                "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+                "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
               },
               "image_url": {
                 "type": [
                   "string",
                   "null"
                 ],
-                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
               },
               "barcode": {
                 "type": [
@@ -1626,7 +1626,7 @@
             "minimum": 0
           },
           "location": {
-            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first.",
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first.",
             "type": "string",
             "maxLength": 200,
             "minLength": 1
@@ -1641,7 +1641,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
           },
           "barcode": {
             "anyOf": [
@@ -1817,7 +1817,7 @@
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first."
           },
           "image_url": {
             "anyOf": [
@@ -1829,7 +1829,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
           },
           "barcode": {
             "anyOf": [
