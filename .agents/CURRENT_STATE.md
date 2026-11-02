@@ -1,3 +1,15 @@
+## November 1 - Inline voice composer delivered to TestFlight164
+
+Apple acknowledged FindEZ 1.1.1 (164), source `67dd0ce36a1cf6577621ec7a9507b20936a6e8cb`, delivery `996b2c63-f063-44a1-8b6b-09cc372fefbb`. Branch `feat/voice-in-composer` is pushed; PR285 stays separate from main. Inline microphone levels, timer, silence-triggered transcription, a two-second auto-send countdown, tap-to-edit/cancel and voice duration labels follow the supplied design. The user explicitly authorized this release after the initial local-only implementation.
+
+Validation: local full Flutter suite 1,249 passed (one existing skip), two added context-cancellation checks, 18 final focused checks, clean analysis, eight native flow/layout checks plus four final accessibility layouts. Web: 324 tests, TypeScript, lint and staged production build/smoke checks. All five CI gates passed on the exact runtime commit (41375848006). Archive/export: 33 iOS-device executables each, strict signatures, 27 privacy manifests, verified production configuration and voice font packaging, credential scans and Apple validation. Accurate voice privacy wording is live, with personalization and research preserved.
+
+Processing/tester availability are pending and were not polled. Physical iPhone microphone acceptance remains with the user. Build162's public App Review submission remains unchanged. Signed IPA/archive and receipts are preserved in `Documents/FindEZ/AppStore/1.1.1-build164`; see `docs/plans/voice-composer164-receipt.json`.
+
+## November 1 — Inline voice composer, local-only lane
+
+`Projects/findez-voice-composer`, branch `feat/voice-in-composer`, implements the user-supplied voice-v1 composer brief over the existing Whisper capture/transport. This lane is not pushed, uploaded or deployed. Its silence → transcription → two-second countdown flow supersedes build163's explicit-Send draft behavior only when this local app is built. User will perform physical iPhone microphone checks. See `docs/voice-v1/IMPLEMENTATION.md` for verification and changed files. Build162's App Review submission and uploaded build163 remain unchanged.
+
 ## November 1 - Whisper voice input delivered to TestFlight163
 
 Apple acknowledged FindEZ 1.1.1 (163), runtime `07a054ebc103ce97304ed7a3e7984a96a81dcbf6`, delivery `8af5f72d-422e-4ff9-92be-305f5eaaedb0`. PR284 remains isolated from main. The user selected voice input only: one-minute in-memory capture, authenticated Whisper transcription, editable draft and explicit Send. Cancellation covers startup, upload, backgrounding and stale accounts. Recording controls stay reachable at large text sizes. No spoken replies or automatic chat submission.

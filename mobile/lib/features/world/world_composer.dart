@@ -1,3 +1,5 @@
+import '../chat/voice_composer_session.dart';
+import '../chat/voice_composer_panel.dart';
 import '../onboarding/sample_scan.dart' show TrialCameraPulse;
 import 'dart:async';
 import 'dart:ui';
@@ -22,6 +24,7 @@ class WorldComposer extends StatefulWidget {
     this.onVoiceEnd,
     this.onVoiceCancel,
     this.voiceTranscript = '',
+    this.voiceSession,
     required this.onSend,
     required this.busy,
     required this.listening,
@@ -38,6 +41,7 @@ class WorldComposer extends StatefulWidget {
   final VoidCallback? onAttach, onVoice, onSend;
   final VoidCallback? onVoiceStart, onVoiceEnd, onVoiceCancel;
   final String voiceTranscript;
+  final VoiceComposerSession? voiceSession;
   final bool busy, listening, compact;
   @override
   State<WorldComposer> createState() => _WorldComposerState();
@@ -145,6 +149,58 @@ class _WorldComposerState extends State<WorldComposer>
 
   @override
   Widget build(BuildContext context) {
+    final voice = widget.voiceSession;
+    if (voice == null) return _idleComposer(context);
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: voice,
+      builder: (context, _) {
+        final content = AnimatedSwitcher(
+          duration: reduced ? Duration.zero : const Duration(milliseconds: 350),
+          switchInCurve: voiceCurve,
+          switchOutCurve: voiceCurve,
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              ...previous.map(
+                (child) => Positioned.fill(
+                  child: OverflowBox(
+                    minHeight: 0,
+                    maxHeight: double.infinity,
+                    alignment: Alignment.topCenter,
+                    child: IgnorePointer(child: child),
+                  ),
+                ),
+              ),
+              if (current != null) current,
+            ],
+          ),
+          child: voice.active
+              ? _ComposerSurface(
+                  key: const ValueKey('voice-composer-active'),
+                  active: true,
+                  child: VoiceComposerPanel(session: voice),
+                )
+              : ConstrainedBox(
+                  key: const ValueKey('voice-composer-idle'),
+                  constraints: BoxConstraints(
+                    minHeight: widget.compact ? 104 : 136,
+                  ),
+                  child: _idleComposer(context),
+                ),
+        );
+        if (reduced) return content;
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 600),
+          curve: voiceCurve,
+          alignment: Alignment.topCenter,
+          child: content,
+        );
+      },
+    );
+  }
+
+  Widget _idleComposer(BuildContext context) {
     final keyboardVisible =
         View.of(context).viewInsets.bottom > 0 ||
         MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -155,6 +211,16 @@ class _WorldComposerState extends State<WorldComposer>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.voiceSession?.errorText != null) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  widget.voiceSession!.errorText!,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (widget.sourceChips != null) ...[
               widget.sourceChips!,
               const SizedBox(height: 8),
@@ -299,31 +365,47 @@ class _WorldComposerState extends State<WorldComposer>
 
 /// A flat frosted writing surface, without the bevel used on floating controls.
 class _ComposerSurface extends StatelessWidget {
-  const _ComposerSurface({required this.child});
+  const _ComposerSurface({super.key, required this.child, this.active = false});
+  final bool active;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final highContrast = MediaQuery.highContrastOf(context);
-    const radius = BorderRadius.all(Radius.circular(20));
+    final radius = BorderRadius.all(Radius.circular(active ? 26 : 20));
     final surface = DecoratedBox(
       decoration: BoxDecoration(
-        color: (dark ? const Color(0xFF262626) : const Color(0xFFFFFFFF))
-            .withValues(alpha: highContrast ? 1 : .78),
+        color:
+            (dark
+                    ? Color(active ? 0xFF1C1C1E : 0xFF262626)
+                    : const Color(0xFFFFFFFF))
+                .withValues(alpha: active || highContrast ? 1 : .78),
+        boxShadow: active && !dark
+            ? [
+                const BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 30,
+                  offset: Offset(0, 10),
+                ),
+              ]
+            : null,
         borderRadius: radius,
         border: Border.all(
-          color: (dark ? Colors.white : const Color(0xFF373737)).withValues(
-            alpha: highContrast ? .45 : (dark ? .07 : .08),
-          ),
-          width: .5,
+          color: active
+              ? (dark ? const Color(0xFF3A3A3C) : const Color(0xFFE2E2E2))
+              : (dark ? Colors.white : const Color(0xFF373737)).withValues(
+                  alpha: highContrast ? .45 : (dark ? .07 : .08),
+                ),
+          width: active ? 1 : .5,
         ),
       ),
       child: child,
     );
+    if (active) return surface;
     return ClipRRect(
       borderRadius: radius,
-      child: highContrast
+      child: highContrast || active
           ? surface
           : BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),

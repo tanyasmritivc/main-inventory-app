@@ -1,3 +1,4 @@
+import 'voice_composer_session.dart' show voiceTime;
 import 'chat_progress.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
@@ -18,10 +19,12 @@ class AskQuestionCard extends StatelessWidget {
     super.key,
     required this.question,
     this.photoBytes,
+    this.voiceDuration,
     this.photoUrl,
     this.compact = false,
   });
   final String question;
+  final Duration? voiceDuration;
   final bool compact;
   final Uint8List? photoBytes;
   // Only a validated app-owned URL may be passed here by the chat controller.
@@ -52,7 +55,9 @@ class AskQuestionCard extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: voiceDuration == null
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.end,
             children: [
               if (photoBytes != null || photoUrl != null) ...[
                 ClipRRect(
@@ -91,6 +96,30 @@ class AskQuestionCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (voiceDuration != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.mic_none,
+                      size: 12,
+                      color: Color(0xFF8E8E93),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'Voice · ${voiceTime(voiceDuration!)}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

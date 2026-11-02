@@ -16,5 +16,16 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
         Future.value(ByteData.sublistView(await fixture.readAsBytes())),
       ))
       .load();
+  for (final face in {
+    'VoiceInter': 'assets/fonts/inter/Inter.ttf',
+    'GeistMono': 'assets/fonts/brand/GeistMono-Regular.ttf',
+  }.entries) {
+    await (FontLoader(face.key)..addFont(
+          Future.value(
+            ByteData.sublistView(await File(face.value).readAsBytes()),
+          ),
+        ))
+        .load();
+  }
   await testMain();
 }

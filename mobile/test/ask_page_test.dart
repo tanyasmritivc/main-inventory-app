@@ -252,29 +252,30 @@ Widget _page(
 );
 
 void main() {
-  testWidgets(
-    'voice returns an editable draft and sends only on explicit Send',
-    (tester) async {
-      final recorder = Recorder();
-      final api = _AskApi(world: true);
-      await tester.pumpWidget(_page(api, voiceRecorder: recorder));
-      await tester.pumpAndSettle();
-      final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
-      composer.controller.text = 'Please help.';
-      composer.onVoice!();
-      await tester.pumpAndSettle();
-      expect(find.text('Now recording'), findsOneWidget);
-      await tester.tap(find.text('Done'));
-      await tester.pumpAndSettle();
-      expect(composer.controller.text, 'Please help. Where are my screws?');
-      expect(api.commands, isEmpty);
-      expect(find.text('Now recording'), findsNothing);
-      tester.widget<WorldComposer>(find.byType(WorldComposer)).onSend!();
-      await tester.pumpAndSettle();
-      expect(api.commands, ['Please help. Where are my screws?']);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+  testWidgets('voice editing sends through chat and labels the message', (
+    tester,
+  ) async {
+    final recorder = Recorder();
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(_page(api, voiceRecorder: recorder));
+    await tester.pumpAndSettle();
+    final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
+    composer.controller.text = 'Please help.';
+    composer.onVoice!();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
+    expect(find.text('Listening'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('voice-transcript')));
+    await tester.pumpAndSettle();
+    expect(find.text('Please help. Where are my screws?'), findsOneWidget);
+    expect(api.commands, isEmpty);
+    expect(find.text('Now recording'), findsNothing);
+    await tester.tap(find.byKey(const Key('voice-send')));
+    await tester.pumpAndSettle();
+    expect(api.commands, ['Please help. Where are my screws?']);
+    expect(find.text('Voice · 0:00'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets('background cancels recording and preserves typed draft', (
     tester,
   ) async {
@@ -285,8 +286,9 @@ void main() {
     final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
     composer.controller.text = 'Keep this';
     composer.onVoice!();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Done'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
+    await tester.tap(find.byKey(const Key('voice-send')));
     await tester.pump();
     expect(find.text('Transcribing...'), findsOneWidget);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -304,6 +306,38 @@ void main() {
     expect(find.text('Transcribing...'), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
+
+  for (final change in ['tab', 'account']) {
+    testWidgets('voice countdown cancels on $change change', (tester) async {
+      final recorder = Recorder();
+      final api = _AskApi(world: true);
+      await tester.pumpWidget(
+        TickerMode(enabled: true, child: _page(api, voiceRecorder: recorder)),
+      );
+      await tester.pumpAndSettle();
+      final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
+      composer.onVoice!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 650));
+      await composer.voiceSession!.capture.release();
+      await tester.pump();
+      expect(composer.voiceSession!.status, 'Sending · tap text to edit');
+      await tester.pumpWidget(
+        TickerMode(
+          enabled: change != 'tab',
+          child: _page(
+            change == 'account' ? _AskApi(world: true) : api,
+            voiceRecorder: recorder,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(composer.voiceSession!.active, false);
+      await tester.pump(const Duration(seconds: 3));
+      expect(api.commands, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
 
   testWidgets('empty Ask has one prompt and no duplicated brand heading', (
     tester,
