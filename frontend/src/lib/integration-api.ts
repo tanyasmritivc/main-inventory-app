@@ -1,19 +1,26 @@
 import { apiBase } from "@/lib/api";
 
-export type KeyScope = "items:read" | "items:write" | "import:write" | "workspace:read" | "org:read" | "org:write";
+export type KeyScope = "items:read" | "items:write" | "import:write" | "workspace:read" | "org:read" | "org:write" | "structure:read" | "structure:write" | "structure:delete" | "members:read" | "members:write" | "items:delete";
 export type IntegrationKey = {
-  id: string; workspace_id: string | null; name: string; key_prefix: string;
+  id: string; organization_id?: string | null; workspace_id: string | null; name: string; key_prefix: string;
   scopes: KeyScope[]; created_at: string; last_used_at: string | null;
   expires_at: string | null; revoked_at: string | null;
 };
+export type KeyOrganization = { organization_id: string; name: string; role: "owner" | "admin" };
 export type KeyWorkspace = { team_id: string; name: string };
 export type CreateIntegrationKey = {
-  name: string; workspace_id: string | null; scopes: KeyScope[]; expires_at: string | null;
+  name: string; workspace_id: string | null; organization_id?: string | null; scopes: KeyScope[]; expires_at: string | null;
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  workspace_access_denied: "Only the team owner can manage integrations for this workspace.",
-  organization_required: "Create a team first, then return here to create its API key.",
+  workspace_access_denied: "Only the workspace owner can manage integrations. Inventory content permissions must also allow access.",
+  organization_required: "Create a workspace first, then return here to create its API key.",
+  key_creation_unavailable: "The key could not be created. Try again after refreshing the page.",
+  key_list_unavailable: "API keys could not be loaded. Try again.",
+  workspace_list_unavailable: "Your workspaces could not be loaded. Try again.",
+  key_revocation_unavailable: "The key could not be revoked. It may still be active. Try again.",
+  database_unavailable: "Inventory access is temporarily unavailable. Your key has not been changed.",
+  authentication_unavailable: "API authentication is temporarily unavailable. Try again.",
   invalid_expiration: "Choose an expiration date in the future.",
   invalid_api_key: "This API key is invalid. Check that you copied the entire key.",
   revoked_api_key: "This API key has been revoked.",
@@ -28,12 +35,14 @@ async function request<T>(path: string, token: string, method = "GET", body?: un
   let response: Response;
   try {
     response = await fetch(`${apiBase().replace(/\/$/, "")}/api/v1${path}`, {
-      method, cache: "no-store",
+      method, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000),
       headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error("Could not connect to FindEZ. Check your connection and try again.");
+    throw new Error(method === "GET" || path === "/query"
+      ? "Could not connect to FindEZ. Check your connection and try again."
+      : "The change could not be confirmed. Refresh the key list before trying again; the request may have succeeded.");
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
@@ -49,19 +58,30 @@ async function request<T>(path: string, token: string, method = "GET", body?: un
 export const listIntegrationKeys = (token: string) => request<{ keys: IntegrationKey[] }>("/keys", token);
 export const listKeyWorkspaces = (token: string) => request<{ workspaces: KeyWorkspace[] }>("/keys/workspaces", token);
 export const createIntegrationKey = (token: string, body: CreateIntegrationKey) => request<IntegrationKey & { key: string }>("/keys", token, "POST", body);
-export const revokeIntegrationKey = (token: string, id: string) => request<{ revoked: true; revoked_at: string }>(`/keys/${encodeURIComponent(id)}`, token, "DELETE");
+export async function revokeIntegrationKey(token: string, id: string) {
+  const receipt = await request<{ revoked: boolean; revoked_at: string }>(`/keys/${encodeURIComponent(id)}`, token, "DELETE");
+  if (receipt.revoked !== true || typeof receipt.revoked_at !== "string" || !Number.isFinite(Date.parse(receipt.revoked_at)))
+    throw new Error("Revocation could not be confirmed. Refresh the key list; the key may still be active.");
+  return receipt;
+}
 
 export async function testIntegrationKey(key: string): Promise<string> {
   const identity = await request<{ scopes: KeyScope[] }>("/whoami", key);
+  if (!Array.isArray(identity.scopes) || !identity.scopes.length) throw new Error("FindEZ returned an invalid key identity. The connection could not be verified.");
   if (identity.scopes.includes("items:read") || identity.scopes.includes("org:read")) {
     const count = await request<{ value: number }>("/query", key, "POST", { resource: "items", aggregate: "count" });
+    if (!Number.isSafeInteger(count.value) || count.value < 0) throw new Error("FindEZ returned an invalid inventory count. The connection could not be verified.");
     return `Connected. This key can read ${count.value} inventory items.`;
   }
   if (identity.scopes.includes("workspace:read")) {
     await request("/workspaces/summary", key);
     return "Connected. Workspace access verified.";
   }
-  return "Key authentication passed. Write permissions were not exercised.";
+  if (identity.scopes.includes("structure:read")) {
+    await request("/organization", key);
+    return "Connected. Organization directory access verified.";
+  }
+  return "Key authentication passed. Write and deletion permissions were not exercised.";
 }
 
 export function integrationKeyStatus(key: Pick<IntegrationKey, "revoked_at" | "expires_at">): "Active" | "Expired" | "Revoked" {
@@ -69,3 +89,5 @@ export function integrationKeyStatus(key: Pick<IntegrationKey, "revoked_at" | "e
   if (key.expires_at && Date.parse(key.expires_at) <= Date.now()) return "Expired";
   return "Active";
 }
+
+export const listKeyOrganizations = (token: string) => request<{ organizations: KeyOrganization[] }>("/keys/organizations", token);

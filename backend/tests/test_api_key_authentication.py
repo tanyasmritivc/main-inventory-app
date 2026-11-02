@@ -106,7 +106,7 @@ def test_integration_routes_are_mounted():
 
 
 def test_data_client_uses_anon_key_and_signed_rls_claims(monkeypatch):
-    from jose import jwt
+    import jwt
     from app.services import api_key_client
 
     captured = {}

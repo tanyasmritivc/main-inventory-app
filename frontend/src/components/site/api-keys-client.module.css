@@ -37,3 +37,7 @@
 .page pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.7; background: var(--light-raised); border-radius: 10px; padding: 16px; margin: 16px 0; }
 .page p.hint { font-size: 12px; }
 @media (max-width: 540px) { .fields { grid-template-columns: 1fr; gap: 0; } .card { padding: 18px; } }
+
+.page dl { display: flex; flex-wrap: wrap; gap: 20px 32px; margin: 20px 0; }
+.page dt { color: var(--text-secondary); font-size: 13px; }
+.page dd { margin: 6px 0 0; font-size: 24px; font-weight: 500; }

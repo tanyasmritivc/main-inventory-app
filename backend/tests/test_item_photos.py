@@ -1,6 +1,6 @@
 import io
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 from PIL import Image
 
@@ -48,6 +48,31 @@ def test_photo_list_keeps_primary_first_and_deduplicates_urls():
     assert [photo["photo_id"] for photo in photos] == ["event-1", "event-2"]
     assert photos[0]["is_primary"] is True
     assert photos[1]["is_primary"] is False
+
+
+def test_original_stays_second_when_newer_gallery_events_exist():
+    events = [
+        {'event_id': 'new', 'image_url': 'new.jpg'},
+        {'event_id': 'source', 'image_url': 'original.jpg', 'content': 'Original scan photo'},
+    ]
+    photos = _photos_for_item(item={'image_url': 'crop.jpg'}, events=events)
+    assert [p['image_url'] for p in photos] == ['crop.jpg', 'original.jpg', 'new.jpg']
+
+
+def test_storage_cleanup_retains_original_needed_by_pending_review():
+    from app.services.item_photos import _image_url_is_referenced
+    query = MagicMock()
+    for method in ('select', 'eq', 'limit'):
+        getattr(query, method).return_value = query
+    query.execute.side_effect = [SimpleNamespace(data=[]), SimpleNamespace(data=[]),
+                                SimpleNamespace(data=[]), SimpleNamespace(data=[{'review_id': 'pending-sibling'}])]
+    raw = MagicMock()
+    raw.table.return_value = query
+    with patch('app.services.supabase_client.get_supabase_raw', return_value=raw):
+        assert _image_url_is_referenced(user_id='actor', image_url='original.jpg')
+    assert call('capture_reviews') in raw.table.call_args_list
+    assert call('source_frame_url', 'original.jpg') in query.eq.call_args_list
+    assert call('user_id', 'actor') not in query.eq.call_args_list
 
 
 def test_photo_is_normalized_to_jpeg():

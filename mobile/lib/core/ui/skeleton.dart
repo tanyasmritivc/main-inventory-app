@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -18,7 +19,8 @@ class SkeletonBox extends StatefulWidget {
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
 
-class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -54,9 +56,18 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
               begin: Alignment(start, 0),
               end: Alignment(end, 0),
               colors: [
-                AppColors.surface2.withValues(alpha: 0.55),
-                Colors.white.withValues(alpha: 0.06),
-                AppColors.surface2.withValues(alpha: 0.55),
+                AppTheme.adaptive(
+                  context,
+                  AppColors.surface2.withValues(alpha: 0.55),
+                ),
+                AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.06),
+                ),
+                AppTheme.adaptive(
+                  context,
+                  AppColors.surface2.withValues(alpha: 0.55),
+                ),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),

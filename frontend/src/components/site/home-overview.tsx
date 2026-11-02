@@ -1,0 +1,302 @@
+"use client";
+import { privateImageSrc } from "@/lib/private-image";
+
+import { canEditInventory } from "@/lib/inventory-selection";
+import { useInventoryRouter } from "@/components/site/inventory-link";
+import Link from "@/components/site/inventory-link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUpRight, Box, Camera, ChevronRight, MapPin, RefreshCw, Search } from "lucide-react";
+import styles from "./home-overview.module.css";
+
+import { accountRequest } from "@/lib/account-request";
+import { itemDisplayName, type InventoryItem, type Space } from "@/lib/api";
+import {
+  buildSpaceIndex,
+  groupItemsBySpace,
+  resolveDisplaySpaces,
+} from "@/lib/spaces";
+import { useApiSession } from "@/lib/use-api-session";
+import { useRestock } from "@/lib/use-restock";
+import { needsBuying, onOrder } from "@/lib/restock-plan";
+export function HomeOverview() {
+  const { accountId } = useApiSession();
+  return <HomeOverviewWorkspace key={accountId || "signed-out"} />;
+}
+function HomeOverviewWorkspace() {
+  const { accountId, error: sessionError } = useApiSession(),
+    restock = useRestock(accountId),
+    router = useInventoryRouter();
+  const { adopt: adoptRestock } = restock;
+  const [checkedAt, setCheckedAt] = useState(0);
+  const owner = useRef(accountId);
+  const request = useRef(0);
+  useEffect(() => {
+    owner.current = accountId;
+    return () => {
+      owner.current = null;
+    };
+  }, [accountId]);
+  const [data, setData] = useState<{
+      items?: InventoryItem[];
+      spaces?: Space[];
+      review?: number;
+      checkouts?: { due_back_at?: string }[];
+      name?: string;
+    }>({}),
+    [failures, setFailures] = useState<string[]>([]),
+    [loading, setLoading] = useState(true),
+    [query, setQuery] = useState("");
+  const load = useCallback(async () => {
+    if (!accountId) return;
+    const account = accountId,
+      ticket = ++request.current;
+    const results = await Promise.allSettled([
+      accountRequest<{ items: InventoryItem[] }>(account, "/search_items", {
+        method: "POST",
+        body: { query: "" },
+      }),
+      accountRequest<Space[] | { spaces: Space[] }>(account, "/spaces"),
+      accountRequest<{ pending_count: number }>(
+        account,
+        "/review-items?limit=1",
+      ),
+      accountRequest<{ checkouts: { due_back_at?: string }[] }>(
+        account,
+        "/checkouts/active",
+      ),
+      accountRequest<{ display_name?: string }>(account, "/profile/me"),
+    ]);
+    if (owner.current !== account || ticket !== request.current) return;
+    const [inventory, spaces, review, checkouts, profile] = results;
+    if (inventory.status === "fulfilled") adoptRestock(inventory.value.items.map(item => item.item_id));
+    setData({
+      items:
+        inventory.status === "fulfilled" ? inventory.value.items : undefined,
+      spaces:
+        spaces.status === "fulfilled"
+          ? Array.isArray(spaces.value)
+            ? spaces.value
+            : spaces.value.spaces
+          : undefined,
+      review:
+        review.status === "fulfilled" ? review.value.pending_count : undefined,
+      checkouts:
+        checkouts.status === "fulfilled"
+          ? checkouts.value.checkouts
+          : undefined,
+      name:
+        profile.status === "fulfilled" ? profile.value.display_name : undefined,
+    });
+    setFailures(
+      results
+        .slice(0, 4)
+        .flatMap((r, i) =>
+          r.status === "rejected"
+            ? [["inventory", "Spaces", "Review", "lent items"][i]]
+            : [],
+        ),
+    );
+    setCheckedAt(Date.now());
+    setLoading(false);
+  }, [accountId, adoptRestock]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) return load();
+    });
+    return () => {
+      active = false;
+    };
+  }, [load]);
+  const recent = [...(data.items ?? [])]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    .slice(0, 6);
+  const groups = groupItemsBySpace(
+      data.items ?? [],
+      data.spaces ? buildSpaceIndex(data.spaces) : null,
+    ),
+    spaces = resolveDisplaySpaces(
+      data.spaces ?? [],
+      data.items ?? [],
+      !data.spaces,
+    );
+  const overdue = data.checkouts?.filter(
+    (c) => c.due_back_at && new Date(c.due_back_at).getTime() < checkedAt,
+  ).length;
+  const toBuy = data.items?.filter((i) =>
+    needsBuying(restock.plan[i.item_id], i.quantity),
+  ).length;
+  const ordered = data.items?.filter((i) =>
+    onOrder(restock.plan[i.item_id]),
+  ).length;
+  const attention = [
+    { href: "/review", count: data.review, label: "captures to review" },
+    { href: "/restock", count: restock.ready ? toBuy : undefined, label: "to buy" },
+    { href: "/restock", count: restock.ready ? ordered : undefined, label: "on order" },
+    { href: "/checkout", count: overdue, label: "overdue lent items" },
+  ].filter((entry) => entry.count !== undefined && entry.count > 0);
+  function ask(e: React.FormEvent) {
+    e.preventDefault();
+    if (query.trim())
+      router.push(`/assist?q=${encodeURIComponent(query.trim())}`);
+  }
+  return (
+    <section className={styles.overview}>
+      <header className="workspace-heading">
+        <div>
+          <h1>
+            {data.name
+              ? `Hello, ${data.name.split(" ")[0]}.`
+              : "Your physical memory"}
+          </h1>
+          <p>
+            {data.items ? `${data.items.length} ${data.items.length === 1 ? "item" : "items"}` : "Your items"}
+            {data.spaces ? ` across ${data.spaces.length} ${data.spaces.length === 1 ? "Space" : "Spaces"}.` : "."}
+          </p>
+        </div>
+        <div className="workspace-actions">
+          <button
+            className="workspace-button"
+            onClick={() => {
+              setLoading(true);
+              setFailures([]);
+              void load();
+            }}
+            aria-label="Refresh Home"
+          >
+            <RefreshCw size={15} />
+          </button>
+          <Link className="workspace-button primary" href={canEditInventory() ? "/scan" : "/inventory"}>
+            <Camera size={15} />
+            {canEditInventory() ? "Capture" : "View inventory"}
+          </Link>
+        </div>
+      </header>
+      <form className="workspace-search" onSubmit={ask}>
+        <Search size={18} />
+        <input
+          aria-label="Ask FindEZ"
+          placeholder="Where did I put it?"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button
+          className="workspace-button"
+          type="submit"
+          disabled={!query.trim()}
+          aria-label="Ask your question"
+        >
+          <ArrowUpRight size={16} />
+        </button>
+      </form>
+      {(sessionError || failures.length > 0) && (
+        <div role="alert" className="workspace-error">
+          {sessionError || `Could not load ${failures.join(", ")}.`}{" "}
+          {sessionError ? <Link className="workspace-button" href="/signin?redirect=/home">Sign in</Link> : <button
+            className="workspace-button"
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              setFailures([]);
+              void load();
+            }}
+          >
+            Try again
+          </button>}
+        </div>
+      )}
+      {loading && !sessionError && (
+        <p role="status" className="workspace-muted">
+          Loading your overview…
+        </p>
+      )}
+      {attention.length > 0 && <section className="workspace-section">
+        <div className="workspace-section-heading">
+          <h2>Needs your attention</h2>
+        </div>
+        <div className="home-attention">
+          {attention.map((entry) => <Link key={entry.label} href={entry.href}>
+            <strong>{entry.count}</strong>
+            <span>{entry.label}</span>
+          </Link>)}
+        </div>
+      </section>}
+      {restock.error && (
+          <p className="workspace-error" role="alert">
+            {restock.error}
+          </p>
+      )}
+      <div className={styles.panels}>
+      <section className={styles.panel} aria-labelledby="home-recent-heading">
+        <div className={styles.panelHeading}>
+          <h2 id="home-recent-heading">Recently added</h2>
+          <Link href="/inventory" aria-label="View all items">View all <ArrowUpRight size={14} /></Link>
+        </div>
+        <div className={styles.recent}>
+          {recent.map((item) => (
+            <Link
+              key={item.item_id}
+              href={`/inventory?item=${encodeURIComponent(item.item_id)}`}
+            >
+              {item.image_url ? (
+                <img src={privateImageSrc(item.image_url, accountId)} alt="" />
+              ) : <span className={styles.itemPlaceholder}><Box size={20} aria-hidden="true" /></span>}
+              <span className={styles.itemCopy}>
+                <strong>{itemDisplayName(item)}</strong>
+                <small>{item.quantity} · {item.location || "Unsorted"}</small>
+              </span>
+            </Link>
+          ))}
+        </div>
+        {data.items?.length === 0 && (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}><Camera size={24} aria-hidden="true" /></span>
+            <h3>{canEditInventory() ? "Start with a photo" : "No items yet"}</h3>
+            <p>
+              {canEditInventory() ? "Capture what you have, then give it a Space." : "Items will appear here when they are added to this inventory."}
+            </p>
+            {canEditInventory() && <Link href="/scan" className="workspace-button">
+              Capture your first items
+            </Link>}
+          </div>
+        )}
+      </section>
+      <section className={styles.panel} aria-labelledby="home-spaces-heading">
+        <div className={styles.panelHeading}>
+          <h2 id="home-spaces-heading">Your Spaces</h2>
+          <Link href="/spaces" aria-label="View all Spaces">View all <ArrowUpRight size={14} /></Link>
+        </div>
+        <div className={styles.spaces}>
+        {spaces.map((name) => (
+          <Link
+            className={styles.spaceRow}
+            key={name}
+            href={`/inventory?space=${encodeURIComponent(name)}`}
+          >
+            <MapPin size={18} aria-hidden="true" />
+            <span className={styles.itemCopy}>
+              <strong>{name}</strong>
+              <small>{data.items ? (groups[name]?.length ?? 0) : "…"} items</small>
+            </span>
+            <ChevronRight size={15} aria-hidden="true" />
+          </Link>
+        ))}
+        </div>
+        {data.spaces && spaces.length === 0 && (
+          <div className={`${styles.empty} ${styles.spaceEmpty}`}>
+            <span className={styles.emptyIcon}><MapPin size={24} aria-hidden="true" /></span>
+            <h3>No Spaces yet</h3>
+            <p>Group items by where you keep them.</p>
+            {canEditInventory() && <Link href="/spaces" className="workspace-button">
+              Create a Space
+            </Link>}
+          </div>
+        )}
+      </section>
+      </div>
+    </section>
+  );
+}

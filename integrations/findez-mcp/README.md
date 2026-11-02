@@ -2,15 +2,21 @@
 
 Connect Claude Desktop or a private ChatGPT GPT to the existing FindEZ integration
 API. The connector reads, adds, updates, and bulk-syncs inventory in linked Team
-Spaces. It has no delete, arbitrary HTTP, raw SQL, or key-management tool.
+Spaces. Organization-bound keys can also manage resources and memberships, and prepare permanent deletions for human confirmation. There is no API confirmation, arbitrary HTTP, raw SQL, or key-management tool.
 
 User setup and downloads: <https://findez.ai/docs/api#ai-assistants>.
 
-For every tool, create a dedicated key with `items:read`, `workspace:read`,
+For inventory-only tools, create a dedicated key with `items:read`, `workspace:read`,
 `items:write`, and `import:write`; for all owned Teams use `org:read` and `org:write`.
 Read-only keys still work for reads; write-only keys cannot read. Existing API
 scope checks, RLS, expiration, revocation and per-key rate limits remain in force.
 Keys never appear in tool parameters or downloadable artifacts.
+
+For organization management, create a new key bound to one organization. Select
+`structure:read/write` for discovery and resource changes, `members:read/write`
+for membership and invitations, and opt into `items:delete` or `structure:delete`
+only when required. Existing keys retain their old scope. Current issuer roles
+remain enforced; organization administration does not unlock restricted inventories.
 
 ## Claude Desktop
 
@@ -51,7 +57,7 @@ The API destination is fixed to `https://findez.openstack.ftctools.com`. Redirec
 requests time out after 30 seconds, response size is bounded, upstream error
 bodies are not exposed, and writes are never automatically retried. SDK clients
 in the tests exercise initialization, discovery, each operation, partial updates,
-null clearing, validation, permission errors, and rejected deletion. All test HTTP
+null clearing, validation, permission errors, and rejected direct deletion. All test HTTP
 traffic is stubbed; no live key or inventory is needed.
 
 For another local MCP client, launch `node /absolute/path/to/src/stdio.mjs` with
@@ -67,8 +73,22 @@ reservations. PATCH sends only supplied changes. Bulk upsert matches the stable
 workspace/source/external identity and uses create defaults for omitted fields;
 send the intended quantity/category. It never deletes omitted rows. After an
 uncertain write result, read inventory before retrying, especially after POST.
-Space/Team management, documents, billing, and other app-only features remain in
-FindEZ and are outside the integration API.
+Use the organization directory to resolve exact workspace, inventory and Space IDs.
+Supply inventory_id for item creation/import when Space names repeat. Organization
+actions require a fresh request_id UUID; reuse it with identical values after a
+timeout. Invitations require recipient acceptance before new access is granted.
+Role changes and removals apply immediately subject to current authority.
+
+Deletion is a separate workflow: prepare the preview, show its impact and approval
+URL to the human key owner, and wait. The owner signs in to FindEZ and types the
+exact name to confirm. Never open or confirm the link on their behalf. Poll status;
+only confirmed plus receipt.deleted=true proves deletion. Previews expire in 15
+minutes; changed contents, revoked roles or keys block confirmation. Workspaces
+must first be empty. Never simulate deletion by setting quantity to zero.
+
+Documents, billing, account deletion, API-key management, ownership transfer and
+cross-organization attachment remain in FindEZ. Version 1.1.0 adds these tools;
+reinstall the Desktop extension or reimport the Actions schema when upgrading.
 
 Official integration references:
 

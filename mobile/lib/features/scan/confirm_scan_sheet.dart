@@ -1,11 +1,15 @@
+import 'package:mobile/core/ui/glass_control.dart';
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
+import 'scan_evidence_panel.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
-const _kLabelStyle = TextStyle(
-  color: Color(0x4DFFFFFF),
+TextStyle _kLabelStyle(BuildContext context) => TextStyle(
+  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
   fontSize: 11,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.6,
@@ -19,6 +23,7 @@ class ConfirmScanSheet extends StatefulWidget {
     super.key,
     required this.items,
     required this.defaultLocation,
+    this.existingItems,
   });
 
   final List<ExtractedInventoryItem> items;
@@ -27,6 +32,7 @@ class ConfirmScanSheet extends StatefulWidget {
   /// initial value for each item's Location field so the user sees their
   /// chosen space rather than the AI-extracted default ("Unsorted").
   final String defaultLocation;
+  final List<InventoryItem>? existingItems;
 
   @override
   State<ConfirmScanSheet> createState() => _ConfirmScanSheetState();
@@ -40,7 +46,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
-  final List<InventoryItem> _existing = InventoryCache.items;
+  late final List<InventoryItem> _existing =
+      widget.existingItems ?? InventoryCache.items;
 
   @override
   void initState() {
@@ -158,6 +165,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
+        scanEvidence: orig.scanEvidence,
+        reviewId: orig.reviewId,
+        reviewStatus: orig.reviewStatus,
+        reviewToken: orig.reviewToken,
       );
     });
   }
@@ -171,25 +182,37 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: _kLabelStyle),
+          AppText(label, style: _kLabelStyle(context)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                width: 0.5,
+              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: controller,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 13,
+                ),
+              ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                hintStyle: const TextStyle(
-                  color: Color(0x33FFFFFF),
-                  fontSize: 13,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
@@ -218,7 +241,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the manufacturer page.')),
+        const SnackBar(
+          content: AppText('Could not open the manufacturer page.'),
+        ),
       );
     }
   }
@@ -235,9 +260,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+        border: Border.all(
+          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+          width: 0.5,
+        ),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -252,11 +280,11 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   widget.items[i].imageUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => Container(
-                    color: const Color(0xFF202020),
+                    color: AppTheme.adaptive(context, const Color(0xFF202020)),
                     alignment: Alignment.center,
-                    child: const Icon(
+                    child: Icon(
                       Icons.broken_image_outlined,
-                      color: Color(0x55FFFFFF),
+                      color: AppTheme.foreground(context, Color(0x55FFFFFF)),
                     ),
                   ),
                 ),
@@ -267,7 +295,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // Row 1: label + "Can't read?" pill
           Row(
             children: [
-              const Text('ITEM NAME', style: _kLabelStyle),
+              AppText('ITEM NAME', style: _kLabelStyle(context)),
               if (isVerified) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -276,26 +304,32 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x1A30D158),
+                    color: AppTheme.adaptive(context, const Color(0x1A30D158)),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: const Color(0x5530D158),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x5530D158),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.verified_rounded,
-                        color: Color(0xFF30D158),
+                        color: AppTheme.foreground(context, Color(0xFF30D158)),
                         size: 13,
                       ),
                       SizedBox(width: 4),
-                      Text(
+                      AppText(
                         'Verified',
                         style: TextStyle(
-                          color: Color(0xFF30D158),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFF30D158),
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -316,16 +350,22 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Text(
+                  child: AppText(
                     "Can't read?",
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -335,57 +375,78 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // Name text field
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                width: 0.5,
+              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: _nameCtrl[i],
               focusNode: _nameFocus[i],
               textInputAction: TextInputAction.next,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Item name',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 14,
+                  ),
+                ),
               ),
               onChanged: (_) => setState(() {}),
             ),
           ),
           const SizedBox(height: 8),
-          // Match to existing row
+          // Reuse a name without claiming an item link or stock update.
           GestureDetector(
             onTap: () => _pickExisting(i),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  width: 0.5,
+                ),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       match != null
-                          ? 'Match found: ${match.name}'
-                          : 'Match to existing item?',
+                          ? 'Similar saved name: ${match.name}'
+                          : 'Use a saved item name',
                       style: TextStyle(
                         color: match != null
-                            ? const Color(0x73FFFFFF)
-                            : const Color(0x33FFFFFF),
+                            ? AppTheme.foreground(
+                                context,
+                                const Color(0x73FFFFFF),
+                              )
+                            : AppTheme.foreground(
+                                context,
+                                const Color(0x33FFFFFF),
+                              ),
                         fontSize: 13,
                       ),
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
-                    color: Color(0x33FFFFFF),
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
                     size: 16,
                   ),
                 ],
@@ -409,19 +470,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
           if (isVerified) ...[
             const SizedBox(height: 12),
-            Text(
+            AppText(
               specificationSummary == null || specificationSummary.isEmpty
                   ? 'Matched against the manufacturer catalog.'
                   : 'Manufacturer specifications: $specificationSummary',
-              style: const TextStyle(
-                color: Color(0x9930D158),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x9930D158)),
                 fontSize: 12,
                 height: 1.35,
               ),
             ),
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              const Text('VERIFIED COMPATIBILITY', style: _kLabelStyle),
+              AppText('VERIFIED COMPATIBILITY', style: _kLabelStyle(context)),
               const SizedBox(height: 7),
               Wrap(
                 spacing: 6,
@@ -434,17 +495,26 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0x1230D158),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x1230D158),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0x3330D158),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x3330D158),
+                            ),
                             width: 0.5,
                           ),
                         ),
-                        child: Text(
+                        child: AppText(
                           value,
-                          style: const TextStyle(
-                            color: Color(0xCC30D158),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xCC30D158),
+                            ),
                             fontSize: 11,
                           ),
                         ),
@@ -457,19 +527,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () => _openManufacturerPage(catalog?.productUrl),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.open_in_new_rounded,
-                      color: Color(0xFF30D158),
+                      color: AppTheme.foreground(context, Color(0xFF30D158)),
                       size: 14,
                     ),
                     SizedBox(width: 5),
-                    Text(
+                    AppText(
                       'View manufacturer source',
                       style: TextStyle(
-                        color: Color(0xFF30D158),
+                        color: AppTheme.foreground(context, Color(0xFF30D158)),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -479,9 +549,16 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ],
           ],
+          if (widget.items[i].scanEvidence != null) ...[
+            const SizedBox(height: 14),
+            ScanEvidencePanel(
+              evidence: widget.items[i].scanEvidence!,
+              barcode: widget.items[i].barcode,
+            ),
+          ],
           const SizedBox(height: 16),
           // QUANTITY label
-          const Text('QUANTITY', style: _kLabelStyle),
+          AppText('QUANTITY', style: _kLabelStyle(context)),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -494,25 +571,28 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.remove,
-                    color: Color(0x73FFFFFF),
+                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                     size: 18,
                   ),
                 ),
               ),
               const SizedBox(width: 24),
-              Text(
+              AppText(
                 '${_qty[i]}',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
@@ -524,16 +604,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add,
-                    color: Color(0x73FFFFFF),
+                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                     size: 18,
                   ),
                 ),
@@ -542,28 +625,40 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
           const SizedBox(height: 16),
           // LOCATION label
-          const Text('LOCATION', style: _kLabelStyle),
+          AppText('LOCATION', style: _kLabelStyle(context)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                width: 0.5,
+              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: _locCtrl[i],
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Unsorted',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
           ),
@@ -580,13 +675,18 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.92,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              width: 0.5,
+            ),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -599,7 +699,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -610,19 +710,24 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  AppText(
                     'Confirm Items',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Review what AI found before saving.',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                  const SizedBox(height: 4),
+                  AppText(
+                    widget.items.any((item) => item.needsReview)
+                        ? 'Save clear items and keep uncertain items for review.'
+                        : 'Review every visible detail before saving.',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -643,9 +748,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 16,
                 MediaQuery.of(context).padding.bottom + 16,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                  top: BorderSide(
+                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    width: 0.5,
+                  ),
                 ),
               ),
               child: Column(
@@ -653,20 +761,35 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(_buildResult()),
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                    child: GlassControl(
+                      radius: 99,
+                      child: Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Center(
+                          child: AppText(
+                            () {
+                              final reviewCount = widget.items
+                                  .where((item) => item.needsReview)
+                                  .length;
+                              final saveCount = n - reviewCount;
+                              if (reviewCount == 0) {
+                                return 'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}';
+                              }
+                              if (saveCount == 0) {
+                                return 'Keep $reviewCount in Review';
+                              }
+                              return 'Save $saveCount · Review $reviewCount';
+                            }(),
+                            style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -675,11 +798,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(null),
-                    child: const Center(
-                      child: Text(
+                    child: Center(
+                      child: AppText(
                         'Cancel',
                         style: TextStyle(
-                          color: Color(0x73FFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 15,
                         ),
                       ),
@@ -744,13 +870,18 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              width: 0.5,
+            ),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -762,7 +893,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -772,10 +903,10 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0x14FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
@@ -786,17 +917,26 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) =>
                       FocusManager.instance.primaryFocus?.unfocus(),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Search existing items…',
-                    hintStyle: TextStyle(
-                      color: Color(0x33FFFFFF),
+                  style: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
+                    ),
+                  ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Search saved names',
+                    hintStyle: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                        fontSize: 14,
+                      ),
                     ),
                     prefixIcon: Icon(
                       Icons.search,
-                      color: Color(0x33FFFFFF),
+                      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
                       size: 18,
                     ),
                   ),
@@ -806,13 +946,16 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
             ),
             Flexible(
               child: _filtered.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: Text(
+                        child: AppText(
                           'No items found',
                           style: TextStyle(
-                            color: Color(0x4DFFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                             fontSize: 14,
                           ),
                         ),
@@ -821,10 +964,10 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   : ListView.separated(
                       shrinkWrap: true,
                       itemCount: _filtered.length,
-                      separatorBuilder: (_, _) => const Divider(
+                      separatorBuilder: (_, _) => Divider(
                         height: 0.5,
                         thickness: 0.5,
-                        color: Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
                         indent: 16,
                         endIndent: 16,
                       ),
@@ -840,18 +983,24 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     item.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 14,
                                     ),
                                   ),
                                 ),
-                                Text(
+                                AppText(
                                   item.category,
-                                  style: const TextStyle(
-                                    color: Color(0x4DFFFFFF),
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x4DFFFFFF),
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
@@ -6,6 +7,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../home/home_overview.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class Note {
   const Note({
@@ -24,10 +27,16 @@ class Note {
 }
 
 class NotesEditorPage extends StatefulWidget {
-  const NotesEditorPage({super.key, required this.api, this.note});
+  const NotesEditorPage({
+    super.key,
+    required this.api,
+    this.note,
+    this.ownerId,
+  });
 
   final ApiClient api;
   final Note? note;
+  final String? Function()? ownerId;
 
   @override
   State<NotesEditorPage> createState() => _NotesEditorPageState();
@@ -36,11 +45,17 @@ class NotesEditorPage extends StatefulWidget {
 class _NotesEditorPageState extends State<NotesEditorPage> {
   late final TextEditingController _controller;
   bool _saving = false;
+  bool _allowPop = false;
   late final String _initialText;
+  late final String? _owner;
+  String? get _currentOwner => widget.ownerId == null
+      ? Supabase.instance.client.auth.currentUser?.id
+      : widget.ownerId!();
 
   @override
   void initState() {
     super.initState();
+    _owner = _currentOwner;
     _controller = TextEditingController();
     if (widget.note != null) {
       _controller.text = widget.note!.content;
@@ -58,14 +73,29 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
     return _controller.text != _initialText;
   }
 
+  Future<void> _finish(bool saved) async {
+    if (!mounted) return;
+    setState(() => _allowPop = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.of(context).pop(saved);
+  }
+
   Future<bool> _save({required bool popOnSuccess}) async {
-    if (_saving) return false;
+    if (_saving || !widget.api.canEdit) return false;
+    if (_owner != _currentOwner) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Your account changed. Reopen this note.'),
+        ),
+      );
+      return false;
+    }
     final text = _controller.text.trim();
     if (text.isEmpty) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note is empty.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('Note is empty.')));
       return false;
     }
 
@@ -76,7 +106,9 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
         final note = widget.note!;
         final bytes = utf8.encode(text);
         final supabase = Supabase.instance.client;
-        await supabase.storage.from('documents').uploadBinary(
+        await supabase.storage
+            .from('documents')
+            .uploadBinary(
               note.storagePath,
               bytes,
               fileOptions: const FileOptions(
@@ -84,6 +116,8 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
                 upsert: true,
               ),
             );
+
+        if (!mounted || _owner != _currentOwner) return false;
 
         try {
           final uid = supabase.auth.currentUser?.id;
@@ -101,7 +135,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
         }
 
         if (!mounted) return false;
-        if (popOnSuccess) Navigator.of(context).pop(true);
+        if (popOnSuccess) await _finish(true);
         return true;
       } else {
         final id = DateTime.now().microsecondsSinceEpoch.toString();
@@ -114,21 +148,21 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
         );
 
         await widget.api.uploadDocument(file: file);
-        if (!mounted) return false;
-        if (popOnSuccess) Navigator.of(context).pop(true);
+        if (!mounted || _owner != _currentOwner) return false;
+        if (popOnSuccess) await _finish(true);
         return true;
       }
     } on dio.DioException {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save note')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('Failed to save note')));
       return false;
     } catch (_) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save note')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('Failed to save note')));
       return false;
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -140,54 +174,112 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
     final isEditing = widget.note != null;
     final title = isEditing
         ? ((widget.note!.displayName ?? '').trim().isEmpty
-            ? widget.note!.filename
-            : widget.note!.displayName!.trim())
-        : 'New Note';
+              ? widget.note!.filename
+              : widget.note!.displayName!.trim())
+        : 'New note';
 
     final blockPopForAutosave =
-        !_saving && _controller.text.trim().isNotEmpty && _hasChanges();
+        _saving || (_controller.text.trim().isNotEmpty && _hasChanges());
 
     return PopScope(
-      canPop: !blockPopForAutosave,
+      canPop: _allowPop || !blockPopForAutosave,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         if (_saving) return;
 
-        final nav = Navigator.of(context);
-
         if (_controller.text.trim().isEmpty || !_hasChanges()) {
-          if (!mounted) return;
-          nav.pop(false);
+          await _finish(false);
           return;
         }
 
         final ok = await _save(popOnSuccess: false);
-        if (!mounted) return;
+        if (!mounted || !context.mounted) return;
         if (ok) {
-          nav.pop(true);
+          await _finish(true);
+        } else {
+          final discard = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const AppText('Note was not saved'),
+              content: const AppText(
+                'Keep editing to try again, or discard this draft.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const AppText('Keep editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const AppText('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (discard == true) await _finish(false);
         }
       },
       child: Scaffold(
+        backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         appBar: AppBar(
-          title: Text(title),
+          backgroundColor: AppTheme.adaptive(context, HomeColors.background),
+          surfaceTintColor: Colors.transparent,
+          title: AppText(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+          ),
           actions: [
             TextButton(
-              onPressed: _saving ? null : () => _save(popOnSuccess: true),
-              child: Text(_saving ? 'Saving…' : 'Save'),
+              onPressed: _saving || !widget.api.canEdit
+                  ? null
+                  : () => _save(popOnSuccess: true),
+              child: AppText(
+                _saving ? 'Saving...' : 'Save',
+                style: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ),
           ],
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _controller,
-            autofocus: true,
-            keyboardType: TextInputType.multiline,
-            maxLines: null,
-            expands: true,
-            decoration: const InputDecoration(
-              hintText: 'Start typing...',
-              border: InputBorder.none,
+        body: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _controller,
+              readOnly: !widget.api.canEdit,
+              onChanged: (_) => setState(() {}),
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                ),
+              ),
+              autofocus: true,
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+              expands: true,
+              decoration: InputDecoration(
+                hintText: 'Start typing...',
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, HomeColors.hint),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
             ),
           ),
         ),

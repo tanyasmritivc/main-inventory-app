@@ -1,10 +1,9 @@
 import type { SVGProps } from "react";
 
-export function FindEZMark({ className, ...props }: SVGProps<SVGSVGElement>) {
-  return (
-    <svg className={className} viewBox="0 0 96 96" fill="none" aria-hidden="true" {...props}>
-      <path d="M28 38H58V68" stroke="currentColor" strokeWidth="11" strokeLinejoin="miter" />
-      <path d="M53 28H68V43" stroke="#E8590C" strokeWidth="11" strokeLinejoin="miter" />
-    </svg>
-  );
+export function FindEZMark(props: SVGProps<SVGSVGElement>) {
+  return <svg viewBox="0 0 1200 1200" fill="none" aria-hidden="true" {...props}><rect width="1200" height="1200" fill="#FFFFFF"/><g transform="translate(34.38 0) scale(12.5)"><path d="M25.25 40.75H55.25V70.75" stroke="#111112" strokeWidth="11"/><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" strokeWidth="11"/></g></svg>;
+}
+
+export function FindEZWordmark({textOnly=false,...props}: SVGProps<SVGSVGElement> & {textOnly?:boolean}) {
+ return <svg viewBox={textOnly ? "88 18 169 66" : "12 18 245 66"} role="img" aria-label="FindEZ" {...props}>{!textOnly && <><path d="M25.25 40.75H55.25V70.75" stroke="currentColor" strokeWidth="11" fill="none"/><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" strokeWidth="11" fill="none"/></>}<g transform="translate(88,69.12) scale(0.057942) translate(-90,0)"><path d="M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z" fill="currentColor"/><path d="M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z" fill="currentColor"/><path d="M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z" fill="currentColor"/><path d="M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z" fill="currentColor"/><path d="M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z" fill="#E8590C"/><path d="M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z" fill="#E8590C"/></g></svg>;
 }

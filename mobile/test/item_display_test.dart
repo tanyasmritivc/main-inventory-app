@@ -39,6 +39,17 @@ void main() {
       'quantity': 1,
       'image_url': 'https://images.test/crop.jpg',
       'source_frame_url': 'https://images.test/source.jpg',
+      'review_id': '10000000-0000-0000-0000-000000000001',
+      'review_status': 'pending',
+      'scan_evidence': {
+        'identification_reasoning': 'Visible markings support this result.',
+        'identity_confidence': 0.42,
+        'ocr_text': 'M4',
+        'ocr_confidence': 0.8,
+        'review_reasons': ['The identification confidence is low.'],
+        'warnings': ['Only part of the photo analysis completed.'],
+        'needs_review': true,
+      },
     });
 
     expect(extracted.imageUrl, 'https://images.test/crop.jpg');
@@ -48,6 +59,14 @@ void main() {
       extracted.toJson()['source_frame_url'],
       'https://images.test/source.jpg',
     );
+    expect(extracted.reviewId, '10000000-0000-0000-0000-000000000001');
+    expect(extracted.isPendingReview, isTrue);
+    expect(extracted.scanEvidence?.ocrText, 'M4');
+    expect(extracted.scanEvidence?.identityConfidence, 0.42);
+    expect(extracted.scanEvidence?.reviewReasons, [
+      'The identification confidence is low.',
+    ]);
+    expect(extracted.toJson()['scan_evidence']['needs_review'], isTrue);
   });
 
   test('item photo mutation returns the updated primary and gallery', () {

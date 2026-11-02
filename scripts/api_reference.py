@@ -44,8 +44,10 @@ TEXT = {
     "name": "Item name. Leading/trailing whitespace is removed; blank values are rejected.",
     "category": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration.",
     "quantity": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it.",
-    "location": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first.",
-    "image_url": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access.",
+    "inventory_id": "Inventory UUID. Supply it when creating or importing into a specific inventory, particularly when multiple inventories have identically named Spaces. Query filters may match it exactly.",
+    "space_id": "Read-only Space UUID of the stored item.",
+    "location": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected. On create/bulk, inventory_id can distinguish identically named Spaces in different inventories. Create the destination in FindEZ or with an authorized organization action first.",
+    "image_url": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app.",
     "barcode": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API.",
     "purchase_source": "Purchase source or vendor text.",
     "notes": "Free-text notes.",
@@ -55,13 +57,13 @@ TEXT = {
     "external_id": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run.",
 }
 
-ITEM = {"item_id": ITEM_ID, "workspace_id": WORKSPACE, "name": "Motor", "category": "Hardware",
+ITEM = {"item_id": ITEM_ID, "workspace_id": WORKSPACE, "inventory_id": "70000000-0000-0000-0000-000000000001", "space_id": "30000000-0000-0000-0000-000000000002", "name": "Motor", "category": "Hardware",
         "quantity": 4, "location": "Shelf B", "image_url": None, "barcode": None,
         "purchase_source": None, "notes": None, "brand": None, "part_number": "5202",
         "source_system": "erp", "external_id": "motor-001", "created_at": STAMP}
 CREATE = {"name": "Motor", "category": "Hardware", "quantity": 4, "location": "Shelf B", "part_number": "5202"}
 BULK = {"items": [{**CREATE, "source_system": "erp", "external_id": "motor-001"}]}
-KEY = {"id": KEY_ID, "workspace_id": WORKSPACE, "name": "Team reporting", "key_prefix": "findez_live_sk_EXAMPL",
+KEY = {"id": KEY_ID, "workspace_id": WORKSPACE, "organization_id": None, "name": "Team reporting", "key_prefix": "findez_live_sk_EXAMPL",
        "scopes": ["items:read", "workspace:read"], "created_at": STAMP, "last_used_at": None,
        "expires_at": None, "revoked_at": None}
 
@@ -70,11 +72,11 @@ ENDPOINTS = {
     "GET /api/v1/whoami": {
         "summary": "Test authentication", "tag": "Connection", "response": "Identity",
         "description": "Returns the key ID, its fixed workspace (null for an organization key), and its explicit scopes. Any valid key can call this endpoint. Success verifies authentication only: it does not prove inventory is visible, that the team is still owned, or that a write will succeed. It consumes the standard request budget.",
-        "example": {"key_id": KEY_ID, "workspace_id": WORKSPACE, "scopes": ["items:read", "workspace:read"]},
+        "example": {"key_id": KEY_ID, "workspace_id": WORKSPACE, "organization_id": None, "scopes": ["items:read", "workspace:read"]},
     },
     "GET /api/v1/items": {
         "summary": "List inventory", "tag": "Inventory", "response": "ItemPage",
-        "description": "Returns visible item records, newest created_at first, then item_id ascending for ties. Pagination starts at 1. total counts all matching records, not units. An out-of-range page returns an empty items array. Only page, page_size, and workspace_id are supported query parameters; use POST /query for filters. Unknown URL query parameters are currently ignored, so misspelled filters will not filter results. Organization reads of an unowned workspace return no visible rows. Pagination is not a snapshot: concurrent inventory changes can move records between pages.",
+        "description": "Returns visible item records, newest created_at first, then item_id ascending for ties. Pagination starts at 1. total counts all matching records, not units. An out-of-range page returns an empty items array. Only page, page_size, and workspace_id are supported query parameters; use POST /query for filters. Unknown URL query parameters are currently ignored, so misspelled filters will not filter results. Reads outside the key boundary or current content permissions return no visible rows. Pagination is not a snapshot: concurrent inventory changes can move records between pages.",
         "query": {"page": 1, "page_size": 50},
         "example": {"items": [ITEM], "page": 1, "page_size": 50, "total": 1},
     },
@@ -97,7 +99,7 @@ ENDPOINTS = {
     },
     "PATCH /api/v1/items/{item_id}": {
         "summary": "Update an item", "tag": "Inventory", "response": "UpdatedItem",
-        "description": "Updates only supplied fields. At least one field is required. name, category, quantity, and location cannot be null; nullable optional fields can be cleared with null. Quantity replaces the stored total, rather than adding a delta. Changing location moves the item to one unambiguous linked Space within the same workspace. workspace_id, space_id, user_id, item_id, and created_at are not writable here. A missing or inaccessible item returns 404. The response is an acknowledgement, not the updated record. There is no ETag, version precondition, or atomic increment: concurrent updates may overwrite one another.",
+        "description": "Updates only supplied fields. At least one field is required. name, category, quantity, and location cannot be null; nullable optional fields can be cleared with null. Quantity replaces the stored total, rather than adding a delta. Changing location moves the item to one unambiguous linked Space within the same workspace. workspace_id, inventory_id, space_id, user_id, item_id, and created_at are not writable here. A missing or inaccessible item returns 404. The response is an acknowledgement, not the updated record. There is no ETag, version precondition, or atomic increment: concurrent updates may overwrite one another.",
         "request": {"quantity": 6, "notes": None},
         "pathValues": {"item_id": ITEM_ID},
         "example": {"updated": True, "item_id": ITEM_ID},
@@ -114,7 +116,7 @@ ENDPOINTS = {
     },
     "GET /api/v1/workspaces/summary": {
         "summary": "Summarize workspaces", "tag": "Workspaces", "response": "WorkspaceSummary",
-        "description": "Returns visible owned Teams, ordered by name, including Teams with no inventory. item_count is the number of item records. space_count is the number of distinct location strings represented by inventory, not the number of linked Spaces. Empty Spaces do not contribute; identically named locations in a team count once. A workspace key sees its fixed team; an organization key sees currently owned teams. No pagination or workspace query filter is supported.",
+        "description": "Returns visible workspaces, ordered by name, including workspaces with no inventory. item_count is the number of item records. space_count is the number of distinct location strings represented by inventory, not the number of linked Spaces. Empty Spaces do not contribute; identically named locations in a team count once. A workspace key sees its fixed team; a legacy all-owned key sees currently owned teams; a bound organization key sees permitted workspaces inside its organization. No pagination or workspace query filter is supported.",
         "example": {"workspaces": [{"workspace_id": WORKSPACE, "name": "Robotics team", "item_count": 1, "space_count": 1}]},
     },
     "GET /api/v1/keys/workspaces": {
@@ -124,10 +126,10 @@ ENDPOINTS = {
     },
     "POST /api/v1/keys": {
         "summary": "Create an API key", "tag": "Key management", "response": "IssuedKey",
-        "description": "Requires an owner's Supabase user access token, not an API key. With workspace_id, only workspace scopes are accepted and the caller must own that team. With workspace_id omitted or null, only org scopes are accepted and the caller must own at least one team. Scope names are trimmed and deduplicated. expires_at must be in the future; omitted/null means no expiration. Prefer an ISO 8601 timestamp with Z or an offset; a timezone-free value is interpreted as UTC. The web form defaults to 90 days, while this HTTP endpoint defaults to no expiration. Returns metadata plus the complete key once, with Cache-Control: no-store. FindEZ stores an Argon2 hash and cannot recover the secret. No endpoint edits an issued key's name, scopes, workspace, or expiration; replace it and revoke the old key. Do not automatically retry issuance after a timeout: it may have created a key whose secret was not received; review the key list and revoke that key before replacing it.",
+        "description": "Requires a signed-in user's Supabase access token, not an API key. With workspace_id, only workspace scopes are accepted and the caller must own that team. With organization_id, the caller must be a current organization owner/admin; workspace_id must be null and organization scopes, including optional management scopes, are accepted. With both IDs omitted/null, only org:read and org:write are accepted and the caller must own at least one team. Scope names are trimmed and deduplicated. expires_at must be in the future; omitted/null means no expiration. Prefer an ISO 8601 timestamp with Z or an offset; a timezone-free value is interpreted as UTC. The web form defaults to 90 days, while this HTTP endpoint defaults to no expiration. Returns metadata plus the complete key once, with Cache-Control: no-store. FindEZ stores an Argon2 hash and cannot recover the secret. No endpoint edits an issued key's name, scopes, workspace, or expiration; replace it and revoke the old key. Do not automatically retry issuance after a timeout: it may have created a key whose secret was not received; review the key list and revoke that key before replacing it.",
         "request": {"name": "Team reporting", "workspace_id": WORKSPACE, "scopes": ["items:read", "workspace:read"], "expires_at": None},
         "example": {**KEY, "org_id": USER_ID, "created_by": USER_ID, "key": "findez_live_sk_EXAMPLE_NOT_A_REAL_KEY"},
-        "extraExamples": {"Organization read key": {"request": {"name": "All-team reporting", "workspace_id": None, "scopes": ["org:read"]}}},
+        "extraExamples": {"Legacy all-owned inventory key": {"request": {"name": "All-team reporting", "workspace_id": None, "scopes": ["org:read"]}}, "Organization directory and inventory key": {"request": {"name": "Organization reporting", "organization_id": "60000000-0000-0000-0000-000000000001", "scopes": ["org:read", "structure:read"]}}},
     },
     "GET /api/v1/keys": {
         "summary": "List key metadata", "tag": "Key management", "response": "KeyList",
@@ -156,6 +158,8 @@ ERRORS = [
     (401, "expired_api_key", "Create a replacement key with an appropriate expiry."),
     (403, "insufficient_scope", "Create a key with the required permission; writing does not imply reading."),
     (403, "workspace_access_denied", "Check the team owner and key workspace. A workspace key cannot select another team."),
+    (403, "organization_admin_required", "Only a current organization owner or admin may issue an organization-bound key."),
+    (403, "organization_access_revoked", "The key issuer no longer administers this organization."),
     (403, "organization_required", "Create or own a Team before issuing an organization key."),
     (404, "item_not_found", "Check item_id and current workspace visibility."),
     (404, "key_not_found", "Check the key metadata id and issuing account; already-revoked keys return this too."),
@@ -174,6 +178,15 @@ ERRORS = [
 ]
 
 
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
+from agent_api_reference import ENDPOINTS as AGENT_ENDPOINTS
+ENDPOINTS.update(AGENT_ENDPOINTS)
+ENDPOINTS["POST /api/v1/organization/actions"]["scope"] = "structure:write or members:write, according to action"
+ENDPOINTS["POST /api/v1/organization/deletions"]["scope"] = "items:delete or structure:delete, according to resource"
+ENDPOINTS["GET /api/v1/organization/deletions/{approval_id}"]["scope"] = "items:delete or structure:delete, matching the request"
+
+
 def response_schemas():
     string = {"type": "string"}
     integer = {"type": "integer"}
@@ -183,7 +196,7 @@ def response_schemas():
                 **{key: scalar("integer" if key == "quantity" else "string", description,
                                nullable=key not in {"name", "category", "quantity", "location"}) for key, description in TEXT.items() if key != "workspace_id"},
                 "created_at": {"type": "string", "description": "Stored creation timestamp. Older inventory records may omit a timezone offset; this is not a modification checkpoint."}})
-    metadata = obj({"id": uid, "workspace_id": {"type": ["string", "null"], "format": "uuid"},
+    metadata = obj({"id": uid, "organization_id": {"type": ["string", "null"], "format": "uuid"}, "workspace_id": {"type": ["string", "null"], "format": "uuid"},
                     "name": string, "key_prefix": string, "scopes": array(string),
                     "created_at": {"type": "string", "format": "date-time"},
                     "last_used_at": date, "expires_at": date, "revoked_at": date})
@@ -196,7 +209,8 @@ def response_schemas():
         "CreatedItem": obj({"item": {**item, "required": ["item_id", "workspace_id", "name", "category", "quantity", "location"]}}),
         "UpdatedItem": obj({"updated": {"const": True}, "item_id": uid}),
         "BulkResult": obj({"processed": integer}),
-        "Identity": obj({"key_id": uid, "workspace_id": {"type": ["string", "null"], "format": "uuid"}, "scopes": array(string)}),
+        "ManagementResult": {"type": "object", "additionalProperties": True, "description": "Action-specific directory, receipt or approval result; see this operation and its examples."},
+        "Identity": obj({"key_id": uid, "organization_id": {"type": ["string", "null"], "format": "uuid"}, "workspace_id": {"type": ["string", "null"], "format": "uuid"}, "scopes": array(string)}),
         "Location": obj({"workspace_id": uid, "location": string, "item_count": integer}),
         "Locations": obj({"spaces": array(ref("Location"))}),
         "Workspace": obj({"workspace_id": uid, "name": string, "item_count": integer, "space_count": integer}),
@@ -214,16 +228,17 @@ def response_schemas():
 
 def build_spec():
     from fastapi import FastAPI
-    from app.api.routes import api_v1
+    from app.api.routes import api_v1, agent_management
     from app.core.auth import get_current_user
     from app.core.config import Settings
 
     app = FastAPI(title="FindEZ Integration API", version="1")
     app.include_router(api_v1.router)
+    app.include_router(agent_management.router)
     spec = app.openapi()
-    spec["info"].update({"description": "Public integration API for inventory in linked Team Spaces. Documentation: https://findez.ai/docs/api. Examples use synthetic IDs and do not contain usable credentials.", "contact": {"name": "FindEZ support", "email": "info@findez.ai"}})
+    spec["info"].update({"description": "Public integration API for inventory and explicitly delegated organization management. Existing all-owned-workspace keys retain inventory-only capabilities; new management keys require an actual organization_id and separate scopes. Deletion requires human confirmation in FindEZ. Documentation: https://findez.ai/docs/api. Examples use synthetic IDs and do not contain usable credentials.", "contact": {"name": "FindEZ support", "email": "info@findez.ai"}})
     spec["servers"] = [{"url": "https://findez.openstack.ftctools.com", "description": "Production"}]
-    spec["tags"] = [{"name": name} for name in ["Connection", "Inventory", "Workspaces", "Key management"]]
+    spec["tags"] = [{"name": name} for name in ["Connection", "Inventory", "Workspaces", "Key management", "Organization management"]]
     spec["x-error-codes"] = [{"status": status, "code": code, "description": description} for status, code, description in ERRORS]
     spec["x-limits"] = {field: Settings.model_fields[field].default for field in ["api_key_requests_per_minute", "api_key_bulk_requests_per_minute", "api_key_bulk_max_items"]}
     spec["components"]["schemas"].update(response_schemas())
@@ -232,10 +247,10 @@ def build_spec():
         spec["components"]["schemas"].pop(name, None)
     spec["components"]["securitySchemes"] = {
         "IntegrationKey": {"type": "http", "scheme": "bearer", "bearerFormat": "findez_live_sk_…", "description": "Secret API key created in Settings → API keys. Keep server-side."},
-        "UserSession": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Signed-in owner's Supabase access_token; only for key management. An integration API key cannot manage keys."},
+        "UserSession": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Signed-in user's Supabase access_token; only for key management. Workspace keys require ownership; organization-bound keys require owner/admin membership. An integration API key cannot manage keys."},
     }
     seen = set()
-    for route in api_v1.router.routes:
+    for route in [*api_v1.router.routes, *agent_management.router.routes]:
         for method in route.methods:
             identity = f"{method} {route.path}"
             annotation = ENDPOINTS[identity]
@@ -243,7 +258,7 @@ def build_spec():
             operation = spec["paths"][route.path][method.lower()]
             dependency = route.dependant.dependencies[0].call
             management = dependency is get_current_user
-            scope = None if management else inspect.getclosurevars(dependency).nonlocals["required_scope"]
+            scope = annotation.get("scope", None if management else inspect.getclosurevars(dependency).nonlocals["required_scope"])
             bulk = False if management else inspect.getclosurevars(dependency).nonlocals["bulk"]
             operation.update({"summary": annotation["summary"], "description": annotation["description"], "tags": [annotation["tag"]],
                               "security": [{"UserSession" if management else "IntegrationKey": []}],
@@ -253,7 +268,7 @@ def build_spec():
             response = {"description": "Success", "content": {"application/json": {"schema": ref(annotation["response"]), "example": annotation["example"]}}}
             if route.path == "/api/v1/keys":
                 response["headers"] = {"Cache-Control": {"schema": {"type": "string"}, "example": "no-store"}}
-            operation["responses"] = {success: response, "default": {"description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.", "content": {"application/json": {"schema": ref("ErrorResponse")}}}}
+            operation["responses"] = {success: response, "default": {"description": "Error; see the error-code reference. Organization-management and user-session errors may have a string detail. Middleware and gateway failures may return non-JSON bodies.", "content": {"application/json": {"schema": ref("ErrorResponse")}}}}
             if "request" in annotation:
                 operation["requestBody"]["content"]["application/json"]["example"] = annotation["request"]
             operation["x-extra-examples"] = annotation.get("extraExamples", {})
@@ -274,7 +289,7 @@ def build_spec():
     schemas["APIItemPatch"]["minProperties"] = 1
     for name in ["source_system", "external_id"]:
         schemas["APIBulkItem"]["properties"][name]["description"] += " Required for bulk sync; surrounding whitespace is trimmed and blank values are rejected."
-    key_descriptions = {"name": "Integration label, 1–100 characters before trimming; must not be blank.", "workspace_id": "Owned Team UUID for a workspace key. Omit or send null to create an organization key covering the issuing account's owned Teams. Use workspace scopes with a Team UUID and organization scopes without one.", "scopes": "1–8 entries. Workspace: items:read, items:write, import:write, workspace:read. Organization: org:read, org:write. Types cannot be mixed; whitespace is trimmed and duplicates removed.", "expires_at": "Future ISO 8601 datetime; omit or null for no expiry. Use Z or an explicit offset; timezone-free input is treated as UTC."}
+    key_descriptions = {"organization_id": "Actual organization UUID for a management key, available to current organization owners/admins. workspace_id must be null. Omit both IDs for a legacy all-owned-workspaces inventory key.", "name": "Integration label, 1–100 characters before trimming; must not be blank.", "workspace_id": "Owned Team UUID for a workspace key. Must be null when organization_id is supplied. Omit both IDs for a legacy all-owned-workspaces inventory key. Use workspace scopes only with a Team UUID.", "scopes": "1–8 entries. Workspace: items:read, items:write, import:write, workspace:read. Legacy all-owned: org:read, org:write. A bound organization also permits structure:read/write/delete, members:read/write, items:delete. Management/deletion scopes require organization_id and are opt-in; old keys never gain them. Types cannot be mixed.", "expires_at": "Future ISO 8601 datetime; omit or null for no expiry. Use Z or an explicit offset; timezone-free input is treated as UTC."}
     for name, schema in schemas["CreateKeyRequest"]["properties"].items():
         schema["description"] = key_descriptions[name]
     query_descriptions = {"resource": "Only items is supported.", "workspace_id": TEXT["workspace_id"], "filters": "Up to 10 ANDed filters; empty array matches all visible rows.", "aggregate": "count = item records; sum_quantity = stored unit total across all matches. Omit/null to return an item page.", "page": "One-based page; maximum 1000000. Validated even for aggregates.", "page_size": "1–100 records; default 50. Does not bound aggregate totals."}

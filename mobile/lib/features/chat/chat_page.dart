@@ -1,24 +1,26 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
-import '../../core/low_stock_prefs.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/restock_plan.dart';
+import '../../core/ask_answer.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
+import 'ask_answer_view.dart';
 import '../scan/scan_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -33,8 +35,10 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onChatStateChanged,
+    this.onBack,
     this.pageController,
     this.onOpenDestination,
+    this.photoPicker,
   });
 
   final ApiClient api;
@@ -47,8 +51,10 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(bool hasMessages)? onChatStateChanged;
+  final VoidCallback? onBack;
   final PageController? pageController;
   final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
+  final Future<AskPhoto?> Function(bool camera)? photoPicker;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -91,7 +97,10 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        final color = Colors.white.withValues(alpha: 0.4);
+        final color = AppTheme.adaptive(
+          context,
+          Colors.white.withValues(alpha: 0.4),
+        );
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -146,11 +155,21 @@ class _AiIntent {
 
 class _ChatSession {
   static final _ChatSession _instance = _ChatSession._internal();
-  factory _ChatSession() => _instance;
+  static final _scope = AskSessionScope();
+  factory _ChatSession() {
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    if (_scope.selectAccount(owner)) {
+      _instance.messages.clear();
+      _instance.hasStarted = false;
+      _instance.conversationId = null;
+    }
+    return _instance;
+  }
   _ChatSession._internal();
 
   List<_ChatMessage> messages = [];
   bool hasStarted = false;
+  String? conversationId;
 }
 
 class _ChatPageState extends State<ChatPage>
@@ -164,10 +183,11 @@ class _ChatPageState extends State<ChatPage>
   bool _sending = false;
   String? _progress;
   final _session = _ChatSession();
-  String _userInitial = '';
+  int _requestGeneration = 0;
 
   // Conversation history
-  String? _currentConversationId;
+  String? get _currentConversationId => _session.conversationId;
+  set _currentConversationId(String? value) => _session.conversationId = value;
   // Retained for the intentionally detached history panel (68f5e83).
   // ignore: unused_field
   bool _historyOpen = false;
@@ -193,8 +213,8 @@ class _ChatPageState extends State<ChatPage>
   List<InventoryItem>? _inventorySnapshot;
 
   final List<String> _pendingAttachments = [];
-
-  Map<String, dynamic>? _pendingNavHint;
+  AskPhoto? _photo;
+  bool _pickingPhoto = false;
 
   final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
@@ -232,19 +252,8 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
-  }
-
-  String _navHintLabel(Map<String, dynamic> hint) {
-    final name = (hint['name'] ?? hint['space_name'] ?? '').toString();
-    if (hint['type'] == 'project_kit') {
-      return 'Open project kit${name.isEmpty ? '' : ': $name'}';
-    }
-    if (hint['type'] == 'item') {
-      return 'Open ${hint['space_name'] ?? 'item location'}';
-    }
-    return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
   String _renderableStreamingMarkdown(String content) {
@@ -339,6 +348,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _requestGeneration++;
     _presentationTimer?.cancel();
     _presentationTimer = null;
     _presentationIdleTimer?.cancel();
@@ -359,6 +369,8 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
+      _photo = null;
+      _pickingPhoto = false;
       _sending = false;
       _canQueueFollowUp = false;
       _progress = null;
@@ -941,19 +953,19 @@ class _ChatPageState extends State<ChatPage>
           if (!mounted) return;
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
+          ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e2))));
         }
       } else if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
+            content: AppText('Rate limited. Try again in ~20 seconds.'),
           ),
         );
       } else {
         _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+        ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
       }
     } catch (e) {
       _cancelPresentation(assistantIndex);
@@ -962,7 +974,7 @@ class _ChatPageState extends State<ChatPage>
       _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
@@ -1311,6 +1323,12 @@ class _ChatPageState extends State<ChatPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_scrollController.hasClients) return;
+      // Keep the first question and its collapsed evidence visible as the
+      // response grows instead of jumping to the bottom of a long results card.
+      if (_session.messages.length <= 2) {
+        _scrollController.jumpTo(0);
+        return;
+      }
       final target = _scrollController.position.maxScrollExtent;
       if (animated) {
         _scrollController.animateTo(
@@ -1397,18 +1415,18 @@ class _ChatPageState extends State<ChatPage>
                 children: [
                   ListTile(
                     leading: const Icon(Icons.image_outlined),
-                    title: const Text('Upload Image'),
+                    title: const AppText('Upload Image'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.image),
                   ),
                   ListTile(
                     leading: const Icon(Icons.description_outlined),
-                    title: const Text('Upload Document'),
+                    title: const AppText('Upload Document'),
                     onTap: () =>
                         Navigator.of(context).pop(_UploadKind.document),
                   ),
                   ListTile(
                     leading: const Icon(Icons.attach_file),
-                    title: const Text('Upload File'),
+                    title: const AppText('Upload File'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.file),
                   ),
                 ],
@@ -1470,7 +1488,7 @@ class _ChatPageState extends State<ChatPage>
       if (_isVideoFile(name)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Videos aren’t supported.')),
+          const SnackBar(content: AppText('Videos aren’t supported.')),
         );
         return;
       }
@@ -1655,7 +1673,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
@@ -1673,7 +1691,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       if (mounted) {
         setState(() {
@@ -1857,30 +1875,22 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<String?> _lowStockSummary() async {
-    final thresholds = await LowStockPrefs.loadAll();
-    if (thresholds.isEmpty) return null;
-
+    final account = RestockPrefs.accountKey;
+    final plan = await RestockPrefs.load();
     final result = await widget.api.searchItems(query: '');
-    final low = <({String name, int qty, int thr})>[];
-    for (final item in result.items) {
-      final thr = thresholds[item.itemId];
-      if (thr == null || thr <= 0) continue;
-
-      if (item.quantity <= thr) {
-        final name = item.name.trim();
-        if (name.isNotEmpty) {
-          low.add((name: name, qty: item.quantity, thr: thr));
-        }
-      }
-    }
-
-    if (low.isEmpty) return null;
-    low.sort((a, b) => a.qty.compareTo(b.qty));
-    final top = low
-        .take(6)
-        .map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})')
-        .join(', ');
-    return 'Low stock: $top.';
+    if (!mounted || account != RestockPrefs.accountKey) return null;
+    final buying = result.items
+        .where((i) => plan.needsBuying(i.itemId, i.quantity))
+        .toList();
+    final ordered = result.items.where((i) => plan.onOrder(i.itemId)).toList();
+    if (buying.isEmpty && ordered.isEmpty) return null;
+    final lines = <String>[
+      if (buying.isNotEmpty)
+        'To buy: ${buying.take(6).map((i) => '${i.displayName} (${plan.entry(i.itemId).quantityToBuy(i.quantity)} to buy, ${i.quantity} on hand)').join(', ')}.',
+      if (ordered.isNotEmpty)
+        'On order: ${ordered.take(6).map((i) => i.displayName).join(', ')}. Stock is unchanged until arrival is confirmed.',
+    ];
+    return lines.join('\n');
   }
 
   String _friendlyRequestError(Object error) {
@@ -1891,8 +1901,12 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
-    final q = text.trim();
+    final photo = _photo;
+    final q = text.trim().isEmpty && photo != null
+        ? 'What is in this photo? Do I already have it?'
+        : text.trim();
     if (q.isEmpty) return;
+    if (_pickingPhoto) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
       _queuedFollowUps.add(q);
@@ -1913,9 +1927,8 @@ class _ChatPageState extends State<ChatPage>
       setState(() => _isListening = false);
     }
 
-    developer.log('ChatPage: Submitting message "$q"');
-
     if (!mounted) return;
+    final requestGeneration = ++_requestGeneration;
 
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
@@ -1923,12 +1936,19 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) return;
     setState(() {
       _sending = true;
+      _progress = photo == null ? null : 'Reading your photo...';
+      _photo = null;
       _canQueueFollowUp = false;
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
         final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
         _session.messages.add(
-          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+          _ChatMessage(
+            role: 'user',
+            content: safeQ,
+            timestamp: _nowTs(),
+            photo: photo,
+          ),
         );
       }
       _session.messages.add(
@@ -1946,66 +1966,51 @@ class _ChatPageState extends State<ChatPage>
 
     final assistantIndex = _session.messages.length - 1;
     try {
-      developer.log('ChatPage: Calling AI stream...');
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
-      if (token == null) throw StateError('Not authenticated');
-      final baseUrl = AppConfig.apiBaseUrl.endsWith('/')
-          ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
-          : AppConfig.apiBaseUrl;
-
-      final request = http.Request(
-        'POST',
-        Uri.parse('$baseUrl/ai_command?stream=true'),
-      );
-      request.headers['Content-Type'] = 'application/json';
-      request.headers['Accept'] = 'text/event-stream';
-      request.headers['Authorization'] = 'Bearer $token';
-      request.body = json.encode(<String, dynamic>{
-        'message': q,
-        if (_currentConversationId != null)
-          'conversation_id': _currentConversationId,
-      });
-
-      final httpClient = http.Client();
-      try {
-        final streamedResponse = await httpClient
-            .send(request)
-            .timeout(const Duration(minutes: 2));
-        if (streamedResponse.statusCode != 200) {
-          throw StateError('HTTP ${streamedResponse.statusCode}');
+      AskAnswerContext? answerContext;
+      Map<String, dynamic>? hint;
+      String? conversationId;
+      var completed = false;
+      final events = photo == null
+          ? widget.api.aiCommandStream(
+              message: q,
+              conversationId: _currentConversationId,
+            )
+          : widget.api.aiPhotoQuestionStream(
+              message: q,
+              photo: photo,
+              conversationId: _currentConversationId,
+            );
+      await for (final event in events) {
+        if (!mounted || requestGeneration != _requestGeneration) return;
+        if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
+          if (photo != null) _progress = null;
+          _enqueuePresentation(assistantIndex, event.delta!);
         }
-
-        await for (final line
-            in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          if (!mounted) break;
-          final l = line.trimRight();
-          if (!l.startsWith('data: ')) continue;
-          final raw = l.substring(6).trim();
-          if (raw == '[DONE]') break;
-          try {
-            final decoded = json.decode(raw);
-            if (decoded is! Map) continue;
-            final content = (decoded['content'] ?? '') as String;
-            if (content.isNotEmpty) {
-              _enqueuePresentation(assistantIndex, content);
-            }
-            final navHintData = decoded['nav_hint'];
-            if (navHintData is Map) {
-              _pendingNavHint = Map<String, dynamic>.from(
-                navHintData.cast<String, dynamic>(),
-              );
-            }
-          } catch (_) {}
+        if (event.type == 'status' && (event.message ?? '').isNotEmpty) {
+          setState(() => _progress = event.message);
         }
-      } finally {
-        httpClient.close();
+        if (event.navHint != null) hint = event.navHint;
+        if (event.answerContext != null) answerContext = event.answerContext;
+        if (event.conversationId != null) conversationId = event.conversationId;
+        if (event.type == 'done') {
+          completed = true;
+          if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
+              !_presentationQueue.any(
+                (chunk) => chunk.index == assistantIndex,
+              ) &&
+              _session.messages[assistantIndex].content.isEmpty &&
+              (event.assistantMessage ?? '').isNotEmpty) {
+            _enqueuePresentation(assistantIndex, event.assistantMessage!);
+          }
+        }
       }
+      if (!completed) throw StateError('Ask response interrupted');
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _currentConversationId = conversationId ?? _currentConversationId;
+      _session.messages[assistantIndex] = _session.messages[assistantIndex]
+          .copyWith(answerContext: answerContext);
 
       if (mounted) {
-        final hint = _pendingNavHint;
-        _pendingNavHint = null;
         _completePresentation(assistantIndex, hint);
         setState(() {
           _sending = false;
@@ -2016,8 +2021,8 @@ class _ChatPageState extends State<ChatPage>
         unawaited(_prefetchInventorySnapshot());
       }
     } on dio.DioException catch (e) {
-      developer.log('ChatPage: DioException: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       final dioErrMsg = _friendlyRequestError(e);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
@@ -2032,14 +2037,16 @@ class _ChatPageState extends State<ChatPage>
       _scrollToBottom();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
+      ).showSnackBar(SnackBar(content: AppText(dioErrMsg)));
     } catch (e) {
-      developer.log('ChatPage: Exception: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
-          content: 'Something went wrong. Please try again.',
+          content: e is AskRequestException
+              ? e.message
+              : 'Something went wrong. Please try again.',
           timestamp: _session.messages[assistantIndex].timestamp,
           isStreaming: false,
         );
@@ -2048,7 +2055,7 @@ class _ChatPageState extends State<ChatPage>
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
-      if (mounted) {
+      if (mounted && requestGeneration == _requestGeneration) {
         setState(() {
           _progress = null;
           _sending = false;
@@ -2059,7 +2066,6 @@ class _ChatPageState extends State<ChatPage>
           unawaited(_submit(next, userAlreadyAdded: true));
         }
       }
-      developer.log('ChatPage: stream finished');
     }
   }
 
@@ -2068,8 +2074,6 @@ class _ChatPageState extends State<ChatPage>
     super.initState();
     _controller = TextEditingController();
     unawaited(_speech.initialize());
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2100,17 +2104,17 @@ class _ChatPageState extends State<ChatPage>
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onChatStateChanged?.call(_session.messages.isNotEmpty);
+    });
+
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _controller.text = initial;
         unawaited(_submit(initial));
-      });
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _focusNode.requestFocus();
       });
     }
   }
@@ -2142,6 +2146,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
+    _requestGeneration++;
     _presentationTimer?.cancel();
     _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
@@ -2196,29 +2201,48 @@ class _ChatPageState extends State<ChatPage>
 
   Future<void> _loadConversation(String id) async {
     _closeHistory();
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
       final result = await widget.api.getConversation(id);
-      if (!mounted) return;
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
       final msgs = result.messages
           .map(
             (m) => _ChatMessage(
               role: m.role,
               content: m.content,
               timestamp: m.createdAt.millisecondsSinceEpoch,
+              answerContext: m.answerContext,
             ),
           )
           .toList();
+      for (var i = 1; i < msgs.length; i++) {
+        if (msgs[i].role != 'assistant' || msgs[i - 1].role != 'user') continue;
+        final photoUrl = trustedAskPhotoUrl(
+          msgs[i].answerContext?.photoUrl,
+          owner: Supabase.instance.client.auth.currentUser?.id,
+          origins: [widget.api.baseUrl, AppConfig.supabaseUrl],
+        );
+        if (photoUrl != null) {
+          msgs[i - 1] = msgs[i - 1].copyWith(photoUrl: photoUrl);
+        }
+      }
       setState(() {
         _session.messages = msgs;
         _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
       });
+      widget.onChatStateChanged?.call(msgs.isNotEmpty);
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
   }
 
@@ -2238,7 +2262,7 @@ class _ChatPageState extends State<ChatPage>
         setState(() => _conversations.insert(idx, removed));
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
       }
     }
   }
@@ -2250,10 +2274,13 @@ class _ChatPageState extends State<ChatPage>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0x14FFFFFF),
+          decoration: BoxDecoration(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
             border: Border(
-              right: BorderSide(color: Color(0x26FFFFFF), width: 1),
+              right: BorderSide(
+                color: AppTheme.adaptive(context, Color(0x26FFFFFF)),
+                width: 1,
+              ),
             ),
           ),
           child: SafeArea(
@@ -2263,10 +2290,10 @@ class _ChatPageState extends State<ChatPage>
                   padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
                   child: Row(
                     children: [
-                      const Text(
+                      AppText(
                         'Chat History',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.foreground(context, Colors.white),
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2276,7 +2303,10 @@ class _ChatPageState extends State<ChatPage>
                         onPressed: _closeHistory,
                         icon: Icon(
                           Icons.close,
-                          color: Colors.white.withValues(alpha: 0.60),
+                          color: AppTheme.foreground(
+                            context,
+                            Colors.white.withValues(alpha: 0.60),
+                          ),
                           size: 20,
                         ),
                         padding: EdgeInsets.zero,
@@ -2299,24 +2329,38 @@ class _ChatPageState extends State<ChatPage>
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFFF2F2F7).withValues(alpha: 0.10),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(
-                            0xFFF2F2F7,
-                          ).withValues(alpha: 0.40),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0xFFF2F2F7).withValues(alpha: 0.40),
+                          ),
                           width: 1,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
+                          Icon(
+                            Icons.add,
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFFF2F2F7),
+                            ),
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
-                          Text(
+                          AppText(
                             'New Chat',
                             style: TextStyle(
-                              color: Color(0xFFF2F2F7),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFF2F2F7),
+                              ),
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -2329,9 +2373,9 @@ class _ChatPageState extends State<ChatPage>
                 const SizedBox(height: 10),
                 Expanded(
                   child: _historyLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppTheme.adaptive(context, Colors.white),
                             strokeWidth: 2,
                           ),
                         )
@@ -2341,19 +2385,25 @@ class _ChatPageState extends State<ChatPage>
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
+                              AppText(
                                 "Couldn't load history.",
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white.withValues(alpha: 0.35),
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
                               TextButton(
                                 onPressed: _openHistory,
-                                child: const Text(
+                                child: AppText(
                                   'Retry',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -2363,10 +2413,13 @@ class _ChatPageState extends State<ChatPage>
                         )
                       : _conversations.isEmpty
                       ? Center(
-                          child: Text(
+                          child: AppText(
                             'No past conversations',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.35),
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -2383,10 +2436,16 @@ class _ChatPageState extends State<ChatPage>
                               background: Container(
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 16),
-                                color: const Color(0x33FF3B30),
-                                child: const Icon(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x33FF3B30),
+                                ),
+                                child: Icon(
                                   Icons.delete_outline,
-                                  color: Color(0xFFFF3B30),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0xFFFF3B30),
+                                  ),
                                   size: 18,
                                 ),
                               ),
@@ -2400,10 +2459,13 @@ class _ChatPageState extends State<ChatPage>
                                     horizontal: 16,
                                     vertical: 12,
                                   ),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     border: Border(
                                       bottom: BorderSide(
-                                        color: Color(0x0FFFFFFF),
+                                        color: AppTheme.adaptive(
+                                          context,
+                                          Color(0x0FFFFFFF),
+                                        ),
                                         width: 0.5,
                                       ),
                                     ),
@@ -2415,12 +2477,15 @@ class _ChatPageState extends State<ChatPage>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
+                                            AppText(
                                               c.title,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                ),
                                                 fontSize: 13,
                                                 fontWeight: isActive
                                                     ? FontWeight.w600
@@ -2428,10 +2493,13 @@ class _ChatPageState extends State<ChatPage>
                                               ),
                                             ),
                                             const SizedBox(height: 3),
-                                            Text(
+                                            AppText(
                                               _relativeTime(c.updatedAt),
-                                              style: const TextStyle(
-                                                color: Color(0x66FFFFFF),
+                                              style: TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Color(0x66FFFFFF),
+                                                ),
                                                 fontSize: 11,
                                               ),
                                             ),
@@ -2439,9 +2507,12 @@ class _ChatPageState extends State<ChatPage>
                                         ),
                                       ),
                                       if (isActive)
-                                        const Icon(
+                                        Icon(
                                           Icons.radio_button_checked,
-                                          color: Color(0xFFF2F2F7),
+                                          color: AppTheme.foreground(
+                                            context,
+                                            Color(0xFFF2F2F7),
+                                          ),
                                           size: 12,
                                         ),
                                     ],
@@ -2460,199 +2531,176 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  Widget _buildPillButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.70)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildHeader() {
+    final title = AppText(
+      key: const Key('ask-heading'),
+      'Ask',
+      style: TextStyle(
+        color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
+        height: 1.2,
       ),
     );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: Color(0xFFF2F2F7),
-                size: 31,
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _ShimmerTitle('Ask FindEZ'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
-    p: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    strong: const TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w600,
-      fontSize: 16,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    em: const TextStyle(
-      color: Color(0xFFAEAEB2),
-      fontStyle: FontStyle.italic,
-      fontSize: 16,
-    ),
-    listBullet: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      height: 1.42,
-    ),
-    blockSpacing: 8,
-    listIndent: 18,
-  );
-
-  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.92,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(2, 4, 12, 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.ai.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: AppColors.ai,
-                      size: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: Color(0xFF8E8E93),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                switchInCurve: Curves.easeOutCubic,
-                child: message.content.trim().isEmpty && isTyping
-                    ? const Padding(
-                        key: ValueKey('thinking'),
-                        padding: EdgeInsets.symmetric(vertical: 7),
-                        child: _TypingDots(),
-                      )
-                    : MarkdownBody(
-                        key: ValueKey('answer'),
-                        data: isTyping
-                            ? _renderableStreamingMarkdown(message.content)
-                            : message.content,
-                        styleSheet: _assistantMarkdownStyle(),
-                        softLineBreak: true,
-                      ),
-              ),
-              if (!isTyping && message.navHint != null)
-                GestureDetector(
-                  onTap: () => unawaited(_openNavHint(message.navHint!)),
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          message.navHint!['type'] == 'project_kit'
-                              ? Icons.construction_outlined
-                              : Icons.folder_open_outlined,
-                          color: const Color(0xFFF2F2F7),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            _navHintLabel(message.navHint!),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFF2F2F7),
-                          size: 17,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+    final reset = FrostedSurface(
+      radius: 16,
+      shadow: false,
+      child: TextButton(
+        onPressed: _resetChat,
+        child: AppText(
+          'New chat',
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFF85858E)),
+            fontSize: 13,
           ),
         ),
       ),
     );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: MediaQuery.textScalerOf(context).scale(18) > 36
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [if (widget.onBack != null) _buildBack(), title]),
+                if (_session.messages.isNotEmpty) reset,
+              ],
+            )
+          : Row(
+              children: [
+                if (widget.onBack != null) _buildBack(),
+                Expanded(child: title),
+                if (_session.messages.isNotEmpty) reset,
+              ],
+            ),
+    );
   }
+
+  Widget _buildBack() => IconButton(
+    tooltip: 'Back',
+    onPressed: widget.onBack,
+    icon: Icon(
+      Icons.arrow_back_ios_new_rounded,
+      size: 20,
+      color: AppTheme.textPrimary(context),
+    ),
+  );
+
+  Widget _buildEmptyState() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 16),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: AppText(
+          'What would you like to know?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            height: 1.25,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _attachPhoto() async {
+    if (_sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    final camera = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const AppText('Take photo'),
+              onTap: () => Navigator.pop(context, true),
+            ),
+            ListTile(
+              title: const AppText('Choose photo'),
+              onTap: () => Navigator.pop(context, false),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (camera == null || !mounted || generation != _requestGeneration) return;
+    setState(() => _pickingPhoto = true);
+    try {
+      AskPhoto? photo;
+      if (widget.photoPicker != null) {
+        photo = await widget.photoPicker!(camera);
+      } else {
+        final file = await ImagePicker().pickImage(
+          source: camera ? ImageSource.camera : ImageSource.gallery,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        );
+        if (file != null) {
+          if (await file.length() > AskPhoto.maxBytes) {
+            throw const AskRequestException(
+              'Choose a photo smaller than 10 MB.',
+            );
+          }
+          photo = AskPhoto(bytes: await file.readAsBytes());
+        }
+      }
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
+      if (photo != null &&
+          (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes)) {
+        throw const AskRequestException(
+          'Choose a valid photo smaller than 10 MB.',
+        );
+      }
+      if (photo != null) setState(() => _photo = photo);
+    } catch (error) {
+      if (!mounted || generation != _requestGeneration) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: AppText(
+            error is AskRequestException
+                ? error.message
+                : 'Could not open the photo. Check camera or photo access in Settings.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _pickingPhoto = false);
+      }
+    }
+  }
+
+  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) =>
+      AskAnswerView(
+        key: ValueKey('answer-${message.timestamp}'),
+        answer: isTyping
+            ? _renderableStreamingMarkdown(message.content)
+            : message.content,
+        contextData: message.answerContext,
+        isLoading: isTyping,
+        pendingMessage: _progress ?? 'Checking your things...',
+        onOpenSource:
+            message.navHint?['type'] != 'project_kit' ||
+                message.answerContext?.sources
+                        .where((source) => source.kind == 'project')
+                        .length !=
+                    1
+            ? null
+            : () => unawaited(_openNavHint(message.navHint!)),
+      );
 
   Widget _messageEntrance(_ChatMessage message, Widget child) {
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
@@ -2670,191 +2718,171 @@ class _ChatPageState extends State<ChatPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final canSend =
-        _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
+        !_pickingPhoto &&
+        (_controller.text.trim().isNotEmpty || _photo != null) &&
+        (!_sending || _canQueueFollowUp);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: widget.inPageView
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              surfaceTintColor: Colors.transparent,
-              leadingWidth: 52,
-              leading: Padding(
-                padding: const EdgeInsets.all(10),
-                child: GestureDetector(
-                  onTap: widget.onProfileTap,
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFF2C2C2E),
-                    radius: 16,
-                    child: Text(
-                      _userInitial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPillButton(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    onTap: () => _focusNode.requestFocus(),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan',
-                    onTap: widget.onScanTap ?? () {},
-                  ),
-                ],
-              ),
-              centerTitle: true,
-              actions: [
-                if (widget.onOpenInventory != null)
-                  IconButton(
-                    onPressed: widget.onOpenInventory,
-                    icon: Icon(
-                      Icons.article_outlined,
-                      color: Colors.white.withValues(alpha: 0.60),
-                    ),
-                  ),
-                IconButton(
-                  onPressed: _resetChat,
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white.withValues(alpha: 0.60),
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF09090B)),
+
       body: Container(
         color: Colors.transparent,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-            12,
-            isIOS ? 16 : 18,
-            12,
-            keyboardVisible ? 12 : 110,
+            16,
+            18,
+            16,
+            // MainShell reserves space for its pill below the page.
+            keyboardVisible || widget.inPageView ? 12 : 110,
           ),
           child: Column(
             children: [
+              if (_session.messages.isNotEmpty) ...[
+                _buildHeader(),
+                const SizedBox(height: 12),
+              ],
               Expanded(
-                child: _session.messages.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.separated(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.only(top: 4, bottom: 12),
-                        itemCount: _session.messages.length,
-                        separatorBuilder: (context, index) {
-                          final curr = _session.messages[index];
-                          final next = _session.messages[index + 1];
-                          return SizedBox(
-                            height: curr.role == next.role ? 6 : 18,
-                          );
-                        },
-                        itemBuilder: (context, index) {
-                          final m = _session.messages[index];
-                          final isUser = m.role == 'user';
-                          final isTyping =
-                              !isUser &&
-                              (m.isStreaming ||
-                                  index == _fakeTypingAssistantIndex ||
-                                  m.content == 'Typing…' ||
-                                  m.content == 'Thinking…' ||
-                                  m.content == 'Thinking...');
-                          if (!isUser) {
-                            return _messageEntrance(
-                              m,
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: _buildAssistantMessage(m, isTyping),
-                              ),
-                            );
-                          }
-                          return _messageEntrance(
-                            m,
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width * 0.78,
-                                ),
-                                child: Container(
-                                  margin: const EdgeInsets.only(
-                                    left: 54,
-                                    bottom: 2,
-                                    top: 2,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 15,
-                                    vertical: 10,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF2F2F7),
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(18),
-                                      topRight: Radius.circular(18),
-                                      bottomLeft: Radius.circular(18),
-                                      bottomRight: Radius.circular(5),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    m.content,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1C1C1E),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                child: ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(top: 4, bottom: 12),
+                  itemCount: _session.messages.isEmpty
+                      ? 1
+                      : _session.messages.length,
+                  separatorBuilder: (context, index) {
+                    final curr = _session.messages[index];
+                    final next = _session.messages[index + 1];
+                    return SizedBox(height: curr.role == next.role ? 12 : 8);
+                  },
+                  itemBuilder: (context, index) {
+                    if (_session.messages.isEmpty) return _buildEmptyState();
+                    final messageIndex = index;
+                    final m = _session.messages[messageIndex];
+                    final isUser = m.role == 'user';
+                    final isTyping =
+                        !isUser &&
+                        (m.isStreaming ||
+                            messageIndex == _fakeTypingAssistantIndex ||
+                            m.content == 'Typing…' ||
+                            m.content == 'Thinking…' ||
+                            m.content == 'Thinking...');
+                    if (!isUser) {
+                      return _messageEntrance(
+                        m,
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildAssistantMessage(m, isTyping),
+                        ),
+                      );
+                    }
+                    return _messageEntrance(
+                      m,
+                      AskQuestionCard(
+                        question: m.content,
+                        photoBytes: m.photo?.bytes,
+                        photoUrl: m.photoUrl,
                       ),
+                    );
+                  },
+                ),
               ),
-              if (_sending && _progress != null) ...[
+              if (_sending &&
+                  _progress != null &&
+                  !_session.messages.any((message) => message.isStreaming)) ...[
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
+                  child: AppText(
                     _progress!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF8E8E93),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
               ],
+              if (_photo != null)
+                Padding(
+                  key: const Key('ask-photo-preview'),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: _sending ? null : _attachPhoto,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            _photo!.bytes,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            semanticLabel: 'Attached photo. Tap to replace.',
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              width: 64,
+                              height: 64,
+                              child: Center(child: AppText('Photo')),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: AppText(
+                          'Photo attached',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFF9999A2),
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Remove photo',
+                        onPressed: () => setState(() => _photo = null),
+                        icon: const Icon(Icons.close, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
               Container(
                 constraints: const BoxConstraints(
                   minHeight: 48,
                   maxHeight: 116,
                 ),
-                padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+                padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
+                  color: AppTheme.adaptive(context, const Color(0xFF171719)),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    IconButton(
+                      tooltip: 'Attach photo',
+                      onPressed: _sending || _pickingPhoto
+                          ? null
+                          : _attachPhoto,
+                      icon: _pickingPhoto
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                              ),
+                            )
+                          : Icon(
+                              Icons.add_rounded,
+                              color: _sending
+                                  ? AppTheme.textSecondary(context)
+                                  : AppTheme.accentForeground(context),
+                              size: 22,
+                            ),
+                    ),
                     Expanded(
                       child: TextField(
                         controller: _controller,
@@ -2864,21 +2892,30 @@ class _ChatPageState extends State<ChatPage>
                         keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.newline,
                         onChanged: (_) => setState(() {}),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                        style: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
+                            fontSize: 16,
+                          ),
                         ),
-                        decoration: const InputDecoration(
-                          hintText: 'Ask about your inventory',
+                        decoration: InputDecoration(
+                          hintText: 'Ask a question',
                           isDense: true,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                           filled: false,
                           contentPadding: EdgeInsets.zero,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF636366),
+                          hintStyle: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFF636366),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -2895,8 +2932,11 @@ class _ChatPageState extends State<ChatPage>
                             ? Icons.mic_rounded
                             : Icons.mic_none_rounded,
                         color: _isListening
-                            ? const Color(0xFFF2F2F7)
-                            : Colors.white38,
+                            ? AppTheme.foreground(
+                                context,
+                                const Color(0xFFF2F2F7),
+                              )
+                            : AppTheme.foreground(context, Colors.white38),
                         size: 21,
                       ),
                       onPressed: _toggleListening,
@@ -2911,24 +2951,36 @@ class _ChatPageState extends State<ChatPage>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _sending && !_canQueueFollowUp
-                              ? const Color(0xFF2C2C2E)
+                              ? AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                )
                               : canSend
-                              ? const Color(0xFFF2F2F7)
-                              : const Color(0xFF2C2C2E),
+                              ? AppTheme.action
+                              : AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                ),
                         ),
                         child: _sending && !_canQueueFollowUp
-                            ? const Padding(
+                            ? Padding(
                                 padding: EdgeInsets.all(9),
                                 child: CircularProgressIndicator(
                                   strokeWidth: 1.7,
-                                  color: Color(0xFF8E8E93),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    Color(0xFF8E8E93),
+                                  ),
                                 ),
                               )
                             : Icon(
                                 Icons.arrow_upward_rounded,
                                 color: canSend
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFF636366),
+                                    ? AppTheme.onAction
+                                    : AppTheme.foreground(
+                                        context,
+                                        const Color(0xFF636366),
+                                      ),
                                 size: 20,
                               ),
                       ),
@@ -2944,70 +2996,6 @@ class _ChatPageState extends State<ChatPage>
   }
 }
 
-class _ShimmerTitle extends StatefulWidget {
-  const _ShimmerTitle(this.text);
-
-  final String text;
-
-  @override
-  State<_ShimmerTitle> createState() => _ShimmerTitleState();
-}
-
-class _ShimmerTitleState extends State<_ShimmerTitle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = _controller.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
-        ),
-      ),
-    );
-  }
-}
-
 class _ChatMessage {
   _ChatMessage({
     required this.role,
@@ -3015,6 +3003,9 @@ class _ChatMessage {
     required this.timestamp,
     this.isStreaming = false,
     this.navHint,
+    this.answerContext,
+    this.photo,
+    this.photoUrl,
   });
 
   final String role;
@@ -3022,12 +3013,17 @@ class _ChatMessage {
   final int timestamp;
   final bool isStreaming;
   final Map<String, dynamic>? navHint;
+  final AskAnswerContext? answerContext;
+  final AskPhoto? photo;
+  final String? photoUrl;
 
   _ChatMessage copyWith({
     String? content,
     int? timestamp,
     bool? isStreaming,
     Map<String, dynamic>? navHint,
+    AskAnswerContext? answerContext,
+    String? photoUrl,
   }) {
     return _ChatMessage(
       role: role,
@@ -3035,6 +3031,9 @@ class _ChatMessage {
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
       navHint: navHint ?? this.navHint,
+      answerContext: answerContext ?? this.answerContext,
+      photo: photo,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

@@ -33,16 +33,14 @@ class UpdateBoardTask(BaseModel):
 
 
 def _membership(team_id: str, user_id: str) -> dict:
-    rows = get_supabase_admin().table("team_memberships").select(
-        "member_id,role").eq("team_id", team_id).eq("user_id", user_id).limit(1).execute().data or []
-    if not rows:
-        raise HTTPException(403, "You are not a member of this team.")
-    return rows[0]
+    from app.services.permissions import workspace_membership
+    return workspace_membership(get_supabase_admin(), team_id, user_id)
 
 
 def _require_editor(team_id: str, user_id: str) -> dict:
     membership = _membership(team_id, user_id)
-    if membership["role"] == "viewer":
+    from app.services.permissions import EDIT_ROLES, workspace_role
+    if workspace_role(membership["role"]) not in EDIT_ROLES:
         raise HTTPException(403, "You have view-only access to this team board.")
     return membership
 

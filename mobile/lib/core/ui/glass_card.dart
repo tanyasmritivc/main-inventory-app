@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -21,10 +22,16 @@ class GlassCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface2.withValues(alpha: 0.95),
+        color: AppTheme.adaptive(
+          context,
+          AppColors.surface2.withValues(alpha: 0.95),
+        ),
         borderRadius: radius,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.10),
+          color: AppTheme.adaptive(
+            context,
+            Colors.white.withValues(alpha: 0.10),
+          ),
           width: 0.75,
         ),
       ),

@@ -3,6 +3,8 @@ import ipaddress
 import io
 import json
 import logging
+import math
+import re
 import time
 from collections import Counter
 from typing import Any
@@ -59,6 +61,29 @@ def _clean_string(value: Any, *, limit: int) -> str | None:
     return cleaned[:limit] or None
 
 
+def _public_reasoning(identity: dict[str, Any]) -> str | None:
+    """Describe the visible basis for a result without exposing internals.
+
+    Pipeline-provided free text is intentionally not returned to clients. It can
+    contain implementation names, infrastructure details, or debugging prose.
+    """
+    name = _clean_string(identity.get("name"), limit=200)
+    vendor = _clean_string(identity.get("vendor"), limit=100)
+    sku = _clean_string(identity.get("sku"), limit=100)
+    if bool(identity.get("unknown")) or not name:
+        return "The visible details were not distinctive enough for a reliable identification."
+    details: list[str] = []
+    if vendor:
+        details.append(f"brand markings match {vendor}")
+    if sku:
+        details.append(f"the visible part number is {sku}")
+    if details:
+        return f"Identified as {name} because " + " and ".join(details) + "."
+    return (
+        f"Visible shape, markings, and surrounding context support the identification {name}."
+    )
+
+
 def _category(value: Any) -> str:
     raw = str(value or "other").strip().lower()
     categories = {
@@ -82,7 +107,7 @@ def _category(value: Any) -> str:
 
 def _notes(item: dict[str, Any], identity: dict[str, Any]) -> str | None:
     parts: list[str] = []
-    reasoning = _clean_string(identity.get("reasoning"), limit=700)
+    reasoning = _public_reasoning(identity)
     if reasoning:
         parts.append(reasoning)
 
@@ -146,15 +171,34 @@ def _scan_evidence(
             width_mm = None
 
     errors = item.get("errors")
-    needs_review = bool(
-        identity.get("unknown")
-        or item.get("low_confidence")
-        or (isinstance(errors, list) and errors)
-    )
+    identity_confidence = _confidence(identity.get("confidence"))
+    review_reasons: list[str] = []
+    warnings: list[str] = []
+    if identity.get("unknown"):
+        review_reasons.append("The item could not be identified reliably.")
+    if item.get("low_confidence") or (
+        identity_confidence is not None and identity_confidence < 0.65
+    ):
+        review_reasons.append("The identification confidence is low.")
+    if isinstance(errors, list) and errors:
+        review_reasons.append("Some details could not be read from this photo.")
+        warnings.append("Only part of the photo analysis completed.")
+    if not _clean_string(identity.get("name"), limit=200):
+        review_reasons.append("A clear item name is still needed.")
+    needs_review = bool(review_reasons)
+
+    method = _clean_string(dimensions.get("method"), limit=20)
+    if method:
+        lowered_method = method.lower()
+        if "ruler" in lowered_method or "reference" in lowered_method:
+            method = "ruler"
+        elif "scale" in lowered_method or "calibrat" in lowered_method:
+            method = "calibrated scale"
+        else:
+            method = "visual estimate"
     return {
-        "identification_reasoning": _clean_string(
-            identity.get("reasoning"), limit=700
-        ),
+        "identification_reasoning": _public_reasoning(identity),
+        "identity_confidence": identity_confidence,
         "ocr_text": _clean_string(ocr.get("text"), limit=500),
         "ocr_confidence": _confidence(ocr.get("mean_conf")),
         "length_mm": length_mm,
@@ -162,7 +206,7 @@ def _scan_evidence(
         "measurement_confidence": _clean_string(
             dimensions.get("confidence"), limit=20
         ),
-        "measurement_method": _clean_string(dimensions.get("method"), limit=20),
+        "measurement_method": method,
         "measurement_assumption": measurement_assumption,
         "barcode_symbology": _clean_string(barcode.get("symbology"), limit=50),
         "barcode_confidence": _confidence(barcode.get("confidence")),
@@ -170,6 +214,8 @@ def _scan_evidence(
             item.get("confidence") if item.get("confidence") is not None
             else item.get("mask_score")
         ),
+        "review_reasons": list(dict.fromkeys(review_reasons)),
+        "warnings": warnings,
         "needs_review": needs_review,
     }
 
@@ -247,9 +293,12 @@ def map_find_result(
     }
 
 
-def _crop_from_box(image_bytes: bytes, item: dict[str, Any]) -> bytes | None:
-    box = next((item.get(key) for key in ("bbox", "mask_bbox", "bounding_box", "box")
-                if item.get(key) is not None), None)
+def _crop_from_box(
+    image_bytes: bytes, item: dict[str, Any], *, frame_size: tuple[Any, Any] = (None, None),
+) -> bytes | None:
+    box_key = next((key for key in ("bbox", "mask_bbox", "bounding_box", "box")
+                    if item.get(key) is not None), None)
+    box = item.get(box_key) if box_key else None
     if box is None and isinstance(item.get("mask"), dict):
         box = item["mask"].get("bbox")
     if box is None:
@@ -264,19 +313,43 @@ def _crop_from_box(image_bytes: bytes, item: dict[str, Any]) -> bytes | None:
                 y2 = float(box.get("y_max", box.get("y2", y1 + float(box.get("height", 0)))))
             elif isinstance(box, (list, tuple)) and len(box) == 4:
                 x1, y1, x2, y2 = (float(value) for value in box)
+                # FIND bbox is x/y/width/height in its stored image frame.
+                if box_key == "bbox" or box_key is None:
+                    x2, y2 = x1 + x2, y1 + y2
             else:
                 return None
-            if max(abs(x1), abs(y1), abs(x2), abs(y2)) <= 1:
+            if not all(math.isfinite(value) for value in (x1, y1, x2, y2)):
+                return None
+            if box_key not in ("bbox", None) and max(abs(x1), abs(y1), abs(x2), abs(y2)) <= 1:
                 x1, x2 = x1 * width, x2 * width
                 y1, y2 = y1 * height, y2 * height
+            else:
+                frame_width, frame_height = frame_size
+                if (isinstance(frame_width, (int, float)) and isinstance(frame_height, (int, float))
+                        and math.isfinite(frame_width) and math.isfinite(frame_height)
+                        and frame_width > 0 and frame_height > 0):
+                    x1, x2 = x1 * width / frame_width, x2 * width / frame_width
+                    y1, y2 = y1 * height / frame_height, y2 * height / frame_height
             bounds = (max(0, int(x1)), max(0, int(y1)),
-                      min(width, int(x2)), min(height, int(y2)))
+                      min(width, math.ceil(x2)), min(height, math.ceil(y2)))
             if bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
                 return None
             output = io.BytesIO()
             image.crop(bounds).convert("RGB").save(output, format="JPEG", quality=88)
             return output.getvalue()
-    except (OSError, TypeError, ValueError):
+    except (OSError, TypeError, ValueError, OverflowError):
+        return None
+
+
+def _crop_jpeg(content: bytes) -> bytes | None:
+    """Only persist a decoded item image, never an error document as a JPEG."""
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            image.thumbnail((1024, 1024))
+            output = io.BytesIO()
+            image.convert("RGB").save(output, format="JPEG", quality=88)
+            return output.getvalue()
+    except (OSError, ValueError):
         return None
 
 
@@ -438,15 +511,26 @@ class FindPipelineClient:
                     crop_path = (crop.get("url") or crop.get("path")) if isinstance(crop, dict) else None
                     crop_path = raw_item.get("crop_url") or raw_item.get("crop_path") or crop_path
                     crop_bytes: bytes | None = None
+                    item_id = raw_item.get("item_id")
+                    if not crop_path and isinstance(item_id, str) and re.fullmatch(r"it_[0-9]+", item_id):
+                        # Result documents expose item IDs, not necessarily crop URLs.
+                        crop_path = f"/v1/jobs/{job_id}/items/{item_id}/crop.jpg?crop_max=1024&masked=true"
                     if isinstance(crop_path, str):
                         parsed = urlparse(crop_path)
                         base = urlparse(self.base_url)
                         path = parsed.path if parsed.scheme else crop_path
                         if (not parsed.scheme or (parsed.scheme, parsed.netloc) == (base.scheme, base.netloc)) and path.startswith(f"/v1/jobs/{job_id}/"):
-                            crop_response = await self._request(client, "GET", path)
-                            crop_bytes = crop_response.content
+                            try:
+                                crop_response = await self._request(client, "GET", path)
+                                crop_bytes = _crop_jpeg(crop_response.content)
+                            except FindPipelineError:
+                                # A missing crop must not discard the usable detections.
+                                logger.info("Item close-up unavailable; trying stored-frame box")
                     if not crop_bytes:
-                        crop_bytes = _crop_from_box(image_bytes, raw_item)
+                        crop_bytes = _crop_from_box(
+                            image_bytes, raw_item,
+                            frame_size=(result.get("width"), result.get("height")),
+                        )
                     if not crop_bytes:
                         crop_urls.append(None)
                         continue

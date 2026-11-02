@@ -25,7 +25,7 @@ export const apiReference = document as unknown as {
 };
 export const endpoints = Object.entries(apiReference.paths).flatMap(([path, methods]) =>
   Object.entries(methods).map(([method, operation]) => ({ path, method: method.toUpperCase(), ...operation })))
-  .sort((a, b) => ["Connection", "Inventory", "Workspaces", "Key management"].indexOf(a.tags[0]) - ["Connection", "Inventory", "Workspaces", "Key management"].indexOf(b.tags[0]));
+  .sort((a, b) => ["Connection", "Inventory", "Workspaces", "Key management", "Organization management"].indexOf(a.tags[0]) - ["Connection", "Inventory", "Workspaces", "Key management", "Organization management"].indexOf(b.tags[0]));
 export type Endpoint = typeof endpoints[number];
 export const apiOrigin = apiReference.servers[0].url;
 

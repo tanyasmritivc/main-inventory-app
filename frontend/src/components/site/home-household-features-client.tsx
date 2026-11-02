@@ -1,8 +1,9 @@
 "use client";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/site/inventory-link";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ export type HomeInventoryRow = {
 };
 
 export function HomeHouseholdFeaturesClient(props: { items: HomeInventoryRow[]; staleCutoffMs: number }) {
-  const router = useRouter();
+  const router = useInventoryRouter();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {

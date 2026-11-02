@@ -1,0 +1,5 @@
+import { ProjectKitsClient } from "@/components/site/project-kits-client";
+import { ProtectedAppPage } from "@/components/site/protected-app-page";
+export const metadata = { title: "Project kits" };
+
+export default function ProjectKitsPage() { return <ProtectedAppPage returnTo="/project-kits"><ProjectKitsClient /></ProtectedAppPage>; }

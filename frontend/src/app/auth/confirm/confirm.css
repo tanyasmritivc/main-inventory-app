@@ -1,0 +1,8 @@
+.email-confirm-page { min-height:100dvh; display:grid; place-items:center; padding:24px; background:var(--light-page); color:var(--ink); }
+.email-confirm-card { width:min(100%,420px); padding:28px; border:1px solid var(--light-line); border-radius:14px; background:var(--light-panel); }
+.email-confirm-card h1 { font-size:24px; margin:0 0 16px; }
+.email-confirm-card p { font-size:14px; line-height:1.6; color:var(--light-muted); }
+.email-confirm-card [role=alert] { color:var(--danger-ink); }
+.email-confirm-card button { width:100%; margin:12px 0; justify-content:center; }
+.email-confirm-card > a { display:block; margin-top:16px; font-size:13px; color:var(--copper); }
+.email-confirm-card small { display:block; margin-top:24px; font-size:12px; line-height:1.5; color:var(--light-muted); }

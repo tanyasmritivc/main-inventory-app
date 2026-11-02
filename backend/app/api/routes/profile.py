@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
-from app.services.storage import create_profile_photo_signed_url
+from app.services.storage import create_profile_photo_signed_url, owned_profile_photo_path
 
 router = APIRouter(tags=["inventory"])
 
@@ -53,7 +53,7 @@ async def upload_profile_photo(
     content_type = (photo.content_type or "").lower()
     if content_type not in {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}:
         raise HTTPException(400, "Choose a JPEG, PNG, WebP, or HEIC image")
-    content = await photo.read()
+    content = await photo.read(5 * 1024 * 1024 + 1)
     if not content or len(content) > 5 * 1024 * 1024:
         raise HTTPException(400, "Profile photo must be smaller than 5 MB")
 
@@ -68,7 +68,7 @@ async def upload_profile_photo(
         file_options={"content-type": content_type, "x-upsert": "true"},
     )
     client.table("profiles").upsert({"id": user.user_id, "avatar_path": path}).execute()
-    return {"avatar_url": create_profile_photo_signed_url(storage_path=path)}
+    return {"avatar_url": create_profile_photo_signed_url(storage_path=path, owner_id=user.user_id)}
 
 
 @router.delete("/profile/photo")
@@ -78,7 +78,7 @@ async def delete_profile_photo(
     client = get_supabase_admin()
     profile = client.table("profiles").select("avatar_path").eq("id", user.user_id).execute()
     path = (profile.data[0].get("avatar_path") if profile.data else None)
-    if path:
+    if owned_profile_photo_path(path, user.user_id):
         client.storage.from_("profile-photos").remove([path])
     client.table("profiles").upsert({"id": user.user_id, "avatar_path": None}).execute()
     return {"deleted": True}
@@ -94,9 +94,9 @@ async def get_my_profile(
     email = u.user.email if u and u.user else ""
     data = profile.data[0] if profile.data else {}
     avatar_url = ""
-    if data.get("avatar_path"):
+    if owned_profile_photo_path(data.get("avatar_path"), user.user_id):
         try:
-            avatar_url = create_profile_photo_signed_url(storage_path=data["avatar_path"])
+            avatar_url = create_profile_photo_signed_url(storage_path=data["avatar_path"], owner_id=user.user_id)
         except Exception:
             logger.exception("Could not sign profile photo for %s", user.user_id)
     return {

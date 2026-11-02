@@ -97,3 +97,27 @@ def test_apns_payload_groups_by_team_and_sets_badge():
     assert payload["aps"]["badge"] == 4
     assert payload["aps"]["thread-id"] == "team-team-1"
     assert payload["aps"]["category"] == "TEAM_ACTIVITY"
+
+
+def test_apns_transient_failure_retries_but_permanent_rejection_does_not():
+    import httpx
+    from app.services import push_notifications
+    client=MagicMock();client.__enter__.return_value=client
+    client.post.side_effect=[httpx.ConnectTimeout('synthetic private URL'),MagicMock(status_code=200)]
+    with patch.object(push_notifications,'_credentials',return_value=('/tmp/key','key','team','com.findez.app')),patch.object(push_notifications,'_authorization',return_value='synthetic-jwt'),patch.object(push_notifications.httpx,'Client',return_value=client),patch.object(push_notifications.time,'sleep'):
+        assert push_notifications._send({'device_token':'synthetic-device'},title='Test',body='Test') is True
+        assert client.post.call_count==2
+        client.post.reset_mock();client.post.side_effect=None;client.post.return_value=MagicMock(status_code=403)
+        assert push_notifications._send({'device_token':'synthetic-device'},title='Test',body='Test') is False
+        assert client.post.call_count==1
+
+
+def test_apns_transport_retries_are_bounded_and_do_not_log_tokens(caplog):
+    import httpx
+    from app.services import push_notifications
+    client=MagicMock();client.__enter__.return_value=client
+    client.post.side_effect=httpx.ConnectTimeout('synthetic-private-device-token')
+    with patch.object(push_notifications,'_credentials',return_value=('/tmp/key','key','team','com.findez.app')),patch.object(push_notifications,'_authorization',return_value='synthetic-jwt'),patch.object(push_notifications.httpx,'Client',return_value=client),patch.object(push_notifications.time,'sleep'):
+        assert push_notifications._send({'device_token':'synthetic-private-device-token'},title='Test',body='Test') is False
+    assert client.post.call_count==3
+    assert 'synthetic-private-device-token' not in caplog.text

@@ -38,10 +38,10 @@ import app.core.config  # noqa: E402
 import app.services.limits  # noqa: E402
 import app.services.usage_service  # noqa: E402
 
-_PILOT_END_DATE = "2026-09-11T23:59:59Z"
+_PILOT_END_DATE = "2026-11-01T23:59:59Z"
 _EXPECTED_NOTICE = (
-    "Free Pilot: Unlimited access through September 11, 2026. "
-    "Standard free-plan limits and optional paid plans begin September 12. "
+    "Free Pilot: Unlimited access through November 1, 2026. "
+    "Standard free-plan limits and optional paid plans begin November 2. "
     "You will not be charged automatically."
 )
 
@@ -171,11 +171,11 @@ class TestPilotNoticeContent(unittest.TestCase):
     def setUp(self):
         self.result = _run_summary(pilot_mode=True, pilot_ends_at=_PILOT_END_DATE)
 
-    def test_notice_mentions_sep_11(self):
-        self.assertIn("September 11, 2026", self.result["pilot_notice"])
+    def test_notice_mentions_nov_1(self):
+        self.assertIn("November 1, 2026", self.result["pilot_notice"])
 
-    def test_notice_mentions_sep_12(self):
-        self.assertIn("September 12", self.result["pilot_notice"])
+    def test_notice_mentions_nov_2(self):
+        self.assertIn("November 2", self.result["pilot_notice"])
 
     def test_notice_mentions_no_automatic_charge(self):
         self.assertIn("not be charged automatically", self.result["pilot_notice"])
@@ -192,6 +192,12 @@ class TestPilotNoticeContent(unittest.TestCase):
 
 class TestPilotLimitsUnchanged(unittest.TestCase):
     """Verify unlimited limits still flow through during active pilot."""
+
+    def test_informational_end_date_does_not_switch_off_pilot(self):
+        result = _run_summary(pilot_mode=True, pilot_ends_at="2000-01-01T00:00:00Z")
+        self.assertTrue(result["pilot_mode"])
+        self.assertIsNone(result["items"]["max"])
+        self.assertEqual(result["pilot_notice"], _EXPECTED_NOTICE)
 
     def test_items_max_is_null_during_pilot(self):
         result = _run_summary(pilot_mode=True, pilot_ends_at=_PILOT_END_DATE)

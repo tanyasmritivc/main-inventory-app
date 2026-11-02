@@ -35,7 +35,7 @@ rather than the engineer.
 
 ## What FindEZ actually is, as of August 2026
 
-An AI-powered inventory app for FTC/FRC robotics teams.
+An AI-powered inventory app for homes, small businesses, labs, schools, robotics teams, factories, and other groups managing physical belongings, supplies, or equipment.
 
 ### Clients
 
