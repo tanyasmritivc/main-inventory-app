@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { publicFonts } from "@/components/landing-v5/fonts";
+import { workbenchFonts } from "@/components/landing-v5/workbench-fonts";
 import { LandingV5 } from "@/components/landing-v5/LandingV5";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
 export const metadata: Metadata = {
@@ -25,6 +26,6 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }} />
-    <LandingV5 className={publicFonts} />
+    <LandingV5 className={`${publicFonts} ${workbenchFonts}`} />
   </>;
 }

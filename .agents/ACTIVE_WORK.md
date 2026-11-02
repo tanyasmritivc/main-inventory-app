@@ -1,3 +1,11 @@
+## November 1 - Workbench hero completed locally
+
+Branch `feat/hero-workbench`, based on web research `268fcc5`, implements the user-supplied `docs/hero-workbench` design. Homepage-only Workbench photo/detection animation, Inter Tight headline, white composer, iPhone announcement and dark header treatment. Existing signup/draft/IME behavior and current navigation destinations are preserved. Other pages and all sections below the hero are unchanged. No backend/mobile/schema/env/deploy configuration changes.
+
+Validation: 649 web tests/90 suites, 10 final focused checks, TypeScript, final standard production build and lint (0 errors, 52 existing warnings) passed. Browser checks at 1440, 390 and 320px cover wrapping/overflow, keyboard prompt handoff, permanent focus-stop for typing, off-screen pause/resume, announcement collapse, lower-page phone navigation and reduced motion. Full detection-cycle samples verified label clipping/content exclusion and a single photo request. Desktop/phone screenshots compared with the supplied reference and walkthrough. See `docs/hero-workbench/IMPLEMENTATION.md` and `qa/`.
+
+The user-supplied prompt explicitly says commit locally and do not push. No push, CI request or deployment performed. Local preview: http://localhost:3038 while its process remains running. The external node_modules symlink was replaced by a local locked install so the normal Turbopack build works; its original target was preserved.
+
 ## November 1 — FIND public research wording
 
 Published runtime `9f10f576890d03c9363b56dccfd2774e46336b66` at

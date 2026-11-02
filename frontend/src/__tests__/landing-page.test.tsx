@@ -7,6 +7,7 @@ const mockRouter = { push, prefetch: jest.fn() };
 const unsubscribe = jest.fn();
 let authChanged: (event: string, session: object | null) => void;
 jest.mock("next/font/google", () => ({
+  Inter_Tight: () => ({ variable: "workbench-tight" }),
   Inter: () => ({ variable: "landing-inter" }),
   Plus_Jakarta_Sans: () => ({ variable: "landing-jakarta" }),
   Geist_Mono: () => ({ variable: "landing-mono" }),
@@ -23,8 +24,8 @@ beforeEach(() => {
 
 test("homepage preserves the requested copy, sections, metadata and destinations", async () => {
   render(await LandingPage());
-  expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
-  expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
+  expect(screen.getByRole("heading", {level: 1}).textContent).toBe("The AI that turns your inventory into intelligence.");
+  expect(screen.getByText("Describe what you own, or tap Scan to start from a photo.")).toBeTruthy();
   for (const id of ["hero", "build", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
   expect(document.querySelectorAll("#prows .pr")).toHaveLength(12);
   const header = within(screen.getByRole("banner"));
