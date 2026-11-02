@@ -1,8 +1,8 @@
-## November 1 - Search logo metadata ready for publication
+## November 1 - Search logo metadata published; Google recrawl requested
 
-User wants the new logo in Google search results. Current public assets already contain the new white Petals logo; Google displays a cached old mark. Branch `fix/search-logo` advertises an explicit 96px PNG favicon and dedicated 512px Petals image for OG/Twitter and Organization schema, with current sitemap modification date. The new PNG is an exact copy of the existing approved favicon artwork. No page UI changes.
+Runtime `b0cfbeb1e5bfdc866fb7e3254cd29f1d31346b04` is live at https://findez.ai in `search-logo-20261101/frontend`, build `AfbYEzdOQhPzG5V5BZoi-`. Branch `fix/search-logo` pushed; draft PR291. Explicit 96px PNG favicon and dedicated 512px Petals image now appear in OG/Twitter and Organization schema; sitemap modification date updated. Artwork is the existing approved white Petals logo. No page UI changes.
 
-649 tests/90 suites, lint (zero errors/52 existing warnings), production build with TypeScript, built HTML metadata/schema and real PNG dimension checks pass. User will open the verified Google Search Console property for a homepage recrawl request after publication. Search result selection/timing remains controlled by Google. Self-hosted publication pending CI/server checks.
+Validation: 649 tests/90 suites; lint zero errors/52 existing warnings; TypeScript/local production build; five exact-source CI gates (41394140167); server build and 35 staged/live routes. Public apex/www metadata, PNG dimensions/MIME/byte hashes, crawl permissions and sitemap verified. Other source/pages/configuration, backend PID and previous compiled release preserved. Only the older intro release's regenerable cache was removed for build space. Google Search Console confirmed “Indexing requested” and addition of https://findez.ai/ to its priority crawl queue after publication. Actual search-result image refresh remains pending Google recrawl/processing; no timing or image selection guarantee. Receipt: `docs/plans/search-logo-receipt.json`.
 
 ## November 1 - Workbench header refinement published
 
