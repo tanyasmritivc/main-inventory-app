@@ -31,68 +31,82 @@ class VoiceRecordingOverlay extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: AnimatedBuilder(
                       animation: voice,
-                      builder: (context, _) => SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                voice.ready
-                                    ? 'Now recording'
-                                    : 'Starting microphone...',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            if (voice.soundLevel != null)
-                              ValueListenableBuilder<double>(
-                                valueListenable: voice.soundLevel!,
-                                builder: (context, value, _) =>
-                                    _SoundBars(level: voice.ready ? value : 0),
-                              )
-                            else
-                              const _SoundBars(level: 0),
-                            const SizedBox(height: 18),
-                            Text(
-                              voice.transcript.isEmpty
-                                  ? 'Speak naturally. Your message sends when you finish.'
-                                  : voice.transcript,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: .7),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 12,
-                              children: [
-                                TextButton(
-                                  onPressed: voice.cancel,
-                                  child: const Text('Cancel'),
-                                ),
-                                FilledButton.icon(
-                                  onPressed: voice.ready
-                                      ? () => unawaited(voice.release())
-                                      : null,
-                                  icon: const Icon(
-                                    CupertinoIcons.stop_fill,
-                                    size: 14,
+                      builder: (context, _) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Text(
+                                      voice.processing
+                                          ? 'Transcribing...'
+                                          : voice.ready
+                                          ? 'Now recording'
+                                          : 'Starting microphone...',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
                                   ),
-                                  label: const Text('Send'),
-                                ),
-                              ],
+                                  const SizedBox(height: 22),
+                                  if (voice.soundLevel != null)
+                                    ValueListenableBuilder<double>(
+                                      valueListenable: voice.soundLevel!,
+                                      builder: (context, value, _) =>
+                                          _SoundBars(
+                                            level: voice.ready ? value : 0,
+                                          ),
+                                    )
+                                  else
+                                    const _SoundBars(level: 0),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    voice.transcript.isEmpty
+                                        ? (voice.processing
+                                              ? 'Turning your recording into text. You can cancel at any time.'
+                                              : 'Speak for up to one minute. Review the text before sending.')
+                                        : voice.transcript,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: .7),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 12,
+                            children: [
+                              TextButton(
+                                onPressed: voice.cancel,
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton.icon(
+                                onPressed: voice.ready && !voice.processing
+                                    ? () => unawaited(voice.release())
+                                    : null,
+                                icon: const Icon(
+                                  CupertinoIcons.stop_fill,
+                                  size: 14,
+                                ),
+                                label: const Text('Done'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),

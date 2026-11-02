@@ -6,7 +6,7 @@ import { CookieNotice } from "@/components/site/cookie-notice";
 import { LEGAL_VERSION } from "@/lib/legal-content";
 jest.mock("@/lib/use-marketing-session", () => ({ useMarketingSession: () => false }));
 
-test.each([[PrivacyPage, "October 12, 2026"], [TermsPage, "October 11, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
+test.each([[PrivacyPage, "November 1, 2026"], [TermsPage, "October 11, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
   const { container } = render(<Page />);
   expect(screen.getByText(`Effective ${effectiveDate}`)).toBeTruthy();
   expect(screen.getByText(/887 Poppy Ct, Sunnyvale, CA 94086/)).toBeTruthy();

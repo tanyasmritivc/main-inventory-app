@@ -72,11 +72,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>FindEZ uses the camera to capture item photos and scan barcodes for your inventory.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>FindEZ uses the microphone to record the inventory questions you choose to speak.</string>
+	<string>FindEZ records your spoken messages and sends the audio to its transcription service so you can review the text before sending.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FindEZ reads the photos you select to identify items or attach images to your inventory.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>FindEZ uses Apple speech recognition to transcribe your spoken inventory questions. Apple may process the audio.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

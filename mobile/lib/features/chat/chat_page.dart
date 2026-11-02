@@ -63,6 +63,7 @@ class ChatPage extends StatefulWidget {
     this.pageController,
     this.onOpenDestination,
     this.photoPicker,
+    this.voiceRecorder,
     this.worldHeading,
     this.onCaptureAction,
     this.contextual = false,
@@ -75,6 +76,7 @@ class ChatPage extends StatefulWidget {
   final ChatSource? initialSource;
   final VoidCallback? onInitialSourceReady;
   final Future<void> Function(String)? onCaptureAction;
+  final VoiceRecorder? voiceRecorder;
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
   final String? initialMessage;
@@ -207,7 +209,7 @@ class _ChatSession {
 }
 
 class _ChatPageState extends State<ChatPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
   late final TextEditingController _controller;
@@ -309,20 +311,45 @@ class _ChatPageState extends State<ChatPage>
     return true;
   }
 
+  String? _voiceOwner;
+  ApiClient? _voiceApi;
   late final VoiceCapture _voice = VoiceCapture(
-    recorder: DeviceVoiceRecorder(),
+    recorder:
+        widget.voiceRecorder ??
+        DeviceVoiceRecorder(
+          transcribe: (wav, cancel) async {
+            final api = _voiceApi;
+            if (api == null ||
+                api.accountId != _voiceOwner ||
+                !identical(api, widget.api)) {
+              throw SessionExpiredException();
+            }
+            return api.transcribeVoice(wav, cancelToken: cancel);
+          },
+        ),
     onSend: (words) {
       if (!mounted || _sending) return;
+      if (widget.api.accountId != _voiceOwner ||
+          !identical(widget.api, _voiceApi)) {
+        return;
+      }
       widget.api.assertCurrentContext();
-      final draft = _controller.text.trim();
-      unawaited(_submit(draft.isEmpty ? words : '$draft $words'));
+      final draft = _controller.text.trimRight();
+      final text = draft.isEmpty ? words : '$draft $words';
+      setState(
+        () => _controller.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        ),
+      );
+      _focusNode.requestFocus();
     },
     onError: () {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Voice input could not start. Check microphone and speech permissions, then try again.',
+              'Voice input could not finish. Check microphone permission and your connection, then try again.',
             ),
           ),
         );
@@ -2336,6 +2363,7 @@ class _ChatPageState extends State<ChatPage>
         ? _ChatSession()
         : _ChatSession._internal();
     _controller = TextEditingController();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_loadCameraHint());
     if (widget.initialSource != null) _sources.add(widget.initialSource!);
     if (widget.onInitialSourceReady != null) {
@@ -2389,16 +2417,39 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
+  Future<void> _startVoice() async {
+    if (_voice.active || _sending) return;
+    _voiceOwner = widget.api.accountId;
+    _voiceApi = widget.api;
+    await _voice.start();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _voice.cancel();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.api, widget.api)) _voice.cancel();
+  }
+
   void _toggleListening() {
     if (_voice.active) {
       unawaited(_voice.release());
     } else {
-      unawaited(_voice.start(autoSend: true));
+      unawaited(_startVoice());
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _voiceOverlay?.remove();
     _voiceOverlay?.dispose();
     _voiceOverlay = null;
@@ -3470,7 +3521,7 @@ class _ChatPageState extends State<ChatPage>
                       onVoice: _sending ? null : _toggleListening,
                       onVoiceStart: _sending
                           ? null
-                          : () => unawaited(_voice.start()),
+                          : () => unawaited(_startVoice()),
                       onVoiceEnd: () => unawaited(_voice.release()),
                       onVoiceCancel: _voice.cancel,
                       voiceTranscript: _voice.transcript,
@@ -3644,7 +3695,7 @@ class _ChatPageState extends State<ChatPage>
                     ? null
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,
-                onVoiceStart: _sending ? null : () => unawaited(_voice.start()),
+                onVoiceStart: _sending ? null : () => unawaited(_startVoice()),
                 onVoiceEnd: () => unawaited(_voice.release()),
                 onVoiceCancel: _voice.cancel,
                 voiceTranscript: _voice.transcript,

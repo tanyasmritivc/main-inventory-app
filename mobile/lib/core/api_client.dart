@@ -219,6 +219,36 @@ class ApiClient {
         '/eezy/chat',
       ].contains(path.split('?').first);
 
+  Future<String> transcribeVoice(
+    Uint8List wav, {
+    required dio.CancelToken cancelToken,
+  }) async {
+    assertCurrentContext();
+    final owner = accountId;
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/voice/transcriptions',
+      data: dio.FormData.fromMap({
+        'file': dio.MultipartFile.fromBytes(
+          wav,
+          filename: 'voice.wav',
+          contentType: MediaType('audio', 'wav'),
+        ),
+      }),
+      cancelToken: cancelToken,
+      options: dio.Options(
+        receiveTimeout: const Duration(seconds: 55),
+        sendTimeout: const Duration(seconds: 20),
+      ),
+    );
+    assertCurrentContext();
+    if (owner != accountId) throw SessionExpiredException();
+    final text = response.data?['text'];
+    if (text is! String || text.length > 10000) {
+      throw const FormatException('Invalid transcription');
+    }
+    return text.trim();
+  }
+
   void assertCurrentContext() {
     if ((_boundAccount != null && accountId != _boundAccount) ||
         (_isCurrent != null && !_isCurrent())) {

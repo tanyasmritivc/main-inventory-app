@@ -1,3 +1,9 @@
+## Whisper voice input (build 163)
+
+Run `flutter test test/voice_capture_test.dart test/voice_api_test.dart test/ask_page_test.dart test/fluid_surfaces_test.dart`, full Flutter tests and analysis. Coverage includes bounded PCM/WAV capture, delayed microphone permission, cancellation during upload, account changes, a one-minute stop, editable drafts preserving typed text, explicit Send and background cancellation. `integration_test/voice_input_audit_test.dart` exercises the synthetic controller and chat cases on native iOS; it does not prove physical microphone capture.
+
+Run the full backend suite. `backend/tests/test_voice_transcription.py` verifies authenticated-only routing, bounded WAV validation, fixed provider destination, no redirects, missing configuration and scrubbed upstream failures. Live provider acceptance uses a generated nonpersonal speech fixture. Before claiming device acceptance, verify a chosen spoken phrase, permission denial, cancel, Done, edit, Send and backgrounding on a physical iPhone. Do not record ambient audio for unattended QA. Keep build162's review submission unchanged.
+
 ## Navigation and Spaces controls (October 29)
 
 Run the full mobile suite and analyzer. `retained_tab_transition_test.dart` covers

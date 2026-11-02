@@ -1,3 +1,7 @@
+## November 1 - Whisper voice input returns an editable draft
+
+User selected voice input only. Build163 replaces Apple speech recognition with in-memory microphone recording and an authenticated `/voice/transcriptions` backend proxy to the supplied FTCTools Whisper endpoint. The provider credential is server-only. No spoken replies, automatic chat send, inventory write or provider fallback. The one-minute capture can be canceled during startup or transcription. The returned text appends to the typed draft and requires explicit Send. This supersedes the build158 automatic voice submission behavior. Preserve build162's App Review submission.
+
 ## October 29 — Restrained native-style crossfade after control fixes
 
 Repair Spaces interaction regressions before changing motion. Shared primary tabs

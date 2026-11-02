@@ -1,0 +1,46 @@
+{
+  "version": "1.1.1",
+  "build": 163,
+  "source_commit": "07a054ebc103ce97304ed7a3e7984a96a81dcbf6",
+  "flutter_tests_passed": 1240,
+  "flutter_existing_skips": 1,
+  "backend_tests_passed": 834,
+  "web_tests_passed": 324,
+  "native_checks_passed": 15,
+  "final_focused_passed": 21,
+  "physical_microphone": "pending user acceptance",
+  "branch": "feat/whisper-voice-input-163",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/284",
+  "features": [
+    "Whisper voice input through authenticated server endpoint",
+    "Editable chat draft with explicit Send",
+    "Bounded in-memory recording and cancellation",
+    "Pinned accessible recording controls"
+  ],
+  "server_deployed": true,
+  "privacy_published": true,
+  "live_authenticated_transcription": "passed with synthetic speech",
+  "public_submission": false,
+  "previous_build162_review": "unchanged",
+  "apple_upload": "acknowledged",
+  "native_layouts": "light/dark at normal and 2.6x text, visually inspected",
+  "notes": [
+    "Initial local full suite interrupted by disk exhaustion; complete rerun passed.",
+    "Final accessibility adjustment passed 21 focused and four native layout checks."
+  ],
+  "ci": {
+    "run": 41364756914,
+    "jobs_passed": 5,
+    "source_commit": "07a054ebc103ce97304ed7a3e7984a96a81dcbf6"
+  },
+  "apple_validation": true,
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "privacy_manifests": 27,
+  "credential_scan": "passed project and archive",
+  "ipa_sha256": "92f3c8bbc6373929ffd4ae28445f35a4693ece0b06c51cc9eb907602d443813a",
+  "delivery_uuid": "8af5f72d-422e-4ff9-92be-305f5eaaedb0",
+  "processing": "pending; not polled",
+  "tester_availability": "unverified",
+  "release_artifacts": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.1.1-build163"
+}

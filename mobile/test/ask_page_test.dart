@@ -1,3 +1,6 @@
+import 'package:mobile/features/chat/voice_capture.dart';
+import 'voice_capture_test.dart' show Recorder;
+import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/chat/native_chat_menu_button.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -215,6 +218,7 @@ class _AskApi extends ApiClient {
 Widget _page(
   _AskApi api, {
   String? initialMessage,
+  VoiceRecorder? voiceRecorder,
   TextScaler scaler = TextScaler.noScaling,
   Future<AskPhoto?> Function(bool camera)? photoPicker,
   Brightness brightness = Brightness.dark,
@@ -237,6 +241,7 @@ Widget _page(
       inPageView: true,
       initialMessage: initialMessage,
       photoPicker: photoPicker,
+      voiceRecorder: voiceRecorder,
       worldHeading: api.worldKey == null ? null : 'Find your things.',
       onChatStateChanged: onChatStateChanged,
     ),
@@ -247,6 +252,59 @@ Widget _page(
 );
 
 void main() {
+  testWidgets(
+    'voice returns an editable draft and sends only on explicit Send',
+    (tester) async {
+      final recorder = Recorder();
+      final api = _AskApi(world: true);
+      await tester.pumpWidget(_page(api, voiceRecorder: recorder));
+      await tester.pumpAndSettle();
+      final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
+      composer.controller.text = 'Please help.';
+      composer.onVoice!();
+      await tester.pumpAndSettle();
+      expect(find.text('Now recording'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(composer.controller.text, 'Please help. Where are my screws?');
+      expect(api.commands, isEmpty);
+      expect(find.text('Now recording'), findsNothing);
+      tester.widget<WorldComposer>(find.byType(WorldComposer)).onSend!();
+      await tester.pumpAndSettle();
+      expect(api.commands, ['Please help. Where are my screws?']);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets('background cancels recording and preserves typed draft', (
+    tester,
+  ) async {
+    final recorder = Recorder()..pendingStop = Completer<void>();
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(_page(api, voiceRecorder: recorder));
+    await tester.pumpAndSettle();
+    final composer = tester.widget<WorldComposer>(find.byType(WorldComposer));
+    composer.controller.text = 'Keep this';
+    composer.onVoice!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    expect(find.text('Transcribing...'), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    recorder.pendingStop!.complete();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    Supabase.instance.client.auth.stopAutoRefresh();
+    await tester.pumpAndSettle();
+    expect(composer.controller.text, 'Keep this');
+    expect(api.commands, isEmpty);
+    expect(find.text('Transcribing...'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('empty Ask has one prompt and no duplicated brand heading', (
     tester,
   ) async {
@@ -350,7 +408,7 @@ void main() {
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-          const MethodChannel('plugin.csdcorp.com/speech_to_text'),
+          const MethodChannel('com.llfbandit.record/messages'),
           (_) async => false,
         );
   });
