@@ -1,3 +1,9 @@
+## November 1 - Workbench header refinement published
+
+User explicitly authorized self-hosted deployment of header-before-after.png and findez-hero-workbench-2.html. Runtime `1ff488a87ef4e11f9cdb3a9634571d1fda4cf618` is live at https://findez.ai in `hero-header-20261101/frontend`, build `HaLAIldkJzsUJ54SyaSsf`. Branch `fix/workbench-header` pushed; draft PR290. Only Header.tsx, workbench.css and workbench-motion.ts changed at runtime. Transparent announcement/nav blend into the photo, scrolling adds dark frosted styling, and detection boxes stay farther from the edges/header/headline. Intro, other pages, configuration, backend PID and previous release are preserved.
+
+Validation: 649 tests/90 suites; lint zero errors/52 existing warnings; TypeScript; standard local build; five CI gates (41392829552); server build with prior cache; 33 staged/live routes. Local, staged and public Chrome 1440/390/320 verify top/scroll styles, box bounds, mobile menu/Escape, intro final state, reduced motion, signup and no page errors. Safari top/scroll visually verified. Temporary preview stopped. Removed only the older hero-workbench release's regenerable build cache for space; compiled rollback release retained. Receipt: `docs/plans/hero-header-receipt.json`.
+
 ## November 1 - Workbench headline intro published
 
 User explicitly authorized direct implementation and self-hosted deployment after supplying CODEX_PROMPT_INTRO_ONLY.md. Runtime `29cefa2f7492620d57ce838e5868dcf03f2e8ec7` is live at https://findez.ai in `hero-intro-20261101/frontend`, build `k7mpOiTNubm6SFT6ghlmr`. Branch `feat/hero-intro` pushed; draft PR289. Only three existing hero runtime files changed. Other pages, configuration, backend PID and previous compiled release are preserved.
