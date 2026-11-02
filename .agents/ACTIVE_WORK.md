@@ -1,3 +1,9 @@
+## November 1 - Workbench header update ready for publication
+
+User supplied header-before-after.png and findez-hero-workbench-2.html and explicitly authorized self-hosted deployment. Branch `fix/workbench-header` changes only homepage header treatment, photo top shade and detection placement. Transparent announcement/nav share the photo fade; scrolling adds the reference dark frosted background. Existing public routes remain, the mobile menu stays available below the hero, and the headline intro remains unchanged. Boxes use 28px edge margins, a 196px top minimum and an expanded headline exclusion zone.
+
+649 tests/90 suites, lint (zero errors/52 existing warnings), TypeScript and final standard production build pass. Chrome 1440/390/320 checks pass for transparent top, frosted scroll, detection bounds, intro final states, mobile menu/Escape, signup, reduced motion, other-page header isolation and no page errors. Build output required prefixed backdrop-filter before the standard property to preserve the Chrome override. Self-hosted publication pending CI and server build checks.
+
 ## November 1 - Workbench headline intro published
 
 User explicitly authorized direct implementation and self-hosted deployment after supplying CODEX_PROMPT_INTRO_ONLY.md. Runtime `29cefa2f7492620d57ce838e5868dcf03f2e8ec7` is live at https://findez.ai in `hero-intro-20261101/frontend`, build `k7mpOiTNubm6SFT6ghlmr`. Branch `feat/hero-intro` pushed; draft PR289. Only three existing hero runtime files changed. Other pages, configuration, backend PID and previous compiled release are preserved.

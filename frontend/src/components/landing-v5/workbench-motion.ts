@@ -13,16 +13,16 @@ export function startWorkbenchMotion(hero:HTMLElement,input:HTMLTextAreaElement,
   const safe={l:c.left-h.left-24,r:c.right-h.left+24,t:c.top-h.top-16,b:c.bottom-h.top+4};
   host.replaceChildren();boxes=[];
   for(const [name,count,[x1,y1,x2,y2]] of objects){
-   const l=Math.max(10,ox+x1*k),r=Math.min(W-10,ox+x2*k),b=Math.min(H-12,oy+y2*k);let t=Math.max(124,oy+y1*k);
+   const l=Math.max(28,ox+x1*k),r=Math.min(W-28,ox+x2*k),b=Math.min(H-28,oy+y2*k);let t=Math.max(196,oy+y1*k);
    if((t+b)/2>safe.b&&l<safe.r&&r>safe.l)t=Math.max(t,safe.b+14);
    const w=r-l,height=b-t;if(w<60||height<50)continue;
-   const overlap=Math.max(0,Math.min(r,safe.r)-Math.max(l,safe.l))*Math.max(0,Math.min(b,safe.b)-Math.max(t,safe.t));
+   const overlap=Math.max(0,Math.min(r,safe.r)-Math.max(l,safe.l))*Math.max(0,Math.min(b,safe.b)-Math.max(t,safe.t-60));
    if(overlap>w*height*.45)continue;
    const box=document.createElement('div');box.className='wb-box';Object.assign(box.style,{left:`${l}px`,top:`${t}px`,width:`${w}px`,height:`${height}px`});
    const label=document.createElement('em');label.textContent=`${name} · ${count}`;if(t>safe.b-60&&t<safe.b+34)label.className='wb-label-below';
    box.append(label);host.append(box);
-   if(label.getBoundingClientRect().right>h.right-10){label.style.left='auto';label.style.right='-1.5px';}
-   if(label.getBoundingClientRect().bottom>h.bottom-12){label.style.top='auto';label.style.bottom='4px';}
+   if(label.getBoundingClientRect().right>h.right-28){label.style.left='auto';label.style.right='-1.5px';}
+   if(label.getBoundingClientRect().bottom>h.bottom-28){label.style.top='auto';label.style.bottom='4px';}
    const lr=label.getBoundingClientRect();if(lr.right>c.left&&lr.left<c.right&&lr.bottom>c.top&&lr.top<c.bottom){box.remove();continue;}boxes.push(box);
   }
  }
