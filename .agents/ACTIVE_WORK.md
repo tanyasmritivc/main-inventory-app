@@ -1,3 +1,9 @@
+## November 1 - Workbench headline intro published
+
+User explicitly authorized direct implementation and self-hosted deployment after supplying CODEX_PROMPT_INTRO_ONLY.md. Runtime `29cefa2f7492620d57ce838e5868dcf03f2e8ec7` is live at https://findez.ai in `hero-intro-20261101/frontend`, build `k7mpOiTNubm6SFT6ghlmr`. Branch `feat/hero-intro` pushed; draft PR289. Only three existing hero runtime files changed. Other pages, configuration, backend PID and previous compiled release are preserved.
+
+Validation: 649 tests/90 suites; lint zero errors/52 existing warnings; TypeScript; standard local production build; all five CI gates (41391173955); isolated server build; all 33 staged/live route checks. Local, staged and public HTTPS Chrome at 1440/390 verify unchanged wrapping and positions within 0.05px, gradient, stagger order, no replay on scroll/resize, pre-hydration state, reduced-motion instant rendering, signup handoff and no page errors. Safari desktop visually verified. Server font fetch failed twice; reusing the prior successful build cache resolved it without source, font or configuration changes. Temporary staging preview stopped. Receipt: `docs/plans/hero-intro-receipt.json`.
+
 ## November 1 - Workbench hero published
 
 The user clarified "please deploy," superseding the earlier local-only/no-push instruction. Runtime `0c0d41c013d5690486384e77dc92613ff9b755fc` is live at https://findez.ai in `hero-workbench-20261101/frontend`, build `pmPktVh8KeokYkMxK4GH0`. Branch `feat/hero-workbench` is pushed; draft PR288; main unchanged. Only eight homepage hero/header runtime files were applied over the actual live `voice-privacy-164` source. Newer voice/personalization privacy wording, research, pricing, terms, Solutions and all other source/assets/configuration are preserved by hash checks. Backend PID unchanged and previous compiled release retained.
