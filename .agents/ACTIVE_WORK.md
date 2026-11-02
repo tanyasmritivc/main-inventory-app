@@ -1,3 +1,7 @@
+## November 1 - TestFlight 164 authorized
+
+The user explicitly requested uploading the inline voice composer to TestFlight, superseding the earlier local-only/no-push limit. Prepare 1.1.1 (164) on `feat/voice-in-composer`, publish accurate voice privacy wording, push the branch and complete signed release/CI checks. Stop at Apple upload acknowledgment. Physical microphone acceptance remains with the user; build162 App Review stays unchanged.
+
 ## November 1 - Inline voice composer completed locally
 
 Completed worktree `Projects/findez-voice-composer`, branch `feat/voice-in-composer`. Follow user-supplied `docs/voice-v1/CODEX_PROMPT.md`, HTML and video: mobile-only inline recording, real levels, silence then two-second auto-send countdown, tap-to-edit and voice duration label. Reuse the Whisper endpoint. User explicitly says commit locally and do not push; no release upload or backend/web/env/CI changes. This supersedes build163 explicit-Send behavior for this local lane only.

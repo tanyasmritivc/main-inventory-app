@@ -1,6 +1,6 @@
-# Inline voice composer — local implementation
+# Inline voice composer — implementation
 
-Branch: `feat/voice-in-composer`, based on build163 source and its delivery receipt. No push, TestFlight upload, build-number increment or production changes. Physical iPhone microphone acceptance is left to the user, as requested.
+Branch: `feat/voice-in-composer`, based on build163 source and its delivery receipt. Initially completed locally. The user subsequently authorized pushing and uploading TestFlight build164; see the release receipt for delivery status. Physical iPhone microphone acceptance is left to the user, as requested.
 
 ## Behavior
 
@@ -19,7 +19,7 @@ Light/dark colors, 136→178pt growth, the specified animation curve, Inter voic
 
 The native audit uses synthetic recorder data. Its snapshots render real Flutter UI with the bundled fonts, including a 320pt accessibility viewport and a normalized 300pt keyboard inset. QA screenshots are in `qa/`; they are development evidence, not App Store screenshots.
 
-Before a future release, update the live privacy wording that currently describes build163's explicit Send flow and complete physical-device acceptance. No web changes are part of this local task.
+The TestFlight164 release updates voice privacy wording to distinguish build163's explicit Send flow from build164's countdown. Physical-device acceptance remains with the user.
 
 ## Changed files
 

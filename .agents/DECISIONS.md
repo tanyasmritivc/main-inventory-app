@@ -1,3 +1,7 @@
+## November 1 - TestFlight 164 authorized
+
+The user explicitly requested uploading the inline voice composer to TestFlight, superseding the earlier local-only/no-push limit. Prepare 1.1.1 (164) on `feat/voice-in-composer`, publish accurate voice privacy wording, push the branch and complete signed release/CI checks. Stop at Apple upload acknowledgment. Physical microphone acceptance remains with the user; build162 App Review stays unchanged.
+
 ## November 1 - Inline voice composer (local only)
 
 The supplied voice-v1 brief supersedes build163's manual draft flow on `feat/voice-in-composer`. Keep capture and the authenticated Whisper transport unchanged. Microphone levels drive the waveform and a 1.2-second silence threshold; batch transcription completes before a full two-second send countdown. Tapping the transcript permanently disables auto-send for that recording and opens editing. Cancel, hidden tabs, backgrounding and changed API/account context invalidate the session. No fake live transcript or spoken replies. Voice duration is local message presentation; historical server messages do not retain it under the unchanged API contract.

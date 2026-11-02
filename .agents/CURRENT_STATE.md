@@ -1,3 +1,7 @@
+## November 1 - TestFlight 164 authorized
+
+The user explicitly requested uploading the inline voice composer to TestFlight, superseding the earlier local-only/no-push limit. Prepare 1.1.1 (164) on `feat/voice-in-composer`, publish accurate voice privacy wording, push the branch and complete signed release/CI checks. Stop at Apple upload acknowledgment. Physical microphone acceptance remains with the user; build162 App Review stays unchanged.
+
 ## November 1 — Inline voice composer, local-only lane
 
 `Projects/findez-voice-composer`, branch `feat/voice-in-composer`, implements the user-supplied voice-v1 composer brief over the existing Whisper capture/transport. This lane is not pushed, uploaded or deployed. Its silence → transcription → two-second countdown flow supersedes build163's explicit-Send draft behavior only when this local app is built. User will perform physical iPhone microphone checks. See `docs/voice-v1/IMPLEMENTATION.md` for verification and changed files. Build162's App Review submission and uploaded build163 remain unchanged.
