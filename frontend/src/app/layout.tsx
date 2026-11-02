@@ -43,21 +43,22 @@ export const metadata: Metadata = {
     url: PUBLIC_SITE_URL,
     siteName: "FindEZ",
     type: "website",
-    images: [{ url: "/brand/findez-favicon.png", width: 512, height: 512, alt: "FindEZ" }],
+    images: [{ url: "/brand/findez-petals-512.png", width: 512, height: 512, alt: "FindEZ" }],
   },
   twitter: {
     card: "summary",
-    images: ["/brand/findez-favicon.png"],
+    images: ["/brand/findez-petals-512.png"],
     title: PUBLIC_SITE_TITLE,
     description: PUBLIC_SITE_DESCRIPTION,
   },
   icons: {
     icon: [
+      { url: "/brand/findez-petals-96.png", sizes: "96x96", type: "image/png" },
       { url: "/brand/findez-favicon-16.png", sizes: "16x16", type: "image/png" },
       { url: "/brand/findez-favicon-32.png", sizes: "32x32", type: "image/png" },
       { url: "/brand/findez-favicon.svg", sizes: "any", type: "image/svg+xml" },
     ],
-    shortcut: "/brand/findez-favicon-32.png",
+    shortcut: "/brand/findez-petals-96.png",
     apple: [{ url: "/brand/findez-app-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };

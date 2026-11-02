@@ -1,3 +1,9 @@
+## November 1 - Search logo metadata published; Google recrawl requested
+
+Runtime `b0cfbeb1e5bfdc866fb7e3254cd29f1d31346b04` is live at https://findez.ai in `search-logo-20261101/frontend`, build `AfbYEzdOQhPzG5V5BZoi-`. Branch `fix/search-logo` pushed; draft PR291. Explicit 96px PNG favicon and dedicated 512px Petals image now appear in OG/Twitter and Organization schema; sitemap modification date updated. Artwork is the existing approved white Petals logo. No page UI changes.
+
+Validation: 649 tests/90 suites; lint zero errors/52 existing warnings; TypeScript/local production build; five exact-source CI gates (41394140167); server build and 35 staged/live routes. Public apex/www metadata, PNG dimensions/MIME/byte hashes, crawl permissions and sitemap verified. Other source/pages/configuration, backend PID and previous compiled release preserved. Only the older intro release's regenerable cache was removed for build space. Google Search Console confirmed “Indexing requested” and addition of https://findez.ai/ to its priority crawl queue after publication. Actual search-result image refresh remains pending Google recrawl/processing; no timing or image selection guarantee. Receipt: `docs/plans/search-logo-receipt.json`.
+
 ## November 1 - Workbench header refinement published
 
 User explicitly authorized self-hosted deployment of header-before-after.png and findez-hero-workbench-2.html. Runtime `1ff488a87ef4e11f9cdb3a9634571d1fda4cf618` is live at https://findez.ai in `hero-header-20261101/frontend`, build `HaLAIldkJzsUJ54SyaSsf`. Branch `fix/workbench-header` pushed; draft PR290. Only Header.tsx, workbench.css and workbench-motion.ts changed at runtime. Transparent announcement/nav blend into the photo, scrolling adds dark frosted styling, and detection boxes stay farther from the edges/header/headline. Intro, other pages, configuration, backend PID and previous release are preserved.
