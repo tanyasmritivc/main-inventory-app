@@ -44,15 +44,16 @@ double _contrast(Color a, Color b) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'first launch defaults to slightly larger text with system accessibility scaling',
+    'first launch defaults to dark with system accessibility text scaling',
     () async {
       final storage = _Storage();
       final controller = AppearanceController(storage: storage);
       addTearDown(controller.dispose);
+      expect(controller.themeMode, ThemeMode.dark);
       await Future.wait([controller.load(), controller.load()]);
       expect(storage.reads, 3);
       expect(controller.loaded, isTrue);
-      expect(controller.themeMode, ThemeMode.light);
+      expect(controller.themeMode, ThemeMode.dark);
       expect(controller.textSize, AppTextSize.standard);
       const system = _NonlinearScaler();
       expect(controller.textScaler(system).scale(14), closeTo(29.12, .001));
@@ -111,7 +112,7 @@ void main() {
       final controller = AppearanceController();
       addTearDown(controller.dispose);
       await controller.load();
-      expect(controller.themeMode, ThemeMode.light);
+      expect(controller.themeMode, ThemeMode.dark);
       expect(controller.textSize, AppTextSize.standard);
       await controller.setThemeMode(ThemeMode.light);
       final prefs = await SharedPreferences.getInstance();
@@ -138,7 +139,9 @@ void main() {
   test(
     'failed writes retain previous settings and expose a retryable error',
     () async {
-      final storage = _Storage()..failWrite = true;
+      final storage = _Storage()
+        ..values[AppearanceController.themeKey] = 'light'
+        ..failWrite = true;
       final controller = AppearanceController(storage: storage);
       addTearDown(controller.dispose);
       expect(await controller.setThemeMode(ThemeMode.dark), isFalse);
@@ -159,7 +162,9 @@ void main() {
   );
 
   test('pending writes cannot publish early or race a second change', () async {
-    final storage = _Storage()..pending = Completer<bool>();
+    final storage = _Storage()
+      ..values[AppearanceController.themeKey] = 'light'
+      ..pending = Completer<bool>();
     final controller = AppearanceController(storage: storage);
     addTearDown(controller.dispose);
     await controller.load();
@@ -178,7 +183,9 @@ void main() {
   test(
     'late writes after disposal never notify a disposed controller',
     () async {
-      final storage = _Storage()..pending = Completer<bool>();
+      final storage = _Storage()
+        ..values[AppearanceController.themeKey] = 'light'
+        ..pending = Completer<bool>();
       final controller = AppearanceController(storage: storage);
       await controller.load();
       final save = controller.setThemeMode(ThemeMode.light);

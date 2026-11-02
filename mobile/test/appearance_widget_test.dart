@@ -81,13 +81,21 @@ void main() {
   });
 
   testWidgets(
-    'real app switches modes in-place without losing the route or draft',
+    'real app defaults dark and switches modes without losing route or draft',
     (tester) async {
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
       final controller = AppearanceController(storage: _Storage());
       final form = TextEditingController(text: 'Unsaved inventory notes');
       addTearDown(controller.dispose);
       addTearDown(form.dispose);
       await _open(tester, controller, form);
+      expect(
+        Theme.of(
+          tester.element(find.byKey(const Key('theme-probe'))),
+        ).brightness,
+        Brightness.dark,
+      );
       final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
       for (final mode in [ThemeMode.light, ThemeMode.dark, ThemeMode.light]) {
         await tester.tap(
@@ -228,7 +236,9 @@ void main() {
   testWidgets(
     'failed save is visible and pending saves disable duplicate choices',
     (tester) async {
-      final storage = _Storage()..succeeds = false;
+      final storage = _Storage()
+        ..values[AppearanceController.themeKey] = 'light'
+        ..succeeds = false;
       final controller = AppearanceController(storage: storage);
       final form = TextEditingController();
       addTearDown(controller.dispose);

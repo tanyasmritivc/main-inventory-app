@@ -1,3 +1,7 @@
+## November 1 - Dark appearance default (build165)
+
+The user requested Dark as the mobile default. Unset, invalid and unavailable appearance storage now fall back to Dark from first construction through loaded state. Explicitly saved Light, Dark and System choices retain their meaning; no preference migration or overwrite. The existing two themes and appearance controls remain available. Scoped to mobile, with build165 release under the standing TestFlight authorization. Active branch `fix/dark-default-165`, worktree `Projects/findez-voice-composer`.
+
 ## November 1 - Inline voice composer delivered to TestFlight164
 
 Apple acknowledged FindEZ 1.1.1 (164), source `67dd0ce36a1cf6577621ec7a9507b20936a6e8cb`, delivery `996b2c63-f063-44a1-8b6b-09cc372fefbb`. Branch `feat/voice-in-composer` is pushed; PR285 stays separate from main. Inline microphone levels, timer, silence-triggered transcription, a two-second auto-send countdown, tap-to-edit/cancel and voice duration labels follow the supplied design. The user explicitly authorized this release after the initial local-only implementation.
