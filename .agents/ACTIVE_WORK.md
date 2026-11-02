@@ -1388,4 +1388,4 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 - Build `WuBumiAAkblC73uGYsn1p` live and externally verified; Safari dark/light, 15 focused tests, lint and production build pass. Receipt: `docs/app-theme/chat-cleanup-deployment.json`.
 
 ## November 2 — composer inner outline
-- Active on `feat/app-theme`: remove the textarea focus outline inside the composer. Keep keyboard focus visible by changing the outer composer's border color instead. CSS only.
+- Complete on `feat/app-theme`, implementation `f4cc6da`: removed the inner textarea focus outline; keyboard focus uses the outer border. CSS only. Production build and 19 route/preservation checks passed; focused input visually verified in Safari. Build `JeuHFjM3tt9gUyAV1gi3s` deployed and externally verified. Receipt: `docs/app-theme/composer-border-deployment.json`.
