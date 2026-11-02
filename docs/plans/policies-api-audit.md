@@ -17,3 +17,5 @@ Validation completed before publication:
 Limits: production integration writes/deletion were intentionally not exercised on customer inventory; their route/SQL/permission/concurrency behavior was tested with isolated fixtures. Empty-organization live reads prove the authenticated production path, not the accuracy of populated customer inventory. A generated contract and tests are not a guarantee of future availability or legal compliance.
 
 Privacy drafting reference: https://www.ftc.gov/business-guidance/privacy-security — describe actual practices and honor privacy promises. Mandatory rights remain conditional on applicable law; no new compliance certification or retention guarantee was added.
+
+Publication completed: 27def05, PR293, CI41400739188 all five jobs green. Local webpack/type checks and isolated server build pass; 38 staged/live routes and public apex/www updated content pass. Chrome reviewed all three staged pages and the published API guide. Production source/configuration and backend PID preserved. See policies-api-receipt.json.

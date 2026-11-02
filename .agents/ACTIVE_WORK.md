@@ -1,6 +1,8 @@
 ## November 1 — Policies and public API audit
 
-Active on `fix/policies-api-current`, based on the deployed organization API contract commit 305e3e0. Updating terms, privacy and API reference against the actual live source. Use a guarded overlay deployment over hero-descender-20261101; preserve all unrelated current web/backend work. Validate live-source HTTP behavior and disposable PostgreSQL permissions. No mobile build or production schema changes.
+Published runtime `27def05a03730b1638525601b79f1a69d201a9ec` at https://findez.ai in `policies-api-20261101/frontend`, build `XTK8TQunEUyBuKjeMpB6j`. Draft PR293; all five exact-source CI gates passed (41400739188). Eight-file overlay preserves the actual hero-descender homepage, latest logo, other pages, configuration and backend PID. Updated Terms/Privacy, API key boundaries, Space destinations, private photo handling, management errors and generated downloads. No native build or backend/schema change.
+
+Live API: 24 authenticated checks with a temporary empty review-account organization and read-only key; key revoked/rejected and organization removed. No customer inventory writes. Local: 108 live-source focused tests; final 43 live-source contract tests; 1,145 full backend tests; 509 disposable SQL assertions plus concurrency; 473 web tests; 36 connector tests and standalone bundle; types/build pass; lint zero errors/51 existing warnings. All 38 staged/live routes, public apex/www content and exact connector download pass. Chrome staged pages/navigation and published docs reviewed. Temporary staging server and local database stopped. Receipt: `docs/plans/policies-api-receipt.json`.
 
 ## Organization agent management - October 19 (active)
 
