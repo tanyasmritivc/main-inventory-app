@@ -1,0 +1,39 @@
+{
+  "version": "1.1.1",
+  "build": 164,
+  "source_commit": "67dd0ce36a1cf6577621ec7a9507b20936a6e8cb",
+  "branch": "feat/voice-in-composer",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/285",
+  "flutter_tests_passed": 1249,
+  "flutter_existing_skips": 1,
+  "final_focused_passed": 18,
+  "native_checks_passed": 12,
+  "physical_microphone": "pending user acceptance",
+  "web_tests_passed": 324,
+  "privacy_published": true,
+  "privacy_manifests": 27,
+  "credential_scan": true,
+  "strict_export_signature": true,
+  "voice_font_verified": true,
+  "public_submission": false,
+  "previous_build162_review": "unchanged",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "ipa_sha256": "046dcb3d63dd80fed96647b80dd5b49ee50fc308ec0119178a0627849c244795",
+  "apple_validation": true,
+  "delivery_uuid": "996b2c63-f063-44a1-8b6b-09cc372fefbb",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "apple_upload": "acknowledged",
+  "ci": {
+    "run": 41375848006,
+    "jobs_passed": 5,
+    "source_commit": "67dd0ce36a1cf6577621ec7a9507b20936a6e8cb"
+  },
+  "release_artifacts": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.1.1-build164",
+  "notes": [
+    "Two added context-cancellation checks passed after the local full Flutter run.",
+    "Live privacy publication patched the existing website and preserved its newer personalization wording.",
+    "Physical iPhone microphone acceptance remains with the user."
+  ]
+}

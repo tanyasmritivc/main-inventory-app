@@ -1,6 +1,6 @@
 # Inline voice composer — implementation
 
-Branch: `feat/voice-in-composer`, based on build163 source and its delivery receipt. Initially completed locally. The user subsequently authorized pushing and uploading TestFlight build164; see the release receipt for delivery status. Physical iPhone microphone acceptance is left to the user, as requested.
+Branch: `feat/voice-in-composer`, based on build163 source and its delivery receipt. Initially completed locally. The user subsequently authorized pushing and uploading TestFlight build164; Apple acknowledged 1.1.1 (164); see `../plans/voice-composer164-receipt.json`. Processing/tester availability remain pending. Physical iPhone microphone acceptance is left to the user, as requested.
 
 ## Behavior
 

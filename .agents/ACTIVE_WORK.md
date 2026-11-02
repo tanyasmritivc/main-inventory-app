@@ -1,6 +1,10 @@
-## November 1 - TestFlight 164 authorized
+## November 1 - Inline voice composer delivered to TestFlight164
 
-The user explicitly requested uploading the inline voice composer to TestFlight, superseding the earlier local-only/no-push limit. Prepare 1.1.1 (164) on `feat/voice-in-composer`, publish accurate voice privacy wording, push the branch and complete signed release/CI checks. Stop at Apple upload acknowledgment. Physical microphone acceptance remains with the user; build162 App Review stays unchanged.
+Apple acknowledged FindEZ 1.1.1 (164), source `67dd0ce36a1cf6577621ec7a9507b20936a6e8cb`, delivery `996b2c63-f063-44a1-8b6b-09cc372fefbb`. Branch `feat/voice-in-composer` is pushed; PR285 stays separate from main. Inline microphone levels, timer, silence-triggered transcription, a two-second auto-send countdown, tap-to-edit/cancel and voice duration labels follow the supplied design. The user explicitly authorized this release after the initial local-only implementation.
+
+Validation: local full Flutter suite 1,249 passed (one existing skip), two added context-cancellation checks, 18 final focused checks, clean analysis, eight native flow/layout checks plus four final accessibility layouts. Web: 324 tests, TypeScript, lint and staged production build/smoke checks. All five CI gates passed on the exact runtime commit (41375848006). Archive/export: 33 iOS-device executables each, strict signatures, 27 privacy manifests, verified production configuration and voice font packaging, credential scans and Apple validation. Accurate voice privacy wording is live, with personalization and research preserved.
+
+Processing/tester availability are pending and were not polled. Physical iPhone microphone acceptance remains with the user. Build162's public App Review submission remains unchanged. Signed IPA/archive and receipts are preserved in `Documents/FindEZ/AppStore/1.1.1-build164`; see `docs/plans/voice-composer164-receipt.json`.
 
 ## November 1 - Inline voice composer completed locally
 
