@@ -1,6 +1,10 @@
-## November 1 - Stop chat response and replace App Store build (166)
+## November 1 - Stop response delivered and App Review updated to build166
 
-The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.
+FindEZ 1.1.1 (166), source `00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6`, is processed VALID and WAITING_FOR_REVIEW. Apple upload delivery `9864067d-9288-48f0-9162-566ba7e90fe7`; review submission `c10d8d96-16f0-4b3a-a340-8bf88d73fdd9`. The user explicitly authorized withdrawal of build162 and replacement with the newest build. Selected build166 is verified; listing metadata, review details and all 14 ordered screenshots are unchanged. Release remains MANUAL; no public release performed. Branch `fix/chat-stop-166` and draft PR287 are pushed, with main unchanged.
+
+The circular send/loading button now stops active text/photo chat, closes the HTTP client even before headers arrive, preserves partial answers/drafts and lets another message start. Late events cannot modify the next turn. Already committed server operations are not undone. Includes voice composer164 and dark default165; saved appearance choices remain intact. No backend/schema/web changes.
+
+Validation: 58 focused checks, all 1,261 Flutter tests (one existing skip), clean analysis, five native iOS stop checks and all five exact-source CI gates (41384044092). The first concurrent full-suite runner stalled and was terminated; the complete standalone rerun passed. Signed archive/export: 33 device executables each, strict signatures, 27 privacy manifests, production configuration, font/credential checks and Apple validation. Artifacts in `Documents/FindEZ/AppStore/1.1.1-build166`; receipt `docs/plans/mobile-chat-stop166-receipt.json`. Physical microphone acceptance remains with the user; TestFlight group availability was not separately checked.
 
 ## November 1 - Dark default delivered to TestFlight165
 
