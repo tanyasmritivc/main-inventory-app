@@ -1,3 +1,9 @@
+## November 1 - Workbench hero published
+
+The user clarified "please deploy," superseding the earlier local-only/no-push instruction. Runtime `0c0d41c013d5690486384e77dc92613ff9b755fc` is live at https://findez.ai in `hero-workbench-20261101/frontend`, build `pmPktVh8KeokYkMxK4GH0`. Branch `feat/hero-workbench` is pushed; draft PR288; main unchanged. Only eight homepage hero/header runtime files were applied over the actual live `voice-privacy-164` source. Newer voice/personalization privacy wording, research, pricing, terms, Solutions and all other source/assets/configuration are preserved by hash checks. Backend PID unchanged and previous compiled release retained.
+
+Validation: prior 649 web tests, 10 final focused tests, TypeScript, lint (0 errors/52 existing warnings), local build and animation/layout checks remain valid. All five exact-source CI gates passed (41389676825). Isolated production build and all 33 staged/live route/asset checks passed. Public HTTPS Chrome checks at 1440/390/320px verify layout, no overflow, prompt handoff, focus-stop typing, off-screen pause/resume, announcement collapse, phone navigation and reduced motion. No browser page errors. Temporary staged preview stopped. Three old regenerable Next.js caches were removed for staging space; no compiled release was removed. See `docs/plans/hero-workbench-receipt.json`.
+
 ## November 1 — FIND public research wording
 
 Published runtime `9f10f576890d03c9363b56dccfd2774e46336b66` at

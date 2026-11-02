@@ -1,0 +1,80 @@
+[
+  {
+    "width": 1440,
+    "overflow": false,
+    "lines": 2,
+    "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "boxes": 6,
+    "background": "url(\"http://localhost:3038/images/landing/workbench-wide.jpg\")",
+    "center": {
+      "x": 380,
+      "y": 301.609375,
+      "width": 680,
+      "height": 296.78125,
+      "top": 301.609375,
+      "right": 1060,
+      "bottom": 598.390625,
+      "left": 380
+    },
+    "focusStopsTyping": true,
+    "pausesOffscreen": true,
+    "bandCollapses": true,
+    "signupPrompt": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "overflow": false,
+    "lines": 3,
+    "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "boxes": 1,
+    "background": "url(\"http://localhost:3038/images/landing/workbench-wide.jpg\")",
+    "center": {
+      "x": 20,
+      "y": 271.7265625,
+      "width": 350,
+      "height": 300.546875,
+      "top": 271.7265625,
+      "right": 370,
+      "bottom": 572.2734375,
+      "left": 20
+    },
+    "focusStopsTyping": true,
+    "pausesOffscreen": true,
+    "bandCollapses": true,
+    "signupPrompt": true,
+    "errors": []
+  },
+  {
+    "width": 320,
+    "overflow": false,
+    "lines": 3,
+    "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "boxes": 1,
+    "background": "url(\"http://localhost:3038/images/landing/workbench-wide.jpg\")",
+    "center": {
+      "x": 20,
+      "y": 271.7265625,
+      "width": 280,
+      "height": 300.546875,
+      "top": 271.7265625,
+      "right": 300,
+      "bottom": 572.2734375,
+      "left": 20
+    },
+    "focusStopsTyping": true,
+    "pausesOffscreen": true,
+    "bandCollapses": true,
+    "signupPrompt": true,
+    "errors": []
+  },
+  {
+    "reduced": {
+      "animation": "none",
+      "placeholder": "Describe your inventory",
+      "transforms": [
+        "none"
+      ]
+    }
+  }
+]
