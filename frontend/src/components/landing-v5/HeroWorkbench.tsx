@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { startWorkbenchMotion } from "./workbench-motion";
 import "./workbench.css";
 import { previewPrompt } from "@/lib/landing-preview";
+
+const headline = "The AI that turns your inventory into intelligence.";
 
 export function HeroWorkbench() {
  const router = useRouter();
@@ -12,6 +14,8 @@ export function HeroWorkbench() {
  const input = useRef<HTMLTextAreaElement>(null), busy = useRef(false);
  const [value, setValue] = useState(''), [leaving, setLeaving] = useState(false);
  useEffect(() => {
+  const element = hero.current;
+  element?.classList.add('wb-intro');
   let restoreFrame = 0;
   try { const draft = JSON.parse(sessionStorage.getItem('findez_public_preview_draft') || 'null');
    if(draft && Date.now()-draft.at < 30*60*1000) { const text=previewPrompt(draft.prompt); if(input.current) input.current.value=text; restoreFrame = requestAnimationFrame(() => setValue(text)); }
@@ -19,7 +23,7 @@ export function HeroWorkbench() {
   const restore = () => {busy.current=false;setLeaving(false)};
   window.addEventListener('pageshow',restore);
   const stop = hero.current && input.current ? startWorkbenchMotion(hero.current, input.current, () => focused.current) : () => {};
-  return()=>{cancelAnimationFrame(restoreFrame);stop();window.removeEventListener('pageshow',restore)};
+  return()=>{element?.classList.remove('wb-intro');cancelAnimationFrame(restoreFrame);stop();window.removeEventListener('pageshow',restore)};
  },[]);
  function submit(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();if(busy.current)return;
@@ -36,7 +40,14 @@ export function HeroWorkbench() {
 <div className="wb-boxes" aria-hidden="true" />
 <div className="wb-veil" aria-hidden="true" />
 <div className="wb-center">
-<h1>The AI that turns your inventory into <span>intelligence.</span></h1>
+<h1 aria-label={headline}>{headline.split(' ').map((word, index) => (
+ <Fragment key={index}>
+  {index > 0 && ' '}
+  <span className="wb-word-mask" aria-hidden="true">
+   <span className={`wb-word${word === 'intelligence.' ? ' wb-ember' : ''}`} style={{ animationDelay: `${150 + index * 70}ms` }}>{word}</span>
+  </span>
+ </Fragment>
+))}</h1>
 
 <form className="wb-composer" id="cform" action="/signup" method="get" onSubmit={submit} aria-busy={leaving}>
 

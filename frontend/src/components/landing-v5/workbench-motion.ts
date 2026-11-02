@@ -28,8 +28,8 @@ export function startWorkbenchMotion(hero:HTMLElement,input:HTMLTextAreaElement,
  }
  function tick(time:number){
   if(disposed)return;if(previous)elapsed+=time-previous;previous=time;
-  const latest=Math.floor((elapsed-900)/1500);
-  boxes.forEach((box,i)=>{const occurrence=latest-((latest-i)%boxes.length+boxes.length)%boxes.length;box.classList.toggle('on',occurrence>=0&&elapsed-(900+occurrence*1500)<2900);});
+  const latest=Math.floor((elapsed-1200)/1500);
+  boxes.forEach((box,i)=>{const occurrence=latest-((latest-i)%boxes.length+boxes.length)%boxes.length;box.classList.toggle('on',occurrence>=0&&elapsed-(1200+occurrence*1500)<2900);});
   if(media.matches)input.placeholder='Describe your inventory';
   else if(!focused()&&!input.value&&elapsed>=1200){
    let phase=(elapsed-1200)%examples.reduce((n,s)=>n+s.length*38+2700,0);

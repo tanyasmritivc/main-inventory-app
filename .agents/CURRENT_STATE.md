@@ -1,3 +1,9 @@
+## November 1 - Workbench headline intro ready for publication
+
+User supplied CODEX_PROMPT_INTRO_ONLY.md, then explicitly authorized direct implementation and self-hosted deployment, overriding its no-push instruction. Branch `feat/hero-intro` adds only the homepage word-by-word slide-up, composer/hint entrance, photo opacity entrance and 1200ms detection start. Copy, layout, navigation, other pages, API and mobile are preserved. Reduced motion shows final states immediately; headline has one accessible name.
+
+Validation: 649 tests in 90 suites, lint (zero errors/52 existing warnings), TypeScript and standard Turbopack production build passed. Chrome at 1440x900 and 390x844 verifies original line breaks and geometry within 0.05px, gradient, stagger order, no replay on resize/scroll, signup handoff and no page errors. Pre-hydration start states and reduced-motion immediate visibility also pass. Self-hosted publication pending CI and isolated build checks.
+
 ## November 1 - Workbench hero published
 
 The user clarified "please deploy," superseding the earlier local-only/no-push instruction. Runtime `0c0d41c013d5690486384e77dc92613ff9b755fc` is live at https://findez.ai in `hero-workbench-20261101/frontend`, build `pmPktVh8KeokYkMxK4GH0`. Branch `feat/hero-workbench` is pushed; draft PR288; main unchanged. Only eight homepage hero/header runtime files were applied over the actual live `voice-privacy-164` source. Newer voice/personalization privacy wording, research, pricing, terms, Solutions and all other source/assets/configuration are preserved by hash checks. Backend PID unchanged and previous compiled release retained.

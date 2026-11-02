@@ -15,7 +15,18 @@
 
 .landing-v5 #hero.hero-workbench .wb-center{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 40px));text-align:center}
 .landing-v5 #hero.hero-workbench h1{font-family:var(--workbench-tight),var(--f);font-weight:400;font-size:clamp(38px,4.4vw,64px);line-height:1.04;letter-spacing:-.022em}
-.landing-v5 #hero.hero-workbench h1 span{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent}
+.landing-v5 #hero.hero-workbench h1 .wb-ember{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent}
+.landing-v5 #hero.hero-workbench .wb-word-mask{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .02em .14em;margin:0 -.02em -.14em}
+.landing-v5 #hero.hero-workbench .wb-word{display:inline-block;transform:translateY(105%)}
+.landing-v5 #hero.hero-workbench.wb-intro .wb-word{animation:workbench-word-in 1050ms var(--wb-e) both}
+.landing-v5 #hero.hero-workbench .wb-composer,.landing-v5 #hero.hero-workbench .wb-hint{opacity:0;transform:translateY(16px)}
+.landing-v5 #hero.hero-workbench.wb-intro .wb-composer{animation:workbench-rise-in 900ms var(--wb-e) 950ms both}
+.landing-v5 #hero.hero-workbench.wb-intro .wb-hint{animation:workbench-rise-in 900ms var(--wb-e) 1100ms both}
+.landing-v5 #hero.hero-workbench .wb-photo{opacity:0}
+.landing-v5 #hero.hero-workbench.wb-intro .wb-photo{animation:workbench-zoom 40s ease-in-out infinite alternate,workbench-photo-in 1600ms ease 100ms both}
+@keyframes workbench-word-in{to{transform:translateY(0)}}
+@keyframes workbench-rise-in{to{opacity:1;transform:translateY(0)}}
+@keyframes workbench-photo-in{to{opacity:1}}
 .landing-v5 #hero.hero-workbench .wb-composer{position:relative;margin:36px auto 0;background:#fff;border-radius:22px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 24px 60px rgba(0,0,0,.5);padding:15px 12px 11px 18px;text-align:left;color:#0B0B0C}
 
 .landing-v5 #hero.hero-workbench .wb-composer textarea{display:block;width:100%;resize:none;border:0;outline:0;background:transparent;font:400 17px/1.4 var(--f);color:#0B0B0C;height:26px;overflow:hidden;white-space:nowrap;letter-spacing:-.011em}
@@ -53,7 +64,13 @@
  .landing-v5 .wb-header.wb-over-hero .menu,.landing-v5 .wb-header.wb-over-hero .mobile-nav-toggle,.landing-v5 .wb-header.wb-over-hero .links .lg,.wb-header .wb-new{display:none}
  .landing-v5 #hero.hero-workbench .wb-veil{background:radial-gradient(90% 34% at 50% 50%,rgba(13,13,15,.95) 40%,rgba(13,13,15,.55) 75%,transparent 100%)}
 }
-@media(prefers-reduced-motion:reduce){.landing-v5 #hero.hero-workbench .wb-photo{animation:none}.landing-v5 #hero.hero-workbench .wb-box{transform:none;transition:none}}
+@media(prefers-reduced-motion:reduce){
+ .landing-v5 #hero.hero-workbench .wb-photo,.landing-v5 #hero.hero-workbench.wb-intro .wb-photo,
+ .landing-v5 #hero.hero-workbench .wb-word,.landing-v5 #hero.hero-workbench.wb-intro .wb-word,
+ .landing-v5 #hero.hero-workbench .wb-composer,.landing-v5 #hero.hero-workbench.wb-intro .wb-composer,
+ .landing-v5 #hero.hero-workbench .wb-hint,.landing-v5 #hero.hero-workbench.wb-intro .wb-hint{animation:none;opacity:1;transform:none}
+ .landing-v5 #hero.hero-workbench .wb-box{transform:none;transition:none}
+}
 
 .landing-v5 .wb-header.wb-over-hero .brand svg{width:22px;height:22px;flex:none}
 .landing-v5 #hero.hero-workbench .scanp{font-family:var(--f)}
