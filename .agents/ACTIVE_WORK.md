@@ -1,3 +1,7 @@
+## November 1 - Hero gradient descender clipping fix in progress
+
+Branch `fix/hero-descender-clipping` owns only the homepage workbench CSS. User screenshot reproduces the bottom of the gradient g being cut at its inner background paint box; the outer animation mask already has descent space. Add matching bottom padding/negative margin to the gradient word, preserving text positions and line wrapping. Chrome comparison with the real Inter Tight font reproduces before/after at 120px, 64px desktop and 38px phone sizes, with zero text-position or heading-height delta. Local production build and TypeScript pass; web suite, lint, Safari and deployment gates pending. Existing self-hosted deployment authorization applies.
+
 ## November 1 - Search logo metadata published; Google recrawl requested
 
 Runtime `b0cfbeb1e5bfdc866fb7e3254cd29f1d31346b04` is live at https://findez.ai in `search-logo-20261101/frontend`, build `AfbYEzdOQhPzG5V5BZoi-`. Branch `fix/search-logo` pushed; draft PR291. Explicit 96px PNG favicon and dedicated 512px Petals image now appear in OG/Twitter and Organization schema; sitemap modification date updated. Artwork is the existing approved white Petals logo. No page UI changes.
