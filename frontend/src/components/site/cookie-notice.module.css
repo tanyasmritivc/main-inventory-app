@@ -4,3 +4,20 @@
 .notice button { flex-shrink:0; padding:8px 12px; color:#fff; background:#272727; border:0; border-radius:5px; cursor:pointer; font:inherit; }
 .notice :is(a,button):focus-visible { outline:2px solid #a64414; outline-offset:4px; }
 @media(max-width:480px) { .notice {inset:auto 12px 12px; padding:14px; gap:12px; align-items:flex-start;} }
+
+/* Interior notice follows Appearance and leaves the sidebar controls clear. */
+:global(html[data-app-theme]) .notice {
+  inset:auto 12px 12px; max-width:820px; padding:12px 16px;
+  background:var(--panel-fill); color:var(--text2); border:1px solid var(--line2);
+  border-radius:var(--radius-field); box-shadow:var(--popover-shadow);
+}
+:global(html[data-app-theme]) .notice a { color:var(--text); }
+:global(html[data-app-theme]) .notice button {
+  min-height:38px; border-radius:var(--radius-pill); padding:8px 16px;
+  background:var(--primary-fill); color:var(--primary-ink); box-shadow:var(--primary-shadow);
+}
+:global(html[data-app-theme]) .notice :is(a,button):focus-visible { outline:none; box-shadow:var(--focus-shadow); }
+@media(min-width:860px) {
+  :global(html[data-app-theme]:has(.app-frame)) .notice { left:84px; }
+  :global(html[data-app-theme]:has(.app-frame.sidebar-pinned)) .notice { left:268px; }
+}

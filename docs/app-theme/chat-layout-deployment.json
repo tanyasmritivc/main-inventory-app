@@ -1,0 +1,31 @@
+{
+  "published": true,
+  "checks": {
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/pricing": 200,
+    "/product": 200,
+    "/solutions": 200,
+    "/research": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/robots.txt": 200,
+    "/sitemap.xml": 200,
+    "/worlds/personal": "guarded",
+    "/settings/appearance": "guarded",
+    "/inventory": "guarded",
+    "/review": "guarded",
+    "/documents": "guarded",
+    "/workspaces": "guarded",
+    "/notifications": "guarded"
+  },
+  "backend_unchanged": true,
+  "public_pages_unchanged": true,
+  "configuration_preserved": true,
+  "build_id": "ctWIaHTNz5-IyOGQGAzqI",
+  "release": "/home/ubuntu/findez-web-releases/chat-layout-20261102/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/app-theme-20261101/frontend",
+  "external_build_id_verified": true
+}

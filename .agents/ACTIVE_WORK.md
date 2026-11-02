@@ -1378,3 +1378,7 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 - User’s subsequent instruction explicitly authorizes direct deployment to the self-hosted site; supersedes attachment’s no-push instruction.
 - Baseline: current deployed frontend captured in commit 1263e02.
 - Complete: implementation `79a4501` pushed on `feat/app-theme`; exact build `QAWxphsKffeBp4ydhcQIE` deployed and externally verified at findez.ai on November 2. Preservation checks passed; previous release retained. Full inherited Jest failures and UI coverage limits are recorded in `docs/app-theme/IMPLEMENTATION.md`; deployment receipt is alongside it.
+
+## November 2 — chat layout correction
+- Complete on `feat/app-theme`: composer remains visible during transcript scrolling, user bubble spacing corrected, cookie notice follows theme and reserves measured space.
+- Safari dark/light and 15 focused tests pass; production build `ctWIaHTNz5-IyOGQGAzqI` deployed and externally verified. Details: `docs/app-theme/CHAT-LAYOUT-FIX.md`.

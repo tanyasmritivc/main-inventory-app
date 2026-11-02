@@ -110,10 +110,10 @@ function AssistClientWorkspace({
   const thread = useRef<HTMLDivElement>(null);
   const followReply = useRef(true);
   useEffect(() => {
-    if (contextual && followReply.current && thread.current) {
+    if (followReply.current && thread.current) {
       thread.current.scrollTop = thread.current.scrollHeight;
     }
-  }, [contextual, messages]);
+  }, [messages]);
   const [ratings, setRatings] = useState<Record<string, ResponseRating>>({});
   const composer = useRef<HTMLTextAreaElement>(null);
   const sendLock = useRef(false);
@@ -373,6 +373,7 @@ function AssistClientWorkspace({
         setSources([]);
         setPhoto(undefined);
         setAutoExtract(false);
+        followReply.current = true;
         setConversationId(id);
         setMessages(
           result.messages.map((m) => ({
@@ -401,6 +402,7 @@ function AssistClientWorkspace({
     setStatus("");
     request.current++;
     setOpening(false);
+    followReply.current = true;
     setConversationId(null);
     setMessages([]);
     setError("");
@@ -463,6 +465,7 @@ function AssistClientWorkspace({
     e?.preventDefault();
     if (!accountId || unavailable || sendLock.current || (!(retryPrompt?.content || input).trim() && !photo)) return;
     sendLock.current = true;
+    followReply.current = true;
     const account = accountId,
       generation = epoch.current,
       text =
@@ -628,7 +631,7 @@ function AssistClientWorkspace({
     }
   }
   return (
-    <section className="ask-workspace">
+    <section className="ask-workspace" data-contextual={contextual || undefined}>
       {contextKind && accountId && worldId && (
         <ChatContextPicker
           key={`${worldId}:${contextKind}`}
@@ -775,10 +778,10 @@ function AssistClientWorkspace({
         <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
           {messages.length || opening ? title : <span className="shiny-text">{title}</span>}
         </h1>
-        <div className="ask-thread" ref={thread} onScroll={contextual ? () => {
+        <div className="ask-thread" ref={thread} onScroll={() => {
           const node = thread.current;
           if (node) followReply.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
-        } : undefined}>
+        }}>
           {opening ? (
             <p role="status">Opening conversation…</p>
           ) : (
