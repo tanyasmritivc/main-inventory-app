@@ -164,7 +164,8 @@ html[data-app-theme] .ask-title .shiny-text { background:linear-gradient(110deg,
 html[data-app-theme] .app-frame .ask-composer-box { position:relative; border:0; border-radius:22px; background:var(--composer-fill); color:var(--text); box-shadow:var(--composer-shadow); padding:15px 14px 11px 18px; }
 html[data-app-theme="dark"] .ask-composer-box::before { content:""; position:absolute; inset:-1px; border-radius:23px; padding:1px; pointer-events:none; background:var(--composer-hairline); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; }
 html[data-app-theme] .app-frame .ask-composer textarea { border:0; background:transparent; box-shadow:none; border-radius:12px; color:var(--text); font:400 16px/1.5 var(--font-main); padding:0 0 10px; }
-html[data-app-theme] .ask-composer textarea:focus-visible { outline:1px solid var(--line2); outline-offset:3px; }
+html[data-app-theme] .app-frame .ask-composer-box textarea.workspace-input:is(:focus,:focus-visible) { border:0; outline:none; box-shadow:none; }
+html[data-app-theme] .app-frame .ask-composer-box:focus-within { border-color:var(--text2); }
 html[data-app-theme] .app-frame .ask-submit { border-radius:var(--radius-pill); background:var(--composer-send); color:var(--composer-send-ink); border:0; box-shadow:var(--primary-shadow); }
 html[data-app-theme] .ask-message { color:var(--text); background:transparent; border:0; }
 html[data-app-theme] .app-frame .ask-message.is-user { background:transparent; border:0; border-radius:0; padding:0; margin-block:0 24px; }

@@ -1386,3 +1386,6 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 ## November 2 — chat visual cleanup
 - Complete on `feat/app-theme`: icon-only chat actions, flat composer, hidden transcript scrollbar with scrolling retained, and original white cookie popup restored at user request.
 - Build `WuBumiAAkblC73uGYsn1p` live and externally verified; Safari dark/light, 15 focused tests, lint and production build pass. Receipt: `docs/app-theme/chat-cleanup-deployment.json`.
+
+## November 2 — composer inner outline
+- Active on `feat/app-theme`: remove the textarea focus outline inside the composer. Keep keyboard focus visible by changing the outer composer's border color instead. CSS only.
