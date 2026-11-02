@@ -1,6 +1,6 @@
 # Workbench hero
 
-Local branch: `feat/hero-workbench`, based on web research commit `268fcc5`. No push or deployment, as requested in `CODEX_PROMPT.md`.
+Branch: `feat/hero-workbench`, based on web research commit `268fcc5`. Initially completed locally per `CODEX_PROMPT.md`; the user subsequently clarified "please deploy." Runtime `0c0d41c` is now pushed and live at https://findez.ai after all five CI gates and staged/live checks. See `../plans/hero-workbench-receipt.json`.
 
 The homepage now uses the supplied Workbench photo, headline, white composer, announcement band and dark navigation treatment. Object boxes use the reference cover geometry, clipping and center exclusion, 900ms initial delay, 1500ms cadence and 2900ms display time. Placeholder examples type at 28ms per character, hold for 2400ms and delete at 10ms per character. Focus permanently stops typing. Reduced motion disables photo zoom, placeholder typing and box scaling. Visibility and intersection observers pause active time and photo motion off screen; observers and frames are cleaned up on unmount.
 
@@ -30,4 +30,4 @@ The existing bounded signup prompt, recent draft restoration, IME handling and B
 - Full box-cycle sampling at desktop/phone: no clipped labels or overlap with the center block; exactly one photo request. See `qa/animation-checks.json`.
 - Reviewed desktop/phone screenshots against the supplied screenshots and extracted walkthrough frames. Existing cookie notice remains; it was dismissed through its normal control for the final visual comparison.
 
-Preview: `http://localhost:3038` while the local preview process remains running. Screenshots and browser results are in `qa/`.
+Live: https://findez.ai. Local preview: `http://localhost:3038` while its process remains running. Local screenshots and browser results are in `qa/`; staged/public verification is recorded in the deployment receipt. Publication applied only the eight runtime hero files over the current live release, preserving newer privacy content and other pages.
