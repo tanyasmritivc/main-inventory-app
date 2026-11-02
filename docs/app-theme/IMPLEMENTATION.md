@@ -2,6 +2,10 @@
 
 Applied the supplied dark/light theme to the existing authenticated web app. Existing Appearance choices, routes, data, controls and actions are retained. The user's later instruction authorizes self-hosted deployment and overrides the attachment's no-push restriction.
 
+## Deployment
+
+Published directly to https://findez.ai on November 2, 2026. Runtime commit `79a4501` is pushed on `feat/app-theme`. The external homepage serves the verified build ID, and the protected route returns HTTP 307 to sign-in. All deployment preservation checks passed; see `deployment-receipt.json`. The previous release remains available for rollback.
+
 ## Implementation
 
 Shared interior-only tokens cover the shell, typography, controls, cards, dialogs, menus, tables, status/empty/loading states, account settings and chat. Resource art is assigned by a stable hash of the resource ID. Shared PageHeader, ThemeCard and ResourceArt helpers avoid duplicated artwork logic. The existing Appearance setting still owns light, dark and system selection. Public pages have no interior theme marker.

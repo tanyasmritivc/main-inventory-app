@@ -1377,4 +1377,4 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 - Apply supplied theme to all signed-in web routes, preserve behavior and public pages.
 - User’s subsequent instruction explicitly authorizes direct deployment to the self-hosted site; supersedes attachment’s no-push instruction.
 - Baseline: current deployed frontend captured in commit 1263e02.
-- Implementation and validation complete; publishing exact staged build `QAWxphsKffeBp4ydhcQIE`. Full inherited Jest failures and UI coverage limits are recorded in `docs/app-theme/IMPLEMENTATION.md`.
+- Complete: implementation `79a4501` pushed on `feat/app-theme`; exact build `QAWxphsKffeBp4ydhcQIE` deployed and externally verified at findez.ai on November 2. Preservation checks passed; previous release retained. Full inherited Jest failures and UI coverage limits are recorded in `docs/app-theme/IMPLEMENTATION.md`; deployment receipt is alongside it.
