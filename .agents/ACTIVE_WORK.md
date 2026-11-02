@@ -1,3 +1,11 @@
+## November 1 - Dark default delivered to TestFlight165
+
+Apple acknowledged FindEZ 1.1.1 (165), source `34dcb4b7f1a11092d8f53e126fb0db79910eabf1`, delivery `7b82bff1-5316-4d15-9cbc-de0cd135c9d9`. Unset, invalid or unavailable appearance storage defaults to Dark from construction through loaded state. Saved Light, Dark and System preferences are preserved. Branch `fix/dark-default-165` is pushed; PR286 remains separate from main. No web/backend/database changes.
+
+Validation: 28 focused appearance checks, all 1,251 Flutter tests (one existing skip), clean analysis and three native iOS appearance checks passed. All five exact-source CI gates passed (41378749175). The signed archive/export passed all 33 device-executable checks each, strict signatures, 27 privacy manifests, production configuration, font/credential checks and Apple validation. Artifacts are preserved in `Documents/FindEZ/AppStore/1.1.1-build165`; see `docs/plans/mobile-dark-default165-receipt.json`.
+
+Processing/tester availability are pending and were not polled. Physical acceptance was not repeated; existing voice microphone acceptance remains with the user. Build162's public App Review submission is unchanged.
+
 ## November 1 - Inline voice composer delivered to TestFlight164
 
 Apple acknowledged FindEZ 1.1.1 (164), source `67dd0ce36a1cf6577621ec7a9507b20936a6e8cb`, delivery `996b2c63-f063-44a1-8b6b-09cc372fefbb`. Branch `feat/voice-in-composer` is pushed; PR285 stays separate from main. Inline microphone levels, timer, silence-triggered transcription, a two-second auto-send countdown, tap-to-edit/cancel and voice duration labels follow the supplied design. The user explicitly authorized this release after the initial local-only implementation.

@@ -1,3 +1,7 @@
+## November 1 - Dark appearance default (build165)
+
+The user requested Dark as the mobile default. Unset, invalid and unavailable appearance storage now fall back to Dark from first construction through loaded state. Explicitly saved Light, Dark and System choices retain their meaning; no preference migration or overwrite. The existing two themes and appearance controls remain available. Scoped to mobile, with build165 release under the standing TestFlight authorization. Active branch `fix/dark-default-165`, worktree `Projects/findez-voice-composer`.
+
 ## November 1 - TestFlight 164 authorized
 
 The user explicitly requested uploading the inline voice composer to TestFlight, superseding the earlier local-only/no-push limit. Prepare 1.1.1 (164) on `feat/voice-in-composer`, publish accurate voice privacy wording, push the branch and complete signed release/CI checks. Stop at Apple upload acknowledgment. Physical microphone acceptance remains with the user; build162 App Review stays unchanged.
