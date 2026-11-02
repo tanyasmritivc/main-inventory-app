@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { canEditInventory } from "@/lib/inventory-selection";
 
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -8,7 +9,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
 
-export function ProjectKitsClient() {
+export function ProjectKitsClient({initialKit}:{initialKit?:string} = {}) {
   const { token } = useApiSession();
   const { confirmAction } = useAppDialog();
   const [spaces, setSpaces] = useState<string[]>([]);
@@ -31,6 +32,31 @@ export function ProjectKitsClient() {
 
   useEffect(() => { if (!token) return; getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
   useEffect(() => { void load(); }, [load]);
+  usePermissionRefresh(() => {
+    if (!token) return;
+    void (async () => {
+      setWorking(true);
+      try {
+        const rows = await getSpaces({ token });
+        setSpaces(rows.map(row => row.name));
+        if (location && location !== "Unsorted" && !rows.some(row => row.name === location)) {
+          setLocation(""); setKits([]); setSelected(null); return;
+        }
+        if (!location) return;
+        const result = await getProjectKits({ token, location });
+        setKits(result.kits ?? []);
+        if (selected) {
+          if (result.kits.some(kit => kit.id === selected.id)) setSelected(await getProjectKit({ token, kitId: selected.id }));
+          else setSelected(null);
+        }
+      } catch (reason) { setError(userFacingError(reason, "Could not refresh project kits.")); }
+      finally { setWorking(false); }
+    })();
+  }, working || creating);
+  useEffect(() => { if(!token || !initialKit)return;let live=true;
+    getProjectKit({token,kitId:initialKit}).then(kit=>{if(!live)return;if(kit.id!==initialKit)throw new Error("This project could not be verified.");setLocation(kit.location);setSelected(kit);}).catch(e=>{if(live)setError(userFacingError(e,"This project could not be opened."));});
+    return()=>{live=false;};
+  },[token,initialKit]);
 
   async function create(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !file || !name.trim() || !location) return;

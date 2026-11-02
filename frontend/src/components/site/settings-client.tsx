@@ -2,6 +2,7 @@
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
+import { AccountVerification } from "./account-verification";
 import { ProfilePhotoCropper } from "./profile-photo-cropper";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
@@ -407,6 +408,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
                 key={choice.value}
                 type="button"
                 className={choice.value === theme ? "is-active" : ""}
+                aria-pressed={choice.value === theme}
                 onClick={() => {
                   try {
                     setTheme(choice.value);
@@ -426,7 +428,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
       {section === "memory" && <div id="memory"><MemorySettings accountId={accountId}/></div>}
       {section === "plans" && <section className="settings-panel">
         <Link className="settings-link-row" href="/pricing">
-          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
+          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Plus and Team. Paid plans coming soon.</small></span>
           <ChevronRight size={16} />
         </Link>
       </section>}
@@ -468,6 +470,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
           <ChevronRight size={16} />
         </a>
       </section>}
+      {section === "account" && <AccountVerification />}
       {section === "account" && <section className="settings-panel" id="account">
         <header>
           <h2>Account management</h2>

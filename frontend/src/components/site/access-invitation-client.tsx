@@ -1,4 +1,5 @@
 "use client";
+import { MemberIdentityLabel } from "@/components/site/member-avatar";
 import Link from "next/link";
 import { invitationAppSchemeLink, isIosDevice } from "@/lib/app-store";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
@@ -88,7 +89,7 @@ function Review({ initialCode, invitationId }: { initialCode: string; invitation
     <h1>{invitation ? invitation.name : "Review invitation"}</h1>
     {invitation ? <>
       <p>{invitation.scope.charAt(0).toUpperCase() + invitation.scope.slice(1)} | {invitationRole(invitation.role)}</p>
-      {invitation.invited_by_name && <p className="workspace-muted">Invited by {invitation.invited_by_name}</p>}
+      {invitation.inviter ? <p><MemberIdentityLabel member={invitation.inviter} prefix="Invited by " /></p> : invitation.invited_by_name && <p className="workspace-muted">Invited by {invitation.invited_by_name}</p>}
       {invitation.status === "pending" && !expired ? <>
         <p className="workspace-muted">You choose whether to join. Access starts only after you accept.</p>
         <div className="product-actions"><button className="product-button" disabled={busy} onClick={() => void decide("decline")}>Decline</button><button className="product-button" disabled={busy} onClick={() => void decide("accept")}>Accept invitation</button></div>

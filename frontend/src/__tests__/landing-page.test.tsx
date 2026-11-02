@@ -1,97 +1,66 @@
 /** @jest-environment jsdom */
-
-import { act, render, screen, within } from "@testing-library/react";
-
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import LandingPage, { metadata } from "@/app/page";
 import { SiteNav } from "@/components/site/nav";
-
-const getUser = jest.fn();
+const push = jest.fn();
+const mockRouter = { push, prefetch: jest.fn() };
 const unsubscribe = jest.fn();
 let authChanged: (event: string, session: object | null) => void;
-
-jest.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: async () => ({ auth: { getUser } }),
+jest.mock("next/font/google", () => ({
+  Inter: () => ({ variable: "landing-inter" }),
+  Plus_Jakarta_Sans: () => ({ variable: "landing-jakarta" }),
+  Geist_Mono: () => ({ variable: "landing-mono" }),
 }));
-jest.mock("next/font/local", () => ({
-  __esModule: true,
-  default: ({ variable }: { variable: string }) => ({ variable: variable === "--fzl-geist" ? "lab-geist" : "lab-mono" }),
-}));
-jest.mock("@/components/site/landing-lab-engine", () => ({
-  ...jest.requireActual("@/components/site/landing-lab-engine"),
-  initLandingLab: () => () => {},
-}));
-jest.mock("@/components/site/hero-morph-engine", () => ({ ...jest.requireActual("@/components/site/hero-morph-engine"), init: () => () => {} }));
-jest.mock("@/components/site/landing-scenes-engine", () => ({ initLandingScenes: () => () => {} }));
-jest.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: () => ({
-    auth: {
-      onAuthStateChange: (listener: typeof authChanged) => {
-        authChanged = listener;
-        return { data: { subscription: { unsubscribe } } };
-      },
-    },
-  }),
-}));
-jest.mock("next/navigation", () => ({ usePathname: () => "/pricing" }));
-
+jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
+jest.mock("@/lib/supabase/browser", () => ({ createSupabaseBrowserClient: () => ({ auth: {
+  onAuthStateChange: (listener: typeof authChanged) => { authChanged = listener; return { data: { subscription: { unsubscribe } } }; },
+} }) }));
+jest.mock("next/navigation", () => ({ usePathname: () => "/pricing", useRouter: () => mockRouter }));
 beforeEach(() => {
-  jest.clearAllMocks();
-  getUser.mockResolvedValue({ data: { user: null }, error: null });
+  jest.clearAllMocks(); sessionStorage.clear();
+  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }) });
 });
 
-test("the homepage publishes the approved Lab design with its original destinations", async () => {
+test("homepage preserves the requested copy, sections, metadata and destinations", async () => {
   render(await LandingPage());
-  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-    "FindEZ gives the physical world a memory.",
-  );
-  expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
-  expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
-  expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "graph", "zoom", "ask", "who", "app", "waitlist", "end"]) {
-    expect(document.getElementById(id)).toBeTruthy();
-  }
-  const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
-  expect(header.getAllByRole("link").map(link => link.textContent)).toEqual(["Developers", "iOS App", "Get started↗"]);
-  expect(header.getByRole("link", { name: "Developers" }).getAttribute("href")).toBe("/docs/api");
-  expect(header.getByRole("link", { name: "iOS App" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
-  const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
+  expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
+  for (const id of ["hero", "build", "s2", "s4", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
+  expect(document.querySelectorAll("#prows .pr")).toHaveLength(12);
+  const header = within(screen.getByRole("banner"));
+  expect(header.getByRole("link", {name: "Get started"}).getAttribute("href")).toBe("/signup");
+  const footer = within(screen.getByRole("navigation", {name: "Footer navigation"}));
   const destinations = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
-  for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", { name }).getAttribute("href")).toBe(href);
-  expect(screen.getByRole("navigation", { name: "Footer navigation" }).closest("footer")?.id).toBe("end");
-  expect(screen.getAllByText("© 2026 AI Robots Inc.")).toHaveLength(1);
-  for (const link of screen.getAllByRole("link", { name: "Get started" })) {
-    expect(link.getAttribute("href")).toBe("/signup");
-  }
-  for (const link of screen.getAllByRole("link", { name: "Try FindEZ on the web" })) expect(link.getAttribute("href")).toBe("/signup");
-  expect(screen.queryByRole("button", { name: /Join waitlist/i })).toBeNull();
-  expect(screen.queryByText(/You are on the list/)).toBeNull();
-  expect(screen.getByRole("link", { name: "Get FindEZ for iPhone" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
+  for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", {name}).getAttribute("href")).toBe(href);
+  expect(screen.getByRole("link", {name: "Talk to us"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
+  expect(metadata.title).toEqual({absolute: "FindEZ | AI for the physical world"});
+  expect(metadata.alternates).toEqual({canonical: "/"});
+  expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
 });
 
-test("the homepage preserves the signed-in Dashboard and follows session changes", async () => {
-  getUser.mockResolvedValue({ data: { user: { id: "returning-user" } }, error: null });
-  const { unmount } = render(await LandingPage());
-  const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
-  expect(header.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  act(() => authChanged("SIGNED_OUT", null));
-  expect(header.getByRole("link", { name: "Get started" }).getAttribute("href")).toBe("/signup");
-  act(() => authChanged("SIGNED_IN", { user: { id: "new-user" } }));
-  expect(header.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  unmount();
-  expect(unsubscribe).toHaveBeenCalledTimes(1);
-});
-
-test("an unavailable auth response leaves the public homepage available", async () => {
-  getUser.mockResolvedValue({ data: { user: null }, error: { message: "Auth unavailable" } });
+test.each([false, true])("composer goes directly to auth with reduced motion %s", async reduced => {
+  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }) });
   render(await LandingPage());
-  expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
-  expect(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("link", { name: "Get started" }).getAttribute("href")).toBe("/signup");
+  const prompt = "Add 20 M3 screws & 2 cables";
+  fireEvent.change(screen.getByRole("textbox"), {target: {value: prompt}});
+  fireEvent.submit(document.getElementById("cform")!);
+  fireEvent.submit(document.getElementById("cform")!);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(push).toHaveBeenCalledTimes(1);
+  expect(push).toHaveBeenCalledWith(`/signup?prompt=${encodeURIComponent(prompt)}`);
+  expect(screen.getByRole("button", {name: "Send"})).toHaveProperty("disabled", true);
+  expect(JSON.parse(sessionStorage.getItem("findez_public_preview_draft")!).prompt).toBe(prompt);
 });
 
-test("the published homepage keeps its public search metadata", () => {
-  expect(metadata.alternates).toEqual({ canonical: "/" });
-  expect(metadata.robots).toBeUndefined();
-  expect(metadata.openGraph).toMatchObject({ url: "https://findez.ai/" });
+test("empty prompts focus the composer; attachment controls still open signup", async () => {
+  render(await LandingPage());
+  fireEvent.submit(document.getElementById("cform")!);
+  expect(document.activeElement).toBe(screen.getByRole("textbox"));
+  expect(push).not.toHaveBeenCalled();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  for (const name of ["Add", "Scan", "Speak"]) {
+    expect(screen.getByRole("link", {name}).getAttribute("href")).toBe("/signup");
+  }
 });
 
 test("simple public navigation follows session changes and unsubscribes", () => {
@@ -106,4 +75,31 @@ test("simple public navigation follows session changes and unsubscribes", () => 
   expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin");
   unmount();
   expect(unsubscribe).toHaveBeenCalledTimes(1);
+});
+
+
+test("Enter submits directly while Shift Enter and IME composition do not", async () => {
+  render(await LandingPage());
+  const input = screen.getByRole("textbox");
+  fireEvent.change(input, { target: { value: "Add 10 screws" } });
+  fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+  fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
+  expect(push).not.toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(push).toHaveBeenCalledWith("/signup?prompt=Add%2010%20screws");
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("Back can recover the recent prompt without restoring expired or corrupt drafts", async () => {
+  sessionStorage.setItem("findez_public_preview_draft", JSON.stringify({ at: Date.now(), prompt: "Add 4 cables" }));
+  const first = render(await LandingPage());
+  expect(screen.getByRole("textbox")).toHaveProperty("value", "Add 4 cables");
+  first.unmount();
+  sessionStorage.setItem("findez_public_preview_draft", JSON.stringify({ at: Date.now() - 31 * 60 * 1000, prompt: "old request" }));
+  const second = render(await LandingPage());
+  expect(screen.getByRole("textbox")).toHaveProperty("value", "");
+  second.unmount();
+  sessionStorage.setItem("findez_public_preview_draft", "not json");
+  render(await LandingPage());
+  expect(screen.getByRole("textbox")).toHaveProperty("value", "");
 });

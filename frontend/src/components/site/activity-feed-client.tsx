@@ -185,8 +185,9 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
             </div>
           )}
         {!loading &&
-          entries.map((entry) => (
+          entries.map((entry, index) => (
             <article
+              id={`notification-${entry.activity_id || entry.id || index}`}
               className={`activity-row ${entry.is_read === false ? "is-unread" : ""}`}
               key={
                 entry.activity_id ??

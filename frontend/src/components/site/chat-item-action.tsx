@@ -5,8 +5,8 @@ import { type ChatItemAction, decideChatItemAction } from "@/lib/chat-item-actio
 import { activeInventory } from "@/lib/inventory-selection";
 import { userFacingError } from "@/lib/user-facing-error";
 
-export function ChatItemActionCard({ action: initial, accountId, onReply }: {
-  action: ChatItemAction; accountId: string;
+export function ChatItemActionCard({ action: initial, accountId, worldId, onReply }: {
+  action: ChatItemAction; accountId: string; worldId?: string;
   onReply: (reply: { id: string; content: string }) => void;
 }) {
   const [action, setAction] = useState(initial), [busy, setBusy] = useState(false), [error, setError] = useState("");
@@ -26,7 +26,7 @@ export function ChatItemActionCard({ action: initial, accountId, onReply }: {
     }
     const request = new AbortController();
     control.current = request; setBusy(true); setError("");
-      const result = await decideChatItemAction(accountId, action, decision, request.signal);
+      const result = await decideChatItemAction(accountId, action, decision, request.signal, worldId);
       if (!mounted.current) return;
       setAction(result.action);
       if (result.action.status === "confirmed" && result.content && result.replyId) onReply({ id: result.replyId, content: result.content });
@@ -36,12 +36,12 @@ export function ChatItemActionCard({ action: initial, accountId, onReply }: {
     } finally { if (mounted.current) setBusy(false); }
   }
   const pending = action.status === "pending";
-  return <section className="ask-action-card" aria-label={`${action.operation === "add" ? "Add" : "Delete"} items review`}>
-    <strong>{pending ? action.operation === "add" ? "Review new items" : "Review items to delete" : action.status === "confirmed" ? "Change confirmed" : "Cancelled"}</strong>
-    <ul>{action.items.map((item, i) => <li key={i}><span>{item.name}</span><small>{item.quantity === null ? "Quantity unknown" : `Qty ${item.quantity}`} · {item.location}</small></li>)}</ul>
+  return <section className="ask-action-card" aria-label={`${action.operation === "add" ? "Add" : action.operation === "delete" ? "Delete" : "Update"} items review`}>
+    <strong>{pending ? action.operation === "add" ? "Review new items" : action.operation === "delete" ? "Review items to delete" : "Review item changes" : action.status === "confirmed" ? "Change confirmed" : "Cancelled"}</strong>
+    <ul>{action.items.map((item, i) => <li key={i}><span>{item.name}</span><small>{item.quantity === null ? "Quantity unknown" : `Qty ${item.quantity}`} · {item.location}</small>{item.details?.map((detail,n)=><small key={n}>{detail}</small>)}</li>)}</ul>
     {pending && <div className="ask-action-buttons">
       <button className="workspace-button" disabled={busy} onClick={() => void decide("cancel")}>Cancel</button>
-      <button className="workspace-button is-primary" disabled={busy || activeInventory()?.can_edit !== true} onClick={() => void decide("confirm")}>{busy ? "Confirming…" : action.operation === "add" ? "Confirm additions" : "Review deletion"}</button>
+      <button className="workspace-button is-primary" disabled={busy || (!worldId && activeInventory()?.can_edit !== true)} onClick={() => void decide("confirm")}>{busy ? "Confirming…" : action.operation === "add" ? "Confirm additions" : action.operation === "delete" ? "Review deletion" : "Confirm changes"}</button>
     </div>}
     {error && <p role="alert">{error}{action.status === "confirmed" && <button className="workspace-button" disabled={busy} onClick={() => void decide("confirm")}>Reload AI reply</button>}</p>}
   </section>;

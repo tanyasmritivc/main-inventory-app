@@ -1,0 +1,8 @@
+.light { display: block; }
+.dark { display: none; }
+:global(.dark) .light,
+:global(.is-night) .light,
+:global(.product-footer:not(.is-light)) .light { display: none; }
+:global(.dark) .dark,
+:global(.is-night) .dark,
+:global(.product-footer:not(.is-light)) .dark { display: block; }

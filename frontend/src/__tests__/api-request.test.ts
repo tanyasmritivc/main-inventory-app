@@ -1,4 +1,4 @@
-import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, extractFromImageMulti, getReviewItems, getSpaces, joinShare, joinTeam, resolveReviewItem, updateReviewItem } from "@/lib/api";
+import { getTeamWorkspace, updateTeamMemberRole, openTeamDocument, ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, extractFromImageMulti, getReviewItems, getSpaces, joinShare, joinTeam, resolveReviewItem, updateReviewItem } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 
 jest.mock("@/lib/session", () => ({ getAccessToken: jest.fn() }));
@@ -154,4 +154,15 @@ test("photo extraction requests a preview and saves its signed evidence only on 
   expect(fetchMock.mock.calls[1][1].method).toBe("POST");
   expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer fallback");
   expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual(item);
+});
+
+
+test.each(["workspace", "role", "file"])("%s team requests cannot adopt another account credential",async kind=>{
+ jest.mocked(getAccessToken).mockResolvedValue("another-account");
+ fetchMock.mockResolvedValue(jsonResponse(200,{}));
+ if(kind==="workspace")await getTeamWorkspace({token:"initiating-account",teamId:"team"});
+ else if(kind==="role")await updateTeamMemberRole({token:"initiating-account",teamId:"team",userId:"member",role:"viewer"});
+ else await openTeamDocument({token:"initiating-account",teamId:"team",documentId:"file"});
+ expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer initiating-account");
+ expect(getAccessToken).not.toHaveBeenCalled();
 });

@@ -1,8 +1,9 @@
 export const SETTINGS_SECTIONS = {
+  organizations: "Organizations",
   profile: "Profile",
   appearance: "Appearance",
   memory: "AI memory",
-  plans: "Plans",
+  plans: "Plans & usage",
   developer: "Developer",
   help: "Help and information",
   account: "Account",

@@ -1,37 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-
-/** Presentation pacing only: every character comes from the model response. */
-export function useAnswerPresentation(target: string, animate: boolean) {
-  const [shown, setShown] = useState(animate ? "" : target);
-  const state = useRef({ target, shown: animate ? "" : target });
-  useEffect(() => {
-    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    state.current.target = target;
-    let timer: number | undefined;
-    const advance = () => {
-      const value = state.current;
-      if (!animate || motion?.matches) {
-        value.shown = value.target;
-      } else {
-        // Canonical completion may normalize punctuation, never flush its suffix.
-        const prefix = value.target.slice(0, value.shown.length);
-        const tail = value.target.slice(prefix.length);
-        const words = [...tail.matchAll(/\s+|\S+\s*/g)];
-        const count = Math.min(16, 4 + Math.floor(words.length / 30));
-        value.shown = prefix + words.slice(0, count).map((word) => word[0]).join("");
-      }
-      setShown(value.shown);
-      if (value.shown !== value.target) timer = window.setTimeout(advance, 36);
-    };
-    advance();
-    motion?.addEventListener?.("change", advance);
-    return () => {
-      window.clearInterval(timer);
-      motion?.removeEventListener?.("change", advance);
-    };
-  }, [target, animate]);
-  return animate ? shown : target;
+/** Render every received chunk immediately; fading never queues or delays text. */
+export function useAnswerPresentation(target: string) {
+  return target;
 }
 
 export type FadeBirths = { text: string; times: number[] };

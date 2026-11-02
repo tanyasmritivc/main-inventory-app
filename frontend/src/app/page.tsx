@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-
-import { LandingLab } from "@/components/site/landing-lab";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { publicFonts } from "@/components/landing-v5/fonts";
+import { workbenchFonts } from "@/components/landing-v5/workbench-fonts";
+import { LandingV5 } from "@/components/landing-v5/LandingV5";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
-
-const geist = localFont({
-  src: [{ path: "./fonts/geist-400.ttf", weight: "400" }, { path: "./fonts/geist-500.ttf", weight: "500" }],
-  variable: "--fzl-geist", display: "swap",
-});
-const mono = localFont({
-  src: [{ path: "./fonts/geist-mono-400.ttf", weight: "400" }, { path: "./fonts/geist-mono-500.ttf", weight: "500" }],
-  variable: "--fzl-mono", display: "swap",
-});
-
 export const metadata: Metadata = {
   title: { absolute: PUBLIC_SITE_TITLE },
   description: PUBLIC_SITE_DESCRIPTION,
@@ -22,24 +11,21 @@ export const metadata: Metadata = {
     title: PUBLIC_SITE_TITLE,
     description: PUBLIC_SITE_DESCRIPTION,
     url: `${PUBLIC_SITE_URL}/`,
-    siteName: "FindEZ AI",
+    siteName: "FindEZ",
     type: "website",
+    images: [{ url: "/brand/findez-petals-512.png", width: 512, height: 512, alt: "FindEZ" }],
   },
   twitter: {
     card: "summary",
+    images: ["/brand/findez-petals-512.png"],
     title: PUBLIC_SITE_TITLE,
     description: PUBLIC_SITE_DESCRIPTION,
   },
 };
 
-export default async function LandingPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function LandingPage() {
   return <>
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }}
-    />
-    <LandingLab className={`${geist.variable} ${mono.variable}`} siteNavigation initialSignedIn={Boolean(user)} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }} />
+    <LandingV5 className={`${publicFonts} ${workbenchFonts}`} />
   </>;
 }

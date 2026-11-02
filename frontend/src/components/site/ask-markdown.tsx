@@ -11,7 +11,7 @@ function answerUrl(value: string) {
 }
 
 export function AskMarkdown({ children, animate = false }: { children: string; animate?: boolean }) {
-  const shown = useAnswerPresentation(children, animate);
+  const shown = useAnswerPresentation(children);
   const [fadePlugin] = useState(() => chunkFades({ text: "", times: [] }));
   const partial = animate && (shown.match(/\*\*/g)?.length ?? 0) % 2 ? `${shown}**` : shown;
   return (

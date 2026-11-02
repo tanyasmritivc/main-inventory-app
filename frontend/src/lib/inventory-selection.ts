@@ -3,6 +3,7 @@ export type InventoryWorkspace = {
   owner_user_id?: string;
   organization_id?: string | null;
   organization_name?: string;
+  organization_role?: "owner" | "admin" | "member" | null;
   name: string;
   kind: "personal" | "team";
   team_id: string | null;
@@ -44,7 +45,7 @@ export function assertInventory(value: InventorySelection | null) {
   if (selection !== value) throw new Error("The inventory changed. Reopen this page and try again.");
 }
 
-const dataRoutes = /^\/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)/;
+const dataRoutes = /^\/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)/;
 export function inventoryApiPath(path: string, selected = selection) {
   if (contextRequired && !selected && dataRoutes.test(path)) throw new Error("Choose an inventory before opening this page.");
   return selected && dataRoutes.test(path) ? `/inventories/${selected.inventory_id}${path}` : path;
@@ -58,4 +59,15 @@ export function inventoryHref(href: string, selected = selection): string {
   if (!isInventoryPage(url.pathname)) return href;
   url.searchParams.set("inventory", selected.inventory_id);
   return url.pathname + url.search + url.hash;
+}
+
+export function canRenameWorkspace(workspace: InventoryWorkspace) {
+  return workspace.kind === "team" && ["owner", "mentor", "member"].includes(workspace.role);
+}
+export function canAdministerWorkspace(workspace: InventoryWorkspace, accountId: string) {
+  return workspace.owner_user_id === accountId || ["owner", "admin"].includes(workspace.organization_role || "");
+}
+
+export function canDeleteWorkspace(workspace: InventoryWorkspace, accountId: string) {
+  return workspace.kind === "team" && (["owner", "mentor"].includes(workspace.role) || canAdministerWorkspace(workspace, accountId));
 }

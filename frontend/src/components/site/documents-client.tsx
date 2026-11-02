@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import documentStyles from "./documents-list.module.css";
 import { activeInventory, canEditInventory } from "@/lib/inventory-selection";
 import Link from "@/components/site/inventory-link";
@@ -109,14 +110,12 @@ function DocumentsClientWorkspace({
     await accountToken(account);
     return text;
   }
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet = false) => {
     if (!accountId) return;
     const account = accountId,
       ticket = ++generation.current;
-    setLoading(true);
+    if (!quiet) { setLoading(true); setDocs([]); setNoteIndex({}); }
     setError("");
-    setDocs([]);
-    setNoteIndex({});
     try {
       const result = await accountRequest<{ documents: DocumentEntry[] }>(
         account,
@@ -152,6 +151,7 @@ function DocumentsClientWorkspace({
     // The configured origins and request helpers are stable for this deployment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId, itemFilter]);
+  usePermissionRefresh(() => load(true), loading || working || !!note || !!linking || !!importFile);
   useEffect(() => {
     setNote(null);
     setLinking(null);

@@ -1,4 +1,7 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
+import {worldHref} from "@/lib/world-navigation";
+import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
 
@@ -21,8 +24,6 @@ import {
   checkoutItem,
   createSpace,
   deleteItem,
-  deleteShare,
-  deleteSpace,
   extractFromImageMulti,
   getActiveCheckouts,
   getJoinedShares,
@@ -55,6 +56,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 // ── Style constants ──────────────────────────────────────────────────────────
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
+import { ResourceRemovalDialog } from "./resource-removal-dialog";
 import { ItemDetails } from "@/components/site/item-details";
 import { useApiSession } from "@/lib/use-api-session";
 import { useRestock } from "@/lib/use-restock";
@@ -201,7 +203,7 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
     },
     { label: 'Notes', value: item.notes },
     { label: 'Tags', value: tags.length ? tags.join(', ') : null },
-    { label: 'Where to buy', value: item.purchase_source },
+    { label: 'Where to buy', value: purchaseSource(item) },
   ];
 }
 
@@ -231,8 +233,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const router = useInventoryRouter();
   const { confirmAction, promptValue } = useAppDialog();
   const { accountId } = useApiSession();
+  const [removingSpace,setRemovingSpace] = useState<Space|null>(null);
   const restock = useRestock(accountId);
   const { adopt: adoptRestock } = restock;
+  const [detailEditing, setDetailEditing] = useState(false);
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
@@ -468,19 +472,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
-  // Refetch spaces and items when the tab regains focus (cross-device sync)
-  useEffect(() => {
-    const onFocus = () => void refreshAll();
-    const onVisibility = () => { if (!document.hidden) void refreshAll(); };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-    // refreshAll reads token via refreshToken() internally — no dependency needed
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  usePermissionRefresh(() => refreshAll(), loading);
 
   // ── Item mutations ─────────────────────────────────────────────────────────
   async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, 'item_id' | 'created_at'>>) {
@@ -610,19 +602,33 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   // ── Space management ───────────────────────────────────────────────────────
+  const refreshSequence = useRef(0);
   async function refreshAll(t?: string) {
+    const sequence = ++refreshSequence.current;
     const tok = t || token || (await refreshToken());
     if (!tok) return;
-    const [itemsResult, spacesResult, reviewsResult] = await Promise.allSettled([
+    const [itemsResult, spacesResult, reviewsResult, queryResult, checkoutsResult] = await Promise.allSettled([
       searchItems({ token: tok, query: '' }),
       getSpaces({ token: tok }),
       getReviewItems({ token: tok, limit: 1 }),
+      query.trim() && !selectedSpace ? searchItems({ token: tok, query: query.trim() }) : Promise.resolve(null),
+      getActiveCheckouts({ token: tok }),
     ]);
+    if (sequence !== refreshSequence.current) return;
     if (itemsResult.status === 'fulfilled') {
       setAllItems(itemsResult.value?.items ?? []);
-      setItems(itemsResult.value?.items ?? []);
+      adoptRestock((itemsResult.value?.items ?? []).map(item => item.item_id));
+      if (!query.trim() || selectedSpace) setItems(itemsResult.value?.items ?? []);
     }
+    if (queryResult.status === 'fulfilled' && queryResult.value) setItems(queryResult.value.items ?? []);
+    if (checkoutsResult.status === 'fulfilled') setActiveCheckouts(checkoutsResult.value.checkouts ?? []);
     if (spacesResult.status === 'fulfilled') {
+      // A saved ID survives rename; a missing ID means the Space was removed.
+      const previous = serverSpaces.find(space => space.name === selectedSpace);
+      if (previous) {
+        const next = spacesResult.value.find(space => space.id === previous.id);
+        setSelectedSpace(next?.name ?? null);
+      }
       setServerSpaces(spacesResult.value);
       setSpacesLoadError(null);
     } else {
@@ -720,40 +726,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   async function onDeleteSpace(space: Space) {
     if (!canDeleteSpace()) { setError("Only inventory owners and admins can delete a Space."); return; }
-    const inventory=activeInventory();
-    let itemCount: number;
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const current = (await getSpaces({ token: t })).find(row => row.id === space.id);
-      if (!current || typeof current.item_count !== "number") throw new Error("Refresh the Space before deleting it.");
-      itemCount = current.item_count;
-    } catch (reason) { setError(errorMessage(reason, "Could not check the Space's contents.")); return; }
-    if (activeInventory()!==inventory) return;
-    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: `This Space contains ${itemCount} saved ${itemCount === 1 ? "item" : "items"}. The Space, its items, and any pending identifications will be permanently deleted.`, confirmLabel: 'Delete Space', danger: true })) return;
-    if (activeInventory()!==inventory) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const matchingShares = myShares.filter(
-        (share) => normalizeLocation(share.share_name).toLowerCase() === normalizeLocation(space.name).toLowerCase(),
-      );
-      await Promise.all(matchingShares.map((share) => deleteShare({ token: t, share_id: share.share_id ?? share.id })));
-      await deleteSpace({ token: t, spaceId: space.id });
-      setMyShares((current) => current.filter((share) => !matchingShares.includes(share)));
-      if (selectedSpace === space.name) {
-        setSelectedSpace(null);
-        setCategoryFilter('');
-        setQuery('');
-      }
-      await refreshAll(t);
-    } catch (err: unknown) {
-      setError(errorMessage(err, 'Failed to delete space'));
-    } finally {
-      setLoading(false);
-    }
+    setRemovingSpace(space);
   }
 
   function openSpreadsheet(spaceName: string) {
@@ -880,7 +853,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
+    if (spaceItems.some(i => purchaseSource(i))) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -963,7 +936,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
+    if (items.some(i => purchaseSource(i))) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -1261,7 +1234,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           {item.notes ?? '—'}
                         </div>
                       )
-                      const value = item[col.field]
+                      const value = col.field === 'purchase_source' ? purchaseSource(item) : item[col.field]
                       return (
                         <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
@@ -1273,31 +1246,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
                     <div style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {itemDisplayName(item)}
-                      </div>
-                      <ItemPhotoGallery itemId={item.item_id} context={{ kind: "shared", shareId: viewingSharedSpace.shareId }} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/>
-                      {itemDetailFields(item)
-                        .filter(f => f.value)
-                        .map(f => (
-                          <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
-                              {f.label}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
-                              {f.value}
-                            </div>
-                          </div>
-                        ))
-                      }
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
-                        {viewingSharedSpace?.permission === 'edit' && (
-                          <button
-                            onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }}
-                            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                            Edit item
-                          </button>
-                        )}
                         <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
@@ -1327,7 +1277,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         <div>
           <button
             type="button"
-            onClick={() => { setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
+            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
             style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
           >
             ← My Spaces
@@ -1451,7 +1401,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           {item.notes ?? '—'}
                         </div>
                       )
-                      const value = (item as unknown as Record<string, unknown>)[col.field]
+                      const value = col.field === 'purchase_source' ? purchaseSource(item) : (item as unknown as Record<string, unknown>)[col.field]
                       return (
                         <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
@@ -1470,23 +1420,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       gap: '12px 24px',
                       marginBottom: 4,
                     }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {itemDisplayName(item)}
-                      </div>
-                      <ItemPhotoGallery itemId={item.item_id} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
-                      {itemDetailFields(item)
-                        .filter(f => f.value)
-                        .map(f => (
-                          <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
-                              {f.label}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
-                              {f.value}
-                            </div>
-                          </div>
-                        ))
-                      }
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
                         <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
@@ -1866,7 +1800,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
+      {accountId && removingSpace && <ResourceRemovalDialog kind="space" id={removingSpace.id} name={removingSpace.name} accountId={accountId} onClose={()=>setRemovingSpace(null)} onDone={()=>{setRemovingSpace(null);setSelectedSpace(null);setCategoryFilter('');setQuery('');void refreshToken().then(async t=>{if(t)await refreshAll(t);});}}/>}
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

@@ -1,4 +1,5 @@
 "use client";
+import { MemberIdentityLabel } from "@/components/site/member-avatar";
 
 import Link from "next/link";
 import { AppThemeProvider } from "@/components/site/use-app-theme";
@@ -93,6 +94,7 @@ function JoinReview({ code, kind, navigate }: { code: string; kind: "space" | "t
       <p style={{ margin: "32px 0 12px", color: "var(--muted-foreground)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{kind === "team" ? "Workspace" : "Space"} invitation</p>
       <h1 style={{ margin: "0 0 16px", fontSize: 30, fontWeight: 600, letterSpacing: "-.04em", overflowWrap: "anywhere" }}>{preview?.name ?? `You're invited to ${kind === "team" ? "a workspace" : "a space"}`}</h1>
       <p style={{ color: "var(--muted-foreground)", lineHeight: 1.6 }}>Open the invitation in FindEZ, or review it here. You choose whether to join.</p>
+      {preview?.inviter && <p><MemberIdentityLabel member={preview.inviter} prefix={`${preview.inviter_label || "Invited by"} `} /></p>}
       {preview && <p style={{ fontSize: 14 }}>Access: {kind === "team" ? "Workspace member" : preview.permission === "edit" ? "Can edit" : "View only"}</p>}
       {!code ? <p role="alert" style={{ color: "var(--destructive)" }}>This invitation link is incomplete. Ask the owner for a new one.</p> : <>
         {ios && <a href={invitationAppSchemeLink(kind, code)} style={{ ...primary, marginTop: 24 }}>Open in FindEZ</a>}

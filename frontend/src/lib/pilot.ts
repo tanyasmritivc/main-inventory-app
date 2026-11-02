@@ -15,9 +15,9 @@ export function isPilotPublic(): boolean {
 export const PILOT_COPY = {
   title: 'Free Pilot',
   notice:
-    'Unlimited access through November 1, 2026. ' +
-    'Standard free-plan limits and optional paid plans begin November 2. ' +
+    'Free pre-launch access. Plan quotas are not enforced during this period. ' +
+    'There is no automatic cutoff date. ' +
     'You will not be charged automatically.',
-  buttonLabel: 'Available Nov 2',
-  pricingNote: 'Plans shown below will be available starting November 2. No action needed now.',
+  buttonLabel: 'Coming soon',
+  pricingNote: 'Plans shown below are for launch. Current pre-launch access is unchanged.',
 } as const;

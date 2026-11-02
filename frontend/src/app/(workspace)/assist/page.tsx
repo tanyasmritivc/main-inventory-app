@@ -9,7 +9,7 @@ export default async function AssistPage({
 }) {
   const params = await searchParams;
   return (
-    <ProtectedAppPage returnTo="/assist">
+    <ProtectedAppPage returnTo={typeof params.q === "string" ? `/assist?${new URLSearchParams({ q: params.q.slice(0, 4000) })}` : "/assist"}>
       <AssistClient
         initialQuery={
           typeof params.q === "string" ? params.q.slice(0, 4000) : ""

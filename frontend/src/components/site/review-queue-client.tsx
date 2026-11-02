@@ -1,4 +1,6 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
+import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import { privateImageSrc } from "@/lib/private-image";
 import styles from "./review-queue.module.css";
 
@@ -55,6 +57,7 @@ export function ReviewQueueClient() {
   const { confirmAction } = useAppDialog();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
@@ -69,6 +72,7 @@ export function ReviewQueueClient() {
     try {
       const result = await getReviewItems({ token });
       setItems(result.items);
+      setDirty(new Set());
       setPendingCount(result.pending_count);
       setExpandedId(null);
       setPage(0);
@@ -80,8 +84,10 @@ export function ReviewQueueClient() {
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
+  usePermissionRefresh(() => load(), loading || !!savingId || !!expandedId || dirty.size > 0);
 
   function change(reviewId: string, changes: Partial<ReviewItem>) {
+    setDirty(current => new Set(current).add(reviewId));
     setItems((current) => current.map((item) => item.review_id === reviewId ? { ...item, ...changes } : item));
   }
 
@@ -99,6 +105,7 @@ export function ReviewQueueClient() {
       setItems((current) => current.filter((entry) => entry.review_id !== item.review_id));
       setPendingCount((count) => Math.max(0, count - 1));
       setExpandedId(null);
+      setDirty(current => { const next = new Set(current); next.delete(item.review_id); return next; });
       setNotice(`${item.name} was saved to your inventory.`);
     } catch (reason) {
       setError(userFacingError(reason, "This item could not be confirmed."));
@@ -121,6 +128,7 @@ export function ReviewQueueClient() {
       setItems((current) => current.filter((entry) => entry.review_id !== item.review_id));
       setPendingCount((count) => Math.max(0, count - 1));
       setExpandedId(null);
+      setDirty(current => { const next = new Set(current); next.delete(item.review_id); return next; });
       setNotice("Capture dismissed.");
     } catch (reason) {
       setError(userFacingError(reason, "This capture could not be dismissed."));
@@ -173,7 +181,7 @@ export function ReviewQueueClient() {
                 <label><span>Name</span><input disabled={!canEditInventory()} className="product-input" value={item.name} onChange={(event) => change(item.review_id, { name: event.target.value })} /></label>
                 <label><span>Category</span><input disabled={!canEditInventory()} className="product-input" value={item.category} onChange={(event) => change(item.review_id, { category: event.target.value })} /></label>
                 <label><span>Location</span><input disabled={!canEditInventory()} className="product-input" value={item.location ?? ""} placeholder="Required" onChange={(event) => change(item.review_id, { location: event.target.value })} /></label>
-                <label><span>Quantity</span><input disabled={!canEditInventory()} className="product-input" type="number" min={0} max={100000} value={item.quantity} onChange={(event) => change(item.review_id, { quantity: Number(event.target.value) })} /></label>
+                <label><span>Quantity</span><input disabled={!canEditInventory()} className="product-input" type="number" min={0} max={100000} value={hasUnknownQuantity(item.scan_evidence) ? "" : item.quantity} placeholder="Quantity needed" onChange={(event) => change(item.review_id, { quantity: Number(event.target.value), scan_evidence: {...item.scan_evidence, needs_review: item.scan_evidence?.needs_review ?? true, quantity_basis: event.target.value !== "" && Number.isSafeInteger(Number(event.target.value)) && Number(event.target.value) >= 0 ? "user_confirmed" : "unknown"} })} /></label>
                 <label><span>Brand</span><input disabled={!canEditInventory()} className="product-input" value={item.brand ?? ""} onChange={(event) => change(item.review_id, { brand: event.target.value || null })} /></label>
                 <label><span>Part / model #</span><input disabled={!canEditInventory()} className="product-input" value={item.part_number ?? ""} onChange={(event) => change(item.review_id, { part_number: event.target.value || null })} /></label>
               </div>

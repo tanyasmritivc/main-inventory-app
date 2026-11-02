@@ -2,7 +2,8 @@
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
-import { FindEZMark, FindEZWordmark } from "./findez-brand";
+import { OrganizationSwitcher, type SelectedOrganization } from "./organization-switcher";
+import { FindEZWordmark } from "./findez-brand";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -24,6 +25,7 @@ import {
   Pin,
   PinOff,
 } from "lucide-react";
+import { SidebarUpgrade } from "./sidebar-upgrade";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export type AppNavItem = {
@@ -141,6 +143,7 @@ export function AppSidebar({
   items = APP_NAV_ITEMS,
   activeRoute,
   homeHref = "/home",
+  accountId, organization, personal,
 }: {
   onToggle: () => void;
   sidebarOpen: boolean;
@@ -152,6 +155,9 @@ export function AppSidebar({
   items?: AppNavItem[];
   activeRoute?: string;
   homeHref?: string;
+  accountId?: string | null;
+  organization?: SelectedOrganization;
+  personal?: boolean;
 }) {
   const pathname = usePathname(),
     router = useInventoryRouter();
@@ -256,8 +262,7 @@ export function AppSidebar({
       >
         <div className="app-sidebar-brand">
           <Link href={homeHref} aria-label="FindEZ home" onClick={closeDrawer}>
-            <FindEZMark className="app-sidebar-logo" />
-            <span><FindEZWordmark textOnly width={77} height={30}/></span>
+            <FindEZWordmark width={111} height={30}/>
           </Link>
           <button
             onClick={onToggle}
@@ -277,6 +282,7 @@ export function AppSidebar({
             {pinned ? <PinOff size={16} /> : <Pin size={16} />}
           </button>}
         </div>
+        {accountId !== undefined && <OrganizationSwitcher accountId={accountId} organization={organization} personal={personal} onNavigate={closeDrawer} />}
         <nav className="app-sidebar-nav">
           {[...new Set(items.map((item) => item.section))].map(
             (section) => (
@@ -297,7 +303,7 @@ export function AppSidebar({
                         }
                         aria-label={item.label}
                         title={item.label}
-                        onClick={closeDrawer}
+                        onClick={(event) => { if (item.label === "New chat" && !event.metaKey && !event.ctrlKey && !event.shiftKey) window.dispatchEvent(new Event("findez-new-world-chat")); closeDrawer(); }}
                       >
                         <Icon size={17} strokeWidth={1.7} />
                         <span>{item.label}</span>
@@ -310,6 +316,7 @@ export function AppSidebar({
           )}
         </nav>
         <div className="app-sidebar-footer">
+          <SidebarUpgrade key={accountId} onOpen={closeDrawer} />
           <Link href="/settings" className="app-account-link" aria-label={`${userName} Profile and settings`} title="Profile and settings" onClick={closeDrawer}>
             <span
               className="app-avatar"
