@@ -1,6 +1,8 @@
-## November 1 - Hero gradient descender clipping fix in progress
+## November 1 - Hero gradient descender clipping fixed and published
 
-Branch `fix/hero-descender-clipping` owns only the homepage workbench CSS. User screenshot reproduces the bottom of the gradient g being cut at its inner background paint box; the outer animation mask already has descent space. Add matching bottom padding/negative margin to the gradient word, preserving text positions and line wrapping. Chrome comparison with the real Inter Tight font reproduces before/after at 120px, 64px desktop and 38px phone sizes, with zero text-position or heading-height delta. Local production build and TypeScript pass; web suite, lint, Safari and deployment gates pending. Existing self-hosted deployment authorization applies.
+Runtime `217139c918e4e1f07c85c486d131b170b585ed41` is live at https://findez.ai in `hero-descender-20261101/frontend`, build `X1qYlrarZBsGQxIZMR2jd`. Branch `fix/hero-descender-clipping`, draft PR292. Only workbench.css changed at runtime. The gradient word's tight background paint box clipped the bottom of the g; bottom padding and a compensating negative margin restore the complete glyph without changing headline spacing or wrapping. Keep the existing outer animation-mask descent space too.
+
+Safari/Chrome real-font comparison reproduces before/after at 120px, 64px and 38px, with identical heading heights and maximum text-position delta below 0.001px. Built and live Chrome desktop/390x844 show the complete g after the intro. 649 web tests/90 suites, lint (0 errors/52 existing warnings), TypeScript, local/server builds, all five CI gates (41397326246), and 35 staged/live routes pass. Public apex/www compiled CSS and existing new-logo metadata verified. Other pages/configuration, backend PID and prior compiled release preserved. Only the older header release's regenerable cache removed for space. Receipt: `docs/plans/hero-descender-receipt.json`.
 
 ## November 1 - Search logo metadata published; Google recrawl requested
 
