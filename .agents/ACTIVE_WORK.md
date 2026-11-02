@@ -1,8 +1,8 @@
-## November 1 - Workbench headline intro ready for publication
+## November 1 - Workbench headline intro published
 
-User supplied CODEX_PROMPT_INTRO_ONLY.md, then explicitly authorized direct implementation and self-hosted deployment, overriding its no-push instruction. Branch `feat/hero-intro` adds only the homepage word-by-word slide-up, composer/hint entrance, photo opacity entrance and 1200ms detection start. Copy, layout, navigation, other pages, API and mobile are preserved. Reduced motion shows final states immediately; headline has one accessible name.
+User explicitly authorized direct implementation and self-hosted deployment after supplying CODEX_PROMPT_INTRO_ONLY.md. Runtime `29cefa2f7492620d57ce838e5868dcf03f2e8ec7` is live at https://findez.ai in `hero-intro-20261101/frontend`, build `k7mpOiTNubm6SFT6ghlmr`. Branch `feat/hero-intro` pushed; draft PR289. Only three existing hero runtime files changed. Other pages, configuration, backend PID and previous compiled release are preserved.
 
-Validation: 649 tests in 90 suites, lint (zero errors/52 existing warnings), TypeScript and standard Turbopack production build passed. Chrome at 1440x900 and 390x844 verifies original line breaks and geometry within 0.05px, gradient, stagger order, no replay on resize/scroll, signup handoff and no page errors. Pre-hydration start states and reduced-motion immediate visibility also pass. Self-hosted publication pending CI and isolated build checks.
+Validation: 649 tests/90 suites; lint zero errors/52 existing warnings; TypeScript; standard local production build; all five CI gates (41391173955); isolated server build; all 33 staged/live route checks. Local, staged and public HTTPS Chrome at 1440/390 verify unchanged wrapping and positions within 0.05px, gradient, stagger order, no replay on scroll/resize, pre-hydration state, reduced-motion instant rendering, signup handoff and no page errors. Safari desktop visually verified. Server font fetch failed twice; reusing the prior successful build cache resolved it without source, font or configuration changes. Temporary staging preview stopped. Receipt: `docs/plans/hero-intro-receipt.json`.
 
 ## November 1 - Workbench hero published
 

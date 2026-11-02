@@ -10,3 +10,5 @@ Runtime files changed:
 - frontend/src/components/landing-v5/HeroWorkbench.tsx
 - frontend/src/components/landing-v5/workbench.css
 - frontend/src/components/landing-v5/workbench-motion.ts
+
+Published at https://findez.ai from runtime `29cefa2` after five CI gates (41391173955), isolated production build, 33 staged/live route checks and public desktop/phone browser verification. Build `k7mpOiTNubm6SFT6ghlmr`. The server build reused the previous successful font/build cache after font-fetch parsing failures; no source/configuration workaround was introduced. Safari desktop visually verified. Other pages, backend and the prior compiled release are preserved. See `docs/plans/hero-intro-receipt.json`.
