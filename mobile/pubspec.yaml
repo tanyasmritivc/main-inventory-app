@@ -102,8 +102,15 @@ flutter:
     - assets/mascot/
     - assets/fonts/OFL.txt
     - assets/fonts/Jakarta-OFL.txt
+    - assets/fonts/inter/OFL.txt
     - assets/fonts/GeistMono-OFL.txt
   fonts:
+    - family: VoiceInter
+      fonts:
+        - asset: assets/fonts/inter/Inter.ttf
+          weight: 400
+        - asset: assets/fonts/inter/Inter.ttf
+          weight: 500
     - family: PlusJakartaSans
       fonts:
         - asset: assets/fonts/brand/PlusJakartaSans-Regular.ttf

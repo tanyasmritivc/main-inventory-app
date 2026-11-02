@@ -1,3 +1,9 @@
+## November 1 - Inline voice composer completed locally
+
+Completed worktree `Projects/findez-voice-composer`, branch `feat/voice-in-composer`. Follow user-supplied `docs/voice-v1/CODEX_PROMPT.md`, HTML and video: mobile-only inline recording, real levels, silence then two-second auto-send countdown, tap-to-edit and voice duration label. Reuse the Whisper endpoint. User explicitly says commit locally and do not push; no release upload or backend/web/env/CI changes. This supersedes build163 explicit-Send behavior for this local lane only.
+
+Validation: full Flutter suite 1,249 passed (one existing skip), two added tab/API cancellation checks, 18 final focused checks, clean analysis, eight native simulator checks and four final accessibility-layout checks. Twelve native QA screenshots retained. User explicitly chose to handle physical iPhone microphone acceptance. See `docs/voice-v1/IMPLEMENTATION.md` for changed files and release limitations. No push or upload performed.
+
 ## November 1 - Whisper voice input delivered to TestFlight163
 
 Apple acknowledged FindEZ 1.1.1 (163), runtime `07a054ebc103ce97304ed7a3e7984a96a81dcbf6`, delivery `8af5f72d-422e-4ff9-92be-305f5eaaedb0`. PR284 remains isolated from main. The user selected voice input only: one-minute in-memory capture, authenticated Whisper transcription, editable draft and explicit Send. Cancellation covers startup, upload, backgrounding and stale accounts. Recording controls stay reachable at large text sizes. No spoken replies or automatic chat submission.

@@ -1,3 +1,9 @@
+## Inline voice composer (local branch)
+
+Run `flutter test test/voice_composer_test.dart test/voice_capture_test.dart test/ask_page_test.dart test/fluid_surfaces_test.dart`, full Flutter tests and analysis. Session tests cover a real-level silence threshold, two full seconds after transcription, delayed upload, early Send, editing, cancellation, denied permission and silence/empty recordings. Chat tests verify normal submission, duration labels and invalidation on background/tab/API changes. Layout tests cover light/dark, 320pt width, large text and Reduce Motion using bundled voice fonts.
+
+Native UI: `flutter test integration_test/voice_composer_audit_test.dart -d <simulator-id> --name 'inline composer|voice editing sends|background cancels|voice countdown cancels'`. This uses synthetic recorder input and does not certify a physical microphone. Copy `voice-composer-*.png` from the test app temporary directory while it runs if retaining visual evidence. Physical checks remain with the user: speak/pause/auto-send, early Send, cancel, edit/send, deny microphone access, stay silent, and background/switch tabs. Do not record unattended ambient audio. This task is local-only: no push, build number change, TestFlight upload or backend/web/environment/CI changes.
+
 ## Whisper voice input (build 163)
 
 Run `flutter test test/voice_capture_test.dart test/voice_api_test.dart test/ask_page_test.dart test/fluid_surfaces_test.dart`, full Flutter tests and analysis. Coverage includes bounded PCM/WAV capture, delayed microphone permission, cancellation during upload, account changes, a one-minute stop, editable drafts preserving typed text, explicit Send and background cancellation. `integration_test/voice_input_audit_test.dart` exercises the synthetic controller and chat cases on native iOS; it does not prove physical microphone capture.
@@ -1173,7 +1179,7 @@ known coverage limits: `docs/plans/native-ios-controls-20261023.md`.
 
 ### Native SF Pro typography
 
-App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. Inter is not in the production font manifest. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.
+App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. The inline voice composer locally adds `VoiceInter` for its supplied design; other app text retains the system font. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.
 
 
 ### Monochrome mobile UI and restrained navigation

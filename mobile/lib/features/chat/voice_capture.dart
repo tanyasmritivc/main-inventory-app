@@ -15,14 +15,22 @@ abstract interface class VoiceRecorder {
 }
 
 /// Microphone audio stays in bounded memory until sent for transcription.
-class DeviceVoiceRecorder implements VoiceRecorder {
+abstract interface class MeteredVoiceRecorder implements VoiceRecorder {
+  ValueListenable<double> get soundLevel;
+}
+
+enum VoiceFailure { permission, empty, recording, transcription }
+
+class DeviceVoiceRecorder implements MeteredVoiceRecorder {
   DeviceVoiceRecorder({
     required this.transcribe,
     AudioRecorder Function()? createRecorder,
   }) : _createRecorder = createRecorder ?? AudioRecorder.new;
   final TranscribeVoice transcribe;
   final AudioRecorder Function() _createRecorder;
-  final soundLevel = ValueNotifier<double>(0);
+  @override
+  final ValueNotifier<double> soundLevel = ValueNotifier<double>(0);
+  bool _permissionRequested = false;
   _Recording? _session;
   int _generation = 0;
 
@@ -41,7 +49,11 @@ class DeviceVoiceRecorder implements VoiceRecorder {
   }
 
   Future<bool> _start(_Recording s) async {
-    if (!await s.recorder.hasPermission() || s.cancelled) return false;
+    final permitted = await s.recorder.hasPermission(
+      request: !_permissionRequested,
+    );
+    _permissionRequested = true;
+    if (!permitted || s.cancelled) return false;
     final stream = await s.recorder.startStream(
       const RecordConfig(
         encoder: AudioEncoder.pcm16bits,
@@ -187,10 +199,12 @@ class VoiceCapture extends ChangeNotifier {
   bool _disposed = false;
   int _generation = 0;
   String transcript = '';
+  VoiceFailure? failure;
+  bool finalTranscript = false;
   Timer? _limit;
   Future<bool>? _starting;
-  ValueListenable<double>? get soundLevel => recorder is DeviceVoiceRecorder
-      ? (recorder as DeviceVoiceRecorder).soundLevel
+  ValueListenable<double>? get soundLevel => recorder is MeteredVoiceRecorder
+      ? (recorder as MeteredVoiceRecorder).soundLevel
       : null;
 
   Future<void> start() async {
@@ -199,16 +213,20 @@ class VoiceCapture extends ChangeNotifier {
     active = true;
     ready = processing = false;
     transcript = '';
+    failure = null;
+    finalTranscript = false;
     notifyListeners();
     _starting = recorder.start((words, finalResult) {
       if (_disposed || generation != _generation) return;
-      if (finalResult) transcript = words;
+      transcript = words;
+      finalTranscript = finalResult;
+      notifyListeners();
     }, () => _fail(generation));
     try {
       final available = await _starting!;
       if (_disposed || generation != _generation) return;
       if (!available) {
-        _fail(generation);
+        _fail(generation, VoiceFailure.permission);
         return;
       }
       ready = true;
@@ -221,8 +239,11 @@ class VoiceCapture extends ChangeNotifier {
     }
   }
 
-  void _fail(int generation) {
+  void _fail(int generation, [VoiceFailure? reason]) {
     if (_disposed || generation != _generation) return;
+    failure =
+        reason ??
+        (processing ? VoiceFailure.transcription : VoiceFailure.recording);
     cancel();
     onError();
   }
@@ -247,6 +268,7 @@ class VoiceCapture extends ChangeNotifier {
       if (text.isNotEmpty) {
         onSend(text);
       } else {
+        failure = VoiceFailure.empty;
         onError();
       }
     } catch (_) {

@@ -1,4 +1,5 @@
-import 'voice_recording_overlay.dart';
+import 'voice_composer_session.dart';
+import 'voice_composer_panel.dart' show voiceCurve;
 import '../../core/ui/photo_source_sheet.dart';
 import 'extraction_progress_panel.dart';
 import 'message_actions.dart';
@@ -313,7 +314,7 @@ class _ChatPageState extends State<ChatPage>
 
   String? _voiceOwner;
   ApiClient? _voiceApi;
-  late final VoiceCapture _voice = VoiceCapture(
+  late final VoiceComposerSession _voice = VoiceComposerSession(
     recorder:
         widget.voiceRecorder ??
         DeviceVoiceRecorder(
@@ -327,52 +328,40 @@ class _ChatPageState extends State<ChatPage>
             return api.transcribeVoice(wav, cancelToken: cancel);
           },
         ),
-    onSend: (words) {
-      if (!mounted || _sending) return;
-      if (widget.api.accountId != _voiceOwner ||
+    onSend: (words, duration) {
+      if (!mounted ||
+          _sending ||
+          widget.api.accountId != _voiceOwner ||
           !identical(widget.api, _voiceApi)) {
         return;
       }
       widget.api.assertCurrentContext();
-      final draft = _controller.text.trimRight();
-      final text = draft.isEmpty ? words : '$draft $words';
-      setState(
-        () => _controller.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
-        ),
-      );
-      _focusNode.requestFocus();
-    },
-    onError: () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Voice input could not finish. Check microphone permission and your connection, then try again.',
-            ),
-          ),
-        );
-      }
+      unawaited(_submit(words, voiceDuration: duration));
     },
   )..addListener(_voiceChanged);
   bool get _isListening => _voice.active;
-  OverlayEntry? _voiceOverlay;
+  bool _voiceWasActive = false;
+  String? _voiceError;
   void _voiceChanged() {
     if (!mounted) return;
-    if (_voice.active && _voiceOverlay == null) {
-      _focusNode.unfocus();
-      _voiceOverlay = OverlayEntry(
-        builder: (_) => VoiceRecordingOverlay(voice: _voice),
-      );
-      Overlay.of(context, rootOverlay: true).insert(_voiceOverlay!);
-    } else if (!_voice.active && _voiceOverlay != null) {
-      _voiceOverlay!.remove();
-      _voiceOverlay!.dispose();
-      _voiceOverlay = null;
+    if (_voice.active != _voiceWasActive || _voiceError != _voice.errorText) {
+      _voiceWasActive = _voice.active;
+      _voiceError = _voice.errorText;
+      setState(() {});
     }
-    setState(() {});
   }
+
+  Widget _voiceDimmed(Widget child) => IgnorePointer(
+    ignoring: _voice.active,
+    child: AnimatedOpacity(
+      opacity: _voice.active ? .28 : 1,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 500),
+      curve: voiceCurve,
+      child: child,
+    ),
+  );
 
   List<DocumentEntry>? _pendingDocChoices;
 
@@ -2031,6 +2020,7 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _submit(
     String text, {
     bool userAlreadyAdded = false,
+    Duration? voiceDuration,
     bool autoExtract = false,
     String? requestId,
     List<ChatSource>? retrySources,
@@ -2073,7 +2063,12 @@ class _ChatPageState extends State<ChatPage>
         _controller.clear();
         setState(
           () => _session.messages.add(
-            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+            _ChatMessage(
+              role: 'user',
+              content: q,
+              timestamp: _nowTs(),
+              voiceDuration: voiceDuration,
+            ),
           ),
         );
         setState(() => _savingCapture = true);
@@ -2127,6 +2122,7 @@ class _ChatPageState extends State<ChatPage>
             content: safeQ,
             timestamp: _nowTs(),
             photo: photo,
+            voiceDuration: voiceDuration,
           ),
         );
       }
@@ -2418,10 +2414,21 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _startVoice() async {
-    if (_voice.active || _sending) return;
+    if (_voice.active ||
+        _sending ||
+        _savingCapture ||
+        _scanningPreview ||
+        _pickingPhoto) {
+      return;
+    }
     _voiceOwner = widget.api.accountId;
     _voiceApi = widget.api;
-    await _voice.start();
+    _focusNode.unfocus();
+    _sourceMenuOpen = false;
+    await _voice.start(draft: _controller.text);
+    if (mounted && _voice.capture.ready) {
+      unawaited(HapticFeedback.lightImpact());
+    }
   }
 
   @override
@@ -2434,6 +2441,16 @@ class _ChatPageState extends State<ChatPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.valuesOf(context).enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !TickerMode.valuesOf(context).enabled) _voice.cancel();
+      });
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant ChatPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.api, widget.api)) _voice.cancel();
@@ -2441,7 +2458,7 @@ class _ChatPageState extends State<ChatPage>
 
   void _toggleListening() {
     if (_voice.active) {
-      unawaited(_voice.release());
+      _voice.send();
     } else {
       unawaited(_startVoice());
     }
@@ -2450,9 +2467,6 @@ class _ChatPageState extends State<ChatPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _voiceOverlay?.remove();
-    _voiceOverlay?.dispose();
-    _voiceOverlay = null;
     _requestGeneration++;
     final active = _activeReply;
     if (active != null) unawaited(active.cancel());
@@ -3498,7 +3512,7 @@ class _ChatPageState extends State<ChatPage>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildEmptyState(),
+                    _voiceDimmed(_buildEmptyState()),
                     const SizedBox(height: 12),
                     if (_previewDraft != null || _scanningPreview)
                       _capturePreview(),
@@ -3522,9 +3536,9 @@ class _ChatPageState extends State<ChatPage>
                       onVoiceStart: _sending
                           ? null
                           : () => unawaited(_startVoice()),
-                      onVoiceEnd: () => unawaited(_voice.release()),
+                      onVoiceEnd: () => _voice.send(),
                       onVoiceCancel: _voice.cancel,
-                      voiceTranscript: _voice.transcript,
+                      voiceSession: _voice,
                       onSend: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
@@ -3535,7 +3549,7 @@ class _ChatPageState extends State<ChatPage>
                     if (_controller.text.trim().isEmpty &&
                         _photo == null &&
                         !compact)
-                      _newChatSuggestions(),
+                      _voiceDimmed(_newChatSuggestions()),
                   ],
                 ),
               ),
@@ -3661,6 +3675,7 @@ class _ChatPageState extends State<ChatPage>
                       ? AskQuestionCard(
                           compact: true,
                           question: message.content,
+                          voiceDuration: message.voiceDuration,
                           photoBytes: message.photo?.bytes,
                           photoUrl: message.photoUrl,
                         )
@@ -3696,9 +3711,9 @@ class _ChatPageState extends State<ChatPage>
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,
                 onVoiceStart: _sending ? null : () => unawaited(_startVoice()),
-                onVoiceEnd: () => unawaited(_voice.release()),
+                onVoiceEnd: () => _voice.send(),
                 onVoiceCancel: _voice.cancel,
-                voiceTranscript: _voice.transcript,
+                voiceSession: _voice,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
@@ -3740,6 +3755,7 @@ class _ChatPageState extends State<ChatPage>
                 message.role == 'user'
                     ? AskQuestionCard(
                         question: message.content,
+                        voiceDuration: message.voiceDuration,
                         photoBytes: message.photo?.bytes,
                         photoUrl: message.photoUrl,
                       )
@@ -3766,160 +3782,184 @@ class _ChatPageState extends State<ChatPage>
               const SizedBox(height: 10),
             ],
             if (_photo != null) _photoPreview(),
-            Container(
-              constraints: const BoxConstraints(minHeight: 48, maxHeight: 150),
-              padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, const Color(0xFF171719)),
-                borderRadius: BorderRadius.circular(
-                  widget.worldHeading != null ? 28 : 18,
+            if (_voice.active || _voice.errorText != null)
+              WorldComposer(
+                controller: _controller,
+                focusNode: _focusNode,
+                onChanged: (_) => setState(() {}),
+                onAttach: _attachPhoto,
+                onVoice: _toggleListening,
+                onVoiceCancel: _voice.cancel,
+                voiceSession: _voice,
+                onSend: canSend
+                    ? () => unawaited(_submit(_controller.text))
+                    : null,
+                busy: _sending,
+                listening: _voice.active,
+                compact: true,
+              )
+            else
+              Container(
+                constraints: const BoxConstraints(
+                  minHeight: 48,
+                  maxHeight: 150,
                 ),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: .08),
+                padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.adaptive(context, const Color(0xFF171719)),
+                  borderRadius: BorderRadius.circular(
+                    widget.worldHeading != null ? 28 : 18,
+                  ),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: .08),
+                  ),
                 ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  IconButton(
-                    tooltip: widget.worldHeading != null
-                        ? 'Capture or attach'
-                        : 'Attach photo',
-                    onPressed: _sending || _pickingPhoto
-                        ? null
-                        : widget.worldHeading != null
-                        ? _worldAttachmentMenu
-                        : _attachPhoto,
-                    icon: _pickingPhoto
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 1.5),
-                          )
-                        : Icon(
-                            Icons.add_rounded,
-                            color: _sending
-                                ? AppTheme.textSecondary(context)
-                                : AppTheme.accentForeground(context),
-                            size: 22,
-                          ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      minLines:
-                          widget.worldHeading != null &&
-                              (_worldHome || _session.messages.isEmpty) &&
-                              !keyboardVisible &&
-                              !compactComposer
-                          ? 3
-                          : 1,
-                      maxLines: compactComposer ? 1 : 4,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      onChanged: (_) => setState(() {}),
-                      style: AppTypography.bodyStyleOf(
-                        context,
-                        TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                          fontSize: 16,
-                        ),
-                      ),
-                      decoration: InputDecoration(
-                        hintText: compactComposer
-                            ? 'Ask...'
-                            : widget.worldHeading != null
-                            ? 'Describe your world...'
-                            : 'Ask a question',
-                        hintMaxLines: 1,
-                        isDense: true,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        contentPadding: EdgeInsets.zero,
-                        hintStyle: AppTypography.bodyStyleOf(
-                          context,
-                          TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0xFF636366),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 38,
-                      height: 38,
-                    ),
-                    icon: Icon(
-                      _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                      color: _isListening
-                          ? AppTheme.foreground(
-                              context,
-                              const Color(0xFFF2F2F7),
-                            )
-                          : AppTheme.foreground(context, Colors.white38),
-                      size: 21,
-                    ),
-                    onPressed: _toggleListening,
-                  ),
-                  GestureDetector(
-                    onTap: canSend
-                        ? () => unawaited(_submit(_controller.text))
-                        : null,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _sending && !_canQueueFollowUp
-                            ? AppTheme.adaptive(
-                                context,
-                                const Color(0xFF2C2C2E),
-                              )
-                            : canSend
-                            ? AppTheme.action
-                            : AppTheme.adaptive(
-                                context,
-                                const Color(0xFF2C2C2E),
-                              ),
-                      ),
-                      child: _sending && !_canQueueFollowUp
-                          ? Padding(
-                              padding: EdgeInsets.all(9),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: widget.worldHeading != null
+                          ? 'Capture or attach'
+                          : 'Attach photo',
+                      onPressed: _sending || _pickingPhoto
+                          ? null
+                          : widget.worldHeading != null
+                          ? _worldAttachmentMenu
+                          : _attachPhoto,
+                      icon: _pickingPhoto
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 1.7,
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0xFF8E8E93),
-                                ),
+                                strokeWidth: 1.5,
                               ),
                             )
                           : Icon(
-                              Icons.arrow_upward_rounded,
-                              color: canSend
-                                  ? AppTheme.onAction
-                                  : AppTheme.foreground(
-                                      context,
-                                      const Color(0xFF636366),
-                                    ),
-                              size: 20,
+                              Icons.add_rounded,
+                              color: _sending
+                                  ? AppTheme.textSecondary(context)
+                                  : AppTheme.accentForeground(context),
+                              size: 22,
                             ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        minLines:
+                            widget.worldHeading != null &&
+                                (_worldHome || _session.messages.isEmpty) &&
+                                !keyboardVisible &&
+                                !compactComposer
+                            ? 3
+                            : 1,
+                        maxLines: compactComposer ? 1 : 4,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        onChanged: (_) => setState(() {}),
+                        style: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
+                            fontSize: 16,
+                          ),
+                        ),
+                        decoration: InputDecoration(
+                          hintText: compactComposer
+                              ? 'Ask...'
+                              : widget.worldHeading != null
+                              ? 'Describe your world...'
+                              : 'Ask a question',
+                          hintMaxLines: 1,
+                          isDense: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: EdgeInsets.zero,
+                          hintStyle: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFF636366),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 38,
+                        height: 38,
+                      ),
+                      icon: Icon(
+                        _isListening
+                            ? Icons.mic_rounded
+                            : Icons.mic_none_rounded,
+                        color: _isListening
+                            ? AppTheme.foreground(
+                                context,
+                                const Color(0xFFF2F2F7),
+                              )
+                            : AppTheme.foreground(context, Colors.white38),
+                        size: 21,
+                      ),
+                      onPressed: _toggleListening,
+                    ),
+                    GestureDetector(
+                      onTap: canSend
+                          ? () => unawaited(_submit(_controller.text))
+                          : null,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _sending && !_canQueueFollowUp
+                              ? AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                )
+                              : canSend
+                              ? AppTheme.action
+                              : AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                ),
+                        ),
+                        child: _sending && !_canQueueFollowUp
+                            ? Padding(
+                                padding: EdgeInsets.all(9),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.7,
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    Color(0xFF8E8E93),
+                                  ),
+                                ),
+                              )
+                            : Icon(
+                                Icons.arrow_upward_rounded,
+                                color: canSend
+                                    ? AppTheme.onAction
+                                    : AppTheme.foreground(
+                                        context,
+                                        const Color(0xFF636366),
+                                      ),
+                                size: 20,
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -3941,8 +3981,10 @@ class _ChatMessage {
     this.onRetry,
     this.messageId,
     this.failed = false,
+    this.voiceDuration,
   });
 
+  final Duration? voiceDuration;
   final String? messageId;
   final bool failed;
   final VoidCallback? onRetry;
@@ -3978,6 +4020,7 @@ class _ChatMessage {
       navHint: navHint ?? this.navHint,
       answerContext: answerContext ?? this.answerContext,
       photo: photo,
+      voiceDuration: voiceDuration,
       photoUrl: photoUrl ?? this.photoUrl,
     );
   }

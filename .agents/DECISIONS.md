@@ -1,3 +1,9 @@
+## November 1 - Inline voice composer (local only)
+
+The supplied voice-v1 brief supersedes build163's manual draft flow on `feat/voice-in-composer`. Keep capture and the authenticated Whisper transport unchanged. Microphone levels drive the waveform and a 1.2-second silence threshold; batch transcription completes before a full two-second send countdown. Tapping the transcript permanently disables auto-send for that recording and opens editing. Cancel, hidden tabs, backgrounding and changed API/account context invalidate the session. No fake live transcript or spoken replies. Voice duration is local message presentation; historical server messages do not retain it under the unchanged API contract.
+
+The user explicitly requested a local commit without a push or release. Physical iPhone acceptance is delegated to the user. Inter is bundled as `VoiceInter` for the requested voice typography only; the app's system typography remains the default. Before a future release, update the live privacy wording that currently describes build163's explicit Send flow, and complete physical microphone/permission checks.
+
 ## November 1 - Whisper voice input returns an editable draft
 
 User selected voice input only. Build163 replaces Apple speech recognition with in-memory microphone recording and an authenticated `/voice/transcriptions` backend proxy to the supplied FTCTools Whisper endpoint. The provider credential is server-only. No spoken replies, automatic chat send, inventory write or provider fallback. The one-minute capture can be canceled during startup or transcription. The returned text appends to the typed draft and requires explicit Send. This supersedes the build158 automatic voice submission behavior. Preserve build162's App Review submission.
