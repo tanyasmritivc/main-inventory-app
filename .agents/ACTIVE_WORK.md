@@ -1,3 +1,7 @@
+## November 1 - Stop chat response and replace App Store build (166)
+
+The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.
+
 ## November 1 - Dark default delivered to TestFlight165
 
 Apple acknowledged FindEZ 1.1.1 (165), source `34dcb4b7f1a11092d8f53e126fb0db79910eabf1`, delivery `7b82bff1-5316-4d15-9cbc-de0cd135c9d9`. Unset, invalid or unavailable appearance storage defaults to Dark from construction through loaded state. Saved Light, Dark and System preferences are preserved. Branch `fix/dark-default-165` is pushed; PR286 remains separate from main. No web/backend/database changes.

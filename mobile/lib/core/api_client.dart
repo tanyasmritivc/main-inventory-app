@@ -1368,32 +1368,23 @@ class ApiClient {
         'sources': sources.map((s) => s.toJson()).toList(),
     });
 
-    final client = http.Client();
-    try {
-      final response = await client
-          .send(request)
-          .timeout(const Duration(minutes: 2));
-      if (response.statusCode != 200) {
-        throw AskRequestException(switch (response.statusCode) {
-          401 => 'Session expired. Please sign in again.',
-          403 =>
-            'Access or chat allowance changed. Check your selected sources and account.',
-          404 =>
-            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
-          422 =>
-            'The selected sources could not be read together. Try fewer files or different sources.',
-          429 => 'Too many requests. Please wait a moment.',
-          _ => 'Your request could not be completed. Please try again.',
-        });
-      }
-
-      yield* decodeAiCommandEvents(response.stream).map((event) {
-        assertCurrentContext();
-        return event;
-      });
-    } finally {
-      client.close();
-    }
+    yield* _sendAiRequest(
+      request,
+      (status) => switch (status) {
+        401 => 'Session expired. Please sign in again.',
+        403 =>
+          'Access or chat allowance changed. Check your selected sources and account.',
+        404 =>
+          'This chat or a selected source is unavailable. Remove the source or start a new chat.',
+        422 =>
+          'The selected sources could not be read together. Try fewer files or different sources.',
+        429 => 'Too many requests. Please wait a moment.',
+        _ => 'Your request could not be completed. Please try again.',
+      },
+    ).map((event) {
+      assertCurrentContext();
+      return event;
+    });
   }
 
   Stream<AiStreamEvent> aiPhotoQuestionStream({
@@ -1439,31 +1430,23 @@ class ApiClient {
     request.files.add(
       http.MultipartFile.fromBytes('file', photo.bytes, filename: 'photo.jpg'),
     );
-    final client = http.Client();
-    try {
-      final response = await client
-          .send(request)
-          .timeout(const Duration(minutes: 2));
-      if (response.statusCode != 200) {
-        throw AskRequestException(switch (response.statusCode) {
-          401 => 'Session expired. Please sign in again.',
-          403 =>
-            'Access or allowance changed. Check your selected sources and account.',
-          404 =>
-            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
-          413 => 'Choose a photo smaller than 10 MB.',
-          400 || 422 => 'Choose a valid photo and a shorter question.',
-          429 => 'Too many photo requests. Please wait a moment.',
-          _ => 'Your photo question could not be completed. Please try again.',
-        });
-      }
-      yield* decodeAiCommandEvents(response.stream).map((event) {
-        assertCurrentContext();
-        return event;
-      });
-    } finally {
-      client.close();
-    }
+    yield* _sendAiRequest(
+      request,
+      (status) => switch (status) {
+        401 => 'Session expired. Please sign in again.',
+        403 =>
+          'Access or allowance changed. Check your selected sources and account.',
+        404 =>
+          'This chat or a selected source is unavailable. Remove the source or start a new chat.',
+        413 => 'Choose a photo smaller than 10 MB.',
+        400 || 422 => 'Choose a valid photo and a shorter question.',
+        429 => 'Too many photo requests. Please wait a moment.',
+        _ => 'Your photo question could not be completed. Please try again.',
+      },
+    ).map((event) {
+      assertCurrentContext();
+      return event;
+    });
   }
 
   Future<Map<String, dynamic>> getMyLimits() async {
@@ -1933,6 +1916,64 @@ class ApiClient {
     final data = res.data ?? {};
     return data['deleted'] == true;
   }
+}
+
+/// Cancellation owns the HTTP client, including while waiting for headers.
+Stream<AiStreamEvent> _sendAiRequest(
+  http.BaseRequest request,
+  String Function(int) errorMessage,
+) {
+  final client = http.Client();
+  var ended = false, clientClosed = false;
+  StreamSubscription<AiStreamEvent>? subscription;
+  late StreamController<AiStreamEvent> controller;
+  void closeClient() {
+    if (!clientClosed) {
+      clientClosed = true;
+      client.close();
+    }
+  }
+
+  void finish([Object? error, StackTrace? stack]) {
+    if (ended) return;
+    ended = true;
+    closeClient();
+    if (error != null) controller.addError(error, stack);
+    unawaited(subscription?.cancel());
+    unawaited(controller.close());
+  }
+
+  controller = StreamController<AiStreamEvent>(
+    onListen: () async {
+      try {
+        final response = await client
+            .send(request)
+            .timeout(const Duration(minutes: 2));
+        if (ended) return;
+        if (response.statusCode != 200) {
+          throw AskRequestException(errorMessage(response.statusCode));
+        }
+        subscription = decodeAiCommandEvents(response.stream).listen(
+          (event) {
+            if (!ended) controller.add(event);
+          },
+          onError: finish,
+          onDone: finish,
+        );
+        if (controller.isPaused) subscription!.pause();
+      } catch (error, stack) {
+        finish(error, stack);
+      }
+    },
+    onPause: () => subscription?.pause(),
+    onResume: () => subscription?.resume(),
+    onCancel: () {
+      ended = true;
+      closeClient();
+      return subscription?.cancel();
+    },
+  );
+  return controller.stream;
 }
 
 class AiStreamEvent {

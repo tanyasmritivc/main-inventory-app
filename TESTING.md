@@ -1,3 +1,7 @@
+## Stop response (build 166)
+
+Run the full Flutter suite and analyzer. `test/chat_cancellation_test.dart` checks text/photo cancellation before headers and during streaming, ignores late events and preserves completed answers. The stop-response cases in `test/ask_page_test.dart` cover World/context chat, thinking/partial replies, preserved drafts, a new request after Stop and sent-photo preservation. Run those five cases on iOS with `flutter test integration_test/chat_stop_audit_test.dart -d <simulator-id> --no-pub --name 'stop response'`. The PNG fixture is a valid one-pixel RGBA image so decoded image cache state cannot change later tests. Stop closes the active HTTP request and retires its UI generation; it does not undo operations already committed by the server. The user explicitly authorized replacing build162 in the existing App Review submission with build166 after successful checks, preserving all metadata, screenshots and manual release.
+
 ## Inline voice composer (local branch)
 
 Run `flutter test test/voice_composer_test.dart test/voice_capture_test.dart test/ask_page_test.dart test/fluid_surfaces_test.dart`, full Flutter tests and analysis. Session tests cover a real-level silence threshold, two full seconds after transcription, delayed upload, early Send, editing, cancellation, denied permission and silence/empty recordings. Chat tests verify normal submission, duration labels and invalidation on background/tab/API changes. Layout tests cover light/dark, 320pt width, large text and Reduce Motion using bundled voice fonts.
