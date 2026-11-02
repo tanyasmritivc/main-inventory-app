@@ -15,7 +15,8 @@
 
 .landing-v5 #hero.hero-workbench .wb-center{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 40px));text-align:center}
 .landing-v5 #hero.hero-workbench h1{font-family:var(--workbench-tight),var(--f);font-weight:400;font-size:clamp(38px,4.4vw,64px);line-height:1.04;letter-spacing:-.022em}
-.landing-v5 #hero.hero-workbench h1 .wb-ember{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Paint the gradient below the tight line box so descenders remain whole. */
+.landing-v5 #hero.hero-workbench h1 .wb-ember{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.14em;margin-bottom:-.14em}
 .landing-v5 #hero.hero-workbench .wb-word-mask{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .02em .14em;margin:0 -.02em -.14em}
 .landing-v5 #hero.hero-workbench .wb-word{display:inline-block;transform:translateY(105%)}
 .landing-v5 #hero.hero-workbench.wb-intro .wb-word{animation:workbench-word-in 1050ms var(--wb-e) both}
