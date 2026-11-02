@@ -27,7 +27,7 @@ export function CookieNotice() {
     const node = notice.current;
     if (!show || !node) return;
     const reserveSpace = () => document.documentElement.style.setProperty(
-      "--cookie-notice-height", `${Math.ceil(node.getBoundingClientRect().height) + 24}px`,
+      "--cookie-notice-height", `${Math.ceil(node.getBoundingClientRect().height) + 40}px`,
     );
     reserveSpace();
     const observer = new ResizeObserver(reserveSpace);

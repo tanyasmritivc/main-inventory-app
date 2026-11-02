@@ -246,9 +246,30 @@ html[data-app-theme] .app-frame.is-ask-workspace .ask-workspace:not([data-contex
 }
 html[data-app-theme] .app-frame.is-ask-workspace .ask-workspace:not([data-contextual]) .ask-thread {
   flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
-  overscroll-behavior:contain; scrollbar-gutter:stable; padding-right:8px;
+  overscroll-behavior:contain; scrollbar-gutter:auto; padding-right:0;
 }
 html[data-app-theme] .app-frame.is-ask-workspace .ask-workspace:not([data-contextual]) .ask-composer { flex-shrink:0; padding-top:10px; }
 html[data-app-theme] .app-frame.is-ask-workspace .ask-workspace:not([data-contextual]) .ask-chat.is-empty { min-height:0; overflow-y:auto; }
 html[data-app-theme] .app-frame.is-ask-workspace .ask-workspace:not([data-contextual]) .ask-chat .ask-disclaimer { margin-top:8px; }
 html[data-app-theme] .app-frame:not(.is-ask-workspace) .app-main { padding-bottom:var(--cookie-notice-height,0px); }
+
+/* Quiet chat controls: icon actions, a flat composer and unobtrusive scrolling. */
+html[data-app-theme] .app-frame .ask-toolbar .ask-toolbar-icon {
+  width:36px; min-width:36px; height:36px; min-height:36px; padding:0;
+  border:0; border-radius:8px; background:transparent; color:var(--text2); box-shadow:none;
+}
+html[data-app-theme] .app-frame .ask-toolbar .ask-toolbar-icon:hover { color:var(--text); background:var(--hover); }
+html[data-app-theme] .app-frame .ask-composer-box {
+  background:var(--surf); border:1px solid var(--line2); box-shadow:none;
+}
+html[data-app-theme] .app-frame .ask-composer-box::before { content:none; }
+html[data-app-theme] .app-frame .ask-composer-box .ask-action-icon {
+  width:36px; min-width:36px; height:36px; min-height:36px; padding:0;
+  border:1px solid var(--line2); border-radius:50%;
+  background:var(--surf2) !important; color:var(--text) !important; box-shadow:none;
+}
+html[data-app-theme] .app-frame .ask-composer-box .ask-action-icon:hover { background:var(--hover) !important; }
+html[data-app-theme] .app-frame .ask-workspace .ask-thread {
+  scrollbar-width:none; scrollbar-gutter:auto; padding-right:0;
+}
+html[data-app-theme] .app-frame .ask-workspace .ask-thread::-webkit-scrollbar { display:none; width:0; height:0; }

@@ -16,10 +16,12 @@ import { privateImageSrc } from "@/lib/private-image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  History,
   ImagePlus,
   MessageSquarePlus,
   RefreshCw,
   Send,
+  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -702,8 +704,8 @@ function AssistClientWorkspace({
       <header className="ask-toolbar">
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
           <DialogTrigger asChild>
-            <button className="workspace-button" disabled={unavailable}>
-              History
+            <button className="workspace-button ask-toolbar-icon" aria-label="History" title="History" disabled={unavailable}>
+              <History size={18} aria-hidden="true" />
             </button>
           </DialogTrigger>
           <DialogContent
@@ -764,12 +766,13 @@ function AssistClientWorkspace({
           </DialogContent>
         </Dialog>
         <button
-          className="workspace-button"
+          className="workspace-button ask-toolbar-icon"
+          aria-label="New conversation"
+          title="New conversation"
           onClick={newChat}
           disabled={unavailable}
         >
-          <MessageSquarePlus size={15} />
-          New conversation
+          <MessageSquarePlus size={18} aria-hidden="true" />
         </button>
       </header>
       <div
@@ -778,7 +781,7 @@ function AssistClientWorkspace({
         <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
           {messages.length || opening ? title : <span className="shiny-text">{title}</span>}
         </h1>
-        <div className="ask-thread" ref={thread} onScroll={() => {
+        <div className="ask-thread" role="region" aria-label="Conversation" tabIndex={0} ref={thread} onScroll={() => {
           const node = thread.current;
           if (node) followReply.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
         }}>
@@ -1140,7 +1143,9 @@ function AssistClientWorkspace({
                 <button
                   key="stop"
                   type="button"
-                  className="workspace-button"
+                  className="workspace-button ask-action-icon"
+                  aria-label="Stop"
+                  title="Stop response"
                   onClick={(event) => {
                     // Cancel the click's default action before React can replace
                     // this control with the submit button during cancellation.
@@ -1149,19 +1154,20 @@ function AssistClientWorkspace({
                     controller.current?.abort();
                   }}
                 >
-                  Stop
+                  <Square size={15} fill="currentColor" aria-hidden="true" />
                 </button>
               ) : (
                 <button
                   key="send"
                   type="submit"
-                  className="workspace-button primary"
+                  className="workspace-button primary ask-action-icon"
+                  aria-label="Ask"
+                  title="Send message"
                   disabled={
                     !accountId || unavailable || (!input.trim() && !photo)
                   }
                 >
-                  <Send size={15} />
-                  Ask
+                  <Send size={17} aria-hidden="true" />
                 </button>
               )}
             </div>

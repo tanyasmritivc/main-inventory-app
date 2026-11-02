@@ -19,10 +19,10 @@ beforeEach(() => {
 test('reserves the actual notice height, responds to wrapping, and releases it on unmount', () => {
   const rect = jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ height: 70 } as DOMRect);
   const view = render(<CookieNotice />);
-  expect(document.documentElement.style.getPropertyValue('--cookie-notice-height')).toBe('94px');
+  expect(document.documentElement.style.getPropertyValue('--cookie-notice-height')).toBe('110px');
   rect.mockReturnValue({ height: 118.4 } as DOMRect);
   act(() => resize());
-  expect(document.documentElement.style.getPropertyValue('--cookie-notice-height')).toBe('143px');
+  expect(document.documentElement.style.getPropertyValue('--cookie-notice-height')).toBe('159px');
   view.unmount();
   expect(document.documentElement.style.getPropertyValue('--cookie-notice-height')).toBe('');
   expect(disconnect).toHaveBeenCalledTimes(1);

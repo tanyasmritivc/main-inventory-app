@@ -1382,3 +1382,7 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 ## November 2 — chat layout correction
 - Complete on `feat/app-theme`: composer remains visible during transcript scrolling, user bubble spacing corrected, cookie notice follows theme and reserves measured space.
 - Safari dark/light and 15 focused tests pass; production build `ctWIaHTNz5-IyOGQGAzqI` deployed and externally verified. Details: `docs/app-theme/CHAT-LAYOUT-FIX.md`.
+
+## November 2 — chat visual cleanup
+- Complete on `feat/app-theme`: icon-only chat actions, flat composer, hidden transcript scrollbar with scrolling retained, and original white cookie popup restored at user request.
+- Build `WuBumiAAkblC73uGYsn1p` live and externally verified; Safari dark/light, 15 focused tests, lint and production build pass. Receipt: `docs/app-theme/chat-cleanup-deployment.json`.
