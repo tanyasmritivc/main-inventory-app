@@ -1,3 +1,9 @@
+## November 1 - Search logo metadata ready for publication
+
+User wants the new logo in Google search results. Current public assets already contain the new white Petals logo; Google displays a cached old mark. Branch `fix/search-logo` advertises an explicit 96px PNG favicon and dedicated 512px Petals image for OG/Twitter and Organization schema, with current sitemap modification date. The new PNG is an exact copy of the existing approved favicon artwork. No page UI changes.
+
+649 tests/90 suites, lint (zero errors/52 existing warnings), production build with TypeScript, built HTML metadata/schema and real PNG dimension checks pass. User will open the verified Google Search Console property for a homepage recrawl request after publication. Search result selection/timing remains controlled by Google. Self-hosted publication pending CI/server checks.
+
 ## November 1 - Workbench header refinement published
 
 User explicitly authorized self-hosted deployment of header-before-after.png and findez-hero-workbench-2.html. Runtime `1ff488a87ef4e11f9cdb3a9634571d1fda4cf618` is live at https://findez.ai in `hero-header-20261101/frontend`, build `HaLAIldkJzsUJ54SyaSsf`. Branch `fix/workbench-header` pushed; draft PR290. Only Header.tsx, workbench.css and workbench-motion.ts changed at runtime. Transparent announcement/nav blend into the photo, scrolling adds dark frosted styling, and detection boxes stay farther from the edges/header/headline. Intro, other pages, configuration, backend PID and previous release are preserved.
