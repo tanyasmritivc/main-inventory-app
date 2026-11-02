@@ -1,3 +1,11 @@
+## November 1 - Stop response delivered and App Review updated to build166
+
+FindEZ 1.1.1 (166), source `00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6`, is processed VALID and WAITING_FOR_REVIEW. Apple upload delivery `9864067d-9288-48f0-9162-566ba7e90fe7`; review submission `c10d8d96-16f0-4b3a-a340-8bf88d73fdd9`. The user explicitly authorized withdrawal of build162 and replacement with the newest build. Selected build166 is verified; listing metadata, review details and all 14 ordered screenshots are unchanged. Release remains MANUAL; no public release performed. Branch `fix/chat-stop-166` and draft PR287 are pushed, with main unchanged.
+
+The circular send/loading button now stops active text/photo chat, closes the HTTP client even before headers arrive, preserves partial answers/drafts and lets another message start. Late events cannot modify the next turn. Already committed server operations are not undone. Includes voice composer164 and dark default165; saved appearance choices remain intact. No backend/schema/web changes.
+
+Validation: 58 focused checks, all 1,261 Flutter tests (one existing skip), clean analysis, five native iOS stop checks and all five exact-source CI gates (41384044092). The first concurrent full-suite runner stalled and was terminated; the complete standalone rerun passed. Signed archive/export: 33 device executables each, strict signatures, 27 privacy manifests, production configuration, font/credential checks and Apple validation. Artifacts in `Documents/FindEZ/AppStore/1.1.1-build166`; receipt `docs/plans/mobile-chat-stop166-receipt.json`. Physical microphone acceptance remains with the user; TestFlight group availability was not separately checked.
+
 ## November 1 - Dark default delivered to TestFlight165
 
 Apple acknowledged FindEZ 1.1.1 (165), source `34dcb4b7f1a11092d8f53e126fb0db79910eabf1`, delivery `7b82bff1-5316-4d15-9cbc-de0cd135c9d9`. Unset, invalid or unavailable appearance storage defaults to Dark from construction through loaded state. Saved Light, Dark and System preferences are preserved. Branch `fix/dark-default-165` is pushed; PR286 remains separate from main. No web/backend/database changes.

@@ -26,6 +26,7 @@ class WorldComposer extends StatefulWidget {
     this.voiceTranscript = '',
     this.voiceSession,
     required this.onSend,
+    this.onStop,
     required this.busy,
     required this.listening,
     required this.compact,
@@ -38,7 +39,7 @@ class WorldComposer extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
-  final VoidCallback? onAttach, onVoice, onSend;
+  final VoidCallback? onAttach, onVoice, onSend, onStop;
   final VoidCallback? onVoiceStart, onVoiceEnd, onVoiceCancel;
   final String voiceTranscript;
   final VoiceComposerSession? voiceSession;
@@ -333,11 +334,15 @@ class _WorldComposerState extends State<WorldComposer>
                     ),
                   ),
                 ),
-                if (widget.onSend != null || widget.busy) ...[
+                if (widget.onSend != null ||
+                    widget.busy ||
+                    widget.onStop != null) ...[
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    tooltip: 'Send message',
-                    onPressed: widget.onSend,
+                    tooltip: widget.onStop != null
+                        ? 'Stop response'
+                        : 'Send message',
+                    onPressed: widget.onStop ?? widget.onSend,
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.onSurface,
                       foregroundColor: Theme.of(context).colorScheme.surface,
@@ -345,11 +350,23 @@ class _WorldComposerState extends State<WorldComposer>
                         context,
                       ).colorScheme.onSurface.withValues(alpha: .06),
                     ),
-                    icon: widget.busy
-                        ? const SizedBox(
+                    icon: widget.busy || widget.onStop != null
+                        ? SizedBox(
                             width: 19,
                             height: 19,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: widget.onStop != null
+                                      ? Theme.of(context).colorScheme.surface
+                                      : null,
+                                ),
+                                if (widget.onStop != null)
+                                  const Icon(CupertinoIcons.stop_fill, size: 8),
+                              ],
+                            ),
                           )
                         : const Icon(CupertinoIcons.arrow_up),
                   ),

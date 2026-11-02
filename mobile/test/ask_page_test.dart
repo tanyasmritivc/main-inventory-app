@@ -76,7 +76,7 @@ class _AskApi extends ApiClient {
   bool fail;
   final bool captureThenFail;
   final int previewRows;
-  final StreamController<AiStreamEvent>? pending;
+  StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
   final List<String> commands = [];
   final List<String?> requestIds = [];
@@ -339,6 +339,79 @@ void main() {
     });
   }
 
+  for (final world in [true, false]) {
+    for (final partial in [false, true]) {
+      testWidgets(
+        'stop response ${world ? 'world' : 'context'} ${partial ? 'streaming' : 'thinking'} preserves draft and accepts next message',
+        (tester) async {
+          var canceled = false;
+          final pending = StreamController<AiStreamEvent>(
+            onCancel: () {
+              canceled = true;
+            },
+          );
+          final api = _AskApi(world: world, pending: pending);
+          await tester.pumpWidget(
+            _page(api, initialMessage: 'Where is my lantern?'),
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 250));
+          if (partial) {
+            pending.add(
+              AiStreamEvent(
+                type: 'delta',
+                delta: 'The lantern is on the shelf.',
+              ),
+            );
+            await tester.pump();
+          }
+          await tester.enterText(
+            find.byType(TextField),
+            'Keep my next question',
+          );
+          await tester.pump();
+          expect(find.byTooltip('Stop response'), findsOneWidget);
+          await tester.tap(find.byTooltip('Stop response'));
+          await tester.pumpAndSettle();
+          expect(canceled, true);
+          expect(find.byTooltip('Stop response'), findsNothing);
+          expect(find.textContaining('Response stopped.'), findsOneWidget);
+          if (partial) {
+            expect(
+              find.textContaining('The lantern is on the shelf.'),
+              findsOneWidget,
+            );
+          }
+          expect(
+            tester.widget<TextField>(find.byType(TextField)).controller!.text,
+            'Keep my next question',
+          );
+          pending.add(
+            AiStreamEvent(
+              type: 'done',
+              assistantMessage: 'Late response must stay hidden',
+              conversationId: 'stale',
+            ),
+          );
+          await tester.runAsync(pending.close);
+          api.pending = null;
+          await tester.tap(find.byTooltip('Send message'));
+          await tester.pumpAndSettle();
+          expect(api.commands, [
+            'Where is my lantern?',
+            'Keep my next question',
+          ]);
+          expect(
+            find.textContaining('Late response must stay hidden'),
+            findsNothing,
+          );
+          expect(find.textContaining('response was interrupted'), findsNothing);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+  }
   testWidgets('empty Ask has one prompt and no duplicated brand heading', (
     tester,
   ) async {
@@ -392,7 +465,7 @@ void main() {
     }
   }
   final png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==',
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII=',
   );
   Future<void> attach(WidgetTester tester, {bool camera = false}) async {
     await tester.tap(find.byTooltip('Attach photo'));
@@ -834,6 +907,32 @@ void main() {
             .toList(),
         throwsA(isA<AskRequestException>()),
       );
+    },
+  );
+
+  testWidgets(
+    'stop response cancels photo thinking without discarding the sent photo',
+    (tester) async {
+      final pending = StreamController<AiStreamEvent>();
+      final api = _AskApi(world: true, pending: pending);
+      await tester.pumpWidget(
+        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+      );
+      await tester.pumpAndSettle();
+      await attachWorld(tester);
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.tap(find.byTooltip('Stop response'));
+      await tester.pumpAndSettle();
+      expect(api.photos, hasLength(1));
+      expect(find.textContaining('Response stopped.'), findsOneWidget);
+      expect(
+        tester.widget<AskQuestionCard>(find.byType(AskQuestionCard)).photoBytes,
+        isNotNull,
+      );
+      await tester.runAsync(pending.close);
+      await tester.pumpWidget(const SizedBox());
     },
   );
 

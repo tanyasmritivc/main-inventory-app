@@ -447,6 +447,41 @@ class _ChatPageState extends State<ChatPage>
     // Text is painted on receipt, so there is no delayed presentation queue.
   }
 
+  void _stopResponse() {
+    if (!mounted || !_sending) return;
+    // Retire this turn before closing its stream so late events and finally
+    // blocks cannot modify the next request or restart queued work.
+    _requestGeneration++;
+    final active = _activeReply;
+    _activeReply = null;
+    if (active != null) unawaited(active.cancel());
+    _phaseTimer1?.cancel();
+    _phaseTimer2?.cancel();
+    _firstTokenFallbackTimer?.cancel();
+    _fakeTypingTimer?.cancel();
+    _fakeTypingAssistantIndex = -1;
+    _queuedFollowUps.clear();
+    setState(() {
+      _sending = false;
+      _canQueueFollowUp = false;
+      _progress = null;
+      for (var i = 0; i < _session.messages.length; i++) {
+        final message = _session.messages[i];
+        if (message.role == 'assistant' && message.isStreaming) {
+          final partial = message.content.trimRight();
+          _session.messages[i] = message.copyWith(
+            content: partial.isEmpty
+                ? 'Response stopped.'
+                : '$partial\n\nResponse stopped.',
+            isStreaming: false,
+            clearRetry: true,
+          );
+        }
+      }
+    });
+    unawaited(HapticFeedback.lightImpact());
+  }
+
   void _resetChat() {
     _voice.cancel();
     _requestGeneration++;
@@ -3539,6 +3574,7 @@ class _ChatPageState extends State<ChatPage>
                       onVoiceEnd: () => _voice.send(),
                       onVoiceCancel: _voice.cancel,
                       voiceSession: _voice,
+                      onStop: _sending ? _stopResponse : null,
                       onSend: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
@@ -3714,6 +3750,7 @@ class _ChatPageState extends State<ChatPage>
                 onVoiceEnd: () => _voice.send(),
                 onVoiceCancel: _voice.cancel,
                 voiceSession: _voice,
+                onStop: _sending ? _stopResponse : null,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
@@ -3791,6 +3828,7 @@ class _ChatPageState extends State<ChatPage>
                 onVoice: _toggleListening,
                 onVoiceCancel: _voice.cancel,
                 voiceSession: _voice,
+                onStop: _sending ? _stopResponse : null,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
@@ -3913,48 +3951,58 @@ class _ChatPageState extends State<ChatPage>
                       ),
                       onPressed: _toggleListening,
                     ),
-                    GestureDetector(
-                      onTap: canSend
-                          ? () => unawaited(_submit(_controller.text))
-                          : null,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _sending && !_canQueueFollowUp
-                              ? AppTheme.adaptive(
-                                  context,
-                                  const Color(0xFF2C2C2E),
-                                )
+                    Semantics(
+                      container: true,
+                      button: true,
+                      label: _sending ? 'Stop response' : 'Send message',
+                      child: Tooltip(
+                        message: _sending ? 'Stop response' : 'Send message',
+                        child: GestureDetector(
+                          onTap: _sending
+                              ? _stopResponse
                               : canSend
-                              ? AppTheme.action
-                              : AppTheme.adaptive(
-                                  context,
-                                  const Color(0xFF2C2C2E),
-                                ),
-                        ),
-                        child: _sending && !_canQueueFollowUp
-                            ? Padding(
-                                padding: EdgeInsets.all(9),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.7,
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0xFF8E8E93),
-                                  ),
-                                ),
-                              )
-                            : Icon(
-                                Icons.arrow_upward_rounded,
-                                color: canSend
-                                    ? AppTheme.onAction
-                                    : AppTheme.foreground(
+                              ? () => unawaited(_submit(_controller.text))
+                              : null,
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _sending && !_canQueueFollowUp
+                                  ? AppTheme.adaptive(
+                                      context,
+                                      const Color(0xFF2C2C2E),
+                                    )
+                                  : canSend
+                                  ? AppTheme.action
+                                  : AppTheme.adaptive(
+                                      context,
+                                      const Color(0xFF2C2C2E),
+                                    ),
+                            ),
+                            child: _sending && !_canQueueFollowUp
+                                ? Padding(
+                                    padding: EdgeInsets.all(9),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.7,
+                                      color: AppTheme.adaptive(
                                         context,
-                                        const Color(0xFF636366),
+                                        Color(0xFF8E8E93),
                                       ),
-                                size: 20,
-                              ),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.arrow_upward_rounded,
+                                    color: canSend
+                                        ? AppTheme.onAction
+                                        : AppTheme.foreground(
+                                            context,
+                                            const Color(0xFF636366),
+                                          ),
+                                    size: 20,
+                                  ),
+                          ),
+                        ),
                       ),
                     ),
                   ],

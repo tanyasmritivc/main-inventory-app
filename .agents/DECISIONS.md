@@ -1,3 +1,7 @@
+## November 1 - Stop chat response and replace App Store build (166)
+
+The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.
+
 ## November 1 - Dark appearance default (build165)
 
 The user requested Dark as the mobile default. Unset, invalid and unavailable appearance storage now fall back to Dark from first construction through loaded state. Explicitly saved Light, Dark and System choices retain their meaning; no preference migration or overwrite. The existing two themes and appearance controls remain available. Scoped to mobile, with build165 release under the standing TestFlight authorization. Active branch `fix/dark-default-165`, worktree `Projects/findez-voice-composer`.
