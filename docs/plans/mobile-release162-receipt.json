@@ -41,7 +41,10 @@
       "conclusion": "success"
     }
   ],
-  "public_submission": "pending current screenshots and final physical acceptance",
+  "public_submission": "submitted and acknowledged November 1; review now COMPLETE",
+  "current_version_status_checked_at": "2026-11-03T22:40:29Z",
+  "current_version_status": "READY_FOR_SALE",
+  "current_version_selected_build": "166",
   "review_metadata": "updated and read back on November 1",
   "first_archive": "rejected locally: stale simulator objective_c framework; clean rebuild passed all device checks",
   "artifacts": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.1.1-build162",

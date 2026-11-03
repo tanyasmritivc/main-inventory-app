@@ -1,3 +1,11 @@
+## November 3 — Release audit complete; current Apple state reconciled
+
+The resumed build162 task is complete. App Store Connect reports version1.1.1,
+selected build166, READY_FOR_SALE at 22:40 UTC. Original and subsequent reviews
+are COMPLETE. This continuation only verified status and reconciled records;
+no runtime changes, new binary or additional Apple submission. Later TestFlight
+work remains separate.
+
 ## November 1 — Build 162 submitted for public App Review
 
 FindEZ 1.1.1 (162) is WAITING_FOR_REVIEW; release remains MANUAL. Apple acknowledged

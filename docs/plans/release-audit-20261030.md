@@ -60,3 +60,13 @@ checksums/order, credentials and listing notes before sending. An initial local
 notes comparison stopped on a trailing newline; a read-back confirmed the notes
 matched exactly and the normalized guard passed. No Apple rejection occurred.
 Private credentials and Apple asset URLs remain outside the repository.
+
+## November 3 — Resumed task reconciliation
+
+A read-only App Store Connect check at 22:40 UTC confirms version1.1.1 is
+READY_FOR_SALE with selected build166. Original submission
+`dc875d6d-dc6c-4adf-8468-34e58657670f` and subsequent submission
+`c10d8d96-16f0-4b3a-a340-8bf88d73fdd9` are COMPLETE. Newer uploaded
+builds170/169/168 are VALID, but this continuation did not select or submit them.
+The requested audit and public submission were already completed. No additional
+runtime changes, tests, binary or release action are needed for this task.

@@ -1,3 +1,13 @@
+## November 3 — Public review completion verified
+
+Read-only App Store Connect check at 22:40 UTC confirms version 1.1.1 is
+READY_FOR_SALE with selected build166. Both the original build162 submission
+and the later submission are COMPLETE. Build162's audit, physical smoke checks,
+screenshots and submission were completed on November 1; the pending-preparation
+entry below is historical. No new build, resubmission or release action was
+performed during this continuation. Latest uploaded builds170/169/168 are VALID;
+they were not substituted into the released version.
+
 ## November 1 - App Store build 162 uploaded; submission preparation continues
 
 Apple acknowledged 1.1.1 (162), runtime `eb48aba5521908c24bb4c10064ccad7b1d5d4420`, delivery `a79a77bb-80f9-4a4f-aa78-154932b99a5f`. The native-tab tooltip fix passed 1,234 host tests (one existing skip), clean analysis, seven final native checks, and all five CI gates (41090924534). The broader native audit passed 172 core, 168 extended (one documented skip), and 30 current surface checks.
