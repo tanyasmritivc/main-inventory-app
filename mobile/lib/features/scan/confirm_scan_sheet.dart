@@ -195,7 +195,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         : notes.substring(0, notes.length.clamp(0, 2000));
   }
 
-  List<ExtractedInventoryItem> _buildResult() {
+  List<ExtractedInventoryItem> _buildResult({bool keepUncertain = false}) {
     return List.generate(widget.items.length, (i) {
       final orig = widget.items[i];
       return ExtractedInventoryItem(
@@ -228,7 +228,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         ? orig.scanEvidence!.confirmedQuantity()
                         : orig.scanEvidence!)
                     .toJson(),
-                'needs_review': _needsReview(i),
+                'needs_review': keepUncertain && _needsReview(i),
                 'quantity_unit': _unitCtrl[i].text.trim(),
               }),
         reviewId: orig.reviewId,
@@ -760,7 +760,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   const SizedBox(height: 4),
                   AppText(
-                    'Save to this Space. Unknown items go to its Review section.',
+                    'Check the names and quantities, then add these items to the Space.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                       fontSize: 13,
@@ -799,17 +799,16 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      List.generate(n, _needsReview).any((review) => review)
-                          ? 'Unknown items will be saved in ${widget.defaultLocation} / Review. Edit them there later.'
-                          : 'You can edit these items after saving.',
+                      _quantityConfirmed.any((confirmed) => !confirmed)
+                          ? 'Enter the missing quantities to add items to ${widget.defaultLocation}, or keep uncertain items in Review.'
+                          : 'Adding confirms these details for ${widget.defaultLocation}. You can edit them later.',
                     ),
                   ),
                   GestureDetector(
                     onTap:
                         _quantityCtrl.every((c) {
                               final n = int.tryParse(c.text);
-                              return c.text.isEmpty ||
-                                  (n != null && n >= 0 && n <= 100000);
+                              return n != null && n >= 0 && n <= 100000;
                             }) &&
                             _nameCtrl.every((c) => c.text.trim().isNotEmpty)
                         ? () => Navigator.of(context).pop(_buildResult())
@@ -825,7 +824,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         ),
                         child: Center(
                           child: AppText(
-                            'Save to Space',
+                            'Add to Space',
                             style: TextStyle(
                               color: AppTheme.textPrimary(context),
                               fontSize: 15,
@@ -836,6 +835,23 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       ),
                     ),
                   ),
+                  if (List.generate(n, _needsReview).any((review) => review))
+                    TextButton(
+                      onPressed:
+                          _nameCtrl.every((c) => c.text.trim().isNotEmpty) &&
+                              _quantityCtrl.every(
+                                (c) =>
+                                    c.text.isEmpty ||
+                                    (int.tryParse(c.text) != null &&
+                                        int.parse(c.text) >= 0 &&
+                                        int.parse(c.text) <= 100000),
+                              )
+                          ? () => Navigator.of(
+                              context,
+                            ).pop(_buildResult(keepUncertain: true))
+                          : null,
+                      child: const Text('Keep uncertain items in Review'),
+                    ),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(null),

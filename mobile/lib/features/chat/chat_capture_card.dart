@@ -426,12 +426,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     }
   }
 
-  Future<void> _saveItems() async {
+  Future<void> _saveItems({bool confirmItems = true}) async {
     Future<Map<String, dynamic>> send(bool separate) =>
         widget.api.collaboration(
           '$_path/save',
           method: 'POST',
-          data: {'revision': _draft['revision'], 'allow_duplicates': separate},
+          data: {
+            'revision': _draft['revision'],
+            'allow_duplicates': separate,
+            'confirm_items': confirmItems,
+          },
         );
     Map<String, dynamic> response;
     try {
@@ -481,8 +485,10 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   itemBuilder: (context, index) {
                     final item = rows[index]['item'] as Map;
                     final review =
-                        (item['scan_evidence'] as Map?)?['needs_review'] ==
-                        true;
+                        ((_draft['receipt'] as Map?)?['reviews'] as List? ?? [])
+                            .any(
+                              (entry) => entry['index'] == rows[index]['index'],
+                            );
                     return ListTile(
                       title: Text(item['name'] as String),
                       subtitle: Text(
@@ -643,7 +649,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          'Needs Review',
+                          'Check extracted details',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w400,
@@ -695,7 +701,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               ? 'Add the missing quantities, or uncheck those items to save the rest.'
               : _draft['space_id'] == null
               ? 'Choose where to keep these items.'
-              : 'Ready to save to ${_draft['location']}.',
+              : 'Check the names and quantities. Adding confirms these items for ${_draft['location']}.',
           style: TextStyle(
             fontSize: 12,
             color: AppTheme.textSecondary(context),
@@ -711,9 +717,22 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 ? 'Add missing quantity'
                 : _draft['space_id'] == null
                 ? 'Choose a Space'
-                : 'Save items',
+                : 'Add to Space',
           ),
         ),
+        if (_editable &&
+            _draft['space_id'] != null &&
+            _missingRows.isEmpty &&
+            rows.any(
+              (row) =>
+                  row['selected'] == true &&
+                  (row['item']['scan_evidence'] as Map?)?['needs_review'] ==
+                      true,
+            ))
+          TextButton(
+            onPressed: () => _run(() => _saveItems(confirmItems: false)),
+            child: const Text('Keep uncertain items in Review'),
+          ),
       ],
       if (_busy && !_choosing) const LinearProgressIndicator(),
       if (_error != null)
