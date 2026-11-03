@@ -216,13 +216,32 @@ void main() {
         return {'capture': value};
       };
       await mount(t);
-      await t.tap(find.widgetWithText(FilledButton, 'Save items'));
+      await t.tap(find.widgetWithText(FilledButton, 'Add to Space'));
       await t.pumpAndSettle();
       expect(saves, 3);
       expect(value['status'], 'saved');
       expect(value['receipt']['saved_count'], 600);
     },
   );
+
+  for (final confirm in [true, false]) {
+    testWidgets('explicit save choice confirm=$confirm', (t) async {
+      value.addAll({
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      });
+      await mount(t);
+      await t.tap(
+        find.text(confirm ? 'Add to Space' : 'Keep uncertain items in Review'),
+      );
+      await t.pumpAndSettle();
+      final saves = f.requests.where((r) => r.path.endsWith('/save')).toList();
+      expect(saves, hasLength(1));
+      expect(saves.single.data['confirm_items'], confirm);
+      expect(saves.single.data['revision'], 1);
+    });
+  }
 
   test('invalid capture cannot render editable data', () {
     expect(parseChatCapture(draft()), isNotNull);
@@ -240,7 +259,7 @@ void main() {
   for (final brightness in Brightness.values) {
     testWidgets('explicit capture selection and saving $brightness', (t) async {
       await mount(t, brightness: brightness);
-      expect(find.text('Needs Review'), findsOneWidget);
+      expect(find.text('Check extracted details'), findsOneWidget);
       await captureAuditCapture?.call('draft-${brightness.name}');
       expect(find.byType(ActionChip), findsNothing);
       expect(
@@ -257,7 +276,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Garage'), findsOneWidget);
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
-      await t.tap(find.text('Save items'));
+      await t.tap(find.text('Add to Space'));
       await t.pumpAndSettle();
       expect(find.text('Extraction saved'), findsOneWidget);
       expect(find.text('1 saved · 1 in Review'), findsOneWidget);
@@ -379,7 +398,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 400));
     await t.pumpAndSettle();
     expect(value['summary']['unknown_quantity_indices'], isEmpty);
-    expect(find.widgetWithText(FilledButton, 'Save items'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Add to Space'), findsOneWidget);
     expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
   });
   testWidgets('zero quantity correction retains uncertainty', (t) async {
@@ -414,17 +433,18 @@ void main() {
       return normal(r);
     };
     await mount(t);
-    await t.tap(find.text('Save items'));
+    await t.tap(find.text('Add to Space'));
     await t.pumpAndSettle();
     expect(find.text('Possible existing items'), findsOneWidget);
     await t.tap(find.text('Keep draft'));
     await t.pumpAndSettle();
     expect(value['status'], 'draft');
-    await t.tap(find.text('Save items'));
+    await t.tap(find.text('Add to Space'));
     await t.pumpAndSettle();
     await t.tap(find.text('Save separately'));
     await t.pumpAndSettle();
     expect(value['status'], 'saved');
     expect(f.requests.last.data['allow_duplicates'], true);
+    expect(f.requests.last.data['confirm_items'], true);
   });
 }

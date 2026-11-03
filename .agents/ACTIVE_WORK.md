@@ -1,11 +1,14 @@
 ## November 2 - Chat destinations and More picker, build167
 
-Mobile-only implementation on `fix/mobile-destination-scope-167` in the existing
+Mobile implementation on `fix/mobile-destination-scope-167` in the existing
 `Projects/findez-voice-composer` worktree. Chat import destinations now use their
 organization directory and revalidate parent/edit access before opening Spaces.
 More tools share the compact inventory sheet. API keys and account-wide integration
-setup are unchanged. Focused tests and analysis pass; full/native/release checks
-are in progress. See `docs/plans/mobile-destination-scope167.md`.
+setup are unchanged. Explicit Add to Space now accepts checked extraction details,
+with a separate Keep uncertain items in Review action. Missing quantities require
+a count. The additive backend contract is on `fix/capture-confirm-to-space`.
+All 1,276 mobile tests pass (one existing skip), 35 save checks pass, and analysis
+is clean. Native/release checks are in progress. See `docs/plans/mobile-destination-scope167.md`.
 
 ## November 1 - Stop response delivered and App Review updated to build166
 

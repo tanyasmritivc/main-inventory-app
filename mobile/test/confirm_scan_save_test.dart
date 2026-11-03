@@ -67,7 +67,7 @@ void main() {
       List<ExtractedInventoryItem>? result;
       await open(tester, item(), (value) => result = value);
       expect(find.textContaining('Keep 1 in Review'), findsNothing);
-      await tester.tap(find.text('Save to Space'));
+      await tester.tap(find.text('Add to Space'));
       await tester.pumpAndSettle();
       expect(result!.single.needsReview, isFalse);
       expect(result!.single.quantity, 8);
@@ -91,7 +91,10 @@ void main() {
     (tester) async {
       List<ExtractedInventoryItem>? result;
       await open(tester, item(unknown: true), (value) => result = value);
-      await tester.tap(find.text('Save to Space'));
+      await tester.tap(find.text('Add to Space'));
+      await tester.pumpAndSettle();
+      expect(result, isNull);
+      await tester.tap(find.text('Keep uncertain items in Review'));
       await tester.pumpAndSettle();
       expect(result!.single.quantity, 1);
       expect(result!.single.scanEvidence!.quantityBasis, 'unknown');
@@ -106,16 +109,34 @@ void main() {
     },
   );
 
-  testWidgets('unknown identity goes to Review even when its count is known', (
+  testWidgets(
+    'explicit confirmation accepts uncertain identity without a second review',
+    (tester) async {
+      List<ExtractedInventoryItem>? result;
+      final draft = item()..name = 'Unknown item';
+      await open(tester, draft, (value) => result = value);
+      await tester.tap(find.text('Add to Space'));
+      await tester.pumpAndSettle();
+      expect(result!.single.quantity, 8);
+      expect(result!.single.needsReview, isFalse);
+      expect(result!.single.location, 'Pantry');
+    },
+  );
+
+  testWidgets('entering a missing count enables direct Space save', (
     tester,
   ) async {
     List<ExtractedInventoryItem>? result;
-    final draft = item()..name = 'Unknown item';
-    await open(tester, draft, (value) => result = value);
-    await tester.tap(find.text('Save to Space'));
+    await open(tester, item(unknown: true), (value) => result = value);
+    final quantity = find.byKey(const ValueKey('quantity-0'));
+    await tester.ensureVisible(quantity);
+    await tester.enterText(quantity, '7');
+    await tester.pump();
+    await tester.tap(find.text('Add to Space'));
     await tester.pumpAndSettle();
-    expect(result!.single.quantity, 8);
-    expect(result!.single.needsReview, isTrue);
+    expect(result!.single.quantity, 7);
+    expect(result!.single.needsReview, isFalse);
+    expect(result!.single.scanEvidence!.quantityBasis, 'user_confirmed');
     expect(result!.single.location, 'Pantry');
   });
 
@@ -128,7 +149,7 @@ void main() {
       await tester.ensureVisible(quantity);
       await tester.enterText(quantity, '100001');
       await tester.pump();
-      await tester.tap(find.text('Save to Space'));
+      await tester.tap(find.text('Add to Space'));
       await tester.pumpAndSettle();
       expect(result, isNull);
       await tester.enterText(quantity, '6');
@@ -136,7 +157,7 @@ void main() {
       await tester.ensureVisible(unit);
       await tester.enterText(unit, 'tablet');
       await tester.pump();
-      await tester.tap(find.text('Save to Space'));
+      await tester.tap(find.text('Add to Space'));
       await tester.pumpAndSettle();
       expect(result!.single.quantity, 6);
       expect(result!.single.scanEvidence!.quantityUnit, 'tablet');

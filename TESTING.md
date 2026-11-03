@@ -1,3 +1,12 @@
+## Build167 explicit extraction confirmation
+
+`confirm_scan_save_test.dart` verifies direct add, missing-count gating and optional
+Review. `chat_capture_card_test.dart` verifies explicit confirmation versus Review,
+duplicate confirmation and save retry behavior. The combined
+`integration_test/capture_confirm_audit_test.dart` runs these on native iOS.
+Backend contract and retry tests are maintained in the separate
+`fix/capture-confirm-to-space` lane.
+
 ## Organization-scoped destinations (build 167)
 
 Run `flutter test test/inventory_destination_test.dart test/world_shell_test.dart`,
