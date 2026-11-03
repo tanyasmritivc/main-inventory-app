@@ -79,8 +79,15 @@ pubspec to 1.1.2+171.
 Release follow-up
 - CI caught an opaque decorated suggestion panel hiding ListTile ink feedback.
   The panel now uses a clipped Material with the same color, border and radius.
-  Existing suggestion actions, layout and text are preserved. Final checks and
-  signed TestFlight packaging are in progress; upload is not yet acknowledged.
+  Existing suggestion actions, layout and text are preserved.
+- Apple acknowledged TestFlight 1.1.2 (171), runtime 347d941747494c99241092a8a283195ad423350f.
+  Delivery: cc0e3122-88c3-42ac-8c3a-656aa39682e7.
+- Final source passed 1,312 Flutter tests (one existing skip), clean analysis,
+  six final native regression checks and all five exact-source CI gates.
+  Signed package verification and Apple validation passed. See the release
+  receipt at docs/plans/mobile-space171-receipt.json.
+- Processing/tester availability were not polled. Physical camera/model/device
+  acceptance remains with the user. Public App Store submission is unchanged.
 
 Validation results
 - flutter analyze --no-pub: clean.
