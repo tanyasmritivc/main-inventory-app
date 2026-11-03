@@ -9,6 +9,7 @@ import '../test/confirm_scan_save_test.dart' as confirm;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  capture.captureAuditUseNativeViewport = true;
   capture.captureAuditCapture = (name) async {
     final boundary =
         find

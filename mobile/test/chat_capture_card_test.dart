@@ -9,6 +9,7 @@ import 'package:mobile/features/chat/chat_capture_card.dart';
 import 'support/hierarchy_fixture.dart';
 
 Future<void> Function(String)? captureAuditCapture;
+bool captureAuditUseNativeViewport = false;
 
 const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     inv = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
@@ -109,10 +110,14 @@ void main() {
     double scale = 1,
     ValueChanged<AskResourceLink>? onOpen,
   }) async {
-    t.view.physicalSize = const Size(390, 844);
-    t.view.devicePixelRatio = 1;
-    addTearDown(t.view.resetPhysicalSize);
-    addTearDown(t.view.resetDevicePixelRatio);
+    // Native keyboard insets use device pixels. A fake 390px view with DPR 1
+    // makes the real iOS keyboard taller than this test's entire screen.
+    if (!captureAuditUseNativeViewport) {
+      t.view.physicalSize = const Size(390, 844);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+    }
     await t.pumpWidget(
       MaterialApp(
         theme: AppTheme.create(brightness),
@@ -368,6 +373,9 @@ void main() {
         t.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
         '',
       );
+      await t.pump(const Duration(milliseconds: 700));
+      await t.ensureVisible(find.text('Leave this item out for now'));
+      await t.pumpAndSettle();
       await t.tap(find.text('Leave this item out for now'));
       await t.pumpAndSettle();
       await t.pump(const Duration(milliseconds: 400));
@@ -393,6 +401,9 @@ void main() {
     await t.tap(find.text('Add quantity'));
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextFormField), '1');
+    await t.pump(const Duration(milliseconds: 700));
+    await t.ensureVisible(find.text('Update quantity'));
+    await t.pumpAndSettle();
     await t.tap(find.text('Update quantity'));
     await t.pumpAndSettle();
     await t.pump(const Duration(milliseconds: 400));
