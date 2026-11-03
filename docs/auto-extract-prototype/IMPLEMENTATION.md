@@ -18,8 +18,8 @@ not undo items outside that receipt.
 Adaptations to actual data and existing capabilities:
 
 - No bounding boxes: the current extracted-item contract has no geometry.
-- No fabricated detected-item events or progress percentage. The sweep runs while
-  the real request is pending; returned rows reveal 120ms apart.
+- No fabricated detected-item events or progress percentage. Loading uses an
+  indeterminate activity bar; returned rows reveal 120ms apart.
 - Actual image URLs supply crops. A photo placeholder appears when no crop exists.
 - No demo recent photos are shown; the app has no recent-photo collection.
 - Numeric confidence below 0.6 starts left out, with explicit inclusion available.
@@ -59,3 +59,26 @@ shorter and describes reviewing items before saving.
 reachability, nested navigation, source results, cancellation and rendered font
 weight. `integration_test/extract_photo_sheet_audit_test.dart` runs the same
 checks on iOS and captures layout images.
+
+## Loading progress and viewport correction
+
+The loader no longer passes server object-count messages through to the screen.
+It maps recognized status events to Preparing photo, Scanning photo and Analyzing
+details. Receipt of a capture draft changes the label to Preparing your review.
+Repeated or earlier-stage heartbeat messages cannot move the phase backwards,
+and unknown status text cannot leak provisional counts. These are event-driven
+phases, not timed claims that the server has finished work.
+
+The fixed 8% bar is replaced by indeterminate activity. Reduce Motion displays a
+static activity icon. The large portrait photo is bounded to 28% of screen height
+(up to 240pt), displayed in full with contain fit, and no longer duplicated during
+its active scan. Placeholder item tiles and the decorative sweep are removed.
+A dark card provides contrast in both appearances. Extraction and review use a
+list clipped between the header and composer; normal conversation retains its
+existing scroll-under presentation. All typography remains regular.
+
+The Ask scanning regression checks count-free streamed updates, heartbeat order,
+indeterminate activity, bounded photo layout and Stop preserving typed text.
+Viewport coverage checks that scrolling cannot put extraction content behind the
+controls. Existing small-screen, keyboard, review, edit, save and cancellation
+checks remain. No API contracts or backend behavior changed.

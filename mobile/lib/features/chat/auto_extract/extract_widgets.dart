@@ -29,11 +29,13 @@ class ExtractPhoto extends StatelessWidget {
     this.height,
     this.width,
     this.radius = 18,
+    this.fit = BoxFit.cover,
   });
   final Uint8List? bytes;
   final String? url;
   final double? height, width;
   final double radius;
+  final BoxFit fit;
   @override
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(radius),
@@ -44,7 +46,7 @@ class ExtractPhoto extends StatelessWidget {
               bytes!,
               height: height,
               width: width,
-              fit: BoxFit.cover,
+              fit: fit,
               errorBuilder: (_, _, _) => _fallback(),
             )
           : url != null && url!.isNotEmpty
@@ -52,7 +54,7 @@ class ExtractPhoto extends StatelessWidget {
               url!,
               height: height,
               width: width,
-              fit: BoxFit.cover,
+              fit: fit,
               errorBuilder: (_, _, _) => _fallback(),
             )
           : _fallback(),
@@ -225,6 +227,40 @@ class ExtractTiles extends StatelessWidget {
   }
 }
 
+enum ExtractScanPhase {
+  preparing('Preparing photo...', 'Getting your photo ready for analysis.'),
+  scanning('Scanning photo...', 'Checking shapes and visual features.'),
+  analyzing('Analyzing details...', 'Examining the photo and reading labels.'),
+  review('Preparing your review...', 'Arranging the results for you to check.');
+
+  const ExtractScanPhase(this.label, this.detail);
+  final String label, detail;
+
+  // Server copy can include provisional object counts. Present only known,
+  // count-free phases and keep heartbeats from moving the UI backwards.
+  ExtractScanPhase advance(String message) {
+    final text = message.toLowerCase();
+    final next = switch (text) {
+      _ when text.contains('review') || text.contains('render') => review,
+      _
+          when text.contains('detail') ||
+              text.contains('identif') ||
+              text.contains('recogn') ||
+              text.contains('analy') =>
+        analyzing,
+      _
+          when text.contains('scan') ||
+              text.contains('detect') ||
+              text.contains('finding') ||
+              text.contains('segment') ||
+              text.contains('reading your photo') =>
+        scanning,
+      _ => this,
+    };
+    return next.index > index ? next : this;
+  }
+}
+
 class ExtractScanning extends StatefulWidget {
   const ExtractScanning({
     super.key,
@@ -237,181 +273,80 @@ class ExtractScanning extends StatefulWidget {
   State<ExtractScanning> createState() => _ExtractScanningState();
 }
 
-class _ExtractScanningState extends State<ExtractScanning>
-    with TickerProviderStateMixin {
-  late final AnimationController _motion = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1800),
+class _ExtractScanningState extends State<ExtractScanning> {
+  late ExtractScanPhase _phase = ExtractScanPhase.preparing.advance(
+    widget.message,
   );
-  late final AnimationController _dots = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
-  late final AnimationController _shimmer = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  );
+
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context) ||
-        MediaQuery.accessibleNavigationOf(context)) {
-      _motion.stop();
-      _dots.stop();
-      _shimmer.stop();
-    } else {
-      _motion.repeat();
-      _dots.repeat();
-      _shimmer.repeat();
-    }
+  void didUpdateWidget(covariant ExtractScanning oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _phase = _phase.advance(widget.message);
   }
 
   @override
-  void dispose() {
-    _motion.dispose();
-    _dots.dispose();
-    _shimmer.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final photoHeight = (MediaQuery.sizeOf(context).height * .28).clamp(
+      120.0,
+      240.0,
+    );
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ExtractStyle.bg,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              _phase.label,
+              key: const Key('extraction-status'),
+              style: ExtractStyle.text(18),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _phase.detail,
+            style: ExtractStyle.text(14, color: ExtractStyle.tx2),
+          ),
+          const SizedBox(height: 16),
+          ExtractPhoto(
+            bytes: widget.photo,
+            width: double.infinity,
+            height: photoHeight,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 16),
+          if (reduceMotion)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: CupertinoActivityIndicator(animating: false),
+            )
+          else
+            const ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(2)),
+              child: LinearProgressIndicator(
+                minHeight: 3,
+                color: ExtractStyle.white,
+                backgroundColor: ExtractStyle.s2,
+                semanticsLabel: 'Photo analysis in progress',
+              ),
+            ),
+          const SizedBox(height: 12),
+          Text(
+            'Nothing is saved until you review and approve.',
+            style: ExtractStyle.text(13, color: ExtractStyle.tx2),
+          ),
+        ],
+      ),
+    );
   }
-
-  @override
-  Widget build(BuildContext context) => ExtractReply(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Looking at your photo',
-                style: ExtractStyle.text(15.5),
-              ),
-            ),
-            AnimatedBuilder(
-              animation: _dots,
-              builder: (_, _) => Row(
-                children: [
-                  for (var i = 0; i < 3; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Opacity(
-                        opacity:
-                            .25 +
-                            .75 *
-                                (1 -
-                                    ((_dots.value - i * .125) % 1 - .5).abs() *
-                                        2),
-                        child: Container(
-                          width: 5,
-                          height: 5,
-                          decoration: const BoxDecoration(
-                            color: ExtractStyle.tx2,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          widget.message,
-          style: ExtractStyle.text(13.5, color: ExtractStyle.tx2),
-        ),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            children: [
-              ExtractPhoto(bytes: widget.photo, width: double.infinity),
-              if (!MediaQuery.disableAnimationsOf(context) &&
-                  !MediaQuery.accessibleNavigationOf(context))
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: AnimatedBuilder(
-                      animation: _motion,
-                      builder: (_, _) => LayoutBuilder(
-                        builder: (_, b) => Stack(
-                          children: [
-                            Positioned(
-                              top:
-                                  (-.45 +
-                                      1.45 *
-                                          Curves.easeInOut.transform(
-                                            _motion.value,
-                                          )) *
-                                  b.maxHeight,
-                              left: 0,
-                              right: 0,
-                              height: b.maxHeight * .45,
-                              child: const DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0x00ffffff),
-                                      Color(0x38ffffff),
-                                      Color(0xccffffff),
-                                    ],
-                                    stops: [0, .85, 1],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        const LinearProgressIndicator(
-          minHeight: 3,
-          color: ExtractStyle.white,
-          backgroundColor: ExtractStyle.s2,
-          value: .08,
-        ),
-        const SizedBox(height: 12),
-        AnimatedBuilder(
-          animation: _shimmer,
-          builder: (context, _) => ShaderMask(
-            blendMode: BlendMode.srcATop,
-            shaderCallback: (rect) => LinearGradient(
-              begin: Alignment(-3 + _shimmer.value * 6, 0),
-              end: Alignment(-2 + _shimmer.value * 6, 0),
-              colors: const [
-                Color(0x00ffffff),
-                Color(0x0fffffff),
-                Color(0x00ffffff),
-              ],
-            ).createShader(rect),
-            child: Row(
-              children: [
-                for (var i = 0; i < 2; i++)
-                  Expanded(
-                    child: Container(
-                      height: 62,
-                      margin: EdgeInsets.only(right: i == 0 ? 8 : 0),
-                      decoration: BoxDecoration(
-                        color: ExtractStyle.s1,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 class ExtractReveal extends StatefulWidget {

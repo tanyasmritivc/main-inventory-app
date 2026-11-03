@@ -1,3 +1,21 @@
+## November 2 - Extraction loading and screen layout complete
+
+Branch `fix/extraction-loading-layout` builds on the photo-sheet/regular-font fix.
+The loading bar is indeterminate instead of fixed at 8%. Server count messages
+map to count-free Preparing photo, Scanning photo and Analyzing details stages;
+a received capture draft switches to Preparing your review. Stale heartbeats
+cannot move the phase backwards. The photo is bounded and shown once during
+scanning; placeholder tiles are removed. Extraction/review scroll between the
+header and composer instead of behind them. Regular typography is retained.
+
+Validation: 1,297 mobile tests pass (one existing skip), nine native iOS extraction
+and keyboard checks pass, clean Flutter analysis and diff checks. Native loading
+and compact-keyboard screenshots were inspected; saved previews are in
+`/Users/tanyasmritivictorcharles/projects/findez-loader-preview`. Camera/model
+acceptance remains unverified. No new TestFlight upload: the prior release's
+trusted production configuration and Apple API metadata remain absent locally.
+See `.agents/HANDOFFS/2026-11-02-photo-sheet-delivery.md` for release continuation.
+
 ## November 2 - Photo picker layout and regular typography complete
 
 Branch `fix/photo-picker-layout-171` fixes the screenshot's full-page blur with a
