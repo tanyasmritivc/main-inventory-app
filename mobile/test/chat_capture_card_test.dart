@@ -220,7 +220,9 @@ void main() {
       await t.tap(find.byTooltip('Edit Drill'));
       await t.pumpAndSettle();
       await t.enterText(find.byType(TextFormField).first, 'Cordless drill');
+      await t.pumpAndSettle();
       await t.ensureVisible(find.text('Done'));
+      await t.pumpAndSettle();
       if (captureAuditCapture != null) await captureAuditCapture!('photo-edit');
       await t.tap(find.text('Done'));
       await t.pumpAndSettle();

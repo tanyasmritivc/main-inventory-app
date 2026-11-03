@@ -39,6 +39,12 @@ abstract final class ExtractStyle {
           borderRadius: BorderRadius.circular(height / 2),
         ),
         textStyle: text(15, weight: FontWeight.w600),
+      ).copyWith(
+        backgroundBuilder: (context, states, child) =>
+            child ?? const SizedBox.shrink(),
+        elevation: const WidgetStatePropertyAll(0),
+        shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
       );
 }
 
