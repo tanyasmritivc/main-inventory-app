@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:mobile/core/ui/native_menu_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
@@ -101,9 +100,7 @@ void main() {
   }
 
   Future<void> open(WidgetTester tester) async {
-    await tester.ensureVisible(find.text('Add Item'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Add Item'));
+    await tester.tap(find.byTooltip('Add items'));
     await tester.pumpAndSettle();
   }
 
@@ -119,7 +116,7 @@ void main() {
     tester,
   ) async {
     await mount(tester);
-    final button = find.byType(FloatingActionButton);
+    final button = find.byTooltip('Add items');
     await tester.tap(button);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
@@ -132,7 +129,7 @@ void main() {
         )
         .first;
     expect(fade.opacity.value, inExclusiveRange(0, 1));
-    await tester.tap(button);
+    await tester.tapAt(const Offset(10, 120));
     await tester.pumpAndSettle();
     expect(find.text('Scan Photo').hitTestable(), findsNothing);
     await tester.tap(button);
@@ -148,14 +145,7 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
       final api = await mount(tester);
-      final menu = find.byWidgetPredicate(
-        (widget) => widget is AppMenuButton && widget.label == 'Space options',
-      );
-      expect(
-        find.descendant(of: menu, matching: find.byType(NativeToolbarButton)),
-        findsNothing,
-      );
-      await tester.tap(find.byTooltip('Space options'));
+      await tester.tap(find.byTooltip('More'));
       await tester.pumpAndSettle();
       expect(find.text('Print Bin Label'), findsOneWidget);
       await tester.tap(
@@ -174,19 +164,18 @@ void main() {
     },
   );
 
-  testWidgets(
-    'empty Space Add Item opens three capture choices without a write',
-    (tester) async {
-      await mount(tester);
-      await open(tester);
-      expectChoices();
-      expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
-    },
-  );
+  testWidgets('empty Space dock opens capture choices without a write', (
+    tester,
+  ) async {
+    await mount(tester);
+    await open(tester);
+    expectChoices();
+    expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+  });
 
   testWidgets('plus opens the same capture choices', (tester) async {
     await mount(tester);
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byTooltip('Add items'));
     await tester.pumpAndSettle();
     expectChoices();
   });
@@ -246,7 +235,7 @@ void main() {
     ) async {
       await mount(tester, readOnly: !viewer, viewer: viewer);
       expect(find.text('Add Item'), findsNothing);
-      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.byTooltip('Add items'), findsNothing);
       expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
     });
   }
@@ -256,7 +245,11 @@ void main() {
   ) async {
     await mount(tester, size: const Size(320, 844), textScale: 1.8);
     await open(tester);
-    expectChoices();
+    for (final label in ['Scan Photo', 'Import Spreadsheet', 'Scan Barcode']) {
+      await tester.ensureVisible(find.text(label));
+      await tester.pumpAndSettle();
+      expect(find.text(label).hitTestable(), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
   });
 }

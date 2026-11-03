@@ -1,4 +1,7 @@
-import '../../core/ui/scroll_glass.dart';
+import 'space_v2/space_style.dart';
+import 'space_v2/space_widgets.dart';
+import 'space_v2/space_quick_view.dart';
+import 'space_v2/space_ask.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
 import '../../core/ui/native_menu_button.dart';
@@ -99,8 +102,7 @@ class LocationItemsPage extends StatefulWidget {
   State<LocationItemsPage> createState() => _LocationItemsPageState();
 }
 
-class _LocationItemsPageState extends State<LocationItemsPage>
-    with SingleTickerProviderStateMixin {
+class _LocationItemsPageState extends State<LocationItemsPage> {
   late final AccountRefresh _accountRefresh;
   late String _location;
   String? _syncError;
@@ -108,15 +110,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
   bool _changed = false;
-  bool _fabOpen = false;
-  late final AnimationController _fabController;
-  late final CurvedAnimation _fabAnimation;
   late final TextEditingController _joinCodeCtrl;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
-  bool _searchOpen = false;
+  Set<String>? _answerIds;
   bool _onlyLowQuantity = false;
   late final TextEditingController _spaceSearchController;
   ItemSortOption _sortOption = ItemSortOption.nameAZ;
@@ -124,8 +123,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   @override
   void dispose() {
     _accountRefresh.dispose();
-    _fabAnimation.dispose();
-    _fabController.dispose();
     _joinCodeCtrl.dispose();
     _listScrollController.dispose();
     _spaceSearchController.dispose();
@@ -151,17 +148,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     _location = widget.location;
     _accountRefresh = AccountRefresh(
       refresh: _refreshSpace,
-      isActive: () =>
-          mounted && (ModalRoute.of(context)?.isCurrent ?? true) && (!_fabOpen),
-    );
-    _fabController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    );
-    _fabAnimation = CurvedAnimation(
-      parent: _fabController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
+      isActive: () => mounted && (ModalRoute.of(context)?.isCurrent ?? true),
     );
     _joinCodeCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
@@ -298,11 +285,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     }
   }
 
-  Widget _buildItemRow(InventoryItem item) {
-    final threshold = _thresholds[item.itemId];
-    final isLow =
-        threshold != null && threshold >= 0 && item.quantity <= threshold;
-    final imageUrl = (item.imageUrl ?? '').trim();
+  Widget _buildItemRow(InventoryItem item, {bool divider = true}) {
     return Dismissible(
       key: ValueKey(item.itemId),
       direction: widget.readOnly
@@ -334,77 +317,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         }
         return false;
       },
-      child: InkWell(
-        onTap: () => _editItem(item),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              if (imageUrl.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: PrivateImage(
-                    imageUrl,
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      item.displayName,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    AppText(
-                      [
-                        if (item.displayDescription != null)
-                          item.displayDescription!,
-                        item.category,
-                      ].join(' · '),
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isLow) ...[
-                Icon(
-                  Icons.error_outline_rounded,
-                  size: 16,
-                  color: AppTheme.foreground(context, AppColors.danger),
-                ),
-                const SizedBox(width: 8),
-              ],
-              AppText(
-                'Qty ${item.quantity}',
-                style: TextStyle(
-                  fontFamily: 'CupertinoSystemText',
-                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 4),
-              IconButton(
-                tooltip: 'Details for ${item.displayName}',
-                onPressed: () => _showProductInfo(context, item),
-                icon: const Icon(Icons.info_outline, size: 20),
-              ),
-            ],
-          ),
-        ),
+      child: SpaceItemRow(
+        item: item,
+        divider: divider,
+        onTap: () => _quickView(item),
+        low: spaceItemIsLow(item, _thresholds[item.itemId]),
       ),
     );
   }
@@ -505,8 +422,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   List<String> _sortedCategoryPills() {
     final catSet = <String>{};
-    for (final it in widget.allItems) {
-      if (it.spaceId != widget.spaceId) continue;
+    for (final it in _items) {
       final c = it.category.trim().isEmpty
           ? 'Uncategorized'
           : it.category.trim();
@@ -543,17 +459,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       permission: widget.readOnly ? 'view' : 'edit',
       initialThreshold: existingThr,
       spaceName: _location,
-      onItemUpdated: (updated) {
-        if (!mounted) return;
-        final index = _items.indexWhere(
-          (entry) => entry.itemId == updated.itemId,
-        );
-        if (index == -1) return;
-        setState(() {
-          _items[index] = updated;
-          _changed = true;
-        });
-      },
+      onItemUpdated: _acceptUpdated,
       onThresholdChanged: (threshold) {
         if (!mounted) return;
         final next = Map<String, int>.from(_thresholds);
@@ -667,85 +573,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     );
   }
 
-  Widget _buildGroupedList() {
-    final groups = <String, List<InventoryItem>>{};
-    for (final item in _items) {
-      final cat = item.category.trim().isEmpty
-          ? 'Uncategorized'
-          : item.category.trim();
-      groups.putIfAbsent(cat, () => []).add(item);
-    }
-    final sortedCats = groups.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    for (final cat in sortedCats) {
-      sortInventoryItems(groups[cat]!, _sortOption);
-    }
-
-    final displayedCats = _selectedCategory == 'All'
-        ? sortedCats
-        : sortedCats.where((c) => c == _selectedCategory).toList();
-
-    final filteredGroups = <String, List<InventoryItem>>{};
-    for (final cat in displayedCats) {
-      final matches = (groups[cat] ?? []).where(_matchesSpaceSearch).toList();
-      if (matches.isNotEmpty) filteredGroups[cat] = matches;
-    }
-    final filteredCats = displayedCats
-        .where((c) => filteredGroups.containsKey(c))
-        .toList();
-
-    if (filteredCats.isEmpty &&
-        (_spaceSearchQuery.trim().isNotEmpty || _onlyLowQuantity)) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: Text(
-            _onlyLowQuantity
-                ? 'No low-quantity items match this view'
-                : 'No items match your search',
-          ),
-        ),
-      );
-    }
-
-    // One lazy viewport for the entire Space, including category headings.
-    final entries = <Object>[];
-    for (final cat in filteredCats) {
-      entries.add(cat);
-      entries.addAll(filteredGroups[cat]!);
-    }
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-      sliver: SliverList.builder(
-        itemCount: entries.length,
-        itemBuilder: (context, index) {
-          final entry = entries[index];
-          if (entry is String) {
-            return Padding(
-              key: _categoryKeys[entry],
-              padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
-              child: Text(
-                '$entry  ·  ${filteredGroups[entry]!.length}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.textSecondary(context),
-                ),
-              ),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Material(
-              color: AppTheme.adaptive(context, const Color(0xFF171717)),
-              borderRadius: BorderRadius.circular(16),
-              clipBehavior: Clip.antiAlias,
-              child: _buildItemRow(entry as InventoryItem),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_removed) {
@@ -756,437 +583,734 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         ),
       );
     }
-
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      extendBody: true,
-      bottomNavigationBar: IgnorePointer(
-        child: ScrollGlass(
-          top: false,
-          child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
-        ),
-      ),
-      backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(
-        flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
-        title: _searchOpen
-            ? TextField(
-                controller: _spaceSearchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search this space',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) => setState(() => _spaceSearchQuery = value),
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              )
-            : AppText(_location),
-        bottom: _syncError == null
-            ? null
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(44),
-                child: Text(_syncError!),
-              ),
-        centerTitle: true,
-        leading: BackButton(
-          onPressed: () => Navigator.of(context).pop(_changed),
-        ),
-        actions: [
-          IconButton(
-            tooltip: _searchOpen ? 'Close search' : 'Search this space',
-            icon: Icon(_searchOpen ? Icons.close : Icons.search),
-            onPressed: () => setState(() {
-              _searchOpen = !_searchOpen;
-              if (!_searchOpen) {
-                _spaceSearchController.clear();
-                _spaceSearchQuery = '';
-                FocusScope.of(context).unfocus();
-              }
-            }),
-          ),
-          NotificationBell(api: widget.api),
-          AppMenuButton(
-            label: 'Space options',
-            useNative: false,
-            onSelected: _onFabItemTap,
-            items: [
-              if (!widget.readOnly)
-                const AppMenuItem(
-                  'Import Spreadsheet',
-                  'Import Spreadsheet',
-                  'tablecells',
-                ),
-              if (!widget.readOnly &&
-                  (widget.api.inventoryContext == null ||
-                      widget.api.inventoryContext!.isPersonal))
-                const AppMenuItem(
-                  'Share Space',
-                  'Share Space',
-                  'square.and.arrow.up',
-                ),
-              if (widget.api.inventoryContext == null)
-                const AppMenuItem(
-                  'Join Space',
-                  'Join Space',
-                  'person.badge.plus',
-                ),
-              const AppMenuItem('Print Bin Label', 'Print Bin Label', 'qrcode'),
-              if (widget.api.inventoryContext == null ||
-                  widget.api.inventoryContext!.isPersonal)
-                const AppMenuItem('Members', 'Members', 'person.2'),
-            ],
-          ),
-        ],
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Stack(
-        children: [
-          Container(
-            color: AppTheme.bg(context),
-            child: CustomScrollView(
-              controller: _listScrollController,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height:
-                        MediaQuery.paddingOf(context).top +
-                        kToolbarHeight +
-                        (_syncError == null ? 12 : 56),
-                  ),
-                ),
-                // Stats bar + action toolbar — scrolls away
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                        child: Text(
-                          '${_items.length} items · ${_totalCount()} units',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppTheme.textSecondary(context),
-                              ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                        child: _buildReviewCard(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InventoryChatButton(
-                            api: widget.api,
-                            prominent: true,
+    final inventory = widget.api.inventoryContext;
+    final filtered = _items
+        .where(
+          (item) =>
+              _matchesSpaceSearch(item) &&
+              (_selectedCategory == 'All' ||
+                  (item.category.trim().isEmpty
+                          ? 'Uncategorized'
+                          : item.category.trim()) ==
+                      _selectedCategory) &&
+              (_answerIds == null || _answerIds!.contains(item.itemId)),
+        )
+        .toList();
+    sortInventoryItems(filtered, _sortOption);
+    final categories = _sortedCategoryPills();
+    return Theme(
+      data: SpaceStyle.theme(context),
+      child: Builder(
+        builder: (context) => Scaffold(
+          backgroundColor: SpaceStyle.bg,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                AnimatedBuilder(
+                  animation: _listScrollController,
+                  builder: (_, _) {
+                    final collapsed =
+                        _listScrollController.hasClients &&
+                        _listScrollController.offset > 70;
+                    return Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: collapsed
+                                ? SpaceStyle.line
+                                : Colors.transparent,
                           ),
                         ),
-                        if (_items.isNotEmpty) ...[
+                      ),
+                      child: Row(
+                        children: [
+                          SpaceCircle(
+                            label: 'Back',
+                            icon: Icons.chevron_left,
+                            onTap: () => Navigator.of(context).pop(_changed),
+                          ),
+                          Expanded(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              child: collapsed
+                                  ? Text(
+                                      _location,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: SpaceStyle.text(17),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: SpaceStyle.card(22),
+                            child: NotificationBell(api: widget.api),
+                          ),
                           const SizedBox(width: 8),
-                          IconButton.outlined(
-                            tooltip: 'Sort items',
-                            icon: const Icon(Icons.sort),
-                            onPressed: () => showItemSortSheet(
-                              context,
-                              _sortOption,
-                              (opt) async {
-                                await saveSortPref(opt);
-                                if (mounted) {
-                                  setState(() => _sortOption = opt);
-                                }
-                              },
+                          PopupMenuButton<String>(
+                            tooltip: 'More',
+                            color: SpaceStyle.menu,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 230,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              side: const BorderSide(color: SpaceStyle.line2),
+                            ),
+                            onSelected: _onFabItemTap,
+                            itemBuilder: (_) => [
+                              if (!widget.readOnly && widget.api.canEdit)
+                                _spaceMenu(
+                                  'Import Spreadsheet',
+                                  Icons.table_chart_outlined,
+                                ),
+                              if (!widget.readOnly &&
+                                  widget.api.canEdit &&
+                                  (inventory == null || inventory.isPersonal))
+                                _spaceMenu('Share Space', Icons.ios_share),
+                              if (inventory == null)
+                                _spaceMenu(
+                                  'Join Space',
+                                  Icons.person_add_outlined,
+                                ),
+                              _spaceMenu('Print Bin Label', Icons.qr_code),
+                              if (inventory == null || inventory.isPersonal)
+                                _spaceMenu('Members', Icons.people_outline),
+                            ],
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: SpaceStyle.card(22),
+                              child: const Icon(Icons.more_horiz),
                             ),
                           ),
                         ],
-                      ],
+                      ),
+                    );
+                  },
+                ),
+                if (_syncError != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      _syncError!,
+                      style: SpaceStyle.text(13, SpaceStyle.amber),
                     ),
                   ),
-                ),
-                // Search bar + category pills — pinned
-                if (_items.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      color: AppTheme.adaptive(context, Colors.black),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Category filter pills
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: SizedBox(
-                              height: 68,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                Expanded(
+                  child: Stack(
+                    children: [
+                      CustomScrollView(
+                        controller: _listScrollController,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (inventory != null)
+                                    Text(
+                                      '${inventory.workspaceName} · ${inventory.name}',
+                                      style: SpaceStyle.text(
+                                        13.5,
+                                        SpaceStyle.tx2,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 9),
+                                  Text(
+                                    _location,
+                                    style: SpaceStyle.text(
+                                      34,
+                                    ).copyWith(letterSpacing: -1.02),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
+                                    style: SpaceStyle.text(15, SpaceStyle.tx2),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: SpaceStatusCard(
+                                          icon: Icons.photo_library_outlined,
+                                          title: 'Review',
+                                          subtitle: 'Items to finish',
+                                          onTap: _openReview,
+                                          onLongPress: _openReview,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: SpaceStatusCard(
+                                          icon: Icons.inventory_2_outlined,
+                                          title: 'Low quantity',
+                                          subtitle:
+                                              '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
+                                          active: _onlyLowQuantity,
+                                          onTap: () => setState(() {
+                                            _onlyLowQuantity =
+                                                !_onlyLowQuantity;
+                                            _answerIds = null;
+                                          }),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SliverPersistentHeader(
+                            pinned: true,
+                            delegate: SpacePinnedHeader(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  14,
+                                  20,
+                                  10,
                                 ),
-                                physics: const BouncingScrollPhysics(),
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(width: 8),
-                                itemCount: _sortedCategoryPills().length,
-                                itemBuilder: (_, i) {
-                                  final pills = _sortedCategoryPills();
-                                  final label = pills[i];
-                                  final isActive = _selectedCategory == label;
-                                  return GestureDetector(
-                                    onTap: () => _onCategoryPillTapped(label),
-                                    child: GlassControl(
-                                      radius: 20,
-                                      selected: isActive,
+                                child: Row(
+                                  children: [
+                                    Expanded(
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 6,
+                                        decoration: SpaceStyle.card(22),
+                                        child: Row(
+                                          children: [
+                                            const SizedBox(width: 14),
+                                            const Icon(
+                                              Icons.search,
+                                              size: 18,
+                                              color: SpaceStyle.tx2,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: TextField(
+                                                controller:
+                                                    _spaceSearchController,
+                                                style: SpaceStyle.text(15.5),
+                                                textInputAction:
+                                                    TextInputAction.search,
+                                                decoration: InputDecoration(
+                                                  hintText:
+                                                      'Search ${spaceCount(_items.length)} items',
+                                                  hintStyle: SpaceStyle.text(
+                                                    15.5,
+                                                    SpaceStyle.tx3,
+                                                  ),
+                                                  border: InputBorder.none,
+                                                  enabledBorder:
+                                                      InputBorder.none,
+                                                  focusedBorder:
+                                                      InputBorder.none,
+                                                  filled: false,
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 10,
+                                                      ),
+                                                  isDense: true,
+                                                ),
+                                                onChanged: (value) =>
+                                                    setState(() {
+                                                      _spaceSearchQuery = value;
+                                                      _answerIds = null;
+                                                    }),
+                                                onSubmitted: (_) =>
+                                                    FocusScope.of(
+                                                      context,
+                                                    ).unfocus(),
+                                              ),
+                                            ),
+                                            if (_spaceSearchQuery.isNotEmpty)
+                                              IconButton(
+                                                tooltip: 'Clear search',
+                                                icon: const Icon(
+                                                  Icons.cancel,
+                                                  size: 20,
+                                                  color: SpaceStyle.tx2,
+                                                ),
+                                                onPressed: () => setState(() {
+                                                  _spaceSearchController
+                                                      .clear();
+                                                  _spaceSearchQuery = '';
+                                                }),
+                                              ),
+                                          ],
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.transparent,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    SpaceCircle(
+                                      label: 'Sort',
+                                      icon: Icons.swap_vert,
+                                      onTap: _openSort,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child:
+                                        _onlyLowQuantity || _answerIds != null
+                                        ? Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: InputChip(
+                                              label: Text(
+                                                _onlyLowQuantity
+                                                    ? 'Low quantity'
+                                                    : 'Ask results',
+                                              ),
+                                              backgroundColor: SpaceStyle.white,
+                                              labelStyle: SpaceStyle.text(
+                                                12.5,
+                                                SpaceStyle.bg,
+                                              ),
+                                              deleteIconColor: SpaceStyle.bg,
+                                              onDeleted: () => setState(() {
+                                                _onlyLowQuantity = false;
+                                                _answerIds = null;
+                                              }),
+                                            ),
+                                          )
+                                        : Text(
+                                            '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
+                                            style: SpaceStyle.text(
+                                              12.5,
+                                              SpaceStyle.tx3,
+                                            ),
                                           ),
+                                  ),
+                                  Flexible(
+                                    child: Text(
+                                      itemSortLabel(_sortOption),
+                                      textAlign: TextAlign.right,
+                                      style: SpaceStyle.text(
+                                        12.5,
+                                        SpaceStyle.tx3,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (categories.length > 2)
+                            SliverToBoxAdapter(
+                              child: SizedBox(
+                                height: 52,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  itemCount: categories.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(width: 8),
+                                  itemBuilder: (_, i) => ChoiceChip(
+                                    label: Text(categories[i]),
+                                    selected:
+                                        categories[i] == _selectedCategory,
+                                    showCheckmark: false,
+                                    selectedColor: SpaceStyle.white,
+                                    backgroundColor: SpaceStyle.s1,
+                                    labelStyle: SpaceStyle.text(
+                                      13,
+                                      categories[i] == _selectedCategory
+                                          ? SpaceStyle.bg
+                                          : SpaceStyle.tx2,
+                                    ),
+                                    onSelected: (_) =>
+                                        _onCategoryPillTapped(categories[i]),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (filtered.isEmpty)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  24,
+                                  52,
+                                  24,
+                                  24,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      _items.isEmpty
+                                          ? 'This space is empty'
+                                          : _spaceSearchQuery.isNotEmpty
+                                          ? 'No “$_spaceSearchQuery” in $_location'
+                                          : 'No items match this filter',
+                                      style: SpaceStyle.text(17),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _items.isEmpty
+                                          ? 'Add items here when you are ready.'
+                                          : 'Try another search, or ask FindEZ to look across this inventory.',
+                                      style: SpaceStyle.text(
+                                        15,
+                                        SpaceStyle.tx2,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (inventory != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 16),
+                                        child: OutlinedButton(
+                                          onPressed: () => _openAsk(
+                                            initial: _spaceSearchQuery,
+                                          ),
+                                          child: const Text('Ask FindEZ'),
                                         ),
-                                        child: Center(
-                                          child: AppText(
-                                            label,
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color: isActive
-                                                  ? AppTheme.accentForeground(
-                                                      context,
-                                                    )
-                                                  : AppTheme.foreground(
-                                                      context,
-                                                      const Color(0x73FFFFFF),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              sliver: SliverList.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (_, index) => _buildItemRow(
+                                  filtered[index],
+                                  divider: index < filtered.length - 1,
+                                ),
+                              ),
+                            ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                20,
+                                20,
+                                154,
+                              ),
+                              child: Text(
+                                'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
+                                textAlign: TextAlign.center,
+                                style: SpaceStyle.text(12.5, SpaceStyle.tx3),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (MediaQuery.viewInsetsOf(context).bottom == 0)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IgnorePointer(
+                                child: Container(
+                                  height: 45,
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        SpaceStyle.bg,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                color: SpaceStyle.bg,
+                                padding: EdgeInsets.fromLTRB(
+                                  12,
+                                  0,
+                                  12,
+                                  MediaQuery.paddingOf(context).bottom + 18,
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (inventory != null)
+                                      Expanded(
+                                        child: Material(
+                                          color: SpaceStyle.s1,
+                                          shape: const StadiumBorder(
+                                            side: BorderSide(
+                                              color: SpaceStyle.line2,
+                                            ),
+                                          ),
+                                          clipBehavior: Clip.antiAlias,
+                                          child: InkWell(
+                                            onTap: _openAsk,
+                                            child: SizedBox(
+                                              height: 58,
+                                              child: Row(
+                                                children: [
+                                                  const SizedBox(width: 10),
+                                                  Container(
+                                                    width: 38,
+                                                    height: 38,
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                          color:
+                                                              SpaceStyle.white,
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.all(9),
+                                                    child: Image.asset(
+                                                      'assets/brand/findez-mark-black.png',
                                                     ),
-                                              fontSize: 13,
-                                              fontWeight: isActive
-                                                  ? FontWeight.w400
-                                                  : FontWeight.w400,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Ask about $_location',
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: SpaceStyle.text(
+                                                        16,
+                                                        SpaceStyle.tx2,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    tooltip:
+                                                        'Ask about $_location with voice',
+                                                    onPressed: () =>
+                                                        _openAsk(voice: true),
+                                                    icon: const Icon(
+                                                      Icons.mic_none,
+                                                      color: SpaceStyle.tx2,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Empty state or items list
-                if (_items.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_box_outlined,
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0x4DFFFFFF),
-                            ),
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          AppText(
-                            'This space is empty',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          AppText(
-                            'Add items here when you are ready.',
-                            style: TextStyle(
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0x73FFFFFF),
-                              ),
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          if (!widget.readOnly && widget.api.canEdit) ...[
-                            const SizedBox(height: 24),
-                            GestureDetector(
-                              onTap: _toggleFab,
-                              child: GlassControl(
-                                radius: 99,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(99),
-                                  ),
-                                  child: AppText(
-                                    'Add Item',
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimary(context),
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                                    if (!widget.readOnly &&
+                                        widget.api.canEdit) ...[
+                                      if (inventory != null)
+                                        const SizedBox(width: 8)
+                                      else
+                                        const Spacer(),
+                                      SpaceCircle(
+                                        key: TutorialController
+                                            .spaceDetailFabKey,
+                                        label: 'Add items',
+                                        icon: Icons.add,
+                                        size: 58,
+                                        white: true,
+                                        onTap: _openAdd,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  _buildGroupedList(),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          // Dark scrim overlay
-          AnimatedOpacity(
-            opacity: _fabOpen ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: IgnorePointer(
-              ignoring: !_fabOpen,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() => _fabOpen = false);
-                  _fabController.value = 0;
-                },
-                child: Container(
-                  color: AppTheme.adaptive(
-                    context,
-                    Colors.black.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _spaceMenu(String title, IconData icon) =>
+      PopupMenuItem(
+        value: title,
+        height: 44,
+        child: Row(
+          children: [
+            Expanded(child: Text(title, style: SpaceStyle.text(15.5))),
+            Icon(icon, size: 20),
+          ],
+        ),
+      );
+
+  void _openReview() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => ReviewQueuePage(
+        api: widget.api,
+        location: _location,
+        onInventoryMutated: () => _changed = true,
+      ),
+    ),
+  );
+
+  void _openSort() => showSpaceSheet<void>(
+    context,
+    builder: (ctx) => SpaceSheetList(
+      title: 'Sort by',
+      children: [
+        for (final option in ItemSortOption.values)
+          SpaceAction(
+            icon: Icons.sort,
+            title: itemSortLabel(option),
+            selected: option == _sortOption,
+            onTap: () {
+              Navigator.pop(ctx);
+              setState(() => _sortOption = option);
+              unawaited(saveSortPref(option));
+            },
+          ),
+      ],
+    ),
+  );
+
+  Future<void> _openAdd() async {
+    final choice = await showSpaceSheet<String>(
+      context,
+      builder: (ctx) => SpaceSheetList(
+        title: 'Add to $_location',
+        children: [
+          SpaceAction(
+            icon: Icons.camera_alt_outlined,
+            title: 'Scan Photo',
+            subtitle: 'Take a photo or choose from your library',
+            onTap: () => Navigator.pop(ctx, 'Scan Photo'),
+          ),
+          SpaceAction(
+            icon: Icons.table_chart_outlined,
+            title: 'Import Spreadsheet',
+            subtitle: 'CSV or Excel, keeps your column names',
+            onTap: () => Navigator.pop(ctx, 'Import Spreadsheet'),
+          ),
+          if (widget.api.inventoryContext != null)
+            SpaceAction(
+              icon: Icons.edit_outlined,
+              title: 'Type it in',
+              subtitle: 'Tell FindEZ what to add',
+              onTap: () => Navigator.pop(ctx, 'Type it in'),
             ),
+          SpaceAction(
+            icon: Icons.qr_code_scanner,
+            title: 'Scan Barcode',
+            onTap: () => Navigator.pop(ctx, 'Scan Barcode'),
           ),
         ],
       ),
-      floatingActionButton: widget.readOnly || !widget.api.canEdit
-          ? null
-          : _buildSpeedDial(),
     );
-  }
-
-  void _toggleFab() {
-    setState(() => _fabOpen = !_fabOpen);
-    if (MediaQuery.disableAnimationsOf(context) ||
-        MediaQuery.accessibleNavigationOf(context)) {
-      _fabController.value = _fabOpen ? 1 : 0;
-    } else if (_fabOpen) {
-      _fabController.forward();
+    if (!mounted || choice == null) return;
+    if (choice == 'Type it in') {
+      _openAsk(draft: 'Add ');
     } else {
-      _fabController.reverse();
+      _onFabItemTap(choice);
     }
   }
 
-  Widget _buildSpeedDial() {
-    const items = [
-      _FabItem(icon: Icons.camera_alt_outlined, label: 'Scan Photo'),
-      _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
-      _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
-    ];
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // Speed dial items (visible when open)
-        IgnorePointer(
-          ignoring: !_fabOpen,
-          child: FadeTransition(
-            opacity: _fabAnimation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, .06),
-                end: Offset.zero,
-              ).animate(_fabAnimation),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: items.map(_buildFabItemTile).toList(),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassFab(
-          key: TutorialController.spaceDetailFabKey,
-          onPressed: _toggleFab,
-        ),
-      ],
-    );
+  void _acceptUpdated(InventoryItem updated) {
+    if (!mounted) return;
+    setState(() {
+      final index = _items.indexWhere((item) => item.itemId == updated.itemId);
+      if (index >= 0) {
+        final stillHere = widget.spaceId == null
+            ? updated.location == _location
+            : updated.spaceId == widget.spaceId;
+        if (stillHere) {
+          _items[index] = updated;
+        } else {
+          _items.removeAt(index);
+        }
+      }
+      _changed = true;
+    });
   }
 
-  Widget _buildFabItemTile(_FabItem item) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10, right: 4),
-      child: Material(
-        color: AppTheme.adaptive(context, AppColors.surface2),
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: () => _onFabItemTap(item.label),
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppTheme.adaptive(context, AppColors.border),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  item.icon,
-                  color: AppTheme.foreground(context, Colors.white),
-                  size: 16,
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: AppText(
-                    item.label,
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  void _quickView(InventoryItem item) => showSpaceQuickView(
+    context,
+    item: item,
+    api: widget.api,
+    readOnly: widget.readOnly,
+    threshold: _thresholds[item.itemId],
+    onUpdated: _acceptUpdated,
+    onEdit: (item) => _showProductInfo(context, item),
+    onAsk: widget.api.inventoryContext == null
+        ? null
+        : (question) => _openAsk(initial: question),
+  );
+
+  Future<void> _openAsk({
+    String? initial,
+    String? draft,
+    bool voice = false,
+  }) async {
+    if (widget.api.inventoryContext == null) return;
+    await showSpaceAsk(
+      context,
+      api: widget.api,
+      space: _location,
+      items: _items,
+      thresholds: _thresholds,
+      readOnly: widget.readOnly,
+      initialMessage: initial,
+      initialDraft: draft,
+      startVoice: voice,
+      onUpdated: _acceptUpdated,
+      onThresholdChanged: (id, threshold) {
+        if (!mounted) return;
+        setState(() {
+          if (threshold == null) {
+            _thresholds.remove(id);
+          } else {
+            _thresholds[id] = threshold;
+          }
+        });
+      },
+      onAdd: _openAdd,
+      onInventoryMutated: () {
+        _changed = true;
+        unawaited(_refreshSpace());
+      },
+      onShowItems: (ids) => setState(() {
+        _answerIds = ids;
+        _onlyLowQuantity = false;
+        _selectedCategory = 'All';
+        _spaceSearchQuery = '';
+        _spaceSearchController.clear();
+      }),
+      onShowLow: () => setState(() {
+        _onlyLowQuantity = true;
+        _answerIds = null;
+        _selectedCategory = 'All';
+        _spaceSearchQuery = '';
+        _spaceSearchController.clear();
+      }),
     );
   }
 
   void _onFabItemTap(String label) {
-    setState(() => _fabOpen = false);
-    _fabController.value = 0;
     switch (label) {
       case 'Scan Photo':
         unawaited(_uploadImage());
@@ -1266,100 +1390,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         }());
     }
   }
-
-  Widget _buildReviewCard() => Material(
-    color: AppTheme.adaptive(context, AppColors.surface),
-    borderRadius: BorderRadius.circular(16),
-    clipBehavior: Clip.antiAlias,
-    child: IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(
-            child: _reviewAction(
-              icon: Icons.photo_library_outlined,
-              title: 'Review',
-              subtitle: 'Items to finish',
-              onTap: () => Navigator.of(context).push<void>(
-                MaterialPageRoute(
-                  builder: (_) => ReviewQueuePage(
-                    api: widget.api,
-                    location: _location,
-                    onInventoryMutated: () => _changed = true,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          VerticalDivider(
-            width: 1,
-            indent: 16,
-            endIndent: 16,
-            color: AppTheme.border(context),
-          ),
-          Expanded(
-            child: _reviewAction(
-              icon: Icons.inventory_2_outlined,
-              title: 'Low quantity',
-              subtitle: _onlyLowQuantity
-                  ? 'Showing low · Tap to reset'
-                  : '${_lowCount()} items',
-              onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _reviewAction({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) => InkWell(
-    onTap: onTap,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 60),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(icon, size: 23),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  AppText(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _FabItem {
-  const _FabItem({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
 }
 
 class _InventoryPageState extends State<InventoryPage>

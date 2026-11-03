@@ -20,6 +20,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import 'item_detail_drag_sheet.dart';
+import 'space_v2/item_detail_fields.dart';
 import 'item_photo_viewer.dart';
 import 'imported_item_details.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -1568,24 +1569,6 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     margin: const EdgeInsets.symmetric(horizontal: 18),
   );
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
   Widget _photoGallery({required bool canEdit}) {
     if (_photosLoading) {
       return const Padding(
@@ -1950,54 +1933,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
                 child: Column(
                   children: [
-                    _editableRow(
-                      item.displayDescription == null ? 'Name' : 'Description',
-                      item.name,
-                      'name',
-                    ),
-                    _divider(),
-                    _editableRow(
-                      'Part number',
-                      item.partNumber ?? '',
-                      'part_number',
-                    ),
-                    _divider(),
-                    _editableRow('Category', item.category, 'category'),
-                    _divider(),
-                    if (widget.shareId == null)
-                      _editableRow('Location', item.location, 'location')
-                    else
-                      _infoRow('Location', item.location),
-                    _divider(),
-                    _editableRow('Quantity', '${item.quantity}', 'quantity'),
-                    if (canEdit || (item.brand?.isNotEmpty ?? false)) ...[
-                      _divider(),
-                      _editableRow('Brand', item.brand ?? '', 'brand'),
-                    ],
-                    if (canEdit || (item.barcode?.isNotEmpty ?? false)) ...[
-                      _divider(),
-                      _editableRow('Barcode', item.barcode ?? '', 'barcode'),
-                    ],
-                    if (canEdit || (item.subcategory?.isNotEmpty ?? false)) ...[
-                      _divider(),
-                      _editableRow(
-                        'Subcategory',
-                        item.subcategory ?? '',
-                        'subcategory',
-                      ),
-                    ],
-                    _divider(),
-                    _infoRow('Date added', _formatDate(item.createdAt)),
-                    if (canEdit || (item.tags?.isNotEmpty ?? false)) ...[
-                      _divider(),
-                      _editableRow('Tags', item.tags?.join(', ') ?? '', 'tags'),
-                    ],
-                    if (item.confidence != null) ...[
-                      _divider(),
-                      _infoRow(
-                        'AI confidence',
-                        '${(item.confidence! * 100).toStringAsFixed(0)}%',
-                      ),
+                    for (final (index, field) in itemDetailFields(
+                      item,
+                      canEdit: canEdit,
+                      shared: widget.shareId != null,
+                    ).indexed) ...[
+                      if (index > 0) _divider(),
+                      if (field.editKey != null)
+                        _editableRow(field.label, field.value, field.editKey!)
+                      else
+                        _infoRow(field.label, field.value),
                     ],
                   ],
                 ),

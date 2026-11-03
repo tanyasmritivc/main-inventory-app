@@ -1,3 +1,5 @@
+import '../inventory/space_v2/space_style.dart';
+import '../inventory/space_v2/space_chat_widgets.dart';
 import 'voice_composer_session.dart';
 import 'voice_composer_panel.dart' show voiceCurve;
 import '../../core/ui/photo_source_sheet.dart';
@@ -69,11 +71,13 @@ class ChatPage extends StatefulWidget {
     this.worldHeading,
     this.onCaptureAction,
     this.contextual = false,
+    this.spacePresentation,
     this.initialSource,
     this.onInitialSourceReady,
   });
 
   final bool contextual;
+  final SpaceChatPresentation? spacePresentation;
   final String? worldHeading;
   final ChatSource? initialSource;
   final VoidCallback? onInitialSourceReady;
@@ -2419,7 +2423,9 @@ class _ChatPageState extends State<ChatPage>
             !widget.contextual
         ? _ChatSession()
         : _ChatSession._internal();
-    _controller = TextEditingController();
+    _controller = TextEditingController(
+      text: widget.spacePresentation?.initialDraft,
+    );
     WidgetsBinding.instance.addObserver(this);
     unawaited(_loadCameraHint());
     if (widget.initialSource != null) _sources.add(widget.initialSource!);
@@ -2456,6 +2462,9 @@ class _ChatPageState extends State<ChatPage>
       return keepAlive.isNotEmpty;
     }());
     unawaited(_prefetchInventorySnapshot());
+    widget.spacePresentation?.registerSend?.call(
+      (text) => unawaited(_submit(text)),
+    );
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
 
@@ -2464,6 +2473,11 @@ class _ChatPageState extends State<ChatPage>
       widget.onChatStateChanged?.call(_session.messages.isNotEmpty);
     });
 
+    if (widget.spacePresentation?.startVoice == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_startVoice());
+      });
+    }
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2549,16 +2563,29 @@ class _ChatPageState extends State<ChatPage>
     _focusNode.unfocus();
     final generation = _requestGeneration;
     try {
-      final selected = await showChatHistory(
-        context,
-        api: widget.api,
-        currentId: _currentConversationId,
-        onDeleted: (id) {
-          if (mounted && id == _currentConversationId) {
-            _currentConversationId = null;
-          }
-        },
-      );
+      void onDeleted(String id) {
+        if (mounted && id == _currentConversationId) {
+          _currentConversationId = null;
+        }
+      }
+
+      if (!mounted) return;
+      final selection = widget.spacePresentation != null
+          ? showSpaceSheet<String>(
+              context,
+              builder: (_) => ChatHistorySheet(
+                api: widget.api,
+                currentId: _currentConversationId,
+                onDeleted: onDeleted,
+              ),
+            )
+          : showChatHistory(
+              context,
+              api: widget.api,
+              currentId: _currentConversationId,
+              onDeleted: onDeleted,
+            );
+      final selected = await selection;
       if (!mounted || generation != _requestGeneration || selected == null) {
         return;
       }
@@ -2634,6 +2661,13 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
+    if (widget.spacePresentation case final presentation?) {
+      return SpaceChatHeader(
+        presentation: presentation,
+        onHistory: _sending ? null : _openHistory,
+        onNew: _sending ? null : _resetChat,
+      );
+    }
     if (widget.contextual) {
       return Row(
         children: [
@@ -2767,30 +2801,35 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
-  Widget _buildEmptyState() => Padding(
-    padding: EdgeInsets.symmetric(
-      vertical: widget.worldHeading == null ? 64 : 22,
-      horizontal: 16,
-    ),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320),
-        child: ShinyStatusText(
-          widget.worldHeading ?? 'What would you like to know?',
-          heading: true,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppTheme.textPrimary(context),
-            fontSize: widget.worldHeading == null ? 22 : 24,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'CupertinoSystemText',
-            letterSpacing: widget.worldHeading == null ? null : -0.6,
-            height: 1.25,
+  Widget _buildEmptyState() => widget.spacePresentation != null
+      ? SpaceChatEmpty(
+          presentation: widget.spacePresentation!,
+          onSend: (text) => unawaited(_submit(text)),
+        )
+      : Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: widget.worldHeading == null ? 64 : 22,
+            horizontal: 16,
           ),
-        ),
-      ),
-    ),
-  );
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: ShinyStatusText(
+                widget.worldHeading ?? 'What would you like to know?',
+                heading: true,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppTheme.textPrimary(context),
+                  fontSize: widget.worldHeading == null ? 22 : 24,
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'CupertinoSystemText',
+                  letterSpacing: widget.worldHeading == null ? null : -0.6,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ),
+        );
 
   final _attachmentAnchor = GlobalKey();
 
@@ -3417,10 +3456,33 @@ class _ChatPageState extends State<ChatPage>
             label: const Text('Retry response'),
           ),
         ),
-      if (message.answerContext?.chatCapture?['source_kind'] != 'photo')
+      if (widget.spacePresentation != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              width: 28,
+              height: 28,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: SpaceStyle.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Image.asset('assets/brand/findez-mark-black.png'),
+            ),
+          ),
+        ),
+      if (widget.spacePresentation != null &&
+          isTyping &&
+          message.content.isEmpty)
+        SpaceChatTyping(status: _progress)
+      else if (message.answerContext?.chatCapture?['source_kind'] != 'photo')
         AskAnswerView(
           key: ValueKey('answer-${message.timestamp}'),
-          refined: widget.worldHeading != null,
+          refined:
+              widget.worldHeading != null || widget.spacePresentation != null,
+          resultBuilder: widget.spacePresentation?.results,
           answer: isTyping
               ? _renderableStreamingMarkdown(message.content)
               : message.content,
@@ -3708,6 +3770,25 @@ class _ChatPageState extends State<ChatPage>
         ],
       );
     }
+    if (widget.spacePresentation != null) {
+      return TweenAnimationBuilder<double>(
+        key: ValueKey('${message.role}-${message.timestamp}'),
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 450),
+        curve: SpaceStyle.curve,
+        builder: (context, value, content) => Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(
+              0,
+              SpaceStyle.reduced(context) ? 0 : 10 * (1 - value),
+            ),
+            child: content,
+          ),
+        ),
+        child: child,
+      );
+    }
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
@@ -3836,7 +3917,10 @@ class _ChatPageState extends State<ChatPage>
           ? Colors.transparent
           : AppTheme.bg(context),
       body: ChatViewport(
-        keepControlsOutside: _scanningPreview || _previewDraft != null,
+        keepControlsOutside:
+            widget.spacePresentation != null ||
+            _scanningPreview ||
+            _previewDraft != null,
         header: widget.contextual || _session.messages.isNotEmpty
             ? _buildHeader()
             : const SizedBox.shrink(),
@@ -3846,7 +3930,9 @@ class _ChatPageState extends State<ChatPage>
           if (_session.messages.isEmpty &&
               !(widget.contextual && keyboardVisible)) ...[
             _buildEmptyState(),
-            if (_controller.text.trim().isEmpty) _newChatSuggestions(),
+            if (widget.spacePresentation == null &&
+                _controller.text.trim().isEmpty)
+              _newChatSuggestions(),
           ],
           for (final message in _session.messages)
             Padding(
@@ -3857,6 +3943,8 @@ class _ChatPageState extends State<ChatPage>
                     ? message.photo?.autoExtract == true
                           ? _extractionUserPhoto(message.photo!)
                           : AskQuestionCard(
+                              compact: widget.spacePresentation != null,
+                              spaceAppearance: widget.spacePresentation != null,
                               question: message.content,
                               voiceDuration: message.voiceDuration,
                               photoBytes: message.photo?.bytes,
@@ -3912,6 +4000,21 @@ class _ChatPageState extends State<ChatPage>
                 busy: _sending,
                 listening: _voice.active,
                 compact: true,
+              )
+            else if (widget.spacePresentation case final presentation?)
+              SpaceChatComposer(
+                controller: _controller,
+                focusNode: _focusNode,
+                onChanged: (_) => setState(() {}),
+                placeholder: _session.messages.isEmpty
+                    ? 'Ask about ${presentation.space}'
+                    : 'Ask a follow-up',
+                onAdd: _sending ? null : presentation.onAdd,
+                onVoice: _sending ? null : _toggleListening,
+                onStop: _sending ? _stopResponse : null,
+                onSend: canSend
+                    ? () => unawaited(_submit(_controller.text))
+                    : null,
               )
             else
               Container(

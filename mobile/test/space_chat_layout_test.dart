@@ -15,7 +15,7 @@ void main() {
   for (final brightness in Brightness.values) {
     for (final empty in [false, true]) {
       testWidgets(
-        'header search and in-flow Ask ${brightness.name} empty=$empty',
+        'pinned search and bottom Ask dock ${brightness.name} empty=$empty',
         (tester) async {
           tester.view.physicalSize = const Size(390, 844);
           tester.view.devicePixelRatio = 1;
@@ -60,40 +60,31 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.byType(TextField), findsNothing);
-          final ask = find.text('Ask FindEZ');
+          expect(find.byType(TextField), findsOneWidget);
+          final ask = find.text('Ask about Workbench');
           expect(ask.hitTestable(), findsOneWidget);
           expect(
             tester.getBottomLeft(ask).dy,
-            lessThan(
-              tester
-                  .getTopLeft(
-                    find.text(empty ? 'This space is empty' : 'Screws'),
-                  )
-                  .dy,
-            ),
+            greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
           );
           expect(
             tester
                 .getRect(ask)
-                .overlaps(tester.getRect(find.byIcon(Icons.add_rounded).last)),
+                .overlaps(tester.getRect(find.byTooltip('Add items'))),
             isFalse,
           );
           await layoutCapture?.call(
             '${brightness.name}-${empty ? 'empty' : 'items'}',
           );
-          await tester.tap(find.byTooltip('Search this space'));
+          await tester.enterText(find.byType(TextField), 'Washer');
           await tester.pumpAndSettle();
-          expect(find.byType(TextField), findsOneWidget);
           if (!empty) {
-            await tester.enterText(find.byType(TextField), 'Washer');
-            await tester.pumpAndSettle();
             expect(find.text('Screws'), findsNothing);
             expect(find.text('Washers'), findsOneWidget);
           }
-          await tester.tap(find.byTooltip('Close search'));
+          await tester.tap(find.byTooltip('Clear search'));
           await tester.pumpAndSettle();
-          expect(find.byType(TextField), findsNothing);
+          expect(find.byType(TextField), findsOneWidget);
           if (!empty) expect(find.text('Screws'), findsOneWidget);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());

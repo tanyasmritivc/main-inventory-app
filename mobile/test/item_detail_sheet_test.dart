@@ -896,7 +896,7 @@ void main() {
   );
 
   testWidgets(
-    'personal and Team-space info buttons open the swipe-dismiss panel, not the editor',
+    'Space rows open quick view and Edit retains the original detail panel',
     (tester) async {
       for (final readOnly in [false, true]) {
         final api = _Api();
@@ -916,7 +916,19 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.info_outline).first);
+        await tester.tap(find.text(item.name).first);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('space-quick-view')), findsOneWidget);
+        final edit = find.text(readOnly ? 'Details' : 'Edit');
+        await tester.scrollUntilVisible(
+          edit,
+          300,
+          scrollable: find.descendant(
+            of: find.byKey(const ValueKey('space-quick-view')),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.tap(edit);
         await tester.pumpAndSettle();
         expect(_scroll, findsOneWidget);
         expect(find.text('Edit item'), findsNothing);
