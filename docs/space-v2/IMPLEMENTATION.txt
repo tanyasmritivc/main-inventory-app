@@ -1,7 +1,9 @@
 Space v2 implementation
 
 Delivery
-- Branch: feat/space-v2-ui. Local commit only; do not push or release.
+- Branch: feat/space-v2-ui. The user subsequently authorized TestFlight171;
+  this supersedes the original local-only delivery limit. Public App Store
+  submission is outside this release.
 - Regular-weight system text follows the user's preference over prototype weights.
 - The photo picker and extraction-loader fixes already on the parent branch remain intact.
 
@@ -71,7 +73,14 @@ Validation files (user explicitly approved updating Space UI tests)
 - mobile/integration_test/space_v2_audit_test.dart
 
 No models, API clients, services, parsing, import mappings, providers, backend,
-configuration, environment, dependency or pubspec changes.
+configuration, environment or dependency changes. Release preparation increments
+pubspec to 1.1.2+171.
+
+Release follow-up
+- CI caught an opaque decorated suggestion panel hiding ListTile ink feedback.
+  The panel now uses a clipped Material with the same color, border and radius.
+  Existing suggestion actions, layout and text are preserved. Final checks and
+  signed TestFlight packaging are in progress; upload is not yet acknowledged.
 
 Validation results
 - flutter analyze --no-pub: clean.

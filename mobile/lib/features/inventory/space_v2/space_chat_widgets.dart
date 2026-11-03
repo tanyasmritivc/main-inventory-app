@@ -145,8 +145,13 @@ class SpaceChatEmpty extends StatelessWidget {
             ).copyWith(height: 1.15, letterSpacing: -.84),
           ),
           const SizedBox(height: 20),
-          Container(
-            decoration: SpaceStyle.card(),
+          Material(
+            color: SpaceStyle.s1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+              side: const BorderSide(color: SpaceStyle.line),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 for (final (index, suggestion) in suggestions.indexed) ...[
