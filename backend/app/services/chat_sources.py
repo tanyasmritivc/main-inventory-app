@@ -61,11 +61,13 @@ def extract(filename, content):
     truncated = False
     try:
         if ext in ('txt', 'md'):
-            text = content.decode('utf-8-sig')
-            if '\x00' in text:
-                raise ValueError('binary')
+            from app.services.chat_file_text import decode_text
+            text = decode_text(content)
             truncated = len(text) > MAX_TEXT
             text = text[:MAX_TEXT]
+        elif ext in ('xlsx', 'docx', 'csv', 'tsv', 'json'):
+            from app.services.chat_file_text import extract_structured
+            text, truncated = extract_structured(ext, content, MAX_TEXT)
         elif ext == 'pdf' and content.startswith(b'%PDF-'):
             from pypdf import PdfReader
             reader = PdfReader(BytesIO(content))
@@ -90,11 +92,11 @@ def extract(filename, content):
                 truncated = pages > 50
             text = '\n'.join(parts)[:MAX_TEXT]
         else:
-            raise HTTPException(422, 'Choose PDF, TXT or Markdown. Use Import inventory for CSV or Excel.')
+            raise HTTPException(422, 'Choose PDF, Excel (.xlsx), Word (.docx), CSV, TSV, JSON, TXT or Markdown. Save older .xls or .doc files as .xlsx or .docx first.')
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(422, 'This file could not be read. Try a text-based PDF, TXT or Markdown file.') from None
+        raise HTTPException(422, 'This file could not be read. Use an unprotected PDF, XLSX, DOCX, CSV, TSV, JSON, TXT or Markdown file within the reading limits.') from None
     text = text.replace('\x00', ' ').strip()
     if not text:
         raise HTTPException(422, 'No readable text was found. For scanned pages, attach a photo instead.')
