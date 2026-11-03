@@ -1,3 +1,9 @@
+## November 2 - Chat file attachments, build169
+
+Attach > Choose files now includes XLSX, DOCX, CSV, TSV and JSON alongside text-based PDF, TXT, Markdown and images. Files are sent as chat evidence, not imported into inventory. Existing world authorization, cancellation guards, 10MB limit and excerpt budgets remain. Legacy XLS/DOC require conversion; scanned PDFs need a readable text layer. Backend readers deployed separately from `feat/chat-file-formats-api`.
+
+Validation: 14 attachment tests, all 1,283 mobile tests (one existing skip) and clean analysis passed. Native simulator checks and signed TestFlight delivery in progress; physical file-provider acceptance remains with the user.
+
 ## November 2 - More menu cleanup delivered, build168
 
 FindEZ 1.1.2 (168), source `915e226a89efe882c85c0fd5e2162129d5377651`, uploaded to Apple with delivery `887f4ab8-7d5d-41d9-885f-203dc5394bc2`. Removes Overview, Projects and Review from More. Documents and notes, Lent items, Workspaces and team tools, and Account settings remain. Validation: 26 focused menu tests, all 1,276 mobile tests (one existing skip), clean analysis and all five exact-source CI gates passed. Signed archive/export passed platform, signature, privacy, production configuration, font and credential checks, plus Apple validation. Processing and tester availability were not polled; physical acceptance remains with the user. No public App Store submission was made. See `docs/plans/mobile-more-menu168-receipt.json`.
