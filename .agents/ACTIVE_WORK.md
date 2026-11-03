@@ -1,9 +1,6 @@
-## November 2 - More menu cleanup, build168
+## November 2 - More menu cleanup delivered, build168
 
-Mobile-only lane `fix/more-menu-168` removes Overview, Projects and Review from
-the More tab at the user's request. Existing feature routes and data are retained.
-The remaining menu is Documents and notes, Lent items, Workspaces and team tools,
-and Account settings. Validation and TestFlight delivery are in progress.
+FindEZ 1.1.2 (168), source `915e226a89efe882c85c0fd5e2162129d5377651`, uploaded to Apple with delivery `887f4ab8-7d5d-41d9-885f-203dc5394bc2`. Removes Overview, Projects and Review from More. Documents and notes, Lent items, Workspaces and team tools, and Account settings remain. Validation: 26 focused menu tests, all 1,276 mobile tests (one existing skip), clean analysis and all five exact-source CI gates passed. Signed archive/export passed platform, signature, privacy, production configuration, font and credential checks, plus Apple validation. Processing and tester availability were not polled; physical acceptance remains with the user. No public App Store submission was made. See `docs/plans/mobile-more-menu168-receipt.json`.
 
 ## November 2 - Organization destinations and confirmed capture, build167
 
