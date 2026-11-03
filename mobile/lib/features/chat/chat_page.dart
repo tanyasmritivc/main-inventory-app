@@ -2877,7 +2877,20 @@ class _ChatPageState extends State<ChatPage>
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt', 'md', 'jpg', 'jpeg', 'png', 'webp'],
+        allowedExtensions: [
+          'pdf',
+          'xlsx',
+          'docx',
+          'csv',
+          'tsv',
+          'json',
+          'txt',
+          'md',
+          'jpg',
+          'jpeg',
+          'png',
+          'webp',
+        ],
         withData: true,
       );
       if (!current() || result == null) return;
@@ -2923,7 +2936,7 @@ class _ChatPageState extends State<ChatPage>
                 ? error.message
                 : detail is String
                 ? detail
-                : 'Could not read this file. Try a text-based PDF, TXT or Markdown file.',
+                : 'Could not read this file. Try PDF, Excel (.xlsx), Word (.docx), CSV, TSV, JSON, TXT or Markdown.',
           ),
         ),
       );

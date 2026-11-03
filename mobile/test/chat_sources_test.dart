@@ -88,6 +88,7 @@ class _Api extends ApiClient {
 
 class _Picker extends FilePicker {
   FilePickerResult? result;
+  List<String>? extensions;
   @override
   Future<FilePickerResult?> pickFiles({
     String? dialogTitle,
@@ -102,7 +103,10 @@ class _Picker extends FilePicker {
     bool withReadStream = false,
     bool lockParentWindow = false,
     bool readSequential = false,
-  }) async => result;
+  }) async {
+    extensions = allowedExtensions;
+    return result;
+  }
 }
 
 Widget frame(
@@ -234,6 +238,50 @@ void main() {
       expect(api.sent.last.single.name, 'manual.txt');
     },
   );
+  for (final extension in [
+    'xlsx',
+    'docx',
+    'csv',
+    'tsv',
+    'json',
+    'pdf',
+    'txt',
+  ]) {
+    testWidgets('Choose files reads and sends $extension as chat evidence', (
+      tester,
+    ) async {
+      final picker = _Picker()
+        ..result = FilePickerResult([
+          PlatformFile(
+            name: 'attachment.$extension',
+            size: 3,
+            bytes: Uint8List.fromList([65, 66, 67]),
+          ),
+        ]);
+      FilePicker.platform = picker;
+      final api = _Api();
+      await tester.pumpWidget(frame(_chat(api)));
+      await tester.pumpAndSettle();
+      await menu(tester, 'Choose files', parent: 'Attach');
+      expect(
+        picker.extensions,
+        containsAll(['xlsx', 'docx', 'csv', 'tsv', 'json', 'pdf', 'txt', 'md']),
+      );
+      expect(api.reads, ['attachment.$extension']);
+      expect(find.byTooltip('Remove attachment.$extension'), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Summarize this file',
+      );
+      await tester.pump();
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pumpAndSettle();
+      expect(api.sent.single.single.name, 'attachment.$extension');
+      expect(api.sent.single.single.kind, 'file');
+      expect(api.sent.single.single.text, 'Shelf A contains batteries.');
+    });
+  }
+
   testWidgets('late file response cannot repopulate a fresh chat', (
     tester,
   ) async {
