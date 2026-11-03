@@ -388,3 +388,50 @@ def test_photo_unknown_counts_block_save_until_confirmed_even_for_legacy_drafts(
     assert c.facts(updated)['items'][0]['quantity'] == 8
     assert updated['items'][0]['item']['scan_evidence']['quantity_basis'] == 'user_confirmed'
     assert not store.bulk.called
+
+
+def test_explicit_confirmation_saves_all_selected_items_and_retains_evidence(store):
+    d = destination(make())
+    store.bulk.return_value = BulkCreateResponse(inserted=[
+        {'item_id': ITEM, 'name': 'Drill'}, {'item_id': str(uuid4()), 'name': 'Unknown fastener'}], failures=[], accepted_indices=[0, 1])
+    saved = c.save(ACTOR, WORLD, CID, d['id'], d['revision'], confirm_items=True)
+    assert saved['items_confirmed'] is True
+    assert saved['receipt']['saved_count'] == 2 and saved['receipt']['review_count'] == 0
+    assert saved['items'][1]['item']['scan_evidence'] == d['items'][1]['item']['scan_evidence']
+    assert len(store.bulk.call_args.args[0].items) == 2
+    store.review.assert_not_called()
+    assert c.save(ACTOR, WORLD, CID, d['id'], d['revision']) == saved
+    assert store.bulk.call_count == 1
+
+
+@pytest.mark.parametrize('confirmed', [False, True])
+def test_partial_retry_cannot_change_confirmation_choice(store, confirmed):
+    d = destination(make())
+    store.bulk.return_value = BulkCreateResponse(inserted=[], failures=[{'index': 0, 'reason': 'Retry'}], accepted_indices=[])
+    first = c.save(ACTOR, WORLD, CID, d['id'], d['revision'], confirm_items=confirmed)
+    payload = store.bulk.call_args.args[0]
+    assert first['items_confirmed'] == confirmed
+    c.save(ACTOR, WORLD, CID, d['id'], d['revision'], confirm_items=not confirmed)
+    assert store.bulk.call_args.args[0] == payload
+    assert len(payload.items) == (2 if confirmed else 1)
+
+
+def test_confirmation_does_not_invent_missing_quantity_or_bypass_access(store):
+    d = c.create(ACTOR, WORLD, CID, [{'name': 'Screws', 'category': 'Hardware', 'quantity': 1,
+        'scan_evidence': {'needs_review': True, 'quantity_basis': 'unknown'}}], None)
+    d = destination(d)
+    with pytest.raises(HTTPException, match='missing quantities'):
+        c.save(ACTOR, WORLD, CID, d['id'], d['revision'], confirm_items=True)
+    store.bulk.assert_not_called(); store.review.assert_not_called()
+    d = c.edit(ACTOR, WORLD, CID, d['id'], d['revision'], {'items': [{'index': 0, 'quantity': 12}]})
+    store.inv['can_edit'] = False
+    with pytest.raises(HTTPException) as error:
+        c.save(ACTOR, WORLD, CID, d['id'], d['revision'], confirm_items=True)
+    assert error.value.status_code == 403
+    store.bulk.assert_not_called()
+
+
+def test_capture_contract_keeps_old_clients_unconfirmed():
+    from app.api.routes.world_chat import CaptureSave
+    assert CaptureSave(revision=1).confirm_items is False
+    assert CaptureSave(revision=1, confirm_items=True).confirm_items is True

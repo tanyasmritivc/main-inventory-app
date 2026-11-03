@@ -1,3 +1,9 @@
+## November 2 - Explicit capture confirmation
+
+Backend-only lane `fix/capture-confirm-to-space`: additive explicit preview
+confirmation for mobile build167, preserving legacy Review behavior and retry
+identity. See `docs/capture-confirmation.md`. Staged deployment in progress.
+
 ## October 24 — Proactive destination creation (in validation)
 
 Backend-only lane `fix/api-proactive-destination-creation-20261024` fixes first-turn

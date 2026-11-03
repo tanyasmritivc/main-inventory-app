@@ -329,6 +329,7 @@ class CaptureEdit(BaseModel):
 class CaptureSave(BaseModel):
     revision: int = Field(ge=1)
     allow_duplicates: bool = False
+    confirm_items: bool = False
 
 
 @router.get('/conversations/{conversation_id}/captures/{capture_id}')
@@ -354,7 +355,7 @@ def edit_capture(request: Request, world_id: str, conversation_id: UUID, capture
 def save_capture(request: Request, world_id: str, conversation_id: UUID, capture_id: UUID, body: CaptureSave, user: AuthenticatedUser = Depends(get_current_user)):
     from app.services.chat_capture import save
     try:
-        return {'capture': save(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id), body.revision, body.allow_duplicates)}
+        return {'capture': save(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id), body.revision, body.allow_duplicates, confirm_items=body.confirm_items)}
     except HTTPException:
         raise
     except Exception as error:

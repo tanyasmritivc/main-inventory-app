@@ -230,7 +230,7 @@ def duplicate_links(owner, inventory_id, selected):
     return world.resource_links({'items': list(found.values())})
 
 
-def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
+def save(actor, key, cid, capture_id, revision, allow_duplicates=False, *, confirm_items=False):
     from app.services import world_chat as world
     from app.services.spaces_repo import list_spaces
     from app.services.review_queue import enqueue_uncertain_items
@@ -264,6 +264,10 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
             if duplicates and not allow_duplicates:
                 raise HTTPException(409, {'code': 'capture_duplicates', 'message': 'Possible matches already exist. Open them, or explicitly save these as separate items.', 'resource_links': duplicates})
             draft['status'] = 'saving'
+            # Freeze explicit preview acceptance with the destination and IDs.
+            # Retries cannot move the same item between Review and inventory.
+            # Original model evidence remains unchanged in the saved draft.
+            draft['items_confirmed'] = bool(confirm_items)
             replace(cid, row, draft)
             row = {**row, 'answer_context': {**row['answer_context'], 'chat_capture': deepcopy(draft)}}
         # Frozen details + stable IDs: a partial/lost response can only finish the
@@ -274,7 +278,7 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
         for entry in batch:
             item = {**entry['item'], 'location': draft['location'],
                     'client_request_id': f"chat_{draft['id']}_{entry['index']}"}
-            if (item.get('scan_evidence') or {}).get('needs_review'):
+            if (item.get('scan_evidence') or {}).get('needs_review') and not draft.get('items_confirmed', False):
                 queued = enqueue_uncertain_items(user_id=inv['owner_user_id'],
                     source_digest=f"chat-{draft['id']}-{entry['index']}", items=[item])[0]
                 reviews.append({'index': entry['index'], 'review_id': queued['review_id']})
