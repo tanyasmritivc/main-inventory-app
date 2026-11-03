@@ -1,3 +1,4 @@
+import '../inventory/space_v2/space_style.dart';
 import 'voice_composer_session.dart' show voiceTime;
 import 'chat_progress.dart';
 import 'package:mobile/core/private_image.dart';
@@ -22,10 +23,11 @@ class AskQuestionCard extends StatelessWidget {
     this.voiceDuration,
     this.photoUrl,
     this.compact = false,
+    this.spaceAppearance = false,
   });
   final String question;
   final Duration? voiceDuration;
-  final bool compact;
+  final bool compact, spaceAppearance;
   final Uint8List? photoBytes;
   // Only a validated app-owned URL may be passed here by the chat controller.
   final String? photoUrl;
@@ -40,10 +42,21 @@ class AskQuestionCard extends StatelessWidget {
         ),
         child: Container(
           width: compact ? null : double.infinity,
-          padding: EdgeInsets.all(compact ? 14 : 16),
+          padding: spaceAppearance
+              ? const EdgeInsets.symmetric(horizontal: 15, vertical: 11)
+              : EdgeInsets.all(compact ? 14 : 16),
           decoration: BoxDecoration(
-            color: AppTheme.adaptive(context, const Color(0xFF171719)),
-            borderRadius: BorderRadius.circular(compact ? 24 : 16),
+            color: spaceAppearance
+                ? SpaceStyle.s3
+                : AppTheme.adaptive(context, const Color(0xFF171719)),
+            borderRadius: spaceAppearance
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(6),
+                  )
+                : BorderRadius.circular(compact ? 24 : 16),
             border: compact
                 ? Border.all(
                     width: .6,
@@ -89,7 +102,11 @@ class AskQuestionCard extends StatelessWidget {
                   context,
                   TextStyle(
                     color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
-                    fontSize: compact ? 16 : 17,
+                    fontSize: spaceAppearance
+                        ? 15.5
+                        : compact
+                        ? 16
+                        : 17,
                     letterSpacing: compact ? -.25 : null,
                     height: compact ? 1.45 : 1.5,
                     fontWeight: FontWeight.w400,
@@ -142,7 +159,9 @@ class AskAnswerView extends StatefulWidget {
     this.api,
     this.onActionResult,
     this.refined = false,
+    this.resultBuilder,
   });
+  final Widget? Function(AskAnswerContext)? resultBuilder;
   final String answer;
   final bool refined;
   final AskAnswerContext? contextData;
@@ -167,6 +186,9 @@ class _AskAnswerViewState extends State<AskAnswerView> {
     final primary = AppTheme.adaptive(context, Color(0xFFF2F2F2));
     final secondary = AppTheme.adaptive(context, Color(0xFF85858E));
     final data = widget.contextData;
+    final customResults = !widget.isLoading && data != null
+        ? widget.resultBuilder?.call(data)
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,7 +307,11 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     context,
                     TextStyle(
                       color: primary,
-                      fontSize: widget.refined ? 16 : 17,
+                      fontSize: widget.resultBuilder != null
+                          ? 15.5
+                          : widget.refined
+                          ? 16
+                          : 17,
                       height: 1.5,
                       letterSpacing: widget.refined ? -.25 : null,
                       fontWeight: FontWeight.w400,
@@ -295,7 +321,11 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     context,
                     TextStyle(
                       color: primary,
-                      fontSize: widget.refined ? 16 : 17,
+                      fontSize: widget.resultBuilder != null
+                          ? 15.5
+                          : widget.refined
+                          ? 16
+                          : 17,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -303,7 +333,11 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     context,
                     TextStyle(
                       color: primary,
-                      fontSize: widget.refined ? 16 : 17,
+                      fontSize: widget.resultBuilder != null
+                          ? 15.5
+                          : widget.refined
+                          ? 16
+                          : 17,
                       height: 1.5,
                       letterSpacing: widget.refined ? -.25 : null,
                     ),
@@ -371,7 +405,9 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               onResult: widget.onActionResult,
               onOpenResource: widget.onOpenResource,
             ),
-        if (!widget.isLoading && data != null && data.rows.isNotEmpty) ...[
+        if (customResults != null)
+          customResults
+        else if (!widget.isLoading && data != null && data.rows.isNotEmpty) ...[
           const SizedBox(height: 22),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),

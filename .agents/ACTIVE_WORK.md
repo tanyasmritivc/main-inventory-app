@@ -1,3 +1,11 @@
+## November 3 - Space UI and extraction fixes delivered to TestFlight171
+
+Apple acknowledged FindEZ 1.1.2 (171), runtime `347d941747494c99241092a8a283195ad423350f`, delivery `cc0e3122-88c3-42ac-8c3a-656aa39682e7`. Branch `feat/space-v2-ui` and PR302 contain the Space detail redesign, item quick view and Ask presentation, plus the earlier photo-picker and count-free extraction-loading fixes. Original item fields, imported columns, APIs and confirmed inventory writes remain intact. The Spaces directory is unchanged. A final Material surface fix restores suggestion tap feedback and compatibility with the newer Flutter CI assertion.
+
+Validation: 1,312 Flutter tests passed (one existing skip), clean analysis, 15 broad native Space scenarios, one saved-history follow-up and six final native regression checks. All five exact-runtime CI gates passed (41733852145). The signed archive and exported IPA passed 33 device-binary checks each, strict signatures, 27 privacy manifests, production configuration/font/credential checks and Apple validation. The exported IPA has distribution entitlements. Production defines were recovered from the SHA256-verified previous build170 IPA. See `docs/plans/mobile-space171-receipt.json` and `docs/space-v2/IMPLEMENTATION.txt`.
+
+Apple processing and tester availability were not polled. Physical camera/model/device acceptance remains with the user. Public App Store submission was not changed. Private IPA/archive, validation logs and Apple receipts are retained in `Projects/findez-space171-private`.
+
 ## November 2 - Extraction loading and screen layout complete
 
 Branch `fix/extraction-loading-layout` builds on the photo-sheet/regular-font fix.

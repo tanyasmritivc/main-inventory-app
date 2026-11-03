@@ -1,0 +1,33 @@
+{
+  "version": "1.1.2",
+  "build": 171,
+  "source_commit": "347d941747494c99241092a8a283195ad423350f",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "2e7dcc5ff49ac0cf7e04a8797d232e1b5b55e2916770627b050fdf56236e86a0",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "cc0e3122-88c3-42ac-8c3a-656aa39682e7",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "local_flutter_tests_passed": 1312,
+  "existing_test_skips": 1,
+  "flutter_analysis": "clean",
+  "native_verification": {
+    "broad_space_scenarios": 15,
+    "saved_history_followup": 1,
+    "final_regression_scenarios": 6,
+    "screenshots_reviewed": true,
+    "physical_camera_model_device_acceptance": "unverified; user acceptance remains pending"
+  },
+  "ci": {
+    "run_id": 41733852145,
+    "jobs_passed": 5,
+    "source_commit": "347d941747494c99241092a8a283195ad423350f"
+  },
+  "recorded_at_utc": "2026-11-03T23:11:30.411493+00:00"
+}

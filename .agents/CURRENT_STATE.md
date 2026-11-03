@@ -1,3 +1,11 @@
+## November 3 - Space UI and extraction fixes delivered to TestFlight171
+
+Apple acknowledged FindEZ 1.1.2 (171), runtime `347d941747494c99241092a8a283195ad423350f`, delivery `cc0e3122-88c3-42ac-8c3a-656aa39682e7`. Branch `feat/space-v2-ui` and PR302 contain the Space detail redesign, item quick view and Ask presentation, plus the earlier photo-picker and count-free extraction-loading fixes. Original item fields, imported columns, APIs and confirmed inventory writes remain intact. The Spaces directory is unchanged. A final Material surface fix restores suggestion tap feedback and compatibility with the newer Flutter CI assertion.
+
+Validation: 1,312 Flutter tests passed (one existing skip), clean analysis, 15 broad native Space scenarios, one saved-history follow-up and six final native regression checks. All five exact-runtime CI gates passed (41733852145). The signed archive and exported IPA passed 33 device-binary checks each, strict signatures, 27 privacy manifests, production configuration/font/credential checks and Apple validation. The exported IPA has distribution entitlements. Production defines were recovered from the SHA256-verified previous build170 IPA. See `docs/plans/mobile-space171-receipt.json` and `docs/space-v2/IMPLEMENTATION.txt`.
+
+Apple processing and tester availability were not polled. Physical camera/model/device acceptance remains with the user. Public App Store submission was not changed. Private IPA/archive, validation logs and Apple receipts are retained in `Projects/findez-space171-private`.
+
 ## November 1 - Stop response delivered and App Review updated to build166
 
 FindEZ 1.1.1 (166), source `00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6`, is processed VALID and WAITING_FOR_REVIEW. Apple upload delivery `9864067d-9288-48f0-9162-566ba7e90fe7`; review submission `c10d8d96-16f0-4b3a-a340-8bf88d73fdd9`. The user explicitly authorized withdrawal of build162 and replacement with the newest build. Selected build166 is verified; listing metadata, review details and all 14 ordered screenshots are unchanged. Release remains MANUAL; no public release performed. Branch `fix/chat-stop-166` and draft PR287 are pushed, with main unchanged.

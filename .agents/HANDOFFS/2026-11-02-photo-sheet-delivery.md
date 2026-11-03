@@ -1,3 +1,15 @@
+# Resolved November 3: included in TestFlight171
+
+The configuration/credential blocker below is historical and resolved. The
+verified prior build170 IPA supplied trusted production defines; Apple metadata
+was recovered and authenticated. The photo-sheet and extraction-loading fixes
+are included in signed build 1.1.2 (171), acknowledged by Apple alongside Space v2.
+See `docs/plans/mobile-space171-receipt.json` for source, validation and delivery.
+Processing/tester availability were not polled; physical camera/model/device
+acceptance remains with the user. No public App Store submission was changed.
+
+Historical handoff follows.
+
 # Photo sheet layout and regular typography
 
 Branch: `fix/extraction-loading-layout` over `fix/photo-picker-layout-171`,

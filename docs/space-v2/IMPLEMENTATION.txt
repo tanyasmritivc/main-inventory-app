@@ -1,0 +1,111 @@
+Space v2 implementation
+
+Delivery
+- Branch: feat/space-v2-ui. The user subsequently authorized TestFlight171;
+  this supersedes the original local-only delivery limit. Public App Store
+  submission is outside this release.
+- Regular-weight system text follows the user's preference over prototype weights.
+- The photo picker and extraction-loader fixes already on the parent branch remain intact.
+
+Implemented
+- Fixed Space toolbar, collapsing title, breadcrumb, comma-separated counts,
+  pinned search, low-quantity filter, category chips, all seven existing sorts,
+  lazy item rows, empty/search states, bottom Ask/Add dock and styled sheets.
+- Whole-row quick view with unchanged names, original row subtitles, existing
+  photos or deterministic gradient thumbnails, confirmed quantity updates,
+  the existing location update, and entry to the original full detail editor.
+- Shared itemDetailFields presentation list supplies both the existing editor
+  and quick view. ImportedItemDetails is reused without modification, preserving
+  original column labels, duplicate labels, order, file metadata and values.
+- Space Ask uses the original ChatPage, API instance, history, new-chat, voice,
+  cancellation and streaming. Server-referenced loaded items get quick-view
+  cards, Use one / Move actions and contextual follow-up questions. Unknown
+  references and project requirements retain the original result renderer.
+- Ask inventory scope is labelled accurately. No device-generated answers.
+- Read-only controls, errors, safe-area/keyboard layout and reduced-motion fades.
+
+Deliberate differences from sample-only prototype features
+- Saved InventoryItem records have no Review flag/count. Review still opens the
+  existing draft queue on tap or long press; no invented count, dots or filter.
+- Existing chat scope is inventory-wide, not Space-only. No unsupported scope
+  switcher or inferred inventory count is shown.
+- Scan Photo retains the existing Camera / Library chooser. Separate direct
+  source rows would require changing the capture flow outside this UI scope.
+  Barcode capture remains available alongside import and Type it in.
+- More retains actual app actions in their original order. Sample-only Select,
+  Export, Rename and Delete actions are not invented.
+- Move lists real Spaces; unavailable per-Space counts are omitted.
+- The current item model has no standalone units field. Imported units/custom
+  columns remain in their original imported details.
+- Manufacturer lookup, checkout, documents, photo gallery, QR sharing and other
+  comprehensive item actions remain in the unchanged full detail editor.
+- Existing lazy slivers are retained rather than adding artificial 60-row fetches.
+
+Data comparison fixtures
+- Manual: exact name, part number, category, location, quantity, brand, barcode,
+  subcategory, date, tags, notes and purchase source; Edit opens the original sheet.
+- Auto Extract: same ordered fields plus original AI confidence.
+- Spreadsheet: same fields plus Part Number, Tooth Count (120.0), Finish / Custom,
+  a duplicate Part Number column, and original filename/sheet. Quantity and Move
+  requests change only their requested fields; import_data remains identical.
+- These checks use isolated test fixtures, not production records.
+
+Changed runtime files
+- mobile/lib/features/inventory/inventory_page.dart (LocationItemsPage only;
+  _InventoryPageState, the Spaces directory, is byte-for-byte unchanged)
+- mobile/lib/features/inventory/item_detail_sheet.dart (shared info-field source)
+- mobile/lib/features/chat/chat_page.dart (optional Space-only presentation hooks)
+- mobile/lib/features/chat/ask_answer_view.dart (optional Space bubble/result rendering)
+- mobile/lib/features/inventory/space_v2/item_detail_fields.dart
+- mobile/lib/features/inventory/space_v2/space_style.dart
+- mobile/lib/features/inventory/space_v2/space_widgets.dart
+- mobile/lib/features/inventory/space_v2/space_quick_view.dart
+- mobile/lib/features/inventory/space_v2/space_move.dart
+- mobile/lib/features/inventory/space_v2/space_chat_widgets.dart
+- mobile/lib/features/inventory/space_v2/space_ask.dart
+
+Validation files (user explicitly approved updating Space UI tests)
+- mobile/test/space_capture_entry_test.dart
+- mobile/test/space_chat_layout_test.dart
+- mobile/test/item_detail_sheet_test.dart
+- mobile/test/item_search_test.dart
+- mobile/test/space_v2_test.dart
+- mobile/integration_test/space_v2_audit_test.dart
+
+No models, API clients, services, parsing, import mappings, providers, backend,
+configuration, environment or dependency changes. Release preparation increments
+pubspec to 1.1.2+171.
+
+Release follow-up
+- CI caught an opaque decorated suggestion panel hiding ListTile ink feedback.
+  The panel now uses a clipped Material with the same color, border and radius.
+  Existing suggestion actions, layout and text are preserved.
+- Apple acknowledged TestFlight 1.1.2 (171), runtime 347d941747494c99241092a8a283195ad423350f.
+  Delivery: cc0e3122-88c3-42ac-8c3a-656aa39682e7.
+- Final source passed 1,312 Flutter tests (one existing skip), clean analysis,
+  six final native regression checks and all five exact-source CI gates.
+  Signed package verification and Apple validation passed. See the release
+  receipt at docs/plans/mobile-space171-receipt.json.
+- Processing/tester availability were not polled. Physical camera/model/device
+  acceptance remains with the user. Public App Store submission is unchanged.
+
+Validation results
+- flutter analyze --no-pub: clean.
+- Full mobile regression suite: 1,312 passed, 1 existing skip.
+- Focused Space + inventory chat regression after the history adjustment:
+  21 passed. Space history uses the existing Flutter ChatHistorySheet in the
+  Space modal; other chats retain their original presentation. This avoids the
+  native presentation conflict found during the iOS audit.
+- iOS screenshot fixtures cover 0, 3, 40 and 298 items; long names; scrolling
+  beyond row 60; search; low quantity; sort/menu/add; manual/Auto Extract/import
+  fields; quantity success/failure/duplicate taps; moving; Ask empty/one/many/no
+  results; quick view over chat; history/new chat; view-only; keyboard/large text.
+- Scope check: protected core/API/model/config files unchanged; the existing
+  Spaces directory implementation remains byte-for-byte unchanged.
+- Final iOS simulator build/audit: all 15 scenarios passed. A further focused
+  native run also verified loading a saved conversation from history.
+- Visual evidence: /Users/tanyasmritivictorcharles/projects/findez-space-v2-preview/
+  (26 distinct captures, including saved history, keyboard and large-text states).
+- Final mobile diff: 17 implementation/test files, 3,334 insertions and 828
+  deletions. The supplied prototype/reference package and this receipt are
+  additionally retained under docs/space-v2/.

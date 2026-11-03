@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
+import 'package:mobile/features/inventory/space_v2/space_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -84,7 +85,7 @@ void main() {
   });
   tearDownAll(() => Supabase.instance.dispose());
   testWidgets(
-    'Space search finds displayed part numbers and imported details; category filter remains active',
+    'Space search finds stored part numbers and imported details; category filter remains active',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -108,23 +109,51 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Search this space'));
-      await tester.pumpAndSettle();
       final input = find.byType(TextField).first;
       await tester.enterText(input, 'Pn-F');
       await tester.pumpAndSettle();
-      expect(find.text('PN-F156'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'target',
+        ),
+        findsOneWidget,
+      );
       await tester.enterText(input, 'PNF156');
       await tester.pumpAndSettle();
-      expect(find.text('PN-F156'), findsOneWidget);
-      expect(find.text('PN-F157'), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'target',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'other',
+        ),
+        findsNothing,
+      );
       await tester.enterText(input, 'stainless sprign');
       await tester.pumpAndSettle();
-      expect(find.text('PN-F156'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'target',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Tools').first);
       await tester.pumpAndSettle();
-      expect(find.text('PN-F156'), findsNothing);
-      expect(find.text('PN-F157'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'target',
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is SpaceItemRow && widget.item.itemId == 'other',
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
