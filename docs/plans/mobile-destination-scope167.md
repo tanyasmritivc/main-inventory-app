@@ -8,7 +8,7 @@ More tools share a bounded, scrollable inventory sheet with inventory cards, wor
 
 Checks: destination regression tests cover organization-only reads, viewers, reparenting, revoked edit access, stale responses, Personal, unchanged unscoped behavior, scoped import handoff, both themes, large text, scrolling, selection and cancellation. World-shell tests cover each More tool's picker. Native audit: `flutter test integration_test/inventory_destination_audit_test.dart -d <simulator> --no-pub --reporter expanded`.
 
-Build 167 is prepared for TestFlight. Full-suite, native, signing and upload results will be recorded in the delivery receipt. Physical-device acceptance remains separate. The additive backend dependency is deployed separately below; web, schema and the public App Store submission are unchanged.
+FindEZ 1.1.2 (167) uploaded to Apple, delivery `6fd7666a-a282-476a-bfa0-e5f1cf23331a`, runtime `742d291f8ccf9bd8ae4152175a3297b7c22a35f4`. All 1,276 mobile tests pass (one existing skip), 35 focused save checks, 20 final focused checks, 11 native destination checks and 20 final native extraction checks pass, with clean analysis and all five exact-source CI gates. Signed archive/export passed platform, signature, privacy, configuration, font and credential checks plus Apple validation. Processing/tester availability were not polled; physical-device acceptance remains with the user. Backend confirmation is deployed separately (PR295); web, schema and public App Store submission are unchanged. See `mobile-destination-scope167-receipt.json`.
 
 ## Explicit extraction confirmation
 

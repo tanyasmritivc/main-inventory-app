@@ -1,14 +1,8 @@
-## November 2 - Chat destinations and More picker, build167
+## November 2 - Organization destinations and confirmed capture, build167
 
-Mobile implementation on `fix/mobile-destination-scope-167` in the existing
-`Projects/findez-voice-composer` worktree. Chat import destinations now use their
-organization directory and revalidate parent/edit access before opening Spaces.
-More tools share the compact inventory sheet. API keys and account-wide integration
-setup are unchanged. Explicit Add to Space now accepts checked extraction details,
-with a separate Keep uncertain items in Review action. Missing quantities require
-a count. The additive backend contract is on `fix/capture-confirm-to-space`.
-All 1,276 mobile tests pass (one existing skip), 35 save checks pass, and analysis
-is clean. Native/release checks are in progress. See `docs/plans/mobile-destination-scope167.md`.
+FindEZ 1.1.2 (167) uploaded to Apple, delivery `6fd7666a-a282-476a-bfa0-e5f1cf23331a`, runtime `742d291f8ccf9bd8ae4152175a3297b7c22a35f4`. All 1,276 mobile tests pass (one existing skip), 35 focused save checks, 20 final focused checks, 11 native destination checks and 20 final native extraction checks pass, with clean analysis and all five exact-source CI gates. Signed archive/export passed platform, signature, privacy, configuration, font and credential checks plus Apple validation. Processing/tester availability were not polled; physical-device acceptance remains with the user. Backend confirmation is deployed separately (PR295); web, schema and public App Store submission are unchanged.
+
+Chat import destinations use the current organization directory, with edit/parent/scope revalidation. More tools share the compact inventory sheet. Add to Space explicitly accepts checked extracted items; Keep uncertain items in Review remains an alternative. Missing quantities must be supplied. API keys and integration grants remain unchanged. See `docs/plans/mobile-destination-scope167.md`.
 
 ## November 1 - Stop response delivered and App Review updated to build166
 
