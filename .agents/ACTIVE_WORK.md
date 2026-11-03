@@ -2,7 +2,8 @@
 
 Backend-only lane `fix/capture-confirm-to-space`: additive explicit preview
 confirmation for mobile build167, preserving legacy Review behavior and retry
-identity. See `docs/capture-confirmation.md`. Staged deployment in progress.
+identity. See `docs/capture-confirmation.md`. Two-file patch deployed; service health and unchanged-source audit passed.
+PR295 remains isolated from main.
 
 ## October 24 — Proactive destination creation (in validation)
 

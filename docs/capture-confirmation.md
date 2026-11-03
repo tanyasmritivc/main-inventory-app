@@ -21,3 +21,7 @@ rollback copies, service health verification and an unchanged-source audit.
 
 Mobile build167 consumes this contract in a separate implementation lane. Existing
 Review entries are not migrated; no public API-key scope changes.
+
+Deployment completed November 2: the running service restarted successfully,
+health returned 200, and the source audit confirms only the two intended files
+changed. Rollback copies are retained on the server. PR295 is a draft.
