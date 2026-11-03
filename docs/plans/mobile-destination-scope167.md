@@ -24,3 +24,9 @@ the same two-action wording and accepts checked identity details directly.
 The additive backend contract is delivered separately on
 `fix/capture-confirm-to-space`; old clients retain their current behavior. API-key
 and integration scope remains unchanged. Existing Review entries are not moved.
+
+## Apple version correction
+
+Apple rejected 1.1.1 (167) during validation because version 1.1.1 was already
+approved and its build train closed. The new TestFlight package is 1.1.2 (167).
+No upload occurred for the rejected package; runtime feature code is unchanged.
