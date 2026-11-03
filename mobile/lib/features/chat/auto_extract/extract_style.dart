@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -17,15 +16,11 @@ abstract final class ExtractStyle {
       ink = Color(0xff0b0b0c),
       red = Color(0xffe5484d);
   static const curve = Cubic(.32, .72, 0, 1);
-  static TextStyle text(
-    double size, {
-    Color color = tx,
-    FontWeight weight = FontWeight.w400,
-  }) => TextStyle(
+  static TextStyle text(double size, {Color color = tx}) => TextStyle(
     fontFamily: 'CupertinoSystemText',
     fontSize: size,
     color: color,
-    fontWeight: weight,
+    fontWeight: FontWeight.w400,
   );
   static ButtonStyle pill({bool primary = false, double height = 46}) =>
       FilledButton.styleFrom(
@@ -38,7 +33,7 @@ abstract final class ExtractStyle {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(height / 2),
         ),
-        textStyle: text(15, weight: FontWeight.w600),
+        textStyle: text(15),
       ).copyWith(
         backgroundBuilder: (context, states, child) =>
             child ?? const SizedBox.shrink(),
@@ -49,108 +44,79 @@ abstract final class ExtractStyle {
 }
 
 Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
-    showGeneralDialog<T>(
+    showModalBottomSheet<T>(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close sheet',
-      barrierColor: Colors.black.withValues(alpha: .55),
-      transitionDuration: const Duration(milliseconds: 500),
-      pageBuilder: (context, _, _) => SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                  child: const SizedBox.expand(),
-                ),
-              ),
+      useRootNavigator: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: false,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .32),
+      constraints: const BoxConstraints(maxWidth: 560),
+      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: Duration(milliseconds: 250),
+              reverseDuration: Duration(milliseconds: 200),
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  8,
-                  8,
-                  8,
-                  MediaQuery.viewInsetsOf(context).bottom + 8,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: 560,
-                    maxHeight:
-                        MediaQuery.sizeOf(context).height * .8 -
-                        MediaQuery.viewInsetsOf(context).bottom.clamp(
-                          0,
-                          MediaQuery.sizeOf(context).height * .45,
-                        ),
+      builder: (context) => SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+            final availableHeight = (constraints.maxHeight * .9 - keyboard - 16)
+                .clamp(0.0, constraints.maxHeight);
+            return Padding(
+              padding: EdgeInsets.fromLTRB(8, 8, 8, keyboard + 8),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: availableHeight),
+                child: Material(
+                  color: ExtractStyle.sheet,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    side: const BorderSide(color: ExtractStyle.line2),
                   ),
-                  child: Material(
-                    color: ExtractStyle.sheet,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(38),
-                      side: const BorderSide(color: ExtractStyle.line2),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        brightness: Brightness.dark,
-                        colorScheme: const ColorScheme.dark(
-                          surface: ExtractStyle.sheet,
-                          primary: ExtractStyle.white,
-                        ),
-                        textTheme: Theme.of(context).textTheme.apply(
-                          bodyColor: ExtractStyle.tx,
-                          displayColor: ExtractStyle.tx,
-                        ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      brightness: Brightness.dark,
+                      colorScheme: const ColorScheme.dark(
+                        surface: ExtractStyle.sheet,
+                        primary: ExtractStyle.white,
                       ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Center(
-                              child: Container(
-                                width: 38,
-                                height: 5,
-                                margin: const EdgeInsets.only(bottom: 14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: .2),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
+                      textTheme: Theme.of(context).textTheme.apply(
+                        bodyColor: ExtractStyle.tx,
+                        displayColor: ExtractStyle.tx,
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 36,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: .2),
+                                borderRadius: BorderRadius.circular(3),
                               ),
                             ),
-                            builder(context),
-                          ],
-                        ),
+                          ),
+                          Builder(builder: builder),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
-      transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: ExtractStyle.curve,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: MediaQuery.disableAnimationsOf(context)
-              ? child
-              : SlideTransition(
-                  position: Tween(
-                    begin: const Offset(0, 1.1),
-                    end: Offset.zero,
-                  ).animate(curved),
-                  child: child,
-                ),
-        );
-      },
     );
 
 Future<bool?> showExtractPhotoSheet(BuildContext context) => extractSheet<bool>(
@@ -158,36 +124,42 @@ Future<bool?> showExtractPhotoSheet(BuildContext context) => extractSheet<bool>(
   (ctx) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
+      Text('Add from a photo', style: ExtractStyle.text(22)),
+      const SizedBox(height: 8),
       Text(
-        'Add from a photo',
-        style: ExtractStyle.text(22, weight: FontWeight.w700),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        'Snap a shelf, drawer or bin. FindEZ lists every item, and nothing saves until you approve.',
+        'Take or choose a photo of a shelf, drawer or bin. Review the items before saving.',
         style: ExtractStyle.text(14.5, color: ExtractStyle.tx2),
       ),
       const SizedBox(height: 16),
-      Row(
-        children: [
-          Expanded(
-            child: FilledButton.icon(
-              style: ExtractStyle.pill(height: 52),
-              onPressed: () => Navigator.pop(ctx, true),
-              icon: const Icon(CupertinoIcons.camera, size: 18),
-              label: const Text('Camera'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: FilledButton.icon(
-              style: ExtractStyle.pill(height: 52),
-              onPressed: () => Navigator.pop(ctx, false),
-              icon: const Icon(CupertinoIcons.photo, size: 18),
-              label: const Text('Library'),
-            ),
-          ),
-        ],
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final camera = FilledButton.icon(
+            style: ExtractStyle.pill(height: 52),
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(CupertinoIcons.camera, size: 20),
+            label: const Text('Camera'),
+          );
+          final library = FilledButton.icon(
+            style: ExtractStyle.pill(height: 52),
+            onPressed: () => Navigator.pop(ctx, false),
+            icon: const Icon(CupertinoIcons.photo, size: 20),
+            label: const Text('Library'),
+          );
+          final largeText = MediaQuery.textScalerOf(context).scale(15) > 20;
+          if (constraints.maxWidth < 300 || largeText) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [camera, const SizedBox(height: 10), library],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: camera),
+              const SizedBox(width: 12),
+              Expanded(child: library),
+            ],
+          );
+        },
       ),
     ],
   ),
@@ -269,11 +241,7 @@ void extractToast(BuildContext context, String message) {
                 ),
                 child: Text(
                   message,
-                  style: ExtractStyle.text(
-                    14,
-                    color: ExtractStyle.ink,
-                    weight: FontWeight.w600,
-                  ),
+                  style: ExtractStyle.text(14, color: ExtractStyle.ink),
                 ),
               ),
             ),

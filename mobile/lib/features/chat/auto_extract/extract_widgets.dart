@@ -160,7 +160,6 @@ class ExtractTiles extends StatelessWidget {
                                 style: ExtractStyle.text(
                                   10,
                                   color: ExtractStyle.ink,
-                                  weight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -176,16 +175,12 @@ class ExtractTiles extends StatelessWidget {
                               name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style:
-                                  ExtractStyle.text(
-                                    13.5,
-                                    weight: FontWeight.w600,
-                                  ).copyWith(
-                                    height: 1.2,
-                                    decoration: selected
-                                        ? null
-                                        : TextDecoration.lineThrough,
-                                  ),
+                              style: ExtractStyle.text(13.5).copyWith(
+                                height: 1.2,
+                                decoration: selected
+                                    ? null
+                                    : TextDecoration.lineThrough,
+                              ),
                             ),
                             const SizedBox(height: 3),
                             Text(

@@ -46,17 +46,10 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: ExtractStyle.text(
-            11.5,
-            color: ExtractStyle.tx2,
-            weight: FontWeight.w500,
-          ),
-        ),
+        Text(label, style: ExtractStyle.text(11.5, color: ExtractStyle.tx2)),
         TextFormField(
           controller: _fields[key],
-          style: ExtractStyle.text(16.5, weight: FontWeight.w500),
+          style: ExtractStyle.text(16.5),
           decoration: const InputDecoration(
             isDense: true,
             filled: false,
@@ -131,10 +124,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                             controller: _fields['quantity'],
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            style: ExtractStyle.text(
-                              20,
-                              weight: FontWeight.w600,
-                            ),
+                            style: ExtractStyle.text(20),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
@@ -333,7 +323,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
       children: [
         Text(
           'Save ${widget.count} ${widget.count == 1 ? 'item' : 'items'} to…',
-          style: ExtractStyle.text(22, weight: FontWeight.w700),
+          style: ExtractStyle.text(22),
         ),
         const SizedBox(height: 14),
         TextField(
@@ -367,11 +357,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
             padding: const EdgeInsets.fromLTRB(10, 14, 10, 4),
             child: Text(
               '${group['workspace_name']} · ${group['name']}',
-              style: ExtractStyle.text(
-                12.5,
-                color: ExtractStyle.tx3,
-                weight: FontWeight.w600,
-              ),
+              style: ExtractStyle.text(12.5, color: ExtractStyle.tx3),
             ),
           ),
           for (final space
@@ -389,10 +375,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
                   vertical: 4,
                 ),
                 leading: tile('${space['name']}'),
-                title: Text(
-                  '${space['name']}',
-                  style: ExtractStyle.text(15.5, weight: FontWeight.w600),
-                ),
+                title: Text('${space['name']}', style: ExtractStyle.text(15.5)),
                 subtitle: Text(
                   space['item_count'] == 0
                       ? 'Empty'
@@ -432,7 +415,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
               query.isEmpty
                   ? 'New Space'
                   : 'New Space “${_search.text.trim()}”',
-              style: ExtractStyle.text(15.5, weight: FontWeight.w600),
+              style: ExtractStyle.text(15.5),
             ),
             subtitle: Text(
               'Create it and save here',

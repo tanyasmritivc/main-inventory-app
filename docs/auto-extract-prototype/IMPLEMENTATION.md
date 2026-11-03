@@ -1,4 +1,4 @@
-# Auto Extract on iPhone — build 170
+# Auto Extract on iPhone
 
 The photo flow uses the supplied prototype's local palette, system typography,
 rounded sheets, scanning sweep, progressive item tiles, edit controls, searchable
@@ -40,3 +40,22 @@ is untouched because the photo flow now renders inline. Tests and a test-only
 photo fixture, this reference package, release notes and the build-number increment
 are included for the explicitly authorized TestFlight delivery. No public App
 Store submission change is part of this release.
+
+## Photo-sheet correction after build 170
+
+The photo, edit and Space sheets now use Flutter's standard modal bottom-sheet
+route with a uniform 32% dimming barrier. The previous full-page backdrop blur
+and translation are removed. Sheets reserve visible dismissal space above the
+card, respect safe areas and keyboard insets, and scroll on short screens. Photo
+actions stack at narrow widths or larger text sizes. Camera/Library results and
+root-navigator ownership remain unchanged.
+
+Auto Extract text now consistently uses regular (400) system type, including
+headings, item names, form fields and button labels, matching the app's existing
+regular-text policy and the user's follow-up request. The source-picker copy is
+shorter and describes reviewing items before saving.
+
+`test/extract_photo_sheet_test.dart` checks light/dark, 320pt at 2.6x, keyboard
+reachability, nested navigation, source results, cancellation and rendered font
+weight. `integration_test/extract_photo_sheet_audit_test.dart` runs the same
+checks on iOS and captures layout images.

@@ -1,3 +1,20 @@
+## November 2 - Photo picker layout and regular typography complete
+
+Branch `fix/photo-picker-layout-171` fixes the screenshot's full-page blur with a
+standard 32% dimmed bottom sheet, safe-area/keyboard-aware scrolling, visible
+outside dismissal space and adaptive photo buttons. Auto Extract now consistently
+uses regular (400) system text, including headings, labels and buttons. Existing
+camera/library results and review/save contracts remain.
+
+Validation: 1,295 mobile tests pass (one existing skip), four native iOS simulator
+checks pass, Flutter analysis and diff checks are clean. Host layout previews were
+reviewed. The first full runner stalled during concurrent simulator compilation;
+it was stopped and the complete standalone rerun passed. Physical camera/Library
+acceptance remains unverified. No new TestFlight upload: trusted production defines,
+export settings and Apple API metadata from the prior release are missing locally.
+`pubspec.yaml` remains build170. See
+`.agents/HANDOFFS/2026-11-02-photo-sheet-delivery.md` for release continuation.
+
 ## November 2 - Auto Extract prototype delivered, build170
 
 FindEZ 1.1.2 (170), source `44c23a764dda0b195877bbbc7463fb642d9d8c27`, uploaded to Apple with delivery `96b3a31b-454e-4a12-b5f2-c6f4a5d30d32`. The photo Auto Extract flow now follows the supplied prototype with inline scanning/review, item tiles, edit/Space sheets, typed corrections, explicit saving and receipt-scoped Undo. Existing API calls and scopes remain. No geometry is fabricated, missing crops use placeholders, and demo recents are omitted. Validation: 76 focused checks, 1,291 local mobile tests (one existing skip), clean analysis, ten native simulator checks, all five exact-source CI gates, platform/signature/privacy/configuration/font/credential checks and Apple validation passed. Native fixtures do not establish physical camera or real-model acceptance, which remains with the user. Processing and tester availability were not polled. No public App Store submission was changed. See `docs/auto-extract-prototype/IMPLEMENTATION.md` and `docs/plans/mobile-auto-extract170-receipt.json`.
