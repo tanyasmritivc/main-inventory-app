@@ -1,3 +1,7 @@
+## November 3 - Founding Access sheet, build172 in progress
+
+User supplied `findez-founding-access-codex.zip` and explicitly authorized direct push and TestFlight delivery in the existing checkout. Branch `feat/founding-access-sheet` is based on delivered build171. Native informational welcome/details sheet replaces the post-signup plan popup; add Your plan within the existing Settings Plans screen. Only locally recorded new account creation qualifies, after Ask mounts. No billing, API, backend, web, database, inventory or dependency changes. Existing production signing/access reused. See `docs/founding-access/IMPLEMENTATION.md`. All 1,327 Flutter tests pass (one existing skip), analyzer is clean, and 15 native iOS checks pass with 12 inspected screenshots. Push, exact-source CI, signed upload and What to Test metadata are pending. No public App Store submission.
+
 ## November 3 - Space UI and extraction fixes delivered to TestFlight171
 
 Apple acknowledged FindEZ 1.1.2 (171), runtime `347d941747494c99241092a8a283195ad423350f`, delivery `cc0e3122-88c3-42ac-8c3a-656aa39682e7`. Branch `feat/space-v2-ui` and PR302 contain the Space detail redesign, item quick view and Ask presentation, plus the earlier photo-picker and count-free extraction-loading fixes. Original item fields, imported columns, APIs and confirmed inventory writes remain intact. The Spaces directory is unchanged. A final Material surface fix restores suggestion tap feedback and compatibility with the newer Flutter CI assertion.

@@ -1,3 +1,4 @@
+import '../founding_access/founding_access_gate.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
 import '../../core/ui/content_loading.dart';
@@ -696,7 +697,12 @@ class _WorldShellState extends State<WorldShell> {
                           child: ChatPage(
                             key: ValueKey(_world),
                             api: _chatApi,
-                            onInitialSourceReady: widget.onInitialChatReady,
+                            onInitialSourceReady: () {
+                              widget.onInitialChatReady?.call();
+                              FoundingAskReady(
+                                _chatApi.accountId,
+                              ).dispatch(context);
+                            },
                             initialSource: _world == 'personal'
                                 ? widget.initialChatSource
                                 : null,

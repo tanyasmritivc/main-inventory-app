@@ -1,3 +1,4 @@
+import '../founding_access/founding_access_store.dart';
 import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
 import 'dart:convert';
@@ -502,13 +503,20 @@ class _AuthPageState extends State<AuthPage> {
   }) async {
     final auth = Supabase.instance.client.auth;
     await widget.beforeAuth?.call(provider.name, true);
+    final foundingSignupStarted = DateTime.now().toUtc();
     final response = await auth.signInWithIdToken(
       provider: provider,
       idToken: idToken,
       nonce: nonce,
       accessToken: accessToken,
     );
-    if (response.user != null) await widget.onSignupUser?.call(response.user!);
+    if (response.user != null) {
+      await FoundingAccessStore.instance.recordSignup(
+        response.user!,
+        foundingSignupStarted,
+      );
+      await widget.onSignupUser?.call(response.user!);
+    }
     return response;
   }
 
@@ -638,6 +646,7 @@ class _AuthPageState extends State<AuthPage> {
         final profileRole = _profileRole.text.trim();
         final organization = _organization.text.trim();
         await OnboardingPrefs.setPostSignupPending(true);
+        final foundingSignupStarted = DateTime.now().toUtc();
         final res = await auth.signUp(
           email: email,
           password: password,
@@ -654,7 +663,14 @@ class _AuthPageState extends State<AuthPage> {
           },
         );
 
-        if (res.user != null) await widget.onSignupUser?.call(res.user!);
+        if (res.user != null) {
+          await FoundingAccessStore.instance.recordSignup(
+            res.user!,
+            foundingSignupStarted,
+            email: true,
+          );
+          await widget.onSignupUser?.call(res.user!);
+        }
 
         // Email confirmation required — user created but no active session yet
         if (res.session == null && res.user != null) {
