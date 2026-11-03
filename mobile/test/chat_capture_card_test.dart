@@ -1,3 +1,5 @@
+import 'support/extract_photo_fixture.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,6 +49,7 @@ void main() {
     value = draft();
     f.status = 200;
     f.requests.clear();
+    SharedPreferences.setMockInitialValues({});
     api = ApiClient.forWorld(f.api, 'personal', isCurrent: () => true);
     f.respond = (r) {
       if (r.path.endsWith('/spaces')) {
@@ -132,10 +135,15 @@ void main() {
         ),
         home: Scaffold(
           body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 54, 16, 24),
             child: ChatCaptureCard(
               api: api,
               conversationId: 'conversation',
               draft: value,
+              photoBytes:
+                  value['source_kind'] == 'photo' && value['status'] == 'draft'
+                  ? extractPhotoFixture
+                  : null,
               onChanged: (_) {},
               onOpenResource: onOpen,
             ),
@@ -146,6 +154,236 @@ void main() {
     await t.pumpAndSettle();
   }
 
+  for (final count in [1, 4, 12]) {
+    testWidgets(
+      'photo prototype renders $count items and excludes low confidence',
+      (t) async {
+        value['source_kind'] = 'photo';
+        value['items'] = [
+          for (var i = 0; i < count; i++)
+            {
+              'index': i,
+              'selected': true,
+              'item': {
+                'name': 'Socket screws $i',
+                'category': 'Hardware',
+                'quantity': 24,
+                if (i == count - 1 && count > 1) 'confidence': .2,
+              },
+            },
+        ];
+        await mount(t, brightness: Brightness.dark);
+        await t.pump(const Duration(seconds: 2));
+        await t.pumpAndSettle();
+        expect(find.textContaining('I found $count'), findsOneWidget);
+        expect(
+          find.text(
+            'Save ${count > 1 ? count - 1 : 1} ${count > 2 ? 'items' : 'item'}',
+          ),
+          findsOneWidget,
+        );
+        expect(f.requests.where((r) => r.method == 'POST'), isEmpty);
+        if (captureAuditCapture != null) {
+          await captureAuditCapture!('photo-review-$count');
+        }
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  testWidgets('photo typed edit is durable and ambiguous edits fall through', (
+    t,
+  ) async {
+    value['source_kind'] = 'photo';
+    await mount(t);
+    final card = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
+    final update = card.correctFromChat('There are 12 drills');
+    await t.pumpAndSettle();
+    expect(await update, 'Updated: Drill ×12.');
+    expect(value['items'][0]['item']['quantity'], 12);
+    expect(await card.correctFromChat('What is in my garage?'), isNull);
+    final remove = card.correctFromChat('skip the fastener');
+    await t.pumpAndSettle();
+    expect(await remove, 'Left out Unknown fastener.');
+    expect(value['items'][1]['selected'], false);
+    expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+  });
+  testWidgets(
+    'photo edit sheet keeps edits through failed save and explicit retry',
+    (t) async {
+      value.addAll({
+        'source_kind': 'photo',
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      });
+      await mount(t);
+      await t.tap(find.byTooltip('Edit Drill'));
+      await t.pumpAndSettle();
+      await t.enterText(find.byType(TextFormField).first, 'Cordless drill');
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Done'));
+      await t.pumpAndSettle();
+      if (captureAuditCapture != null) await captureAuditCapture!('photo-edit');
+      await t.tap(find.text('Done'));
+      await t.pumpAndSettle();
+      expect(value['items'][0]['item']['name'], 'Cordless drill');
+      final successful = f.respond;
+      f.respond = (_) => {'detail': 'Temporarily unavailable'};
+      f.status = 503;
+      await t.ensureVisible(find.text('Save 2 items'));
+      await t.tap(find.text('Save 2 items'));
+      await t.pumpAndSettle();
+      expect(value['status'], 'draft');
+      expect(find.text('Cordless drill'), findsOneWidget);
+      f.status = 200;
+      f.respond = successful;
+      await t.tap(find.text('Save 2 items'));
+      await t.pumpAndSettle();
+      expect(value['status'], 'saved');
+      expect(f.requests.where((r) => r.path.endsWith('/save')).length, 2);
+      if (captureAuditCapture != null) {
+        await captureAuditCapture!('photo-saved');
+      }
+    },
+  );
+  testWidgets('photo Space search chooses a destination without saving', (
+    t,
+  ) async {
+    value['source_kind'] = 'photo';
+    await mount(t);
+    await t.ensureVisible(find.text('Choose a Space'));
+    await t.tap(find.text('Choose a Space'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextField), 'gar');
+    await t.pumpAndSettle();
+    expect(find.text('Garage'), findsOneWidget);
+    if (captureAuditCapture != null) await captureAuditCapture!('photo-space');
+    await t.tap(find.text('Garage'));
+    await t.pumpAndSettle();
+    expect(value['space_id'], space);
+    expect(value['status'], 'draft');
+    expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+    expect(find.text('Search Spaces'), findsNothing);
+  });
+
+  testWidgets(
+    'photo creates a Space through the authorized inventory and does not save items',
+    (t) async {
+      value['source_kind'] = 'photo';
+      final original = f.respond;
+      f.respond = (r) {
+        if (r.path == '/inventories/$inv') {
+          return {
+            'inventory': inventory(
+              inv,
+              workspace: 'personal',
+              organization: 'personal',
+            ),
+          };
+        }
+        if (r.method == 'POST' && r.path == '/inventories/$inv/spaces') {
+          return {
+            'space': {'id': space, 'name': 'Workbench'},
+          };
+        }
+        return original(r);
+      };
+      await mount(t);
+      await t.ensureVisible(find.text('Choose a Space'));
+      await t.tap(find.text('Choose a Space'));
+      await t.pumpAndSettle();
+      await t.enterText(find.byType(TextField), 'Workbench');
+      await t.pumpAndSettle();
+      await t.tap(find.text('New Space “Workbench”'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Create Space'));
+      await t.tap(find.text('Create Space'));
+      await t.pumpAndSettle();
+      expect(
+        f.requests.where(
+          (r) => r.method == 'POST' && r.path == '/inventories/$inv/spaces',
+        ),
+        hasLength(1),
+      );
+      expect(value['space_id'], space);
+      expect(value['status'], 'draft');
+      expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+    },
+  );
+  testWidgets(
+    'photo Undo deletes only receipt items and preserves partial retry',
+    (t) async {
+      const first = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          second = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+      value.addAll({
+        'source_kind': 'photo',
+        'status': 'saved',
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+        'receipt': {
+          'saved_count': 2,
+          'review_count': 0,
+          'resource_links': [
+            for (final id in [first, second])
+              {
+                'kind': 'item',
+                'id': id,
+                'inventory_id': inv,
+                'label': 'Saved item',
+                'href': 'findez://item/$inv/$id',
+              },
+          ],
+        },
+      });
+      var fail = true;
+      f.respond = (r) {
+        if (r.path == '/inventories/$inv') {
+          return {
+            'inventory': inventory(
+              inv,
+              workspace: 'personal',
+              organization: 'personal',
+            ),
+          };
+        }
+        if (r.method == 'DELETE') {
+          if (r.queryParameters['item_id'] == second && fail) {
+            f.status = 503;
+            return {'detail': 'Unavailable'};
+          }
+          return {'deleted': true};
+        }
+        return {'capture': value};
+      };
+      await mount(t);
+      await t.tap(find.text('Undo'));
+      await t.pumpAndSettle();
+      expect(
+        find.text('Undone. Nothing from that photo was saved.'),
+        findsNothing,
+      );
+      fail = false;
+      f.status = 200;
+      await t.tap(find.text('Undo'));
+      await t.pumpAndSettle();
+      await t.pump(const Duration(seconds: 3));
+      expect(
+        find.text('Undone. Nothing from that photo was saved.'),
+        findsOneWidget,
+      );
+      final deletes = f.requests.where((r) => r.method == 'DELETE').toList();
+      expect(deletes.map((r) => r.queryParameters['item_id']).toList(), [
+        first,
+        second,
+        second,
+      ]);
+      expect(
+        deletes.every((r) => r.path == '/inventories/$inv/delete_item'),
+        isTrue,
+      );
+    },
+  );
   testWidgets(
     'chat save confirms once and a failed save is not retried silently',
     (t) async {

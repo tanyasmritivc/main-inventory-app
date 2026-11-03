@@ -1,3 +1,4 @@
+import 'package:mobile/features/chat/chat_capture_card.dart';
 import 'package:mobile/features/chat/voice_capture.dart';
 import 'voice_capture_test.dart' show Recorder;
 import 'package:mobile/features/world/world_composer.dart';
@@ -127,6 +128,7 @@ class _AskApi extends ApiClient {
             'version': 1,
             'revision': 1,
             'status': 'draft',
+            'source_kind': 'photo',
             'items': [
               {
                 'index': 0,
@@ -154,6 +156,7 @@ class _AskApi extends ApiClient {
             'version': 1,
             'revision': 1,
             'status': 'draft',
+            'source_kind': 'photo',
             'items': [
               for (var index = 0; index < previewRows; index++)
                 {
@@ -1129,48 +1132,13 @@ void main() {
             await tester.pumpAndSettle();
             await tester.tap(find.text('Auto Extract'));
             await tester.pumpAndSettle();
-            await tester.tap(find.text('Choose photo'));
+            await tester.ensureVisible(find.text('Library'));
+            await tester.tap(find.text('Library'));
             await tester.pumpAndSettle();
             expect(focused.last, isTrue);
-            expect(find.text('Review extraction'), findsOneWidget);
-            expect(find.text('Auto Extract'), findsNothing);
+            expect(find.byType(ChatCaptureCard), findsOneWidget);
+            expect(find.byType(ChatCaptureCard), findsOneWidget);
             expect(find.byType(LinearProgressIndicator), findsNothing);
-            if (width == 390 && scale == 1) {
-              expect(
-                find
-                    .widgetWithText(FilledButton, 'Choose a Space')
-                    .hitTestable(),
-                findsOneWidget,
-              );
-              final actionRect = tester.getRect(
-                find.widgetWithText(FilledButton, 'Choose a Space'),
-              );
-              await tester.drag(
-                find.byKey(const Key('extraction-preview-scroll')),
-                const Offset(0, -160),
-              );
-              await tester.pumpAndSettle();
-              expect(
-                tester.getRect(
-                  find.widgetWithText(FilledButton, 'Choose a Space'),
-                ),
-                actionRect,
-              );
-              if (previewAuditCapture != null) {
-                final boundary = tester.renderObject<RenderRepaintBoundary>(
-                  find.byKey(const Key('preview-audit-frame')),
-                );
-                final image = await boundary.toImage(pixelRatio: 1);
-                final data = await image.toByteData(
-                  format: ui.ImageByteFormat.png,
-                );
-                await previewAuditCapture!(
-                  'extraction-review-${brightness.name}',
-                  data!.buffer.asUint8List(),
-                );
-                image.dispose();
-              }
-            }
             tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
             await tester.enterText(
               find.byType(TextField).first,
@@ -1188,16 +1156,6 @@ void main() {
             expect(
               find.byTooltip('Hide keyboard').hitTestable(),
               findsOneWidget,
-            );
-            expect(
-              find.byTooltip('Keep draft in chat').hitTestable(),
-              findsOneWidget,
-            );
-            expect(
-              tester
-                  .getRect(find.byKey(const Key('extraction-preview-scroll')))
-                  .bottom,
-              lessThan(input.top),
             );
             expect(tester.takeException(), isNull);
             if (previewAuditCapture != null) {
@@ -1256,14 +1214,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Auto Extract'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Choose photo'));
+      await tester.tap(find.text('Library'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(focused.last, isTrue);
       expect(find.text('Reading your photo...'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.byTooltip('Stop scanning').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Stop response').hitTestable(), findsOneWidget);
       if (previewAuditCapture != null) {
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(const Key('preview-audit-frame')),
@@ -1279,10 +1237,10 @@ void main() {
 
       await tester.enterText(find.byType(TextField).first, 'Keep this draft');
       await tester.pump();
-      await tester.tap(find.byTooltip('Stop scanning'));
+      await tester.tap(find.byTooltip('Stop response'));
       await tester.pumpAndSettle();
       expect(find.text('Keep this draft'), findsOneWidget);
-      expect(find.text('Review extraction'), findsNothing);
+      expect(find.byType(ChatCaptureCard), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
@@ -1343,12 +1301,12 @@ void main() {
       await tester.tap(find.text('Auto Extract'));
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
-      await tester.tap(find.text('Choose photo'));
+      await tester.tap(find.text('Library'));
       await tester.pumpAndSettle();
       expect(api.photos, hasLength(1));
       expect(api.photos.single.autoExtract, isTrue);
       expect(api.photoQuestions.single, isEmpty);
-      expect(find.text('Review extraction'), findsOneWidget);
+      expect(find.byType(ChatCaptureCard), findsOneWidget);
       expect(find.byType(AskQuestionCard), findsNothing);
       expect(find.byType(TextField), findsOneWidget);
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
@@ -1357,14 +1315,14 @@ void main() {
       tester.view.resetViewInsets();
       await tester.enterText(
         find.byType(TextField).first,
-        'Increase the blue pen quantity to 2',
+        'What could I do with these?',
       );
       await tester.pump();
       await tester.tap(find.byTooltip('Send message'));
       await tester.pumpAndSettle();
-      expect(find.text('Review extraction'), findsNothing);
+
       expect(api.conversationIds.single, 'photo-conversation');
-      expect(api.commands.single, 'Increase the blue pen quantity to 2');
+      expect(api.commands.single, 'What could I do with these?');
       expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -1455,13 +1413,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Auto Extract'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Choose photo'));
+    await tester.tap(find.text('Library'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.byTooltip('Stop scanning'), findsNothing);
-    expect(find.text('Review extraction'), findsOneWidget);
+    expect(find.byType(ChatCaptureCard), findsOneWidget);
     expect(find.byType(AskQuestionCard), findsNothing);
-    expect(find.text('Review extraction'), findsOneWidget);
-    expect(find.text('1 of 1 selected · Not saved yet'), findsOneWidget);
+    expect(find.byType(ChatCaptureCard), findsOneWidget);
+    expect(find.text('I found 1 item.'), findsOneWidget);
   });
 }
