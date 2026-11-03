@@ -1,3 +1,9 @@
+## November 2 - Chat file readers deployed
+
+Backend lane `feat/chat-file-formats-api` adds bounded XLSX, DOCX, CSV, TSV and arbitrary JSON readers to the existing authenticated chat-files endpoint. ZIP expansion and XML entities are guarded; formulas remain expressions and are never executed. Existing PDF/text reading, world permissions, 10MB and excerpt limits remain. Legacy XLS/DOC require conversion. No schema, inventory writes or web changes.
+
+Validation: 46 focused parser/source tests, all 1,474 backend tests and ten subtests passed. The 46 checks also passed on current live source. A hash-checked three-file deployment preserved unrelated live code and requirements; health returned 200. Rollback and manifest: `/home/ubuntu/findez-chat-files169-20261102`. Mobile enablement is build169.
+
 ## November 2 - Explicit capture confirmation
 
 Backend-only lane `fix/capture-confirm-to-space`: additive explicit preview
