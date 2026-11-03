@@ -3170,7 +3170,7 @@ class _ChatPageState extends State<ChatPage>
       _scanningPreview = true;
       _pickingPhoto = true;
       _worldHome = false;
-      _progress = 'Reading your photo...';
+      _progress = 'Preparing your photo...';
       _extractionPhoto = photo;
       _session.hasStarted = true;
       _session.messages.add(
@@ -3202,7 +3202,10 @@ class _ChatPageState extends State<ChatPage>
         }
         if (event.type == 'status') setState(() => _progress = event.message);
         if (event.answerContext?.chatCapture != null) {
-          setState(() => _previewDraft = event.answerContext!.chatCapture);
+          setState(() {
+            _previewDraft = event.answerContext!.chatCapture;
+            _progress = 'Preparing your review...';
+          });
         }
         if (event.type == 'done') {
           completed = true;
@@ -3242,26 +3245,29 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Widget _extractionUserPhoto(AskPhoto photo) => Align(
-    alignment: Alignment.centerRight,
-    child: Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(6),
-        ),
-        child: Image.memory(
-          photo.bytes,
-          width: 200,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const Icon(CupertinoIcons.photo),
-        ),
-      ),
-    ),
-  );
+  Widget _extractionUserPhoto(AskPhoto photo) =>
+      _scanningPreview && identical(photo.bytes, _extractionPhoto?.bytes)
+      ? const SizedBox.shrink()
+      : Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(6),
+              ),
+              child: Image.memory(
+                photo.bytes,
+                width: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const Icon(CupertinoIcons.photo),
+              ),
+            ),
+          ),
+        );
 
   void _stopExtraction() {
     if (!_scanningPreview) return;
@@ -3613,7 +3619,7 @@ class _ChatPageState extends State<ChatPage>
                       voiceSession: _voice,
                       extractionActive: _scanningPreview,
                       placeholder: _scanningPreview
-                          ? 'FindEZ is looking…'
+                          ? 'Add a note while scanning...'
                           : _previewDraft != null
                           ? 'Or tell me what to change…'
                           : null,
@@ -3743,6 +3749,7 @@ class _ChatPageState extends State<ChatPage>
         resizeToAvoidBottomInset: !widget.inPageView,
         backgroundColor: Colors.transparent,
         body: ChatViewport(
+          keepControlsOutside: _scanningPreview || _previewDraft != null,
           header: _buildHeader(),
           controller: _scrollController,
 
@@ -3800,7 +3807,7 @@ class _ChatPageState extends State<ChatPage>
                 voiceSession: _voice,
                 extractionActive: _scanningPreview,
                 placeholder: _scanningPreview
-                    ? 'FindEZ is looking…'
+                    ? 'Add a note while scanning...'
                     : _previewDraft != null
                     ? 'Or tell me what to change…'
                     : null,
@@ -3829,6 +3836,7 @@ class _ChatPageState extends State<ChatPage>
           ? Colors.transparent
           : AppTheme.bg(context),
       body: ChatViewport(
+        keepControlsOutside: _scanningPreview || _previewDraft != null,
         header: widget.contextual || _session.messages.isNotEmpty
             ? _buildHeader()
             : const SizedBox.shrink(),
@@ -3889,7 +3897,7 @@ class _ChatPageState extends State<ChatPage>
                 voiceSession: _voice,
                 extractionActive: _scanningPreview,
                 placeholder: _scanningPreview
-                    ? 'FindEZ is looking…'
+                    ? 'Add a note while scanning...'
                     : _previewDraft != null
                     ? 'Or tell me what to change…'
                     : null,

@@ -1,6 +1,7 @@
 # Photo sheet layout and regular typography
 
-Branch: `fix/photo-picker-layout-171` over `feat/auto-extract-exact` (build170).
+Branch: `fix/extraction-loading-layout` over `fix/photo-picker-layout-171`,
+which builds on `feat/auto-extract-exact` (build170).
 Worktree: `/Users/tanyasmritivictorcharles/projects/findez-voice-composer`.
 
 The screenshot's full-page blur is removed. Auto Extract uses a standard dimmed
@@ -34,3 +35,15 @@ check Apple's latest build number, increment once, package, verify all device
 binaries/signatures/configuration/privacy, validate and upload. Stop at Apple
 upload acknowledgement. Public App Store submission is outside this task.
 Physical camera/Library acceptance remains a device check.
+
+## Loading follow-up
+
+The follow-up removes raw server counts, fixed 8% progress, duplicate active
+photos and empty placeholder tiles. The live loader uses count-free server phases
+and indeterminate activity, with a bounded contain-fit image. Extraction and
+review reserve header/composer layout space. See the implementation notes for
+behavior and regression checks. Final validation: 1,297 full mobile tests pass
+(one existing skip), clean analysis and nine native iOS extraction/keyboard checks.
+Native screenshots are saved in `projects/findez-loader-preview`; the loading
+image and compact keyboard layout were inspected. No production configuration,
+API contracts or backend files changed. Release remains blocked as above.

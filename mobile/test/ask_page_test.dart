@@ -1,6 +1,7 @@
 import 'package:mobile/features/chat/chat_capture_card.dart';
 import 'package:mobile/features/chat/voice_capture.dart';
 import 'voice_capture_test.dart' show Recorder;
+import 'support/extract_photo_fixture.dart';
 import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/chat/native_chat_menu_button.dart';
 import 'dart:async';
@@ -1204,7 +1205,7 @@ void main() {
           key: const Key('preview-audit-frame'),
           child: _page(
             _AskApi(world: true, pending: pending),
-            photoPicker: (_) async => AskPhoto(bytes: png),
+            photoPicker: (_) async => AskPhoto(bytes: extractPhotoFixture),
             onChatStateChanged: focused.add,
           ),
         ),
@@ -1218,7 +1219,45 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(focused.last, isTrue);
-      expect(find.text('Reading your photo...'), findsOneWidget);
+      expect(find.text('Scanning photo...'), findsOneWidget);
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        isNull,
+      );
+      pending.add(
+        AiStreamEvent(
+          type: 'status',
+          message: 'Reading details for 8 objects...',
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Analyzing details...'), findsOneWidget);
+      expect(find.textContaining('8 objects'), findsNothing);
+      pending.add(
+        AiStreamEvent(type: 'status', message: 'Reading your photo...'),
+      );
+      await tester.pump();
+      expect(find.text('Analyzing details...'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4));
+      expect(find.text('Analyzing details...'), findsOneWidget);
+      expect(find.text('Preparing your review...'), findsNothing);
+      final viewport = tester.getRect(
+        find.byKey(const Key('chat-full-viewport')),
+      );
+      expect(
+        tester.getRect(find.byKey(const Key('extraction-status'))).top,
+        greaterThanOrEqualTo(viewport.top),
+      );
+      expect(
+        viewport.bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(WorldComposer)).top),
+      );
+      expect(find.byType(Image), findsOneWidget);
+      expect(tester.getSize(find.byType(Image)).height, lessThanOrEqualTo(240));
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byTooltip('Stop response').hitTestable(), findsOneWidget);

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/ui/scroll_glass.dart';
 
-/// Full-height messages flow beneath softly blurred controls. Measured insets
-/// keep the first/last message reachable with keyboards and larger text.
+/// Normal messages flow beneath softly blurred controls with measured insets.
+/// Extraction reserves space for its controls so content cannot overlap them.
 class ChatViewport extends StatefulWidget {
   const ChatViewport({
     super.key,
@@ -11,11 +11,13 @@ class ChatViewport extends StatefulWidget {
     required this.messages,
     required this.controller,
     this.preview,
+    this.keepControlsOutside = false,
   });
   final Widget header, footer;
   final List<Widget> messages;
   final ScrollController controller;
   final Widget? preview;
+  final bool keepControlsOutside;
   @override
   State<ChatViewport> createState() => _ChatViewportState();
 }
@@ -62,9 +64,35 @@ class _ChatViewportState extends State<ChatViewport> {
       Padding(padding: const EdgeInsets.all(8), child: widget.footer),
     ],
   );
+  Widget _boundedLayout(BuildContext context) => Column(
+    children: [
+      Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          MediaQuery.paddingOf(context).top + 8,
+          16,
+          12,
+        ),
+        child: widget.header,
+      ),
+      Expanded(
+        child: ListView(
+          key: const Key('chat-full-viewport'),
+          controller: widget.controller,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          children: widget.messages,
+        ),
+      ),
+      Padding(padding: const EdgeInsets.all(8), child: widget.footer),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, bounds) => widget.preview != null
+    builder: (context, bounds) => widget.keepControlsOutside
+        ? _boundedLayout(context)
+        : widget.preview != null
         ? _previewLayout(context)
         : Stack(
             fit: StackFit.expand,
