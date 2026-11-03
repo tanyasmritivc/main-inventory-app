@@ -1,3 +1,21 @@
+## November 3 — Public review completion verified
+
+Read-only App Store Connect check at 22:40 UTC confirms version 1.1.1 is
+READY_FOR_SALE with selected build166. Both the original build162 submission
+and the later submission are COMPLETE. Build162's audit, physical smoke checks,
+screenshots and submission were completed on November 1; the pending-preparation
+entry below is historical. No new build, resubmission or release action was
+performed during this continuation. Latest uploaded builds170/169/168 are VALID;
+they were not substituted into the released version.
+
+## November 1 - App Store build 162 uploaded; submission preparation continues
+
+Apple acknowledged 1.1.1 (162), runtime `eb48aba5521908c24bb4c10064ccad7b1d5d4420`, delivery `a79a77bb-80f9-4a4f-aa78-154932b99a5f`. The native-tab tooltip fix passed 1,234 host tests (one existing skip), clean analysis, seven final native checks, and all five CI gates (41090924534). The broader native audit passed 172 core, 168 extended (one documented skip), and 30 current surface checks.
+
+The first archive was rejected locally for a cached simulator framework. A clean rebuild passed all 34 archive and 34 export device-executable checks, strict signing, 26 privacy manifests, production configuration, SF Pro packaging, and Apple validation. IPA/archive and receipts are preserved in `Documents/FindEZ/AppStore/1.1.1-build162`; see `docs/plans/mobile-release162-receipt.json`.
+
+Public submission is explicitly authorized but not yet sent. The 1.1.1 draft remains manual. Review login, authenticated workspace read, backend/database health, and legal URLs passed again November 1. Corrected review instructions and release notes were saved and read back. Current screenshots and final physical build162 acceptance remain pending. UI control can inspect the simulator but currently rejects native-coordinate taps; user was asked to bring its window to the current desktop. Physical build161 checks are recorded separately in the release audit. Main and runtime code are unchanged during packaging; PR282.
+
 ## October 30 — Spaces controls and restrained navigation delivered
 
 Apple acknowledged TestFlight 1.1.1 (161), runtime `0ff52f02acaf8305cbc0c583d5ca39e4b2dfe011`, delivery `bc9b127a-7053-4804-b1a5-7465619c5fde`. Fixed delayed Space opening, snapping add-menu controls, blocked interactive back and excessive scroll-blur passes first. Then added the explicitly requested restrained 160ms crossfade shared by primary tabs and pushed routes, using live UIKit Reduce Motion/Prefer Cross-Fade preferences. No skeletons or artificial loading delays added. Material tab surfaces preserve list tap feedback.

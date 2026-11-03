@@ -59,6 +59,9 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   void didUpdateWidget(RetainedTabTransition oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.index != widget.index) {
+      // UIKit tab callbacks bypass Flutter pointer events. Clear hints from the
+      // retained page so they cannot float over or reappear on another tab.
+      Tooltip.dismissAllToolTips();
       // A rapid retarget keeps the visually dominant prior scene underneath.
       final previous = _controller.isAnimating && _controller.value < .5
           ? _outgoing ?? oldWidget.index

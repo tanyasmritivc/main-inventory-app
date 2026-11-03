@@ -1,0 +1,72 @@
+# Public App Store release audit - October 30
+
+The user explicitly requested broad testing, fixes, and public App Store review.
+The user confirmed App Store review rather than TestFlight-only delivery and
+enabled iPhone Mirroring for physical-device checks. Preserve existing product
+features and main; use isolated fixtures for destructive/error-path coverage.
+
+Source starts at build161 runtime `0ff52f0`, receipt `c1a91fe`.
+Lane: `fix/mobile-release-audit-162` in the persistent Projects checkout.
+
+Completed: 172 native core tests, 168 extended tests (one documented skip), and
+30 current onboarding/capture/surface tests passed on iOS 26.5. Full host suite:
+1,234 passed, one existing skip; static analysis clean. Fixture tests do not write
+to customer data. Dedicated live review login, authenticated workspace read,
+health/database health and public legal pages passed.
+
+Physical TestFlight161 checks covered Ask/Spaces/More, empty and populated Spaces,
+photo-source menu cancellation, item details and scrolling, search, scoped chat,
+Back and settings. A Spaces tooltip persisted over More because native tab
+callbacks bypass Flutter pointer dismissal. Explicitly dismiss hints when the
+retained destination changes. A regression reproduces stale tooltip state when
+returning to the old tab before the fix, and passes after it. Build162 includes
+this fix; final native checks and physical candidate acceptance remain pending.
+
+App Store draft 1.1.1 is PREPARE_FOR_SUBMISSION, release MANUAL, with no selected
+build. Build161 is VALID. No active review must be canceled. Review instructions
+and What's New still describe obsolete sample onboarding; listing screenshots
+show the retired orange/cream interface and need current native captures.
+
+Remaining: final native/device checks, current listing/screenshots, exact-source
+CI, signed build and guarded App Store submission.
+Do not claim camera, speech, APNs or OAuth acceptance from synthetic tests.
+
+## November 1 continuation
+
+All seven final native navigation/preference checks passed. Five exact-source CI gates passed on `eb48aba` (41090924534). Build162 was cleanly rebuilt after package verification rejected a cached simulator framework. The final package passed 34 archive/export iOS executable checks each, strict signing, privacy/configuration/font checks and Apple validation. Apple acknowledged upload: `a79a77bb-80f9-4a4f-aa78-154932b99a5f`.
+
+Dedicated review login, authenticated workspace read, backend/database health and legal links passed again. The real review account opens the current app on the iPhone17 Pro Max simulator. Corrected review instructions and What's New are saved and verified in App Store Connect. Screenshot replacement is prepared but not performed; old assets remain until the complete current set is captured and reviewed. Final TestFlight162/device acceptance and public review submission remain pending.
+
+## November 1 — Submitted to App Review
+
+Apple acknowledged submission `dc875d6d-dc6c-4adf-8468-34e58657670f` at
+23:06:10 UTC. Version 1.1.1 build162 is WAITING_FOR_REVIEW with MANUAL release.
+The user's replacement `findez-appstore-nov-2.zip` supplies seven iPhone and seven
+iPad screenshots, all COMPLETE and ordered hero first, then memory, describe,
+photo, spaces, ask and team. Overview contact sheets were excluded. All 24 prior
+assets were backed up before replacement; obsolete size overrides were removed.
+
+Final physical iPhone acceptance verified the installed TestFlight build162,
+welcome/sign-in with the dedicated review account, Ask/Spaces/More transitions,
+Space search, Sample Workshop (five items/24 units), item details and scrolling,
+Settings, and a live Ask response matching all five sample items and quantities.
+No inventory mutations. Mirrored native tabs needed deliberate taps. Camera,
+microphone, OAuth and APNs were not retested in this smoke check. The tooltip
+regression remains covered by the completed host/native tests.
+
+Review login, backend/database health and public legal links passed again.
+The guarded submission verified exact build/CI/signature receipts, screenshot
+checksums/order, credentials and listing notes before sending. An initial local
+notes comparison stopped on a trailing newline; a read-back confirmed the notes
+matched exactly and the normalized guard passed. No Apple rejection occurred.
+Private credentials and Apple asset URLs remain outside the repository.
+
+## November 3 — Resumed task reconciliation
+
+A read-only App Store Connect check at 22:40 UTC confirms version1.1.1 is
+READY_FOR_SALE with selected build166. Original submission
+`dc875d6d-dc6c-4adf-8468-34e58657670f` and subsequent submission
+`c10d8d96-16f0-4b3a-a340-8bf88d73fdd9` are COMPLETE. Newer uploaded
+builds170/169/168 are VALID, but this continuation did not select or submit them.
+The requested audit and public submission were already completed. No additional
+runtime changes, tests, binary or release action are needed for this task.
