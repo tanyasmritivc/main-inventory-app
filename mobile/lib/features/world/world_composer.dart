@@ -27,10 +27,14 @@ class WorldComposer extends StatefulWidget {
     this.voiceSession,
     required this.onSend,
     this.onStop,
+    this.placeholder,
+    this.extractionActive = false,
     required this.busy,
     required this.listening,
     required this.compact,
   });
+  final String? placeholder;
+  final bool extractionActive;
   final GlobalKey? attachmentKey;
   final VoidCallback? onFirstCamera;
   final Widget? sourceChips;
@@ -99,6 +103,7 @@ class _WorldComposerState extends State<WorldComposer>
   }
 
   bool get _canAnimate =>
+      widget.placeholder == null &&
       _enabled &&
       _active &&
       !widget.busy &&
@@ -255,6 +260,7 @@ class _WorldComposerState extends State<WorldComposer>
               ),
               decoration: InputDecoration(
                 hintText:
+                    widget.placeholder ??
                     _hint ??
                     (widget.compact
                         ? 'Ask FindEZ…'
@@ -350,7 +356,9 @@ class _WorldComposerState extends State<WorldComposer>
                         context,
                       ).colorScheme.onSurface.withValues(alpha: .06),
                     ),
-                    icon: widget.busy || widget.onStop != null
+                    icon: widget.extractionActive
+                        ? const Icon(CupertinoIcons.stop_fill, size: 12)
+                        : widget.busy || widget.onStop != null
                         ? SizedBox(
                             width: 19,
                             height: 19,

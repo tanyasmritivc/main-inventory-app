@@ -1,7 +1,8 @@
 import 'voice_composer_session.dart';
 import 'voice_composer_panel.dart' show voiceCurve;
 import '../../core/ui/photo_source_sheet.dart';
-import 'extraction_progress_panel.dart';
+import 'auto_extract/extract_style.dart';
+import 'auto_extract/extract_widgets.dart';
 import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
@@ -273,6 +274,7 @@ class _ChatPageState extends State<ChatPage>
   AskPhoto? _photo;
   Map<String, dynamic>? _previewDraft;
   bool _scanningPreview = false;
+  AskPhoto? _extractionPhoto;
   bool _savingCapture = false;
   final _previewKey = GlobalKey<ChatCaptureCardState>();
   bool _pickingPhoto = false;
@@ -507,6 +509,7 @@ class _ChatPageState extends State<ChatPage>
       _worldHome = true;
       _previewDraft = null;
       _scanningPreview = false;
+      _extractionPhoto = null;
       _photo = null;
       _pickingPhoto = false;
       _sending = false;
@@ -2115,7 +2118,30 @@ class _ChatPageState extends State<ChatPage>
         return;
       }
     }
-    if (!_sending && _previewDraft != null) _publishPreview();
+    if (!_sending && _previewDraft != null) {
+      final card = _previewKey.currentState;
+      if (card != null) {
+        setState(() => _savingCapture = true);
+        final corrected = await card.correctFromChat(q);
+        if (!mounted) return;
+        setState(() => _savingCapture = false);
+        if (corrected != null) {
+          _controller.clear();
+          setState(
+            () => _session.messages.addAll([
+              _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+              _ChatMessage(
+                role: 'assistant',
+                content: corrected,
+                timestamp: _nowTs(),
+              ),
+            ]),
+          );
+          return;
+        }
+      }
+      _publishPreview();
+    }
     if (_pickingPhoto) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
@@ -2946,6 +2972,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _worldAttachmentMenu() async {
+    if (_scanningPreview) {
+      extractToast(context, 'Still looking at your photo');
+      return;
+    }
     if (_sending || _pickingPhoto || _sourceMenuOpen) return;
     final generation = _requestGeneration;
     setState(() => _sourceMenuOpen = true);
@@ -2961,6 +2991,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _selectChatSource(String selected) async {
+    if (_scanningPreview) {
+      extractToast(context, 'Still looking at your photo');
+      return;
+    }
     if (!mounted || _sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     if (selected == 'open') {
@@ -3034,7 +3068,11 @@ class _ChatPageState extends State<ChatPage>
     if (_sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
-    final camera = source ?? await showPhotoSourceSheet(context);
+    final camera =
+        source ??
+        await (autoExtract
+            ? showExtractPhotoSheet(context)
+            : showPhotoSourceSheet(context));
     if (camera == null || !mounted || generation != _requestGeneration) return;
     if (camera && !await _consumeCameraHint()) return;
     if (!mounted || generation != _requestGeneration) return;
@@ -3110,14 +3148,13 @@ class _ChatPageState extends State<ChatPage>
       _session.messages.add(
         _ChatMessage(
           role: 'assistant',
-          content: draft['status'] == 'saved'
-              ? 'Saved to ${draft['location'] ?? 'your Space'}.'
-              : '',
+          content: '',
           timestamp: _nowTs(),
           answerContext: AskAnswerContext(chatCapture: draft),
         ),
       );
       _previewDraft = null;
+      _extractionPhoto = null;
     });
     widget.onChatStateChanged?.call(true);
   }
@@ -3125,6 +3162,7 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _extractPreview() async {
     final photo = _photo;
     if (photo == null || _sending || _scanningPreview) return;
+    if (_previewDraft != null) _publishPreview();
     final generation = ++_requestGeneration;
     _focusNode.unfocus();
     setState(() {
@@ -3133,6 +3171,16 @@ class _ChatPageState extends State<ChatPage>
       _pickingPhoto = true;
       _worldHome = false;
       _progress = 'Reading your photo...';
+      _extractionPhoto = photo;
+      _session.hasStarted = true;
+      _session.messages.add(
+        _ChatMessage(
+          role: 'user',
+          content: '',
+          photo: AskPhoto(bytes: photo.bytes, autoExtract: true),
+          timestamp: _nowTs(),
+        ),
+      );
     });
     widget.onChatStateChanged?.call(true);
     final iterator = StreamIterator(
@@ -3194,102 +3242,75 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Widget _capturePreview() => ConstrainedBox(
-    constraints: BoxConstraints(
-      maxHeight: MediaQuery.sizeOf(context).height * .64,
-    ),
-    child: LayoutBuilder(
-      builder: (context, bounds) => LiquidSurface(
-        radius: 26,
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding:
-                    bounds.maxHeight < 160 ||
-                        MediaQuery.viewInsetsOf(context).bottom > 0
-                    ? const EdgeInsets.fromLTRB(18, 0, 10, 0)
-                    : const EdgeInsets.fromLTRB(18, 10, 10, 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      CupertinoIcons.viewfinder,
-                      size: 21,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Review extraction',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: _scanningPreview
-                          ? 'Stop scanning'
-                          : 'Keep draft in chat',
-                      icon: const Icon(CupertinoIcons.xmark, size: 18),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: .05),
-                        minimumSize: const Size(44, 44),
-                      ),
-                      onPressed: () {
-                        if (_scanningPreview) {
-                          _requestGeneration++;
-                          final active = _activeReply;
-                          _activeReply = null;
-                          if (active != null) unawaited(active.cancel());
-                          setState(() {
-                            _scanningPreview = false;
-                            _pickingPhoto = false;
-                            _progress = null;
-                          });
-                        }
-                        _publishPreview();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              if (_scanningPreview)
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: ExtractionProgressPanel(
-                      message: _progress ?? 'Reading your photo...',
-                    ),
-                  ),
-                ),
-              if (_previewDraft != null && _currentConversationId != null)
-                Flexible(
-                  child: ChatCaptureCard(
-                    key: _previewKey,
-                    api: widget.api,
-                    conversationId: _currentConversationId!,
-                    draft: _previewDraft!,
-                    embedded: true,
-                    disabled: _scanningPreview,
-                    onChanged: _onCaptureChanged,
-                    onSaved: () {
-                      _controller.clear();
-                      _publishPreview();
-                      widget.onInventoryMutated?.call();
-                    },
-                  ),
-                ),
-            ],
-          ),
+  Widget _extractionUserPhoto(AskPhoto photo) => Align(
+    alignment: Alignment.centerRight,
+    child: Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(6),
+        ),
+        child: Image.memory(
+          photo.bytes,
+          width: 200,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const Icon(CupertinoIcons.photo),
         ),
       ),
     ),
+  );
+
+  void _stopExtraction() {
+    if (!_scanningPreview) return;
+    _requestGeneration++;
+    final active = _activeReply;
+    _activeReply = null;
+    if (active != null) unawaited(active.cancel());
+    setState(() {
+      _scanningPreview = false;
+      _pickingPhoto = false;
+      _progress = null;
+      _previewDraft = null;
+      _extractionPhoto = null;
+      _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: 'Stopped. Nothing was saved.',
+          timestamp: _nowTs(),
+        ),
+      );
+    });
+  }
+
+  Widget _capturePreview() => Padding(
+    padding: const EdgeInsets.only(top: 16, bottom: 12),
+    child: _scanningPreview && _extractionPhoto != null
+        ? ExtractScanning(
+            photo: _extractionPhoto!.bytes,
+            message: _progress ?? 'Reading your photo…',
+          )
+        : _previewDraft != null && _currentConversationId != null
+        ? ChatCaptureCard(
+            key: _previewKey,
+            api: widget.api,
+            conversationId: _currentConversationId!,
+            draft: _previewDraft!,
+            photoBytes: _extractionPhoto?.bytes,
+            disabled: _scanningPreview,
+            onChanged: _onCaptureChanged,
+            onOpenResource: widget.onOpenDestination == null
+                ? null
+                : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+            onSaved: () {
+              _controller.clear();
+              _publishPreview();
+              widget.onInventoryMutated?.call();
+            },
+          )
+        : const SizedBox.shrink(),
   );
 
   void _onCaptureChanged(Map<String, dynamic> updated) {
@@ -3390,30 +3411,31 @@ class _ChatPageState extends State<ChatPage>
             label: const Text('Retry response'),
           ),
         ),
-      AskAnswerView(
-        key: ValueKey('answer-${message.timestamp}'),
-        refined: widget.worldHeading != null,
-        answer: isTyping
-            ? _renderableStreamingMarkdown(message.content)
-            : message.content,
-        contextData: message.answerContext,
-        isLoading: isTyping,
-        animateChunks: message.live,
-        api: widget.api,
-        onActionResult: _onItemActionResult,
-        onOpenResource: widget.onOpenDestination == null
-            ? null
-            : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
-        pendingMessage: _progress ?? 'Checking your things...',
-        onOpenSource:
-            message.navHint?['type'] != 'project_kit' ||
-                message.answerContext?.sources
-                        .where((source) => source.kind == 'project')
-                        .length !=
-                    1
-            ? null
-            : () => unawaited(_openNavHint(message.navHint!)),
-      ),
+      if (message.answerContext?.chatCapture?['source_kind'] != 'photo')
+        AskAnswerView(
+          key: ValueKey('answer-${message.timestamp}'),
+          refined: widget.worldHeading != null,
+          answer: isTyping
+              ? _renderableStreamingMarkdown(message.content)
+              : message.content,
+          contextData: message.answerContext,
+          isLoading: isTyping,
+          animateChunks: message.live,
+          api: widget.api,
+          onActionResult: _onItemActionResult,
+          onOpenResource: widget.onOpenDestination == null
+              ? null
+              : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+          pendingMessage: _progress ?? 'Checking your things...',
+          onOpenSource:
+              message.navHint?['type'] != 'project_kit' ||
+                  message.answerContext?.sources
+                          .where((source) => source.kind == 'project')
+                          .length !=
+                      1
+              ? null
+              : () => unawaited(_openNavHint(message.navHint!)),
+        ),
       if (message.answerContext?.chatCapture != null &&
           _currentConversationId != null &&
           identical(
@@ -3435,6 +3457,8 @@ class _ChatPageState extends State<ChatPage>
           disabled: _sending,
           onChanged: _onCaptureChanged,
           onSaved: widget.onInventoryMutated,
+          onAsk: (text) => unawaited(_submit(text)),
+          onAddPhoto: () => unawaited(_attachPhoto(autoExtract: true)),
           onOpenResource: widget.onOpenDestination == null
               ? null
               : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
@@ -3587,7 +3611,17 @@ class _ChatPageState extends State<ChatPage>
                       onVoiceEnd: () => _voice.send(),
                       onVoiceCancel: _voice.cancel,
                       voiceSession: _voice,
-                      onStop: _sending ? _stopResponse : null,
+                      extractionActive: _scanningPreview,
+                      placeholder: _scanningPreview
+                          ? 'FindEZ is looking…'
+                          : _previewDraft != null
+                          ? 'Or tell me what to change…'
+                          : null,
+                      onStop: _scanningPreview
+                          ? _stopExtraction
+                          : _sending
+                          ? _stopResponse
+                          : null,
                       onSend: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
@@ -3711,9 +3745,7 @@ class _ChatPageState extends State<ChatPage>
         body: ChatViewport(
           header: _buildHeader(),
           controller: _scrollController,
-          preview: _previewDraft != null || _scanningPreview
-              ? _capturePreview()
-              : null,
+
           messages: [
             for (final message in _session.messages)
               Padding(
@@ -3721,13 +3753,15 @@ class _ChatPageState extends State<ChatPage>
                 child: _messageEntrance(
                   message,
                   message.role == 'user'
-                      ? AskQuestionCard(
-                          compact: true,
-                          question: message.content,
-                          voiceDuration: message.voiceDuration,
-                          photoBytes: message.photo?.bytes,
-                          photoUrl: message.photoUrl,
-                        )
+                      ? message.photo?.autoExtract == true
+                            ? _extractionUserPhoto(message.photo!)
+                            : AskQuestionCard(
+                                compact: true,
+                                question: message.content,
+                                voiceDuration: message.voiceDuration,
+                                photoBytes: message.photo?.bytes,
+                                photoUrl: message.photoUrl,
+                              )
                       : _buildAssistantMessage(
                           message,
                           message.isStreaming ||
@@ -3736,6 +3770,7 @@ class _ChatPageState extends State<ChatPage>
                         ),
                 ),
               ),
+            if (_previewDraft != null || _scanningPreview) _capturePreview(),
           ],
           footer: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3755,7 +3790,7 @@ class _ChatPageState extends State<ChatPage>
                 controller: _controller,
                 focusNode: _focusNode,
                 onChanged: (_) => setState(() {}),
-                onAttach: _sending || _pickingPhoto
+                onAttach: _sending || (_pickingPhoto && !_scanningPreview)
                     ? null
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,
@@ -3763,7 +3798,17 @@ class _ChatPageState extends State<ChatPage>
                 onVoiceEnd: () => _voice.send(),
                 onVoiceCancel: _voice.cancel,
                 voiceSession: _voice,
-                onStop: _sending ? _stopResponse : null,
+                extractionActive: _scanningPreview,
+                placeholder: _scanningPreview
+                    ? 'FindEZ is looking…'
+                    : _previewDraft != null
+                    ? 'Or tell me what to change…'
+                    : null,
+                onStop: _scanningPreview
+                    ? _stopExtraction
+                    : _sending
+                    ? _stopResponse
+                    : null,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
@@ -3788,9 +3833,7 @@ class _ChatPageState extends State<ChatPage>
             ? _buildHeader()
             : const SizedBox.shrink(),
         controller: _scrollController,
-        preview: _previewDraft != null || _scanningPreview
-            ? _capturePreview()
-            : null,
+
         messages: [
           if (_session.messages.isEmpty &&
               !(widget.contextual && keyboardVisible)) ...[
@@ -3803,12 +3846,14 @@ class _ChatPageState extends State<ChatPage>
               child: _messageEntrance(
                 message,
                 message.role == 'user'
-                    ? AskQuestionCard(
-                        question: message.content,
-                        voiceDuration: message.voiceDuration,
-                        photoBytes: message.photo?.bytes,
-                        photoUrl: message.photoUrl,
-                      )
+                    ? message.photo?.autoExtract == true
+                          ? _extractionUserPhoto(message.photo!)
+                          : AskQuestionCard(
+                              question: message.content,
+                              voiceDuration: message.voiceDuration,
+                              photoBytes: message.photo?.bytes,
+                              photoUrl: message.photoUrl,
+                            )
                     : _buildAssistantMessage(
                         message,
                         message.isStreaming ||
@@ -3817,6 +3862,7 @@ class _ChatPageState extends State<ChatPage>
                       ),
               ),
             ),
+          if (_previewDraft != null || _scanningPreview) _capturePreview(),
         ],
         footer: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3841,7 +3887,17 @@ class _ChatPageState extends State<ChatPage>
                 onVoice: _toggleListening,
                 onVoiceCancel: _voice.cancel,
                 voiceSession: _voice,
-                onStop: _sending ? _stopResponse : null,
+                extractionActive: _scanningPreview,
+                placeholder: _scanningPreview
+                    ? 'FindEZ is looking…'
+                    : _previewDraft != null
+                    ? 'Or tell me what to change…'
+                    : null,
+                onStop: _scanningPreview
+                    ? _stopExtraction
+                    : _sending
+                    ? _stopResponse
+                    : null,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
