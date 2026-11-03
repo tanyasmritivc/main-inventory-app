@@ -1,3 +1,13 @@
+## Organization-scoped destinations (build 167)
+
+Run `flutter test test/inventory_destination_test.dart test/world_shell_test.dart`,
+the full Flutter suite and analyzer. Run
+`flutter test integration_test/inventory_destination_audit_test.dart -d <simulator> --no-pub`
+for native organization-boundary, picker, long-label and large-text checks.
+The fixtures use synthetic inventories and do not write customer data. Preserve
+the `INVENTORY_PICKER_VISUAL` PNGs while the test app is running. TestFlight upload
+does not establish physical-device acceptance. API-key setup/grants stay unchanged.
+
 ## Stop response (build 166)
 
 Run the full Flutter suite and analyzer. `test/chat_cancellation_test.dart` checks text/photo cancellation before headers and during streaming, ignores late events and preserves completed answers. The stop-response cases in `test/ask_page_test.dart` cover World/context chat, thinking/partial replies, preserved drafts, a new request after Stop and sent-photo preservation. Run those five cases on iOS with `flutter test integration_test/chat_stop_audit_test.dart -d <simulator-id> --no-pub --name 'stop response'`. The PNG fixture is a valid one-pixel RGBA image so decoded image cache state cannot change later tests. Stop closes the active HTTP request and retires its UI generation; it does not undo operations already committed by the server. The user explicitly authorized replacing build162 in the existing App Review submission with build166 after successful checks, preserving all metadata, screenshots and manual release.

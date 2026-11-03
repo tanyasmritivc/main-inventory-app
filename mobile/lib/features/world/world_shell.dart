@@ -12,6 +12,7 @@ import '../../core/ui/liquid_surface.dart';
 import '../../core/ui/native_menu_button.dart';
 import '../../core/ui/native_presentation.dart';
 import 'world_style.dart';
+import 'inventory_picker_sheet.dart';
 import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -213,6 +214,7 @@ class _WorldShellState extends State<WorldShell> {
   }
 
   Future<ApiClient?> _chooseInventory({bool writable = false}) async {
+    final world = _world;
     final rows = _inventories
         .where((r) => !writable || r['can_edit'] == true)
         .toList();
@@ -228,24 +230,8 @@ class _WorldShellState extends State<WorldShell> {
       }
       return null;
     }
-    final choice = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        children: [
-          const ListTile(title: Text('Choose inventory')),
-          for (final row in rows)
-            ListTile(
-              title: Text(row['name'].toString()),
-              subtitle: Text(row['workspace_name'].toString()),
-              onTap: () => Navigator.pop(context, row),
-            ),
-        ],
-      ),
-    );
-    if (choice == null || !mounted) return null;
+    final choice = await showInventoryPicker(context, rows);
+    if (choice == null || !mounted || world != _world) return null;
     return _inventory(choice);
   }
 

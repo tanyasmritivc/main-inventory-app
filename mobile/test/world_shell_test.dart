@@ -79,6 +79,55 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('More tools share the compact inventory picker', (tester) async {
+    final fallback = fixture.respond;
+    fixture.respond = (request) {
+      if (request.path.endsWith('/directory')) {
+        return {
+          'inventories': [
+            {
+              'inventory_id': 'hardware',
+              'name': 'Hardware',
+              'workspace_id': 'workspace-a',
+              'workspace_name': 'FTC Season 2026-2027 Workspace',
+              'can_edit': true,
+            },
+            {
+              'inventory_id': 'software',
+              'name': 'Software',
+              'workspace_id': 'workspace-a',
+              'workspace_name': 'FTC Season 2026-2027 Workspace',
+              'can_edit': true,
+            },
+          ],
+        };
+      }
+      return fallback(request);
+    };
+    await mount(tester);
+    await tester.tap(find.byTooltip('More'));
+    await tester.pumpAndSettle();
+    for (final tool in [
+      'Overview',
+      'Review',
+      'Projects',
+      'Documents and notes',
+      'Lent items',
+    ]) {
+      await tester.ensureVisible(find.text(tool));
+      await tester.tap(find.text(tool));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose an inventory to continue.'), findsOneWidget);
+      expect(find.text('Hardware'), findsOneWidget);
+      expect(find.text('Software'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close inventory picker'));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose inventory'), findsNothing);
+    }
+    expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Spaces follows web rename and deletion while already visible', (
     tester,
   ) async {

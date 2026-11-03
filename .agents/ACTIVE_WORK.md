@@ -1,3 +1,12 @@
+## November 2 - Chat destinations and More picker, build167
+
+Mobile-only implementation on `fix/mobile-destination-scope-167` in the existing
+`Projects/findez-voice-composer` worktree. Chat import destinations now use their
+organization directory and revalidate parent/edit access before opening Spaces.
+More tools share the compact inventory sheet. API keys and account-wide integration
+setup are unchanged. Focused tests and analysis pass; full/native/release checks
+are in progress. See `docs/plans/mobile-destination-scope167.md`.
+
 ## November 1 - Stop response delivered and App Review updated to build166
 
 FindEZ 1.1.1 (166), source `00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6`, is processed VALID and WAITING_FOR_REVIEW. Apple upload delivery `9864067d-9288-48f0-9162-566ba7e90fe7`; review submission `c10d8d96-16f0-4b3a-a340-8bf88d73fdd9`. The user explicitly authorized withdrawal of build162 and replacement with the newest build. Selected build166 is verified; listing metadata, review details and all 14 ordered screenshots are unchanged. Release remains MANUAL; no public release performed. Branch `fix/chat-stop-166` and draft PR287 are pushed, with main unchanged.

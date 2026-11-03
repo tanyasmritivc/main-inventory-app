@@ -32,15 +32,54 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
     _load();
   }
 
+  Future<void> _openImport(Map<String, dynamic> space) async {
+    try {
+      scoped!.assertCurrentContext();
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ImportSheetPage(
+            api: scoped!,
+            location: space['name'].toString(),
+            kind: widget.kind,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) setState(() => error = describeError(e).$1);
+    }
+  }
+
   Future<void> _load() async {
     setState(() {
       busy = true;
       error = null;
+      inventories = [];
     });
     try {
       if (widget.api.inventoryContext != null) {
+        widget.api.assertCurrentContext();
+        if (!widget.api.canEdit) {
+          throw const FormatException('Choose an inventory you can edit.');
+        }
         scoped = widget.api;
         spaces = await scoped!.listSpaces();
+      } else if (widget.api.worldKey != null) {
+        final world = widget.api.worldKey!;
+        final result = await widget.api.collaboration(
+          '/worlds/${Uri.encodeComponent(world)}/directory',
+        );
+        widget.api.assertCurrentContext();
+        if (!mounted) return;
+        if (result['world'] != null && result['world'] != world) {
+          throw const FormatException(
+            'The organization changed. Choose again.',
+          );
+        }
+        inventories = (result['inventories'] as List? ?? [])
+            .whereType<Map>()
+            .where((row) => row['can_edit'] == true)
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
       } else {
         final result = await widget.api.collaboration('/inventory-workspaces');
         final found = <Map<String, dynamic>>[];
@@ -78,11 +117,20 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
       final id = inventory['inventory_id'].toString();
       final result = await widget.api.collaboration('/inventories/$id');
       widget.api.assertCurrentContext();
+      if (!mounted) return;
       final context = InventoryContext.fromJson(
         Map<String, dynamic>.from(result['inventory']),
         accountId: widget.api.accountId!,
         expectedInventory: id,
+        expectedWorkspace: inventory['workspace_id'] as String?,
       );
+      if (!context.canEdit ||
+          (widget.api.worldKey != null &&
+              (context.organizationId ?? 'personal') != widget.api.worldKey)) {
+        throw const FormatException(
+          'This inventory is no longer available in this organization. Choose again.',
+        );
+      }
       final selected = ApiClient.forInventory(
         widget.api,
         context,
@@ -157,19 +205,7 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   trailing: const Icon(Icons.chevron_right, size: 18),
-                  onTap: busy
-                      ? null
-                      : () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => ImportSheetPage(
-                                api: scoped!,
-                                location: space['name'].toString(),
-                                kind: widget.kind,
-                              ),
-                            ),
-                          );
-                        },
+                  onTap: busy ? null : () => _openImport(space),
                 ),
               ),
             ),
