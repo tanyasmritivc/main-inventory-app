@@ -3,7 +3,7 @@ import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
 import { OrganizationSwitcher, type SelectedOrganization } from "./organization-switcher";
-import { FindEZWordmark } from "./findez-brand";
+import { FindEZMark, FindEZWordmark } from "./findez-brand";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -262,7 +262,8 @@ export function AppSidebar({
       >
         <div className="app-sidebar-brand">
           <Link href={homeHref} aria-label="FindEZ home" onClick={closeDrawer}>
-            <FindEZWordmark width={111} height={30}/>
+            <FindEZMark className="app-sidebar-compact-mark" width={30} height={30} />
+            <FindEZWordmark className="app-sidebar-wordmark" width={111} height={30}/>
           </Link>
           <button
             onClick={onToggle}

@@ -1389,3 +1389,6 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 
 ## November 2 — composer inner outline
 - Complete on `feat/app-theme`, implementation `f4cc6da`: removed the inner textarea focus outline; keyboard focus uses the outer border. CSS only. Production build and 19 route/preservation checks passed; focused input visually verified in Safari. Build `JeuHFjM3tt9gUyAV1gi3s` deployed and externally verified. Receipt: `docs/app-theme/composer-border-deployment.json`.
+
+## November 2 — collapsed sidebar clipping
+- Complete on `feat/app-theme`: compact rail uses the standalone logo mark and centered, rail-sized controls instead of clipping expanded content. Safari collapsed/hover/pinned checks and all 26 sidebar tests pass, along with lint and production build. Build `j7LgB7v3YFurmBlDuc3Wu` deployed and externally verified; 19 route checks and preservation checks pass. Details: `docs/app-theme/SIDEBAR-RAIL-FIX.md`.
