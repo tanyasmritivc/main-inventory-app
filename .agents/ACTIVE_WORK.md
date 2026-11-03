@@ -1392,3 +1392,6 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 
 ## November 2 — collapsed sidebar clipping
 - Complete on `feat/app-theme`: compact rail uses the standalone logo mark and centered, rail-sized controls instead of clipping expanded content. Safari collapsed/hover/pinned checks and all 26 sidebar tests pass, along with lint and production build. Build `j7LgB7v3YFurmBlDuc3Wu` deployed and externally verified; 19 route checks and preservation checks pass. Details: `docs/app-theme/SIDEBAR-RAIL-FIX.md`.
+
+## November 2 — contextual Ask FindEZ button
+- Complete on `feat/app-theme`: floating launcher has a silver-grey gradient, highlight, dark text and subtle hover/pressed states. CSS only; reduced-motion and forced-color support retained. Production build and 19 route/preservation checks pass; native Safari verified its appearance and chat open/close behavior. Build `7tFfespqwsMseG0zVD1P9` deployed and externally verified. Receipt: `docs/app-theme/ask-launcher-deployment.json`.
