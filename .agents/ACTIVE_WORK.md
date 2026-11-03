@@ -1,3 +1,7 @@
+## November 3 - Space UI and extraction fixes: TestFlight171 preparation
+
+User explicitly requested TestFlight upload, superseding the package local-only limit. Branch `feat/space-v2-ui` includes the photo sheet, count-free extraction stages and Space redesign with regular typography. Completed checks: 1,312 full Flutter tests (one existing skip), clean analysis, 15 native Space scenarios and a saved-history follow-up. Preparing 1.1.2 (171); Apple confirms latest uploaded build170. Recovered production defines from its signed IPA after matching its recorded SHA256; Apple credentials verified. No public App Store submission is authorized by this request. Physical camera/model and device acceptance remain with the user.
+
 ## November 2 - Extraction loading and screen layout complete
 
 Branch `fix/extraction-loading-layout` builds on the photo-sheet/regular-font fix.
