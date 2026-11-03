@@ -1,8 +1,6 @@
-## November 2 - Chat file attachments, build169
+## November 2 - Chat file attachments delivered, build169
 
-Attach > Choose files now includes XLSX, DOCX, CSV, TSV and JSON alongside text-based PDF, TXT, Markdown and images. Files are sent as chat evidence, not imported into inventory. Existing world authorization, cancellation guards, 10MB limit and excerpt budgets remain. Legacy XLS/DOC require conversion; scanned PDFs need a readable text layer. Backend readers deployed separately from `feat/chat-file-formats-api`.
-
-Validation: 14 attachment tests, all 1,283 mobile tests (one existing skip) and clean analysis passed. Native simulator checks and signed TestFlight delivery in progress; physical file-provider acceptance remains with the user.
+FindEZ 1.1.2 (169), source `9cf25a5354972ea387647942d7e8a29e6581cbed`, uploaded to Apple with delivery `118aa912-82a5-4af2-a42f-dbf8e07ce3ee`. Attach > Choose files supports XLSX, DOCX, CSV, TSV and arbitrary JSON alongside existing text-based PDF, TXT, Markdown and images. Existing file size, excerpt budgets and world authorization remain. Legacy XLS/DOC require conversion; scanned PDFs require a text layer. Backend readers are deployed (PR298). Validation: 14 focused tests, 1,283 mobile tests (one existing skip), clean analysis, 14 simulator checks, all five exact-source CI gates, signing/platform/privacy/configuration/font/credential checks and Apple validation passed. Processing and tester availability were not polled. Physical file-provider acceptance remains with the user. No public App Store submission was changed. See `docs/plans/mobile-chat-files169-receipt.json`.
 
 ## November 2 - More menu cleanup delivered, build168
 
