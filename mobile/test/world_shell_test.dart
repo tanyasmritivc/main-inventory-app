@@ -107,13 +107,10 @@ void main() {
     await mount(tester);
     await tester.tap(find.byTooltip('More'));
     await tester.pumpAndSettle();
-    for (final tool in [
-      'Overview',
-      'Review',
-      'Projects',
-      'Documents and notes',
-      'Lent items',
-    ]) {
+    for (final tool in ['Overview', 'Projects', 'Review']) {
+      expect(find.widgetWithText(ListTile, tool), findsNothing);
+    }
+    for (final tool in ['Documents and notes', 'Lent items']) {
       await tester.ensureVisible(find.text(tool));
       await tester.tap(find.text(tool));
       await tester.pumpAndSettle();

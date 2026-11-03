@@ -534,9 +534,6 @@ class _WorldShellState extends State<WorldShell> {
     padding: const EdgeInsets.all(20),
     children: [
       for (final label in [
-        ('Overview', CupertinoIcons.square_grid_2x2),
-        ('Review', CupertinoIcons.checkmark_seal),
-        ('Projects', CupertinoIcons.cube_box),
         ('Documents and notes', CupertinoIcons.doc_text),
         ('Lent items', CupertinoIcons.arrow_right_arrow_left),
       ])
