@@ -78,11 +78,6 @@ void main({Future<void> Function(String name, List<int> bytes)? capture}) {
     };
     {
       for (final entry in {
-        'PlusJakartaSans': 'assets/fonts/PlusJakartaSans.ttf',
-        for (final weight in ['regular', 'medium', 'semiBold', 'bold'])
-          'PlusJakartaSans_$weight': 'assets/fonts/PlusJakartaSans.ttf',
-        'Ahem': 'assets/fonts/PlusJakartaSans.ttf',
-        'Roboto': 'assets/fonts/PlusJakartaSans.ttf',
         'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
         'packages/cupertino_icons/CupertinoIcons':
             'packages/cupertino_icons/assets/CupertinoIcons.ttf',

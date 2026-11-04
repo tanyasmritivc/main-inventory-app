@@ -581,7 +581,7 @@ class _WorldShellState extends State<WorldShell> {
                 ? Text(
                     index == 1 ? 'Spaces' : 'More',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   )
                 : OrganizationPill(
@@ -752,24 +752,25 @@ class _WorldShellState extends State<WorldShell> {
                                 top: 8,
                                 bottom: 12,
                               ),
-                              child: LiquidSurface(
-                                radius: 28,
-                                child: TextButton.icon(
-                                  onPressed: _creatingSpace ? null : _newSpace,
-                                  icon: const Icon(
-                                    CupertinoIcons.plus,
-                                    size: 19,
-                                  ),
-                                  label: Text(
-                                    _creatingSpace
-                                        ? 'Creating...'
-                                        : 'New space',
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 22,
-                                      vertical: 12,
-                                    ),
+                              child: TextButton.icon(
+                                onPressed: _creatingSpace ? null : _newSpace,
+                                icon: const Icon(CupertinoIcons.plus, size: 19),
+                                label: Text(
+                                  _creatingSpace ? 'Creating...' : 'New space',
+                                ),
+                                style: TextButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(0xFF242424)
+                                      : const Color(0xFFE7E7E9),
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  shape: const StadiumBorder(),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 22,
+                                    vertical: 12,
                                   ),
                                 ),
                               ),

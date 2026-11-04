@@ -104,8 +104,8 @@ profile store and live unread notification count. Home surfaces recent items, pl
 pending Review items. Profile, team, sharing, project, document, checkout,
 notification, and settings flows remain.
 
-The app's shared typography keeps body/inputs regular (400) and emphasis at most
-medium (500), independently of OS Bold Text. Text scaling, VoiceOver, reduced
+The app's shared typography keeps all app-owned text regular (400), with semibold (600) reserved for
+AI response headings, independently of OS Bold Text. Text scaling, VoiceOver, reduced
 motion and other accessibility settings remain supported. Active Ask conversations
 hide the pill within the existing shell; Back returns to the prior tab without
 discarding the chat or draft.

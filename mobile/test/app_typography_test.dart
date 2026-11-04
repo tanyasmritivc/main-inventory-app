@@ -1,3 +1,4 @@
+import 'package:mobile/features/chat/ask_answer_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/app_theme.dart';
@@ -49,6 +50,49 @@ FontWeight? _weight(WidgetTester tester, String label) => tester
     ?.fontWeight;
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('only AI response headings are bold ${brightness.name}', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.create(brightness),
+          builder: (_, child) => AppTypography(child: child!),
+          home: const Scaffold(
+            body: AskAnswerView(
+              answer: '# Inventory heading\n\nRegular **emphasis** body.',
+              isLoading: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final texts = tester.widgetList<RichText>(find.byType(RichText));
+      final heading = texts.firstWhere(
+        (t) => t.text.toPlainText() == 'Inventory heading',
+      );
+      final body = texts.firstWhere(
+        (t) => t.text.toPlainText().contains('Regular'),
+      );
+      void check(InlineSpan span, TextStyle inherited, FontWeight weight) {
+        final style = inherited.merge(span.style);
+        if (span is TextSpan) {
+          if ((span.text ?? '').isNotEmpty) {
+            expect(style.fontWeight, weight);
+            expect(style.fontFamily, 'CupertinoSystemText');
+          }
+          for (final child in span.children ?? <InlineSpan>[]) {
+            check(child, style, weight);
+          }
+        }
+      }
+
+      check(heading.text, const TextStyle(), FontWeight.w600);
+      check(body.text, const TextStyle(), FontWeight.w400);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
   for (final brightness in Brightness.values) {
     testWidgets(
       '${brightness.name} text weights stay light when OS Bold Text changes',

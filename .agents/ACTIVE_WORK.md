@@ -1,3 +1,7 @@
+## November 3 - Compact Space header and consistent SF Pro (build176)
+
+Active mobile-only lane `fix/space-header-sf-pro` follows delivered175 in the existing checkout. New screenshots supersede the ZIP typography: SF Pro throughout, regular text except semantic headings in AI replies. Compact centered Space title fades with scrolling, counts are centered, full-width blur and pinned search/sort remain. Move/Ask and New space use opaque grey pills; Space surfaces and sheets now follow Light/Dark/System. Keep main Ask behavior and layout, API/backend/web and public App Store submission unchanged. User authorizes push/TestFlight. 1,356 Flutter tests passed (one skip), analyzer clean and39 native iOS checks passed. Signed packaging/CI/TestFlight pending; see docs/space-header176/IMPLEMENTATION.md.
+
 ## November 3 — Photo scan175 ready for release
 
 The existing main Ask scan card now uses the supplied riso design and the same review selection/save path. All other main Ask behavior is preserved. 1,351 Flutter tests pass (one skip), analyzer clean, native layout/stop/retry/viewport checks pass, and five real production scans produced unsaved drafts. Disposable accounts and34 test images were removed; no inventory writes. API has crops but no boxes/real progress, so notes are truthful about thumbnails after extraction. See docs/photo-scan/IMPLEMENTATION.md. Build175 signing/CI/upload pending; self-hosted web Founding Access remains next.

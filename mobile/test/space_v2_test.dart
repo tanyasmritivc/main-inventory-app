@@ -171,6 +171,7 @@ void main() {
     bool photos = false,
     bool low = true,
     bool viewer = false,
+    ThemeMode mode = ThemeMode.dark,
     double scale = 1,
     double keyboard = 0,
     Size size = const Size(390, 844),
@@ -215,7 +216,9 @@ void main() {
         key: const ValueKey('space-v2-frame'),
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.create(Brightness.dark),
+          theme: AppTheme.create(Brightness.light),
+          darkTheme: AppTheme.create(Brightness.dark),
+          themeMode: mode,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(
               padding: const EdgeInsets.only(top: 44, bottom: 24),
@@ -241,6 +244,111 @@ void main() {
     await tester.pumpAndSettle();
     addTearDown(api.stream.close);
     return api;
+  }
+
+  for (final mode in ThemeMode.values) {
+    testWidgets('compact Space header and solid actions ${mode.name}', (
+      tester,
+    ) async {
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await mount(tester, 30, mode: mode);
+      final title = find.text('Fastener DB');
+      expect(title, findsOneWidget);
+      expect(
+        tester.widget<Text>(title).style!.fontFamily,
+        'CupertinoSystemText',
+      );
+      expect(tester.widget<Text>(title).style!.fontWeight, FontWeight.w400);
+      final count = find.byKey(const ValueKey('space-unit-count'));
+      expect(tester.getCenter(count).dx, closeTo(195, 1));
+      expect(tester.getCenter(title).dx, closeTo(195, 1));
+      final page = find.byType(LocationItemsPage);
+      Color background() => tester
+          .widget<Scaffold>(
+            find.descendant(of: page, matching: find.byType(Scaffold)).first,
+          )
+          .backgroundColor!;
+      expect(background().computeLuminance() > .5, mode != ThemeMode.dark);
+      await spaceV2Capture?.call('compact-${mode.name}');
+      if (mode == ThemeMode.system) {
+        tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+        await tester.pumpAndSettle();
+        expect(background().computeLuminance(), lessThan(.1));
+        await spaceV2Capture?.call('system-dark');
+      }
+      await tester.drag(
+        find.byType(CustomScrollView).first,
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<Opacity>(find.byKey(const ValueKey('space-title-fade')))
+            .opacity,
+        0,
+      );
+      expect(find.byTooltip('Sort').hitTestable(), findsOneWidget);
+      expect(find.byType(TextField).hitTestable(), findsOneWidget);
+      final pinnedY = tester.getTopLeft(find.byType(TextField).first).dy;
+      await tester.drag(
+        find.byType(CustomScrollView).first,
+        const Offset(0, -150),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.byType(TextField).first).dy,
+        closeTo(pinnedY, .1),
+      );
+      for (final glass in find.byType(SpaceHeaderGlass).evaluate()) {
+        expect(glass.size!.width, 390);
+      }
+      await spaceV2Capture?.call('scrolled-${mode.name}');
+      await tester.tap(find.byType(SpaceItemRow).hitTestable().first);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Move'));
+      await tester.pumpAndSettle();
+      for (final label in ['Move', 'Ask']) {
+        final buttonFinder = find.ancestor(
+          of: find.text(label),
+          matching: find.byType(FilledButton),
+        );
+        final button = tester.widget<FilledButton>(buttonFinder);
+        final style = button.style!;
+        final color = style.backgroundColor!.resolve({})!;
+        expect(color.a, 1);
+        final marker = Container();
+        expect(
+          style.backgroundBuilder!(tester.element(buttonFinder), {}, marker),
+          same(marker),
+        );
+        expect(style.shape!.resolve({}), isA<StadiumBorder>());
+        final foreground = style.foregroundColor!.resolve({})!;
+        final a = color.computeLuminance(), b = foreground.computeLuminance();
+        expect(
+          ((a > b ? a : b) + .05) / ((a < b ? a : b) + .05),
+          greaterThan(4.5),
+        );
+      }
+      if (mode == ThemeMode.system) {
+        tester.platformDispatcher.platformBrightnessTestValue =
+            Brightness.light;
+        await tester.pumpAndSettle();
+        final move = tester.widget<FilledButton>(
+          find.ancestor(
+            of: find.text('Move'),
+            matching: find.byType(FilledButton),
+          ),
+        );
+        expect(
+          move.style!.backgroundColor!.resolve({})!.computeLuminance(),
+          greaterThan(.5),
+        );
+      }
+      await spaceV2Capture?.call('actions-${mode.name}');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
   }
 
   testWidgets(

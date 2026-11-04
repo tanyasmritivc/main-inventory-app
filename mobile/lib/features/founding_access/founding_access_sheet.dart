@@ -25,7 +25,7 @@ TextStyle _style(
   double height = 1.4,
 }) => TextStyle(
   inherit: false,
-  fontFamily: 'VoiceInter',
+  fontFamily: 'CupertinoSystemText',
   letterSpacing: 0,
   fontSize: size,
   color: color,
@@ -67,17 +67,17 @@ class FoundingAccessPlanRow extends StatelessWidget {
       onTap: () => unawaited(showFoundingAccess(context)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 52),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
-              const Expanded(child: Text('Your plan')),
-              const SizedBox(width: 12),
-              const Flexible(
+              Expanded(child: Text('Your plan')),
+              SizedBox(width: 12),
+              Flexible(
                 child: Text('Founding Access', textAlign: TextAlign.right),
               ),
-              const SizedBox(width: 6),
-              const Icon(Icons.chevron_right, size: 20),
+              SizedBox(width: 6),
+              Icon(Icons.chevron_right, size: 20),
             ],
           ),
         ),
@@ -457,7 +457,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
                     ),
                     child: Text(
                       'Founding Access',
-                      style: _style(12.5, weight: FontWeight.w500, height: 1.3),
+                      style: _style(12.5, weight: FontWeight.w400, height: 1.3),
                     ),
                   ),
                 ),
@@ -499,7 +499,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         style: _style(
           34,
           height: 1.08,
-        ).copyWith(fontFamily: 'Inter Tight', letterSpacing: -.68),
+        ).copyWith(fontFamily: 'CupertinoSystemText', letterSpacing: -.68),
       ),
       const SizedBox(height: 8),
       Text(
@@ -567,7 +567,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
           Expanded(
             child: Text(
               widget.fromSettings ? 'Your plan' : "What's included",
-              style: _style(17, weight: FontWeight.w500),
+              style: _style(17, weight: FontWeight.w400),
             ),
           ),
         ],
@@ -589,7 +589,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
               children: [
                 Text(
                   'Founding Access',
-                  style: _style(16, weight: FontWeight.w500),
+                  style: _style(16, weight: FontWeight.w400),
                 ),
                 Text(
                   'Your plan right now',
@@ -650,7 +650,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
             Widget heading(String text) => Text(
               text,
               textAlign: TextAlign.center,
-              style: _style(12, color: _tertiary, weight: FontWeight.w500),
+              style: _style(12, color: _tertiary, weight: FontWeight.w400),
             );
             Widget row(String label, String? future, {bool header = false}) {
               if (header && large) return const SizedBox.shrink();
@@ -794,7 +794,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: _style(15.5, weight: FontWeight.w500)),
+            Text(title, style: _style(15.5, weight: FontWeight.w400)),
             const SizedBox(height: 2),
             Text(body, style: _style(14, color: _secondary)),
           ],
@@ -845,7 +845,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: _style(12, color: color, weight: FontWeight.w500),
+          style: _style(12, color: color, weight: FontWeight.w400),
         ),
       );
 }
@@ -912,7 +912,7 @@ class _FoundingButtonState extends State<_FoundingButton> {
                   style: _style(
                     16,
                     color: widget.primary ? _ink : _text,
-                    weight: FontWeight.w600,
+                    weight: FontWeight.w400,
                     height: 1.4,
                   ),
                 ),

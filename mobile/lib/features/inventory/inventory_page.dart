@@ -363,13 +363,19 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                   hintStyle: AppTypography.bodyStyleOf(
                     context,
                     TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                      color: AppTheme.foreground(
+                        context,
+                        const Color(0x4DFFFFFF),
+                      ),
                     ),
                   ),
                   counterStyle: AppTypography.bodyStyleOf(
                     context,
                     TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                      color: AppTheme.foreground(
+                        context,
+                        const Color(0x4DFFFFFF),
+                      ),
                     ),
                   ),
                 ),
@@ -378,7 +384,10 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                 AppText(
                   error!,
                   style: TextStyle(
-                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                    color: AppTheme.foreground(
+                      context,
+                      const Color(0xFFFF453A),
+                    ),
                     fontSize: 12,
                   ),
                 ),
@@ -602,7 +611,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
       data: SpaceStyle.theme(context),
       child: Builder(
         builder: (context) => Scaffold(
-          backgroundColor: SpaceStyle.bg,
+          backgroundColor: SpaceStyle.of(context).bg,
           body: Column(
             children: [
               Expanded(
@@ -640,7 +649,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   border: Border(
                                     bottom: BorderSide(
                                       color: collapsed
-                                          ? SpaceStyle.line
+                                          ? SpaceStyle.of(context).line
                                           : Colors.transparent,
                                     ),
                                   ),
@@ -653,40 +662,50 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                       onTap: () =>
                                           Navigator.of(context).pop(_changed),
                                     ),
+                                    const SizedBox(width: 52),
                                     Expanded(
-                                      child: AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 350,
+                                      child: Opacity(
+                                        key: const ValueKey('space-title-fade'),
+                                        opacity:
+                                            (1 -
+                                                    (_listScrollController
+                                                                .hasClients
+                                                            ? _listScrollController
+                                                                  .offset
+                                                            : 0) /
+                                                        100)
+                                                .clamp(0.0, 1.0),
+                                        child: Text(
+                                          _location,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: SpaceStyle.of(
+                                            context,
+                                          ).text(17),
                                         ),
-                                        child: collapsed
-                                            ? Text(
-                                                _location,
-                                                textAlign: TextAlign.center,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: SpaceStyle.text(17),
-                                              )
-                                            : const SizedBox.shrink(),
                                       ),
                                     ),
                                     Container(
                                       width: 44,
                                       height: 44,
-                                      decoration: SpaceStyle.card(22),
+                                      decoration: SpaceStyle.of(
+                                        context,
+                                      ).card(22),
                                       child: NotificationBell(api: widget.api),
                                     ),
                                     const SizedBox(width: 8),
                                     PopupMenuButton<String>(
                                       tooltip: 'More',
-                                      color: SpaceStyle.menu,
+                                      color: SpaceStyle.of(context).menu,
                                       constraints:
                                           const BoxConstraints.tightFor(
                                             width: 230,
                                           ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(22),
-                                        side: const BorderSide(
-                                          color: SpaceStyle.line2,
+                                        side: BorderSide(
+                                          color: SpaceStyle.of(context).line2,
                                         ),
                                       ),
                                       onSelected: _onFabItemTap,
@@ -724,7 +743,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                       child: Container(
                                         width: 44,
                                         height: 44,
-                                        decoration: SpaceStyle.card(22),
+                                        decoration: SpaceStyle.of(
+                                          context,
+                                        ).card(22),
                                         child: const Icon(Icons.more_horiz),
                                       ),
                                     ),
@@ -740,7 +761,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                               padding: const EdgeInsets.all(8),
                               child: Text(
                                 _syncError!,
-                                style: SpaceStyle.text(13, SpaceStyle.amber),
+                                style: SpaceStyle.of(
+                                  context,
+                                ).text(13, SpaceStyle.of(context).amber),
                               ),
                             ),
                           ),
@@ -750,29 +773,15 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (inventory != null)
-                                  Text(
-                                    '${inventory.workspaceName} · ${inventory.name}',
-                                    style: SpaceStyle.text(
-                                      13.5,
-                                      SpaceStyle.tx2,
-                                    ),
+                                Center(
+                                  child: Text(
+                                    '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
+                                    key: const ValueKey('space-unit-count'),
+                                    textAlign: TextAlign.center,
+                                    style: SpaceStyle.of(
+                                      context,
+                                    ).text(15, SpaceStyle.of(context).tx2),
                                   ),
-                                const SizedBox(height: 9),
-                                Text(
-                                  _location,
-                                  style: SpaceStyle.text(34).copyWith(
-                                    fontFamily: 'Inter Tight',
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: -.68,
-                                    height: 1.1,
-                                    color: const Color(0xFFF4F4F5),
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
-                                  style: SpaceStyle.text(15, SpaceStyle.tx2),
                                 ),
                                 const SizedBox(height: 16),
                                 Row(
@@ -824,30 +833,37 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                 children: [
                                   Expanded(
                                     child: Container(
-                                      decoration: SpaceStyle.card(22),
+                                      decoration: SpaceStyle.of(
+                                        context,
+                                      ).card(22),
                                       child: Row(
                                         children: [
                                           const SizedBox(width: 14),
-                                          const Icon(
+                                          Icon(
                                             Icons.search,
                                             size: 18,
-                                            color: SpaceStyle.tx2,
+                                            color: SpaceStyle.of(context).tx2,
                                           ),
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: TextField(
                                               controller:
                                                   _spaceSearchController,
-                                              style: SpaceStyle.text(15.5),
+                                              style: SpaceStyle.of(
+                                                context,
+                                              ).text(15.5),
                                               textInputAction:
                                                   TextInputAction.search,
                                               decoration: InputDecoration(
                                                 hintText:
                                                     'Search ${spaceCount(_items.length)} items',
-                                                hintStyle: SpaceStyle.text(
-                                                  15.5,
-                                                  SpaceStyle.tx3,
-                                                ),
+                                                hintStyle:
+                                                    SpaceStyle.of(context).text(
+                                                      15.5,
+                                                      SpaceStyle.of(
+                                                        context,
+                                                      ).tx3,
+                                                    ),
                                                 border: InputBorder.none,
                                                 enabledBorder: InputBorder.none,
                                                 focusedBorder: InputBorder.none,
@@ -871,10 +887,12 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                           if (_spaceSearchQuery.isNotEmpty)
                                             IconButton(
                                               tooltip: 'Clear search',
-                                              icon: const Icon(
+                                              icon: Icon(
                                                 Icons.cancel,
                                                 size: 20,
-                                                color: SpaceStyle.tx2,
+                                                color: SpaceStyle.of(
+                                                  context,
+                                                ).tx2,
                                               ),
                                               onPressed: () => setState(() {
                                                 _spaceSearchController.clear();
@@ -911,12 +929,17 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                   ? 'Low quantity'
                                                   : 'Ask results',
                                             ),
-                                            backgroundColor: SpaceStyle.white,
-                                            labelStyle: SpaceStyle.text(
-                                              12.5,
-                                              SpaceStyle.bg,
-                                            ),
-                                            deleteIconColor: SpaceStyle.bg,
+                                            backgroundColor: SpaceStyle.of(
+                                              context,
+                                            ).white,
+                                            labelStyle: SpaceStyle.of(context)
+                                                .text(
+                                                  12.5,
+                                                  SpaceStyle.of(context).bg,
+                                                ),
+                                            deleteIconColor: SpaceStyle.of(
+                                              context,
+                                            ).bg,
                                             onDeleted: () => setState(() {
                                               _onlyLowQuantity = false;
                                               _answerIds = null;
@@ -925,9 +948,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                         )
                                       : Text(
                                           '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
-                                          style: SpaceStyle.text(
+                                          style: SpaceStyle.of(context).text(
                                             12.5,
-                                            SpaceStyle.tx3,
+                                            SpaceStyle.of(context).tx3,
                                           ),
                                         ),
                                 ),
@@ -935,10 +958,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   child: Text(
                                     itemSortLabel(_sortOption),
                                     textAlign: TextAlign.right,
-                                    style: SpaceStyle.text(
-                                      12.5,
-                                      SpaceStyle.tx3,
-                                    ),
+                                    style: SpaceStyle.of(
+                                      context,
+                                    ).text(12.5, SpaceStyle.of(context).tx3),
                                   ),
                                 ),
                               ],
@@ -961,13 +983,13 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   label: Text(categories[i]),
                                   selected: categories[i] == _selectedCategory,
                                   showCheckmark: false,
-                                  selectedColor: SpaceStyle.white,
-                                  backgroundColor: SpaceStyle.s1,
-                                  labelStyle: SpaceStyle.text(
+                                  selectedColor: SpaceStyle.of(context).white,
+                                  backgroundColor: SpaceStyle.of(context).s1,
+                                  labelStyle: SpaceStyle.of(context).text(
                                     13,
                                     categories[i] == _selectedCategory
-                                        ? SpaceStyle.bg
-                                        : SpaceStyle.tx2,
+                                        ? SpaceStyle.of(context).bg
+                                        : SpaceStyle.of(context).tx2,
                                   ),
                                   onSelected: (_) =>
                                       _onCategoryPillTapped(categories[i]),
@@ -992,7 +1014,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                         : _spaceSearchQuery.isNotEmpty
                                         ? 'No “$_spaceSearchQuery” in $_location'
                                         : 'No items match this filter',
-                                    style: SpaceStyle.text(17),
+                                    style: SpaceStyle.of(context).text(17),
                                     textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 12),
@@ -1000,7 +1022,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                     _items.isEmpty
                                         ? 'Add items here when you are ready.'
                                         : 'Try another search, or ask FindEZ to look across this inventory.',
-                                    style: SpaceStyle.text(15, SpaceStyle.tx2),
+                                    style: SpaceStyle.of(
+                                      context,
+                                    ).text(15, SpaceStyle.of(context).tx2),
                                     textAlign: TextAlign.center,
                                   ),
                                   if (inventory != null)
@@ -1034,7 +1058,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                             child: Text(
                               'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
                               textAlign: TextAlign.center,
-                              style: SpaceStyle.text(12.5, SpaceStyle.tx3),
+                              style: SpaceStyle.of(
+                                context,
+                              ).text(12.5, SpaceStyle.of(context).tx3),
                             ),
                           ),
                         ),
@@ -1051,17 +1077,20 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                             IgnorePointer(
                               child: Container(
                                 height: 45,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, SpaceStyle.bg],
+                                    colors: [
+                                      Colors.transparent,
+                                      SpaceStyle.of(context).bg,
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
                             Container(
-                              color: SpaceStyle.bg,
+                              color: SpaceStyle.of(context).bg,
                               padding: EdgeInsets.fromLTRB(
                                 12,
                                 0,
@@ -1073,10 +1102,10 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   if (inventory != null)
                                     Expanded(
                                       child: Material(
-                                        color: SpaceStyle.s1,
-                                        shape: const StadiumBorder(
+                                        color: SpaceStyle.of(context).s1,
+                                        shape: StadiumBorder(
                                           side: BorderSide(
-                                            color: SpaceStyle.line2,
+                                            color: SpaceStyle.of(context).line2,
                                           ),
                                         ),
                                         clipBehavior: Clip.antiAlias,
@@ -1090,16 +1119,20 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                 Container(
                                                   width: 38,
                                                   height: 38,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: SpaceStyle.white,
-                                                        shape: BoxShape.circle,
-                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: SpaceStyle.of(
+                                                      context,
+                                                    ).white,
+                                                    shape: BoxShape.circle,
+                                                  ),
                                                   padding: const EdgeInsets.all(
                                                     9,
                                                   ),
                                                   child: Image.asset(
                                                     'assets/brand/findez-mark-black.png',
+                                                    color: SpaceStyle.of(
+                                                      context,
+                                                    ).bg,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 10),
@@ -1109,10 +1142,15 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
-                                                    style: SpaceStyle.text(
-                                                      16,
-                                                      SpaceStyle.tx2,
-                                                    ),
+                                                    style:
+                                                        SpaceStyle.of(
+                                                          context,
+                                                        ).text(
+                                                          16,
+                                                          SpaceStyle.of(
+                                                            context,
+                                                          ).tx2,
+                                                        ),
                                                   ),
                                                 ),
                                                 IconButton(
@@ -1120,9 +1158,11 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                       'Ask about $_location with voice',
                                                   onPressed: () =>
                                                       _openAsk(voice: true),
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                     Icons.mic_none,
-                                                    color: SpaceStyle.tx2,
+                                                    color: SpaceStyle.of(
+                                                      context,
+                                                    ).tx2,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 4),
@@ -1169,7 +1209,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
         height: 44,
         child: Row(
           children: [
-            Expanded(child: Text(title, style: SpaceStyle.text(15.5))),
+            Expanded(
+              child: Text(title, style: SpaceStyle.of(context).text(15.5)),
+            ),
             Icon(icon, size: 20),
           ],
         ),
@@ -2286,7 +2328,7 @@ class _InventoryPageState extends State<InventoryPage>
         children: [
           Icon(
             Icons.wifi_off_outlined,
-            color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+            color: AppTheme.foreground(context, const Color(0x4DFFFFFF)),
             size: 48,
           ),
           const SizedBox(height: 16),
@@ -2302,7 +2344,7 @@ class _InventoryPageState extends State<InventoryPage>
           AppText(
             'Pull down to retry',
             style: TextStyle(
-              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
               fontSize: 13,
             ),
           ),
@@ -2372,18 +2414,18 @@ class _InventoryPageState extends State<InventoryPage>
                             Icons.wifi_off_outlined,
                             color: AppTheme.foreground(
                               context,
-                              Color(0x73FFFFFF),
+                              const Color(0x73FFFFFF),
                             ),
                             size: 20,
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: AppText(
                               'Could not load spaces. Tap to retry.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
                                   context,
-                                  Color(0x73FFFFFF),
+                                  const Color(0x73FFFFFF),
                                 ),
                                 fontSize: 13,
                               ),
@@ -2416,11 +2458,11 @@ class _InventoryPageState extends State<InventoryPage>
                           Icons.add_box_outlined,
                           color: AppTheme.foreground(
                             context,
-                            Color(0xFFF2F2F7),
+                            const Color(0xFFF2F2F7),
                           ),
                           size: 20,
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: AppText(
                             'Create your first space to start organizing your inventory.',
@@ -2467,11 +2509,11 @@ class _InventoryPageState extends State<InventoryPage>
                           Icons.add_circle_outline_rounded,
                           color: AppTheme.foreground(
                             context,
-                            Color(0xFFF2F2F7),
+                            const Color(0xFFF2F2F7),
                           ),
                           size: 28,
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         AppText(
                           'New Space',
                           style: TextStyle(
@@ -2599,7 +2641,7 @@ class _InventoryPageState extends State<InventoryPage>
                                                 style: TextStyle(
                                                   color: AppTheme.foreground(
                                                     context,
-                                                    Color(0x40FFFFFF),
+                                                    const Color(0x40FFFFFF),
                                                   ),
                                                 ),
                                               ),
@@ -2659,7 +2701,7 @@ class _InventoryPageState extends State<InventoryPage>
                                         Icons.person_add_alt_1_rounded,
                                         color: AppTheme.foreground(
                                           context,
-                                          Color(0x99FFFFFF),
+                                          const Color(0x99FFFFFF),
                                         ),
                                         size: 18,
                                       ),
@@ -2682,7 +2724,7 @@ class _InventoryPageState extends State<InventoryPage>
                                         Icons.more_horiz,
                                         color: AppTheme.foreground(
                                           context,
-                                          Color(0x60FFFFFF),
+                                          const Color(0x60FFFFFF),
                                         ),
                                         size: 19,
                                       ),
@@ -2721,7 +2763,10 @@ class _InventoryPageState extends State<InventoryPage>
                   children: [
                     Icon(
                       Icons.refresh,
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                      color: AppTheme.foreground(
+                        context,
+                        const Color(0x4DFFFFFF),
+                      ),
                       size: 16,
                     ),
                     const SizedBox(width: 8),
@@ -2745,13 +2790,13 @@ class _InventoryPageState extends State<InventoryPage>
         if (_joinedShares.isNotEmpty) ...<Widget>[
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
               child: AppText(
                 'JOINED SPACES',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w400,
-                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  color: AppTheme.foreground(context, const Color(0x4DFFFFFF)),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -2820,7 +2865,7 @@ class _InventoryPageState extends State<InventoryPage>
                                     style: TextStyle(
                                       color: AppTheme.foreground(
                                         context,
-                                        Color(0x73FFFFFF),
+                                        const Color(0x73FFFFFF),
                                       ),
                                       fontSize: 11,
                                     ),
@@ -2938,7 +2983,9 @@ class _InventoryPageState extends State<InventoryPage>
             hintText: 'Space name',
             hintStyle: AppTypography.bodyStyleOf(
               context,
-              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
+              TextStyle(
+                color: AppTheme.foreground(context, const Color(0x4DFFFFFF)),
+              ),
             ),
           ),
         ),
@@ -3050,7 +3097,7 @@ class _InventoryPageState extends State<InventoryPage>
                           TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x4DFFFFFF),
+                              const Color(0x4DFFFFFF),
                             ),
                           ),
                         ),
@@ -3059,7 +3106,7 @@ class _InventoryPageState extends State<InventoryPage>
                           TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x4DFFFFFF),
+                              const Color(0x4DFFFFFF),
                             ),
                           ),
                         ),
@@ -3097,7 +3144,7 @@ class _InventoryPageState extends State<InventoryPage>
                           borderSide: BorderSide(
                             color: AppTheme.adaptive(
                               context,
-                              Color(0xFFF2F2F7),
+                              const Color(0xFFF2F2F7),
                             ),
                             width: 1,
                           ),
@@ -3111,7 +3158,7 @@ class _InventoryPageState extends State<InventoryPage>
                         style: TextStyle(
                           color: AppTheme.foreground(
                             context,
-                            Color(0xFFFF453A),
+                            const Color(0xFFFF453A),
                           ),
                           fontSize: 12,
                         ),
@@ -3189,8 +3236,8 @@ class _InventoryPageState extends State<InventoryPage>
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: BoxDecoration(
-          color: AppTheme.adaptive(context, Color(0xFF1C1C1E)),
-          borderRadius: BorderRadius.only(
+          color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -3229,12 +3276,18 @@ class _InventoryPageState extends State<InventoryPage>
                 ListTile(
                   leading: Icon(
                     Icons.delete_outline,
-                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                    color: AppTheme.foreground(
+                      context,
+                      const Color(0xFFFF453A),
+                    ),
                   ),
                   title: AppText(
                     'Delete Space',
                     style: TextStyle(
-                      color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                      color: AppTheme.foreground(
+                        context,
+                        const Color(0xFFFF453A),
+                      ),
                     ),
                   ),
                   onTap: () => Navigator.pop(context, 'delete'),
@@ -3279,7 +3332,9 @@ class _InventoryPageState extends State<InventoryPage>
           decoration: InputDecoration(
             hintStyle: AppTypography.bodyStyleOf(
               context,
-              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
+              TextStyle(
+                color: AppTheme.foreground(context, const Color(0x4DFFFFFF)),
+              ),
             ),
           ),
         ),
@@ -3410,14 +3465,14 @@ class _InventoryPageState extends State<InventoryPage>
                           child: Container(
                             width: 16,
                             height: 16,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: AppTheme.action,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: AppText(
                                 '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: AppTheme.onAction,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w400,
@@ -3868,14 +3923,14 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
-        borderRadius: BorderRadius.only(
+        color: AppTheme.adaptive(context, const Color(0xFF0A0A0A)),
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -3912,7 +3967,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
             child: AppText(
               'Location: ${widget.spaceName}',
               style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
                 fontSize: 13,
               ),
             ),
@@ -3927,7 +3982,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
               separatorBuilder: (_, _) => Divider(
-                color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                 height: 1,
               ),
               itemBuilder: (_, i) {
@@ -3955,7 +4010,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                           style: TextStyle(
                             color: AppTheme.foreground(
                               context,
-                              Color(0x73FFFFFF),
+                              const Color(0x73FFFFFF),
                             ),
                             fontSize: 13,
                           ),
@@ -3969,7 +4024,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         style: TextStyle(
                           color: AppTheme.foreground(
                             context,
-                            Color(0x73FFFFFF),
+                            const Color(0x73FFFFFF),
                           ),
                           fontSize: 13,
                         ),
@@ -3981,7 +4036,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                           Icons.close_rounded,
                           color: AppTheme.foreground(
                             context,
-                            Color(0x4DFFFFFF),
+                            const Color(0x4DFFFFFF),
                           ),
                           size: 18,
                         ),
@@ -4007,7 +4062,10 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     child: AppText(
                       'Cancel',
                       style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                        color: AppTheme.foreground(
+                          context,
+                          const Color(0x73FFFFFF),
+                        ),
                       ),
                     ),
                   ),
@@ -4086,7 +4144,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     hintStyle: AppTypography.bodyStyleOf(
       context,
       TextStyle(
-        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+        color: AppTheme.foreground(context, const Color(0x33FFFFFF)),
         fontSize: 15,
       ),
     ),
@@ -4096,21 +4154,21 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        color: AppTheme.adaptive(context, const Color(0x40FFFFFF)),
         width: 0.5,
       ),
     ),
@@ -4121,14 +4179,14 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
-        borderRadius: BorderRadius.only(
+        color: AppTheme.adaptive(context, const Color(0xFF0A0A0A)),
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -4208,7 +4266,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             style: AppTypography.bodyStyleOf(
               context,
               TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                color: AppTheme.foreground(context, const Color(0x4DFFFFFF)),
                 fontSize: 15,
               ),
             ),
@@ -4254,7 +4312,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               child: AppText(
                 'Cancel',
                 style: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                  color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
                   fontSize: 15,
                 ),
               ),

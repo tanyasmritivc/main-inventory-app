@@ -47,7 +47,7 @@ class AskQuestionCard extends StatelessWidget {
               : EdgeInsets.all(compact ? 14 : 16),
           decoration: BoxDecoration(
             color: spaceAppearance
-                ? SpaceStyle.s3
+                ? SpaceStyle.of(context).s3
                 : AppTheme.adaptive(context, const Color(0xFF171719)),
             borderRadius: spaceAppearance
                 ? const BorderRadius.only(
@@ -101,7 +101,10 @@ class AskQuestionCard extends StatelessWidget {
                 style: AppTypography.styleOf(
                   context,
                   TextStyle(
-                    color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+                    color: AppTheme.foreground(
+                      context,
+                      const Color(0xFFF2F2F2),
+                    ),
                     fontSize: spaceAppearance
                         ? 15.5
                         : compact
@@ -183,8 +186,8 @@ class _AskAnswerViewState extends State<AskAnswerView> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = AppTheme.adaptive(context, Color(0xFFF2F2F2));
-    final secondary = AppTheme.adaptive(context, Color(0xFF85858E));
+    final primary = AppTheme.adaptive(context, const Color(0xFFF2F2F2));
+    final secondary = AppTheme.adaptive(context, const Color(0xFF85858E));
     final data = widget.contextData;
     final customResults = !widget.isLoading && data != null
         ? widget.resultBuilder?.call(data)
@@ -200,7 +203,10 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               borderRadius: BorderRadius.circular(6),
               onTap: () => setState(() => _expanded = !_expanded),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
                 child: AppText(
                   'What it read',
                   style: TextStyle(
@@ -209,7 +215,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     decoration: TextDecoration.underline,
                     decorationColor: AppTheme.foreground(
                       context,
-                      Color(0xFF3A3A40),
+                      const Color(0xFF3A3A40),
                     ),
                     decorationThickness: 1.2,
                   ),
@@ -302,6 +308,36 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                 // Generated images must not trigger arbitrary third-party requests.
                 sizedImageBuilder: (_) => const SizedBox.shrink(),
                 styleSheet: MarkdownStyleSheet(
+                  h1: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  h2: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  h3: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  h4: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  h5: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  h6: TextStyle(
+                    fontFamily: 'CupertinoSystemText',
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                   code: const TextStyle(fontFamily: 'CupertinoSystemText'),
                   p: AppTypography.styleOf(
                     context,
@@ -420,7 +456,10 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: AppTheme.adaptive(context, Color(0xFF29292E)),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF29292E),
+                        ),
                       ),
                     _ResultRow(row: data.rows[index]),
                   ],
@@ -430,7 +469,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
           ),
           if (data.rowsTruncated)
             Padding(
-              padding: EdgeInsets.only(top: 10, left: 4),
+              padding: const EdgeInsets.only(top: 10, left: 4),
               child: AppText(
                 'Additional results are not shown here.',
                 style: TextStyle(color: secondary, fontSize: 13),
@@ -459,7 +498,7 @@ class _ResultRow extends StatelessWidget {
         AppText(
           row.name,
           style: TextStyle(
-            color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+            color: AppTheme.foreground(context, const Color(0xFFF2F2F2)),
             fontSize: 17,
             height: 1.4,
           ),
@@ -468,7 +507,7 @@ class _ResultRow extends StatelessWidget {
         AppText(
           subtitle,
           style: TextStyle(
-            color: AppTheme.foreground(context, Color(0xFF85858E)),
+            color: AppTheme.foreground(context, const Color(0xFF85858E)),
             fontSize: 14,
             height: 1.4,
           ),

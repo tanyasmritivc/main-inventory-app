@@ -526,7 +526,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                           ],
                           Text(
                             widget.done ? 'Done' : 'Scanning',
-                            style: _text(13, weight: FontWeight.w500),
+                            style: _text(13, weight: FontWeight.w400),
                           ),
                         ],
                       ),
@@ -619,7 +619,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                                 style: _text(
                                   10.5,
                                   color: ExtractStyle.ink,
-                                  weight: FontWeight.w700,
+                                  weight: FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -632,7 +632,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: _text(12, weight: FontWeight.w500),
+                      style: _text(12, weight: FontWeight.w400),
                     ),
                   ],
                 ),
@@ -710,7 +710,9 @@ class _ExtractScanningState extends State<ExtractScanning>
                         ? 'Scan stopped'
                         : "Couldn't read this photo",
                     textAlign: TextAlign.center,
-                    style: _text(22).copyWith(fontFamily: 'Inter Tight'),
+                    style: _text(
+                      22,
+                    ).copyWith(fontFamily: 'CupertinoSystemText'),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -744,7 +746,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                               : 'Looking at your photo',
                           key: const Key('extraction-status'),
                           style: _text(26).copyWith(
-                            fontFamily: 'Inter Tight',
+                            fontFamily: 'CupertinoSystemText',
                             letterSpacing: -.52,
                           ),
                         ),
@@ -1046,7 +1048,7 @@ class _ScanButtonState extends State<_ScanButton> {
                       color: widget.primary
                           ? ExtractStyle.ink
                           : ExtractStyle.white,
-                    ).copyWith(fontWeight: FontWeight.w600),
+                    ).copyWith(fontWeight: FontWeight.w400),
                   ),
                 ),
               ),

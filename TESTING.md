@@ -671,7 +671,7 @@ account switching. Source/widget results are not a native physical pass.
 ### Stable light typography and OS Bold Text
 
 `app_typography_test.dart` verifies rendered RichText and EditableText weights:
-app and framework supporting text/inputs use 400 and headings/buttons cap at 600
+app and framework text/inputs/buttons use 400; only AI reply headings use 600
 in both themes, with identical weights when OS Bold Text changes. Text semantics, layout options,
 explicit color/spacing, OS scaling and other accessibility flags are retained.
 `appearance_widget_test.dart` changes the actual app root's OS preference and
@@ -1202,7 +1202,7 @@ known coverage limits: `docs/plans/native-ios-controls-20261023.md`.
 
 ### Native SF Pro typography
 
-App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. The inline voice composer locally adds `VoiceInter` for its supplied design; other app text retains the system font. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.
+App-owned text and page overrides use Flutter's CupertinoSystemText alias, matching its native iOS San Francisco theme. Voice, scan and Founding Access also use the system font; previous feature font exceptions are removed. Host tests load the installed macOS SF font when available; Linux uses an open-source metric fixture, not native acceptance. Run integration_test/system_typography_test.dart on iOS for actual system-font text, inputs, chat, large text and both themes.
 
 
 ### Monochrome mobile UI and restrained navigation
