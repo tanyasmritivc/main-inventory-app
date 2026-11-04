@@ -728,9 +728,13 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   const SizedBox(height: 9),
                                   Text(
                                     _location,
-                                    style: SpaceStyle.text(
-                                      34,
-                                    ).copyWith(letterSpacing: -1.02),
+                                    style: SpaceStyle.text(34).copyWith(
+                                      fontFamily: 'Inter Tight',
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: -.68,
+                                      height: 1.1,
+                                      color: const Color(0xFFF4F4F5),
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -751,21 +755,23 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                           onLongPress: _openReview,
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: SpaceStatusCard(
-                                          icon: Icons.inventory_2_outlined,
-                                          title: 'Low quantity',
-                                          subtitle:
-                                              '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
-                                          active: _onlyLowQuantity,
-                                          onTap: () => setState(() {
-                                            _onlyLowQuantity =
-                                                !_onlyLowQuantity;
-                                            _answerIds = null;
-                                          }),
+                                      if (_lowCount() > 0)
+                                        const SizedBox(width: 8),
+                                      if (_lowCount() > 0)
+                                        Expanded(
+                                          child: SpaceStatusCard(
+                                            icon: Icons.inventory_2_outlined,
+                                            title: 'Low quantity',
+                                            subtitle:
+                                                '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
+                                            active: _onlyLowQuantity,
+                                            onTap: () => setState(() {
+                                              _onlyLowQuantity =
+                                                  !_onlyLowQuantity;
+                                              _answerIds = null;
+                                            }),
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ],
@@ -898,7 +904,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                             ),
                                           ),
                                   ),
-                                  Flexible(
+                                  Expanded(
                                     child: Text(
                                       itemSortLabel(_sortOption),
                                       textAlign: TextAlign.right,

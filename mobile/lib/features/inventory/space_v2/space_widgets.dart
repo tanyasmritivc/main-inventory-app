@@ -1,8 +1,8 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import '../../../core/private_image.dart';
 import 'space_style.dart';
+import '../../founding_access/riso_art.dart';
 
 String spaceItemSubtitle(InventoryItem item) => [
   if (item.displayDescription != null) item.displayDescription!,
@@ -28,41 +28,21 @@ class SpaceThumbnail extends StatelessWidget {
   final double? height;
   @override
   Widget build(BuildContext context) {
-    final green = item.category.codeUnits
-        .fold(0, (a, b) => (a * 31 + b) & 0x7fffffff)
-        .isEven;
-    final fallback = DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: green
-              ? const Alignment(-.342, -.94)
-              : const Alignment(-.5, -.866),
-          end: green ? const Alignment(.342, .94) : const Alignment(.5, .866),
-          colors: green
-              ? const [Color(0xFF3E5A4C), Color(0xFF6F8C74), Color(0xFF22322C)]
-              : const [Color(0xFFB9BEC5), Color(0xFF6E747D), Color(0xFF24272C)],
-        ),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: green ? Alignment.topRight : Alignment.topLeft,
-            radius: 1.2,
-            colors: [
-              Color(green ? 0x66E3C9A6 : 0x66D9DCE0),
-              Colors.transparent,
-            ],
-          ),
-        ),
-        child: CustomPaint(
-          painter: const _Grain(),
-          child: Center(
-            child: Icon(
-              Icons.inventory_2_outlined,
-              size: height == null ? 22 : 44,
-              color: Colors.white70,
+    final fallback = RisoTile(
+      palette: RisoPalette.forCategory(item.category, item.location),
+      radius: radius,
+      child: Center(
+        child: Icon(
+          spaceItemIcon(item),
+          size: height == null ? 22 : 44,
+          color: Colors.white.withValues(alpha: .90),
+          shadows: const [
+            Shadow(
+              color: Color(0x40000000),
+              blurRadius: 5,
+              offset: Offset(0, 2),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -82,26 +62,19 @@ class SpaceThumbnail extends StatelessWidget {
   }
 }
 
-class _Grain extends CustomPainter {
-  const _Grain();
-  @override
-  void paint(Canvas canvas, Size size) {
-    final random = math.Random(47);
-    final paint = Paint()..color = const Color(0x14FFFFFF);
-    for (var i = 0; i < size.width * size.height / 24; i++) {
-      canvas.drawCircle(
-        Offset(
-          random.nextDouble() * size.width,
-          random.nextDouble() * size.height,
-        ),
-        .5,
-        paint,
-      );
-    }
+IconData spaceItemIcon(InventoryItem item) {
+  final text = '${item.name} ${item.category}'.toLowerCase();
+  if (['belt', 'chain'].any(text.contains)) return Icons.link;
+  if (['screw', 'bolt', 'nut', 'washer', 'standoff'].any(text.contains)) {
+    return Icons.hexagon_outlined;
   }
-
-  @override
-  bool shouldRepaint(_Grain oldDelegate) => false;
+  if (['wire', 'cable'].any(text.contains)) return Icons.cable;
+  if (text.contains('battery')) return Icons.battery_std_outlined;
+  if (['motor', 'servo', 'gear'].any(text.contains)) {
+    return Icons.settings_outlined;
+  }
+  if (text.contains('tool')) return Icons.build_outlined;
+  return Icons.inventory_2_outlined;
 }
 
 class SpaceItemRow extends StatelessWidget {
@@ -143,9 +116,11 @@ class SpaceItemRow extends StatelessWidget {
                         item.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: SpaceStyle.text(
-                          15.5,
-                        ).copyWith(height: 1.25, letterSpacing: -.155),
+                        style: SpaceStyle.text(15.5).copyWith(
+                          height: 1.25,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -.155,
+                        ),
                       ),
                       const SizedBox(height: 3),
                       Text(

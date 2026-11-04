@@ -30,6 +30,74 @@ enum RisoPalette {
 
   const RisoPalette(this.colors);
   final List<Color> colors;
+
+  /// Stable across launches and platforms, unlike String.hashCode.
+  static RisoPalette forCategory(String category, String space) {
+    final value = category.trim().isEmpty ? space : category;
+    final hash = value.codeUnits.fold(0, (a, b) => (a * 31 + b) & 0x7fffffff);
+    return values[hash % values.length];
+  }
+}
+
+/// Four process-lifetime raster tiles; scrolling never repaints grain per item.
+/// The cache holds only public artwork, never inventory or account content.
+class RisoTile extends StatelessWidget {
+  const RisoTile({
+    super.key,
+    required this.palette,
+    this.radius = 13,
+    this.child,
+  });
+  final RisoPalette palette;
+  final double radius;
+  final Widget? child;
+  static final _images = <RisoPalette, Future<ui.Image>>{};
+  static Future<ui.Image>? _grain;
+
+  static Future<ui.Image> _loadGrain() async {
+    final data = await rootBundle.load('assets/textures/grain.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    codec.dispose();
+    return frame.image;
+  }
+
+  static Future<ui.Image> image(RisoPalette palette) =>
+      _images.putIfAbsent(palette, () async {
+        final grain = await (_grain ??= _loadGrain());
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder)..scale(3);
+        _RisoPainter(palette, grain).paint(canvas, const Size(128, 128));
+        final picture = recorder.endRecording();
+        final image = await picture.toImage(384, 384);
+        picture.dispose();
+        return image;
+      });
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(radius),
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: palette.colors[1]),
+        FutureBuilder<ui.Image>(
+          future: image(palette),
+          builder: (_, snapshot) =>
+              RawImage(image: snapshot.data, fit: BoxFit.cover),
+        ),
+        ?child,
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: Colors.white.withValues(alpha: .08)),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class RisoArt extends StatefulWidget {

@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
+import 'package:mobile/features/founding_access/riso_art.dart';
+import 'package:mobile/core/private_image.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +18,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'support/hierarchy_fixture.dart';
 
 Future<void> Function(String)? spaceV2Capture;
+Future<void> Function(Future<void> Function())? spacePolishProfile;
 
 class _Api extends ApiClient {
   _Api(HierarchyFixture fixture, {bool viewer = false})
@@ -155,6 +160,8 @@ void main() {
     WidgetTester tester,
     int count, {
     String kind = 'manual',
+    bool photos = false,
+    bool low = true,
     bool viewer = false,
     double scale = 1,
     double keyboard = 0,
@@ -164,7 +171,35 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    data = List.generate(count, (i) => row(i, kind: kind));
+    data = List.generate(
+      count,
+      (i) => {
+        ...row(i, kind: kind),
+        if (photos) 'image_url': 'https://images.test/item-$i.jpg',
+      },
+    );
+    await tester.runAsync(() async {
+      await Future.wait(RisoPalette.values.map(RisoTile.image));
+      if (photos) {
+        final bytes = await rootBundle.load(
+          'assets/onboarding/sample_workbench.jpg',
+        );
+        final codec = await ui.instantiateImageCodec(
+          bytes.buffer.asUint8List(),
+        );
+        final frame = await codec.getNextFrame();
+        codec.dispose();
+        for (var i = 0; i < count; i++) {
+          PaintingBinding.instance.imageCache.putIfAbsent(
+            NetworkImage('https://images.test/item-$i.jpg'),
+            () => OneFrameImageStreamCompleter(
+              Future.value(ImageInfo(image: frame.image.clone())),
+            ),
+          );
+        }
+        frame.image.dispose();
+      }
+    });
     final api = _Api(fixture, viewer: viewer);
     final items = data.map(InventoryItem.fromJson).toList();
     await tester.pumpWidget(
@@ -190,7 +225,7 @@ void main() {
             spaceId: 'space-a',
             items: items,
             allItems: items,
-            thresholds: const {'item-0': 3},
+            thresholds: low ? const {'item-0': 3} : const {},
           ),
         ),
       ),
@@ -199,6 +234,52 @@ void main() {
     addTearDown(api.stream.close);
     return api;
   }
+
+  testWidgets(
+    'Space polish preserves photos and hides zero low card without new requests',
+    (tester) async {
+      await mount(tester, 3, photos: true, low: false);
+      expect(find.text('Low quantity'), findsNothing);
+      expect(find.text('Items to finish'), findsOneWidget);
+      expect(find.byType(PrivateImage), findsNWidgets(3));
+      expect(fixture.requests.where((r) => r.path.contains('review')), isEmpty);
+      final sort = tester.getRect(find.text('Part # / Item A → Z'));
+      final quantity = tester.getRect(find.text('2').first);
+      expect(sort.right, closeTo(quantity.right, .1));
+      await spaceV2Capture?.call('photos-no-low');
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('Space 300 cached tiles scroll profile', (tester) async {
+    await mount(tester, 300);
+    expect(
+      identical(
+        RisoTile.image(RisoPalette.plumRust),
+        RisoTile.image(RisoPalette.plumRust),
+      ),
+      isTrue,
+    );
+    Future<void> scroll() async {
+      for (var i = 0; i < 12; i++) {
+        await tester.fling(
+          find.byType(CustomScrollView),
+          const Offset(0, -650),
+          1800,
+        );
+        await tester.pumpAndSettle();
+      }
+    }
+
+    if (spacePolishProfile != null) {
+      await spacePolishProfile!(scroll);
+    } else {
+      await scroll();
+    }
+    expect(find.byType(SpaceItemRow).evaluate().length, lessThan(20));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   for (final count in [0, 3, 40, 298]) {
     testWidgets(
