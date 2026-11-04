@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/ui/swipe_down_sheet.dart';
 
 // Local to Space v2; never changes the app's global theme.
 abstract final class SpaceStyle {
@@ -105,7 +106,7 @@ Future<T?> showSpaceSheet<T>(
             child: MediaQuery.removeViewInsets(
               context: ctx,
               removeBottom: true,
-              child: builder(ctx),
+              child: SwipeDownSheet(child: builder(ctx)),
             ),
           ),
         ),
@@ -118,7 +119,7 @@ Future<T?> showSpaceSheet<T>(
               child: FadeTransition(
                 opacity: scrim,
                 child: GestureDetector(
-                  onTap: () => Navigator.of(ctx).pop(),
+                  onTap: () => Navigator.of(ctx).maybePop(),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                     child: const ColoredBox(color: Color(0x8C000000)),

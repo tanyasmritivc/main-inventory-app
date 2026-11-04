@@ -327,11 +327,6 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Close',
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, size: 20),
-                  ),
                 ],
               ),
             ),

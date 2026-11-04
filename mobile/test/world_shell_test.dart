@@ -117,7 +117,11 @@ void main() {
       expect(find.text('Choose an inventory to continue.'), findsOneWidget);
       expect(find.text('Hardware'), findsOneWidget);
       expect(find.text('Software'), findsOneWidget);
-      await tester.tap(find.byTooltip('Close inventory picker'));
+      await tester.dragFrom(
+        tester.getRect(find.byType(BottomSheet)).topCenter +
+            const Offset(0, 16),
+        const Offset(0, 500),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Choose inventory'), findsNothing);
     }

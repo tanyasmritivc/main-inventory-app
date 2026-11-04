@@ -228,7 +228,7 @@ void main() {
       }
       _controller(tester).jumpTo(_controller(tester).position.maxScrollExtent);
       await tester.pumpAndSettle();
-      expect(find.text('Close').hitTestable(), findsOneWidget);
+      expect(find.text('Close'), findsNothing);
       if (itemDetailCapture != null) {
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(_visualBoundary),
@@ -750,7 +750,7 @@ void main() {
   });
 
   testWidgets(
-    'Close and system back share save protection and read-only dismissal does not write',
+    'Swipe and system back share save protection and read-only dismissal does not write',
     (tester) async {
       final api = _Api();
       await _open(tester, api);
@@ -760,8 +760,7 @@ void main() {
       expect(find.text('Save your notes?'), findsOneWidget);
       await tester.tap(find.text('Keep editing'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Close'));
-      await tester.tap(find.text('Close'));
+      await _pull(tester);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Discard'));
       await tester.pumpAndSettle();
@@ -895,50 +894,45 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Space rows open quick view and Edit retains the original detail panel',
-    (tester) async {
-      for (final readOnly in [false, true]) {
-        final api = _Api();
-        final item = InventoryItem.fromJson(api.data);
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: ThemeData.dark(),
-            home: LocationItemsPage(
-              api: api,
-              location: 'Parts Room',
-              items: [item],
-              thresholds: {},
-              allItems: [item],
-              spaceId: 'personal-or-team-space',
-              readOnly: readOnly,
-            ),
+  testWidgets('Space rows open inline quick view without an Edit button', (
+    tester,
+  ) async {
+    for (final readOnly in [false, true]) {
+      final api = _Api();
+      final item = InventoryItem.fromJson(api.data);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: LocationItemsPage(
+            api: api,
+            location: 'Parts Room',
+            items: [item],
+            thresholds: {},
+            allItems: [item],
+            spaceId: 'personal-or-team-space',
+            readOnly: readOnly,
           ),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(item.name).first);
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('space-quick-view')), findsOneWidget);
-        final edit = find.text(readOnly ? 'Details' : 'Edit');
-        await tester.scrollUntilVisible(
-          edit,
-          300,
-          scrollable: find.descendant(
-            of: find.byKey(const ValueKey('space-quick-view')),
-            matching: find.byType(Scrollable),
-          ),
-        );
-        await tester.tap(edit);
-        await tester.pumpAndSettle();
-        expect(_scroll, findsOneWidget);
-        expect(find.text('Edit item'), findsNothing);
-        await _pull(tester);
-        expect(_scroll, findsNothing);
-        expect(find.byType(LocationItemsPage), findsOneWidget);
-        expect(api.writes, isEmpty);
-      }
-    },
-  );
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(item.displayName).first);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('space-quick-view')), findsOneWidget);
+      expect(find.text('Edit'), findsNothing);
+      expect(find.text('Details'), findsNothing);
+      await tester.dragFrom(
+        tester
+                .getRect(find.byKey(const ValueKey('space-quick-view')))
+                .topCenter +
+            const Offset(0, 20),
+        const Offset(0, 350),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('space-quick-view')), findsNothing);
+      expect(find.byType(LocationItemsPage), findsOneWidget);
+      expect(api.writes, isEmpty);
+    }
+  });
 
   testWidgets(
     'joined and shared-space info buttons open the same swipe-dismiss panel',

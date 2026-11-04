@@ -44,11 +44,6 @@ class InventoryPickerSheet extends StatelessWidget {
                       style: theme.textTheme.titleLarge,
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Close inventory picker',
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(CupertinoIcons.xmark, size: 18),
-                  ),
                 ],
               ),
             ),

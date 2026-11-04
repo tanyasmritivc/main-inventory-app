@@ -3006,39 +3006,6 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ),
 
             const SizedBox(height: 24),
-
-            // ── Close ─────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () => unawaited(_requestClose()),
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0x14FFFFFF),
-                      ),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Center(
-                    child: AppText(
-                      'Close',
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),

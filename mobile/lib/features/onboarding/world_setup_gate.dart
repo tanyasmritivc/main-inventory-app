@@ -89,7 +89,8 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
     return showModalBottomSheet<bool>(
       context: context,
       isDismissible: false,
-      enableDrag: false,
+      enableDrag: true,
+      showDragHandle: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: const Color(0xFFF7F7F6),

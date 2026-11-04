@@ -25,6 +25,7 @@ class InventoryChatButton extends StatelessWidget {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        showDragHandle: true,
         useSafeArea: true,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black.withValues(alpha: .16),
@@ -80,11 +81,6 @@ class InventoryChatButton extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                ),
-                                IconButton(
-                                  tooltip: 'Close contextual chat',
-                                  onPressed: () => Navigator.pop(context),
-                                  icon: const Icon(Icons.close),
                                 ),
                               ],
                             ),

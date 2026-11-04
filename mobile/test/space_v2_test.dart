@@ -13,6 +13,7 @@ import 'package:mobile/core/chat_source.dart';
 import 'package:mobile/core/inventory_context.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/inventory/space_v2/space_widgets.dart';
+import 'package:mobile/features/inventory/space_v2/space_style.dart';
 import 'package:mobile/features/chat/chat_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'support/hierarchy_fixture.dart';
@@ -21,9 +22,12 @@ Future<void> Function(String)? spaceV2Capture;
 Future<void> Function(Future<void> Function())? spacePolishProfile;
 
 class _Api extends ApiClient {
-  _Api(HierarchyFixture fixture, {bool viewer = false})
-    : super(
+  _Api(this.fixture, {bool viewer = false, String? spaceId, _Api? source})
+    : stream = source?.stream ?? StreamController<AiStreamEvent>.broadcast(),
+      messages = source?.messages ?? <String>[],
+      super(
         baseUrl: 'https://api.test',
+        chatSpaceId: spaceId,
         httpClient: dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
           ..httpClientAdapter = fixture,
         inventoryContext: InventoryContext.fromJson(
@@ -36,8 +40,12 @@ class _Api extends ApiClient {
           expectedInventory: 'inventory-a',
         ),
       );
-  final stream = StreamController<AiStreamEvent>.broadcast();
-  final messages = <String>[];
+  final HierarchyFixture fixture;
+  final StreamController<AiStreamEvent> stream;
+  final List<String> messages;
+  @override
+  ApiClient bindSpaceChat(String spaceId) =>
+      _Api(fixture, viewer: !canEdit, spaceId: spaceId, source: this);
   @override
   void assertCurrentContext() {}
   @override
@@ -240,7 +248,8 @@ void main() {
     (tester) async {
       await mount(tester, 3, photos: true, low: false);
       expect(find.text('Low quantity'), findsNothing);
-      expect(find.text('Items to finish'), findsOneWidget);
+      expect(find.text('Review'), findsOneWidget);
+      expect(find.text('Items to finish'), findsNothing);
       expect(find.byType(PrivateImage), findsNWidgets(3));
       expect(fixture.requests.where((r) => r.path.contains('review')), isEmpty);
       final sort = tester.getRect(find.text('Part # / Item A → Z'));
@@ -292,10 +301,7 @@ void main() {
         if (count > 0) {
           await tester.tap(find.text('Low quantity'));
           await tester.pumpAndSettle();
-          expect(
-            find.text('5mm Timing Belts - Tooth Count 120.0'),
-            findsOneWidget,
-          );
+          expect(find.text('PN-F105'), findsOneWidget);
           expect(find.text('PN-F001'), findsNothing);
           await spaceV2Capture?.call('low-$count');
           await tester.tap(find.text('Low quantity').first);
@@ -333,7 +339,7 @@ void main() {
       (tester) async {
         await mount(tester, 3, kind: kind);
         final before = data.first.toString();
-        await tester.tap(find.text('5mm Timing Belts - Tooth Count 120.0'));
+        await tester.tap(find.text('PN-F105'));
         await tester.pumpAndSettle();
         final quick = find.byKey(const ValueKey('space-quick-view'));
         final scrollable = find.descendant(
@@ -382,21 +388,17 @@ void main() {
           expect(find.text('120.0'), findsOneWidget);
           await spaceV2Capture?.call('import-fields');
         }
-        await tester.scrollUntilVisible(
-          find.text('Edit'),
-          300,
-          scrollable: scrollable,
-        );
-        await tester.tap(find.text('Edit'));
+        final editPart = find.byKey(const ValueKey('space-edit-part_number'));
+        await tester.scrollUntilVisible(editPart, -300, scrollable: scrollable);
+        await tester.tap(editPart);
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const ValueKey('item-detail-scroll')),
+          find.byKey(const ValueKey('space-item-field-part_number')),
           findsOneWidget,
         );
-        expect(
-          find.byKey(const ValueKey('edit-item-part_number')),
-          findsOneWidget,
-        );
+        expect(find.text('Edit'), findsNothing);
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
         expect(data.first.toString(), before);
         expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
         await tester.pumpWidget(const SizedBox());
@@ -405,11 +407,160 @@ void main() {
   }
 
   testWidgets(
+    'inline part editing preserves failed draft and sends one confirmed update',
+    (tester) async {
+      await mount(tester, 3);
+      await tester.tap(find.text('PN-F105'));
+      await tester.pumpAndSettle();
+      final scroll = find.descendant(
+        of: find.byKey(const ValueKey('space-quick-view')),
+        matching: find.byType(Scrollable),
+      );
+      final edit = find.byKey(const ValueKey('space-edit-part_number'));
+      await tester.scrollUntilVisible(edit, 300, scrollable: scroll);
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      final input = find.byKey(const ValueKey('space-item-field-part_number'));
+      await tester.enterText(input, 'NEW-123');
+      await spaceV2Capture?.call('inline-edit');
+      failWrite = true;
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(input).decoration!.errorText, isNotEmpty);
+      expect(tester.widget<TextField>(input).controller!.text, 'NEW-123');
+      expect(data.first['part_number'], 'PN-F105');
+      failWrite = false;
+      fixture.status = 200;
+      pending = Completer<void>();
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      await tester.tap(find.text('Saving...'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(
+        fixture.requests.where((r) => r.path.endsWith('/update_item')).length,
+        2,
+      );
+      pending!.complete();
+      await tester.pumpAndSettle();
+      expect(data.first['part_number'], 'NEW-123');
+      expect(input, findsNothing);
+      expect(find.text('Edit'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'photo section opens the full image and empty section offers camera or library',
+    (tester) async {
+      await mount(tester, 3, photos: true);
+      await tester.tap(find.text('PN-F105'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('space-item-photo')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('full-item-photo')), findsOneWidget);
+      final photo = tester.widget<PrivateImage>(
+        find.descendant(
+          of: find.byKey(const ValueKey('full-item-photo')),
+          matching: find.byType(PrivateImage),
+        ),
+      );
+      expect(photo.fit, BoxFit.contain);
+      await spaceV2Capture?.call('full-photo');
+      await tester.tap(find.byTooltip('Close photo'));
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const SizedBox());
+      await mount(tester, 3);
+      await tester.tap(find.text('PN-F105'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('space-item-photo')));
+      await tester.pumpAndSettle();
+      expect(find.text('Take photo'), findsOneWidget);
+      expect(find.text('Choose photo'), findsOneWidget);
+      await spaceV2Capture?.call('add-photo');
+      expect(find.text('Cancel'), findsNothing);
+      await tester.tapAt(const Offset(4, 40));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('space-quick-view')), findsOneWidget);
+      expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'alert threshold is editable in place without an inventory write',
+    (tester) async {
+      await mount(tester, 3);
+      await tester.tap(find.text('PN-F105'));
+      await tester.pumpAndSettle();
+      final scroll = find.descendant(
+        of: find.byKey(const ValueKey('space-quick-view')),
+        matching: find.byType(Scrollable),
+      );
+      final field = find.byKey(const ValueKey('space-edit-threshold'));
+      await tester.scrollUntilVisible(field, 300, scrollable: scroll);
+      await tester.tap(field);
+      await tester.pumpAndSettle();
+      final input = find.byKey(const ValueKey('space-item-field-threshold'));
+      await tester.enterText(input, '-2');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(input).decoration!.errorText, isNotEmpty);
+      await tester.enterText(input, '');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(input, findsNothing);
+      expect(
+        fixture.requests.where((r) => r.path.endsWith('/update_item')),
+        isEmpty,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('swipe dismissal protects an unsaved inline edit', (
+    tester,
+  ) async {
+    await mount(tester, 3);
+    await tester.tap(find.text('PN-F105'));
+    await tester.pumpAndSettle();
+    final scroll = find.descendant(
+      of: find.byKey(const ValueKey('space-quick-view')),
+      matching: find.byType(Scrollable),
+    );
+    final edit = find.byKey(const ValueKey('space-edit-name'));
+    await tester.scrollUntilVisible(edit, 250, scrollable: scroll);
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('space-item-field-name')),
+      'Changed draft',
+    );
+    tester.state<ScrollableState>(scroll.first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(SpaceHandle).last, const Offset(0, 180));
+    await tester.pumpAndSettle();
+    expect(find.text('Save your changes?'), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+    expect(find.text('Changed draft'), findsOneWidget);
+    expect(data.first['name'], '5mm Timing Belts - Tooth Count 120.0');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('space-quick-view')), findsNothing);
+    expect(data.first['name'], '5mm Timing Belts - Tooth Count 120.0');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
     'quantity is confirmed, duplicate taps blocked, failure visible, move removes row',
     (tester) async {
       await mount(tester, 3, kind: 'import');
       final originalImport = data.first['import_data'].toString();
-      await tester.tap(find.text('5mm Timing Belts - Tooth Count 120.0'));
+      await tester.tap(find.text('PN-F105'));
       await tester.pumpAndSettle();
       pending = Completer<void>();
       await tester.tap(find.byTooltip('Add one'));
@@ -454,7 +605,7 @@ void main() {
       expect(data.first['import_data'].toString(), originalImport);
       await tester.tapAt(const Offset(4, 80));
       await tester.pumpAndSettle();
-      expect(find.text('5mm Timing Belts - Tooth Count 120.0'), findsNothing);
+      expect(find.text('PN-F105'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
@@ -502,14 +653,16 @@ void main() {
 
   for (final resultCount in [0, 1, 6]) {
     testWidgets(
-      'Ask $resultCount results uses inventory scope and server references',
+      'Ask $resultCount results uses Space scope and server references',
       (tester) async {
         final api = await mount(tester, 40);
         await tester.tap(find.text('Ask about Fastener DB'));
         await tester.pumpAndSettle();
-        expect(find.text('Only in Parts Inventory'), findsOneWidget);
-        expect(find.textContaining('Only in Fastener DB'), findsNothing);
-        expect(tester.widget<ChatPage>(find.byType(ChatPage)).api, same(api));
+        expect(find.text('Only in Fastener DB'), findsOneWidget);
+        expect(
+          tester.widget<ChatPage>(find.byType(ChatPage)).api.chatSpaceId,
+          'space-a',
+        );
         await spaceV2Capture?.call('ask-empty');
         await tester.enterText(
           find.descendant(
@@ -562,7 +715,10 @@ void main() {
             findsOneWidget,
           );
           await spaceV2Capture?.call('quick-from-ask');
-          await tester.tap(find.byTooltip('Close').last);
+          await tester.drag(
+            find.byType(SpaceHandle).last,
+            const Offset(0, 180),
+          );
           await tester.pumpAndSettle();
           expect(find.byType(ChatPage), findsOneWidget);
           await tester.ensureVisible(find.text('− I used one'));
@@ -584,7 +740,7 @@ void main() {
           expect(find.text('Ask about Fastener DB.'), findsOneWidget);
           await tester.tap(find.byTooltip('Chat history'));
           await tester.pumpAndSettle();
-          expect(find.byTooltip('Close history'), findsOneWidget);
+          expect(find.byTooltip('Close history'), findsNothing);
           expect(find.text('Saved conversation'), findsOneWidget);
           expect(find.text("Couldn't load history."), findsNothing);
           await spaceV2Capture?.call('ask-history');
@@ -603,7 +759,10 @@ void main() {
           expect(find.byType(ChatPage), findsNothing);
           expect(find.text('Ask results'), findsOneWidget);
         } else {
-          await tester.tap(find.byTooltip('Close'));
+          await tester.drag(
+            find.byType(SpaceHandle).last,
+            const Offset(0, 180),
+          );
           await tester.pumpAndSettle();
         }
         expect(tester.takeException(), isNull);
@@ -627,7 +786,7 @@ void main() {
     );
     await tester.enterText(field, 'Where are the belts?');
     await tester.pump();
-    expect(find.byTooltip('Close').hitTestable(), findsOneWidget);
+    expect(find.byType(SpaceHandle).hitTestable(), findsOneWidget);
     expect(find.byTooltip('Send message').hitTestable(), findsOneWidget);
     expect(tester.getBottomLeft(field).dy, lessThan(544));
     await spaceV2Capture?.call('ask-keyboard');
@@ -639,7 +798,7 @@ void main() {
     tester,
   ) async {
     await mount(tester, 3, viewer: true);
-    await tester.tap(find.text('5mm Timing Belts - Tooth Count 120.0'));
+    await tester.tap(find.text('PN-F105'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Use one'), findsNothing);
     expect(find.byTooltip('Add one'), findsNothing);
@@ -665,7 +824,7 @@ void main() {
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
       addTearDown(tester.view.resetViewInsets);
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Close').hitTestable(), findsOneWidget);
+      expect(find.byType(SpaceHandle).hitTestable(), findsOneWidget);
       expect(find.byTooltip('Send message').hitTestable(), findsOneWidget);
       await spaceV2Capture?.call('ask-large-text-keyboard');
       expect(tester.takeException(), isNull);

@@ -98,25 +98,33 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     expect(find.text('Ask FindEZ'), findsNothing);
     await api.stream.close();
   });
-  testWidgets('interruption retains the answer prefix with an incomplete notice', (tester) async {
-    final api = ChatApi('Hardware');
-    await tester.pumpWidget(host(api));
-    await tester.tap(find.text('Ask FindEZ'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Where is my drill?');
-    await tester.pump();
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-    await tester.pump();
-    api.stream.add(AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'));
-    await tester.pump();
-    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
-    api.stream.addError(StateError('interrupted'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
-    expect(find.textContaining('This response was interrupted.'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-    await api.stream.close();
-  });
+  testWidgets(
+    'interruption retains the answer prefix with an incomplete notice',
+    (tester) async {
+      final api = ChatApi('Hardware');
+      await tester.pumpWidget(host(api));
+      await tester.tap(find.text('Ask FindEZ'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Where is my drill?');
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.pump();
+      api.stream.add(
+        AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'),
+      );
+      await tester.pump();
+      expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+      api.stream.addError(StateError('interrupted'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+      expect(
+        find.textContaining('This response was interrupted.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+      await api.stream.close();
+    },
+  );
   for (final brightness in Brightness.values) {
     testWidgets(
       '${brightness.name} scoped sheet has close, original client, immediate stream, and cancels on dismissal',
@@ -144,7 +152,11 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         await tester.pump(const Duration(milliseconds: 200));
         await capture?.call(tester, brightness.name);
         expect(api.conversations, [null]);
-        await tester.tap(find.byTooltip('Close contextual chat'));
+        await tester.dragFrom(
+          tester.getRect(find.byType(BottomSheet)).topCenter +
+              const Offset(0, 16),
+          const Offset(0, 500),
+        );
         await tester.pumpAndSettle();
         api.stream.add(
           AiStreamEvent(type: 'delta', delta: 'Late text must not reappear.'),
@@ -178,7 +190,11 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         AiStreamEvent(type: 'done', conversationId: 'hardware-conversation'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Close contextual chat'));
+      await tester.dragFrom(
+        tester.getRect(find.byType(BottomSheet)).topCenter +
+            const Offset(0, 16),
+        const Offset(0, 500),
+      );
       await tester.pumpAndSettle();
       await tester.pumpWidget(host(b));
       await tester.tap(find.text('Ask FindEZ'));
@@ -186,13 +202,17 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       expect(find.textContaining('Hardware-only answer'), findsNothing);
       expect(find.textContaining('Private hardware'), findsNothing);
       expect(find.text('Only in Bathroom'), findsOneWidget);
-      await tester.tap(find.byTooltip('Close contextual chat'));
+      await tester.dragFrom(
+        tester.getRect(find.byType(BottomSheet)).topCenter +
+            const Offset(0, 16),
+        const Offset(0, 500),
+      );
       await tester.pumpAndSettle();
       await a.stream.close();
       await b.stream.close();
     },
   );
-  testWidgets('narrow sheet and large text keep the close action reachable', (
+  testWidgets('narrow sheet and large text keep swipe dismissal reachable', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(320, 568);
@@ -203,17 +223,17 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     await tester.pumpWidget(host(api, scale: 2));
     await tester.tap(find.text('Ask FindEZ'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close contextual chat'), findsOneWidget);
+    expect(find.byTooltip('Close contextual chat'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(host(api, scale: 2, keyboard: 220));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(
-      find.byTooltip('Close contextual chat').hitTestable(),
-      findsOneWidget,
-    );
+    expect(find.byType(BottomSheet).hitTestable(), findsOneWidget);
     await capture?.call(tester, 'narrow-keyboard');
-    await tester.tap(find.byTooltip('Close contextual chat'));
+    await tester.dragFrom(
+      tester.getRect(find.byType(BottomSheet)).topCenter + const Offset(0, 16),
+      const Offset(0, 500),
+    );
     await tester.pumpAndSettle();
     await api.stream.close();
   });

@@ -38,6 +38,36 @@ void main() {
   );
 
   test(
+    'Space chat client carries its boundary without mutating main Ask',
+    () async {
+      final inventoryApi = ApiClient.forInventory(
+        fixture.api,
+        context('fasteners'),
+        isCurrent: () => true,
+      );
+      final spaceApi = inventoryApi.bindSpaceChat('space-a');
+      final mainApi = ApiClient.forWorld(
+        fixture.api,
+        'personal',
+        isCurrent: () => true,
+      );
+      fixture.respond = (_) => [];
+      await spaceApi.listConversations();
+      expect(fixture.requests.last.headers['X-Findez-Space-ID'], 'space-a');
+      expect(
+        fixture.requests.last.path,
+        '/inventories/fasteners/conversations',
+      );
+      await inventoryApi.listConversations();
+      expect(fixture.requests.last.headers['X-Findez-Space-ID'], isNull);
+      await mainApi.listConversations();
+      expect(fixture.requests.last.path, '/worlds/personal/conversations');
+      expect(fixture.requests.last.headers['X-Findez-Space-ID'], isNull);
+      expect(spaceApi.inventoryContext, same(inventoryApi.inventoryContext));
+    },
+  );
+
+  test(
     'items, capture, documents, Spaces, Review and conversations use one selected inventory',
     () async {
       final api = ApiClient.forInventory(
