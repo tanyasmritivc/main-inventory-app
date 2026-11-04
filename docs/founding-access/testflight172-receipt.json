@@ -1,0 +1,63 @@
+{
+  "version": "1.1.2",
+  "build": 172,
+  "source_commit": "905af39a9ce1d0b43d0ac6a2cf67ef1f0c7053dc",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "6bd13709410f50fe149431bb1c5a7f41dcc78e75ed27dafc56209d65d057bffa",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "d5553ee7-a4d2-4fb7-88a2-cda177976f59",
+  "processing": "VALID",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "testflight_notes_verified": true,
+  "branch": "feat/founding-access-sheet",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/303",
+  "ci": {
+    "run_id": 41741633856,
+    "source_commit": "905af39a9ce1d0b43d0ac6a2cf67ef1f0c7053dc",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "Backend (Python)",
+        "conclusion": "success"
+      },
+      {
+        "name": "Mobile (Flutter)",
+        "conclusion": "success"
+      },
+      {
+        "name": "API permissions (PostgreSQL)",
+        "conclusion": "success"
+      },
+      {
+        "name": "AI connectors (MCP and Actions)",
+        "conclusion": "success"
+      },
+      {
+        "name": "Web (Jest)",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "validation": {
+    "flutter_tests_passed": 1327,
+    "existing_skips": 1,
+    "focused_checks_passed": 18,
+    "native_ios_scenarios_passed": 15,
+    "native_screenshots": 12,
+    "analyzer": "clean",
+    "physical_device_acceptance": "unverified",
+    "real_account_signup": "unverified"
+  },
+  "testflight_notes": {
+    "build": 172,
+    "locale": "en-US",
+    "whatsNew": "New: Founding Access sheet after sign-up (shown once), plus Settings \u203a Your plan. Please check it fits your screen and the art has rounded corners.",
+    "verified": true
+  }
+}

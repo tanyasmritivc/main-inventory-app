@@ -65,6 +65,9 @@ void main() {
           home: const PlansPage(),
         ),
       );
+      // The new Your plan row precedes this notice. At accessibility sizes,
+      // read it through the same scrollable page instead of assuming its offset.
+      await tester.scrollUntilVisible(find.text(plansNotice), 160);
       expect(find.text(plansNotice), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Yearly'), 160);
       await tester.pumpAndSettle();

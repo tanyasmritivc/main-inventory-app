@@ -1,3 +1,4 @@
+import '../founding_access/founding_access_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -52,6 +53,8 @@ class _PlansPageState extends State<PlansPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
+          const FoundingAccessPlanRow(),
+          const SizedBox(height: 16),
           AppText(
             'Remember more of your world.',
             style: TextStyle(color: primary, fontSize: 26, height: 1.2),
