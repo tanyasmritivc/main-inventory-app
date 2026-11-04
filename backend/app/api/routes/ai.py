@@ -120,6 +120,16 @@ async def ai_photo_question_route(
     supports_item_actions: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> StreamingResponse:
+    from app.services.inventory_scope import current_inventory
+    if getattr(current_inventory.get(), 'chat_space_id', None):
+        from app.services.space_chat import response
+        raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
+        try:
+            jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
+        except ValueError:
+            raise bad_request('Choose a valid photo smaller than 10 MB and 25 megapixels.')
+        return await response(user=user, message=message, conversation_id=conversation_id,
+                              allow_item_actions=supports_item_actions, image_bytes=jpeg)
     raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
     if len(raw) > MAX_ITEM_PHOTO_BYTES:
         raise HTTPException(413, 'Choose a photo smaller than 10 MB.')
@@ -222,6 +232,11 @@ async def ai_command_route(
     user: AuthenticatedUser = Depends(get_current_user),
     stream: bool = False,
 ) -> AICommandResponse:
+    from app.services.inventory_scope import current_inventory
+    if getattr(current_inventory.get(), 'chat_space_id', None):
+        from app.services.space_chat import response
+        return await response(user=user, message=payload.message, conversation_id=payload.conversation_id,
+                              allow_item_actions=payload.supports_item_actions)
     try:
         check_and_increment_chat(user.user_id)
     except TeamSoftCapExceeded as exc:
