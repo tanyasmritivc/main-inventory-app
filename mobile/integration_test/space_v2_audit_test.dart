@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -7,7 +8,15 @@ import 'package:integration_test/integration_test.dart';
 import '../test/space_v2_test.dart' as audit;
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  if (const bool.fromEnvironment('SPACE_PROFILE')) {
+    audit.spacePolishProfile = (action) async {
+      await binding.watchPerformance(action, reportKey: 'space_300_scroll');
+      debugPrint('SPACE_PROFILE_RESULT ${jsonEncode(binding.reportData)}');
+    };
+    audit.main();
+    return;
+  }
   audit.spaceV2Capture = (name) async {
     final boundary =
         find

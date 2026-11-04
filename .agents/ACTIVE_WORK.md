@@ -1,3 +1,7 @@
+## November 3 - Sequential Space polish, photo scan, web Founding Access
+
+User explicitly requests all three supplied ZIPs ONE BY ONE, overriding any no-push/no-deploy text. First lane: `feat/space-polish` from delivered build172, preparing build173. Existing Space widgets and shared riso helper only; no new review API. Review count unavailable locally, so preserve its label/card as the package permits. Native/profile and release checks in progress. Next, only after this ships: photo scan mobile/TestFlight, then web Founding Access/self-hosted deployment. Preserve production VM changes and all existing API/data contracts.
+
 ## November 3 - Founding Access delivered to TestFlight172
 
 Apple acknowledged FindEZ 1.1.2 (172), runtime `905af39a9ce1d0b43d0ac6a2cf67ef1f0c7053dc`, delivery `d5553ee7-a4d2-4fb7-88a2-cda177976f59`. Branch `feat/founding-access-sheet` and draft PR303 are pushed from the existing checkout, based on build171. Native informational Founding Access welcome/details replaces the post-signup plan popup for locally recorded new accounts after Ask is ready; Settings Plans now includes Your plan. Supplied fonts/art are bundled. No billing, API, database, backend, web, inventory or dependency changes.
