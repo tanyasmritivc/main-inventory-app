@@ -1,6 +1,6 @@
 # Founding Access native sheet
 
-Branch `feat/founding-access-sheet`, based on delivered build171, in the existing checkout. Preparing 1.1.2 (172). No second checkout or main merge.
+Branch `feat/founding-access-sheet`, based on delivered build171, in the existing checkout. Delivered 1.1.2 (172). No second checkout or main merge.
 
 ## Entry points and scope
 
@@ -21,11 +21,11 @@ Branch `feat/founding-access-sheet`, based on delivered build171, in the existin
 
 Reuse build171's verified production defines, export options and Apple API metadata from the private release directory. Run focused/full Flutter tests, analyzer, native iOS layout/lifecycle checks and exact-source CI. Clean before production archive to avoid simulator framework contamination. Verify archive/export Mach-O platforms, signatures, app/extension version, privacy manifests, bundled fonts/texture and compiled production defines, then validate/upload with altool. No new certificates, profiles, credentials or dependencies.
 
-The requested What to Test text will be saved against build172 using Apple's betaBuildLocalizations API after the build record becomes available. Public App Store submission is outside this task.
+The requested What to Test text is saved and verified against build172 using Apple's betaBuildLocalizations API. Public App Store submission is outside this task.
 
 ## Validation
 
-Clean analyzer and 15 native iOS scenarios pass. Four viewport configurations (375x667, 390x844, 440x956 and 320x568 at 200% text) and both reduced/normal motion were checked; 12 native screenshots are in `verification/`. Existing Plans tests now scroll to the preserved notice at 260% text after the new row is inserted. All 1,327 Flutter regression tests pass (one existing skip). Eighteen focused Founding Access/Plans checks pass. Signed delivery and exact-source CI are pending. Native fixtures use synthetic auth identities and local storage, not real account creation or customer inventory. Physical-device acceptance remains separate.
+Clean analyzer and 15 native iOS scenarios pass. Four viewport configurations (375x667, 390x844, 440x956 and 320x568 at 200% text) and both reduced/normal motion were checked; 12 native screenshots are in `verification/`. Existing Plans tests now scroll to the preserved notice at 260% text after the new row is inserted. All 1,327 Flutter regression tests pass (one existing skip). Eighteen focused Founding Access/Plans checks pass. All five exact-source CI gates passed (41741633856). Apple acknowledged the signed upload, delivery `d5553ee7-a4d2-4fb7-88a2-cda177976f59`; processing is VALID. Tester availability is unverified. See `testflight172-receipt.json` for the binary hash, runtime commit and validation receipt. Native fixtures use synthetic auth identities and local storage, not real account creation or customer inventory. Physical-device acceptance remains separate.
 
 
 ## Changed files
