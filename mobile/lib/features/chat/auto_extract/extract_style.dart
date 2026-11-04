@@ -1,4 +1,5 @@
 import 'package:mobile/core/ui/app_typography.dart';
+import 'package:mobile/core/ui/swipe_down_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -120,51 +121,152 @@ Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
       ),
     );
 
-Future<bool?> showExtractPhotoSheet(BuildContext context) => extractSheet<bool>(
-  context,
-  (ctx) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text('Add from a photo', style: ExtractStyle.text(22)),
-      const SizedBox(height: 8),
-      Text(
-        'Take or choose a photo of a shelf, drawer or bin. Review the items before saving.',
-        style: ExtractStyle.text(14.5, color: ExtractStyle.tx2),
-      ),
-      const SizedBox(height: 16),
-      LayoutBuilder(
+/// The source picker follows app appearance independently of the extraction
+/// review surfaces. Keep its typography local, including OS Bold Text handling.
+Future<bool?> showExtractPhotoSheet(BuildContext context) =>
+    showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      enableDrag: false,
+      showDragHandle: false,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .32),
+      constraints: const BoxConstraints(maxWidth: 560),
+      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: Duration(milliseconds: 250),
+              reverseDuration: Duration(milliseconds: 200),
+            ),
+      builder: (_) => const AppTypography(child: _ExtractPhotoPicker()),
+    );
+
+class _ExtractPhotoPicker extends StatelessWidget {
+  const _ExtractPhotoPicker();
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final ink = dark ? const Color(0xFFFAFAFA) : const Color(0xFF19191B);
+    final muted = dark ? const Color(0xFF9A9AA0) : const Color(0xFF616167);
+    final button = dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
+    TextStyle text(double size, [Color? color]) => TextStyle(
+      fontFamily: 'CupertinoSystemText',
+      fontWeight: FontWeight.w400,
+      fontSize: size,
+      height: 1.35,
+      color: color ?? ink,
+    );
+    final style = FilledButton.styleFrom(
+      backgroundColor: button,
+      foregroundColor: ink,
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: const StadiumBorder(),
+      textStyle: text(AppTypography.bodySize),
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+    ).copyWith(backgroundBuilder: (_, _, child) => child!);
+    final camera = FilledButton.icon(
+      style: style,
+      onPressed: () => Navigator.pop(context, true),
+      icon: const Icon(CupertinoIcons.camera, size: 20),
+      label: const Text('Camera'),
+    );
+    final library = FilledButton.icon(
+      style: style,
+      onPressed: () => Navigator.pop(context, false),
+      icon: const Icon(CupertinoIcons.photo, size: 20),
+      label: const Text('Library'),
+    );
+    return SafeArea(
+      top: false,
+      child: LayoutBuilder(
         builder: (context, constraints) {
-          final camera = FilledButton.icon(
-            style: ExtractStyle.pill(height: 52),
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(CupertinoIcons.camera, size: 20),
-            label: const Text('Camera'),
-          );
-          final library = FilledButton.icon(
-            style: ExtractStyle.pill(height: 52),
-            onPressed: () => Navigator.pop(ctx, false),
-            icon: const Icon(CupertinoIcons.photo, size: 20),
-            label: const Text('Library'),
-          );
-          final largeText = MediaQuery.textScalerOf(context).scale(15) > 20;
-          if (constraints.maxWidth < 300 || largeText) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [camera, const SizedBox(height: 10), library],
-            );
-          }
-          return Row(
-            children: [
-              Expanded(child: camera),
-              const SizedBox(width: 12),
-              Expanded(child: library),
-            ],
+          final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(8, 8, 8, keyboard + 8),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: (constraints.maxHeight - keyboard - 16).clamp(
+                  0,
+                  constraints.maxHeight * .9,
+                ),
+              ),
+              child: SwipeDownSheet(
+                child: Material(
+                  key: const ValueKey('auto-extract-source-sheet'),
+                  color: dark
+                      ? const Color(0xFF19191B)
+                      : const Color(0xFFF9F9FA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    side: BorderSide(color: ink.withValues(alpha: .1)),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            key: const ValueKey('auto-extract-source-handle'),
+                            width: 36,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: ink.withValues(alpha: .24),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                        Text('Add from a photo', style: text(18)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Take a photo or choose one from your library. Review the items before saving.',
+                          style: text(AppTypography.bodySize, muted),
+                        ),
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, bounds) {
+                            if (bounds.maxWidth < 300 ||
+                                MediaQuery.textScalerOf(context).scale(16) >
+                                    20) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  camera,
+                                  const SizedBox(height: 10),
+                                  library,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(child: camera),
+                                const SizedBox(width: 12),
+                                Expanded(child: library),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),
-    ],
-  ),
-);
+    );
+  }
+}
 
 class ExtractReply extends StatelessWidget {
   const ExtractReply({super.key, required this.child});
