@@ -27,9 +27,6 @@ void main() {
     await fixture.initialize();
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       await (FontLoader(
-        'Roboto',
-      )..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))).load();
-      await (FontLoader(
         'MaterialIcons',
       )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
       await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(

@@ -39,15 +39,15 @@ class SpaceChatHeader extends StatelessWidget {
   final VoidCallback? onHistory, onNew;
   @override
   Widget build(BuildContext context) {
-    final title = Text('Ask FindEZ', style: SpaceStyle.text(19));
+    final title = Text('Ask FindEZ', style: SpaceStyle.of(context).text(19));
     final scope = Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: SpaceStyle.card(13, SpaceStyle.s2),
+      decoration: SpaceStyle.of(context).card(13, SpaceStyle.of(context).s2),
       child: Text(
         presentation.scopeLabel,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: SpaceStyle.text(12.5, SpaceStyle.tx2),
+        style: SpaceStyle.of(context).text(12.5, SpaceStyle.of(context).tx2),
       ),
     );
     final history = SpaceCircle(
@@ -120,35 +120,34 @@ class SpaceChatEmpty extends StatelessWidget {
         children: [
           Text(
             'Ask about ${presentation.space}.',
-            style: SpaceStyle.text(
-              28,
-            ).copyWith(height: 1.15, letterSpacing: -.84),
+            style: SpaceStyle.of(
+              context,
+            ).text(28).copyWith(height: 1.15, letterSpacing: -.84),
           ),
           const SizedBox(height: 6),
           Text(
             'Find, count or change items in this Space.',
-            style: SpaceStyle.text(
-              28,
-              SpaceStyle.tx3,
-            ).copyWith(height: 1.15, letterSpacing: -.84),
+            style: SpaceStyle.of(context)
+                .text(28, SpaceStyle.of(context).tx3)
+                .copyWith(height: 1.15, letterSpacing: -.84),
           ),
           const SizedBox(height: 20),
           Material(
-            color: SpaceStyle.s1,
+            color: SpaceStyle.of(context).s1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(22),
-              side: const BorderSide(color: SpaceStyle.line),
+              side: BorderSide(color: SpaceStyle.of(context).line),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 for (final (index, suggestion) in suggestions.indexed) ...[
                   if (index > 0)
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 14,
                       endIndent: 14,
-                      color: SpaceStyle.line,
+                      color: SpaceStyle.of(context).line,
                     ),
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(
@@ -159,7 +158,9 @@ class SpaceChatEmpty extends StatelessWidget {
                         ? Container(
                             width: 34,
                             height: 34,
-                            decoration: SpaceStyle.card(10, SpaceStyle.s3),
+                            decoration: SpaceStyle.of(
+                              context,
+                            ).card(10, SpaceStyle.of(context).s3),
                             child: Icon(
                               index == 0
                                   ? Icons.inventory_2_outlined
@@ -172,11 +173,14 @@ class SpaceChatEmpty extends StatelessWidget {
                             size: 34,
                             radius: 10,
                           ),
-                    title: Text(suggestion.$1, style: SpaceStyle.text(15.5)),
-                    trailing: const Icon(
+                    title: Text(
+                      suggestion.$1,
+                      style: SpaceStyle.of(context).text(15.5),
+                    ),
+                    trailing: Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: SpaceStyle.tx3,
+                      color: SpaceStyle.of(context).tx3,
                     ),
                     onTap: () => onSend(suggestion.$1),
                   ),
@@ -211,7 +215,7 @@ class SpaceChatComposer extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     constraints: const BoxConstraints(minHeight: 56),
     padding: const EdgeInsets.all(5),
-    decoration: SpaceStyle.card(28),
+    decoration: SpaceStyle.of(context).card(28),
     child: Row(
       children: [
         IconButton(
@@ -226,11 +230,13 @@ class SpaceChatComposer extends StatelessWidget {
             onChanged: onChanged,
             minLines: 1,
             maxLines: 3,
-            style: SpaceStyle.text(16),
+            style: SpaceStyle.of(context).text(16),
             decoration: InputDecoration(
               hintText: placeholder,
               hintMaxLines: 1,
-              hintStyle: SpaceStyle.text(16, SpaceStyle.tx3),
+              hintStyle: SpaceStyle.of(
+                context,
+              ).text(16, SpaceStyle.of(context).tx3),
               filled: false,
               isDense: true,
               border: InputBorder.none,
@@ -243,7 +249,11 @@ class SpaceChatComposer extends StatelessWidget {
         IconButton(
           tooltip: 'Voice input',
           onPressed: onVoice,
-          icon: const Icon(Icons.mic_none, size: 22, color: SpaceStyle.tx2),
+          icon: Icon(
+            Icons.mic_none,
+            size: 22,
+            color: SpaceStyle.of(context).tx2,
+          ),
         ),
         SpaceCircle(
           label: onStop != null ? 'Stop response' : 'Send message',
@@ -303,9 +313,9 @@ class _SpaceChatTypingState extends State<SpaceChatTyping>
                 child: Container(
                   width: 5,
                   height: 5,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: SpaceStyle.tx2,
+                    color: SpaceStyle.of(context).tx2,
                   ),
                 ),
               ),
@@ -315,7 +325,9 @@ class _SpaceChatTypingState extends State<SpaceChatTyping>
             Flexible(
               child: Text(
                 widget.status!,
-                style: SpaceStyle.text(13, SpaceStyle.tx2),
+                style: SpaceStyle.of(
+                  context,
+                ).text(13, SpaceStyle.of(context).tx2),
               ),
             ),
           ],

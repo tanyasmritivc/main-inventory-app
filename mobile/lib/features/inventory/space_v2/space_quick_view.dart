@@ -356,7 +356,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
               controller: _fieldController,
               autofocus: true,
               enabled: !_saving,
-              style: SpaceStyle.text(15),
+              style: SpaceStyle.of(context).text(15),
               keyboardType: key == 'quantity' || key == 'threshold'
                   ? TextInputType.number
                   : TextInputType.text,
@@ -449,12 +449,14 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xCC252527),
+                              color: SpaceStyle.of(
+                                context,
+                              ).s2.withValues(alpha: .9),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               'Add photo',
-                              style: SpaceStyle.text(13),
+                              style: SpaceStyle.of(context).text(13),
                             ),
                           ),
                         ),
@@ -469,20 +471,22 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   children: [
                     Text(
                       _item.displayName,
-                      style: SpaceStyle.text(
-                        24,
-                      ).copyWith(height: 1.15, letterSpacing: -.6),
+                      style: SpaceStyle.of(
+                        context,
+                      ).text(24).copyWith(height: 1.15, letterSpacing: -.6),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       spaceItemSubtitle(_item),
-                      style: SpaceStyle.text(15, SpaceStyle.tx2),
+                      style: SpaceStyle.of(
+                        context,
+                      ).text(15, SpaceStyle.of(context).tx2),
                     ),
                   ],
                 ),
               ),
               Container(
-                decoration: SpaceStyle.card(),
+                decoration: SpaceStyle.of(context).card(),
                 padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
                 child: Row(
                   children: [
@@ -492,12 +496,17 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                         children: [
                           Text(
                             low ? 'Quantity · Low' : 'Quantity',
-                            style: SpaceStyle.text(
+                            style: SpaceStyle.of(context).text(
                               12.5,
-                              low ? SpaceStyle.amber : SpaceStyle.tx2,
+                              low
+                                  ? SpaceStyle.of(context).amber
+                                  : SpaceStyle.of(context).tx2,
                             ),
                           ),
-                          Text('${_item.quantity}', style: SpaceStyle.text(32)),
+                          Text(
+                            '${_item.quantity}',
+                            style: SpaceStyle.of(context).text(32),
+                          ),
                         ],
                       ),
                     ),
@@ -553,16 +562,18 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                     liveRegion: true,
                     child: Text(
                       _error ?? _receipt!,
-                      style: SpaceStyle.text(
+                      style: SpaceStyle.of(context).text(
                         14,
-                        _error == null ? SpaceStyle.tx2 : SpaceStyle.amber,
+                        _error == null
+                            ? SpaceStyle.of(context).tx2
+                            : SpaceStyle.of(context).amber,
                       ),
                     ),
                   ),
                 ),
               const SizedBox(height: 14),
               Container(
-                decoration: SpaceStyle.card(),
+                decoration: SpaceStyle.of(context).card(),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 4,
@@ -571,7 +582,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   children: [
                     for (final (index, field) in fields.indexed) ...[
                       if (index > 0)
-                        const Divider(height: 1, color: SpaceStyle.line),
+                        Divider(height: 1, color: SpaceStyle.of(context).line),
                       _field(field.label, field.value, field.editKey),
                     ],
                   ],
@@ -587,7 +598,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                 const SizedBox(height: 16),
                 Text(
                   'Price, expiry and reordering',
-                  style: SpaceStyle.text(15),
+                  style: SpaceStyle.of(context).text(15),
                 ),
                 if (_item.unitPrice != null)
                   _Field(
@@ -601,7 +612,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Text(
                       'Request ${_item.reorderQuantity} when quantity reaches ${_item.reorderThreshold}',
-                      style: SpaceStyle.text(14.5),
+                      style: SpaceStyle.of(context).text(14.5),
                     ),
                   ),
               ],
@@ -653,12 +664,20 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
 
   Widget _pill(String title, IconData icon, VoidCallback? onTap) =>
       FilledButton.icon(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(100, 52),
-          backgroundColor: const Color(0xFFD4D4D8),
-          foregroundColor: SpaceStyle.bg,
-          textStyle: SpaceStyle.text(15),
-        ),
+        style:
+            FilledButton.styleFrom(
+              minimumSize: const Size(100, 52),
+              backgroundColor: SpaceStyle.of(context).button,
+              foregroundColor: SpaceStyle.of(context).tx,
+              disabledBackgroundColor: SpaceStyle.of(context).button,
+              disabledForegroundColor: SpaceStyle.of(context).tx3,
+              shape: const StadiumBorder(),
+              elevation: 0,
+              textStyle: SpaceStyle.of(context).text(15),
+            ).copyWith(
+              backgroundBuilder: (_, _, child) =>
+                  child ?? const SizedBox.shrink(),
+            ),
         onPressed: onTap,
         icon: Icon(icon, size: 18),
         label: Text(title),
@@ -671,8 +690,15 @@ class _Field extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = [
-      Text(label, style: SpaceStyle.text(14.5, SpaceStyle.tx2)),
-      Text(value, textAlign: TextAlign.right, style: SpaceStyle.text(14.5)),
+      Text(
+        label,
+        style: SpaceStyle.of(context).text(14.5, SpaceStyle.of(context).tx2),
+      ),
+      Text(
+        value,
+        textAlign: TextAlign.right,
+        style: SpaceStyle.of(context).text(14.5),
+      ),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),

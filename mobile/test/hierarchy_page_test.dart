@@ -617,17 +617,6 @@ void main() {
     final material = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await material.load();
-    await (FontLoader(
-      'Roboto',
-    )..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))).load();
-    await (FontLoader('PlaceGeist')
-          ..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))
-          ..addFont(rootBundle.load('assets/fonts/Geist-Medium.ttf'))
-          ..addFont(rootBundle.load('assets/fonts/Geist-SemiBold.ttf')))
-        .load();
-    await (FontLoader(
-      'PlaceGeistMono',
-    )..addFont(rootBundle.load('assets/fonts/GeistMono-Medium.ttf'))).load();
     await tester.runAsync(() async {
       final bytes = await File('/System/Library/Fonts/SFNS.ttf').readAsBytes();
       for (final family in ['FindEZ-QA']) {

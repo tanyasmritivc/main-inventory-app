@@ -273,7 +273,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            decoration: SpaceStyle.card(18),
+            decoration: SpaceStyle.of(context).card(18),
             child: Column(
               children: [
                 for (final (index, item) in visibleItems.indexed)
@@ -309,8 +309,8 @@ class _SpaceAskState extends State<_SpaceAsk> {
                           : () => _change(resultItems.first),
                       style: FilledButton.styleFrom(
                         shape: const StadiumBorder(),
-                        backgroundColor: SpaceStyle.s2,
-                        foregroundColor: SpaceStyle.tx,
+                        backgroundColor: SpaceStyle.of(context).s2,
+                        foregroundColor: SpaceStyle.of(context).tx,
                       ),
                       child: const Text('− I used one'),
                     ),
@@ -323,8 +323,8 @@ class _SpaceAskState extends State<_SpaceAsk> {
                           : () => _change(resultItems.first, move: true),
                       style: FilledButton.styleFrom(
                         shape: const StadiumBorder(),
-                        backgroundColor: SpaceStyle.s2,
-                        foregroundColor: SpaceStyle.tx,
+                        backgroundColor: SpaceStyle.of(context).s2,
+                        foregroundColor: SpaceStyle.of(context).tx,
                       ),
                       child: const Text('Move'),
                     ),
@@ -339,7 +339,9 @@ class _SpaceAskState extends State<_SpaceAsk> {
                 liveRegion: true,
                 child: Text(
                   _writeStatus!,
-                  style: SpaceStyle.text(13, SpaceStyle.tx2),
+                  style: SpaceStyle.of(
+                    context,
+                  ).text(13, SpaceStyle.of(context).tx2),
                 ),
               ),
             ),
@@ -381,9 +383,9 @@ class _SpaceAskState extends State<_SpaceAsk> {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         shape: const StadiumBorder(),
-                        textStyle: SpaceStyle.text(13.5),
-                        foregroundColor: SpaceStyle.tx2,
-                        side: const BorderSide(color: SpaceStyle.line2),
+                        textStyle: SpaceStyle.of(context).text(13.5),
+                        foregroundColor: SpaceStyle.of(context).tx2,
+                        side: BorderSide(color: SpaceStyle.of(context).line2),
                       ),
                       onPressed: () => _send?.call(question),
                       child: Text(question),
@@ -395,7 +397,9 @@ class _SpaceAskState extends State<_SpaceAsk> {
           if (data.rowsTruncated)
             Text(
               'Additional results are not shown here.',
-              style: SpaceStyle.text(13, SpaceStyle.tx2),
+              style: SpaceStyle.of(
+                context,
+              ).text(13, SpaceStyle.of(context).tx2),
             ),
         ],
       ),

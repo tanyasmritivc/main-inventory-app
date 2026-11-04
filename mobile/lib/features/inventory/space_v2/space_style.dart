@@ -4,6 +4,8 @@ import '../../../core/ui/swipe_down_sheet.dart';
 
 // Local to Space v2; never changes the app's global theme.
 abstract final class SpaceStyle {
+  static SpacePalette of(BuildContext context) =>
+      SpacePalette(Theme.of(context).brightness);
   static const bg = Color(0xFF0B0B0C);
   static const s1 = Color(0xFF1C1C1E);
   static const s2 = Color(0xFF252527);
@@ -19,8 +21,12 @@ abstract final class SpaceStyle {
   static const white = Color(0xFFF2F2F2);
   static const amber = Color(0xFFD6A84E);
   static const curve = Cubic(.32, .72, 0, 1);
-  static TextStyle text(double size, [Color color = tx]) =>
-      TextStyle(fontSize: size, color: color, fontWeight: FontWeight.w400);
+  static TextStyle text(double size, [Color color = tx]) => TextStyle(
+    fontFamily: 'CupertinoSystemText',
+    fontSize: size,
+    color: color,
+    fontWeight: FontWeight.w400,
+  );
   static bool reduced(BuildContext context) =>
       MediaQuery.disableAnimationsOf(context) ||
       MediaQuery.accessibleNavigationOf(context);
@@ -30,19 +36,56 @@ abstract final class SpaceStyle {
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: line),
       );
-  static ThemeData theme(BuildContext context) => Theme.of(context).copyWith(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: bg,
-    colorScheme: const ColorScheme.dark(
-      surface: s1,
-      primary: white,
-      onPrimary: bg,
-      onSurface: tx,
-    ),
-    textTheme: Theme.of(
-      context,
-    ).textTheme.apply(bodyColor: tx, displayColor: tx),
-    iconTheme: const IconThemeData(color: tx, size: 20),
+  static ThemeData theme(BuildContext context) {
+    final palette = of(context);
+    return Theme.of(context).copyWith(
+      scaffoldBackgroundColor: palette.bg,
+      colorScheme: Theme.of(context).colorScheme.copyWith(
+        surface: palette.s1,
+        primary: palette.white,
+        onPrimary: palette.bg,
+        onSurface: palette.tx,
+      ),
+      textTheme: Theme.of(context).textTheme.apply(
+        bodyColor: palette.tx,
+        displayColor: palette.tx,
+        fontFamily: 'CupertinoSystemText',
+      ),
+      iconTheme: IconThemeData(color: palette.tx, size: 20),
+    );
+  }
+}
+
+/// Immutable, context-bound colours also follow live System appearance changes.
+class SpacePalette {
+  const SpacePalette(this.brightness);
+  final Brightness brightness;
+  bool get dark => brightness == Brightness.dark;
+  Color get bg => dark ? SpaceStyle.bg : const Color(0xFFF8F8FA);
+  Color get s1 => dark ? SpaceStyle.s1 : const Color(0xFFEEEEF0);
+  Color get s2 => dark ? SpaceStyle.s2 : const Color(0xFFE5E5E8);
+  Color get s3 => dark ? SpaceStyle.s3 : const Color(0xFFDADADF);
+  Color get sheet => dark ? SpaceStyle.sheet : const Color(0xFFF9F9FA);
+  Color get ask => dark ? SpaceStyle.ask : const Color(0xFFFAFAFB);
+  Color get menu => dark ? SpaceStyle.menu : const Color(0xFFF0F0F2);
+  Color get line => dark ? SpaceStyle.line : const Color(0x14000000);
+  Color get line2 => dark ? SpaceStyle.line2 : const Color(0x1F000000);
+  Color get tx => dark ? SpaceStyle.tx : const Color(0xFF19191B);
+  Color get tx2 => dark ? SpaceStyle.tx2 : const Color(0xFF616167);
+  Color get tx3 => dark ? const Color(0xFF929298) : const Color(0xFF6B6B72);
+  Color get white => dark ? SpaceStyle.white : const Color(0xFF242426);
+  Color get amber => dark ? SpaceStyle.amber : const Color(0xFF795B16);
+  Color get button => dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
+  TextStyle text(double size, [Color? color]) => TextStyle(
+    fontFamily: 'CupertinoSystemText',
+    fontSize: size,
+    color: color ?? tx,
+    fontWeight: FontWeight.w400,
+  );
+  BoxDecoration card([double radius = 22, Color? color]) => BoxDecoration(
+    color: color ?? s1,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: line),
   );
 }
 
@@ -94,13 +137,13 @@ Future<T?> showSpaceSheet<T>(
                     .clamp(0, double.infinity),
           ),
           child: Material(
-            color: ask ? SpaceStyle.ask : SpaceStyle.sheet,
+            color: ask ? SpaceStyle.of(ctx).ask : SpaceStyle.of(ctx).sheet,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(ask ? 32 : 38),
                 bottom: Radius.circular(ask ? 0 : 38),
               ),
-              side: const BorderSide(color: SpaceStyle.line2),
+              side: BorderSide(color: SpaceStyle.of(ctx).line2),
             ),
             clipBehavior: Clip.antiAlias,
             child: MediaQuery.removeViewInsets(
@@ -112,7 +155,7 @@ Future<T?> showSpaceSheet<T>(
         ),
       );
       return Theme(
-        data: SpaceStyle.theme(context),
+        data: SpaceStyle.theme(ctx),
         child: Stack(
           children: [
             Positioned.fill(
@@ -158,7 +201,7 @@ class SpaceHandle extends StatelessWidget {
       height: 5,
       margin: const EdgeInsets.only(top: 10, bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .2),
+        color: SpaceStyle.of(context).tx.withValues(alpha: .2),
         borderRadius: BorderRadius.circular(9),
       ),
     ),
@@ -186,10 +229,14 @@ class SpaceCircle extends StatelessWidget {
       tooltip: label,
       onPressed: onTap,
       style: IconButton.styleFrom(
-        backgroundColor: white ? SpaceStyle.white : SpaceStyle.s1,
-        foregroundColor: white ? SpaceStyle.bg : SpaceStyle.tx,
-        disabledForegroundColor: SpaceStyle.tx3,
-        side: const BorderSide(color: SpaceStyle.line2),
+        backgroundColor: white
+            ? SpaceStyle.of(context).white
+            : SpaceStyle.of(context).s1,
+        foregroundColor: white
+            ? SpaceStyle.of(context).bg
+            : SpaceStyle.of(context).tx,
+        disabledForegroundColor: SpaceStyle.of(context).tx3,
+        side: BorderSide(color: SpaceStyle.of(context).line2),
       ),
       icon: Icon(icon, size: 22),
     ),

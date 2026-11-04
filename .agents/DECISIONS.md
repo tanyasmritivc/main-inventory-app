@@ -1,3 +1,7 @@
+## November 3 - SF Pro and appearance override supplied feature fonts
+
+The latest user screenshots/instruction supersede the Inter Tight/VoiceInter/GeistMono feature exceptions. All mobile app-owned text uses native CupertinoSystemText (SF Pro), with regular weights. Only Markdown headings inside AI responses use semibold; inline body emphasis remains regular. No Apple font is bundled. Space colours must resolve from the inherited theme, including open sheets and live System changes. Solid grey item actions explicitly bypass the global glass button background builder. Preserve main Ask behavior and layout.
+
 ## November 1 - Stop chat response and replace App Store build (166)
 
 The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.

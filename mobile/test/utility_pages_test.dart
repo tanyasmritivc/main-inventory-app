@@ -103,9 +103,6 @@ void main() {
   setUpAll(() async {
     if (!visual) return;
     await (FontLoader(
-      'PlusJakartaSans',
-    )..addFont(rootBundle.load('assets/fonts/PlusJakartaSans.ttf'))).load();
-    await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
     await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(

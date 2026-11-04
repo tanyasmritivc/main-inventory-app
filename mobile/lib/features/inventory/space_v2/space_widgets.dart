@@ -50,7 +50,7 @@ class SpaceThumbnail extends StatelessWidget {
     return Container(
       width: size,
       height: height ?? size,
-      decoration: SpaceStyle.card(radius),
+      decoration: SpaceStyle.of(context).card(radius),
       clipBehavior: Clip.antiAlias,
       child: (item.imageUrl ?? '').trim().isEmpty
           ? fallback
@@ -117,18 +117,22 @@ class SpaceItemRow extends StatelessWidget {
                         item.displayName,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: SpaceStyle.text(15.5).copyWith(
-                          height: 1.25,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -.155,
-                        ),
+                        style: SpaceStyle.of(context)
+                            .text(15.5)
+                            .copyWith(
+                              height: 1.25,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: -.155,
+                            ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         '${spaceItemSubtitle(item)}$subtitleSuffix',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: SpaceStyle.text(13, SpaceStyle.tx2),
+                        style: SpaceStyle.of(
+                          context,
+                        ).text(13, SpaceStyle.of(context).tx2),
                       ),
                     ],
                   ),
@@ -139,19 +143,24 @@ class SpaceItemRow extends StatelessWidget {
                   children: [
                     Text(
                       '${quantity ?? item.quantity}',
-                      style:
-                          SpaceStyle.text(
+                      style: SpaceStyle.of(context)
+                          .text(
                             17,
-                            low ? SpaceStyle.amber : SpaceStyle.tx,
-                          ).copyWith(
+                            low
+                                ? SpaceStyle.of(context).amber
+                                : SpaceStyle.of(context).tx,
+                          )
+                          .copyWith(
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                     ),
                     Text(
                       low ? 'low' : 'qty',
-                      style: SpaceStyle.text(
+                      style: SpaceStyle.of(context).text(
                         11,
-                        low ? SpaceStyle.amber : SpaceStyle.tx3,
+                        low
+                            ? SpaceStyle.of(context).amber
+                            : SpaceStyle.of(context).tx3,
                       ),
                     ),
                   ],
@@ -162,9 +171,9 @@ class SpaceItemRow extends StatelessWidget {
         ),
       ),
       if (divider)
-        const Padding(
-          padding: EdgeInsets.only(left: 77),
-          child: Divider(height: 1, color: SpaceStyle.line),
+        Padding(
+          padding: const EdgeInsets.only(left: 77),
+          child: Divider(height: 1, color: SpaceStyle.of(context).line),
         ),
     ],
   );
@@ -188,12 +197,13 @@ class SpaceStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: '$title, $subtitle',
+    selected: active,
     button: true,
     child: Material(
       color: active ? const Color(0xFFF4F4F5) : const Color(0xFFD4D4D8),
       shape: StadiumBorder(
         side: active
-            ? const BorderSide(color: Colors.white, width: 2)
+            ? BorderSide(color: SpaceStyle.of(context).tx2, width: 2)
             : BorderSide.none,
       ),
       clipBehavior: Clip.antiAlias,
@@ -207,7 +217,7 @@ class SpaceStatusCard extends StatelessWidget {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: SpaceStyle.text(14.5, SpaceStyle.bg),
+            style: SpaceStyle.of(context).text(14.5, const Color(0xFF19191B)),
           ),
         ),
       ),
@@ -224,7 +234,7 @@ class SpaceHeaderGlass extends StatelessWidget {
     child: BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
       child: ColoredBox(
-        color: SpaceStyle.bg.withValues(alpha: .68),
+        color: SpaceStyle.of(context).bg.withValues(alpha: .68),
         child: child,
       ),
     ),
@@ -269,16 +279,23 @@ class SpaceAction extends StatelessWidget {
     leading: Container(
       width: 44,
       height: 44,
-      decoration: SpaceStyle.card(14, SpaceStyle.s2),
+      decoration: SpaceStyle.of(context).card(14, SpaceStyle.of(context).s2),
       child: Icon(icon),
     ),
-    title: Text(title, style: SpaceStyle.text(16)),
+    title: Text(title, style: SpaceStyle.of(context).text(16)),
     subtitle: subtitle == null
         ? null
-        : Text(subtitle!, style: SpaceStyle.text(13, SpaceStyle.tx2)),
+        : Text(
+            subtitle!,
+            style: SpaceStyle.of(context).text(13, SpaceStyle.of(context).tx2),
+          ),
     trailing: selected
-        ? const Icon(Icons.check_circle, color: SpaceStyle.white)
-        : const Icon(Icons.chevron_right, size: 18, color: SpaceStyle.tx3),
+        ? Icon(Icons.check_circle, color: SpaceStyle.of(context).white)
+        : Icon(
+            Icons.chevron_right,
+            size: 18,
+            color: SpaceStyle.of(context).tx3,
+          ),
     onTap: onTap,
   );
 }
@@ -302,7 +319,7 @@ class SpaceSheetList extends StatelessWidget {
           const SpaceHandle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-            child: Text(title, style: SpaceStyle.text(20)),
+            child: Text(title, style: SpaceStyle.of(context).text(20)),
           ),
           ...children,
         ],
