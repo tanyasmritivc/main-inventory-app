@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_typography.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,7 @@ abstract final class ExtractStyle {
   static const curve = Cubic(.32, .72, 0, 1);
   static TextStyle text(double size, {Color color = tx}) => TextStyle(
     fontFamily: 'CupertinoSystemText',
-    fontSize: size,
+    fontSize: AppTypography.standardSize(size),
     color: color,
     fontWeight: FontWeight.w400,
   );

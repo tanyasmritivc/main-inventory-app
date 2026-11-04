@@ -9,6 +9,13 @@ class AppTypography extends StatelessWidget {
 
   final Widget child;
 
+  static const double bodySize = 16;
+  static const double captionSize = 13;
+  // Ordinary body, form and control text shares one default size. Deliberate
+  // captions and larger headings/hero values keep their hierarchy and scaling.
+  static double? standardSize(double? size) =>
+      size != null && size >= 14 && size <= 17 ? bodySize : size;
+
   static FontWeight _weight(TextStyle style, {bool body = false}) {
     return FontWeight.w400;
   }
@@ -18,6 +25,7 @@ class AppTypography extends StatelessWidget {
     final result = (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective),
       fontFamily: 'CupertinoSystemText',
+      fontSize: standardSize(style?.fontSize),
     );
     return result;
   }
@@ -27,6 +35,7 @@ class AppTypography extends StatelessWidget {
     return (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective, body: true),
       fontFamily: 'CupertinoSystemText',
+      fontSize: standardSize(style?.fontSize),
     );
   }
 
@@ -34,6 +43,7 @@ class AppTypography extends StatelessWidget {
     TextStyle? adapt(TextStyle? style, {bool body = false}) => style?.copyWith(
       fontWeight: _weight(style, body: body),
       fontFamily: 'CupertinoSystemText',
+      fontSize: standardSize(style.fontSize),
     );
     TextTheme textTheme(TextTheme text) => TextTheme(
       displayLarge: adapt(text.displayLarge),

@@ -1,3 +1,4 @@
+import '../../../core/private_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -67,12 +68,72 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
   String? _error, _receipt;
   Timer? _savedTimer;
   final _fieldController = TextEditingController();
+  final _editFocus = FocusNode();
+  final _editAnchor = GlobalKey();
+  final _scroll = ScrollController();
+  final _gallery = PageController();
+  List<ItemPhoto> _photos = [];
+  int _photoIndex = 0, _galleryEpoch = 0;
+  String? _galleryError;
+
+  @override
+  void initState() {
+    super.initState();
+    _photos = _fallbackPhotos();
+    unawaited(_loadPhotos());
+  }
+
+  List<ItemPhoto> _fallbackPhotos() => (_item.imageUrl ?? '').trim().isEmpty
+      ? []
+      : [
+          ItemPhoto(
+            photoId: 'primary',
+            imageUrl: _item.imageUrl!,
+            isPrimary: true,
+            createdAt: _item.createdAt,
+          ),
+        ];
+  Future<void> _loadPhotos() async {
+    final epoch = ++_galleryEpoch;
+    try {
+      widget.api.assertCurrentContext();
+      final photos = await widget.api.getItemPhotos(itemId: _item.itemId);
+      widget.api.assertCurrentContext();
+      if (!mounted || epoch != _galleryEpoch) return;
+      setState(() {
+        _photos = photos.isEmpty ? _fallbackPhotos() : photos;
+        _galleryError = null;
+        _photoIndex = 0;
+      });
+    } catch (error) {
+      if (mounted && epoch == _galleryEpoch) {
+        setState(() => _galleryError = 'Could not load all photos.');
+      }
+    }
+  }
+
+  void _revealEditor() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = _editAnchor.currentContext;
+      if (!mounted || anchor == null) return;
+      Scrollable.ensureVisible(
+        anchor,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        alignment: .5,
+      );
+    });
+  }
+
   String? _editingField, _fieldError;
   bool get _canEdit => !widget.readOnly && widget.api.canEdit;
   @override
   void dispose() {
     _savedTimer?.cancel();
     _fieldController.dispose();
+    _editFocus.dispose();
+    _scroll.dispose();
+    _gallery.dispose();
     super.dispose();
   }
 
@@ -139,78 +200,199 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
   bool _openingPhoto = false;
   Future<void> _photo() async {
     if (_openingPhoto || _saving || _editingField != null) return;
-    _openingPhoto = true;
+    setState(() => _openingPhoto = true);
     try {
       await _performPhoto();
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);
     } finally {
-      _openingPhoto = false;
+      if (mounted) setState(() => _openingPhoto = false);
     }
   }
 
   Future<void> _performPhoto() async {
-    final url = (_item.imageUrl ?? '').trim();
-    if (url.isNotEmpty) {
-      await Navigator.of(context).push<void>(
-        PageRouteBuilder(
-          transitionDuration: Duration(
-            milliseconds: SpaceStyle.reduced(context) ? 180 : 350,
-          ),
-          reverseTransitionDuration: const Duration(milliseconds: 250),
-          pageBuilder: (_, _, _) => ItemPhotoViewer(
-            photos: [
-              ItemPhoto(
-                photoId: 'primary',
-                imageUrl: url,
-                isPrimary: true,
-                createdAt: _item.createdAt,
-              ),
-            ],
-            initialIndex: 0,
-          ),
-          transitionsBuilder: (_, animation, _, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
-      );
+    if (_photos.isEmpty) {
+      await _addPhotos();
       return;
     }
-    if (!_canEdit || _saving) return;
+    await Navigator.of(context).push<void>(
+      PageRouteBuilder(
+        transitionDuration: Duration(
+          milliseconds: SpaceStyle.reduced(context) ? 180 : 350,
+        ),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (_, _, _) => ItemPhotoViewer(
+          photos: List.of(_photos),
+          initialIndex: _photoIndex,
+        ),
+        transitionsBuilder: (_, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  Future<void> _addPhotos() async {
+    if (!_canEdit || _saving || _editingField != null) return;
     final camera = await showPhotoSourceSheet(context, showCancel: false);
     if (camera == null || !mounted) return;
-    final image = await ImagePicker().pickImage(
-      source: camera ? ImageSource.camera : ImageSource.gallery,
-      maxWidth: 2048,
-      maxHeight: 2048,
-      imageQuality: 88,
-    );
-    if (image == null || !mounted) return;
+    final picker = ImagePicker();
+    final images = camera
+        ? [
+            await picker.pickImage(
+              source: ImageSource.camera,
+              maxWidth: 2048,
+              maxHeight: 2048,
+              imageQuality: 88,
+            ),
+          ].whereType<XFile>().toList()
+        : await picker.pickMultiImage(
+            maxWidth: 2048,
+            maxHeight: 2048,
+            imageQuality: 88,
+          );
+    if (images.isEmpty || !mounted) return;
+    ++_galleryEpoch;
     setState(() {
       _saving = true;
       _error = null;
     });
+    var added = 0;
     try {
-      widget.api.assertCurrentContext();
-      final result = await widget.api.addItemPhoto(
-        itemId: _item.itemId,
-        bytes: await image.readAsBytes(),
-        filename: image.name,
-      );
-      widget.api.assertCurrentContext();
-      InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
-      widget.onUpdated(result.item);
-      if (mounted) {
+      for (final image in images) {
+        widget.api.assertCurrentContext();
+        final result = await widget.api.addItemPhoto(
+          itemId: _item.itemId,
+          bytes: await image.readAsBytes(),
+          filename: image.name,
+        );
+        widget.api.assertCurrentContext();
+        InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
+        widget.onUpdated(result.item);
+        if (!mounted) return;
+        added++;
         setState(() {
           _item = result.item;
-          _receipt = 'Photo added';
+          _photos = result.photos.isEmpty ? _fallbackPhotos() : result.photos;
+          _photoIndex = 0;
+          _galleryError = null;
+          _receipt = added == 1 ? 'Photo added' : '$added photos added';
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _gallery.hasClients) _gallery.jumpToPage(0);
         });
       }
     } catch (error) {
-      if (mounted) setState(() => _error = describeError(error).$1);
+      if (mounted) {
+        setState(
+          () => _error =
+              '${added == 0 ? '' : '$added ${added == 1 ? 'photo' : 'photos'} added. '}${describeError(error).$1}',
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Widget _photoGallery() => Column(
+    children: [
+      SizedBox(
+        height: 190,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: _photos.isEmpty
+              ? InkWell(
+                  key: const ValueKey('space-item-photo'),
+                  onTap: _saving || _editingField != null ? null : _photo,
+                  child: SpaceThumbnail(
+                    item: _item,
+                    size: double.infinity,
+                    height: 190,
+                    radius: 26,
+                  ),
+                )
+              : PageView.builder(
+                  controller: _gallery,
+                  itemCount: _photos.length,
+                  onPageChanged: (index) => setState(() => _photoIndex = index),
+                  itemBuilder: (_, index) => Semantics(
+                    label: 'View full item photo ${index + 1}',
+                    button: true,
+                    child: InkWell(
+                      key: index == _photoIndex
+                          ? const ValueKey('space-item-photo')
+                          : null,
+                      onTap: _saving || _editingField != null ? null : _photo,
+                      child: PrivateImage(
+                        _photos[index].imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            const Center(child: Text('Photo unavailable')),
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+      ),
+      const SizedBox(height: 6),
+      Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (_photos.length > 1) ...[
+            IconButton(
+              tooltip: 'Previous item photo',
+              onPressed: _photoIndex > 0
+                  ? () => _gallery.previousPage(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                    )
+                  : null,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Text(
+              '${_photoIndex + 1} of ${_photos.length}',
+              style: SpaceStyle.of(context).text(13),
+            ),
+            IconButton(
+              tooltip: 'Next item photo',
+              onPressed: _photoIndex + 1 < _photos.length
+                  ? () => _gallery.nextPage(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                    )
+                  : null,
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+          if (_canEdit)
+            TextButton.icon(
+              onPressed: _saving || _openingPhoto || _editingField != null
+                  ? null
+                  : () async {
+                      if (_openingPhoto) return;
+                      setState(() => _openingPhoto = true);
+                      try {
+                        await _addPhotos();
+                      } catch (error) {
+                        if (mounted) {
+                          setState(() => _error = describeError(error).$1);
+                        }
+                      } finally {
+                        if (mounted) setState(() => _openingPhoto = false);
+                      }
+                    },
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: Text(_saving ? 'Adding...' : 'Add photos'),
+            ),
+          if (_galleryError != null)
+            TextButton(
+              onPressed: _loadPhotos,
+              child: Text('$_galleryError Retry'),
+            ),
+        ],
+      ),
+    ],
+  );
 
   void _beginField(String key, String value) {
     if (!_canEdit || _saving || _editingField != null) return;
@@ -223,6 +405,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
       _fieldController.text = value;
       _fieldError = null;
     });
+    _revealEditor();
   }
 
   Future<void> _saveField() async {
@@ -261,6 +444,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
         setState(() {
           _threshold = value.isEmpty ? null : quantity;
           _editingField = null;
+          _editFocus.unfocus();
           _receipt = 'Saved';
         });
         widget.onThresholdChanged?.call(_threshold);
@@ -297,6 +481,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
       setState(() {
         if (saved) {
           _editingField = null;
+          _editFocus.unfocus();
         } else {
           _fieldError = _error;
         }
@@ -347,6 +532,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
   Widget _field(String label, String value, [String? key]) {
     if (_editingField == key && key != null) {
       return Padding(
+        key: _editAnchor,
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -354,6 +540,8 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
             TextField(
               key: ValueKey('space-item-field-$key'),
               controller: _fieldController,
+              focusNode: _editFocus,
+              scrollPadding: const EdgeInsets.only(bottom: 96, top: 24),
               autofocus: true,
               enabled: !_saving,
               style: SpaceStyle.of(context).text(15),
@@ -365,9 +553,12 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   ? 5000
                   : key == 'tags'
                   ? 1000
+                  : key == 'quantity' || key == 'threshold'
+                  ? 6
                   : 200,
               decoration: InputDecoration(
                 labelText: label,
+                counterText: '',
                 errorText: _fieldError,
               ),
               onSubmitted: (_) => _saveField(),
@@ -378,7 +569,10 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                 TextButton(
                   onPressed: _saving
                       ? null
-                      : () => setState(() => _editingField = null),
+                      : () {
+                          _editFocus.unfocus();
+                          setState(() => _editingField = null);
+                        },
                   child: const Text('Cancel'),
                 ),
                 TextButton(
@@ -414,6 +608,8 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
         if (!didPop) unawaited(_requestDismiss());
       },
       child: SingleChildScrollView(
+        controller: _scroll,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         key: const ValueKey('space-quick-view'),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 22),
@@ -422,48 +618,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SpaceHandle(),
-              Semantics(
-                button: (_item.imageUrl ?? '').isNotEmpty || _canEdit,
-                label: (_item.imageUrl ?? '').isNotEmpty
-                    ? 'View full item photo'
-                    : 'Add item photo',
-                child: InkWell(
-                  key: const ValueKey('space-item-photo'),
-                  onTap: _saving || _editingField != null ? null : _photo,
-                  borderRadius: BorderRadius.circular(26),
-                  child: Stack(
-                    children: [
-                      SpaceThumbnail(
-                        item: _item,
-                        size: double.infinity,
-                        height: 190,
-                        radius: 26,
-                      ),
-                      if ((_item.imageUrl ?? '').isEmpty && _canEdit)
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: SpaceStyle.of(
-                                context,
-                              ).s2.withValues(alpha: .9),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Add photo',
-                              style: SpaceStyle.of(context).text(13),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+              _photoGallery(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(6, 18, 6, 18),
                 child: Column(
@@ -628,33 +783,34 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   _threshold?.toString() ?? '',
                   'threshold',
                 ),
-              const SizedBox(height: 14),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (_canEdit)
-                    _pill(
-                      'Move',
-                      Icons.drive_file_move_outline,
-                      _saving || _editingField != null ? null : _move,
-                    ),
-                  if (widget.onAsk != null)
-                    _pill(
-                      'Ask',
-                      Icons.auto_awesome_outlined,
-                      _saving || _editingField != null
-                          ? null
-                          : () {
-                              Navigator.pop(context);
-                              widget.onAsk!(
-                                'How many ${_item.name} do we have?',
-                              );
-                            },
-                    ),
-                ],
-              ),
+              if (_editingField == null) const SizedBox(height: 14),
+              if (_editingField == null)
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (_canEdit)
+                      _pill(
+                        'Move',
+                        Icons.drive_file_move_outline,
+                        _saving || _editingField != null ? null : _move,
+                      ),
+                    if (widget.onAsk != null)
+                      _pill(
+                        'Ask',
+                        Icons.auto_awesome_outlined,
+                        _saving || _editingField != null
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                widget.onAsk!(
+                                  'How many ${_item.name} do we have?',
+                                );
+                              },
+                      ),
+                  ],
+                ),
             ],
           ),
         ),

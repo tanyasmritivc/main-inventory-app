@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'support/capture_picker_fixture.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +27,19 @@ void main() {
     'dev.steenbakker.mobile_scanner/scanner/deviceOrientation',
   );
   setUp(() {
+    final imagePicker = ImagePickerPlatform.instance;
+    FilePicker? filePicker;
+    try {
+      filePicker = FilePicker.platform;
+    } catch (_) {
+      /* No host plugin registered. */
+    }
+    ImagePickerPlatform.instance = CapturePhotoPicker();
+    FilePicker.platform = CaptureFilePicker();
+    addTearDown(() {
+      ImagePickerPlatform.instance = imagePicker;
+      if (filePicker != null) FilePicker.platform = filePicker;
+    });
     fixture.requests.clear();
     fixture.respond = (_) => <String, dynamic>{};
     final messenger =
@@ -105,14 +121,19 @@ void main() {
   }
 
   void expectChoices() {
-    for (final label in ['Scan Photo', 'Scan Barcode', 'Import Spreadsheet']) {
+    for (final label in [
+      'Take photo',
+      'Photo library',
+      'Scan barcode',
+      'Import spreadsheet',
+    ]) {
       expect(find.text(label).hitTestable(), findsOneWidget);
     }
     expect(find.text('Manual Add'), findsNothing);
     expect(find.byType(ItemEditorSheet), findsNothing);
   }
 
-  testWidgets('Space add menu opens progressively and handles rapid reversal', (
+  testWidgets('Space add menu opens immediately and handles rapid reversal', (
     tester,
   ) async {
     await mount(tester);
@@ -120,18 +141,10 @@ void main() {
     await tester.tap(button);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
-    final fade = tester
-        .widgetList<FadeTransition>(
-          find.ancestor(
-            of: find.text('Scan Photo'),
-            matching: find.byType(FadeTransition),
-          ),
-        )
-        .first;
-    expect(fade.opacity.value, inExclusiveRange(0, 1));
+    expectChoices();
     await tester.tapAt(const Offset(10, 120));
     await tester.pumpAndSettle();
-    expect(find.text('Scan Photo').hitTestable(), findsNothing);
+    expect(find.text('Take photo').hitTestable(), findsNothing);
     await tester.tap(button);
     await tester.pumpAndSettle();
     expectChoices();
@@ -180,29 +193,28 @@ void main() {
     expectChoices();
   });
 
-  testWidgets(
-    'photo action opens camera/library choice and cancel stays in Space',
-    (tester) async {
-      await mount(tester);
-      await open(tester);
-      await tester.tap(find.text('Scan Photo'));
-      await tester.pumpAndSettle();
-      expect(find.text('Take Photo'), findsOneWidget);
-      expect(find.text('Choose from Library'), findsOneWidget);
-      expect(find.byType(ItemEditorSheet), findsNothing);
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.byType(LocationItemsPage), findsOneWidget);
-      expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
-    },
-  );
+  testWidgets('photo action opens camera directly and cancel stays in Space', (
+    tester,
+  ) async {
+    await mount(tester);
+    await open(tester);
+    await tester.tap(find.text('Take photo'));
+    await tester.pumpAndSettle();
+    expect((ImagePickerPlatform.instance as CapturePhotoPicker).sources, [
+      ImageSource.camera,
+    ]);
+    expect(find.text('Choose from Library'), findsNothing);
+    expect(find.byType(ItemEditorSheet), findsNothing);
+    expect(find.byType(LocationItemsPage), findsOneWidget);
+    expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+  });
 
   testWidgets('barcode action opens the scanner and Back preserves Space', (
     tester,
   ) async {
     await mount(tester);
     await open(tester);
-    await tester.tap(find.text('Scan Barcode'));
+    await tester.tap(find.text('Scan barcode'));
     await tester.pumpAndSettle();
     expect(find.byType(MobileScanner), findsOneWidget);
     await tester.pageBack();
@@ -217,11 +229,12 @@ void main() {
   ) async {
     final api = await mount(tester);
     await open(tester);
-    await tester.tap(find.text('Import Spreadsheet'));
+    await tester.tap(find.text('Import spreadsheet'));
     await tester.pumpAndSettle();
     final page = tester.widget<ImportSheetPage>(find.byType(ImportSheetPage));
     expect(page.api, same(api));
     expect(page.location, 'Garage');
+    expect((FilePicker.platform as CaptureFilePicker).calls, 1);
     expect(find.text('Choose file'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -245,7 +258,12 @@ void main() {
   ) async {
     await mount(tester, size: const Size(320, 844), textScale: 1.8);
     await open(tester);
-    for (final label in ['Scan Photo', 'Import Spreadsheet', 'Scan Barcode']) {
+    for (final label in [
+      'Take photo',
+      'Photo library',
+      'Import spreadsheet',
+      'Scan barcode',
+    ]) {
       await tester.ensureVisible(find.text(label));
       await tester.pumpAndSettle();
       expect(find.text(label).hitTestable(), findsOneWidget);

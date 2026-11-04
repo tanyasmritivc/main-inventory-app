@@ -222,58 +222,61 @@ Future<void> runUploadPhotoFlow({
   required String preselectedSpace,
   required Future<void> Function() onItemsSaved,
   String? barcodeToAssociate,
+  ImageSource? source,
 }) async {
   // Step 1: pick image source
-  final src = await showModalBottomSheet<ImageSource>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_camera_outlined,
-                    color: AppTheme.foreground(ctx, Colors.white),
-                  ),
-                  title: AppText(
-                    'Take Photo',
-                    style: TextStyle(
-                      color: AppTheme.foreground(ctx, Colors.white),
+  final src =
+      source ??
+      await showModalBottomSheet<ImageSource>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: Icon(
+                        Icons.photo_camera_outlined,
+                        color: AppTheme.foreground(ctx, Colors.white),
+                      ),
+                      title: AppText(
+                        'Take Photo',
+                        style: TextStyle(
+                          color: AppTheme.foreground(ctx, Colors.white),
+                        ),
+                      ),
+                      onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
                     ),
-                  ),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_outlined,
-                    color: AppTheme.foreground(ctx, Colors.white),
-                  ),
-                  title: AppText(
-                    'Choose from Library',
-                    style: TextStyle(
-                      color: AppTheme.foreground(ctx, Colors.white),
+                    ListTile(
+                      leading: Icon(
+                        Icons.photo_outlined,
+                        color: AppTheme.foreground(ctx, Colors.white),
+                      ),
+                      title: AppText(
+                        'Choose from Library',
+                        style: TextStyle(
+                          color: AppTheme.foreground(ctx, Colors.white),
+                        ),
+                      ),
+                      onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
                     ),
-                  ),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
-    ),
-  );
+      );
   if (src == null) return;
 
   // Step 2: pick image

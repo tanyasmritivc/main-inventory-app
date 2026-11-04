@@ -1,3 +1,4 @@
+import '../../../core/ui/scroll_glass.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../../core/api_client.dart';
@@ -217,7 +218,7 @@ class SpaceStatusCard extends StatelessWidget {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: SpaceStyle.of(context).text(14.5, const Color(0xFF19191B)),
+            style: SpaceStyle.of(context).text(16, const Color(0xFF19191B)),
           ),
         ),
       ),
@@ -241,21 +242,103 @@ class SpaceHeaderGlass extends StatelessWidget {
   );
 }
 
-class SpacePinnedHeader extends SliverPersistentHeaderDelegate {
-  SpacePinnedHeader({required this.child});
-  final Widget child;
+double spaceSummaryHeight(
+  BuildContext context,
+  int count,
+  int units,
+  bool low,
+) {
+  final width = MediaQuery.sizeOf(context).width - 40;
+  double height(String label, double maxWidth, double size) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: SpaceStyle.of(context).text(size)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: maxWidth);
+    return painter.height;
+  }
+
+  final pillWidth = (low ? (width - 8) / 2 : width) - 32;
+  final pill = height(low ? 'Low quantity' : 'Review', pillWidth, 16) + 24;
+  return 6 +
+      height(
+        '${spaceCount(count)} items · ${spaceCount(units)} units',
+        width,
+        16,
+      ) +
+      16 +
+      (pill < 48 ? 48 : pill);
+}
+
+/// One header collapses the navigation and summary, leaving only the floating
+/// search controls. The blur dissolves over the content instead of ending in a bar.
+class SpaceCollapsingHeader extends SliverPersistentHeaderDelegate {
+  SpaceCollapsingHeader({
+    required this.topInset,
+    required this.summaryExtent,
+    required this.navigation,
+    required this.summary,
+    required this.search,
+  });
+  final double topInset, summaryExtent;
+  final Widget navigation, summary, search;
   @override
-  double get minExtent => 68;
+  double get minExtent => topInset + 68;
   @override
-  double get maxExtent => 68;
+  double get maxExtent => minExtent + 56 + summaryExtent;
   @override
   Widget build(
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => SpaceHeaderGlass(child: child);
+  ) {
+    final remaining = (maxExtent - shrinkOffset).clamp(minExtent, maxExtent);
+    final progress = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: remaining + 28,
+          child: const IgnorePointer(
+            child: ScrollGlass(child: SizedBox.expand()),
+          ),
+        ),
+        Positioned(
+          top: topInset,
+          left: 0,
+          right: 0,
+          height: (remaining - minExtent).clamp(0, maxExtent),
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              minHeight: 56 + summaryExtent,
+              maxHeight: 56 + summaryExtent,
+              child: Opacity(
+                key: const ValueKey('space-navigation-fade'),
+                opacity: 1 - progress,
+                child: Transform.translate(
+                  offset: Offset(0, -shrinkOffset),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 56, child: navigation),
+                      SizedBox(height: summaryExtent, child: summary),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(left: 0, right: 0, bottom: 0, height: 68, child: search),
+      ],
+    );
+  }
+
   @override
-  bool shouldRebuild(SpacePinnedHeader oldDelegate) => true;
+  bool shouldRebuild(SpaceCollapsingHeader old) => true;
 }
 
 class SpaceAction extends StatelessWidget {

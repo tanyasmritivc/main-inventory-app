@@ -4075,7 +4075,10 @@ class _ChatPageState extends State<ChatPage>
                 placeholder: _session.messages.isEmpty
                     ? 'Ask about ${presentation.space}'
                     : 'Ask a follow-up',
-                onAdd: _sending ? null : presentation.onAdd,
+                addAnchor: _attachmentAnchor,
+                onAdd: _sending || presentation.onAdd == null
+                    ? null
+                    : () => presentation.onAdd!(context, _attachmentAnchor),
                 onVoice: _sending ? null : _toggleListening,
                 onStop: _sending ? _stopResponse : null,
                 onSend: canSend

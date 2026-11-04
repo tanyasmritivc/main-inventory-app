@@ -103,14 +103,14 @@ class AppTheme {
           fontWeight: FontWeight.w400,
           letterSpacing: -0.1,
         ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+        titleSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
         bodyLarge: TextStyle(
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
           height: 1.35,
         ),
         bodyMedium: TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
           height: 1.35,
         ),
@@ -120,7 +120,7 @@ class AppTheme {
           height: 1.35,
         ),
         labelLarge: TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.1,
         ),
@@ -231,6 +231,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
+            fontSize: 16,
             fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
@@ -260,6 +261,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: adapt(AppColors.primaryText),
           textStyle: const TextStyle(
+            fontSize: 16,
             fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
@@ -279,7 +281,7 @@ class AppTheme {
         ),
         contentTextStyle: TextStyle(
           color: adapt(AppColors.muted),
-          fontSize: 14,
+          fontSize: 16,
           height: 1.4,
         ),
       ),
@@ -303,7 +305,7 @@ class AppTheme {
         iconColor: adapt(AppColors.muted),
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
         subtitleTextStyle: TextStyle(
@@ -322,7 +324,7 @@ class AppTheme {
         ),
         textStyle: TextStyle(
           color: adapt(Colors.white),
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
       ),

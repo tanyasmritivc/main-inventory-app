@@ -1,3 +1,7 @@
+## November3 — Regular SF Pro and direct Space capture
+
+Latest user instruction supersedes176: use regular SF Pro even for AI headings; ordinary body/form/control sizes14–17 normalize to16pt, retaining intentional captions/large headings and user scaling. Space navigation collapses entirely so only search/sort float over dissolving blur. Swipe Edit reuses the current inline item sheet. Item galleries reuse existing photo APIs with multi-select and visible partial failures. Space capture must originate from the active Space-chat route when invoked there; no background-page presentation. Main Ask behavior remains protected except its explicitly requested scan visuals and global typography. No backend/schema changes.
+
 ## November 3 - SF Pro and appearance override supplied feature fonts
 
 The latest user screenshots/instruction supersede the Inter Tight/VoiceInter/GeistMono feature exceptions. All mobile app-owned text uses native CupertinoSystemText (SF Pro), with regular weights. Only Markdown headings inside AI responses use semibold; inline body emphasis remains regular. No Apple font is bundled. Space colours must resolve from the inherited theme, including open sheets and live System changes. Solid grey item actions explicitly bypass the global glass button background builder. Preserve main Ask behavior and layout.

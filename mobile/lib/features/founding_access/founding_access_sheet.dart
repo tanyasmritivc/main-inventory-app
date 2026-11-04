@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_typography.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -27,7 +28,7 @@ TextStyle _style(
   inherit: false,
   fontFamily: 'CupertinoSystemText',
   letterSpacing: 0,
-  fontSize: size,
+  fontSize: AppTypography.standardSize(size),
   color: color,
   fontWeight: weight,
   height: height,

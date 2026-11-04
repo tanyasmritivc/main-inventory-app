@@ -21,7 +21,7 @@ class SpaceChatPresentation {
   final String space, scopeLabel;
   final List<InventoryItem> items;
   final VoidCallback onClose;
-  final VoidCallback? onAdd;
+  final Future<void> Function(BuildContext, GlobalKey)? onAdd;
   final ValueChanged<ValueChanged<String>>? registerSend;
   final Widget? Function(AskAnswerContext) results;
   final String? initialDraft;
@@ -205,7 +205,9 @@ class SpaceChatComposer extends StatelessWidget {
     this.onVoice,
     this.onAdd,
     this.onStop,
+    this.addAnchor,
   });
+  final GlobalKey? addAnchor;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -219,6 +221,7 @@ class SpaceChatComposer extends StatelessWidget {
     child: Row(
       children: [
         IconButton(
+          key: addAnchor,
           tooltip: 'Add items',
           onPressed: onAdd,
           icon: const Icon(Icons.add, size: 22),

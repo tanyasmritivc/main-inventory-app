@@ -22,7 +22,7 @@ Future<void> showSpaceAsk(
   required bool readOnly,
   required ValueChanged<InventoryItem> onUpdated,
   required void Function(String, int?) onThresholdChanged,
-  required VoidCallback onAdd,
+  required Future<void> Function(BuildContext, GlobalKey) onAdd,
   required VoidCallback onInventoryMutated,
   required ValueChanged<Set<String>> onShowItems,
   required VoidCallback onShowLow,
@@ -100,7 +100,8 @@ class _SpaceAsk extends StatefulWidget {
   final bool readOnly, startVoice;
   final ValueChanged<InventoryItem> onUpdated;
   final void Function(String, int?) onThresholdChanged;
-  final VoidCallback onAdd, onInventoryMutated, onShowLow;
+  final Future<void> Function(BuildContext, GlobalKey) onAdd;
+  final VoidCallback onInventoryMutated, onShowLow;
   final ValueChanged<Set<String>> onShowItems;
   final String? initialMessage, initialDraft;
   @override

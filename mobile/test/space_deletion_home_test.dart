@@ -176,6 +176,8 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Delete space'));
     await tester.pumpAndSettle();
     if (find.byType(AlertDialog).evaluate().isNotEmpty) {
+      await tester.ensureVisible(find.text('Cancel'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
     }
