@@ -276,14 +276,15 @@ class SpaceCollapsingHeader extends SliverPersistentHeaderDelegate {
   SpaceCollapsingHeader({
     required this.topInset,
     required this.summaryExtent,
+    required this.searchExtent,
     required this.navigation,
     required this.summary,
     required this.search,
   });
-  final double topInset, summaryExtent;
+  final double topInset, summaryExtent, searchExtent;
   final Widget navigation, summary, search;
   @override
-  double get minExtent => topInset + 68;
+  double get minExtent => topInset + searchExtent;
   @override
   double get maxExtent => minExtent + 56 + summaryExtent;
   @override
@@ -332,7 +333,13 @@ class SpaceCollapsingHeader extends SliverPersistentHeaderDelegate {
             ),
           ),
         ),
-        Positioned(left: 0, right: 0, bottom: 0, height: 68, child: search),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: searchExtent,
+          child: search,
+        ),
       ],
     );
   }

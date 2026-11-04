@@ -635,6 +635,16 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                           pinned: true,
                           delegate: SpaceCollapsingHeader(
                             topInset: MediaQuery.paddingOf(context).top,
+                            // Keep the complete editable line visible at larger
+                            // system text sizes, including its vertical padding.
+                            searchExtent:
+                                (MediaQuery.textScalerOf(
+                                              context,
+                                            ).scale(AppTypography.bodySize) *
+                                            1.35 +
+                                        46)
+                                    .ceilToDouble()
+                                    .clamp(68.0, double.infinity),
                             summaryExtent: spaceSummaryHeight(
                               context,
                               _items.length,

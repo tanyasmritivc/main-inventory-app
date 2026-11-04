@@ -1157,6 +1157,11 @@ void main() {
         scale: 1.8,
         size: const Size(320, 844),
       );
+      expect(
+        tester.getSize(find.byType(EditableText).first).height,
+        greaterThanOrEqualTo(16 * 1.35 * 1.8),
+        reason: 'Large-text search must keep its full text line visible',
+      );
       expect(find.byTooltip('Add items'), findsNothing);
       await tester.tap(find.text('Ask about Fastener DB'));
       await tester.pumpAndSettle();
