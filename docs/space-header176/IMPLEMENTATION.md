@@ -10,9 +10,9 @@ All app-owned Flutter text uses CupertinoSystemText, iOS SF Pro. Explicit Inter 
 
 - Focused Space/typography/Founding Access/photo-scan/voice regressions:64 passed before the additional heading/open-sheet appearance checks.
 - Full Flutter suite:1,356 passed, one existing skip. Analyzer clean. Native iOS:24 broad Space cases,12 typography/chat cases and3 final Light/Dark/System cases passed. The first full run exposed two obsolete Jakarta font loaders; removing those loaders fixed the setups and the full rerun passed.
-- Ten final screenshots are retained in verification/. Reviewed the header, scrolling blur, actions and live System transition. Signed packaging/CI/Apple delivery are pending.
+- Ten final screenshots are retained in verification/. Reviewed the header, scrolling blur, actions and live System transition. All five exact-source CI gates passed (run41762643253). Archive/export verified33 device executables each, strict signing,27 privacy manifests, production configuration and system-font packaging. Apple validation and upload passed.
 - Native screenshot checks cover compact/scrolling headers and opaque item actions in Light/Dark/System. System switches while the page and item sheet are open.
 - Existing tests cover all seven sorts, part-first names, inline writes and failed drafts, photos, quantity, move, scoped Ask, keyboard, large text and protected swipe dismissal.
 - No real customer data or production API is used by these fixtures. Physical iPhone/VoiceOver acceptance remains unverified.
 
-Delivery receipts and final checks will be recorded here after completion. Private build/signing material is kept outside the repository in `projects/findez-space176-private`.
+Apple acknowledged TestFlight1.1.2(176), delivery d43dbc9d-223f-424f-a546-4550133eeaaa. Processing and tester availability remain pending/unpolled. No public App Store submission. Source 871fb57ca13d7d647024ec3b2d36a309d22ac7d1. See testflight176-receipt.json. Private build/signing material is kept outside the repository in `projects/findez-space176-private`.
