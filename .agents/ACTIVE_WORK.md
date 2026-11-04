@@ -1395,3 +1395,13 @@ retention/order is API-owned; existing galleries remain private. Dashboard untou
 
 ## November 2 — contextual Ask FindEZ button
 - Complete on `feat/app-theme`: floating launcher has a silver-grey gradient, highlight, dark text and subtle hover/pressed states. CSS only; reduced-motion and forced-color support retained. Production build and 19 route/preservation checks pass; native Safari verified its appearance and chat open/close behavior. Build `7tFfespqwsMseG0zVD1P9` deployed and externally verified. Receipt: `docs/app-theme/ask-launcher-deployment.json`.
+
+
+## November3 — web Founding Access (active)
+
+Branch feat/founding-access-web uses the existing app-theme checkout. Replace the older PlanIntroduction launch with once-per-user/browser Founding Access; add a Plans & usage entry card. User explicitly authorizes self-hosted production deployment, overriding ZIP preview-only instructions. No billing/auth/API/schema/mobile/public-page changes. Current live base is ask-launcher-20261102; preserve unrelated runtime and configuration through a selective staged release. Baseline local Jest before edits:70 failures,433 passes,24 failed suites/42 passed. Compare final failures with this recorded baseline.
+
+
+## November3 — web Founding Access verified
+
+The once-per-browser/user modal and Plans card are implemented on feat/founding-access-web.16 new tests pass; final full suite449 passes/70 inherited failures with exact baseline failure identities unchanged. ESLint zero errors, production build/TypeScript pass.12 native Safari/Chrome theme/viewport cases pass with real component fixtures; no demo route ships. Staged production build r4JxNAEUD3hp1rgmLA_8H preserves public content and configuration, all unrelated source, and backend process. Self-hosted publication pending final commit/push. See docs/founding-access-web/IMPLEMENTATION.md.

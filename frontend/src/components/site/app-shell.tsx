@@ -45,7 +45,7 @@ import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
 import { NotificationPreview } from "./notification-preview";
 import { ContextChat, hasContextChat } from "./context-chat";
-import { PlanIntroduction } from "./plan-introduction";
+import { FoundingAccessProvider } from "@/components/founding-access/founding-access";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -89,6 +89,7 @@ export function AppShell({
   const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const accountPage =
@@ -110,6 +111,7 @@ export function AppShell({
       if (!current()) return;
       const user = data.session?.user;
       setUserId(user?.id || null);
+      setUserCreatedAt(user?.created_at || null);
       if (notificationAccount !== user?.id) {
         notificationAccount = user?.id;
         notificationGeneration++;
@@ -391,8 +393,8 @@ export function AppShell({
   );
   return (
     <AppThemeProvider>
+      <FoundingAccessProvider accountId={userId} createdAt={userCreatedAt} pathname={pathname}>
       {!accountPage && <AccountVerification prompt />}
-      {userId && /^\/worlds\/[^/]+$/.test(pathname) && <PlanIntroduction key={userId} accountId={userId} />}
       <div
         onPointerMove={(event) => {
           if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -539,6 +541,7 @@ export function AppShell({
           </DialogContent>
         </Dialog>
       </div>
+      </FoundingAccessProvider>
     </AppThemeProvider>
   );
 }

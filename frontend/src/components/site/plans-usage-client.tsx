@@ -7,6 +7,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { currentAccess, usageCount, usagePeriod } from "@/lib/plan-usage";
 import { PlanComparison } from "./plan-comparison";
 import styles from "./plans-usage.module.css";
+import { FoundingPlanCard } from "@/components/founding-access/founding-access";
 
 function UsageStat({ name, used, max, unmetered, period }: { name: string; used: unknown; max: unknown; unmetered?: boolean; period?: string | null }) {
   const count = usageCount(used), limit = usageCount(max);
@@ -56,6 +57,7 @@ export function AccountUsage({ accountId }: { accountId: string }) {
       <div><h1>Plans &amp; usage</h1><p>Your account, at a glance.</p></div>
       <button type="button" className={styles.secondary} disabled={busy} onClick={refresh} aria-label="Refresh usage"><RefreshCw size={15} aria-hidden="true"/>Refresh</button>
     </header>
+    <FoundingPlanCard accountId={accountId}/>
     {busy && <p className={styles.muted} role="status">Loading usage…</p>}
     {error && <div className={styles.error} role="alert"><p>Usage couldn’t be loaded. Your access hasn’t changed.</p><button className={styles.secondary} onClick={refresh}>Try again</button></div>}
     {data && <UsageOverview data={data} checkedAt={checkedAt}/>}
