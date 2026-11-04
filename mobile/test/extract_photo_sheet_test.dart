@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/app_theme.dart';
-import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/features/chat/auto_extract/extract_style.dart';
 
 Future<void> Function(String, Uint8List)? photoSheetCapture;
@@ -17,9 +16,11 @@ void main() {
       await File('/private/tmp/$name.png').writeAsBytes(bytes);
     };
   }
-  for (final brightness in Brightness.values) {
+  for (final mode in ThemeMode.values) {
     for (final compact in [false, true]) {
-      testWidgets('photo sheet ${brightness.name} compact=$compact', (t) async {
+      testWidgets('photo sheet ${mode.name} compact=$compact', (t) async {
+        t.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+        addTearDown(t.platformDispatcher.clearPlatformBrightnessTestValue);
         t.view.physicalSize = compact
             ? const Size(320, 568)
             : const Size(390, 844);
@@ -33,14 +34,16 @@ void main() {
           RepaintBoundary(
             key: const Key('photo-sheet-frame'),
             child: MaterialApp(
-              theme: AppTheme.create(brightness),
+              theme: AppTheme.create(Brightness.light),
+              darkTheme: AppTheme.create(Brightness.dark),
+              themeMode: mode,
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context).copyWith(
                   textScaler: TextScaler.linear(compact ? 2.6 : 1),
                   boldText: true,
                   disableAnimations: compact,
                 ),
-                child: AppTypography(child: child!),
+                child: child!,
               ),
               home: Navigator(
                 onGenerateRoute: (_) => MaterialPageRoute<void>(
@@ -65,6 +68,31 @@ void main() {
           await t.tap(find.text('Open photo'));
           await t.pumpAndSettle();
           expect(t.takeException(), isNull);
+          final sheet = find.byKey(const ValueKey('auto-extract-source-sheet'));
+          Color sheetColor() => t.widget<Material>(sheet).color!;
+          expect(sheetColor().computeLuminance() > .5, mode != ThemeMode.dark);
+          if (mode == ThemeMode.system) {
+            t.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+            await t.pumpAndSettle();
+            expect(sheetColor().computeLuminance(), lessThan(.1));
+            t.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+            await t.pumpAndSettle();
+            expect(sheetColor().computeLuminance(), greaterThan(.5));
+          }
+          for (final button in t.widgetList<FilledButton>(
+            find.byType(FilledButton),
+          )) {
+            final style = button.style!;
+            final color = style.backgroundColor!.resolve({})!;
+            expect(color.a, 1);
+            final marker = Container();
+            expect(
+              style.backgroundBuilder!(t.element(sheet), {}, marker),
+              same(marker),
+            );
+            expect(style.shape!.resolve({}), isA<StadiumBorder>());
+          }
+          if (!compact) expect(t.getSize(sheet).height, lessThan(300));
           if (photoSheetCapture != null) {
             await t.runAsync(() async {
               final boundary = t.renderObject<RenderRepaintBoundary>(
@@ -75,7 +103,7 @@ void main() {
                 format: ui.ImageByteFormat.png,
               );
               await photoSheetCapture!(
-                'photo-sheet-${brightness.name}-$compact',
+                'photo-sheet-${mode.name}-$compact',
                 data!.buffer.asUint8List(),
               );
               image.dispose();
@@ -90,6 +118,9 @@ void main() {
               (t.widget<RichText>(richText).text as TextSpan).style!.fontWeight,
               FontWeight.w400,
             );
+            final style = t.widget<RichText>(richText).text.style!;
+            expect(style.fontFamily, 'CupertinoSystemText');
+            expect(style.fontSize, label == 'Add from a photo' ? 18 : 16);
           }
           // A pre-existing keyboard must not hide the final source choice.
           if (compact) {
@@ -108,6 +139,19 @@ void main() {
           t.view.resetViewInsets();
           await t.pumpAndSettle();
         }
+        completed = false;
+        await t.tap(find.text('Open photo'));
+        await t.pumpAndSettle();
+        await t.dragFrom(
+          t.getTopLeft(
+                find.byKey(const ValueKey('auto-extract-source-handle')),
+              ) +
+              const Offset(18, 2),
+          const Offset(0, 160),
+        );
+        await t.pumpAndSettle();
+        expect(completed, isTrue);
+        expect(result, isNull);
         completed = false;
         await t.tap(find.text('Open photo'));
         await t.pumpAndSettle();

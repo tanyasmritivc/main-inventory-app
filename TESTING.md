@@ -1,3 +1,7 @@
+## Auto-extract source popup178
+
+Run `flutter test test/extract_photo_sheet_test.dart test/chat_capture_card_test.dart`, full Flutter tests and analyzer. The six popup cases cover Light/Dark/System, live appearance changes, narrow phones with2.6x text/keyboard/reduced motion, source results, nested navigation, local regular SF Pro, opaque buttons and dismissal. Run `flutter test integration_test/auto_extract_popup_test.dart -d <simulator> --no-pub` for native rendering and preserve `PHOTO_SHEET_IMAGE` paths before test-runner cleanup. Physical camera/photo-library permissions and device acceptance remain separate from these controlled fixtures.
+
 ## Space capture and galleries177
 
 Run full Flutter tests and analyzer. `space_v2_test.dart` covers swipe/tap parity, gallery paging/full images, partial multi-upload failure, direct camera/library cancellation, spreadsheet presentation above Space chat, keyboard-safe fields, all sorts and appearance modes. `space_capture_entry_test.dart` checks immediate menus, camera/barcode/import routes, permissions and large text. `photo_scan_card_test.dart` checks the plain scan stage, preserved aspect, reduced motion and review/stop/retry behavior. `app_typography_test.dart` verifies regular SF Pro, a16pt ordinary default, deliberate heading sizes, and preserved system scaling with OS Bold Text enabled.
