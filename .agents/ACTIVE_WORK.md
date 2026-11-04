@@ -1,6 +1,8 @@
-## November 3 - Sequential Space polish, photo scan, web Founding Access
+## November 3 - Space polish delivered to TestFlight173
 
-User explicitly requests all three supplied ZIPs ONE BY ONE, overriding any no-push/no-deploy text. First lane: `feat/space-polish` from delivered build172, preparing build173. Existing Space widgets and shared riso helper only; no new review API. Review count unavailable locally, so preserve its label/card as the package permits. Native/profile and release checks in progress. Next, only after this ships: photo scan mobile/TestFlight, then web Founding Access/self-hosted deployment. Preserve production VM changes and all existing API/data contracts.
+First of the user's three sequential packages is complete. Apple acknowledged 1.1.2 (173), runtime `6091565f8a74011dffec3b6c2fa0ced3f357692a`, delivery `b052bbd1-56cb-49af-9702-4ab31ae4600f`. Branch `feat/space-polish`, PR304, processing VALID, requested notes verified. Existing Space rows use shared cached risograph art, Inter Tight title, requested row typography and right-aligned sort label. Low quantity hides at zero. Review count is not available locally; the package's explicit exception preserves its label/card without a new API call. No data/API/backend changes.
+
+Validation: 1,329 Flutter tests (one skip), 17 focused and native checks, clean analyzer, five exact-source CI gates, signed-package/Apple validation. Dedicated macOS profile scroll: 300 items, 277 frames, build p95 4.235ms, no build frame over16.67ms; not physical iPhone acceptance. See `docs/space-polish/IMPLEMENTATION.md` and receipt. Next authorized lane: photo-scan mobile/TestFlight, then web Founding Access on the self-hosted site. User overrides package no-push/no-deploy instructions. No public App Store submission.
 
 ## November 3 - Founding Access delivered to TestFlight172
 

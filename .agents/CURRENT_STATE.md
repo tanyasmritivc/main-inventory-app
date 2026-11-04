@@ -1,3 +1,9 @@
+## November 3 - Space polish delivered to TestFlight173
+
+First of the user's three sequential packages is complete. Apple acknowledged 1.1.2 (173), runtime `6091565f8a74011dffec3b6c2fa0ced3f357692a`, delivery `b052bbd1-56cb-49af-9702-4ab31ae4600f`. Branch `feat/space-polish`, PR304, processing VALID, requested notes verified. Existing Space rows use shared cached risograph art, Inter Tight title, requested row typography and right-aligned sort label. Low quantity hides at zero. Review count is not available locally; the package's explicit exception preserves its label/card without a new API call. No data/API/backend changes.
+
+Validation: 1,329 Flutter tests (one skip), 17 focused and native checks, clean analyzer, five exact-source CI gates, signed-package/Apple validation. Dedicated macOS profile scroll: 300 items, 277 frames, build p95 4.235ms, no build frame over16.67ms; not physical iPhone acceptance. See `docs/space-polish/IMPLEMENTATION.md` and receipt. Next authorized lane: photo-scan mobile/TestFlight, then web Founding Access on the self-hosted site. User overrides package no-push/no-deploy instructions. No public App Store submission.
+
 ## November 3 - Founding Access delivered to TestFlight172
 
 Apple acknowledged FindEZ 1.1.2 (172), runtime `905af39a9ce1d0b43d0ac6a2cf67ef1f0c7053dc`, delivery `d5553ee7-a4d2-4fb7-88a2-cda177976f59`. Branch `feat/founding-access-sheet` and draft PR303 are pushed from the existing checkout, based on build171. Native informational Founding Access welcome/details replaces the post-signup plan popup for locally recorded new accounts after Ask is ready; Settings Plans now includes Your plan. Supplied fonts/art are bundled. No billing, API, database, backend, web, inventory or dependency changes.

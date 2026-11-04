@@ -1,0 +1,66 @@
+{
+  "version": "1.1.2",
+  "build": 173,
+  "source_commit": "6091565f8a74011dffec3b6c2fa0ced3f357692a",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "b2be657c0f313c807d27cd1c263e862f7b1434900d2a1d27bce7f5a8f0e8c064",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "b052bbd1-56cb-49af-9702-4ab31ae4600f",
+  "processing": "VALID",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "testflight_notes_verified": true,
+  "branch": "feat/space-polish",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/304",
+  "ci_run": 41744964899,
+  "ci_jobs": [
+    {
+      "name": "API permissions (PostgreSQL)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Mobile (Flutter)",
+      "conclusion": "success"
+    },
+    {
+      "name": "AI connectors (MCP and Actions)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Backend (Python)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Web (Jest)",
+      "conclusion": "success"
+    }
+  ],
+  "flutter_tests": 1329,
+  "existing_skips": 1,
+  "native_checks": 17,
+  "focused_checks": 17,
+  "analyzer": "clean",
+  "profile": {
+    "frames": 277,
+    "build_p95_ms": 4.235,
+    "raster_p95_ms": 0.001,
+    "build_over_16ms": 0,
+    "raster_over_16ms": 0,
+    "items": 300,
+    "platform": "macOS profile",
+    "cached_palettes": 4
+  },
+  "review_count_available": false,
+  "physical_device_acceptance": "unverified",
+  "testflight_notes": {
+    "build": 173,
+    "locale": "en-US",
+    "whatsNew": "Space screen polish: risograph tiles for items without photos, Review count, new title font, tidier rows. Check Fastener DB scrolls smoothly.",
+    "verified": true
+  }
+}
