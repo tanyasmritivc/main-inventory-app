@@ -1,3 +1,11 @@
+## November 3 — Photo scan175 ready for release
+
+The existing main Ask scan card now uses the supplied riso design and the same review selection/save path. All other main Ask behavior is preserved. 1,351 Flutter tests pass (one skip), analyzer clean, native layout/stop/retry/viewport checks pass, and five real production scans produced unsaved drafts. Disposable accounts and34 test images were removed; no inventory writes. API has crops but no boxes/real progress, so notes are truthful about thumbnails after extraction. See docs/photo-scan/IMPLEMENTATION.md. Build175 signing/CI/upload pending; self-hosted web Founding Access remains next.
+
+## November 3 — Photo scan card in place, build175 active
+
+Branch `feat/photo-scan-riso` from delivered174 receipt ac7ce41. User explicitly corrected the earlier skip decision: apply the photo-scan instructions inside main Ask only. Replace ExtractScanning in place; preserve requests, parser, saved-data behavior, existing review and all other main Ask UI. Live API returns a complete draft, optional crop URLs, no boxes or numeric progress. Reuse RisoPalette/RisoTile and Inter Tight. Existing ChatCaptureCard selected state and callbacks remain authoritative. After TestFlight175, implement/deploy web Founding Access.
+
 ## November 3 — Space interactions delivered174; photo scan next
 
 Apple acknowledged build174, runtime `2312c0af9bf7b945c9212db61f74a34e20d6cca7`, delivery `3209d1a0-bb6a-464d-9580-29acfa9ede12`. Five CI gates passed; companion Space chat is deployed and real HTTPS QA passed. See docs/space-item-interactions receipt. Latest user clarification authorizes only the photo-scan ZIP changes inside main Ask; the rest of main Ask remains protected. Photo-scan build175 next, then self-hosted web Founding Access.
@@ -2582,3 +2590,8 @@ User added a UI-only follow-up during build157 packaging. Hold upload of the fir
 Build 1.1.1 (157), runtime source fbfde35014185b8d6ee482eb7c86dea420bf3871, was acknowledged by Apple (9b63d37e-f88d-4fe8-ad28-d017e6e54ff5). Monochrome interface surfaces replace orange/blue/cream; contextual Ask uses gray glass; pages have a subtle settle with faster tab selection. Default text rises about7% (.90→.96) through the existing scaler with SF Pro and accessibility preserved. Extraction has bounded glass, actual stream status with a native activity indicator, grouped review rows and pinned existing destination/save controls when space permits; small/keyboard/large-text layouts scroll safely. No features, API behavior, chat scopes or web changes.
 
 Validation: 1,211 Flutter tests, one existing skip, clean analysis, 85 focused extraction/appearance checks, 21 native layout/motion checks plus9 native extraction/keyboard checks and a loader visual recapture. All five CI jobs passed on final source (40831509387). Signed IPA/device binaries verified (34 archive +34 export),26 privacy manifests, production config, SF Pro font manifest and Apple validation passed. Artifacts/receipts: Documents/FindEZ/AppStore/1.1.1-build157. Processing/tester availability remain pending and unpolled; physical-device visual acceptance is unverified. Main remains1c97e1f; no public App Store submission. PR273 remains isolated from main.
+
+
+## November3 — photo scan TestFlight175 delivered
+
+User authorized the scan-card change inside main Ask; other main Ask behavior remains intact. Source395b3c522d2f729fce9e51f0db97492db50c3b03 passed five CI gates,1351 Flutter tests (one skip), clean analysis, eight native card cases, one actual Ask lifecycle case and five disposable production scan cases. Build1.1.2(175) acknowledged by Apple026b66da-c3d5-47cb-8a52-dc2d8e4b347a. Apple processing VALID and notes verified; tester availability unverified. Physical camera/VoiceOver acceptance unverified. No API/schema/public submission change. Details and verification in docs/photo-scan.

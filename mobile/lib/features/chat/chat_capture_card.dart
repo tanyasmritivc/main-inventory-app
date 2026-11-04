@@ -30,6 +30,8 @@ class ChatCaptureCard extends StatefulWidget {
     this.photoBytes,
     this.onAsk,
     this.onAddPhoto,
+    this.scanPreview = false,
+    this.onRetake,
   });
   final ApiClient api;
   final String conversationId;
@@ -40,7 +42,8 @@ class ChatCaptureCard extends StatefulWidget {
   final bool disabled, embedded;
   final Uint8List? photoBytes;
   final ValueChanged<String>? onAsk;
-  final VoidCallback? onAddPhoto;
+  final VoidCallback? onAddPhoto, onRetake;
+  final bool scanPreview;
   @override
   State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
@@ -53,6 +56,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
   final Set<int> _excluded = {};
   final Set<String> _deleted = {};
   bool _undone = false;
+  bool _photoReviewOpen = false;
   int? _highlight;
   Timer? _highlightTimer;
   bool get _photoFlow => _draft['source_kind'] == 'photo';
@@ -1027,7 +1031,43 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_photoFlow) return _photoBody(context);
+    if (_photoFlow) {
+      if (widget.scanPreview &&
+          !_photoReviewOpen &&
+          _draft['status'] == 'draft' &&
+          widget.photoBytes != null) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ExtractScanning(
+              photo: widget.photoBytes!,
+              message: '',
+              done: true,
+              rows: _rows,
+              onToggle: _editable
+                  ? (row) => _photoPatch({
+                      'index': row['index'],
+                      'selected': row['selected'] != true,
+                    })
+                  : null,
+              onReview: _editable
+                  ? () => setState(() => _photoReviewOpen = true)
+                  : null,
+              onRetake: _editable ? widget.onRetake : null,
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  _error!,
+                  style: ExtractStyle.text(14, color: ExtractStyle.red),
+                ),
+              ),
+          ],
+        );
+      }
+      return _photoBody(context);
+    }
     final rows = _rows;
     final selected = rows.where((r) => r['selected'] == true).length;
     final receipt = _draft['receipt'] as Map?;

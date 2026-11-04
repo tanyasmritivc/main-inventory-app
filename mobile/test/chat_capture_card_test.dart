@@ -111,6 +111,7 @@ void main() {
     WidgetTester t, {
     Brightness brightness = Brightness.light,
     double scale = 1,
+    bool scanPreview = false,
     ValueChanged<AskResourceLink>? onOpen,
   }) async {
     // Native keyboard insets use device pixels. A fake 390px view with DPR 1
@@ -138,6 +139,7 @@ void main() {
             padding: const EdgeInsets.fromLTRB(16, 54, 16, 24),
             child: ChatCaptureCard(
               api: api,
+              scanPreview: scanPreview,
               conversationId: 'conversation',
               draft: value,
               photoBytes:
@@ -153,6 +155,36 @@ void main() {
     );
     await t.pumpAndSettle();
   }
+
+  testWidgets(
+    'scan preview selection is the existing review selection; review saves nothing',
+    (t) async {
+      value['source_kind'] = 'photo';
+      value.addAll({
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      });
+      await mount(t, scanPreview: true);
+      await t.ensureVisible(find.text('Drill'));
+      await t.tap(find.text('Drill'));
+      await t.pumpAndSettle();
+      expect(value['items'][0]['selected'], false);
+      expect(find.text('Review 1 item'), findsOneWidget);
+      await t.ensureVisible(find.text('Review 1 item'));
+      await t.tap(find.text('Review 1 item'));
+      await t.pumpAndSettle();
+      expect(find.text('Save 1 item'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == 'Include Drill',
+        ),
+        findsOneWidget,
+      );
+      expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+      expect(t.takeException(), isNull);
+    },
+  );
 
   for (final count in [1, 4, 12]) {
     testWidgets(
