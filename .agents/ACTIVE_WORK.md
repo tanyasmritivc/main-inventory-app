@@ -1,3 +1,11 @@
+## November 3 — Photo scan175 ready for release
+
+The existing main Ask scan card now uses the supplied riso design and the same review selection/save path. All other main Ask behavior is preserved. 1,351 Flutter tests pass (one skip), analyzer clean, native layout/stop/retry/viewport checks pass, and five real production scans produced unsaved drafts. Disposable accounts and34 test images were removed; no inventory writes. API has crops but no boxes/real progress, so notes are truthful about thumbnails after extraction. See docs/photo-scan/IMPLEMENTATION.md. Build175 signing/CI/upload pending; self-hosted web Founding Access remains next.
+
+## November 3 — Photo scan card in place, build175 active
+
+Branch `feat/photo-scan-riso` from delivered174 receipt ac7ce41. User explicitly corrected the earlier skip decision: apply the photo-scan instructions inside main Ask only. Replace ExtractScanning in place; preserve requests, parser, saved-data behavior, existing review and all other main Ask UI. Live API returns a complete draft, optional crop URLs, no boxes or numeric progress. Reuse RisoPalette/RisoTile and Inter Tight. Existing ChatCaptureCard selected state and callbacks remain authoritative. After TestFlight175, implement/deploy web Founding Access.
+
 ## November 3 — Space interactions delivered174; photo scan next
 
 Apple acknowledged build174, runtime `2312c0af9bf7b945c9212db61f74a34e20d6cca7`, delivery `3209d1a0-bb6a-464d-9580-29acfa9ede12`. Five CI gates passed; companion Space chat is deployed and real HTTPS QA passed. See docs/space-item-interactions receipt. Latest user clarification authorizes only the photo-scan ZIP changes inside main Ask; the rest of main Ask remains protected. Photo-scan build175 next, then self-hosted web Founding Access.

@@ -11,7 +11,7 @@
   "uploaded": true,
   "apple_validation": true,
   "delivery_uuid": "3209d1a0-bb6a-464d-9580-29acfa9ede12",
-  "processing": "pending, not polled",
+  "processing": "VALID",
   "tester_availability": "unverified",
   "public_app_store_submission_changed": false,
   "ci_run": "41751956906",
@@ -21,5 +21,6 @@
   "native_scenarios": 22,
   "backend_runtime": "d80a06f023c9cf96460ea611aa313c2cb0fab026",
   "backend_deployed": true,
-  "backend_live_qa_passed": true
+  "backend_live_qa_passed": true,
+  "testflight_notes_verified": true
 }

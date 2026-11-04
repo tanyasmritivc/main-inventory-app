@@ -1200,11 +1200,12 @@ void main() {
       final pending = StreamController<AiStreamEvent>();
       addTearDown(pending.close);
       final focused = <bool>[];
+      final api = _AskApi(world: true, pending: pending);
       await tester.pumpWidget(
         RepaintBoundary(
           key: const Key('preview-audit-frame'),
           child: _page(
-            _AskApi(world: true, pending: pending),
+            api,
             photoPicker: (_) async => AskPhoto(bytes: extractPhotoFixture),
             onChatStateChanged: focused.add,
           ),
@@ -1219,14 +1220,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(focused.last, isTrue);
-      expect(find.text('Scanning photo...'), findsOneWidget);
+      expect(find.text('Looking at your photo'), findsOneWidget);
       expect(
         tester
             .widget<LinearProgressIndicator>(
               find.byType(LinearProgressIndicator),
             )
             .value,
-        isNull,
+        inInclusiveRange(.14, .9),
       );
       pending.add(
         AiStreamEvent(
@@ -1235,15 +1236,15 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('Analyzing details...'), findsOneWidget);
+      expect(find.text('Looking at your photo'), findsOneWidget);
       expect(find.textContaining('8 objects'), findsNothing);
       pending.add(
         AiStreamEvent(type: 'status', message: 'Reading your photo...'),
       );
       await tester.pump();
-      expect(find.text('Analyzing details...'), findsOneWidget);
+      expect(find.text('Looking at your photo'), findsOneWidget);
       await tester.pump(const Duration(seconds: 4));
-      expect(find.text('Analyzing details...'), findsOneWidget);
+      expect(find.text('Looking at your photo'), findsOneWidget);
       expect(find.text('Preparing your review...'), findsNothing);
       final viewport = tester.getRect(
         find.byKey(const Key('chat-full-viewport')),
@@ -1257,10 +1258,13 @@ void main() {
         lessThanOrEqualTo(tester.getRect(find.byType(WorldComposer)).top),
       );
       expect(find.byType(Image), findsOneWidget);
-      expect(tester.getSize(find.byType(Image)).height, lessThanOrEqualTo(240));
+      expect(
+        tester.getSize(find.byKey(const Key('scan-photo-stage'))).height,
+        300,
+      );
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.byTooltip('Stop response').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Stop scan').hitTestable(), findsOneWidget);
       if (previewAuditCapture != null) {
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(const Key('preview-audit-frame')),
@@ -1276,14 +1280,55 @@ void main() {
 
       await tester.enterText(find.byType(TextField).first, 'Keep this draft');
       await tester.pump();
-      await tester.tap(find.byTooltip('Stop response'));
+      await tester.tap(find.byTooltip('Stop scan'));
       await tester.pumpAndSettle();
       expect(find.text('Keep this draft'), findsOneWidget);
+      expect(find.text('Scan stopped'), findsOneWidget);
+      expect(find.text('Scan again'), findsOneWidget);
       expect(find.byType(ChatCaptureCard), findsNothing);
+      api.pending = null;
+      await tester.tap(find.text('Scan again'));
+      await tester.pumpAndSettle();
+      expect(api.photos, hasLength(2));
+      expect(identical(api.photos[0].bytes, api.photos[1].bytes), isTrue);
+      expect(find.text('Keep this draft'), findsOneWidget);
+      expect(find.text('Review 1 item'), findsOneWidget);
+      expect(
+        tester.getRect(find.text('Review 1 item')).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(WorldComposer)).top),
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets('failed scan retries the same photo and retains the note', (
+    tester,
+  ) async {
+    final api = _AskApi(world: true, fail: true);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Auto Extract'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Library'));
+    await tester.pumpAndSettle();
+    expect(find.text("Couldn't read this photo"), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Keep the blue pen');
+    api.fail = false;
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(api.photos, hasLength(2));
+    expect(identical(api.photos[0].bytes, api.photos[1].bytes), isTrue);
+    expect(find.text('Keep the blue pen'), findsOneWidget);
+    expect(find.text('Review 1 item'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('reset ignores late photo picker completion', (tester) async {
     final picker = Completer<AskPhoto?>();
@@ -1459,6 +1504,12 @@ void main() {
     expect(find.byType(ChatCaptureCard), findsOneWidget);
     expect(find.byType(AskQuestionCard), findsNothing);
     expect(find.byType(ChatCaptureCard), findsOneWidget);
+    expect(find.text('1 item found'), findsOneWidget);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Review 1 item'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Review 1 item'));
+    await tester.pumpAndSettle();
     expect(find.text('I found 1 item.'), findsOneWidget);
   });
 }

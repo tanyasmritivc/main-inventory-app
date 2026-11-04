@@ -278,9 +278,12 @@ class _ChatPageState extends State<ChatPage>
   AskPhoto? _photo;
   Map<String, dynamic>? _previewDraft;
   bool _scanningPreview = false;
+  bool _scanStopped = false;
+  String? _scanError;
   AskPhoto? _extractionPhoto;
   bool _savingCapture = false;
   final _previewKey = GlobalKey<ChatCaptureCardState>();
+  final _scanCardKey = GlobalKey();
   bool _pickingPhoto = false;
   String? _cameraHintOwner;
   bool get _cameraHint =>
@@ -514,6 +517,8 @@ class _ChatPageState extends State<ChatPage>
       _previewDraft = null;
       _scanningPreview = false;
       _extractionPhoto = null;
+      _scanStopped = false;
+      _scanError = null;
       _photo = null;
       _pickingPhoto = false;
       _sending = false;
@@ -3194,6 +3199,8 @@ class _ChatPageState extends State<ChatPage>
       );
       _previewDraft = null;
       _extractionPhoto = null;
+      _scanStopped = false;
+      _scanError = null;
     });
     widget.onChatStateChanged?.call(true);
   }
@@ -3207,6 +3214,8 @@ class _ChatPageState extends State<ChatPage>
     setState(() {
       _photo = null;
       _scanningPreview = true;
+      _scanStopped = false;
+      _scanError = null;
       _pickingPhoto = true;
       _worldHome = false;
       _progress = 'Preparing your photo...';
@@ -3256,20 +3265,25 @@ class _ChatPageState extends State<ChatPage>
       }
     } catch (_) {
       if (mounted && generation == _requestGeneration) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Could not finish scanning. Your photo is ready to retry.',
+        if (_previewDraft == null) {
+          setState(
+            () => _scanError =
+                'Could not finish scanning. Your photo is ready to retry.',
+          );
+        } else {
+          // Extraction is durable even when the subsequent model reply fails.
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Could not finish scanning. Your photo is ready to retry.',
+              ),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: _retryExtraction,
+              ),
             ),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () {
-                setState(() => _photo = photo);
-                unawaited(_extractPreview());
-              },
-            ),
-          ),
-        );
+          );
+        }
       }
     } finally {
       unawaited(iterator.cancel());
@@ -3280,12 +3294,17 @@ class _ChatPageState extends State<ChatPage>
           _pickingPhoto = false;
           _progress = null;
         });
+        _scrollScanIntoView();
       }
     }
   }
 
   Widget _extractionUserPhoto(AskPhoto photo) =>
-      _scanningPreview && identical(photo.bytes, _extractionPhoto?.bytes)
+      (_scanningPreview ||
+              _previewDraft != null ||
+              _scanStopped ||
+              _scanError != null) &&
+          identical(photo.bytes, _extractionPhoto?.bytes)
       ? const SizedBox.shrink()
       : Align(
           alignment: Alignment.centerRight,
@@ -3319,23 +3338,50 @@ class _ChatPageState extends State<ChatPage>
       _pickingPhoto = false;
       _progress = null;
       _previewDraft = null;
-      _extractionPhoto = null;
-      _session.messages.add(
-        _ChatMessage(
-          role: 'assistant',
-          content: 'Stopped. Nothing was saved.',
-          timestamp: _nowTs(),
+      _scanStopped = true;
+      _scanError = null;
+    });
+    _scrollScanIntoView();
+  }
+
+  void _scrollScanIntoView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _scanCardKey.currentContext;
+      if (!mounted || target == null) return;
+      unawaited(
+        Scrollable.ensureVisible(
+          target,
+          alignment: 1,
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 450),
+          curve: const Cubic(.32, .72, 0, 1),
         ),
       );
     });
   }
 
+  void _retryExtraction() {
+    if (_extractionPhoto == null || _scanningPreview || _sending) return;
+    setState(() => _photo = _extractionPhoto);
+    unawaited(_extractPreview());
+  }
+
   Widget _capturePreview() => Padding(
+    key: _scanCardKey,
     padding: const EdgeInsets.only(top: 16, bottom: 12),
-    child: _scanningPreview && _extractionPhoto != null
+    child:
+        (_scanningPreview || _scanStopped || _scanError != null) &&
+            _extractionPhoto != null
         ? ExtractScanning(
             photo: _extractionPhoto!.bytes,
             message: _progress ?? 'Reading your photo…',
+            stopped: _scanStopped,
+            error: _scanError,
+            onRetry: _retryExtraction,
+            rows: (_previewDraft?['items'] as List? ?? [])
+                .map((row) => Map<String, dynamic>.from(row as Map))
+                .toList(),
           )
         : _previewDraft != null && _currentConversationId != null
         ? ChatCaptureCard(
@@ -3344,6 +3390,9 @@ class _ChatPageState extends State<ChatPage>
             conversationId: _currentConversationId!,
             draft: _previewDraft!,
             photoBytes: _extractionPhoto?.bytes,
+            scanPreview: true,
+            onRetake: () =>
+                unawaited(_attachPhoto(source: true, autoExtract: true)),
             disabled: _scanningPreview,
             onChanged: _onCaptureChanged,
             onOpenResource: widget.onOpenDestination == null
@@ -3654,7 +3703,10 @@ class _ChatPageState extends State<ChatPage>
                   children: [
                     _voiceDimmed(_buildEmptyState()),
                     const SizedBox(height: 12),
-                    if (_previewDraft != null || _scanningPreview)
+                    if (_previewDraft != null ||
+                        _scanningPreview ||
+                        _scanStopped ||
+                        _scanError != null)
                       _capturePreview(),
                     if (_photo != null) _photoPreview(),
                     WorldComposer(
@@ -3681,9 +3733,11 @@ class _ChatPageState extends State<ChatPage>
                       voiceSession: _voice,
                       extractionActive: _scanningPreview,
                       placeholder: _scanningPreview
-                          ? 'Add a note while scanning...'
+                          ? 'Add a note while scanning…'
                           : _previewDraft != null
-                          ? 'Or tell me what to change…'
+                          ? (_previewDraft?['source_kind'] == 'photo'
+                                ? 'Ask about these items…'
+                                : 'Or tell me what to change…')
                           : null,
                       onStop: _scanningPreview
                           ? _stopExtraction
@@ -3858,7 +3912,11 @@ class _ChatPageState extends State<ChatPage>
                         ),
                 ),
               ),
-            if (_previewDraft != null || _scanningPreview) _capturePreview(),
+            if (_previewDraft != null ||
+                _scanningPreview ||
+                _scanStopped ||
+                _scanError != null)
+              _capturePreview(),
           ],
           footer: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3888,9 +3946,11 @@ class _ChatPageState extends State<ChatPage>
                 voiceSession: _voice,
                 extractionActive: _scanningPreview,
                 placeholder: _scanningPreview
-                    ? 'Add a note while scanning...'
+                    ? 'Add a note while scanning…'
                     : _previewDraft != null
-                    ? 'Or tell me what to change…'
+                    ? (_previewDraft?['source_kind'] == 'photo'
+                          ? 'Ask about these items…'
+                          : 'Or tell me what to change…')
                     : null,
                 onStop: _scanningPreview
                     ? _stopExtraction
@@ -3958,7 +4018,11 @@ class _ChatPageState extends State<ChatPage>
                       ),
               ),
             ),
-          if (_previewDraft != null || _scanningPreview) _capturePreview(),
+          if (_previewDraft != null ||
+              _scanningPreview ||
+              _scanStopped ||
+              _scanError != null)
+            _capturePreview(),
         ],
         footer: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3985,9 +4049,11 @@ class _ChatPageState extends State<ChatPage>
                 voiceSession: _voice,
                 extractionActive: _scanningPreview,
                 placeholder: _scanningPreview
-                    ? 'Add a note while scanning...'
+                    ? 'Add a note while scanning…'
                     : _previewDraft != null
-                    ? 'Or tell me what to change…'
+                    ? (_previewDraft?['source_kind'] == 'photo'
+                          ? 'Ask about these items…'
+                          : 'Or tell me what to change…')
                     : null,
                 onStop: _scanningPreview
                     ? _stopExtraction

@@ -1,0 +1,44 @@
+{
+  "scans": [
+    {
+      "scenario": "portrait",
+      "items": 8,
+      "crop_urls": 8,
+      "draft_status": "draft"
+    },
+    {
+      "scenario": "landscape",
+      "items": 8,
+      "crop_urls": 8,
+      "draft_status": "draft"
+    },
+    {
+      "scenario": "one-item",
+      "items": 4,
+      "crop_urls": 4,
+      "draft_status": "draft"
+    },
+    {
+      "scenario": "many-items",
+      "items": 8,
+      "crop_urls": 8,
+      "draft_status": "draft"
+    },
+    {
+      "scenario": "single-bearing",
+      "items": 1,
+      "crop_urls": 1,
+      "draft_status": "draft"
+    }
+  ],
+  "cleanup": {
+    "no_inventory_writes": true,
+    "test_images_removed": 32,
+    "disposable_account_removed": true
+  },
+  "single_object_cleanup": {
+    "no_inventory_writes": true,
+    "test_images_removed": 2,
+    "disposable_account_removed": true
+  }
+}

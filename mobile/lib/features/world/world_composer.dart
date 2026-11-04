@@ -345,19 +345,28 @@ class _WorldComposerState extends State<WorldComposer>
                     widget.onStop != null) ...[
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    tooltip: widget.onStop != null
+                    tooltip: widget.extractionActive
+                        ? 'Stop scan'
+                        : widget.onStop != null
                         ? 'Stop response'
                         : 'Send message',
                     onPressed: widget.onStop ?? widget.onSend,
                     style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.onSurface,
-                      foregroundColor: Theme.of(context).colorScheme.surface,
+                      minimumSize: widget.extractionActive
+                          ? const Size(46, 46)
+                          : null,
+                      backgroundColor: widget.extractionActive
+                          ? const Color(0xFFF4F4F5)
+                          : Theme.of(context).colorScheme.onSurface,
+                      foregroundColor: widget.extractionActive
+                          ? const Color(0xFF0B0B0C)
+                          : Theme.of(context).colorScheme.surface,
                       disabledBackgroundColor: Theme.of(
                         context,
                       ).colorScheme.onSurface.withValues(alpha: .06),
                     ),
                     icon: widget.extractionActive
-                        ? const Icon(CupertinoIcons.stop_fill, size: 12)
+                        ? const Icon(CupertinoIcons.stop_fill, size: 13)
                         : widget.busy || widget.onStop != null
                         ? SizedBox(
                             width: 19,
