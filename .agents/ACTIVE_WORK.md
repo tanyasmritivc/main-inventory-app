@@ -1,3 +1,15 @@
+## November 3 — Space interactions delivered174; photo scan next
+
+Apple acknowledged build174, runtime `2312c0af9bf7b945c9212db61f74a34e20d6cca7`, delivery `3209d1a0-bb6a-464d-9580-29acfa9ede12`. Five CI gates passed; companion Space chat is deployed and real HTTPS QA passed. See docs/space-item-interactions receipt. Latest user clarification authorizes only the photo-scan ZIP changes inside main Ask; the rest of main Ask remains protected. Photo-scan build175 next, then self-hosted web Founding Access.
+
+## November 3 - Space item interactions ready for release checks
+
+`feat/space-item-interactions` implements inline info, full photos, grey actions, full-width blur, part-first sorting and swipe dismissal outside main Ask. Build174 targets the companion authenticated Space-chat fix. Main Ask is preserved; see `docs/space-item-interactions/IMPLEMENTATION.md`. Photo-scan and web Founding Access ZIPs remain next in order.
+
+## November 3 - Additional Space/item interaction pass, build174
+
+User adds tap-to-edit item information, removal of bottom Edit, opaque gray Ask in item info, swipe-down dismissal for ALL sheets outside main Ask/chat (explicitly confirmed), blurred full-width Space header with floating controls, smooth full-photo opening and tap-to-add photo, part-number-first rows and truthful sort, plain oval Review/Low quantity buttons, and fixing interrupted Space Ask with actual local scope. Main Ask/chat must remain unchanged; baseline hashes captured privately. Screenshots did not arrive (only Image1-9 placeholders); working from written description. Apply requests one by one on `feat/space-item-interactions` from delivered173. Then resume photo-scan ZIP/TestFlight and web Founding Access/self-hosted deployment. All pushes/deployments explicitly authorized; no main merge/public App Store submission.
+
 ## November 3 - Space polish delivered to TestFlight173
 
 First of the user's three sequential packages is complete. Apple acknowledged 1.1.2 (173), runtime `6091565f8a74011dffec3b6c2fa0ced3f357692a`, delivery `b052bbd1-56cb-49af-9702-4ab31ae4600f`. Branch `feat/space-polish`, PR304, processing VALID, requested notes verified. Existing Space rows use shared cached risograph art, Inter Tight title, requested row typography and right-aligned sort label. Low quantity hides at zero. Review count is not available locally; the package's explicit exception preserves its label/card without a new API call. No data/API/backend changes.

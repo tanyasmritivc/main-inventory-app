@@ -265,7 +265,11 @@ void main() {
           expect(chosen?['inventory_id'], 'Inventory 15');
           await tester.tap(find.text('Open picker'));
           await tester.pumpAndSettle();
-          await tester.tap(find.byTooltip('Close inventory picker'));
+          await tester.dragFrom(
+            tester.getRect(find.byType(BottomSheet)).topCenter +
+                const Offset(0, 16),
+            const Offset(0, 500),
+          );
           await tester.pumpAndSettle();
           expect(chosen, isNull);
           expect(tester.takeException(), isNull);

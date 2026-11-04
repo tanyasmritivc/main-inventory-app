@@ -60,21 +60,11 @@ class SpaceChatHeader extends StatelessWidget {
       icon: Icons.edit_square,
       onTap: onNew,
     );
-    final close = SpaceCircle(
-      label: 'Close',
-      icon: Icons.close,
-      onTap: presentation.onClose,
-    );
     return Column(
       children: [
         const SpaceHandle(),
         if (MediaQuery.textScalerOf(context).scale(19) > 26) ...[
-          Row(
-            children: [
-              Expanded(child: title),
-              close,
-            ],
-          ),
+          Row(children: [Expanded(child: title)]),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -98,8 +88,6 @@ class SpaceChatHeader extends StatelessWidget {
               history,
               const SizedBox(width: 4),
               newChat,
-              const SizedBox(width: 4),
-              close,
             ],
           ),
       ],
@@ -138,7 +126,7 @@ class SpaceChatEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Find, count or change items in this inventory.',
+            'Find, count or change items in this Space.',
             style: SpaceStyle.text(
               28,
               SpaceStyle.tx3,

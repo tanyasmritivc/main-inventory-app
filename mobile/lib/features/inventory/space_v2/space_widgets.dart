@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../../../core/api_client.dart';
 import '../../../core/private_image.dart';
 import 'space_style.dart';
@@ -113,7 +114,7 @@ class SpaceItemRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.name,
+                        item.displayName,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: SpaceStyle.text(15.5).copyWith(
@@ -185,43 +186,46 @@ class SpaceStatusCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool active;
   @override
-  Widget build(BuildContext context) => Material(
-    color: active ? SpaceStyle.s2 : SpaceStyle.s1,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(18),
-      side: BorderSide(
-        color: active ? SpaceStyle.white : SpaceStyle.line,
-        width: active ? 1.5 : 1,
+  Widget build(BuildContext context) => Semantics(
+    label: '$title, $subtitle',
+    button: true,
+    child: Material(
+      color: active ? const Color(0xFFF4F4F5) : const Color(0xFFD4D4D8),
+      shape: StadiumBorder(
+        side: active
+            ? const BorderSide(color: Colors.white, width: 2)
+            : BorderSide.none,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          alignment: Alignment.center,
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: SpaceStyle.text(14.5, SpaceStyle.bg),
+          ),
+        ),
       ),
     ),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 60),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: SpaceStyle.card(11, SpaceStyle.s3),
-              child: Icon(icon, size: 18),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: SpaceStyle.text(14.5)),
-                  const SizedBox(height: 3),
-                  Text(subtitle, style: SpaceStyle.text(12.5, SpaceStyle.tx2)),
-                ],
-              ),
-            ),
-          ],
-        ),
+  );
+}
+
+/// Uniform blur behind the entire control area, including the status bar.
+class SpaceHeaderGlass extends StatelessWidget {
+  const SpaceHeaderGlass({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => ClipRect(
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+      child: ColoredBox(
+        color: SpaceStyle.bg.withValues(alpha: .68),
+        child: child,
       ),
     ),
   );
@@ -239,7 +243,7 @@ class SpacePinnedHeader extends SliverPersistentHeaderDelegate {
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => ColoredBox(color: SpaceStyle.bg, child: child);
+  ) => SpaceHeaderGlass(child: child);
   @override
   bool shouldRebuild(SpacePinnedHeader oldDelegate) => true;
 }

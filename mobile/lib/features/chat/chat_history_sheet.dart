@@ -223,11 +223,12 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                   _query = '';
                 }),
               ),
-              IconButton(
-                tooltip: 'Close history',
-                icon: const Icon(CupertinoIcons.xmark, size: 19),
-                onPressed: () => Navigator.pop(context),
-              ),
+              if (widget.api.chatSpaceId == null)
+                IconButton(
+                  tooltip: 'Close history',
+                  icon: const Icon(CupertinoIcons.xmark, size: 19),
+                  onPressed: () => Navigator.pop(context),
+                ),
             ],
           ),
           if (_searching)

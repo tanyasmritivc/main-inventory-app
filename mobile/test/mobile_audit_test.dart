@@ -162,7 +162,10 @@ void main() {
           .last,
     );
     await tester.enterText(find.byType(TextFormField), '2.');
-    await tester.tap(find.byTooltip('Close review'));
+    await tester.dragFrom(
+      tester.getCenter(find.byKey(const ValueKey('review-drag-handle'))),
+      const Offset(0, 350),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Discard changes?'), findsOneWidget);
     await tester.tap(find.text('Keep editing'));
@@ -244,7 +247,10 @@ void main() {
       maxScrolls: 100,
     );
     expect(tester.takeException(), isNull);
-    await tester.tap(find.byTooltip('Close review'));
+    await tester.dragFrom(
+      tester.getCenter(find.byKey(const ValueKey('review-drag-handle'))),
+      const Offset(0, 350),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Review capture'), findsNothing);
   });

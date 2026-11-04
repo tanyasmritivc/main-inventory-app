@@ -1,3 +1,4 @@
+import '../../core/ui/swipe_down_sheet.dart';
 import '../../core/ui/content_loading.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
@@ -27,7 +28,9 @@ Future<void> showReviewDetail(
     isScrollControlled: true,
     useSafeArea: true,
     enableDrag: false,
-    builder: (_) => _ReviewDetailSheet(api: api, item: item),
+    builder: (_) => SwipeDownSheet(
+      child: _ReviewDetailSheet(api: api, item: item),
+    ),
   );
 }
 
@@ -104,7 +107,9 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
       // Route drag dismissal bypasses PopScope. The handle below requests a
       // guarded close so pending saves and unsaved edits cannot be abandoned.
       enableDrag: false,
-      builder: (_) => _ReviewDetailSheet(api: widget.api, item: item),
+      builder: (_) => SwipeDownSheet(
+        child: _ReviewDetailSheet(api: widget.api, item: item),
+      ),
     );
     if (!mounted || outcome == null) return;
     setState(
@@ -499,13 +504,8 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
         ),
         child: Column(
           children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onVerticalDragEnd: (details) {
-                if ((details.primaryVelocity ?? 0) > 200) {
-                  unawaited(_requestClose());
-                }
-              },
+            SizedBox(
+              key: const ValueKey('review-drag-handle'),
               child: SizedBox(
                 width: double.infinity,
                 height: 24,
@@ -539,11 +539,6 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                         ),
                       ),
                     ),
-                  IconButton(
-                    tooltip: 'Close review',
-                    onPressed: _saving ? null : _requestClose,
-                    icon: const Icon(Icons.close_rounded),
-                  ),
                 ],
               ),
             ),

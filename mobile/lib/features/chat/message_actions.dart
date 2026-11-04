@@ -92,6 +92,7 @@ class _MessageActionsState extends State<MessageActions> {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: widget.api.chatSpaceId != null ? true : null,
       useSafeArea: true,
       builder: (context) => StatefulBuilder(
         builder: (context, update) => Padding(
@@ -109,11 +110,12 @@ class _MessageActionsState extends State<MessageActions> {
                 Row(
                   children: [
                     const Expanded(child: Text('What went wrong? (optional)')),
-                    IconButton(
-                      tooltip: 'Close feedback details',
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
+                    if (widget.api.chatSpaceId == null)
+                      IconButton(
+                        tooltip: 'Close feedback details',
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
                   ],
                 ),
                 DropdownButtonFormField<String>(

@@ -603,550 +603,560 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
       child: Builder(
         builder: (context) => Scaffold(
           backgroundColor: SpaceStyle.bg,
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                AnimatedBuilder(
-                  animation: _listScrollController,
-                  builder: (_, _) {
-                    final collapsed =
-                        _listScrollController.hasClients &&
-                        _listScrollController.offset > 70;
-                    return Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: collapsed
-                                ? SpaceStyle.line
-                                : Colors.transparent,
+          body: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    CustomScrollView(
+                      controller: _listScrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      slivers: [
+                        SliverAppBar(
+                          pinned: true,
+                          toolbarHeight: 56,
+                          elevation: 0,
+                          scrolledUnderElevation: 0,
+                          backgroundColor: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
+                          automaticallyImplyLeading: false,
+                          titleSpacing: 0,
+                          flexibleSpace: const SpaceHeaderGlass(
+                            child: SizedBox.expand(),
                           ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          SpaceCircle(
-                            label: 'Back',
-                            icon: Icons.chevron_left,
-                            onTap: () => Navigator.of(context).pop(_changed),
-                          ),
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 350),
-                              child: collapsed
-                                  ? Text(
-                                      _location,
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: SpaceStyle.text(17),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ),
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: SpaceStyle.card(22),
-                            child: NotificationBell(api: widget.api),
-                          ),
-                          const SizedBox(width: 8),
-                          PopupMenuButton<String>(
-                            tooltip: 'More',
-                            color: SpaceStyle.menu,
-                            constraints: const BoxConstraints.tightFor(
-                              width: 230,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
-                              side: const BorderSide(color: SpaceStyle.line2),
-                            ),
-                            onSelected: _onFabItemTap,
-                            itemBuilder: (_) => [
-                              if (!widget.readOnly && widget.api.canEdit)
-                                _spaceMenu(
-                                  'Import Spreadsheet',
-                                  Icons.table_chart_outlined,
+                          title: AnimatedBuilder(
+                            animation: _listScrollController,
+                            builder: (_, _) {
+                              final collapsed =
+                                  _listScrollController.hasClients &&
+                                  _listScrollController.offset > 70;
+                              return Container(
+                                height: 56,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
                                 ),
-                              if (!widget.readOnly &&
-                                  widget.api.canEdit &&
-                                  (inventory == null || inventory.isPersonal))
-                                _spaceMenu('Share Space', Icons.ios_share),
-                              if (inventory == null)
-                                _spaceMenu(
-                                  'Join Space',
-                                  Icons.person_add_outlined,
-                                ),
-                              _spaceMenu('Print Bin Label', Icons.qr_code),
-                              if (inventory == null || inventory.isPersonal)
-                                _spaceMenu('Members', Icons.people_outline),
-                            ],
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: SpaceStyle.card(22),
-                              child: const Icon(Icons.more_horiz),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                if (_syncError != null)
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      _syncError!,
-                      style: SpaceStyle.text(13, SpaceStyle.amber),
-                    ),
-                  ),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      CustomScrollView(
-                        controller: _listScrollController,
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (inventory != null)
-                                    Text(
-                                      '${inventory.workspaceName} · ${inventory.name}',
-                                      style: SpaceStyle.text(
-                                        13.5,
-                                        SpaceStyle.tx2,
-                                      ),
-                                    ),
-                                  const SizedBox(height: 9),
-                                  Text(
-                                    _location,
-                                    style: SpaceStyle.text(34).copyWith(
-                                      fontFamily: 'Inter Tight',
-                                      fontWeight: FontWeight.w400,
-                                      letterSpacing: -.68,
-                                      height: 1.1,
-                                      color: const Color(0xFFF4F4F5),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: collapsed
+                                          ? SpaceStyle.line
+                                          : Colors.transparent,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
-                                    style: SpaceStyle.text(15, SpaceStyle.tx2),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: SpaceStatusCard(
-                                          icon: Icons.photo_library_outlined,
-                                          title: 'Review',
-                                          subtitle: 'Items to finish',
-                                          onTap: _openReview,
-                                          onLongPress: _openReview,
-                                        ),
-                                      ),
-                                      if (_lowCount() > 0)
-                                        const SizedBox(width: 8),
-                                      if (_lowCount() > 0)
-                                        Expanded(
-                                          child: SpaceStatusCard(
-                                            icon: Icons.inventory_2_outlined,
-                                            title: 'Low quantity',
-                                            subtitle:
-                                                '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
-                                            active: _onlyLowQuantity,
-                                            onTap: () => setState(() {
-                                              _onlyLowQuantity =
-                                                  !_onlyLowQuantity;
-                                              _answerIds = null;
-                                            }),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SliverPersistentHeader(
-                            pinned: true,
-                            delegate: SpacePinnedHeader(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  14,
-                                  20,
-                                  10,
                                 ),
                                 child: Row(
                                   children: [
+                                    SpaceCircle(
+                                      label: 'Back',
+                                      icon: Icons.chevron_left,
+                                      onTap: () =>
+                                          Navigator.of(context).pop(_changed),
+                                    ),
                                     Expanded(
-                                      child: Container(
-                                        decoration: SpaceStyle.card(22),
-                                        child: Row(
-                                          children: [
-                                            const SizedBox(width: 14),
-                                            const Icon(
-                                              Icons.search,
-                                              size: 18,
-                                              color: SpaceStyle.tx2,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: TextField(
-                                                controller:
-                                                    _spaceSearchController,
-                                                style: SpaceStyle.text(15.5),
-                                                textInputAction:
-                                                    TextInputAction.search,
-                                                decoration: InputDecoration(
-                                                  hintText:
-                                                      'Search ${spaceCount(_items.length)} items',
-                                                  hintStyle: SpaceStyle.text(
-                                                    15.5,
-                                                    SpaceStyle.tx3,
-                                                  ),
-                                                  border: InputBorder.none,
-                                                  enabledBorder:
-                                                      InputBorder.none,
-                                                  focusedBorder:
-                                                      InputBorder.none,
-                                                  filled: false,
-                                                  contentPadding:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 10,
-                                                      ),
-                                                  isDense: true,
-                                                ),
-                                                onChanged: (value) =>
-                                                    setState(() {
-                                                      _spaceSearchQuery = value;
-                                                      _answerIds = null;
-                                                    }),
-                                                onSubmitted: (_) =>
-                                                    FocusScope.of(
-                                                      context,
-                                                    ).unfocus(),
-                                              ),
-                                            ),
-                                            if (_spaceSearchQuery.isNotEmpty)
-                                              IconButton(
-                                                tooltip: 'Clear search',
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  size: 20,
-                                                  color: SpaceStyle.tx2,
-                                                ),
-                                                onPressed: () => setState(() {
-                                                  _spaceSearchController
-                                                      .clear();
-                                                  _spaceSearchQuery = '';
-                                                }),
-                                              ),
-                                          ],
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 350,
                                         ),
+                                        child: collapsed
+                                            ? Text(
+                                                _location,
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: SpaceStyle.text(17),
+                                              )
+                                            : const SizedBox.shrink(),
                                       ),
+                                    ),
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: SpaceStyle.card(22),
+                                      child: NotificationBell(api: widget.api),
                                     ),
                                     const SizedBox(width: 8),
-                                    SpaceCircle(
-                                      label: 'Sort',
-                                      icon: Icons.swap_vert,
-                                      onTap: _openSort,
+                                    PopupMenuButton<String>(
+                                      tooltip: 'More',
+                                      color: SpaceStyle.menu,
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                            width: 230,
+                                          ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(22),
+                                        side: const BorderSide(
+                                          color: SpaceStyle.line2,
+                                        ),
+                                      ),
+                                      onSelected: _onFabItemTap,
+                                      itemBuilder: (_) => [
+                                        if (!widget.readOnly &&
+                                            widget.api.canEdit)
+                                          _spaceMenu(
+                                            'Import Spreadsheet',
+                                            Icons.table_chart_outlined,
+                                          ),
+                                        if (!widget.readOnly &&
+                                            widget.api.canEdit &&
+                                            (inventory == null ||
+                                                inventory.isPersonal))
+                                          _spaceMenu(
+                                            'Share Space',
+                                            Icons.ios_share,
+                                          ),
+                                        if (inventory == null)
+                                          _spaceMenu(
+                                            'Join Space',
+                                            Icons.person_add_outlined,
+                                          ),
+                                        _spaceMenu(
+                                          'Print Bin Label',
+                                          Icons.qr_code,
+                                        ),
+                                        if (inventory == null ||
+                                            inventory.isPersonal)
+                                          _spaceMenu(
+                                            'Members',
+                                            Icons.people_outline,
+                                          ),
+                                      ],
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: SpaceStyle.card(22),
+                                        child: const Icon(Icons.more_horiz),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
+                        ),
+                        if (_syncError != null)
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child:
-                                        _onlyLowQuantity || _answerIds != null
-                                        ? Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: InputChip(
-                                              label: Text(
-                                                _onlyLowQuantity
-                                                    ? 'Low quantity'
-                                                    : 'Ask results',
-                                              ),
-                                              backgroundColor: SpaceStyle.white,
-                                              labelStyle: SpaceStyle.text(
-                                                12.5,
-                                                SpaceStyle.bg,
-                                              ),
-                                              deleteIconColor: SpaceStyle.bg,
-                                              onDeleted: () => setState(() {
-                                                _onlyLowQuantity = false;
-                                                _answerIds = null;
-                                              }),
-                                            ),
-                                          )
-                                        : Text(
-                                            '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
-                                            style: SpaceStyle.text(
-                                              12.5,
-                                              SpaceStyle.tx3,
-                                            ),
-                                          ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      itemSortLabel(_sortOption),
-                                      textAlign: TextAlign.right,
-                                      style: SpaceStyle.text(
-                                        12.5,
-                                        SpaceStyle.tx3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              padding: const EdgeInsets.all(8),
+                              child: Text(
+                                _syncError!,
+                                style: SpaceStyle.text(13, SpaceStyle.amber),
                               ),
                             ),
                           ),
-                          if (categories.length > 2)
-                            SliverToBoxAdapter(
-                              child: SizedBox(
-                                height: 52,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  itemCount: categories.length,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(width: 8),
-                                  itemBuilder: (_, i) => ChoiceChip(
-                                    label: Text(categories[i]),
-                                    selected:
-                                        categories[i] == _selectedCategory,
-                                    showCheckmark: false,
-                                    selectedColor: SpaceStyle.white,
-                                    backgroundColor: SpaceStyle.s1,
-                                    labelStyle: SpaceStyle.text(
-                                      13,
-                                      categories[i] == _selectedCategory
-                                          ? SpaceStyle.bg
-                                          : SpaceStyle.tx2,
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (inventory != null)
+                                  Text(
+                                    '${inventory.workspaceName} · ${inventory.name}',
+                                    style: SpaceStyle.text(
+                                      13.5,
+                                      SpaceStyle.tx2,
                                     ),
-                                    onSelected: (_) =>
-                                        _onCategoryPillTapped(categories[i]),
+                                  ),
+                                const SizedBox(height: 9),
+                                Text(
+                                  _location,
+                                  style: SpaceStyle.text(34).copyWith(
+                                    fontFamily: 'Inter Tight',
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: -.68,
+                                    height: 1.1,
+                                    color: const Color(0xFFF4F4F5),
                                   ),
                                 ),
-                              ),
-                            ),
-                          if (filtered.isEmpty)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  24,
-                                  52,
-                                  24,
-                                  24,
+                                const SizedBox(height: 6),
+                                Text(
+                                  '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
+                                  style: SpaceStyle.text(15, SpaceStyle.tx2),
                                 ),
-                                child: Column(
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      _items.isEmpty
-                                          ? 'This space is empty'
-                                          : _spaceSearchQuery.isNotEmpty
-                                          ? 'No “$_spaceSearchQuery” in $_location'
-                                          : 'No items match this filter',
-                                      style: SpaceStyle.text(17),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      _items.isEmpty
-                                          ? 'Add items here when you are ready.'
-                                          : 'Try another search, or ask FindEZ to look across this inventory.',
-                                      style: SpaceStyle.text(
-                                        15,
-                                        SpaceStyle.tx2,
+                                    Expanded(
+                                      child: SpaceStatusCard(
+                                        icon: Icons.photo_library_outlined,
+                                        title: 'Review',
+                                        subtitle: 'Items to finish',
+                                        onTap: _openReview,
+                                        onLongPress: _openReview,
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
-                                    if (inventory != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 16),
-                                        child: OutlinedButton(
-                                          onPressed: () => _openAsk(
-                                            initial: _spaceSearchQuery,
-                                          ),
-                                          child: const Text('Ask FindEZ'),
+                                    if (_lowCount() > 0)
+                                      const SizedBox(width: 8),
+                                    if (_lowCount() > 0)
+                                      Expanded(
+                                        child: SpaceStatusCard(
+                                          icon: Icons.inventory_2_outlined,
+                                          title: 'Low quantity',
+                                          subtitle:
+                                              '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
+                                          active: _onlyLowQuantity,
+                                          onTap: () => setState(() {
+                                            _onlyLowQuantity =
+                                                !_onlyLowQuantity;
+                                            _answerIds = null;
+                                          }),
                                         ),
                                       ),
                                   ],
                                 ),
-                              ),
-                            )
-                          else
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              sliver: SliverList.builder(
-                                itemCount: filtered.length,
-                                itemBuilder: (_, index) => _buildItemRow(
-                                  filtered[index],
-                                  divider: index < filtered.length - 1,
-                                ),
-                              ),
+                              ],
                             ),
-                          SliverToBoxAdapter(
+                          ),
+                        ),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: SpacePinnedHeader(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
+                                14,
                                 20,
-                                20,
-                                154,
+                                10,
                               ),
-                              child: Text(
-                                'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
-                                textAlign: TextAlign.center,
-                                style: SpaceStyle.text(12.5, SpaceStyle.tx3),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: SpaceStyle.card(22),
+                                      child: Row(
+                                        children: [
+                                          const SizedBox(width: 14),
+                                          const Icon(
+                                            Icons.search,
+                                            size: 18,
+                                            color: SpaceStyle.tx2,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: TextField(
+                                              controller:
+                                                  _spaceSearchController,
+                                              style: SpaceStyle.text(15.5),
+                                              textInputAction:
+                                                  TextInputAction.search,
+                                              decoration: InputDecoration(
+                                                hintText:
+                                                    'Search ${spaceCount(_items.length)} items',
+                                                hintStyle: SpaceStyle.text(
+                                                  15.5,
+                                                  SpaceStyle.tx3,
+                                                ),
+                                                border: InputBorder.none,
+                                                enabledBorder: InputBorder.none,
+                                                focusedBorder: InputBorder.none,
+                                                filled: false,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                    ),
+                                                isDense: true,
+                                              ),
+                                              onChanged: (value) =>
+                                                  setState(() {
+                                                    _spaceSearchQuery = value;
+                                                    _answerIds = null;
+                                                  }),
+                                              onSubmitted: (_) => FocusScope.of(
+                                                context,
+                                              ).unfocus(),
+                                            ),
+                                          ),
+                                          if (_spaceSearchQuery.isNotEmpty)
+                                            IconButton(
+                                              tooltip: 'Clear search',
+                                              icon: const Icon(
+                                                Icons.cancel,
+                                                size: 20,
+                                                color: SpaceStyle.tx2,
+                                              ),
+                                              onPressed: () => setState(() {
+                                                _spaceSearchController.clear();
+                                                _spaceSearchQuery = '';
+                                              }),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SpaceCircle(
+                                    label: 'Sort',
+                                    icon: Icons.swap_vert,
+                                    onTap: _openSort,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      if (MediaQuery.viewInsetsOf(context).bottom == 0)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IgnorePointer(
-                                child: Container(
-                                  height: 45,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        SpaceStyle.bg,
-                                      ],
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _onlyLowQuantity || _answerIds != null
+                                      ? Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: InputChip(
+                                            label: Text(
+                                              _onlyLowQuantity
+                                                  ? 'Low quantity'
+                                                  : 'Ask results',
+                                            ),
+                                            backgroundColor: SpaceStyle.white,
+                                            labelStyle: SpaceStyle.text(
+                                              12.5,
+                                              SpaceStyle.bg,
+                                            ),
+                                            deleteIconColor: SpaceStyle.bg,
+                                            onDeleted: () => setState(() {
+                                              _onlyLowQuantity = false;
+                                              _answerIds = null;
+                                            }),
+                                          ),
+                                        )
+                                      : Text(
+                                          '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
+                                          style: SpaceStyle.text(
+                                            12.5,
+                                            SpaceStyle.tx3,
+                                          ),
+                                        ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    itemSortLabel(_sortOption),
+                                    textAlign: TextAlign.right,
+                                    style: SpaceStyle.text(
+                                      12.5,
+                                      SpaceStyle.tx3,
                                     ),
                                   ),
                                 ),
-                              ),
-                              Container(
-                                color: SpaceStyle.bg,
-                                padding: EdgeInsets.fromLTRB(
-                                  12,
-                                  0,
-                                  12,
-                                  MediaQuery.paddingOf(context).bottom + 18,
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (categories.length > 2)
+                          SliverToBoxAdapter(
+                            child: SizedBox(
+                              height: 52,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
                                 ),
-                                child: Row(
-                                  children: [
-                                    if (inventory != null)
-                                      Expanded(
-                                        child: Material(
-                                          color: SpaceStyle.s1,
-                                          shape: const StadiumBorder(
-                                            side: BorderSide(
-                                              color: SpaceStyle.line2,
-                                            ),
+                                itemCount: categories.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 8),
+                                itemBuilder: (_, i) => ChoiceChip(
+                                  label: Text(categories[i]),
+                                  selected: categories[i] == _selectedCategory,
+                                  showCheckmark: false,
+                                  selectedColor: SpaceStyle.white,
+                                  backgroundColor: SpaceStyle.s1,
+                                  labelStyle: SpaceStyle.text(
+                                    13,
+                                    categories[i] == _selectedCategory
+                                        ? SpaceStyle.bg
+                                        : SpaceStyle.tx2,
+                                  ),
+                                  onSelected: (_) =>
+                                      _onCategoryPillTapped(categories[i]),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (filtered.isEmpty)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                52,
+                                24,
+                                24,
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _items.isEmpty
+                                        ? 'This space is empty'
+                                        : _spaceSearchQuery.isNotEmpty
+                                        ? 'No “$_spaceSearchQuery” in $_location'
+                                        : 'No items match this filter',
+                                    style: SpaceStyle.text(17),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _items.isEmpty
+                                        ? 'Add items here when you are ready.'
+                                        : 'Try another search, or ask FindEZ to look across this inventory.',
+                                    style: SpaceStyle.text(15, SpaceStyle.tx2),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (inventory != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 16),
+                                      child: OutlinedButton(
+                                        onPressed: () => _openAsk(
+                                          initial: _spaceSearchQuery,
+                                        ),
+                                        child: const Text('Ask FindEZ'),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            sliver: SliverList.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (_, index) => _buildItemRow(
+                                filtered[index],
+                                divider: index < filtered.length - 1,
+                              ),
+                            ),
+                          ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 154),
+                            child: Text(
+                              'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
+                              textAlign: TextAlign.center,
+                              style: SpaceStyle.text(12.5, SpaceStyle.tx3),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (MediaQuery.viewInsetsOf(context).bottom == 0)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IgnorePointer(
+                              child: Container(
+                                height: 45,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, SpaceStyle.bg],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              color: SpaceStyle.bg,
+                              padding: EdgeInsets.fromLTRB(
+                                12,
+                                0,
+                                12,
+                                MediaQuery.paddingOf(context).bottom + 18,
+                              ),
+                              child: Row(
+                                children: [
+                                  if (inventory != null)
+                                    Expanded(
+                                      child: Material(
+                                        color: SpaceStyle.s1,
+                                        shape: const StadiumBorder(
+                                          side: BorderSide(
+                                            color: SpaceStyle.line2,
                                           ),
-                                          clipBehavior: Clip.antiAlias,
-                                          child: InkWell(
-                                            onTap: _openAsk,
-                                            child: SizedBox(
-                                              height: 58,
-                                              child: Row(
-                                                children: [
-                                                  const SizedBox(width: 10),
-                                                  Container(
-                                                    width: 38,
-                                                    height: 38,
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                          color:
-                                                              SpaceStyle.white,
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
-                                                    padding:
-                                                        const EdgeInsets.all(9),
-                                                    child: Image.asset(
-                                                      'assets/brand/findez-mark-black.png',
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Text(
-                                                      'Ask about $_location',
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: SpaceStyle.text(
-                                                        16,
-                                                        SpaceStyle.tx2,
+                                        ),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: InkWell(
+                                          onTap: _openAsk,
+                                          child: SizedBox(
+                                            height: 58,
+                                            child: Row(
+                                              children: [
+                                                const SizedBox(width: 10),
+                                                Container(
+                                                  width: 38,
+                                                  height: 38,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: SpaceStyle.white,
+                                                        shape: BoxShape.circle,
                                                       ),
+                                                  padding: const EdgeInsets.all(
+                                                    9,
+                                                  ),
+                                                  child: Image.asset(
+                                                    'assets/brand/findez-mark-black.png',
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Ask about $_location',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: SpaceStyle.text(
+                                                      16,
+                                                      SpaceStyle.tx2,
                                                     ),
                                                   ),
-                                                  IconButton(
-                                                    tooltip:
-                                                        'Ask about $_location with voice',
-                                                    onPressed: () =>
-                                                        _openAsk(voice: true),
-                                                    icon: const Icon(
-                                                      Icons.mic_none,
-                                                      color: SpaceStyle.tx2,
-                                                    ),
+                                                ),
+                                                IconButton(
+                                                  tooltip:
+                                                      'Ask about $_location with voice',
+                                                  onPressed: () =>
+                                                      _openAsk(voice: true),
+                                                  icon: const Icon(
+                                                    Icons.mic_none,
+                                                    color: SpaceStyle.tx2,
                                                   ),
-                                                  const SizedBox(width: 4),
-                                                ],
-                                              ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                              ],
                                             ),
                                           ),
                                         ),
                                       ),
-                                    if (!widget.readOnly &&
-                                        widget.api.canEdit) ...[
-                                      if (inventory != null)
-                                        const SizedBox(width: 8)
-                                      else
-                                        const Spacer(),
-                                      SpaceCircle(
-                                        key: TutorialController
-                                            .spaceDetailFabKey,
-                                        label: 'Add items',
-                                        icon: Icons.add,
-                                        size: 58,
-                                        white: true,
-                                        onTap: _openAdd,
-                                      ),
-                                    ],
+                                    ),
+                                  if (!widget.readOnly &&
+                                      widget.api.canEdit) ...[
+                                    if (inventory != null)
+                                      const SizedBox(width: 8)
+                                    else
+                                      const Spacer(),
+                                    SpaceCircle(
+                                      key: TutorialController.spaceDetailFabKey,
+                                      label: 'Add items',
+                                      icon: Icons.add,
+                                      size: 58,
+                                      white: true,
+                                      onTap: _openAdd,
+                                    ),
                                   ],
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1260,6 +1270,16 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     api: widget.api,
     readOnly: widget.readOnly,
     threshold: _thresholds[item.itemId],
+    onThresholdChanged: (threshold) {
+      if (!mounted) return;
+      setState(() {
+        if (threshold == null) {
+          _thresholds.remove(item.itemId);
+        } else {
+          _thresholds[item.itemId] = threshold;
+        }
+      });
+    },
     onUpdated: _acceptUpdated,
     onEdit: (item) => _showProductInfo(context, item),
     onAsk: widget.api.inventoryContext == null
@@ -1277,6 +1297,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
       context,
       api: widget.api,
       space: _location,
+      spaceId: widget.spaceId,
       items: _items,
       thresholds: _thresholds,
       readOnly: widget.readOnly,

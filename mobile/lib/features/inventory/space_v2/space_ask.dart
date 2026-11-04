@@ -16,6 +16,7 @@ Future<void> showSpaceAsk(
   BuildContext context, {
   required ApiClient api,
   required String space,
+  String? spaceId,
   required List<InventoryItem> items,
   required Map<String, int> thresholds,
   required bool readOnly,
@@ -32,11 +33,24 @@ Future<void> showSpaceAsk(
   try {
     api.assertCurrentContext();
     if (api.inventoryContext == null) return;
+    final matches = spaceId == null
+        ? (await api.listSpaces()).where((row) => row['name'] == space).toList()
+        : <Map<String, dynamic>>[];
+    final resolvedId =
+        spaceId ??
+        (matches.length == 1 ? matches.single['id']?.toString() : null);
+    if (resolvedId == null) {
+      throw const FormatException(
+        'This Space is unavailable. Reopen it and try again.',
+      );
+    }
+    if (!context.mounted) return;
     await showSpaceSheet<void>(
       context,
       ask: true,
       builder: (_) => _SpaceAsk(
         api: api,
+        chatApi: api.bindSpaceChat(resolvedId),
         space: space,
         items: items,
         thresholds: thresholds,
@@ -64,6 +78,7 @@ Future<void> showSpaceAsk(
 class _SpaceAsk extends StatefulWidget {
   const _SpaceAsk({
     required this.api,
+    required this.chatApi,
     required this.space,
     required this.items,
     required this.thresholds,
@@ -78,7 +93,7 @@ class _SpaceAsk extends StatefulWidget {
     this.initialDraft,
     required this.startVoice,
   });
-  final ApiClient api;
+  final ApiClient api, chatApi;
   final String space;
   final List<InventoryItem> items;
   final Map<String, int> thresholds;
@@ -187,6 +202,18 @@ class _SpaceAskState extends State<_SpaceAsk> {
         api: widget.api,
         readOnly: widget.readOnly,
         threshold: _thresholds[item.itemId],
+        onThresholdChanged: (threshold) {
+          if (mounted) {
+            setState(() {
+              if (threshold == null) {
+                _thresholds.remove(item.itemId);
+              } else {
+                _thresholds[item.itemId] = threshold;
+              }
+            });
+          }
+          widget.onThresholdChanged(item.itemId, threshold);
+        },
         onUpdated: _updated,
         onAsk: (question) => _send?.call(question),
         onEdit: (current) => showItemDetailSheet(
@@ -385,14 +412,14 @@ class _SpaceAskState extends State<_SpaceAsk> {
       ),
       child: ChatPage(
         key: _chatKey,
-        api: widget.api,
+        api: widget.chatApi,
         contextual: true,
         inPageView: true,
         initialMessage: widget.initialMessage,
         onInventoryMutated: widget.onInventoryMutated,
         spacePresentation: SpaceChatPresentation(
           space: widget.space,
-          scopeLabel: 'Only in ${widget.api.inventoryContext!.name}',
+          scopeLabel: 'Only in ${widget.space}',
           items: _items.values.toList(),
           onClose: () => Navigator.pop(context),
           onAdd: widget.readOnly || !widget.api.canEdit ? null : widget.onAdd,

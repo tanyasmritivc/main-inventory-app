@@ -55,6 +55,7 @@ class ApiClient {
     dio.Dio? httpClient,
     this.inventoryContext,
     this.worldKey,
+    this.chatSpaceId,
     String? boundAccount,
     bool Function()? isCurrent,
   }) : _dio =
@@ -76,6 +77,9 @@ class ApiClient {
           try {
             assertCurrentContext();
             final path = options.path;
+            if (chatSpaceId != null && _inventoryRoutes.hasMatch(path)) {
+              options.headers['X-Findez-Space-ID'] = chatSpaceId;
+            }
             if (worldKey != null) options.path = inventoryPath(path);
             if (inventoryContext != null && _inventoryRoutes.hasMatch(path)) {
               if (options.method == 'DELETE' &&
@@ -154,6 +158,7 @@ class ApiClient {
        _teamSpaceId = spaceId,
        inventoryContext = source.inventoryContext,
        worldKey = source.worldKey,
+       chatSpaceId = source.chatSpaceId,
        _boundAccount = source._boundAccount,
        _isCurrent = source._isCurrent;
 
@@ -190,6 +195,31 @@ class ApiClient {
     isCurrent: isCurrent,
   );
 
+  /// Space Ask owns a separate client; the main world client is unchanged.
+  factory ApiClient.forSpaceChat(ApiClient source, String spaceId) {
+    if (source.inventoryContext == null || spaceId.isEmpty) {
+      throw const AskRequestException(
+        'Open an inventory Space before starting this chat.',
+      );
+    }
+    return ApiClient(
+      baseUrl: source.baseUrl,
+      httpClient: dio.Dio(source._dio.options.copyWith())
+        ..httpClientAdapter = source._dio.httpClientAdapter,
+      inventoryContext: source.inventoryContext,
+      chatSpaceId: spaceId,
+      boundAccount: source._boundAccount,
+      isCurrent: () {
+        source.assertCurrentContext();
+        return true;
+      },
+    );
+  }
+
+  ApiClient bindSpaceChat(String spaceId) =>
+      ApiClient.forSpaceChat(this, spaceId);
+
+  final String? chatSpaceId;
   final String? worldKey;
   final InventoryContext? inventoryContext;
   final String? _boundAccount;
@@ -1353,6 +1383,9 @@ class ApiClient {
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
     request.headers['Accept'] = 'text/event-stream';
+    if (chatSpaceId != null) {
+      request.headers['X-Findez-Space-ID'] = chatSpaceId!;
+    }
     request.headers['Authorization'] = 'Bearer $token';
     request.body = json.encode(<String, dynamic>{
       'message': message,
@@ -1407,6 +1440,9 @@ class ApiClient {
       ),
     );
     request.headers['Accept'] = 'text/event-stream';
+    if (chatSpaceId != null) {
+      request.headers['X-Findez-Space-ID'] = chatSpaceId!;
+    }
     request.headers['Authorization'] = 'Bearer ${_requireToken()}';
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
