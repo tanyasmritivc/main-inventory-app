@@ -1,3 +1,7 @@
+## November 3 — Space interactions delivered174; photo scan next
+
+Apple acknowledged build174, runtime `2312c0af9bf7b945c9212db61f74a34e20d6cca7`, delivery `3209d1a0-bb6a-464d-9580-29acfa9ede12`. Five CI gates passed; companion Space chat is deployed and real HTTPS QA passed. See docs/space-item-interactions receipt. Latest user clarification authorizes only the photo-scan ZIP changes inside main Ask; the rest of main Ask remains protected. Photo-scan build175 next, then self-hosted web Founding Access.
+
 ## November 3 - Space item interactions ready for release checks
 
 `feat/space-item-interactions` implements inline info, full photos, grey actions, full-width blur, part-first sorting and swipe dismissal outside main Ask. Build174 targets the companion authenticated Space-chat fix. Main Ask is preserved; see `docs/space-item-interactions/IMPLEMENTATION.md`. Photo-scan and web Founding Access ZIPs remain next in order.
