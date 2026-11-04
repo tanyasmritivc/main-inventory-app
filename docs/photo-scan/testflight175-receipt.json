@@ -11,7 +11,7 @@
   "uploaded": true,
   "apple_validation": true,
   "delivery_uuid": "026b66da-c3d5-47cb-8a52-dc2d8e4b347a",
-  "processing": "pending, not polled",
+  "processing": "VALID",
   "tester_availability": "unverified",
   "public_app_store_submission_changed": false,
   "ci_run": "41755872479",
@@ -21,5 +21,5 @@
   "native_card_cases": 8,
   "native_ask_cases": 1,
   "live_scan_cases": 5,
-  "testflight_notes_verified": false
+  "testflight_notes_verified": true
 }
