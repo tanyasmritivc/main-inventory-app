@@ -17,7 +17,7 @@ class WorldStyle extends StatelessWidget {
       bool secondary = false,
     }) => TextStyle(
       fontFamily: 'CupertinoSystemText',
-      fontSize: size,
+      fontSize: AppTypography.standardSize(size),
       fontWeight: weight,
       letterSpacing: -.25,
       height: 1.35,

@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_typography.dart';
 import 'package:flutter/material.dart';
 
 abstract final class PlaceTokens {
@@ -30,7 +31,7 @@ abstract final class PlaceTokens {
     double? spacing,
   }) => TextStyle(
     fontFamily: 'CupertinoSystemText',
-    fontSize: size,
+    fontSize: AppTypography.standardSize(size),
     fontWeight: weight,
     color: color,
     height: 1.25,

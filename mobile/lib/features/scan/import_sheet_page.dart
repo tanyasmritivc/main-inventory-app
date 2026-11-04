@@ -21,6 +21,7 @@ class ImportSheetPage extends StatefulWidget {
     this.kind = 'inventory',
     this.initialFilePath,
     this.initialFilename,
+    this.openPicker = false,
   });
 
   final ApiClient api;
@@ -29,6 +30,7 @@ class ImportSheetPage extends StatefulWidget {
   final String kind;
   final String? initialFilePath;
   final String? initialFilename;
+  final bool openPicker;
 
   @override
   State<ImportSheetPage> createState() => _ImportSheetPageState();
@@ -45,7 +47,14 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   void initState() {
     super.initState();
     final path = widget.initialFilePath;
-    if (path == null || path.isEmpty) return;
+    if (path == null || path.isEmpty) {
+      if (widget.openPicker) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _pickAndImport();
+        });
+      }
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _importSharedFile(path);

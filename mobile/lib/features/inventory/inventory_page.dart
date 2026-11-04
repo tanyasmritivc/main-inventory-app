@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'space_v2/space_style.dart';
 import 'space_v2/space_widgets.dart';
 import 'space_v2/space_quick_view.dart';
@@ -226,7 +227,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    _showProductInfo(context, item);
+    await _quickView(item);
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
@@ -482,9 +483,13 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     );
   }
 
-  Future<void> _uploadImage() async {
+  Future<void> _uploadImage({
+    BuildContext? sourceContext,
+    ImageSource? source,
+  }) async {
     await runUploadPhotoFlow(
-      context: context,
+      context: sourceContext ?? context,
+      source: source,
       api: widget.api,
       preselectedSpace: _location,
       onItemsSaved: () async {
@@ -515,10 +520,14 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     );
   }
 
-  Future<void> _importSpreadsheet() async {
-    final imported = await Navigator.of(context).push<bool>(
+  Future<void> _importSpreadsheet({BuildContext? sourceContext}) async {
+    final imported = await Navigator.of(sourceContext ?? context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ImportSheetPage(api: widget.api, location: _location),
+        builder: (_) => ImportSheetPage(
+          api: widget.api,
+          location: _location,
+          openPicker: true,
+        ),
       ),
     );
     if (imported != true) return;
@@ -559,9 +568,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     ),
   );
 
-  Future<void> _scanBarcode() async {
+  Future<void> _scanBarcode({BuildContext? sourceContext}) async {
     await runSpaceBarcodeFlow(
-      context: context,
+      context: sourceContext ?? context,
       api: widget.api,
       preselectedSpace: _location,
       onItemsSaved: () async {
@@ -622,207 +631,192 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       slivers: [
-                        SliverAppBar(
+                        SliverPersistentHeader(
                           pinned: true,
-                          toolbarHeight: 56,
-                          elevation: 0,
-                          scrolledUnderElevation: 0,
-                          backgroundColor: Colors.transparent,
-                          surfaceTintColor: Colors.transparent,
-                          automaticallyImplyLeading: false,
-                          titleSpacing: 0,
-                          flexibleSpace: const SpaceHeaderGlass(
-                            child: SizedBox.expand(),
-                          ),
-                          title: AnimatedBuilder(
-                            animation: _listScrollController,
-                            builder: (_, _) {
-                              final collapsed =
-                                  _listScrollController.hasClients &&
-                                  _listScrollController.offset > 70;
-                              return Container(
-                                height: 56,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: collapsed
-                                          ? SpaceStyle.of(context).line
-                                          : Colors.transparent,
-                                    ),
+                          delegate: SpaceCollapsingHeader(
+                            topInset: MediaQuery.paddingOf(context).top,
+                            // Keep the complete editable line visible at larger
+                            // system text sizes, including its vertical padding.
+                            searchExtent:
+                                (MediaQuery.textScalerOf(
+                                              context,
+                                            ).scale(AppTypography.bodySize) *
+                                            1.35 +
+                                        46)
+                                    .ceilToDouble()
+                                    .clamp(68.0, double.infinity),
+                            summaryExtent: spaceSummaryHeight(
+                              context,
+                              _items.length,
+                              _totalCount(),
+                              _lowCount() > 0,
+                            ),
+                            navigation: AnimatedBuilder(
+                              animation: _listScrollController,
+                              builder: (_, _) {
+                                return Container(
+                                  height: 56,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    SpaceCircle(
-                                      label: 'Back',
-                                      icon: Icons.chevron_left,
-                                      onTap: () =>
-                                          Navigator.of(context).pop(_changed),
-                                    ),
-                                    const SizedBox(width: 52),
-                                    Expanded(
-                                      child: Opacity(
-                                        key: const ValueKey('space-title-fade'),
-                                        opacity:
-                                            (1 -
-                                                    (_listScrollController
-                                                                .hasClients
-                                                            ? _listScrollController
-                                                                  .offset
-                                                            : 0) /
-                                                        100)
-                                                .clamp(0.0, 1.0),
-                                        child: Text(
-                                          _location,
-                                          textAlign: TextAlign.center,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: SpaceStyle.of(
-                                            context,
-                                          ).text(17),
+                                  child: Row(
+                                    children: [
+                                      SpaceCircle(
+                                        label: 'Back',
+                                        icon: Icons.chevron_left,
+                                        onTap: () =>
+                                            Navigator.of(context).pop(_changed),
+                                      ),
+                                      const SizedBox(width: 52),
+                                      Expanded(
+                                        child: Opacity(
+                                          key: const ValueKey(
+                                            'space-title-fade',
+                                          ),
+                                          opacity:
+                                              (1 -
+                                                      (_listScrollController
+                                                                  .hasClients
+                                                              ? _listScrollController
+                                                                    .offset
+                                                              : 0) /
+                                                          100)
+                                                  .clamp(0.0, 1.0),
+                                          child: Text(
+                                            _location,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: SpaceStyle.of(
+                                              context,
+                                            ).text(17),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: SpaceStyle.of(
-                                        context,
-                                      ).card(22),
-                                      child: NotificationBell(api: widget.api),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    PopupMenuButton<String>(
-                                      tooltip: 'More',
-                                      color: SpaceStyle.of(context).menu,
-                                      constraints:
-                                          const BoxConstraints.tightFor(
-                                            width: 230,
-                                          ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(22),
-                                        side: BorderSide(
-                                          color: SpaceStyle.of(context).line2,
-                                        ),
-                                      ),
-                                      onSelected: _onFabItemTap,
-                                      itemBuilder: (_) => [
-                                        if (!widget.readOnly &&
-                                            widget.api.canEdit)
-                                          _spaceMenu(
-                                            'Import Spreadsheet',
-                                            Icons.table_chart_outlined,
-                                          ),
-                                        if (!widget.readOnly &&
-                                            widget.api.canEdit &&
-                                            (inventory == null ||
-                                                inventory.isPersonal))
-                                          _spaceMenu(
-                                            'Share Space',
-                                            Icons.ios_share,
-                                          ),
-                                        if (inventory == null)
-                                          _spaceMenu(
-                                            'Join Space',
-                                            Icons.person_add_outlined,
-                                          ),
-                                        _spaceMenu(
-                                          'Print Bin Label',
-                                          Icons.qr_code,
-                                        ),
-                                        if (inventory == null ||
-                                            inventory.isPersonal)
-                                          _spaceMenu(
-                                            'Members',
-                                            Icons.people_outline,
-                                          ),
-                                      ],
-                                      child: Container(
+                                      Container(
                                         width: 44,
                                         height: 44,
                                         decoration: SpaceStyle.of(
                                           context,
                                         ).card(22),
-                                        child: const Icon(Icons.more_horiz),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        if (_syncError != null)
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Text(
-                                _syncError!,
-                                style: SpaceStyle.of(
-                                  context,
-                                ).text(13, SpaceStyle.of(context).amber),
-                              ),
-                            ),
-                          ),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
-                                    key: const ValueKey('space-unit-count'),
-                                    textAlign: TextAlign.center,
-                                    style: SpaceStyle.of(
-                                      context,
-                                    ).text(15, SpaceStyle.of(context).tx2),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: SpaceStatusCard(
-                                        icon: Icons.photo_library_outlined,
-                                        title: 'Review',
-                                        subtitle: 'Items to finish',
-                                        onTap: _openReview,
-                                        onLongPress: _openReview,
-                                      ),
-                                    ),
-                                    if (_lowCount() > 0)
-                                      const SizedBox(width: 8),
-                                    if (_lowCount() > 0)
-                                      Expanded(
-                                        child: SpaceStatusCard(
-                                          icon: Icons.inventory_2_outlined,
-                                          title: 'Low quantity',
-                                          subtitle:
-                                              '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
-                                          active: _onlyLowQuantity,
-                                          onTap: () => setState(() {
-                                            _onlyLowQuantity =
-                                                !_onlyLowQuantity;
-                                            _answerIds = null;
-                                          }),
+                                        child: NotificationBell(
+                                          api: widget.api,
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(width: 8),
+                                      PopupMenuButton<String>(
+                                        tooltip: 'More',
+                                        color: SpaceStyle.of(context).menu,
+                                        constraints:
+                                            const BoxConstraints.tightFor(
+                                              width: 230,
+                                            ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            22,
+                                          ),
+                                          side: BorderSide(
+                                            color: SpaceStyle.of(context).line2,
+                                          ),
+                                        ),
+                                        onSelected: _onFabItemTap,
+                                        itemBuilder: (_) => [
+                                          if (!widget.readOnly &&
+                                              widget.api.canEdit)
+                                            _spaceMenu(
+                                              'Import Spreadsheet',
+                                              Icons.table_chart_outlined,
+                                            ),
+                                          if (!widget.readOnly &&
+                                              widget.api.canEdit &&
+                                              (inventory == null ||
+                                                  inventory.isPersonal))
+                                            _spaceMenu(
+                                              'Share Space',
+                                              Icons.ios_share,
+                                            ),
+                                          if (inventory == null)
+                                            _spaceMenu(
+                                              'Join Space',
+                                              Icons.person_add_outlined,
+                                            ),
+                                          _spaceMenu(
+                                            'Print Bin Label',
+                                            Icons.qr_code,
+                                          ),
+                                          if (inventory == null ||
+                                              inventory.isPersonal)
+                                            _spaceMenu(
+                                              'Members',
+                                              Icons.people_outline,
+                                            ),
+                                        ],
+                                        child: Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: SpaceStyle.of(
+                                            context,
+                                          ).card(22),
+                                          child: const Icon(Icons.more_horiz),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                        ),
-                        SliverPersistentHeader(
-                          pinned: true,
-                          delegate: SpacePinnedHeader(
-                            child: Padding(
+                            summary: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Center(
+                                    child: Text(
+                                      '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
+                                      key: const ValueKey('space-unit-count'),
+                                      textAlign: TextAlign.center,
+                                      style: SpaceStyle.of(
+                                        context,
+                                      ).text(15, SpaceStyle.of(context).tx2),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: SpaceStatusCard(
+                                          icon: Icons.photo_library_outlined,
+                                          title: 'Review',
+                                          subtitle: 'Items to finish',
+                                          onTap: _openReview,
+                                          onLongPress: _openReview,
+                                        ),
+                                      ),
+                                      if (_lowCount() > 0)
+                                        const SizedBox(width: 8),
+                                      if (_lowCount() > 0)
+                                        Expanded(
+                                          child: SpaceStatusCard(
+                                            icon: Icons.inventory_2_outlined,
+                                            title: 'Low quantity',
+                                            subtitle:
+                                                '${_lowCount()} ${_lowCount() == 1 ? 'item' : 'items'}',
+                                            active: _onlyLowQuantity,
+                                            onTap: () => setState(() {
+                                              _onlyLowQuantity =
+                                                  !_onlyLowQuantity;
+                                              _answerIds = null;
+                                            }),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            search: Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
                                 14,
@@ -914,6 +908,18 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                             ),
                           ),
                         ),
+                        if (_syncError != null)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(
+                                _syncError!,
+                                style: SpaceStyle.of(
+                                  context,
+                                ).text(13, SpaceStyle.of(context).amber),
+                              ),
+                            ),
+                          ),
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
@@ -1247,44 +1253,57 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     ),
   );
 
-  Future<void> _openAdd() async {
-    final choice = await showSpaceSheet<String>(
-      context,
-      builder: (ctx) => SpaceSheetList(
-        title: 'Add to $_location',
-        children: [
-          SpaceAction(
-            icon: Icons.camera_alt_outlined,
-            title: 'Scan Photo',
-            subtitle: 'Take a photo or choose from your library',
-            onTap: () => Navigator.pop(ctx, 'Scan Photo'),
-          ),
-          SpaceAction(
-            icon: Icons.table_chart_outlined,
-            title: 'Import Spreadsheet',
-            subtitle: 'CSV or Excel, keeps your column names',
-            onTap: () => Navigator.pop(ctx, 'Import Spreadsheet'),
-          ),
-          if (widget.api.inventoryContext != null)
-            SpaceAction(
-              icon: Icons.edit_outlined,
-              title: 'Type it in',
-              subtitle: 'Tell FindEZ what to add',
-              onTap: () => Navigator.pop(ctx, 'Type it in'),
-            ),
-          SpaceAction(
-            icon: Icons.qr_code_scanner,
-            title: 'Scan Barcode',
-            onTap: () => Navigator.pop(ctx, 'Scan Barcode'),
-          ),
-        ],
+  GlobalKey get _addAnchor => TutorialController.spaceDetailFabKey;
+  Future<void> _openAdd({
+    BuildContext? sourceContext,
+    GlobalKey? anchor,
+  }) async {
+    final activeContext = sourceContext ?? context;
+    final box =
+        (anchor ?? _addAnchor).currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final origin = box.localToGlobal(Offset.zero);
+    final screen = MediaQuery.sizeOf(activeContext);
+    final choice = await showMenu<String>(
+      context: activeContext,
+      position: RelativeRect.fromLTRB(
+        origin.dx,
+        origin.dy - 260,
+        screen.width - origin.dx - box.size.width,
+        screen.height - origin.dy,
       ),
+      popUpAnimationStyle: AnimationStyle.noAnimation,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      items: [
+        const PopupMenuItem(value: 'camera', child: Text('Take photo')),
+        const PopupMenuItem(value: 'library', child: Text('Photo library')),
+        const PopupMenuItem(
+          value: 'spreadsheet',
+          child: Text('Import spreadsheet'),
+        ),
+        if (sourceContext == null && widget.api.inventoryContext != null)
+          const PopupMenuItem(value: 'type', child: Text('Type it in')),
+        const PopupMenuItem(value: 'barcode', child: Text('Scan barcode')),
+      ],
     );
-    if (!mounted || choice == null) return;
-    if (choice == 'Type it in') {
-      _openAsk(draft: 'Add ');
-    } else {
-      _onFabItemTap(choice);
+    if (!mounted || !activeContext.mounted || choice == null) return;
+    switch (choice) {
+      case 'camera':
+        await _uploadImage(
+          sourceContext: activeContext,
+          source: ImageSource.camera,
+        );
+      case 'library':
+        await _uploadImage(
+          sourceContext: activeContext,
+          source: ImageSource.gallery,
+        );
+      case 'spreadsheet':
+        await _importSpreadsheet(sourceContext: activeContext);
+      case 'barcode':
+        await _scanBarcode(sourceContext: activeContext);
+      case 'type':
+        await _openAsk(draft: 'Add ');
     }
   }
 
@@ -1306,7 +1325,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     });
   }
 
-  void _quickView(InventoryItem item) => showSpaceQuickView(
+  Future<void> _quickView(InventoryItem item) => showSpaceQuickView(
     context,
     item: item,
     api: widget.api,
@@ -1357,7 +1376,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
           }
         });
       },
-      onAdd: _openAdd,
+      onAdd: (ctx, anchor) => _openAdd(sourceContext: ctx, anchor: anchor),
       onInventoryMutated: () {
         _changed = true;
         unawaited(_refreshSpace());

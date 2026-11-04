@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_typography.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/ui/swipe_down_sheet.dart';
@@ -23,7 +24,8 @@ abstract final class SpaceStyle {
   static const curve = Cubic(.32, .72, 0, 1);
   static TextStyle text(double size, [Color color = tx]) => TextStyle(
     fontFamily: 'CupertinoSystemText',
-    fontSize: size,
+    fontSize: AppTypography.standardSize(size),
+    height: 1.35,
     color: color,
     fontWeight: FontWeight.w400,
   );
@@ -78,7 +80,8 @@ class SpacePalette {
   Color get button => dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
   TextStyle text(double size, [Color? color]) => TextStyle(
     fontFamily: 'CupertinoSystemText',
-    fontSize: size,
+    fontSize: AppTypography.standardSize(size),
+    height: 1.35,
     color: color ?? tx,
     fontWeight: FontWeight.w400,
   );
@@ -124,17 +127,18 @@ Future<T?> showSpaceSheet<T>(
           ask ? 0 : 8,
           ask ? 56 : 8,
           ask ? 0 : 8,
-          MediaQuery.viewInsetsOf(ctx).bottom +
-              (ask ? 0 : MediaQuery.paddingOf(ctx).bottom),
+          MediaQuery.viewInsetsOf(ctx).bottom > 0
+              ? MediaQuery.viewInsetsOf(ctx).bottom
+              : (ask ? 0 : MediaQuery.paddingOf(ctx).bottom),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight:
-                ((ask
-                            ? MediaQuery.sizeOf(ctx).height - 56
-                            : MediaQuery.sizeOf(ctx).height * .86) -
-                        MediaQuery.viewInsetsOf(ctx).bottom)
-                    .clamp(0, double.infinity),
+                (MediaQuery.sizeOf(ctx).height -
+                        MediaQuery.viewInsetsOf(ctx).bottom -
+                        MediaQuery.paddingOf(ctx).top -
+                        24)
+                    .clamp(0, MediaQuery.sizeOf(ctx).height * .9),
           ),
           child: Material(
             color: ask ? SpaceStyle.of(ctx).ask : SpaceStyle.of(ctx).sheet,

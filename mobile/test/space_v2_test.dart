@@ -1,4 +1,10 @@
 import 'dart:async';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:mobile/core/ui/scroll_glass.dart';
+import 'support/extract_photo_fixture.dart';
+import 'support/capture_picker_fixture.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:mobile/features/scan/import_sheet_page.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:mobile/features/founding_access/riso_art.dart';
@@ -300,9 +306,17 @@ void main() {
         tester.getTopLeft(find.byType(TextField).first).dy,
         closeTo(pinnedY, .1),
       );
-      for (final glass in find.byType(SpaceHeaderGlass).evaluate()) {
-        expect(glass.size!.width, 390);
-      }
+      expect(pinnedY, lessThan(65));
+      expect(
+        tester
+            .widget<Opacity>(
+              find.byKey(const ValueKey('space-navigation-fade')),
+            )
+            .opacity,
+        0,
+      );
+      expect(find.byType(ScrollGlass), findsWidgets);
+      expect(find.byType(SpaceHeaderGlass), findsNothing);
       await spaceV2Capture?.call('scrolled-${mode.name}');
       await tester.tap(find.byType(SpaceItemRow).hitTestable().first);
       await tester.pumpAndSettle();
@@ -627,6 +641,224 @@ void main() {
     },
   );
 
+  testWidgets('right swipe opens the same inline item sheet as tapping', (
+    tester,
+  ) async {
+    await mount(tester, 3);
+    await tester.drag(find.byType(SpaceItemRow).first, const Offset(330, 0));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('space-quick-view')), findsOneWidget);
+    expect(find.byKey(const ValueKey('space-edit-name')), findsOneWidget);
+    expect(find.text('Edit item'), findsNothing);
+    await spaceV2Capture?.call('swipe-inline');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(SpaceItemRow).hitTestable(), findsWidgets);
+    expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('multiple item photos swipe in the sheet and full image viewer', (
+    tester,
+  ) async {
+    await mount(tester, 3, photos: true);
+    final respond = fixture.respond;
+    fixture.respond = (request) async {
+      if (request.path.endsWith('/item-0/photos')) {
+        return {
+          'photos': [
+            for (var i = 0; i < 3; i++)
+              {
+                'photo_id': 'photo-$i',
+                'image_url': 'https://images.test/item-$i.jpg',
+                'is_primary': i == 0,
+              },
+          ],
+        };
+      }
+      return respond(request);
+    };
+    await tester.tap(find.text('PN-F105'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 3'), findsOneWidget);
+    await tester.drag(find.byType(PageView), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 3'), findsOneWidget);
+    await spaceV2Capture?.call('gallery-sheet');
+    await tester.tap(find.byKey(const ValueKey('space-item-photo')));
+    await tester.pumpAndSettle();
+    expect(find.text('Photo 2 of 3'), findsOneWidget);
+    await tester.drag(find.byType(PageView).last, const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Photo 3 of 3'), findsOneWidget);
+    await tester.tap(find.byTooltip('Previous photo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Photo 2 of 3'), findsOneWidget);
+    await spaceV2Capture?.call('gallery-full');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+    'multi-photo upload retains completed photos when a later upload fails',
+    (tester) async {
+      final originalPicker = ImagePickerPlatform.instance;
+      final picker = CapturePhotoPicker()
+        ..images = [
+          XFile.fromData(extractPhotoFixture, name: 'first.jpg'),
+          XFile.fromData(extractPhotoFixture, name: 'second.jpg'),
+        ];
+      ImagePickerPlatform.instance = picker;
+      addTearDown(() => ImagePickerPlatform.instance = originalPicker);
+      await mount(tester, 3, photos: true);
+      final respond = fixture.respond;
+      var uploads = 0;
+      fixture.respond = (request) async {
+        if (request.path.endsWith('/item-0/photos') &&
+            request.method == 'POST') {
+          uploads++;
+          if (uploads == 2) {
+            fixture.status = 500;
+            return {'detail': 'Could not add photo.'};
+          }
+          return {
+            'item': data.first,
+            'photos': [
+              for (var i = 0; i < 2; i++)
+                {
+                  'photo_id': 'photo-$i',
+                  'image_url': 'https://images.test/item-$i.jpg',
+                  'is_primary': i == 0,
+                },
+            ],
+          };
+        }
+        return respond(request);
+      };
+      await tester.tap(find.text('PN-F105'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add photos'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose photo'));
+      await tester.pumpAndSettle();
+      expect(picker.multiCalls, 1);
+      expect(uploads, 2);
+      expect(find.text('1 of 2'), findsOneWidget);
+      expect(find.textContaining('1 photo added.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  for (final inChat in [false, true]) {
+    testWidgets(
+      'Space capture opens the selected picker directly with chat=$inChat',
+      (tester) async {
+        final originalPicker = ImagePickerPlatform.instance;
+        final picker = CapturePhotoPicker();
+        ImagePickerPlatform.instance = picker;
+        addTearDown(() => ImagePickerPlatform.instance = originalPicker);
+        await mount(tester, 3);
+        if (inChat) {
+          await tester.tap(find.text('Ask about Fastener DB'));
+          await tester.pumpAndSettle();
+        }
+        fixture.requests.clear();
+        for (final entry in [
+          ('Take photo', ImageSource.camera),
+          ('Photo library', ImageSource.gallery),
+        ]) {
+          await tester.tap(find.byTooltip('Add items').hitTestable());
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(entry.$1));
+          await tester.pumpAndSettle();
+          expect(picker.sources.last, entry.$2);
+          expect(find.text('Choose photo'), findsNothing);
+          expect(find.byType(ChatPage), inChat ? findsOneWidget : findsNothing);
+          expect(find.byTooltip('Add items').hitTestable(), findsOneWidget);
+        }
+        expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
+
+  testWidgets(
+    'spreadsheet picker opens above Space chat and cancellation preserves it',
+    (tester) async {
+      FilePicker? original;
+      try {
+        original = FilePicker.platform;
+      } catch (_) {
+        /* No host plugin registered. */
+      }
+      final picker = CaptureFilePicker();
+      FilePicker.platform = picker;
+      addTearDown(() {
+        if (original != null) FilePicker.platform = original;
+      });
+      await mount(tester, 3);
+      await tester.tap(find.text('Ask about Fastener DB'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add items').hitTestable());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Import spreadsheet'));
+      await tester.pumpAndSettle();
+      expect(picker.calls, 1);
+      expect(find.byType(ImportSheetPage), findsOneWidget);
+      expect(find.byType(ChatPage, skipOffstage: false), findsOneWidget);
+      await spaceV2Capture?.call('chat-import');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Only in Fastener DB'), findsOneWidget);
+      expect(find.byTooltip('Add items').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets(
+      'inline threshold stays above keyboard with clean footer ${mode.name}',
+      (tester) async {
+        await mount(tester, 3, mode: mode);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.tap(find.text('PN-F105'));
+        await tester.pumpAndSettle();
+        final scroll = find.descendant(
+          of: find.byKey(const ValueKey('space-quick-view')),
+          matching: find.byType(Scrollable),
+        );
+        final field = find.byKey(const ValueKey('space-edit-threshold'));
+        await tester.scrollUntilVisible(field, 250, scrollable: scroll);
+        await tester.tap(field);
+        await tester.pumpAndSettle();
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('space-item-field-threshold')),
+          '12',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Move'), findsNothing);
+        expect(find.text('Ask'), findsNothing);
+        expect(find.textContaining('/200'), findsNothing);
+        expect(find.text('Save').hitTestable(), findsOneWidget);
+        expect(tester.getBottomLeft(find.text('Save')).dy, lessThan(544));
+        await spaceV2Capture?.call('inline-keyboard-${mode.name}');
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('space-item-field-threshold')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
+
   testWidgets('swipe dismissal protects an unsaved inline edit', (
     tester,
   ) async {
@@ -924,6 +1156,11 @@ void main() {
         viewer: true,
         scale: 1.8,
         size: const Size(320, 844),
+      );
+      expect(
+        tester.getSize(find.byType(EditableText).first).height,
+        greaterThanOrEqualTo(16 * 1.35 * 1.8),
+        reason: 'Large-text search must keep its full text line visible',
       );
       expect(find.byTooltip('Add items'), findsNothing);
       await tester.tap(find.text('Ask about Fastener DB'));

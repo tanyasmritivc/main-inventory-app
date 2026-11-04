@@ -92,6 +92,17 @@ void main() {
         await t.pump(const Duration(milliseconds: 300));
         expect(find.text('Looking at your photo'), findsOneWidget);
         expect(find.text('0 found'), findsOneWidget);
+        final gradient = t.widget<DecoratedBox>(
+          find.byKey(const Key('scan-clean-gradient')),
+        );
+        expect(
+          (gradient.decoration as BoxDecoration).gradient,
+          isA<LinearGradient>(),
+        );
+        expect(
+          find.byType(RawImage),
+          findsOneWidget,
+        ); // Only the photo; no grain layer.
         expect(find.textContaining('8 objects'), findsNothing);
         expect(
           t.getSize(find.byKey(const Key('scan-photo-stage'))).height,

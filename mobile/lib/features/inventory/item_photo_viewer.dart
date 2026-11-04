@@ -21,16 +21,29 @@ class ItemPhotoViewer extends StatefulWidget {
 class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
   final _transform = TransformationController();
   late int _index = widget.initialIndex;
+  late final _pages = PageController(initialPage: widget.initialIndex);
+  bool _zoomed = false;
 
   @override
   void dispose() {
     _transform.dispose();
+    _pages.dispose();
     super.dispose();
   }
 
   void _select(int index) {
     _transform.value = Matrix4.identity();
-    setState(() => _index = index);
+    setState(() {
+      _index = index;
+      _zoomed = false;
+    });
+    if (_pages.hasClients && _pages.page?.round() != index) {
+      _pages.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -51,22 +64,33 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
       child: Column(
         children: [
           Expanded(
-            child: InteractiveViewer(
-              key: const ValueKey('full-item-photo'),
-              transformationController: _transform,
-              minScale: 1,
-              maxScale: 8,
-              child: SizedBox.expand(
-                child: PrivateImage(
-                  widget.photos[_index].imageUrl,
-                  key: ValueKey(widget.photos[_index].photoId),
-                  fit: BoxFit.contain,
-                  semanticLabel: 'Item photo ${_index + 1}',
-                  loadingBuilder: (_, child, progress) => progress == null
-                      ? child
-                      : const Center(child: CircularProgressIndicator()),
-                  errorBuilder: (_, _, _) => const Center(
-                    child: Text('Photo unavailable. Close and try again.'),
+            child: PageView.builder(
+              controller: _pages,
+              physics: _zoomed ? const NeverScrollableScrollPhysics() : null,
+              itemCount: widget.photos.length,
+              onPageChanged: _select,
+              itemBuilder: (_, index) => InteractiveViewer(
+                key: index == _index ? const ValueKey('full-item-photo') : null,
+                panEnabled: _zoomed,
+                onInteractionUpdate: (_) {
+                  final zoomed = _transform.value.getMaxScaleOnAxis() > 1.01;
+                  if (zoomed != _zoomed) setState(() => _zoomed = zoomed);
+                },
+                transformationController: _transform,
+                minScale: 1,
+                maxScale: 8,
+                child: SizedBox.expand(
+                  child: PrivateImage(
+                    widget.photos[index].imageUrl,
+                    key: ValueKey(widget.photos[index].photoId),
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Item photo ${index + 1}',
+                    loadingBuilder: (_, child, progress) => progress == null
+                        ? child
+                        : const Center(child: CircularProgressIndicator()),
+                    errorBuilder: (_, _, _) => const Center(
+                      child: Text('Photo unavailable. Close and try again.'),
+                    ),
                   ),
                 ),
               ),
@@ -84,7 +108,10 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
                     icon: const Icon(Icons.chevron_left),
                   ),
                 TextButton(
-                  onPressed: () => _transform.value = Matrix4.identity(),
+                  onPressed: () {
+                    _transform.value = Matrix4.identity();
+                    setState(() => _zoomed = false);
+                  },
                   child: const Text('Reset zoom'),
                 ),
                 if (widget.photos.length > 1)

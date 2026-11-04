@@ -311,32 +311,32 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                   h1: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   h2: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   h3: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   h4: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   h5: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   h6: TextStyle(
                     fontFamily: 'CupertinoSystemText',
                     color: primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                   code: const TextStyle(fontFamily: 'CupertinoSystemText'),
                   p: AppTypography.styleOf(

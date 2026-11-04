@@ -51,46 +51,47 @@ FontWeight? _weight(WidgetTester tester, String label) => tester
 
 void main() {
   for (final brightness in Brightness.values) {
-    testWidgets('only AI response headings are bold ${brightness.name}', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.create(brightness),
-          builder: (_, child) => AppTypography(child: child!),
-          home: const Scaffold(
-            body: AskAnswerView(
-              answer: '# Inventory heading\n\nRegular **emphasis** body.',
-              isLoading: true,
+    testWidgets(
+      'AI response headings and body remain regular ${brightness.name}',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.create(brightness),
+            builder: (_, child) => AppTypography(child: child!),
+            home: const Scaffold(
+              body: AskAnswerView(
+                answer: '# Inventory heading\n\nRegular **emphasis** body.',
+                isLoading: true,
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pump();
-      final texts = tester.widgetList<RichText>(find.byType(RichText));
-      final heading = texts.firstWhere(
-        (t) => t.text.toPlainText() == 'Inventory heading',
-      );
-      final body = texts.firstWhere(
-        (t) => t.text.toPlainText().contains('Regular'),
-      );
-      void check(InlineSpan span, TextStyle inherited, FontWeight weight) {
-        final style = inherited.merge(span.style);
-        if (span is TextSpan) {
-          if ((span.text ?? '').isNotEmpty) {
-            expect(style.fontWeight, weight);
-            expect(style.fontFamily, 'CupertinoSystemText');
-          }
-          for (final child in span.children ?? <InlineSpan>[]) {
-            check(child, style, weight);
+        );
+        await tester.pump();
+        final texts = tester.widgetList<RichText>(find.byType(RichText));
+        final heading = texts.firstWhere(
+          (t) => t.text.toPlainText() == 'Inventory heading',
+        );
+        final body = texts.firstWhere(
+          (t) => t.text.toPlainText().contains('Regular'),
+        );
+        void check(InlineSpan span, TextStyle inherited, FontWeight weight) {
+          final style = inherited.merge(span.style);
+          if (span is TextSpan) {
+            if ((span.text ?? '').isNotEmpty) {
+              expect(style.fontWeight, weight);
+              expect(style.fontFamily, 'CupertinoSystemText');
+            }
+            for (final child in span.children ?? <InlineSpan>[]) {
+              check(child, style, weight);
+            }
           }
         }
-      }
 
-      check(heading.text, const TextStyle(), FontWeight.w600);
-      check(body.text, const TextStyle(), FontWeight.w400);
-      await tester.pumpWidget(const SizedBox());
-    });
+        check(heading.text, const TextStyle(), FontWeight.w400);
+        check(body.text, const TextStyle(), FontWeight.w400);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
   }
 
   for (final brightness in Brightness.values) {
@@ -109,6 +110,36 @@ void main() {
         expect(_weight(tester, 'Framework toolbar'), FontWeight.w400);
         expect(_weight(tester, 'Framework button'), FontWeight.w400);
         expect(_weight(tester, 'Field hint'), FontWeight.w400);
+        for (final label in [
+          'Supporting text',
+          'Framework body',
+          'Framework button',
+        ]) {
+          final text = tester.widget<RichText>(
+            find.descendant(
+              of: find.text(label),
+              matching: find.byType(RichText),
+            ),
+          );
+          expect(text.text.style?.fontSize, 16, reason: label);
+        }
+        expect(
+          tester
+              .widget<RichText>(
+                find.descendant(
+                  of: find.text('Heading'),
+                  matching: find.byType(RichText),
+                ),
+              )
+              .text
+              .style
+              ?.fontSize,
+          24,
+        );
+        expect(
+          tester.widget<EditableText>(find.byType(EditableText)).style.fontSize,
+          16,
+        );
         for (final label in [
           'Heading',
           'Supporting text',

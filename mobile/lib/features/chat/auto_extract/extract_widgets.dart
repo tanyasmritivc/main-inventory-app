@@ -300,7 +300,6 @@ class _ExtractScanningState extends State<ExtractScanning>
     duration: const Duration(seconds: 35),
   );
   double _aspect = 1;
-  ui.Image? _decoded;
   bool _reduce = false;
   bool get _active => !widget.done && !widget.stopped && widget.error == null;
   @override
@@ -317,14 +316,11 @@ class _ExtractScanningState extends State<ExtractScanning>
       final ratio = frame.image.width / frame.image.height;
       codec.dispose();
       if (mounted && identical(bytes, widget.photo)) {
-        _decoded?.dispose();
         setState(() {
           _aspect = ratio;
-          _decoded = frame.image;
         });
-      } else {
-        frame.image.dispose();
       }
+      frame.image.dispose();
     } catch (_) {
       /* The existing image error fallback remains visible. */
     }
@@ -363,7 +359,6 @@ class _ExtractScanningState extends State<ExtractScanning>
   void dispose() {
     _sweep.dispose();
     _activity.dispose();
-    _decoded?.dispose();
     super.dispose();
   }
 
@@ -410,9 +405,20 @@ class _ExtractScanningState extends State<ExtractScanning>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              const TickerMode(enabled: false, child: RisoArt(radius: 22)),
-              if (_decoded != null)
-                CustomPaint(painter: _ScanPhotoBackdrop(_decoded!)),
+              const DecoratedBox(
+                key: Key('scan-clean-gradient'),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF514252),
+                      Color(0xFF87696B),
+                      Color(0xFFC5A28D),
+                    ],
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: LayoutBuilder(
@@ -453,21 +459,11 @@ class _ExtractScanningState extends State<ExtractScanning>
                               ),
                               if (_active && !_reduce)
                                 IgnorePointer(
-                                  child: FutureBuilder<ui.Image>(
-                                    future: RisoTile.image(
-                                      RisoPalette.plumRust,
+                                  child: AnimatedBuilder(
+                                    animation: _sweep,
+                                    builder: (_, _) => CustomPaint(
+                                      painter: _ScanSweep(_sweep.value),
                                     ),
-                                    builder: (_, art) => art.data == null
-                                        ? const SizedBox.shrink()
-                                        : AnimatedBuilder(
-                                            animation: _sweep,
-                                            builder: (_, _) => CustomPaint(
-                                              painter: _ScanSweep(
-                                                art.data!,
-                                                _sweep.value,
-                                              ),
-                                            ),
-                                          ),
                                   ),
                                 ),
                               IgnorePointer(
@@ -896,85 +892,25 @@ class _ExtractScanningState extends State<ExtractScanning>
   }
 }
 
-// These blend into the existing photograph/art instead of covering it with
-// an opaque strip. They use the same shared grain raster as the app's riso tiles.
-class _ScanPhotoBackdrop extends CustomPainter {
-  const _ScanPhotoBackdrop(this.image);
-  final ui.Image image;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final source = Size(image.width.toDouble(), image.height.toDouble());
-    final fit = applyBoxFit(BoxFit.cover, source, size);
-    canvas.drawImageRect(
-      image,
-      Alignment.center.inscribe(fit.source, Offset.zero & source),
-      Offset.zero & size,
-      Paint()
-        ..blendMode = BlendMode.luminosity
-        ..color = Colors.white.withValues(alpha: .28)
-        ..imageFilter = ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanPhotoBackdrop old) => old.image != image;
-}
-
+// A neutral line scans the photo without tinting or texturing it.
 class _ScanSweep extends CustomPainter {
-  const _ScanSweep(this.image, this.value);
-  final ui.Image image;
+  const _ScanSweep(this.value);
   final double value;
   @override
   void paint(Canvas canvas, Size size) {
     final t = const Cubic(.45, 0, .55, 1).transform(value);
-    final band = Rect.fromLTWH(
-      0,
-      size.height * (t * 1.42 - .42),
-      size.width,
-      size.height * .42,
-    );
-    canvas.saveLayer(
-      Offset.zero & size,
-      Paint()
-        ..blendMode = BlendMode.screen
-        ..color = Colors.white.withValues(alpha: .95),
-    );
-    canvas.drawImageRect(
-      image,
-      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      band,
-      Paint(),
-    );
-    canvas.drawRect(
-      band,
-      Paint()
-        ..blendMode = BlendMode.dstIn
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.white,
-            Colors.white,
-            Colors.transparent,
-          ],
-          stops: [0, .35, .84, 1],
-        ).createShader(band),
-    );
-    final line = Rect.fromLTWH(0, band.bottom - 10, size.width, 2);
+    final line = Rect.fromLTWH(0, size.height * t, size.width, 1.5);
     canvas.drawRect(
       line,
       Paint()
-        ..color = Colors.white
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        ..color = Colors.white.withValues(alpha: .55)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
     );
-    canvas.drawRect(line, Paint()..color = Colors.white);
-    canvas.restore();
+    canvas.drawRect(line, Paint()..color = Colors.white.withValues(alpha: .9));
   }
 
   @override
-  bool shouldRepaint(covariant _ScanSweep old) =>
-      old.value != value || old.image != image;
+  bool shouldRepaint(covariant _ScanSweep old) => old.value != value;
 }
 
 class _ScanButton extends StatefulWidget {

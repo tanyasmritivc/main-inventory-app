@@ -1,3 +1,7 @@
+## November3 — TestFlight177 uploaded
+
+Apple acknowledged TestFlight 1.1.2(177), delivery 22a7a085-2082-4627-9dfa-66e16d7eef66. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41782391061). Signed archive/export passed device-platform, strict-signature, privacy, production-configuration and font-packaging checks; Apple validation passed. Source 9a2d6c65b494de78aedbde01bcc57393d49d6980. See testflight177-receipt.json. Physical-device acceptance remains unverified. Scope: direct Space capture, swipe/tap item-sheet parity, multi-photo galleries, keyboard-safe editing, collapsing header, clean scan visuals and regular SF Pro defaults. No backend/web or public App Store changes.
+
 ## November 3 - Space polish delivered to TestFlight173
 
 First of the user's three sequential packages is complete. Apple acknowledged 1.1.2 (173), runtime `6091565f8a74011dffec3b6c2fa0ced3f357692a`, delivery `b052bbd1-56cb-49af-9702-4ab31ae4600f`. Branch `feat/space-polish`, PR304, processing VALID, requested notes verified. Existing Space rows use shared cached risograph art, Inter Tight title, requested row typography and right-aligned sort label. Low quantity hides at zero. Review count is not available locally; the package's explicit exception preserves its label/card without a new API call. No data/API/backend changes.

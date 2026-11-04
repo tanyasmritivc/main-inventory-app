@@ -1,3 +1,9 @@
+## Space capture and galleries177
+
+Run full Flutter tests and analyzer. `space_v2_test.dart` covers swipe/tap parity, gallery paging/full images, partial multi-upload failure, direct camera/library cancellation, spreadsheet presentation above Space chat, keyboard-safe fields, all sorts and appearance modes. `space_capture_entry_test.dart` checks immediate menus, camera/barcode/import routes, permissions and large text. `photo_scan_card_test.dart` checks the plain scan stage, preserved aspect, reduced motion and review/stop/retry behavior. `app_typography_test.dart` verifies regular SF Pro, a16pt ordinary default, deliberate heading sizes, and preserved system scaling with OS Bold Text enabled.
+
+Native: run `integration_test/space_v2_audit_test.dart`, `integration_test/photo_scan_audit_test.dart` and `integration_test/system_typography_test.dart` on the iOS simulator. Retain their image paths while the runner is alive. These controlled fixtures do not establish real camera/physical iPhone acceptance. Do not write customer inventory for verification.
+
 ## Build167 explicit extraction confirmation
 
 `confirm_scan_save_test.dart` verifies direct add, missing-count gating and optional
