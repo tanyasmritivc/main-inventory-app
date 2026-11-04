@@ -1,0 +1,389 @@
+{
+  "matrix_cases": 12,
+  "all_layout_bounds_pass": true,
+  "focus_container_and_scroll_lock": true,
+  "safari_clipping_verified": true,
+  "observations": [
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 310,
+        "y": 172,
+        "width": 820,
+        "height": 500
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "What's included",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "28px",
+      "dialog": {
+        "x": 310,
+        "y": 82.25,
+        "width": 820,
+        "height": 679.515625
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "closed",
+      "font": null,
+      "fontSize": null,
+      "dialog": null,
+      "overflow": false,
+      "focusOnContainer": false,
+      "scrollLocked": false,
+      "clip": null,
+      "seen": "true"
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "closed",
+      "font": null,
+      "fontSize": null,
+      "dialog": null,
+      "overflow": false,
+      "focusOnContainer": false,
+      "scrollLocked": false,
+      "clip": null,
+      "seen": "true"
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "Your plan",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "28px",
+      "dialog": {
+        "x": 310,
+        "y": 96.25,
+        "width": 820,
+        "height": 651.515625
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": "true"
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "light",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 310,
+        "y": 172,
+        "width": 820,
+        "height": 500
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        1280,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 230,
+        "y": 172,
+        "width": 820,
+        "height": 500
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "light",
+      "viewport": [
+        1280,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 230,
+        "y": 172,
+        "width": 820,
+        "height": 500
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "dark",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "32px",
+      "dialog": {
+        "x": 8,
+        "y": 100,
+        "width": 374,
+        "height": 736
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 22px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3.1 Safari/605.1.15",
+      "theme": "light",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "32px",
+      "dialog": {
+        "x": 8,
+        "y": 65,
+        "width": 374,
+        "height": 771
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 22px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "dark",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 310,
+        "y": 168.58203125,
+        "width": 820,
+        "height": 506.8359375
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "light",
+      "viewport": [
+        1440,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 310,
+        "y": 168.58203125,
+        "width": 820,
+        "height": 506.8359375
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "dark",
+      "viewport": [
+        1280,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 230,
+        "y": 168.58203125,
+        "width": 820,
+        "height": 506.8359375
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "light",
+      "viewport": [
+        1280,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "36px",
+      "dialog": {
+        "x": 230,
+        "y": 168.58203125,
+        "width": 820,
+        "height": 506.8359375
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 12px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "dark",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "You're in early.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "32px",
+      "dialog": {
+        "x": 8,
+        "y": 92.421875,
+        "width": 374,
+        "height": 743.578125
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 22px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "light",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "You're a Founding member.",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "32px",
+      "dialog": {
+        "x": 8,
+        "y": 57.2265625,
+        "width": 374,
+        "height": 778.7734375
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 22px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "light",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "What's included",
+      "font": "\"Inter Tight\", \"Inter Tight Fallback\", Inter, Arial, sans-serif",
+      "fontSize": "28px",
+      "dialog": {
+        "x": 8,
+        "y": 8,
+        "width": 374,
+        "height": 828
+      },
+      "overflow": false,
+      "focusOnContainer": true,
+      "scrollLocked": true,
+      "clip": "inset(0px round 22px)",
+      "seen": null
+    },
+    {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "theme": "light",
+      "viewport": [
+        390,
+        844
+      ],
+      "title": "closed",
+      "font": null,
+      "fontSize": null,
+      "dialog": null,
+      "overflow": false,
+      "focusOnContainer": false,
+      "scrollLocked": false,
+      "clip": null,
+      "seen": "true"
+    }
+  ]
+}

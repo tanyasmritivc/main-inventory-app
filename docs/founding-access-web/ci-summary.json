@@ -1,0 +1,34 @@
+{
+  "run": "41759923020",
+  "source_commit": "7f11774b2cdd3cec87bf6577c46a8f45e217e61c",
+  "status": "completed",
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "name": "Mobile (Flutter)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Backend (Python)",
+      "conclusion": "success"
+    },
+    {
+      "name": "API permissions (PostgreSQL)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Web (Jest)",
+      "conclusion": "failure"
+    },
+    {
+      "name": "AI connectors (MCP and Actions)",
+      "conclusion": "success"
+    }
+  ],
+  "web_tests_failed": 66,
+  "web_tests_passed": 453,
+  "web_suites_failed": 23,
+  "web_suites_passed": 44,
+  "new_failure_headings_vs_local_baseline": [],
+  "founding_access_suite_passed": true
+}

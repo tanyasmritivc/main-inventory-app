@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "numFailedTests": 70,
+    "numPassedTests": 433,
+    "numFailedTestSuites": 24,
+    "numPassedTestSuites": 42
+  },
+  "final": {
+    "numFailedTests": 70,
+    "numPassedTests": 449,
+    "numFailedTestSuites": 24,
+    "numPassedTestSuites": 43
+  },
+  "new_failures": [],
+  "resolved_failures": []
+}
