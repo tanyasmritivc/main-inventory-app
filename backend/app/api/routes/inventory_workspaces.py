@@ -280,6 +280,26 @@ async def inventory_session(request: Request, inventory_id: str, user: Authentic
     if not scope.can_edit and request.method not in ('GET', 'HEAD', 'OPTIONS') and suffix not in read_posts and not suffix.startswith('/conversations') and not suffix.startswith('/ai_actions/') and not preview:
         raise HTTPException(403, 'You have view-only access to this inventory.')
     token = current_inventory.set(scope)
+    # Optional Space chat boundary is validated after inventory authorization.
+    # It is never inferred from model text or applied to the main world chat.
+    space_header = request.headers.get('x-findez-space-id')
+    if space_header:
+        from dataclasses import replace
+        from uuid import UUID
+        from app.services.supabase_client import get_supabase_admin
+        try:
+            space_id = str(UUID(space_header))
+            rows = await asyncio.to_thread(lambda: get_supabase_admin().table('spaces').select('id,name').eq('id', space_id).limit(1).execute().data)
+            if not rows:
+                raise HTTPException(404, 'This Space is no longer available.')
+            scope = replace(scope, chat_space_id=space_id, chat_space_name=rows[0]['name'])
+            current_inventory.set(scope)
+        except (ValueError, TypeError):
+            current_inventory.reset(token)
+            raise HTTPException(422, 'Choose a valid Space.') from None
+        except BaseException:
+            current_inventory.reset(token)
+            raise
     # Legacy inventory services receive their effective owner, while the actor
     # remains independently verified for membership, private chats and auditing.
     user.user_id, user.actor_id = scope.owner_id, actor

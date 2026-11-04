@@ -842,6 +842,8 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
 
 def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
                        expected_item: dict | None = None) -> Any:
+    from app.services.space_chat import guard_tool
+    guard_tool(tool_name, args)
     if tool_name == 'inventory_propose_add':
         return propose_additions(user_id=user_id, items=args['items'])
     if tool_name == 'inventory_propose_delete':

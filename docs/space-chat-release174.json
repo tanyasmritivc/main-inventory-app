@@ -1,0 +1,53 @@
+{
+  "runtime_commit": "d80a06f023c9cf96460ea611aa313c2cb0fab026",
+  "branch": "fix/space-chat-scope",
+  "ci_run": "41752020266",
+  "ci_jobs_passed": 5,
+  "deployment": {
+    "health": 200,
+    "database_health": 200,
+    "files": {
+      "app/api/routes/ai.py": {
+        "before": "14014953c66c977946128872d2ac3ccec096328fc398c13f09430dd3366949fa",
+        "after": "d875abeaeba58b1ff6c8c8b8b34ee04a87ae656bea8a7175e86c430f1f9fd083"
+      },
+      "app/api/routes/inventory_workspaces.py": {
+        "before": "0e72edc497562ad5bcefedc37ba8e825f4a409588b99061ac05fc4d384f82291",
+        "after": "371f57c40caf555e33fe635c340e34c89c4fcace6fd34a93599353d4d2880913"
+      },
+      "app/services/ai_agent.py": {
+        "before": "2a0a7781613fde3eec48c1a5765c91992be6419d49e959e2a6f722caae029a51",
+        "after": "aa62aea19ae3802430caab8035bb036a2364cf61308126846c2803a53c6ff8cb"
+      },
+      "app/services/chat_item_actions.py": {
+        "before": "5d0c8be41fe94ef37eaec0b19085715996f8a29112b9b8ac5acfe838de7f624b",
+        "after": "c9c2295758e79722a1e3ebed69e5a979c9e4125e61b9f385b7954d1e89690462"
+      },
+      "app/services/inventory_scope.py": {
+        "before": "7962c82a527c9a70c91dfe2718502861deee88b946f6eec372630126628e3ee7",
+        "after": "89853484cf7cb8472661a064219caf4cf5d2581eb8b5e1c6b24240f2bd80faea"
+      },
+      "app/services/space_chat.py": {
+        "before": null,
+        "after": "52b3d64e84ab5aeb46fc0da4b48802bc7d883d94330bc72d5c6662a6b4d3050f"
+      },
+      "app/api/routes/conversations.py": {
+        "before": "37829e1e75641cf555fdf472130cdb8cae78484c93b6e59d15cb7a2eae062d4e",
+        "after": "db0a7209d99304b717805535011e8c276839b09d6b735f56b6c9f9206fab5902"
+      }
+    },
+    "other_source_preserved": true,
+    "world_chat_unchanged": true
+  },
+  "live_verification": {
+    "reviewed_add_and_delete": true,
+    "real_model_completed": 4,
+    "first_answer_seconds": 2.27,
+    "followup_seconds": 1.99,
+    "space_only_evidence": true,
+    "cross_space_history_denied": true,
+    "cross_space_write_denied": true,
+    "customer_records_used": false,
+    "disposable_account_removed": true
+  }
+}

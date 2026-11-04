@@ -105,6 +105,8 @@ def action_context(trace):
 
 
 def change_action(*, actor, action_id, decision):
+    from app.services.space_chat import guard_action
+    guard_action(action_id)
     scope = current_inventory.get()
     if scope is None or scope.actor_id != actor:
         raise HTTPException(400, 'Choose the inventory containing this action.')

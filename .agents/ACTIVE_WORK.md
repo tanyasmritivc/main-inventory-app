@@ -1,3 +1,11 @@
+## November 3 — Space chat deployed
+
+Runtime `d80a06f023c9cf96460ea611aa313c2cb0fab026`, branch `fix/space-chat-scope`, PR306: seven-file scoped patch deployed onto current live source without replacing unrelated changes. API/database health and real HTTPS four-answer/isolation/reviewed-action QA passed. Five CI gates passed; no schema change. Companion mobile build174 is uploading. See `docs/space-chat-release174.json`.
+
+## November 3 - Space-scoped chat repair
+
+Backend lane `fix/space-chat-scope` adds an authenticated, request-local Space boundary and a Space-only answer path with sufficient generation budget. Main world chat remains unchanged. No database migration. 1,530 local tests and 34 live-source focused checks pass. Real-model scoped reads/history/write denial and reviewed add/delete passed with a disposable account removed. Production deployment awaits exact-source CI. See `docs/space-chat-scope.md`.
+
 ## November 2 - Chat file readers deployed
 
 Backend lane `feat/chat-file-formats-api` adds bounded XLSX, DOCX, CSV, TSV and arbitrary JSON readers to the existing authenticated chat-files endpoint. ZIP expansion and XML entities are guarded; formulas remain expressions and are never executed. Existing PDF/text reading, world permissions, 10MB and excerpt limits remain. Legacy XLS/DOC require conversion. No schema, inventory writes or web changes.
