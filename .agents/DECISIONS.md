@@ -1,3 +1,7 @@
+## November 3 — Isolate main Ask source-picker appearance
+
+The Auto-extract Camera/Library popup follows Light/Dark/System and enforces regular SF Pro locally (18pt heading, 16pt body/buttons). It must not inherit the older forced-dark extraction-review container. Preserve source return values and the existing main Ask photo/extraction pipeline.
+
 ## November3 — Regular SF Pro and direct Space capture
 
 Latest user instruction supersedes176: use regular SF Pro even for AI headings; ordinary body/form/control sizes14–17 normalize to16pt, retaining intentional captions/large headings and user scaling. Space navigation collapses entirely so only search/sort float over dissolving blur. Swipe Edit reuses the current inline item sheet. Item galleries reuse existing photo APIs with multi-select and visible partial failures. Space capture must originate from the active Space-chat route when invoked there; no background-page presentation. Main Ask behavior remains protected except its explicitly requested scan visuals and global typography. No backend/schema changes.

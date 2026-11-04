@@ -1,3 +1,7 @@
+## November 3 — Auto-extract popup178 uploaded
+
+Apple acknowledged TestFlight 1.1.2 (178), delivery 22381432-74f8-441a-b8ae-55477d3b6aa4. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41786025561). Signed archive/export passed platform, strict-signature, privacy, production-configuration and font-packaging checks; Apple validation passed. Source ab3ca194b1cbce7475da8fcf49edb29abfa9ce02. See testflight178-receipt.json. The isolated main Ask source picker uses compact regular SF Pro, adaptive opaque-grey controls and keyboard/large-text-safe swipe dismissal. Other main Ask/extraction behavior remains unchanged. Physical iPhone acceptance unverified.
+
 ## November3 — TestFlight177 uploaded
 
 Apple acknowledged TestFlight 1.1.2(177), delivery 22a7a085-2082-4627-9dfa-66e16d7eef66. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41782391061). Signed archive/export passed device-platform, strict-signature, privacy, production-configuration and font-packaging checks; Apple validation passed. Source 9a2d6c65b494de78aedbde01bcc57393d49d6980. See testflight177-receipt.json. Physical-device acceptance remains unverified. Scope: direct Space capture, swipe/tap item-sheet parity, multi-photo galleries, keyboard-safe editing, collapsing header, clean scan visuals and regular SF Pro defaults. No backend/web or public App Store changes.

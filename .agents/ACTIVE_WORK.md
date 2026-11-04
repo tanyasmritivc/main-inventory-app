@@ -1,6 +1,6 @@
-## November3 — Main Ask auto-extract source popup178
+## November 3 — Main Ask auto-extract source popup 178 delivered
 
-Active mobile-only branch `fix/auto-extract-photo-popup` from delivered177. The user explicitly requests fixing the main Ask Auto-extract Camera/Library popup. Isolate the picker from the older forced-dark extraction-review sheet: regular SF Pro,18pt heading/16pt body and buttons, compact spacing, opaque grey controls, live Light/Dark/System appearance, large-text/keyboard-safe scrolling and swipe-down/accessibility dismissal. Preserve boolean source selection and all extraction/main-chat behavior. Push/TestFlight remain authorized. Checks and build178 pending.
+Completed mobile-only branch `fix/auto-extract-photo-popup` from delivered build 177. The user explicitly requests fixing the main Ask Auto-extract Camera/Library popup. Isolate the picker from the older forced-dark extraction-review sheet: regular SF Pro, 18pt heading/16pt body and buttons, compact spacing, opaque grey controls, live Light/Dark/System appearance, large-text/keyboard-safe scrolling and swipe-down/accessibility dismissal. Preserve boolean source selection and all extraction/main-chat behavior. Push/TestFlight remain authorized. Apple acknowledged TestFlight 1.1.2 (178), delivery 22381432-74f8-441a-b8ae-55477d3b6aa4. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41786025561). Signed archive/export passed platform, strict-signature, privacy, production-configuration and font-packaging checks; Apple validation passed. Source ab3ca194b1cbce7475da8fcf49edb29abfa9ce02. See testflight178-receipt.json.
 
 ## November 3 — Space capture/gallery and clean scan177 delivered
 
