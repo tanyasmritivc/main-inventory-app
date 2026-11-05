@@ -517,14 +517,27 @@ void main() {
         );
         if (kind == 'import') {
           await tester.scrollUntilVisible(
-            find.text('Finish / Custom'),
+            find.text('Imported details'),
             300,
             scrollable: scrollable,
+          );
+          await tester.tap(find.text('Imported details'));
+          await tester.pumpAndSettle();
+          final importedScroll = find.descendant(
+            of: find.byKey(const PageStorageKey('imported-details-scroll')),
+            matching: find.byType(Scrollable),
+          );
+          await tester.scrollUntilVisible(
+            find.text('Finish / Custom'),
+            150,
+            scrollable: importedScroll,
           );
           expect(find.text('Part Number'), findsNWidgets(2));
           expect(find.text('Blue - keep CASE'), findsOneWidget);
           expect(find.text('120.0'), findsOneWidget);
           await spaceV2Capture?.call('import-fields');
+          await tester.tap(find.text('Imported details'));
+          await tester.pumpAndSettle();
         }
         final editPart = find.byKey(const ValueKey('space-edit-part_number'));
         await tester.scrollUntilVisible(editPart, -300, scrollable: scrollable);
