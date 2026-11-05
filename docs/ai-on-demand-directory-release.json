@@ -1,0 +1,37 @@
+{
+  "runtime": "39d3c464284c443736005be0d86af149726a08a0",
+  "ci_run": 41975087990,
+  "checks": 1495,
+  "deployment": {
+    "source": "39d3c464284c443736005be0d86af149726a08a0",
+    "file": "app/services/world_chat.py",
+    "before": "501e4b18a521a6be3a1885e704b145c9277cc7b98178a2d7d14195398bdb3edf",
+    "after": "d263d9eb6dc02300880fc44e039e52945db9a4f858b7206c45109c754f2be445",
+    "health": 200,
+    "database_health": 200,
+    "unrelated_source_preserved": true
+  },
+  "real_model_qa": {
+    "authenticated_disposable_account": true,
+    "greeting": {
+      "completed": true,
+      "directory_calls": 0,
+      "tool_calls": 0,
+      "seconds": 11.83
+    },
+    "directory": {
+      "completed": true,
+      "directory_calls": 1,
+      "tool_calls": 1,
+      "seconds": 2.05
+    },
+    "thanks": {
+      "completed": true,
+      "directory_calls": 0,
+      "tool_calls": 0,
+      "seconds": 1.63
+    },
+    "disposable_account_removed": true
+  },
+  "schema_changed": false
+}

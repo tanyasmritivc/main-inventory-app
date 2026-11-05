@@ -325,7 +325,7 @@ def test_first_turn_can_resolve_destination_after_drafting_without_another_messa
         offered.append({t['function']['name'] for t in kwargs['tools']})
         return next(responses)
     with c.use_capture(ACTOR, WORLD, CID, None) as state, patch.object(w, 'authorize'), \
-         patch.object(w, 'directory', return_value=known), \
+         patch.object(w, 'authorize'), patch.object(w, 'directory', return_value=known), \
          patch('app.services.spaces_repo.list_spaces', return_value=[{'id': SPACE, 'name': 'Fridge'}]), \
          patch('app.services.agent_gateway_client.gateway_completion', side_effect=gateway):
         events = list(w.stream_turn(ACTOR, WORLD, 'I have like 6 strawberries to add to my fridge', [], CID,
@@ -353,7 +353,7 @@ def test_first_turn_cannot_bypass_draft_with_add_items_in_same_tool_batch(store)
         ('world_draft_items', {'place': 'Fridge', 'items': [{'name': 'Strawberries', 'quantity': 6}]}),
         ('world_add_items', {'inventory_id': INV, 'items': [{'name': 'Strawberries', 'quantity': 6, 'location': 'Fridge'}]})]]
     with c.use_capture(ACTOR, WORLD, CID, None), patch.object(w, 'authorize'), \
-         patch.object(w, 'directory', return_value={}), \
+         patch.object(w, 'authorize'), patch.object(w, 'directory', return_value={}), \
          patch('app.services.chat_item_actions.propose_additions') as additions, \
          patch('app.services.agent_gateway_client.gateway_completion', side_effect=[
              NS(choices=[NS(message=NS(content='', tool_calls=calls))]),

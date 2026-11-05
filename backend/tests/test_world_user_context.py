@@ -22,7 +22,7 @@ def test_optional_profile_outage_does_not_invent_identity_or_block_inventory():
 
 
 def test_saved_actor_preferences_and_identity_reach_world_model():
-    with patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello')) as gateway:
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello')) as gateway:
         list(world.stream_turn(ACTOR, WORLD, 'Who am I?', [], 'cid', user_context={'profile': {'first_name': 'Tanya'}, 'preferences': {'answer_length': 'brief'}}))
     messages = str(gateway.call_args.kwargs['messages'])
     assert 'Tanya' in messages and 'Use concise phrasing' in messages

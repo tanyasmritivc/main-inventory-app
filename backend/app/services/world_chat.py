@@ -361,9 +361,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     from app.services.agent_gateway_client import gateway_completion
     from app.services.completion_stream import completion_events
     from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
-    known = directory(actor, world)
+    authorize(actor, world)
+    yield {'type': 'status', 'message': 'Thinking...'}
     messages = [{'role': 'system', 'content': 'You are FindEZ, AI memory for the physical world. '
         'Answer the user in your own words. Search saved records before making inventory claims. '
+        'Choose tools only when the current request needs saved data or an action. Greetings, thanks, '
+        'and general conversation need no directory or inventory lookup. Reply naturally yourself. '
+        'When you need accessible workspaces or inventories, call world_directory first; '
+        'the directory is not preloaded. Use targeted reads for the question, not a full stock scan. '
         'An extraction draft is NOT saved inventory. Questions such as what items do I have require fresh saved-item tools, even when a draft is in this conversation. '
         'Answer the current question first; do not keep asking for a draft destination when the user changes topic. '
         'You work across the selected organization, never other organizations. Conversations are private to their author. '
@@ -381,7 +386,6 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         'For item discovery, extract a few distinctive keywords from the user description; the user does not need the exact saved name. Search matches words across saved names, part numbers, brands, categories, notes, tags and imported fields, including identifier formatting variants and modest spelling errors. If an initial lookup has no useful match, retry a shorter keyword or a sensible synonym before asking for an exact name. Never infer physical absence from a bounded search. Treat _match_basis="likely text match" as a candidate: describe the saved item and clarify ambiguous identities before any change. Do not invent synonyms that imply verified compatibility. '
         'Use world_query for quantity/date filters, spelling variations, synonyms expressed as alternative searches, or accurate totals. Respect complete and rows_truncated. Use world_projects then world_project_readiness for saved project requirements and reservation-aware shortages; never infer compatibility from names. Use world_activity for changes made by the signed-in user. '
         'Use world_tracking for due expiry dates, prices or enabled reorder rules. Ask for missing dates, amounts and currency. Creation and deletion require a real confirmation card; follow the client action policy below for edits and moves. ' + CHAT_STYLE_INSTRUCTION},
-        {'role': 'system', 'content': 'Current organization directory: ' + json.dumps(model_data(known))},
         *[{k: row[k] for k in ('role', 'content')} for row in history], {'role': 'user', 'content': message}]
     if user_context is not None:
         from app.services.memory_context import style_instruction

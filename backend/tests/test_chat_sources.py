@@ -144,7 +144,7 @@ def test_entire_validated_file_excerpt_reaches_model_not_generic_1500_character_
     from backend.tests.test_world_chat import completion
     file = sources.FileSource(kind='file', name='manual.txt', text='x' * 5000 + ' Voltage is 5V.')
     evidence = sources.resolve(ACTOR, WORLD, [file])
-    with patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('The voltage is 5V.')) as gateway:
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('The voltage is 5V.')) as gateway:
         list(world.stream_turn(ACTOR, WORLD, 'What voltage?', [], CID, source_evidence=evidence))
     messages = gateway.call_args.kwargs['messages']
     reference_message = next(m['content'] for m in messages if m['content'].startswith('Selected reference sources: '))
