@@ -14,7 +14,7 @@ def directory():
 
 
 def test_creation_and_items_are_one_exact_review_without_writes():
-    with patch.object(world, 'directory', return_value=directory()), patch('app.services.supabase_client.get_supabase_raw') as db:
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value=directory()), patch('app.services.supabase_client.get_supabase_raw') as db:
         result = tasks.propose(ACTOR, WORLD, PLAN)
     db.assert_not_called()
     card = result['world_action']
@@ -25,7 +25,7 @@ def test_creation_and_items_are_one_exact_review_without_writes():
 
 
 def test_destination_must_be_visible_in_same_review():
-    with patch.object(world, 'directory', return_value=directory()):
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value=directory()):
         with pytest.raises(ValueError):
             tasks.propose(ACTOR, WORLD, {**PLAN, 'inventories': [{**PLAN['inventories'][0], 'spaces': ['Elsewhere']}]})
 
@@ -36,7 +36,7 @@ def test_move_freezes_saved_identity_instead_of_copying_or_trusting_model_snapsh
         'item': {'item_id': item, 'name': 'Bosch drill', 'quantity': 1, 'location': 'Storage'}})
     plan = {'workspace_id': WORKSPACE, 'inventories': [{'name': 'Garage inventory', 'spaces': ['Garage'],
         'moves': [{'inventory_id': INVENTORY, 'item_id': item, 'location': 'Garage'}]}]}
-    with patch.object(world, 'directory', return_value=directory()), patch.object(world, 'authorize'), patch.object(world, '_inventory', return_value=inventory()), patch('app.services.supabase_client.get_supabase_raw', return_value=db):
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value=directory()), patch.object(world, 'authorize'), patch.object(world, '_inventory', return_value=inventory()), patch('app.services.supabase_client.get_supabase_raw', return_value=db):
         result = tasks.propose(ACTOR, WORLD, plan)
     move = result['world_action']['plan']['inventories'][0]['moves'][0]
     assert move['snapshot'] == 'server-snapshot' and move['name'] == 'Bosch drill'
@@ -46,7 +46,7 @@ def test_move_freezes_saved_identity_instead_of_copying_or_trusting_model_snapsh
 
 @pytest.mark.parametrize('supported', [False, True])
 def test_composite_tool_only_exposed_to_clients_that_display_entire_plan(supported):
-    with patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello')) as gateway:
+    with patch.object(world, 'authorize'), patch.object(world, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello')) as gateway:
         list(world.stream_turn(ACTOR, WORLD, 'Hello', [], 'cid', supports_task_actions=supported))
     names = {t['function']['name'] for t in gateway.call_args.kwargs['tools']}
     assert ('world_create_task' in names) == supported

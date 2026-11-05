@@ -1,3 +1,7 @@
+## November 4 - AI chooses directory lookups
+
+Backend-only lane `fix/ai-on-demand-directory` removes the unconditional world directory read before every turn. Authorization remains upfront. The existing AI tool loop chooses directory and item tools when relevant; no greeting classifier or canned reply. Neutral initial status. Preserve all current live changes with a narrow hash-checked patch at deployment, not a checkout reset. Companion mobile181 normalizes presentation.
+
 ## November 3 — Space chat deployed
 
 Runtime `d80a06f023c9cf96460ea611aa313c2cb0fab026`, branch `fix/space-chat-scope`, PR306: seven-file scoped patch deployed onto current live source without replacing unrelated changes. API/database health and real HTTPS four-answer/isolation/reviewed-action QA passed. Five CI gates passed; no schema change. Companion mobile build174 is uploading. See `docs/space-chat-release174.json`.
