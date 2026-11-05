@@ -1,6 +1,6 @@
-## November 4 - Import column semantics182 active
+## November 4 - Import column semantics182 deployed
 
-Branch `fix/import-column-semantics`: preserve arbitrary typed source fields, avoid ambiguous duplicate canonical mappings, enable JSON connector review, and project proven legacy vendor identifiers out of purchase source without rewriting customer data. Deploy only a narrow verified patch after tests/CI. Companion mobile182.
+Deployed runtime 4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0 from PR316 after all five CI gates passed (run 41979118056). 1,538 backend tests, 12 final update-return regression tests, and three staged/live-source regressions passed. Authenticated HTTPS limits and connector catalog returned200; invalid authentication returned401. The disposable QA account was removed. API/database health passed; unrelated live source is unchanged. No customer database rewrite or schema migration. See docs/import-column-semantics182-release.json. Companion mobile182.
 
 ## November 4 - AI-directed directory deployed
 

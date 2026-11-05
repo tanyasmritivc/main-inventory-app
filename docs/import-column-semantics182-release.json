@@ -1,0 +1,38 @@
+{
+  "before": {
+    "app/services/items_repo.py": "395bf86a2f024c10286a4e2833be1c19fe4ce939fb7e9657053ccd3367eb5466",
+    "app/schemas/inventory.py": "d18bc7f8a4a504b43443643f30491c1b360d7cf3e41723d6f065a8be334494c2",
+    "app/api/routes/connectors.py": "2b1a19174c36c60ed1c157cdcd8cc1041796f4aaf7172d064e87165866dbf484",
+    "app/services/connector_tables.py": "5e3dc759226601db64f32eb9fba67a67c73de65eeb5f1c5cd41895e25384d1e0",
+    "app/services/spreadsheet_import.py": "5012d3b0851ef528adce74a1a4247b41d77c305d89b8a9cc4e22d4b1b781d87b"
+  },
+  "after": {
+    "app/services/items_repo.py": "7e34236f607664e4783206efedc1f6f4d7483e0bd14afaa7cefd5ddd9570ca24",
+    "app/schemas/inventory.py": "3561764dbefb9dee844f2c9f81a7c120c6ed37a587620de10d1dbdd6240b23b0",
+    "app/api/routes/connectors.py": "0ef2b5eac7255d1f0b309f7a222da68d5e299e048c099eed06b3b748c47986c1",
+    "app/services/connector_tables.py": "18d324b4e3237057f8ebcee0f82921be99424ce10b75fff91244a393f7986e1c",
+    "app/services/spreadsheet_import.py": "9941cf5d266bf4b33d6b81c37178ab11d94d01a41f3833900701722c4a1000a8"
+  },
+  "source": "4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0",
+  "health": 200,
+  "database_health": 200,
+  "unrelated_source_preserved": true,
+  "customer_database_mutations": false,
+  "pull_request": 316,
+  "ci_run": 41979118056,
+  "ci_jobs_passed": 5,
+  "backend_tests_passed": 1538,
+  "final_update_return_regressions_passed": 12,
+  "staged_source_regressions": 3,
+  "live_source_regressions": 3,
+  "authenticated_https": {
+    "authenticated_disposable_account": true,
+    "live_https": {
+      "/me/limits": 200,
+      "/connectors": 200
+    },
+    "invalid_auth_denied": true,
+    "disposable_account_removed": true
+  },
+  "mobile_companion_build": 182
+}
