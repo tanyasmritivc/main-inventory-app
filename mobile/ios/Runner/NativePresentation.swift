@@ -3,7 +3,7 @@ import UIKit
 import CoreText
 
 /// System presentations only. Dart remains responsible for data and permissions.
-final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate {
+final class NativePresentation: NSObject, UIPopoverPresentationControllerDelegate {
   private let channel: FlutterMethodChannel
   private var result: FlutterResult?
   private var token: String?
@@ -43,20 +43,22 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     result = reply
     model = data
     if data["kind"] as? String == "photoSource" {
-      let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-      alert.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
-        self?.finish(["action": "camera"])
-      })
-      alert.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
-        self?.finish(["action": "library"])
-      })
-      alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in self?.finish(nil) })
-      if let popover = alert.popoverPresentationController {
-        popover.sourceView = parent.view
-        popover.sourceRect = CGRect(x: parent.view.bounds.midX, y: parent.view.bounds.maxY - parent.view.safeAreaInsets.bottom - 1, width: 1, height: 1)
-        popover.permittedArrowDirections = .down
+      let choices = PhotoSourceController { [weak self] action in
+        self?.finish(action.map { ["action": $0] })
       }
-      controller = alert
+      choices.modalPresentationStyle = .popover
+      if let popover = choices.popoverPresentationController {
+        popover.sourceView = parent.view
+        let anchor = data["anchor"] as? [String: NSNumber] ?? [:]
+        let rect = CGRect(x: anchor["x"]?.doubleValue ?? parent.view.bounds.midX,
+                          y: anchor["y"]?.doubleValue ?? parent.view.bounds.midY,
+                          width: max(1, anchor["width"]?.doubleValue ?? 1),
+                          height: max(1, anchor["height"]?.doubleValue ?? 1))
+        popover.sourceRect = parent.view.convert(rect, from: parent.view.window).intersection(parent.view.bounds)
+        popover.permittedArrowDirections = [.up, .down]
+        popover.delegate = self
+      }
+      controller = choices
     } else if data["kind"] as? String == "alert" {
       let alert = makeAlert(data) { [weak self] value in self?.finish(value) }
       controller = alert
@@ -168,6 +170,9 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
   }
 
   func close() { if !busy { finish(nil) } }
+  func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle { .none }
+  func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle { .none }
+  func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) { complete(nil) }
   func presentationControllerDidDismiss(_ presentationController: UIPresentationController) { complete(nil) }
   private func finish(_ value: [String: Any]?) {
     guard let current = controller else { complete(value); return }
@@ -179,6 +184,41 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     result = nil; token = nil; controller = nil; model = [:]; busy = false
     reply?(value)
   }
+}
+
+/// UIKit popover anchored to the originating composer control, also on iPhone.
+private final class PhotoSourceController: UITableViewController {
+  private let selected: (String?) -> Void
+  init(selected: @escaping (String?) -> Void) {
+    self.selected = selected
+    super.init(style: .plain)
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    tableView.isScrollEnabled = true
+    tableView.tableFooterView = UIView()
+    tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    tableView.rowHeight = max(48, UIFont.preferredFont(forTextStyle: .body).lineHeight + 24)
+    preferredContentSize = CGSize(width: 240, height: tableView.rowHeight * 2)
+  }
+  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 2 }
+  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+    var content = cell.defaultContentConfiguration()
+    content.text = indexPath.row == 0 ? "Camera" : "Photo Library"
+    content.textProperties.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16, weight: .regular))
+    content.image = UIImage(systemName: indexPath.row == 0 ? "camera" : "photo.on.rectangle")
+    content.imageProperties.tintColor = .secondaryLabel
+    content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+    cell.contentConfiguration = content
+    cell.accessibilityTraits.insert(.button)
+    return cell
+  }
+  override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    selected(indexPath.row == 0 ? "camera" : "library")
+  }
+  override func accessibilityPerformEscape() -> Bool { selected(nil); return true }
 }
 
 private final class NativeListController: UITableViewController, UISearchResultsUpdating {
@@ -367,11 +407,12 @@ private final class NativeControl: NSObject, FlutterPlatformView {
     configuration.cornerStyle = .capsule
     configuration.baseForegroundColor = .label
     let symbolSize = min(28, max(12, CGFloat((data["symbolSize"] as? NSNumber)?.doubleValue ?? 20)))
+    let weight: UIImage.SymbolWeight = data["lightSymbol"] as? Bool == true ? .light : .regular
     configuration.image = UIImage(systemName: data["symbol"] as? String ?? "ellipsis",
-      withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolSize, weight: .regular))
+      withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolSize, weight: weight))
     if let size = data["symbolSize"] as? NSNumber {
       configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
-        pointSize: min(28, max(12, CGFloat(size.doubleValue))), weight: .regular)
+        pointSize: min(28, max(12, CGFloat(size.doubleValue))), weight: weight)
     }
     button.configuration = configuration
     button.accessibilityLabel = data["label"] as? String

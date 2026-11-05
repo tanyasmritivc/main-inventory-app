@@ -1,3 +1,7 @@
+## November 4 - Mobile import presentation182 active
+
+Branch `fix/mobile-import-details-182`: composer-anchored UIKit photo popover, compact bounded imported fields, 18pt light home symbols, JSON import selection. Companion backend fixes legacy identifier/source projection and preserves custom columns. Tests and TestFlight182 pending.
+
 ## November 4 - Mobile consistency181 delivered
 
 Apple acknowledged TestFlight 1.1.2 (181), delivery f1876ea2-5e32-49a0-8ece-59089bb4ad88. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41976263542). 1,379 Flutter tests passed (one existing skip), analyzer clean; 61 native checks passed across menus, typography, Space, inventory Ask and workspaces. Signed archive/export and Apple validation passed. Source 1d4888c1fce3020322ecedb878e94db7f7a6294d. Physical iPhone acceptance remains unverified. See docs/consistency181/testflight181-receipt.json. Branch `fix/mobile-consistency-181`, PR315. Companion on-demand AI directory retrieval is deployed, backend PR314.

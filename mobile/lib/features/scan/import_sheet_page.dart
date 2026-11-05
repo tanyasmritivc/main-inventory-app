@@ -127,11 +127,9 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     final extension = (file.extension ?? file.name.split('.').last)
         .trim()
         .toLowerCase();
-    if (extension != 'xlsx' && extension != 'csv') {
+    if (!const ['xlsx', 'csv', 'json'].contains(extension)) {
       setState(() {
-        _errorMessage = extension == 'json'
-            ? 'JSON import is not supported yet. Choose an Excel (.xlsx) or CSV file.'
-            : 'Choose an Excel (.xlsx) or CSV file.';
+        _errorMessage = 'Choose an Excel (.xlsx), CSV, or JSON file.';
       });
       return;
     }
@@ -269,7 +267,7 @@ class _ReadyView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         AppText(
-          'Excel (.xlsx) or CSV, up to 10 MB',
+          'Excel (.xlsx), CSV, or JSON, up to 10 MB',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textSecondary(context),

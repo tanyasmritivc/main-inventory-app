@@ -90,6 +90,7 @@ void main() {
           null,
         ),
       );
+      final anchor = GlobalKey();
       bool? value;
       bool done = false;
       await t.pumpWidget(
@@ -97,8 +98,12 @@ void main() {
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
+                key: anchor,
                 onPressed: () async {
-                  value = await showExtractPhotoSheet(context);
+                  value = await showExtractPhotoSheet(
+                    context,
+                    anchorKey: anchor,
+                  );
                   done = true;
                 },
                 child: const Text('Open native'),
@@ -110,6 +115,13 @@ void main() {
       await t.tap(find.text('Open native'));
       await t.pumpAndSettle();
       expect(presented?['kind'], 'photoSource');
+      final bounds = t.getRect(find.byKey(anchor));
+      expect(presented?['anchor'], {
+        'x': bounds.left,
+        'y': bounds.top,
+        'width': bounds.width,
+        'height': bounds.height,
+      });
       expect(done, isFalse);
       expect(find.text('Add from a photo'), findsNothing);
       if (action == 'error') {

@@ -600,7 +600,12 @@ class _WorldShellState extends State<WorldShell> {
           ),
         ),
         if (index == 0)
-          NotificationBell(api: _chatApi, native: true, iconSize: 22),
+          NotificationBell(
+            api: _chatApi,
+            native: true,
+            iconSize: 18,
+            lightSymbol: true,
+          ),
         if (index == 0)
           Padding(
             padding: const EdgeInsets.only(right: 10),
@@ -609,13 +614,14 @@ class _WorldShellState extends State<WorldShell> {
                     symbol: 'clock',
                     label: 'Chat history',
                     glass: false,
-                    symbolSize: 22,
+                    symbolSize: 18,
+                    lightSymbol: true,
                     onPressed: _history,
                   )
                 : IconButton(
                     tooltip: 'Chat history',
                     onPressed: _history,
-                    icon: const Icon(CupertinoIcons.clock, size: 22),
+                    icon: const Icon(CupertinoIcons.clock, size: 18),
                   ),
           ),
         if (index == 1)

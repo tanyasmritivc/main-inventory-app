@@ -19,6 +19,7 @@ void main() {
       t,
     ) async {
       final completion = Completer<bool?>();
+      final anchor = GlobalKey();
       await t.pumpWidget(
         MaterialApp(
           theme: AppTheme.create(scenario.$1),
@@ -27,8 +28,10 @@ void main() {
             builder: (context) => Scaffold(
               body: Center(
                 child: TextButton(
-                  onPressed: () async =>
-                      completion.complete(await showExtractPhotoSheet(context)),
+                  key: anchor,
+                  onPressed: () async => completion.complete(
+                    await showExtractPhotoSheet(context, anchorKey: anchor),
+                  ),
                   child: const AppText('Choose photo source'),
                 ),
               ),
