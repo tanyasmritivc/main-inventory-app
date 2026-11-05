@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
 class AddItemRequest(BaseModel):
@@ -168,7 +168,7 @@ class ScanEvidence(BaseModel):
 
 class ImportField(BaseModel):
     name: str = Field(max_length=1000)
-    value: str | int | float | bool | None = None
+    value: JsonValue = None
 
 
 class ImportData(BaseModel):

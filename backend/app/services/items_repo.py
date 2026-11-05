@@ -10,6 +10,7 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.spreadsheet_import import correct_legacy_purchase_source
 from app.services.spaces_repo import SpaceLimitExceeded, count_spaces, get_or_create_space
 from app.services.inventory_scope import current_inventory, inventory_cache_key
 from fastapi import HTTPException
@@ -238,6 +239,7 @@ def list_items(*, user_id: str) -> list[dict]:
             lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
         )
         items = resp.data or []
+    items = [correct_legacy_purchase_source(item) for item in items]
     _set_cached_inventory(user_id, items)
     return items
 
@@ -619,7 +621,7 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
         .execute()
     )
 
-    return resp.data or []
+    return [correct_legacy_purchase_source(item) for item in (resp.data or [])]
 
 
 def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501) -> dict:

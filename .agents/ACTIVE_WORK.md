@@ -1,3 +1,7 @@
+## November 4 - Import column semantics182 active
+
+Branch `fix/import-column-semantics`: preserve arbitrary typed source fields, avoid ambiguous duplicate canonical mappings, enable JSON connector review, and project proven legacy vendor identifiers out of purchase source without rewriting customer data. Deploy only a narrow verified patch after tests/CI. Companion mobile182.
+
 ## November 4 - AI-directed directory deployed
 
 Backend-only lane `fix/ai-on-demand-directory` removes the unconditional world directory read before every turn. Authorization remains upfront. The existing AI tool loop chooses directory and item tools when relevant; no greeting classifier or canned reply. Neutral initial status. Preserve all current live changes with a narrow hash-checked patch at deployment, not a checkout reset. Companion mobile181 normalizes presentation. Source39d3c46, PR314, five CI gates and1,495 backend tests passed; real-provider tool selection verified with a removed disposable account. See docs/ai-on-demand-directory-release.json.

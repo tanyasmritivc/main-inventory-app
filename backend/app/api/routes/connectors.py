@@ -101,7 +101,7 @@ def _public(s, *, include_tables=False, include_rows=True):
 @router.get('/connectors')
 def connector_status(user: AuthenticatedUser = Depends(get_current_user)):
     return {'connectors': [
-        {'id': 'spreadsheet', 'name': 'CSV & Excel', 'status': 'available', 'action': 'upload'},
+        {'id': 'spreadsheet', 'name': 'CSV, Excel & JSON', 'status': 'available', 'action': 'upload'},
         {'id': 'bom', 'name': 'KiCad / Fusion BOM', 'status': 'available', 'action': 'upload'},
     ]}
 
