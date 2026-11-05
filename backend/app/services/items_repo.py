@@ -586,7 +586,7 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
         pass
 
     invalidate_inventory_cache(user_id)
-    return result
+    return correct_legacy_purchase_source(result) if result else None
 
 
 def search_items_basic(*, user_id: str, q: str) -> list[dict]:
