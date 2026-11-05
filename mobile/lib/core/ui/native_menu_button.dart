@@ -70,6 +70,7 @@ class NativeToolbarButton extends StatefulWidget {
     this.onSelected,
     this.glass = true,
     this.symbolSize,
+    this.lightSymbol = false,
   });
   final String symbol, label;
   final VoidCallback? onPressed;
@@ -77,6 +78,7 @@ class NativeToolbarButton extends StatefulWidget {
   final ValueChanged<String>? onSelected;
   final bool glass;
   final double? symbolSize;
+  final bool lightSymbol;
   @override
   State<NativeToolbarButton> createState() => _NativeToolbarButtonState();
 }
@@ -88,6 +90,7 @@ class _NativeToolbarButtonState extends State<NativeToolbarButton> {
     'label': widget.label,
     'glass': widget.glass,
     if (widget.symbolSize != null) 'symbolSize': widget.symbolSize,
+    'lightSymbol': widget.lightSymbol,
     'enabled':
         widget.onPressed != null ||
         (widget.items.isNotEmpty && widget.onSelected != null),

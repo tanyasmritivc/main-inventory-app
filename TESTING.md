@@ -1265,3 +1265,7 @@ those behaviors are verified on-device.
 ## Mobile scan/native source polish (180)
 
 Run the full Flutter suite and analyzer. Relevant regressions are `extract_photo_sheet_test`, `photo_scan_card_test`, `chat_capture_card_test`, `ask_page_test`, `chat_viewport_test`, `app_typography_test`, `world_shell_test`, and `space_v2_test`. The native `native_photo_source_audit_test` is interactive: select Camera (dark), Photo Library (light), then dismiss the third sheet; the fixture verifies source returns without opening a real camera/library. Run `photo_scan_audit_test`, `extraction_keyboard_audit_test` (scanning/keyboard cases), typography audit and Space audit. Inspect native screenshots for both themes and large text. Physical iPhone picker/camera and final TestFlight acceptance remain separate; do not claim them from simulated selection.
+
+### Imported details and native controls182
+
+Run the full Flutter suite and analyzer. `imported_item_details_test`, `extract_photo_sheet_test`, `world_shell_test` and the imported quick-view case in `space_v2_test` cover compact bounded fields, source-anchor coordinates, home icon sizing, and edit navigation. `native_photo_source_audit_test` requires selecting Camera, Photo Library, then outside dismissal; selection does not open a real camera. `import_details182_audit_test` verifies light/dark and enlarged text; `space_v2_audit_test --plain-name 'import quick view'` checks the panel in context. Physical iPhone picker/camera acceptance remains separate. Companion backend regression: `test_import_semantics182.py`.

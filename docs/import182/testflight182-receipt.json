@@ -1,0 +1,44 @@
+{
+  "version": "1.1.2",
+  "build": 182,
+  "source_commit": "a06cb8db14a1315cd33556ee02c00bba17c85db8",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "b3d63dedbb03d7b005897eeb003fd1e20c28118487ef4b9b80c7df0298f647ba",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "9f85977b-6b92-4d38-abd5-dc1b30fdb13a",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pull_request": 317,
+  "ci_run": 41979826041,
+  "ci_jobs_passed": 5,
+  "flutter_tests_passed": 1379,
+  "existing_skips": 1,
+  "analyzer": "clean",
+  "native_checks": {
+    "actions": 3,
+    "details": 3,
+    "world": 5,
+    "space-import": 1
+  },
+  "font_packaging": "Native SF Pro; only icon fonts bundled",
+  "physical_device_acceptance": "unverified",
+  "backend_pull_request": 316,
+  "backend_runtime_commit": "4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0",
+  "backend_tests_passed": 1538,
+  "backend_live_http": {
+    "authenticated_disposable_account": true,
+    "live_https": {
+      "/me/limits": 200,
+      "/connectors": 200
+    },
+    "invalid_auth_denied": true,
+    "disposable_account_removed": true
+  },
+  "live_import_regressions_passed": 3
+}

@@ -3104,7 +3104,7 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 const SizedBox(height: 12),
                 const AppText(
-                  'Choose a CSV or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
+                  'Choose a CSV, JSON, or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
@@ -3132,7 +3132,7 @@ class _ChatPageState extends State<ChatPage>
     final camera =
         source ??
         await (autoExtract
-            ? showExtractPhotoSheet(context)
+            ? showExtractPhotoSheet(context, anchorKey: _attachmentAnchor)
             : showPhotoSourceSheet(context));
     if (camera == null || !mounted || generation != _requestGeneration) return;
     if (camera && !await _consumeCameraHint()) return;

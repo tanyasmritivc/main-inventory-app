@@ -1,3 +1,7 @@
+## November 4 - Preserve imported field meaning
+
+Keep arbitrary source columns in import_data with their original labels and typed values. An unsupported column must not be placed in Where to buy merely to fit a built-in field. Duplicate semantic headers require explicit selection; proven legacy vendor identifiers are hidden from purchase-source responses while their original fields remain unchanged. Imported details use a compact, bounded expandable section. Auto-extract photo choices anchor to the initiating composer control.
+
 ## November4 - Spaces directory typography and AI-selected context
 
 The user makes the main Spaces directory the reference for all Space features. Remove the local15/12pt detail exception; use regular native SF Pro16pt body and13pt secondary text, retaining intentional headings/value emphasis. Organization menus open before network completion, and shared inventory choosers are compact lists. Inventory Ask must use the current composer without losing its inventory scope. Greetings stay AI-generated; directory/item retrieval happens only when the model requests a relevant tool.

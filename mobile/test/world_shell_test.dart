@@ -92,17 +92,20 @@ void main() {
         find.byType(NotificationBell).first,
       );
       expect(bell.native, isTrue);
-      expect(bell.iconSize, 22);
+      expect(bell.iconSize, 18);
       if (usesNativePresentation) {
         final buttons = tester
             .widgetList<NativeToolbarButton>(find.byType(NativeToolbarButton))
             .where((b) => ['bell', 'clock'].contains(b.symbol))
             .toList();
         expect(buttons, hasLength(2));
-        expect(buttons.every((b) => b.symbolSize == 22), isTrue);
+        expect(
+          buttons.every((b) => b.symbolSize == 18 && b.lightSymbol),
+          isTrue,
+        );
       } else {
-        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.bell)).size, 22);
-        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.clock)).size, 22);
+        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.bell)).size, 18);
+        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.clock)).size, 18);
       }
       await worldAuditCapture?.call('home-icons');
       await tester.pumpWidget(const SizedBox());

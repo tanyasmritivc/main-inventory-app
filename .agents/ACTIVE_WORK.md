@@ -1,3 +1,7 @@
+## November 4 - Imported details and native controls182 delivered
+
+Apple acknowledged TestFlight 1.1.2 (182), delivery 9f85977b-6b92-4d38-abd5-dc1b30fdb13a. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41979826041). 1,379 Flutter tests passed (one existing skip), analyzer clean; 12 native checks passed across anchored source selection, imported details and home controls. Signed archive/export and Apple validation passed. Source a06cb8db14a1315cd33556ee02c00bba17c85db8. Physical iPhone acceptance remains unverified. See docs/import182/testflight182-receipt.json. Branch `fix/mobile-import-details-182`, PR317. Backend PR316 deployed separately.
+
 ## November 4 - Mobile consistency181 delivered
 
 Apple acknowledged TestFlight 1.1.2 (181), delivery f1876ea2-5e32-49a0-8ece-59089bb4ad88. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41976263542). 1,379 Flutter tests passed (one existing skip), analyzer clean; 61 native checks passed across menus, typography, Space, inventory Ask and workspaces. Signed archive/export and Apple validation passed. Source 1d4888c1fce3020322ecedb878e94db7f7a6294d. Physical iPhone acceptance remains unverified. See docs/consistency181/testflight181-receipt.json. Branch `fix/mobile-consistency-181`, PR315. Companion on-demand AI directory retrieval is deployed, backend PR314.

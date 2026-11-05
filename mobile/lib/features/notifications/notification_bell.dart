@@ -19,10 +19,12 @@ class NotificationBell extends StatefulWidget {
     this.onOpen,
     this.native = false,
     this.iconSize = 24,
+    this.lightSymbol = false,
   });
   final ApiClient api;
   final bool native;
   final double iconSize;
+  final bool lightSymbol;
   final ValueListenable<int>? count;
   final Future<void> Function()? onOpen;
   @override
@@ -133,6 +135,7 @@ class _NotificationBellState extends State<NotificationBell>
           label: label,
           glass: false,
           symbolSize: widget.iconSize,
+          lightSymbol: widget.lightSymbol,
           onPressed: _open,
         ),
       );

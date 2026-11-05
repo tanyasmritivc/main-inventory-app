@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/features/inventory/imported_item_details.dart';
 
+Future<void> Function(WidgetTester, String)? importDetailsCapture;
+
 void main() {
   final item = InventoryItem.fromJson({
     'item_id': 'test',
@@ -50,25 +52,43 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: ThemeData(brightness: brightness),
-            home: MediaQuery(
-              data: const MediaQueryData(
-                size: Size(320, 700),
-                textScaler: TextScaler.linear(2),
-              ),
-              child: Scaffold(
-                body: SingleChildScrollView(
-                  child: ImportedItemDetails(data: item.importData!),
+            home: RepaintBoundary(
+              key: const ValueKey('import-details-frame'),
+              child: MediaQuery(
+                data: const MediaQueryData(
+                  size: Size(320, 700),
+                  textScaler: TextScaler.linear(2),
+                ),
+                child: Scaffold(
+                  body: SingleChildScrollView(
+                    child: ImportedItemDetails(data: item.importData!),
+                  ),
                 ),
               ),
             ),
           ),
         );
+        expect(find.text('Screw Length'), findsNothing);
+        await tester.tap(find.text('Imported details'));
+        await tester.pumpAndSettle();
         expect(find.text('Screw Length'), findsOneWidget);
+        expect(
+          tester.getSize(find.byType(ImportedItemDetails)).height,
+          lessThan(400),
+        );
         expect(find.text('Vendor Part #'), findsOneWidget);
         expect(find.text('Size'), findsNWidgets(2));
         expect(find.text('Column 5'), findsOneWidget);
         expect(find.text('0'), findsOneWidget);
         expect(find.text('Empty'), findsOneWidget);
+        await importDetailsCapture?.call(tester, brightness.name);
+        final scroll = find.descendant(
+          of: find.byType(ImportedItemDetails),
+          matching: find.byType(SingleChildScrollView),
+        );
+        await tester.drag(scroll, const Offset(0, -1000));
+        await tester.pumpAndSettle();
+        expect(find.text('Empty').hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

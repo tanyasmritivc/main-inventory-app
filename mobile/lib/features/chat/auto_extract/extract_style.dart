@@ -152,11 +152,30 @@ Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
 
 /// Return only after the native action sheet has dismissed so image_picker can
 /// present Camera or Photo Library from the originating chat without a race.
-Future<bool?> showExtractPhotoSheet(BuildContext context) async {
+Future<bool?> showExtractPhotoSheet(
+  BuildContext context, {
+  GlobalKey? anchorKey,
+}) async {
   if (usesNativePresentation) {
+    final box = (anchorKey?.currentContext ?? context).findRenderObject();
+    final origin = box is RenderBox && box.hasSize
+        ? box.localToGlobal(Offset.zero) & box.size
+        : Rect.fromCenter(
+            center: MediaQuery.sizeOf(context).center(Offset.zero),
+            width: 1,
+            height: 1,
+          );
     final result = await NativePresentation.show(
       context,
-      model: {'kind': 'photoSource'},
+      model: {
+        'kind': 'photoSource',
+        'anchor': {
+          'x': origin.left,
+          'y': origin.top,
+          'width': origin.width,
+          'height': origin.height,
+        },
+      },
     );
     if (context.mounted && result?['error'] is String) {
       ScaffoldMessenger.of(
