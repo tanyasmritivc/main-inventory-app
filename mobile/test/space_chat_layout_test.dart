@@ -60,13 +60,15 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.byType(TextField), findsOneWidget);
+          expect(find.byType(TextField), empty ? findsNothing : findsOneWidget);
           final ask = find.text('Ask about Workbench');
           expect(ask.hitTestable(), findsOneWidget);
-          expect(
-            tester.getBottomLeft(ask).dy,
-            greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
-          );
+          if (!empty) {
+            expect(
+              tester.getBottomLeft(ask).dy,
+              greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
+            );
+          }
           expect(
             tester
                 .getRect(ask)
@@ -76,16 +78,18 @@ void main() {
           await layoutCapture?.call(
             '${brightness.name}-${empty ? 'empty' : 'items'}',
           );
-          await tester.enterText(find.byType(TextField), 'Washer');
-          await tester.pumpAndSettle();
           if (!empty) {
-            expect(find.text('Screws'), findsNothing);
-            expect(find.text('Washers'), findsOneWidget);
+            await tester.enterText(find.byType(TextField), 'Washer');
+            await tester.pumpAndSettle();
+            if (!empty) {
+              expect(find.text('Screws'), findsNothing);
+              expect(find.text('Washers'), findsOneWidget);
+            }
+            await tester.tap(find.byTooltip('Clear search'));
+            await tester.pumpAndSettle();
+            expect(find.byType(TextField), findsOneWidget);
+            if (!empty) expect(find.text('Screws'), findsOneWidget);
           }
-          await tester.tap(find.byTooltip('Clear search'));
-          await tester.pumpAndSettle();
-          expect(find.byType(TextField), findsOneWidget);
-          if (!empty) expect(find.text('Screws'), findsOneWidget);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
         },

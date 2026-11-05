@@ -266,13 +266,13 @@ void main() {
         'CupertinoSystemText',
       );
       expect(tester.widget<Text>(title).style!.fontWeight, FontWeight.w400);
-      expect(tester.widget<Text>(title).style!.fontSize, 15);
+      expect(tester.widget<Text>(title).style!.fontSize, 16);
       expect(
         tester
             .widget<EditableText>(find.byType(EditableText).first)
             .style
             .fontSize,
-        15,
+        16,
       );
       final count = find.byKey(const ValueKey('space-unit-count'));
       expect(tester.getCenter(count).dx, closeTo(195, 1));
@@ -425,7 +425,15 @@ void main() {
       'Space $count items has stable layout, search, low filter and lazy rows',
       (tester) async {
         await mount(tester, count);
-        expect(find.byType(TextField), findsOneWidget);
+        expect(
+          find.byType(TextField),
+          count == 0 ? findsNothing : findsOneWidget,
+        );
+        if (count == 0) {
+          expect(find.text("Tap + to add your first item."), findsOneWidget);
+          expect(find.text("Showing 0 of 0"), findsNothing);
+          expect(find.text("Ask FindEZ"), findsNothing);
+        }
         expect(find.byType(SpaceItemRow).evaluate().length, lessThan(20));
         await spaceV2Capture?.call('space-$count');
         if (count > 0) {

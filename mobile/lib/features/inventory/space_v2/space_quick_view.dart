@@ -627,9 +627,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   children: [
                     AppText(
                       _item.displayName,
-                      style: SpaceStyle.of(
-                        context,
-                      ).text(24).copyWith(height: 1.15, letterSpacing: -.6),
+                      style: SpaceStyle.of(context).text(16),
                     ),
                     const SizedBox(height: 6),
                     AppText(

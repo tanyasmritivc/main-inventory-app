@@ -1,8 +1,8 @@
 import 'package:mobile/core/ui/app_text.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/liquid_surface.dart';
+import '../world/world_style.dart';
 import '../../core/api_error.dart';
 import 'chat_page.dart';
 
@@ -30,74 +30,24 @@ class InventoryChatButton extends StatelessWidget {
         useSafeArea: true,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black.withValues(alpha: .16),
-        builder: (context) => LayoutBuilder(
-          builder: (context, constraints) => Padding(
+        builder: (context) => WorldStyle(
+          child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.viewInsetsOf(context).bottom,
             ),
-            child: SizedBox(
-              height:
-                  (constraints.maxHeight -
-                          MediaQuery.viewInsetsOf(context).bottom)
-                      .clamp(0.0, constraints.maxHeight) *
-                  (MediaQuery.viewInsetsOf(context).bottom > 0 ? 1 : .86),
-              child: ClipRRect(
+            child: FractionallySizedBox(
+              heightFactor: .92,
+              child: Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(28),
                 ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                  child: Material(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surface.withValues(alpha: .92),
-                    child: SafeArea(
-                      top: false,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 10, 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const AppText(
-                                        'Ask FindEZ',
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      AppText(
-                                        'Only in ${api.inventoryContext!.name}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(height: 1),
-                          Expanded(
-                            child: ChatPage(
-                              api: api,
-                              contextual: true,
-                              inPageView: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                clipBehavior: Clip.antiAlias,
+                child: ChatPage(
+                  api: api,
+                  contextual: true,
+                  inPageView: true,
+                  worldHeading: 'Ask about ${api.inventoryContext!.name}',
                 ),
               ),
             ),

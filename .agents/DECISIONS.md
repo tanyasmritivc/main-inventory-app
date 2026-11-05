@@ -1,3 +1,7 @@
+## November4 - Spaces directory typography and AI-selected context
+
+The user makes the main Spaces directory the reference for all Space features. Remove the local15/12pt detail exception; use regular native SF Pro16pt body and13pt secondary text, retaining intentional headings/value emphasis. Organization menus open before network completion, and shared inventory choosers are compact lists. Inventory Ask must use the current composer without losing its inventory scope. Greetings stay AI-generated; directory/item retrieval happens only when the model requests a relevant tool.
+
 ## November 4 - One mobile typography policy
 
 All plain app-owned text uses AppText; normalize inherited as well as explicit sizes. Ordinary text and inputs use regular native SF Pro at 16pt, captions 13pt and standard titles 20pt. Preserve deliberate hero/badge sizes and accessibility scaling. Voice and native list controls must match body sizing. Main Ask behavior is unchanged by this typography-only authorization.

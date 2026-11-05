@@ -617,8 +617,6 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     sortInventoryItems(filtered, _sortOption);
     final categories = _sortedCategoryPills();
     return AppTypography(
-      bodyPointSize: 15,
-      captionPointSize: 12,
       child: Builder(
         builder: (context) => Theme(
           data: SpaceStyle.theme(context),
@@ -641,16 +639,17 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                 topInset: MediaQuery.paddingOf(context).top,
                                 // Keep the complete editable line visible at larger
                                 // system text sizes, including its vertical padding.
-                                searchExtent:
-                                    (MediaQuery.textScalerOf(context).scale(
-                                                  AppTypography.bodySizeOf(
-                                                    context,
-                                                  ),
-                                                ) *
-                                                1.35 +
-                                            46)
-                                        .ceilToDouble()
-                                        .clamp(68.0, double.infinity),
+                                searchExtent: _items.isEmpty
+                                    ? 0
+                                    : (MediaQuery.textScalerOf(context).scale(
+                                                    AppTypography.bodySizeOf(
+                                                      context,
+                                                    ),
+                                                  ) *
+                                                  1.35 +
+                                              46)
+                                          .ceilToDouble()
+                                          .clamp(68.0, double.infinity),
                                 summaryExtent: spaceSummaryHeight(
                                   context,
                                   _items.length,
@@ -837,105 +836,113 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                     ],
                                   ),
                                 ),
-                                search: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    20,
-                                    14,
-                                    20,
-                                    10,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          decoration: SpaceStyle.of(
-                                            context,
-                                          ).card(22),
-                                          child: Row(
-                                            children: [
-                                              const SizedBox(width: 14),
-                                              Icon(
-                                                Icons.search,
-                                                size: 18,
-                                                color: SpaceStyle.of(
+                                search: _items.isEmpty
+                                    ? const SizedBox.shrink()
+                                    : Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          14,
+                                          20,
+                                          10,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                decoration: SpaceStyle.of(
                                                   context,
-                                                ).tx2,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: TextField(
-                                                  controller:
-                                                      _spaceSearchController,
-                                                  style: SpaceStyle.of(
-                                                    context,
-                                                  ).text(15.5),
-                                                  textInputAction:
-                                                      TextInputAction.search,
-                                                  decoration: InputDecoration(
-                                                    hintText:
-                                                        'Search ${spaceCount(_items.length)} items',
-                                                    hintStyle:
-                                                        SpaceStyle.of(
-                                                          context,
-                                                        ).text(
-                                                          15.5,
-                                                          SpaceStyle.of(
-                                                            context,
-                                                          ).tx3,
-                                                        ),
-                                                    border: InputBorder.none,
-                                                    enabledBorder:
-                                                        InputBorder.none,
-                                                    focusedBorder:
-                                                        InputBorder.none,
-                                                    filled: false,
-                                                    contentPadding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 10,
-                                                        ),
-                                                    isDense: true,
-                                                  ),
-                                                  onChanged: (value) =>
-                                                      setState(() {
-                                                        _spaceSearchQuery =
-                                                            value;
-                                                        _answerIds = null;
-                                                      }),
-                                                  onSubmitted: (_) =>
-                                                      FocusScope.of(
+                                                ).card(22),
+                                                child: Row(
+                                                  children: [
+                                                    const SizedBox(width: 14),
+                                                    Icon(
+                                                      Icons.search,
+                                                      size: 18,
+                                                      color: SpaceStyle.of(
                                                         context,
-                                                      ).unfocus(),
+                                                      ).tx2,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: TextField(
+                                                        controller:
+                                                            _spaceSearchController,
+                                                        style: SpaceStyle.of(
+                                                          context,
+                                                        ).text(15.5),
+                                                        textInputAction:
+                                                            TextInputAction
+                                                                .search,
+                                                        decoration: InputDecoration(
+                                                          hintText:
+                                                              'Search ${spaceCount(_items.length)} items',
+                                                          hintStyle:
+                                                              SpaceStyle.of(
+                                                                context,
+                                                              ).text(
+                                                                15.5,
+                                                                SpaceStyle.of(
+                                                                  context,
+                                                                ).tx3,
+                                                              ),
+                                                          border:
+                                                              InputBorder.none,
+                                                          enabledBorder:
+                                                              InputBorder.none,
+                                                          focusedBorder:
+                                                              InputBorder.none,
+                                                          filled: false,
+                                                          contentPadding:
+                                                              const EdgeInsets.symmetric(
+                                                                vertical: 10,
+                                                              ),
+                                                          isDense: true,
+                                                        ),
+                                                        onChanged: (value) =>
+                                                            setState(() {
+                                                              _spaceSearchQuery =
+                                                                  value;
+                                                              _answerIds = null;
+                                                            }),
+                                                        onSubmitted: (_) =>
+                                                            FocusScope.of(
+                                                              context,
+                                                            ).unfocus(),
+                                                      ),
+                                                    ),
+                                                    if (_spaceSearchQuery
+                                                        .isNotEmpty)
+                                                      IconButton(
+                                                        tooltip: 'Clear search',
+                                                        icon: Icon(
+                                                          Icons.cancel,
+                                                          size: 20,
+                                                          color: SpaceStyle.of(
+                                                            context,
+                                                          ).tx2,
+                                                        ),
+                                                        onPressed: () => setState(
+                                                          () {
+                                                            _spaceSearchController
+                                                                .clear();
+                                                            _spaceSearchQuery =
+                                                                '';
+                                                          },
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
                                               ),
-                                              if (_spaceSearchQuery.isNotEmpty)
-                                                IconButton(
-                                                  tooltip: 'Clear search',
-                                                  icon: Icon(
-                                                    Icons.cancel,
-                                                    size: 20,
-                                                    color: SpaceStyle.of(
-                                                      context,
-                                                    ).tx2,
-                                                  ),
-                                                  onPressed: () => setState(() {
-                                                    _spaceSearchController
-                                                        .clear();
-                                                    _spaceSearchQuery = '';
-                                                  }),
-                                                ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            SpaceCircle(
+                                              label: 'Sort',
+                                              icon: Icons.swap_vert,
+                                              onTap: _openSort,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      SpaceCircle(
-                                        label: 'Sort',
-                                        icon: Icons.swap_vert,
-                                        onTap: _openSort,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ),
                             if (_syncError != null)
@@ -950,67 +957,75 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   ),
                                 ),
                               ),
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  4,
-                                  20,
-                                  6,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child:
-                                          _onlyLowQuantity || _answerIds != null
-                                          ? Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: InputChip(
-                                                label: AppText(
-                                                  _onlyLowQuantity
-                                                      ? 'Low quantity'
-                                                      : 'Ask results',
-                                                ),
-                                                backgroundColor: SpaceStyle.of(
-                                                  context,
-                                                ).white,
-                                                labelStyle:
-                                                    SpaceStyle.of(context).text(
-                                                      12.5,
-                                                      SpaceStyle.of(context).bg,
-                                                    ),
-                                                deleteIconColor: SpaceStyle.of(
-                                                  context,
-                                                ).bg,
-                                                onDeleted: () => setState(() {
-                                                  _onlyLowQuantity = false;
-                                                  _answerIds = null;
-                                                }),
-                                              ),
-                                            )
-                                          : AppText(
-                                              '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
-                                              style: SpaceStyle.of(context)
-                                                  .text(
-                                                    12.5,
-                                                    SpaceStyle.of(context).tx3,
+                            if (_items.isNotEmpty)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    4,
+                                    20,
+                                    6,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child:
+                                            _onlyLowQuantity ||
+                                                _answerIds != null
+                                            ? Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: InputChip(
+                                                  label: AppText(
+                                                    _onlyLowQuantity
+                                                        ? 'Low quantity'
+                                                        : 'Ask results',
                                                   ),
-                                            ),
-                                    ),
-                                    Expanded(
-                                      child: AppText(
-                                        itemSortLabel(_sortOption),
-                                        textAlign: TextAlign.right,
-                                        style: SpaceStyle.of(context).text(
-                                          12.5,
-                                          SpaceStyle.of(context).tx3,
+                                                  backgroundColor:
+                                                      SpaceStyle.of(
+                                                        context,
+                                                      ).white,
+                                                  labelStyle:
+                                                      SpaceStyle.of(
+                                                        context,
+                                                      ).text(
+                                                        12.5,
+                                                        SpaceStyle.of(
+                                                          context,
+                                                        ).bg,
+                                                      ),
+                                                  deleteIconColor:
+                                                      SpaceStyle.of(context).bg,
+                                                  onDeleted: () => setState(() {
+                                                    _onlyLowQuantity = false;
+                                                    _answerIds = null;
+                                                  }),
+                                                ),
+                                              )
+                                            : AppText(
+                                                '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
+                                                style: SpaceStyle.of(context)
+                                                    .text(
+                                                      12.5,
+                                                      SpaceStyle.of(
+                                                        context,
+                                                      ).tx3,
+                                                    ),
+                                              ),
+                                      ),
+                                      Expanded(
+                                        child: AppText(
+                                          itemSortLabel(_sortOption),
+                                          textAlign: TextAlign.right,
+                                          style: SpaceStyle.of(context).text(
+                                            12.5,
+                                            SpaceStyle.of(context).tx3,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
                             if (categories.length > 2)
                               SliverToBoxAdapter(
                                 child: SizedBox(
@@ -1069,14 +1084,15 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                       const SizedBox(height: 12),
                                       AppText(
                                         _items.isEmpty
-                                            ? 'Add items here when you are ready.'
+                                            ? 'Tap + to add your first item.'
                                             : 'Try another search, or ask FindEZ to look across this inventory.',
                                         style: SpaceStyle.of(
                                           context,
                                         ).text(15, SpaceStyle.of(context).tx2),
                                         textAlign: TextAlign.center,
                                       ),
-                                      if (inventory != null)
+                                      if (inventory != null &&
+                                          _items.isNotEmpty)
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             top: 16,
@@ -1105,23 +1121,24 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                   ),
                                 ),
                               ),
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  20,
-                                  20,
-                                  154,
-                                ),
-                                child: AppText(
-                                  'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
-                                  textAlign: TextAlign.center,
-                                  style: SpaceStyle.of(
-                                    context,
-                                  ).text(12.5, SpaceStyle.of(context).tx3),
+                            if (filtered.isNotEmpty)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    20,
+                                    20,
+                                    154,
+                                  ),
+                                  child: AppText(
+                                    'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
+                                    textAlign: TextAlign.center,
+                                    style: SpaceStyle.of(
+                                      context,
+                                    ).text(12.5, SpaceStyle.of(context).tx3),
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                         if (MediaQuery.viewInsetsOf(context).bottom == 0)

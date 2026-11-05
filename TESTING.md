@@ -1,3 +1,7 @@
+## Mobile consistency181
+
+Run full Flutter tests and analysis. Native `world_audit_test` filter `home bell|Ask retains light|organization menu|More tools` verifies the immediate menu and compact chooser; tab callback activation selects the fixture screen (not proof of UIKit tab hit testing). `consistency181_audit_test` filter `scoped sheet|narrow sheet|workspace home has correct` covers light/dark inventory Ask, large text/keyboard and workspace destinations. Run the Space and typography audits. Flutter captures omit UIKit platform views; use native UI inspection for those. Physical device acceptance remains unverified.
+
 ## Consistent mobile typography179
 
 Run the full Flutter suite and analyzer. `app_typography_test.dart` checks resolved inherited and explicit font sizes, regular SF Pro, input/body parity, intentional title/caption sizes, and retained accessibility scaling. `typography_consistency_audit_test.dart` runs typography, Auto-extract popup and voice cases on native iOS (filter `--name "AI response|text weights|inherited and local|typography preserves|app text retains|photo sheet|inline composer"`; exact fake-clock voice timing checks belong in the unit runner), emitting `TYPOGRAPHY_IMAGE` captures. Run `space_v2_audit_test.dart` for real Space/item layout captures and keyboard, gallery and chat regression checks. Preserve emitted images before the runner exits. Native screenshots do not establish physical iPhone acceptance.

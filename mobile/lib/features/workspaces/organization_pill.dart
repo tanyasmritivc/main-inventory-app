@@ -1,7 +1,6 @@
 import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../core/ui/liquid_surface.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
@@ -30,24 +29,15 @@ class OrganizationPill extends StatefulWidget {
 }
 
 class _OrganizationPillState extends State<OrganizationPill> {
-  bool _busy = false, _loading = false;
+  bool _busy = false;
   Future<void> _open() async {
     if (_busy) return;
     final account = widget.api.accountId;
     setState(() {
       _busy = true;
-      _loading = true;
     });
     try {
-      final result = await widget.api.collaboration('/organizations');
-      if (!mounted || widget.api.accountId != account) return;
-      final organizations = placeRows(result['organizations'])
-        ..sort(
-          (a, b) => a['name'].toString().toLowerCase().compareTo(
-            b['name'].toString().toLowerCase(),
-          ),
-        );
-      setState(() => _loading = false);
+      final organizations = widget.api.collaboration('/organizations');
       final box = context.findRenderObject()! as RenderBox;
       final overlay =
           Navigator.of(context).overlay!.context.findRenderObject()!
@@ -64,32 +54,25 @@ class _OrganizationPillState extends State<OrganizationPill> {
           ),
           Offset.zero & overlay.size,
         ),
-        constraints: BoxConstraints(maxWidth: overlay.size.width - 32),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
+        constraints: BoxConstraints(
+          minWidth: 220,
+          maxWidth: (overlay.size.width - 32).clamp(220, 300),
         ),
+        popUpAnimationStyle: AnimationStyle.noAnimation,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF262626)
+            : const Color(0xFFF2F2F4),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         items: [
-          for (final org in organizations)
-            PopupMenuItem(
-              value: 'org:${org['organization_id']}',
-              child: _row(
-                org['name'].toString(),
-                org['organization_id'] == widget.id,
-              ),
+          PopupMenuItem<String>(
+            enabled: false,
+            padding: EdgeInsets.zero,
+            child: _OrganizationChoices(
+              organizations: organizations,
+              reload: () => widget.api.collaboration('/organizations'),
+              selected: widget.id,
             ),
-          if (organizations.isNotEmpty) const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'personal',
-            child: _row('Personal', widget.id == null),
-          ),
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'new',
-            child: _menuLabel('New organization', CupertinoIcons.plus),
-          ),
-          PopupMenuItem(
-            value: 'invite',
-            child: _menuLabel('Review invitation', CupertinoIcons.envelope),
           ),
         ],
       );
@@ -123,56 +106,10 @@ class _OrganizationPillState extends State<OrganizationPill> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _loading = false;
         });
       }
     }
   }
-
-  Widget _menuLabel(String name, IconData icon) => widget.glass
-      ? Row(
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 14),
-            Expanded(child: AppText(name)),
-          ],
-        )
-      : AppText(name);
-
-  Widget _row(String name, bool selected) => Row(
-    children: [
-      if (widget.glass) ...[
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.onSurface.withValues(alpha: .14),
-          child: AppText(
-            name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-      ],
-      Expanded(
-        child: AppText(
-          name,
-          style: TextStyle(
-            fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
-          ),
-        ),
-      ),
-      if (selected)
-        const Padding(
-          padding: EdgeInsets.only(left: 12),
-          child: Icon(Icons.check, size: 18),
-        ),
-    ],
-  );
 
   Future<String?> _create() async {
     final text = TextEditingController();
@@ -259,29 +196,32 @@ class _OrganizationPillState extends State<OrganizationPill> {
 
   @override
   Widget build(BuildContext context) {
-    final button = _button(context);
-    return widget.glass
-        ? LiquidSurface(radius: 30, quiet: true, shadow: false, child: button)
-        : button;
+    return _button(context);
   }
 
   Widget _button(BuildContext context) => Semantics(
     container: true,
     label: 'Switch organization. Current: ${widget.name}',
     button: true,
-    enabled: !_loading,
-    onTap: _loading ? null : _open,
+    enabled: !_busy,
+    onTap: _busy ? null : _open,
     child: ExcludeSemantics(
       child: OutlinedButton(
-        onPressed: _loading ? null : _open,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          minimumSize: Size(0, widget.glass ? 44 : 40),
-          side: widget.glass ? BorderSide.none : null,
-          backgroundColor: widget.glass ? Colors.transparent : null,
-          shape: const StadiumBorder(),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
+        onPressed: _busy ? null : _open,
+        style:
+            OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size(0, widget.glass ? 44 : 40),
+              side: BorderSide.none,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF242424)
+                  : const Color(0xFFE7E7E9),
+              shape: const StadiumBorder(),
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+            ).copyWith(
+              backgroundBuilder: (context, states, child) =>
+                  child ?? const SizedBox.shrink(),
+            ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -315,16 +255,110 @@ class _OrganizationPillState extends State<OrganizationPill> {
               ),
             ),
             const SizedBox(width: 6),
-            if (_loading)
-              const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              )
-            else
-              const Icon(Icons.expand_more, size: 18),
+            const Icon(Icons.expand_more, size: 18),
           ],
         ),
+      ),
+    ),
+  );
+}
+
+class _OrganizationChoices extends StatefulWidget {
+  const _OrganizationChoices({
+    required this.organizations,
+    required this.reload,
+    required this.selected,
+  });
+  final Future<Map<String, dynamic>> organizations;
+  final Future<Map<String, dynamic>> Function() reload;
+  final String? selected;
+  @override
+  State<_OrganizationChoices> createState() => _OrganizationChoicesState();
+}
+
+class _OrganizationChoicesState extends State<_OrganizationChoices> {
+  late Future<Map<String, dynamic>> _request = widget.organizations;
+  Widget _choice(
+    String label,
+    String value, {
+    bool selected = false,
+    IconData? icon,
+  }) => ListTile(
+    dense: true,
+    minVerticalPadding: 4,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+    leading: icon == null
+        ? null
+        : Icon(
+            icon,
+            size: 18,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+    title: AppText(
+      label,
+      style: AppTypography.bodyStyleOf(
+        context,
+      ).copyWith(color: Theme.of(context).colorScheme.onSurface),
+    ),
+    trailing: selected
+        ? Icon(
+            CupertinoIcons.check_mark,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurface,
+          )
+        : null,
+    onTap: () => Navigator.of(context).pop(value),
+  );
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * .65,
+    ),
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FutureBuilder<Map<String, dynamic>>(
+            future: _request,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return ListTile(
+                  title: AppText(describeError(snapshot.error!).$1),
+                  trailing: TextButton(
+                    onPressed: () => setState(() => _request = widget.reload()),
+                    child: const AppText('Retry'),
+                  ),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const ListTile(
+                  title: AppText('Loading organizations...'),
+                );
+              }
+              final rows = placeRows(snapshot.data!['organizations'])
+                ..sort(
+                  (a, b) => a['name'].toString().toLowerCase().compareTo(
+                    b['name'].toString().toLowerCase(),
+                  ),
+                );
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final row in rows)
+                    _choice(
+                      row['name'].toString(),
+                      'org:${row['organization_id']}',
+                      selected: row['organization_id'] == widget.selected,
+                    ),
+                ],
+              );
+            },
+          ),
+          _choice('Personal', 'personal', selected: widget.selected == null),
+          const Divider(height: 1),
+          _choice('New organization', 'new', icon: CupertinoIcons.plus),
+          _choice('Review invitation', 'invite', icon: CupertinoIcons.envelope),
+        ],
       ),
     ),
   );

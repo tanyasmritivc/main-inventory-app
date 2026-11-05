@@ -51,7 +51,7 @@ class WorldStyle extends StatelessWidget {
             titleTextStyle: text(16),
             subtitleTextStyle: text(13, secondary: true),
             iconColor: muted,
-            minVerticalPadding: 12,
+            minVerticalPadding: 8,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           ),
           inputDecorationTheme: theme.inputDecorationTheme.copyWith(
@@ -74,7 +74,7 @@ class WorldStyle extends StatelessWidget {
             ),
           ),
           popupMenuTheme: PopupMenuThemeData(
-            color: dark ? const Color(0xFF262626) : const Color(0xF2FFFFFF),
+            color: dark ? const Color(0xFF262626) : const Color(0xFFF2F2F4),
             surfaceTintColor: Colors.transparent,
             textStyle: text(16),
             elevation: 12,
@@ -85,7 +85,7 @@ class WorldStyle extends StatelessWidget {
           bottomSheetTheme: theme.bottomSheetTheme.copyWith(
             backgroundColor: dark
                 ? const Color(0xFF262626)
-                : const Color(0xF7FFFFFF),
+                : const Color(0xFFF2F2F4),
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(32)),

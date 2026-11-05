@@ -10,6 +10,8 @@ import 'package:mobile/features/workspaces/hierarchy_page.dart';
 import 'package:mobile/core/ui/member_avatar.dart';
 import 'support/hierarchy_fixture.dart';
 
+Future<void> Function(WidgetTester, String)? workspaceCapture;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final fixture = HierarchyFixture();
@@ -149,7 +151,10 @@ void main() {
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!,
+          child: RepaintBoundary(
+            key: const ValueKey("workspace-frame"),
+            child: child!,
+          ),
         ),
         home: WorkspaceHome(session: session, onOpenInventory: open),
       ),
@@ -167,6 +172,7 @@ void main() {
           );
           await pump(tester, brightness: mode);
           expect(find.text('FTC ROBOTICS 2026'), findsOneWidget);
+          await workspaceCapture?.call(tester, mode.name);
           expect(find.text('60 items · Viewer'), findsOneWidget);
           expect(find.text('New inventory'), findsNothing);
           expect(find.text('Tasks'), findsOneWidget);
