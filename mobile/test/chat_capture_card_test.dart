@@ -1,3 +1,4 @@
+import 'package:mobile/features/chat/auto_extract/extract_widgets.dart';
 import 'support/extract_photo_fixture.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -229,6 +230,21 @@ void main() {
       await t.pumpAndSettle();
       expect(value['items'][1]['selected'], isFalse);
       expect(value['items'][0]['selected'], isTrue);
+      await t.ensureVisible(find.text('Review 2 items'));
+      await t.tap(find.text('Review 2 items'));
+      await t.pumpAndSettle();
+      final tiles = t.widget<ExtractTiles>(find.byType(ExtractTiles));
+      expect(tiles.rows.map((r) => r['index']), [1, 2, 0]);
+      final unknownTile = find
+          .ancestor(
+            of: find.text('Unknown object'),
+            matching: find.byType(Material),
+          )
+          .first;
+      expect(
+        find.descendant(of: unknownTile, matching: find.text('3')),
+        findsOneWidget,
+      );
       final card = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
       final edit = card.correctFromChat('Wrench quantity 12');
       await t.pumpAndSettle();

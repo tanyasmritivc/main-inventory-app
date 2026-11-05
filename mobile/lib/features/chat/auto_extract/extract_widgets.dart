@@ -126,20 +126,20 @@ class ExtractTiles extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final row in rows)
+          for (final (position, row) in rows.indexed)
             SizedBox(
               width: width,
               child: ExtractReveal(
                 key: ValueKey(row['index']),
-                index: row['index'] as int,
-                child: _tile(context, row),
+                index: position,
+                child: _tile(context, row, position),
               ),
             ),
         ],
       );
     },
   );
-  Widget _tile(BuildContext context, Map<String, dynamic> row) {
+  Widget _tile(BuildContext context, Map<String, dynamic> row, int position) {
     final selected = row['selected'] == true;
     final name = extractName(row);
     final item = row['item'] as Map;
@@ -191,7 +191,7 @@ class ExtractTiles extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: AppText(
-                                '${(row['index'] as int) + 1}',
+                                '${position + 1}',
                                 style: ExtractStyle.of(
                                   context,
                                 ).text(10, color: ExtractStyle.of(context).ink),
@@ -714,8 +714,9 @@ class _ExtractScanningState extends State<ExtractScanning>
   );
   @override
   Widget build(BuildContext context) {
-    final selected = _rows.where((r) => r['selected'] == true).length;
-    final names = _rows.map(extractName).map((s) => s.toLowerCase()).toList();
+    final rows = _rows;
+    final selected = rows.where((r) => r['selected'] == true).length;
+    final names = rows.map(extractName).map((s) => s.toLowerCase()).toList();
     final found = names.length < 2
         ? names.join()
         : '${names.take(names.length - 1).join(', ')} and ${names.last}';
@@ -769,7 +770,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                         liveRegion: true,
                         child: AppText(
                           widget.done
-                              ? '${_rows.length} ${_rows.length == 1 ? 'item' : 'items'} found'
+                              ? '${rows.length} ${rows.length == 1 ? 'item' : 'items'} found'
                               : 'Looking at your photo',
                           key: const Key('extraction-status'),
                           style: _text(AppTypography.titleSize).copyWith(
@@ -825,13 +826,13 @@ class _ExtractScanningState extends State<ExtractScanning>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var i = 0; i < _rows.length; i++)
+                        for (var i = 0; i < rows.length; i++)
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: _tile(_rows[i], i),
+                            child: _tile(rows[i], i),
                           ),
                         if (_active)
-                          for (var i = 0; i < (_rows.length < 2 ? 3 : 1); i++)
+                          for (var i = 0; i < (rows.length < 2 ? 3 : 1); i++)
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: _placeholder(),
