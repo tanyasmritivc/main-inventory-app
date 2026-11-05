@@ -186,6 +186,59 @@ void main() {
     },
   );
 
+  testWidgets(
+    'confidence sorting keeps exclusion and edits attached to original item',
+    (t) async {
+      value['source_kind'] = 'photo';
+      value['items'] = [
+        {
+          'index': 0,
+          'selected': true,
+          'item': {
+            'name': 'Unknown object',
+            'quantity': 1,
+            'scan_evidence': {'identity_confidence': .99},
+          },
+        },
+        {
+          'index': 1,
+          'selected': true,
+          'item': {
+            'name': 'Drill',
+            'quantity': 1,
+            'scan_evidence': {'identity_confidence': .9},
+          },
+        },
+        {
+          'index': 2,
+          'selected': true,
+          'item': {
+            'name': 'Wrench',
+            'quantity': 1,
+            'scan_evidence': {'identity_confidence': .8},
+          },
+        },
+      ];
+      await mount(t, scanPreview: true);
+      await t.pumpAndSettle();
+      expect(
+        t.getTopLeft(find.text('Drill')).dx,
+        lessThan(t.getTopLeft(find.text('Wrench')).dx),
+      );
+      await t.tap(find.text('Drill'));
+      await t.pumpAndSettle();
+      expect(value['items'][1]['selected'], isFalse);
+      expect(value['items'][0]['selected'], isTrue);
+      final card = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
+      final edit = card.correctFromChat('Wrench quantity 12');
+      await t.pumpAndSettle();
+      expect(await edit, 'Updated: Wrench ×12.');
+      expect(value['items'][2]['item']['quantity'], 12);
+      expect(value['items'][0]['item']['quantity'], 1);
+      expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+    },
+  );
+
   for (final count in [1, 4, 12]) {
     testWidgets(
       'photo prototype renders $count items and excludes low confidence',

@@ -1,3 +1,6 @@
+import '../../core/ui/native_menu_button.dart';
+import '../../core/ui/native_presentation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -14,8 +17,12 @@ class NotificationBell extends StatefulWidget {
     required this.api,
     this.count,
     this.onOpen,
+    this.native = false,
+    this.iconSize = 24,
   });
   final ApiClient api;
+  final bool native;
+  final double iconSize;
   final ValueListenable<int>? count;
   final Future<void> Function()? onOpen;
   @override
@@ -115,15 +122,37 @@ class _NotificationBellState extends State<NotificationBell>
     super.dispose();
   }
 
-  Widget _button(int count) => IconButton(
-    tooltip: count > 0 ? 'Notifications, $count unread' : 'Notifications',
-    onPressed: _open,
-    icon: Badge(
-      isLabelVisible: count > 0,
-      label: AppText(count > 99 ? '99+' : '$count'),
-      child: const Icon(Icons.notifications_none_rounded),
-    ),
-  );
+  Widget _button(int count) {
+    final label = count > 0 ? 'Notifications, $count unread' : 'Notifications';
+    if (widget.native && usesNativePresentation) {
+      return Badge(
+        isLabelVisible: count > 0,
+        label: AppText(count > 99 ? '99+' : '$count'),
+        child: NativeToolbarButton(
+          symbol: 'bell',
+          label: label,
+          glass: false,
+          symbolSize: widget.iconSize,
+          onPressed: _open,
+        ),
+      );
+    }
+    return IconButton(
+      tooltip: label,
+      onPressed: _open,
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: AppText(count > 99 ? '99+' : '$count'),
+        child: Icon(
+          widget.native
+              ? CupertinoIcons.bell
+              : Icons.notifications_none_rounded,
+          size: widget.iconSize,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => widget.count == null
       ? _button(widget.api.accountId == _account ? _count : 0)

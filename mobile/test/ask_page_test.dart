@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/chat/chat_capture_card.dart';
 import 'package:mobile/features/chat/voice_capture.dart';
 import 'voice_capture_test.dart' show Recorder;
@@ -512,6 +513,8 @@ void main() {
     );
   });
   setUp(() {
+    debugNativePresentationOverride = false;
+    addTearDown(() => debugNativePresentationOverride = null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('com.llfbandit.record/messages'),
@@ -1128,8 +1131,8 @@ void main() {
             await tester.pumpAndSettle();
             await tester.tap(find.text('Auto Extract'));
             await tester.pumpAndSettle();
-            await tester.ensureVisible(find.text('Library'));
-            await tester.tap(find.text('Library'));
+            await tester.ensureVisible(find.text('Photo Library'));
+            await tester.tap(find.text('Photo Library'));
             await tester.pumpAndSettle();
             expect(focused.last, isTrue);
             expect(find.byType(ChatCaptureCard), findsOneWidget);
@@ -1211,7 +1214,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Auto Extract'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Library'));
+      await tester.tap(find.text('Photo Library'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(focused.last, isTrue);
@@ -1250,8 +1253,20 @@ void main() {
       );
       expect(
         viewport.bottom,
-        lessThanOrEqualTo(tester.getRect(find.byType(WorldComposer)).top),
+        greaterThan(tester.getRect(find.byType(WorldComposer)).top),
       );
+      final list = find.byKey(const Key('chat-full-viewport'));
+      final listWidget = tester.widget<ListView>(list);
+      listWidget.controller!.jumpTo(
+        listWidget.controller!.position.maxScrollExtent,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        tester.getRect(find.byKey(const Key('scan-photo-stage'))).top,
+        lessThan(tester.getRect(find.byTooltip('Stop scan')).top),
+      );
+      listWidget.controller!.jumpTo(0);
+      await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(Image), findsOneWidget);
       expect(
         tester.getSize(find.byKey(const Key('scan-photo-stage'))).height,
@@ -1288,6 +1303,10 @@ void main() {
       expect(identical(api.photos[0].bytes, api.photos[1].bytes), isTrue);
       expect(find.text('Keep this draft'), findsOneWidget);
       expect(find.text('Review 1 item'), findsOneWidget);
+      listWidget.controller!.jumpTo(
+        listWidget.controller!.position.maxScrollExtent,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
       expect(
         tester.getRect(find.text('Review 1 item')).bottom,
         lessThanOrEqualTo(tester.getRect(find.byType(WorldComposer)).top),
@@ -1309,7 +1328,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Auto Extract'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Library'));
+    await tester.tap(find.text('Photo Library'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't read this photo"), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'Keep the blue pen');
@@ -1380,7 +1399,7 @@ void main() {
       await tester.tap(find.text('Auto Extract'));
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
-      await tester.tap(find.text('Library'));
+      await tester.tap(find.text('Photo Library'));
       await tester.pumpAndSettle();
       expect(api.photos, hasLength(1));
       expect(api.photos.single.autoExtract, isTrue);
@@ -1492,7 +1511,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Auto Extract'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Library'));
+    await tester.tap(find.text('Photo Library'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.byTooltip('Stop scanning'), findsNothing);

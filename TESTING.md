@@ -1257,3 +1257,7 @@ and `fluid_shell_visual_test.dart`. The latter uses Flutter control fallbacks fo
 automated taps on iOS; `world_audit_test.dart` retains real UIKit rendering checks.
 Physical microphone/camera/VoiceOver acceptance is still required before claiming
 those behaviors are verified on-device.
+
+## Mobile scan/native source polish (180)
+
+Run the full Flutter suite and analyzer. Relevant regressions are `extract_photo_sheet_test`, `photo_scan_card_test`, `chat_capture_card_test`, `ask_page_test`, `chat_viewport_test`, `app_typography_test`, `world_shell_test`, and `space_v2_test`. The native `native_photo_source_audit_test` is interactive: select Camera (dark), Photo Library (light), then dismiss the third sheet; the fixture verifies source returns without opening a real camera/library. Run `photo_scan_audit_test`, `extraction_keyboard_audit_test` (scanning/keyboard cases), typography audit and Space audit. Inspect native screenshots for both themes and large text. Physical iPhone picker/camera and final TestFlight acceptance remain separate; do not claim them from simulated selection.

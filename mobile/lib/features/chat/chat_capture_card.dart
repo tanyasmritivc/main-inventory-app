@@ -106,14 +106,18 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
       '/worlds/${widget.api.worldKey}/conversations/${widget.conversationId}/captures/${_draft['id']}';
   bool get _editable =>
       !_busy && !widget.disabled && _draft['status'] == 'draft';
-  List<Map<String, dynamic>> get _rows => (_draft['items'] as List)
-      .map(
-        (r) => <String, dynamic>{
-          ...Map<String, dynamic>.from(r as Map),
-          if (_excluded.contains(r['index'])) 'selected': false,
-        },
-      )
-      .toList();
+  List<Map<String, dynamic>> get _rows {
+    final rows = (_draft['items'] as List)
+        .map(
+          (r) => <String, dynamic>{
+            ...Map<String, dynamic>.from(r as Map),
+            if (_excluded.contains(r['index'])) 'selected': false,
+          },
+        )
+        .toList();
+    return _photoFlow ? sortedExtractRows(rows) : rows;
+  }
+
   void _accept(Map<String, dynamic> response) {
     widget.api.assertCurrentContext();
     if (!mounted) return;
@@ -777,7 +781,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
         .map((r) => extractName(r).toLowerCase())
         .join(' and ');
     Widget pill(String label, VoidCallback? tap) => FilledButton(
-      style: ExtractStyle.pill(height: 38),
+      style: ExtractStyle.of(context).pill(height: 38),
       onPressed: tap,
       child: AppText(label),
     );
@@ -792,33 +796,33 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             if (_undone)
               AppText(
                 'Undone. Nothing from that photo was saved.',
-                style: ExtractStyle.text(15.5),
+                style: ExtractStyle.of(context).text(15.5),
               )
             else if (saved) ...[
               Container(
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: ExtractStyle.s1,
+                  color: ExtractStyle.of(context).s1,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: ExtractStyle.line),
+                  border: Border.all(color: ExtractStyle.of(context).line),
                 ),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 12,
-                      backgroundColor: ExtractStyle.white,
+                      backgroundColor: ExtractStyle.of(context).white,
                       child: Icon(
                         Icons.check,
                         size: 13,
-                        color: ExtractStyle.ink,
+                        color: ExtractStyle.of(context).ink,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: AppText(
                         'Saved ${receipt?['saved_count'] ?? 0} ${(receipt?['saved_count'] ?? 0) == 1 ? 'item' : 'items'} to ${_draft['location'] ?? 'your Space'}${(receipt?['review_count'] ?? 0) > 0 ? ' · ${receipt!['review_count']} in Review' : ''}',
-                        style: ExtractStyle.text(14.5),
+                        style: ExtractStyle.of(context).text(14.5),
                       ),
                     ),
                     for (final row in selected.take(4))
@@ -901,7 +905,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             ] else ...[
               AppText(
                 'I found ${rows.length} ${rows.length == 1 ? 'item' : 'items'}.${excluded.isNotEmpty ? " I left out the $excluded because I’m not sure." : ""}',
-                style: ExtractStyle.text(15.5).copyWith(height: 1.5),
+                style: ExtractStyle.of(
+                  context,
+                ).text(15.5).copyWith(height: 1.5),
               ),
               if (widget.photoBytes != null ||
                   _draft['source_url'] is String) ...[
@@ -933,14 +939,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               if (rows.isEmpty)
                 AppText(
                   'No items were detected. Try a closer, well-lit photo.',
-                  style: ExtractStyle.text(14, color: ExtractStyle.tx2),
+                  style: ExtractStyle.of(
+                    context,
+                  ).text(14, color: ExtractStyle.of(context).tx2),
                 ),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, bounds) {
                   final actions = [
                     FilledButton.icon(
-                      style: ExtractStyle.pill(),
+                      style: ExtractStyle.of(context).pill(),
                       onPressed: _editable ? _destination : null,
                       icon: const Icon(Icons.location_on_outlined, size: 17),
                       label: AppText(
@@ -950,7 +958,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       ),
                     ),
                     FilledButton(
-                      style: ExtractStyle.pill(primary: true),
+                      style: ExtractStyle.of(context).pill(primary: true),
                       onPressed: _busy || widget.disabled || selected.isEmpty
                           ? null
                           : _save,
@@ -985,12 +993,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               const SizedBox(height: 8),
               AppText(
                 'Tap an item or its number to leave it out. Tap ✎ to edit.',
-                style: ExtractStyle.text(12.5, color: ExtractStyle.tx3),
+                style: ExtractStyle.of(
+                  context,
+                ).text(12.5, color: ExtractStyle.of(context).tx3),
               ),
               if (_missingRows.isNotEmpty)
                 AppText(
                   'Add the missing quantities before saving.',
-                  style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
+                  style: ExtractStyle.of(
+                    context,
+                  ).text(12.5, color: ExtractStyle.of(context).tx2),
                 ),
               if (_editable &&
                   _draft['space_id'] != null &&
@@ -1004,25 +1016,31 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   onPressed: () => _run(() => _saveItems(confirmItems: false)),
                   child: AppText(
                     'Keep uncertain items in Review',
-                    style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
+                    style: ExtractStyle.of(
+                      context,
+                    ).text(12.5, color: ExtractStyle.of(context).tx2),
                   ),
                 ),
             ],
             if (_busy && !_choosing)
-              const LinearProgressIndicator(
+              LinearProgressIndicator(
                 minHeight: 2,
-                color: ExtractStyle.white,
-                backgroundColor: ExtractStyle.s2,
+                color: ExtractStyle.of(context).white,
+                backgroundColor: ExtractStyle.of(context).s2,
               ),
             if (_error != null)
               AppText(
                 _error!,
-                style: ExtractStyle.text(14, color: ExtractStyle.red),
+                style: ExtractStyle.of(
+                  context,
+                ).text(14, color: ExtractStyle.of(context).red),
               ),
             for (final failure in receipt?['failures'] as List? ?? [])
               AppText(
                 '${failure['reason']}',
-                style: ExtractStyle.text(14, color: ExtractStyle.red),
+                style: ExtractStyle.of(
+                  context,
+                ).text(14, color: ExtractStyle.of(context).red),
               ),
           ],
         ),
@@ -1061,7 +1079,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 padding: const EdgeInsets.all(12),
                 child: AppText(
                   _error!,
-                  style: ExtractStyle.text(14, color: ExtractStyle.red),
+                  style: ExtractStyle.of(
+                    context,
+                  ).text(14, color: ExtractStyle.of(context).red),
                 ),
               ),
           ],

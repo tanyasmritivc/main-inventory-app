@@ -1,3 +1,7 @@
+import 'package:mobile/core/ui/native_menu_button.dart';
+import 'package:mobile/core/ui/native_presentation.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:mobile/features/notifications/notification_bell.dart';
 import 'dart:convert';
 import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/ui/skeleton.dart';
@@ -78,6 +82,31 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'home bell and history share symbol size and regular icon family',
+    (tester) async {
+      await mount(tester);
+      final bell = tester.widget<NotificationBell>(
+        find.byType(NotificationBell).first,
+      );
+      expect(bell.native, isTrue);
+      expect(bell.iconSize, 22);
+      if (usesNativePresentation) {
+        final buttons = tester
+            .widgetList<NativeToolbarButton>(find.byType(NativeToolbarButton))
+            .where((b) => ['bell', 'clock'].contains(b.symbol))
+            .toList();
+        expect(buttons, hasLength(2));
+        expect(buttons.every((b) => b.symbolSize == 22), isTrue);
+      } else {
+        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.bell)).size, 22);
+        expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.clock)).size, 22);
+      }
+      await worldAuditCapture?.call('home-icons');
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('More tools share the compact inventory picker', (tester) async {
     final fallback = fixture.respond;

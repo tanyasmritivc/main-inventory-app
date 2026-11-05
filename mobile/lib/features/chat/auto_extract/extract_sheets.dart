@@ -41,16 +41,21 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
   Widget field(String key, String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     decoration: BoxDecoration(
-      color: ExtractStyle.s2,
+      color: ExtractStyle.of(context).s2,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(label, style: ExtractStyle.text(11.5, color: ExtractStyle.tx2)),
+        AppText(
+          label,
+          style: ExtractStyle.of(
+            context,
+          ).text(11.5, color: ExtractStyle.of(context).tx2),
+        ),
         TextFormField(
           controller: _fields[key],
-          style: ExtractStyle.text(16.5),
+          style: ExtractStyle.of(context).text(16.5),
           decoration: const InputDecoration(
             isDense: true,
             filled: false,
@@ -92,7 +97,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: ExtractStyle.s2,
+                  color: ExtractStyle.of(context).s2,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -100,7 +105,9 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                   children: [
                     AppText(
                       'Quantity',
-                      style: ExtractStyle.text(11.5, color: ExtractStyle.tx2),
+                      style: ExtractStyle.of(
+                        context,
+                      ).text(11.5, color: ExtractStyle.of(context).tx2),
                     ),
                     Row(
                       children: [
@@ -114,10 +121,10 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                                   '${n > 1 ? n - 1 : 1}',
                             );
                           },
-                          icon: const Icon(
+                          icon: Icon(
                             CupertinoIcons.minus,
                             size: 16,
-                            color: ExtractStyle.tx,
+                            color: ExtractStyle.of(context).tx,
                           ),
                         ),
                         Expanded(
@@ -125,7 +132,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                             controller: _fields['quantity'],
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            style: ExtractStyle.text(20),
+                            style: ExtractStyle.of(context).text(20),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
@@ -152,10 +159,10 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                                   '${n < 100000 ? n + 1 : 100000}',
                             );
                           },
-                          icon: const Icon(
+                          icon: Icon(
                             CupertinoIcons.plus,
                             size: 16,
-                            color: ExtractStyle.tx,
+                            color: ExtractStyle.of(context).tx,
                           ),
                         ),
                       ],
@@ -187,7 +194,9 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
           onPressed: () => setState(() => _more = !_more),
           child: AppText(
             _more ? 'Fewer details' : 'More details',
-            style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
+            style: ExtractStyle.of(
+              context,
+            ).text(12.5, color: ExtractStyle.of(context).tx2),
           ),
         ),
         if (_more) ...[
@@ -203,11 +212,13 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
             Expanded(
               flex: 10,
               child: FilledButton(
-                style: ExtractStyle.pill(height: 52).copyWith(
-                  foregroundColor: const WidgetStatePropertyAll(
-                    ExtractStyle.red,
-                  ),
-                ),
+                style: ExtractStyle.of(context)
+                    .pill(height: 52)
+                    .copyWith(
+                      foregroundColor: WidgetStatePropertyAll(
+                        ExtractStyle.of(context).red,
+                      ),
+                    ),
                 onPressed: () => Navigator.pop(context, {
                   'index': widget.row['index'],
                   'selected': false,
@@ -219,7 +230,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
             Expanded(
               flex: 14,
               child: FilledButton(
-                style: ExtractStyle.pill(primary: true, height: 52),
+                style: ExtractStyle.of(context).pill(primary: true, height: 52),
                 onPressed: () {
                   if (!_form.currentState!.validate()) return;
                   Navigator.pop(context, {
@@ -280,7 +291,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: ExtractStyle.s3,
+        color: ExtractStyle.of(context).s3,
         borderRadius: BorderRadius.circular(12),
         gradient: plus
             ? null
@@ -291,7 +302,11 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
               ),
       ),
       child: plus
-          ? const Icon(CupertinoIcons.plus, size: 18, color: ExtractStyle.tx)
+          ? Icon(
+              CupertinoIcons.plus,
+              size: 18,
+              color: ExtractStyle.of(context).tx,
+            )
           : null,
     );
   }
@@ -324,24 +339,26 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
       children: [
         AppText(
           'Save ${widget.count} ${widget.count == 1 ? 'item' : 'items'} to…',
-          style: ExtractStyle.text(22),
+          style: ExtractStyle.of(context).text(22),
         ),
         const SizedBox(height: 14),
         TextField(
           controller: _search,
           onChanged: (_) => setState(() {}),
           enabled: !_creating,
-          style: ExtractStyle.text(15.5),
+          style: ExtractStyle.of(context).text(15.5),
           decoration: InputDecoration(
             hintText: 'Search Spaces',
-            hintStyle: ExtractStyle.text(15.5, color: ExtractStyle.tx2),
-            prefixIcon: const Icon(
+            hintStyle: ExtractStyle.of(
+              context,
+            ).text(15.5, color: ExtractStyle.of(context).tx2),
+            prefixIcon: Icon(
               CupertinoIcons.search,
               size: 17,
-              color: ExtractStyle.tx2,
+              color: ExtractStyle.of(context).tx2,
             ),
             filled: true,
-            fillColor: ExtractStyle.s2,
+            fillColor: ExtractStyle.of(context).s2,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(23),
               borderSide: BorderSide.none,
@@ -358,7 +375,9 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
             padding: const EdgeInsets.fromLTRB(10, 14, 10, 4),
             child: AppText(
               '${group['workspace_name']} · ${group['name']}',
-              style: ExtractStyle.text(12.5, color: ExtractStyle.tx3),
+              style: ExtractStyle.of(
+                context,
+              ).text(12.5, color: ExtractStyle.of(context).tx3),
             ),
           ),
           for (final space
@@ -367,7 +386,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
               ))
             Material(
               color: space['id'] == widget.selected
-                  ? ExtractStyle.s2
+                  ? ExtractStyle.of(context).s2
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
               child: ListTile(
@@ -378,22 +397,24 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
                 leading: tile('${space['name']}'),
                 title: AppText(
                   '${space['name']}',
-                  style: ExtractStyle.text(15.5),
+                  style: ExtractStyle.of(context).text(15.5),
                 ),
                 subtitle: AppText(
                   space['item_count'] == 0
                       ? 'Empty'
                       : '${group['name']}${space['item_count'] is num ? ' · ${space['item_count']} items' : ''}',
-                  style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
+                  style: ExtractStyle.of(
+                    context,
+                  ).text(12.5, color: ExtractStyle.of(context).tx2),
                 ),
                 trailing: space['id'] == widget.selected
-                    ? const CircleAvatar(
+                    ? CircleAvatar(
                         radius: 12,
-                        backgroundColor: ExtractStyle.white,
+                        backgroundColor: ExtractStyle.of(context).white,
                         child: Icon(
                           CupertinoIcons.check_mark,
                           size: 13,
-                          color: ExtractStyle.ink,
+                          color: ExtractStyle.of(context).ink,
                         ),
                       )
                     : null,
@@ -409,7 +430,9 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
         if (widget.groups.isEmpty)
           AppText(
             'No writable inventories. Ask chat to create one, or request edit access.',
-            style: ExtractStyle.text(14, color: ExtractStyle.tx2),
+            style: ExtractStyle.of(
+              context,
+            ).text(14, color: ExtractStyle.of(context).tx2),
           ),
         if (widget.groups.isNotEmpty)
           ListTile(
@@ -419,11 +442,13 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
               query.isEmpty
                   ? 'New Space'
                   : 'New Space “${_search.text.trim()}”',
-              style: ExtractStyle.text(15.5),
+              style: ExtractStyle.of(context).text(15.5),
             ),
             subtitle: AppText(
               'Create it and save here',
-              style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
+              style: ExtractStyle.of(
+                context,
+              ).text(12.5, color: ExtractStyle.of(context).tx2),
             ),
             onTap: _creating
                 ? null
@@ -433,12 +458,14 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
           if (query.isEmpty)
             AppText(
               'Enter a name in Search Spaces above.',
-              style: ExtractStyle.text(14, color: ExtractStyle.tx2),
+              style: ExtractStyle.of(
+                context,
+              ).text(14, color: ExtractStyle.of(context).tx2),
             ),
           DropdownButtonFormField<String>(
             initialValue: '${_newGroup!['inventory_id']}',
-            dropdownColor: ExtractStyle.s2,
-            style: ExtractStyle.text(14),
+            dropdownColor: ExtractStyle.of(context).s2,
+            style: ExtractStyle.of(context).text(14),
             items: [
               for (final group in widget.groups)
                 DropdownMenuItem(
@@ -458,7 +485,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
           ),
           const SizedBox(height: 10),
           FilledButton(
-            style: ExtractStyle.pill(primary: true),
+            style: ExtractStyle.of(context).pill(primary: true),
             onPressed: _creating || query.isEmpty ? null : create,
             child: AppText(_creating ? 'Creating…' : 'Create Space'),
           ),
@@ -466,7 +493,9 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
         if (_error != null)
           AppText(
             _error!,
-            style: ExtractStyle.text(14, color: ExtractStyle.red),
+            style: ExtractStyle.of(
+              context,
+            ).text(14, color: ExtractStyle.of(context).red),
           ),
       ],
     );

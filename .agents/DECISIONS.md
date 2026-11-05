@@ -1601,3 +1601,7 @@ Black, white and neutral gray are the mobile interface palette. Retired accent c
 ## October 28 — readable Default and extraction glass
 
 Increase only the app Default size from .90 to .96 through the existing root text scaler; preserve Small/Large/Larger choices and compose with system accessibility. Keep extraction within its existing chat lifecycle. Presentation may pin existing save controls on roomy layouts, but must fall back to scrolling when the keyboard, accessibility text or an error needs the room. Use actual pipeline status, never simulated progress.
+
+## 2026-11-04 — Native photo source and scan consistency (180)
+
+The user replaces the custom Auto-extract source explanation with native iOS Camera/Photo Library actions and explicitly authorizes scan viewport/style changes in main Ask. Keep existing capture/save behavior. Known scan results rank by identity confidence, unknowns last, without renumbering server rows. Space detail alone uses 15pt body/12pt captions; app defaults stay 16pt and regular SF Pro, with accessibility scaling intact.

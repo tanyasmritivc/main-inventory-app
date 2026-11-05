@@ -5,9 +5,23 @@ import 'package:flutter/material.dart';
 /// Weights stay regular regardless of OS Bold Text. Other
 /// accessibility preferences and text scaling stay intact.
 class AppTypography extends StatelessWidget {
-  const AppTypography({super.key, required this.child});
+  const AppTypography({
+    super.key,
+    required this.child,
+    this.bodyPointSize,
+    this.captionPointSize,
+  });
 
   final Widget child;
+  final double? bodyPointSize;
+  final double? captionPointSize;
+
+  static double bodySizeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_TypographySizes>()?.body ??
+      bodySize;
+  static double captionSizeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_TypographySizes>()?.caption ??
+      captionSize;
 
   static const double bodySize = 16;
   static const double captionSize = 13;
@@ -15,10 +29,14 @@ class AppTypography extends StatelessWidget {
   static const String fontFamily = 'CupertinoSystemText';
   // Ordinary body, form and control text shares one default size. Deliberate
   // captions and larger headings/hero values keep their hierarchy and scaling.
-  static double? standardSize(double? size) {
+  static double? standardSize(
+    double? size, {
+    double body = bodySize,
+    double caption = captionSize,
+  }) {
     if (size == null) return null;
-    if (size >= 12 && size < 14) return captionSize;
-    if (size >= 14 && size < 20) return bodySize;
+    if (size >= 12 && size < 14) return caption;
+    if (size >= 14 && size < 20) return body;
     if (size >= 20 && size < 24) return titleSize;
     return size;
   }
@@ -39,15 +57,25 @@ class AppTypography extends StatelessWidget {
           ? 0
           : style?.letterSpacing,
       fontFamily: fontFamily,
-      fontSize: standardSize(effective.fontSize) ?? bodySize,
+      fontSize:
+          standardSize(
+            effective.fontSize,
+            body: bodySizeOf(context),
+            caption: captionSizeOf(context),
+          ) ??
+          bodySizeOf(context),
     );
     return result;
   }
 
   static TextStyle bodyStyleOf(BuildContext context, [TextStyle? style]) =>
-      styleOf(context, style).copyWith(fontSize: bodySize);
+      styleOf(context, style).copyWith(fontSize: bodySizeOf(context));
 
-  static ThemeData _theme(ThemeData theme) {
+  static ThemeData _theme(
+    ThemeData theme,
+    double bodySize,
+    double captionSize,
+  ) {
     TextStyle? adapt(TextStyle? style, {bool body = false}) => style?.copyWith(
       fontWeight: _weight(style, body: body),
       fontStyle: FontStyle.normal,
@@ -58,7 +86,11 @@ class AppTypography extends StatelessWidget {
           ? 0
           : style.letterSpacing,
       fontFamily: fontFamily,
-      fontSize: standardSize(style.fontSize),
+      fontSize: standardSize(
+        style.fontSize,
+        body: bodySize,
+        caption: captionSize,
+      ),
     );
     TextTheme textTheme(TextTheme text) => TextTheme(
       displayLarge: adapt(text.displayLarge),
@@ -156,8 +188,41 @@ class AppTypography extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(boldText: false),
-    child: Theme(data: _theme(Theme.of(context)), child: child),
-  );
+  Widget build(BuildContext context) {
+    final body = bodyPointSize ?? bodySizeOf(context);
+    final caption = captionPointSize ?? captionSizeOf(context);
+    return _TypographySizes(
+      body: body,
+      caption: caption,
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(boldText: false),
+        child: Theme(
+          data: _theme(Theme.of(context), body, caption),
+          child: bodyPointSize == null
+              ? child
+              : DefaultTextStyle.merge(
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    fontSize: body,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  child: child,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypographySizes extends InheritedWidget {
+  const _TypographySizes({
+    required this.body,
+    required this.caption,
+    required super.child,
+  });
+  final double body;
+  final double caption;
+  @override
+  bool updateShouldNotify(_TypographySizes oldWidget) =>
+      body != oldWidget.body || caption != oldWidget.caption;
 }

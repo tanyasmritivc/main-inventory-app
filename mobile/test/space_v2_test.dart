@@ -266,6 +266,14 @@ void main() {
         'CupertinoSystemText',
       );
       expect(tester.widget<Text>(title).style!.fontWeight, FontWeight.w400);
+      expect(tester.widget<Text>(title).style!.fontSize, 15);
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText).first)
+            .style
+            .fontSize,
+        15,
+      );
       final count = find.byKey(const ValueKey('space-unit-count'));
       expect(tester.getCenter(count).dx, closeTo(195, 1));
       expect(tester.getCenter(title).dx, closeTo(195, 1));
@@ -1159,7 +1167,12 @@ void main() {
       );
       expect(
         tester.getSize(find.byType(EditableText).first).height,
-        greaterThanOrEqualTo(16 * 1.35 * 1.8),
+        greaterThanOrEqualTo(
+          tester
+              .state<EditableTextState>(find.byType(EditableText).first)
+              .renderEditable
+              .preferredLineHeight,
+        ),
         reason: 'Large-text search must keep its full text line visible',
       );
       expect(find.byTooltip('Add items'), findsNothing);
