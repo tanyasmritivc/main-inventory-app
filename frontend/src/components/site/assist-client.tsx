@@ -1,4 +1,5 @@
 "use client";
+import { QuickStart, useHomePlaceholder } from "./web-refresh-ui";
 import { MessageActions, type ResponseRating } from "./message-actions";
 import { ChatProgress } from "./chat-progress";
 import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
@@ -127,6 +128,8 @@ function AssistClientWorkspace({
     [opening, setOpening] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
+  const homeEmpty = Boolean(worldId && !contextual && !messages.length && !opening);
+  const { placeholder, stopPlaceholder } = useHomePlaceholder(homeEmpty, input);
   const [progressStartedAt, setProgressStartedAt] = useState(0);
   const [lastActivityAt, setLastActivityAt] = useState<number | null>(null);
   useEffect(() => {
@@ -1064,7 +1067,8 @@ function AssistClientWorkspace({
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }}
               className="workspace-input"
               aria-label="Your question"
-              placeholder="Ask about your inventory…"
+              placeholder={homeEmpty ? placeholder : "Ask about your inventory…"}
+              onFocus={stopPlaceholder}
               maxLength={4000}
               value={input}
               disabled={unavailable}
@@ -1176,6 +1180,11 @@ function AssistClientWorkspace({
             Check AI answers before making changes.
           </p>
         </form>
+        {homeEmpty && <QuickStart disabled={unavailable || !accountId}
+          onPhoto={() => chooseSource("auto_extract")}
+          onImport={() => chooseSource("spreadsheet")}
+          onFind={() => { stopPlaceholder(); draft("Where are the "); composer.current?.focus(); }}
+          onLow={() => { stopPlaceholder(); draft("What is running low?"); requestAnimationFrame(() => composer.current?.form?.requestSubmit()); }} />}
       </div>
     </section>
   );

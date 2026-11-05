@@ -1,0 +1,11 @@
+{
+  "visibleItems": true,
+  "tableColumns": true,
+  "sharedTableColumns": true,
+  "gridTemplate": true,
+  "sharedGridTemplate": true,
+  "inventoryCallsIdentical": true,
+  "frontend/src/components/site/item-details.tsx": true,
+  "frontend/src/lib/api.ts": true,
+  "frontend/src/lib/ask-stream.ts": true
+}

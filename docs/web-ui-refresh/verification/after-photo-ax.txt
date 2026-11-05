@@ -1,0 +1,8 @@
+text PART # / ITEM
+text CATEGORY
+text QTY
+text ACTIONS
+text Cordless drill
+text Tools
+text 1
+pop up button Actions for Cordless drill

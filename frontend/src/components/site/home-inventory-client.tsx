@@ -1,4 +1,5 @@
 "use client";
+import { SpaceInfoLine } from "./web-refresh-ui";
 import { ResourceArt } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import {worldHref} from "@/lib/world-navigation";
@@ -64,7 +65,7 @@ import { useRestock } from "@/lib/use-restock";
 import { userFacingError } from "@/lib/user-facing-error";
 import { needsBuying } from "@/lib/restock-plan";
 
-const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+const FONT = "var(--font-main)";
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--light-panel)',
@@ -962,10 +963,22 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     <div className="inventory-workspace">
 
       {/* Header */}
-      <div className="inventory-page-header">
+      <div className={`inventory-page-header${selectedSpace ? " refresh-space-heading" : ""}`}>
+        {selectedSpace && <ResourceArt tile id={serverSpaces.find(s => s.name === selectedSpace)?.id ?? selectedSpace}><Boxes size={24} /></ResourceArt>}
         <div>
+          {selectedSpace && !viewingSharedSpace && (          <button
+            type="button"
+            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
+            style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
+          >
+            ← My Spaces
+          </button>)}
           <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Items')}</h1>
-          {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
+          {selectedSpace && <div className="refresh-space-summary"><p>{(itemsBySpace[selectedSpace] ?? []).length} items</p><SpaceInfoLine
+            units={(itemsBySpace[selectedSpace] ?? []).reduce((sum, item) => sum + item.quantity, 0)}
+            low={(itemsBySpace[selectedSpace] ?? []).filter(item => needsBuying(restock.plan[item.item_id], item.quantity)).length}
+            addedAt={(itemsBySpace[selectedSpace] ?? []).map(item => item.created_at).filter(Boolean).sort()[0]}
+            createdAt={serverSpaces.find(s => s.name === selectedSpace)?.created_at} /></div>}
         </div>
         {!selectedSpace && !viewingSharedSpace && canEdit && (
           <div className="product-actions">
@@ -1054,7 +1067,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {(visibleItems ?? []).map((item) => (
             <div key={item.item_id} className={toolbarStyles.tableRow}>
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                {item.image_url && <Image unoptimized width={42} height={42} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                {!item.image_url && <span className="refresh-item-tile resource-art g-slate"><Boxes size={18} aria-hidden="true" /></span>}{item.image_url && <Image unoptimized width={42} height={42} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                 <div style={{ minWidth: 0 }}>
                   <button type="button" style={{ textAlign: "left", background: "transparent", border: 0, padding: 0, fontSize: 13, fontWeight: 590, color: "var(--text-primary)" }} onClick={() => setDetailItem(item)}>{itemDisplayName(item)}</button>
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
@@ -1174,7 +1187,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               </div>
 
               {/* Dynamic header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
+              <div className="refresh-table-heading" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                 {sharedTableColumns.map(col => (
                   <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>{col.label}</div>
                 ))}
@@ -1192,7 +1205,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
-                          {item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          {!item.image_url && <span className="refresh-item-tile resource-art g-slate"><Boxes size={18} aria-hidden="true" /></span>}{item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
@@ -1248,7 +1261,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
-                    <div style={{ background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
+                    <Dialog open onOpenChange={open => { if (!open) setExpandedSharedItemId(null); }}><DialogContent className="refresh-item-panel" showCloseButton={false} aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle><div style={{ background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
                       <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', gap: 8 }}>
                         <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
@@ -1259,7 +1272,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           Close ↑
                         </button>
                       </div>
-                    </div>
+                    </div></DialogContent></Dialog>
                   )}
                 </React.Fragment>
               ))}
@@ -1278,16 +1291,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
       ) : selectedSpace ? (
         <div>
-          <button
-            type="button"
-            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
-            style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
-          >
-            ← My Spaces
-          </button>
+
 
           {/* Toolbar */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20, marginBottom: 20 }}>
+          <div className="refresh-space-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20, marginBottom: 20 }}>
             {canEdit && <>
             <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' }}>
               Upload Image
@@ -1316,10 +1323,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               style={{ flex: 1, minWidth: 200, background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: FONT }}
             />
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+          <div className="refresh-segments" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
             <button
               type="button"
               onClick={() => setCategoryFilter('')}
+              aria-pressed={categoryFilter === ''}
               style={{ background: categoryFilter === '' ? 'var(--light-raised)' : 'var(--light-panel)', color: categoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: categoryFilter === '' ? '1px solid var(--light-line)' : '1px solid var(--light-line)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
             >All</button>
             {(categories ?? []).map((cat) => (
@@ -1327,6 +1335,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(cat)}
+                aria-pressed={categoryFilter === cat}
                 style={{ background: categoryFilter === cat ? 'var(--light-raised)' : 'var(--light-panel)', color: categoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: categoryFilter === cat ? '1px solid var(--light-line)' : '1px solid var(--light-line)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
               >{cat}</button>
             ))}
@@ -1339,8 +1348,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               {query.trim() || categoryFilter ? <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Try another search or clear the filters.</p> : canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
+            <div className="refresh-inventory-table">
+              <div className="refresh-table-heading" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                 {tableColumns.map(col => (
                   <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>
                     {col.label}
@@ -1378,7 +1387,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
-                          {item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          {!item.image_url && <span className="refresh-item-tile resource-art g-slate"><Boxes size={18} aria-hidden="true" /></span>}{item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
@@ -1413,7 +1422,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                     })}
                   </div>
                   {expandedItemId === item.item_id && (
-                    <div style={{
+                    <Dialog open onOpenChange={open => { if (!open) setExpandedItemId(null); }}><DialogContent className="refresh-item-panel" showCloseButton={false} aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle><div style={{
                       background: 'var(--surf2)',
                       border: '1px solid var(--line)',
                       borderRadius: 10,
@@ -1433,11 +1442,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           Close ↑
                         </button>
                       </div>
-                    </div>
+                    </div></DialogContent></Dialog>
                   )}
                 </React.Fragment>
               ))}
-            </>
+            </div>
           )}
         </div>
 
@@ -1480,7 +1489,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 <span className="space-card-icon"><Boxes size={17} /></span>
                 <div className="space-card-copy">
                   <strong>{space}</strong>
-                  {lowStock > 0 && <span>{lowStock} low stock</span>}
+                  <SpaceInfoLine units={itemsInSpace.reduce((sum, item) => sum + item.quantity, 0)} low={lowStock} addedAt={itemsInSpace.map(item => item.created_at).filter(Boolean).sort()[0]} createdAt={spaceObj?.created_at} />
                 </div>
                 <div className="space-card-actions">
                   {/* Upload image */}
@@ -1805,7 +1814,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       </Dialog>
 
       {accountId && removingSpace && <ResourceRemovalDialog kind="space" id={removingSpace.id} name={removingSpace.name} accountId={accountId} onClose={()=>setRemovingSpace(null)} onDone={()=>{setRemovingSpace(null);setSelectedSpace(null);setCategoryFilter('');setQuery('');void refreshToken().then(async t=>{if(t)await refreshAll(t);});}}/>}
-      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog refresh-item-panel" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

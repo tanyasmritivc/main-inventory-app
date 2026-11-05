@@ -12,12 +12,12 @@ const THEME_CHANGE_EVENT = "findez-theme-change";
 let sessionChoice: AppThemeChoice | null = null;
 
 function readStoredChoice(): AppThemeChoice {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   try {
     const stored = window.localStorage.getItem(APP_THEME_STORAGE_KEY);
-    return sessionChoice ?? (stored === "light" || stored === "dark" ? stored : "system");
+    return sessionChoice ?? (stored === "light" || stored === "dark" || stored === "system" ? stored : "light");
   } catch {
-    return sessionChoice ?? "system";
+    return sessionChoice ?? "light";
   }
 }
 
@@ -59,14 +59,13 @@ const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 /** Shared preferences; document styling is owned by the persistent root. */
 function useThemeState() {
   const storedChoice = useSyncExternalStore(subscribeChoice, readStoredChoice, serverChoice);
-  const choice = storedChoice ?? "system";
+  const choice = storedChoice ?? "light";
   const systemDark = useSyncExternalStore(subscribeSystem, systemPrefersDark, serverSystemDark);
   const resolved: AppThemeResolved = choice === "system" ? (systemDark ? "dark" : "light") : choice;
 
   const setTheme = useCallback((next: AppThemeChoice) => {
     try {
-      if (next === "system") window.localStorage.removeItem(APP_THEME_STORAGE_KEY);
-      else window.localStorage.setItem(APP_THEME_STORAGE_KEY, next);
+      window.localStorage.setItem(APP_THEME_STORAGE_KEY, next);
       sessionChoice = null;
     } catch {
       // Restricted storage must not prevent changing appearance this session.

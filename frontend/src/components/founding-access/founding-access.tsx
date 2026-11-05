@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { ArrowLeft, Check, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { Dialog, DialogPortal } from "@/components/ui/dialog";
@@ -90,6 +90,33 @@ export function FoundingAccessProvider({ accountId, createdAt, pathname, childre
     {request && <FoundingModal key={request.sequence} request={request} open={Boolean(open)} onClose={close} />}
     {eligible && toast === accountId && <div className={styles.toast} role="status">Ask anything, or add your first items with +</div>}
   </FoundingContext.Provider>;
+}
+
+let bannerDismissedInSession = false;
+function bannerClosed() {
+  try { return bannerDismissedInSession || localStorage.getItem("findez-founding-banner-closed") === "true"; }
+  catch { return bannerDismissedInSession; }
+}
+function subscribeBanner(notify: () => void) {
+  window.addEventListener("storage", notify);
+  window.addEventListener("findez-banner-dismissed", notify);
+  return () => { window.removeEventListener("storage", notify); window.removeEventListener("findez-banner-dismissed", notify); };
+}
+/** Shares the existing Founding Access account eligibility and popup. */
+export function FoundingBanner() {
+  const founding = useContext(FoundingContext);
+  const closed = useSyncExternalStore(subscribeBanner, bannerClosed, () => true);
+  if (!founding?.accountId) return null;
+  return <aside className="refresh-banner" data-dismissed={closed} aria-label="Founding Access" inert={closed}>
+    <span className="refresh-banner-badge">Founding Access</span>
+    <span>You&apos;re in early, and FindEZ is free while we get ready to launch.</span>
+    <button type="button" className="refresh-banner-link" onClick={founding.openPlan}>See what is included</button>
+    <button type="button" className="refresh-banner-close" aria-label="Dismiss Founding Access banner" onClick={() => {
+      try { localStorage.setItem("findez-founding-banner-closed", "true"); }
+      catch { bannerDismissedInSession = true; }
+      window.dispatchEvent(new Event("findez-banner-dismissed"));
+    }}><X size={15} aria-hidden="true" /></button>
+  </aside>;
 }
 
 function Clove({ size }: { size: number }) {

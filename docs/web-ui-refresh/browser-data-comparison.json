@@ -1,0 +1,35 @@
+{
+  "sheet": {
+    "identicalColumnOrderRowsValuesActions": true,
+    "table": [
+      "text PART # / ITEM",
+      "text DESCRIPTION",
+      "text CATEGORY",
+      "text QTY",
+      "text ACTIONS",
+      "text PN-F245",
+      "text Round belt 5mm cord diameter",
+      "text Supplies",
+      "text 8",
+      "pop up button Actions for Round belt 5mm cord diameter",
+      "text PN-F45",
+      "text M5 screws",
+      "text Hardware",
+      "text 43",
+      "pop up button Actions for M5 screws"
+    ]
+  },
+  "photo": {
+    "identicalColumnOrderRowsValuesActions": true,
+    "table": [
+      "text PART # / ITEM",
+      "text CATEGORY",
+      "text QTY",
+      "text ACTIONS",
+      "text Cordless drill",
+      "text Tools",
+      "text 1",
+      "pop up button Actions for Cordless drill"
+    ]
+  }
+}

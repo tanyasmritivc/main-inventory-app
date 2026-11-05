@@ -10,6 +10,7 @@ import "./globals.css";
 import "./app-theme.css";
 import "./workspace.css";
 import "./interior-tokens.css";
+import "./web-ui-refresh.css";
 
 // Runs before first paint, on every route, because layout.tsx wraps the
 // whole app. It must stay a no-op outside the interior: it checks the
@@ -19,7 +20,7 @@ import "./interior-tokens.css";
 // system preference or a stored choice from a previous interior visit.
 // The persistent AppThemeDocument maintains this across client navigation.
 // This script covers the first paint of a full document load.
-const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.appTheme=dark?"dark":"light";if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0d0d0f":"#ffffff");}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.appTheme=dark?"dark":"light";if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0d0d0f":"#ffffff");}catch(e){}})();`;
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-app-inter", display: "swap" });
 const tight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-app-tight", display: "swap" });

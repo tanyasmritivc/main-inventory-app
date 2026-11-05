@@ -1,3 +1,9 @@
+## November 4 - Web UI refresh, branch review only
+
+Implemented the supplied `CODEX_PROMPT_WEB-4.md` and ZIP reference on `feat/web-ui-refresh` from `a2309b3`. Scope is Next.js presentation only, plus the four explicitly approved UI additions. No API, backend, mobile, database, dependency or production changes. Light is the default; explicit dark/system preferences remain available. No merge or deployment is authorized for this task.
+
+Lint passes with 52 existing warnings. Production webpack build passes. Full Jest: 454 passed, 70 failed, with exactly the same 70 failures as the pre-change baseline (449 passed). All five new tests pass. AST control audit: all 1,056 existing control declarations retained unchanged, plus three new declarations for the banner and mapped Quick start cards. Browser comparison of synthetic spreadsheet/photo Spaces confirms identical table columns, row values and actions. Local Chrome checks cover light/dark, navigation, add flows, export, contextual chat, settings and responsive layouts. See `docs/web-ui-refresh/IMPLEMENTATION.md` and `verification/` for evidence and limits. Commit and branch push are the delivery; production remains unchanged.
+
 ## November 1 — Policies and public API audit
 
 Published runtime `27def05a03730b1638525601b79f1a69d201a9ec` at https://findez.ai in `policies-api-20261101/frontend`, build `XTK8TQunEUyBuKjeMpB6j`. Draft PR293; all five exact-source CI gates passed (41400739188). Eight-file overlay preserves the actual hero-descender homepage, latest logo, other pages, configuration and backend PID. Updated Terms/Privacy, API key boundaries, Space destinations, private photo handling, management errors and generated downloads. No native build or backend/schema change.

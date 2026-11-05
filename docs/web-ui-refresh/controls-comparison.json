@@ -1,0 +1,42 @@
+{
+  "before": 1056,
+  "after": 1059,
+  "removedOrChanged": [],
+  "added": [
+    {
+      "control": {
+        "file": "frontend/src/components/founding-access/founding-access.tsx",
+        "tag": "button",
+        "attributes": {
+          "type": "\"button\"",
+          "aria-label": "\"Dismiss Founding Access banner\"",
+          "onClick": "{() => { try { localStorage.setItem(\"findez-founding-banner-closed\", \"true\"); } catch { bannerDismissedInSession = true; } window.dispatchEvent(new Event(\"findez-banner-dismissed\")); }}"
+        }
+      },
+      "count": 1
+    },
+    {
+      "control": {
+        "file": "frontend/src/components/founding-access/founding-access.tsx",
+        "tag": "button",
+        "attributes": {
+          "type": "\"button\"",
+          "onClick": "{founding.openPlan}"
+        }
+      },
+      "count": 1
+    },
+    {
+      "control": {
+        "file": "frontend/src/components/site/web-refresh-ui.tsx",
+        "tag": "button",
+        "attributes": {
+          "type": "\"button\"",
+          "disabled": "{disabled}",
+          "onClick": "{action}"
+        }
+      },
+      "count": 1
+    }
+  ]
+}

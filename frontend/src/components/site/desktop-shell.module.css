@@ -1,12 +1,12 @@
 /* Shared authenticated desktop layout. Never applies to marketing or auth pages. */
-.shell.shell.shell { --desktop-sidebar:256px; }
+.shell.shell.shell { --desktop-sidebar:266px; }
 .shell.shell :global(.app-sidebar) { background:var(--side); border-right:1px solid var(--app-border); }
 .shell.shell :global(.app-sidebar-brand) { min-height:64px; padding:16px 18px; }
 .shell.shell :global(.app-sidebar-logo) { width:26px; height:26px; }
 .shell.shell :global(.app-sidebar-nav) { padding:10px 12px 20px; scrollbar-width:thin; }
 .shell.shell :global(.app-nav-section) { margin-bottom:16px; }
 .shell.shell :global(.app-nav-section + .app-nav-section) { border:0; padding-top:4px; }
-.shell.shell :global(.app-nav-section > p) { margin:0 10px 6px; font-family:inherit; font-size:11px; line-height:20px; font-weight:500; letter-spacing:0; text-transform:none; color:var(--app-muted); }
+.shell.shell :global(.app-nav-section > p) { margin:0 10px 6px; font-family:inherit; font-size:12.5px; line-height:20px; font-weight:500; letter-spacing:0; text-transform:none; color:var(--app-muted); }
 .shell.shell :global(.app-nav-section > a) { min-height:36px; padding:8px 10px; gap:10px; border:0; border-radius:10px; font-size:14px; font-weight:400; color:var(--app-muted); transition:background 140ms ease,color 140ms ease; }
 .shell.shell :global(.app-nav-section > a:hover) { color:var(--app-text); background:var(--app-surface-2); }
 .shell.shell :global(.app-nav-section > a.is-active) { background:var(--app-surface-2); box-shadow:none; color:var(--app-text); font-weight:500; }

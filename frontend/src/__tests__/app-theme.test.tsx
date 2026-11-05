@@ -30,7 +30,7 @@ test("saved Appearance controls all interiors and is removed on public navigatio
   expect(document.documentElement.dataset.appTheme).toBe("light");
   await userEvent.click(screen.getByRole("button",{name:"System"}));
   expect(document.documentElement.dataset.appTheme).toBe("dark");
-  expect(localStorage.getItem(APP_THEME_STORAGE_KEY)).toBeNull();
+  expect(localStorage.getItem(APP_THEME_STORAGE_KEY)).toBe("system");
   act(() => window.dispatchEvent(new Event("findez-theme-change")));
 });
 test.each(["/", "/signin", "/signup", "/privacy", "/terms", "/docs/api", "/research", "/pricing", "/product", "/spaceship"])("public route %s never receives the signed-in theme", path => { expect(isInteriorPath(path)).toBe(false); });

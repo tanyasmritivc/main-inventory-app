@@ -33,7 +33,7 @@
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(0, 325px));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 14px;
 }
 .card {
@@ -47,10 +47,11 @@
   color: var(--app-text);
   text-decoration: none;
   min-width: 0;
-  transition: background 0.15s;
+  transition: transform .25s var(--motion-ease), box-shadow .25s var(--motion-ease);
 }
 .card:hover {
-  background: var(--app-surface-2);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow);
 }
 .card svg {
   flex-shrink: 0;

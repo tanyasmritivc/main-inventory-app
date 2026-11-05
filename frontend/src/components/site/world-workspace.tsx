@@ -4,7 +4,7 @@ import Link from "next/link";
 import { rememberWorld } from "@/lib/world-entry";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
-import { Boxes, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
+import { Boxes, ChevronRight, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { AppShell } from "./app-shell";
 import { AssistClient } from "./assist-client";
@@ -247,12 +247,7 @@ function WorldContent({
                     ? "Tools"
                     : "Workspaces"}
               </h1>
-              <p>
-                {name}
-                {chosen === "spaces"
-                  ? " · Across your accessible inventories"
-                  : ""}
-              </p>
+
             </div>
             <div className={styles.tools}>
               <button
@@ -349,6 +344,7 @@ function WorldContent({
                         <strong>{i.name}</strong>
                         <small>{i.workspace_name} · All items</small>
                       </div>
+                      <ChevronRight size={16} aria-hidden="true" style={{ marginLeft: "auto", flexShrink: 0, color: "var(--text3)" }} />
                     </Link>
                   ))}
                 </div>
@@ -367,7 +363,7 @@ function WorldContent({
                   <div className={styles.caption}>
                     <FolderKanban size={16} />
                     <strong>{w.name}</strong>
-                    <small>Inventories, people, tasks and files</small>
+
                   </div>
                 </Link>
               ))}

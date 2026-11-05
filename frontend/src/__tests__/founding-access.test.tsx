@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { FoundingAccessProvider, FoundingPlanCard, foundingVersion } from "@/components/founding-access/founding-access";
+import { FoundingAccessProvider, FoundingPlanCard, FoundingBanner, foundingVersion } from "@/components/founding-access/founding-access";
 
 let serial = 0;
 const old = "2025-01-01T00:00:00Z";
@@ -120,4 +120,20 @@ test("creation timestamp boundary and malformed/future timestamps use the return
   const now = Date.parse("2026-11-04T00:00:00Z");
   expect(foundingVersion(new Date(now - 899999).toISOString(), now)).toBe("signup");
   for (const date of [new Date(now - 900000).toISOString(), new Date(now + 1000).toISOString(), "invalid", null]) expect(foundingVersion(date, now)).toBe("signin");
+});
+
+
+test("banner reuses the existing plan popup and remembers dismissal", async () => {
+  const id = `banner-${++serial}`;
+  localStorage.setItem(`findez_founding_seen_${id}`, "true");
+  const tree = <FoundingAccessProvider accountId={id} createdAt={old} pathname="/settings/plans"><FoundingBanner /></FoundingAccessProvider>;
+  const { unmount } = render(tree);
+  fireEvent.click(screen.getByRole("button", { name: "See what is included" }));
+  expect(screen.getByRole("dialog", { name: "Your plan" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Close Founding Access" }));
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss Founding Access banner" }));
+  expect(localStorage.getItem("findez-founding-banner-closed")).toBe("true");
+  unmount();
+  const { container } = render(tree);
+  expect(container.querySelector("[data-dismissed=true]")).toBeTruthy();
 });

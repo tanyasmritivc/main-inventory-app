@@ -45,7 +45,7 @@ import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
 import { NotificationPreview } from "./notification-preview";
 import { ContextChat, hasContextChat } from "./context-chat";
-import { FoundingAccessProvider } from "@/components/founding-access/founding-access";
+import { FoundingAccessProvider, FoundingBanner } from "@/components/founding-access/founding-access";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -442,6 +442,7 @@ export function AppShell({
           }
           homeHref={context?.homeHref || world?.homeHref || "/organizations"}
         />
+        <FoundingBanner />
         <header className="app-topbar">
           <button
             className="app-icon-button app-mobile-nav-button"
