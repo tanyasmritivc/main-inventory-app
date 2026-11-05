@@ -1,6 +1,6 @@
-## November 4 - Mobile consistency181 and AI retrieval diagnosis active
+## November 4 - Mobile consistency181 delivered
 
-Existing checkout, branch `fix/mobile-consistency-181`, follows uploaded180. Main Spaces directory is the typography reference for all Space features; compact immediate organization menu and opaque pill, shared compact inventory chooser, More/workspace/empty states, current inventory Ask UI. Investigate greeting inventory retrieval in the deployed backend separately; preserve AI decisions and authenticated scope, no scripted greeting. Push/TestFlight authorized. Physical acceptance pending.
+Apple acknowledged TestFlight 1.1.2 (181), delivery f1876ea2-5e32-49a0-8ece-59089bb4ad88. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41976263542). 1,379 Flutter tests passed (one existing skip), analyzer clean; 61 native checks passed across menus, typography, Space, inventory Ask and workspaces. Signed archive/export and Apple validation passed. Source 1d4888c1fce3020322ecedb878e94db7f7a6294d. Physical iPhone acceptance remains unverified. See docs/consistency181/testflight181-receipt.json. Branch `fix/mobile-consistency-181`, PR315. Companion on-demand AI directory retrieval is deployed, backend PR314.
 
 ## November 4 - Native photo and scan/Space polish delivered
 
