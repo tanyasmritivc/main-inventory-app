@@ -1,9 +1,11 @@
+import '../../../core/app_theme.dart';
+import '../../../core/ui/native_presentation.dart';
 import 'package:mobile/core/ui/app_text.dart';
-import 'package:mobile/core/ui/swipe_down_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 abstract final class ExtractStyle {
+  static ExtractPalette of(BuildContext context) => ExtractPalette(context);
   static const bg = Color(0xff111112),
       s1 = Color(0xff1c1c1e),
       s2 = Color(0xff232325),
@@ -45,6 +47,41 @@ abstract final class ExtractStyle {
       );
 }
 
+class ExtractPalette {
+  const ExtractPalette(this.context);
+  final BuildContext context;
+  bool get dark => Theme.of(context).brightness == Brightness.dark;
+  Color get bg => AppTheme.bg(context);
+  Color get sheet => AppTheme.surface(context);
+  Color get s1 => AppTheme.surface(context);
+  Color get s2 => dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
+  Color get s3 => AppTheme.surface2(context);
+  Color get tx => AppTheme.textPrimary(context);
+  Color get tx2 => AppTheme.textSecondary(context);
+  Color get tx3 => AppTheme.textMuted(context);
+  Color get line => AppTheme.border(context);
+  Color get line2 => AppTheme.border(context);
+  Color get white => tx;
+  Color get ink => dark ? const Color(0xFF0B0B0C) : Colors.white;
+  Color get red => AppTheme.danger;
+  TextStyle text(double size, {Color? color}) =>
+      ExtractStyle.text(size, color: color ?? tx);
+  ButtonStyle pill({bool primary = false, double height = 46}) =>
+      ExtractStyle.pill(primary: primary, height: height).copyWith(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => (primary ? white : s2).withValues(
+            alpha: states.contains(WidgetState.disabled) ? .35 : 1,
+          ),
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? tx3
+              : (primary ? ink : tx),
+        ),
+        textStyle: WidgetStatePropertyAll(text(AppTypography.bodySize)),
+      );
+}
+
 Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
     showModalBottomSheet<T>(
       context: context,
@@ -73,24 +110,14 @@ Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: availableHeight),
                 child: Material(
-                  color: ExtractStyle.sheet,
+                  color: ExtractStyle.of(context).sheet,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
-                    side: const BorderSide(color: ExtractStyle.line2),
+                    side: BorderSide(color: ExtractStyle.of(context).line2),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Theme(
-                    data: Theme.of(context).copyWith(
-                      brightness: Brightness.dark,
-                      colorScheme: const ColorScheme.dark(
-                        surface: ExtractStyle.sheet,
-                        primary: ExtractStyle.white,
-                      ),
-                      textTheme: Theme.of(context).textTheme.apply(
-                        bodyColor: ExtractStyle.tx,
-                        displayColor: ExtractStyle.tx,
-                      ),
-                    ),
+                    data: Theme.of(context),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
                       child: Column(
@@ -103,7 +130,9 @@ Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
                               height: 4,
                               margin: const EdgeInsets.only(bottom: 20),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: .2),
+                                color: ExtractStyle.of(
+                                  context,
+                                ).tx.withValues(alpha: .2),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                             ),
@@ -121,154 +150,45 @@ Future<T?> extractSheet<T>(BuildContext context, WidgetBuilder builder) =>
       ),
     );
 
-/// The source picker follows app appearance independently of the extraction
-/// review surfaces. Keep its typography local, including OS Bold Text handling.
-Future<bool?> showExtractPhotoSheet(BuildContext context) =>
-    showModalBottomSheet<bool>(
-      context: context,
-      useRootNavigator: true,
-      useSafeArea: true,
-      isScrollControlled: true,
-      enableDrag: false,
-      showDragHandle: false,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: .32),
-      constraints: const BoxConstraints(maxWidth: 560),
-      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
-          ? AnimationStyle.noAnimation
-          : const AnimationStyle(
-              duration: Duration(milliseconds: 250),
-              reverseDuration: Duration(milliseconds: 200),
-            ),
-      builder: (_) => const AppTypography(child: _ExtractPhotoPicker()),
+/// Return only after the native action sheet has dismissed so image_picker can
+/// present Camera or Photo Library from the originating chat without a race.
+Future<bool?> showExtractPhotoSheet(BuildContext context) async {
+  if (usesNativePresentation) {
+    final result = await NativePresentation.show(
+      context,
+      model: {'kind': 'photoSource'},
     );
-
-class _ExtractPhotoPicker extends StatelessWidget {
-  const _ExtractPhotoPicker();
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final ink = dark ? const Color(0xFFFAFAFA) : const Color(0xFF19191B);
-    final muted = dark ? const Color(0xFF9A9AA0) : const Color(0xFF616167);
-    final button = dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
-    TextStyle text(double size, [Color? color]) => TextStyle(
-      fontFamily: 'CupertinoSystemText',
-      fontWeight: FontWeight.w400,
-      fontSize: size,
-      height: 1.35,
-      color: color ?? ink,
-    );
-    final style = FilledButton.styleFrom(
-      backgroundColor: button,
-      foregroundColor: ink,
-      minimumSize: const Size(48, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      shape: const StadiumBorder(),
-      textStyle: text(AppTypography.bodySize),
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-    ).copyWith(backgroundBuilder: (_, _, child) => child!);
-    final camera = FilledButton.icon(
-      style: style,
-      onPressed: () => Navigator.pop(context, true),
-      icon: const Icon(CupertinoIcons.camera, size: 20),
-      label: const AppText('Camera'),
-    );
-    final library = FilledButton.icon(
-      style: style,
-      onPressed: () => Navigator.pop(context, false),
-      icon: const Icon(CupertinoIcons.photo, size: 20),
-      label: const AppText('Library'),
-    );
-    return SafeArea(
-      top: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(8, 8, 8, keyboard + 8),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: (constraints.maxHeight - keyboard - 16).clamp(
-                  0,
-                  constraints.maxHeight * .9,
-                ),
-              ),
-              child: SwipeDownSheet(
-                child: Material(
-                  key: const ValueKey('auto-extract-source-sheet'),
-                  color: dark
-                      ? const Color(0xFF19191B)
-                      : const Color(0xFFF9F9FA),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                    side: BorderSide(color: ink.withValues(alpha: .1)),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(
-                          child: Container(
-                            key: const ValueKey('auto-extract-source-handle'),
-                            width: 36,
-                            height: 4,
-                            margin: const EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: ink.withValues(alpha: .24),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                        ),
-                        AppText(
-                          'Add from a photo',
-                          style: text(AppTypography.titleSize),
-                        ),
-                        const SizedBox(height: 8),
-                        AppText(
-                          'Take a photo or choose one from your library. Review the items before saving.',
-                          style: text(AppTypography.bodySize, muted),
-                        ),
-                        const SizedBox(height: 16),
-                        LayoutBuilder(
-                          builder: (context, bounds) {
-                            if (bounds.maxWidth < 300 ||
-                                MediaQuery.textScalerOf(context).scale(16) >
-                                    20) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  camera,
-                                  const SizedBox(height: 10),
-                                  library,
-                                ],
-                              );
-                            }
-                            return Row(
-                              children: [
-                                Expanded(child: camera),
-                                const SizedBox(width: 12),
-                                Expanded(child: library),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    if (context.mounted && result?['error'] is String) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: AppText(result!['error'] as String)));
+    }
+    return switch (result?['action']) {
+      'camera' => true,
+      'library' => false,
+      _ => null,
+    };
   }
+  return showCupertinoModalPopup<bool>(
+    context: context,
+    useRootNavigator: true,
+    builder: (sheetContext) => CupertinoActionSheet(
+      actions: [
+        CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(sheetContext, true),
+          child: const AppText('Camera'),
+        ),
+        CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(sheetContext, false),
+          child: const AppText('Photo Library'),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.pop(sheetContext),
+        child: const AppText('Cancel'),
+      ),
+    ),
+  );
 }
 
 class ExtractReply extends StatelessWidget {
@@ -277,7 +197,7 @@ class ExtractReply extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reply = DefaultTextStyle(
-      style: ExtractStyle.text(15.5).copyWith(height: 1.5),
+      style: ExtractStyle.of(context).text(15.5).copyWith(height: 1.5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -285,13 +205,13 @@ class ExtractReply extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: ExtractStyle.white,
+              color: ExtractStyle.of(context).white,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               CupertinoIcons.square_grid_2x2_fill,
               size: 15,
-              color: ExtractStyle.ink,
+              color: ExtractStyle.of(context).ink,
             ),
           ),
           const SizedBox(width: 10),
@@ -299,15 +219,7 @@ class ExtractReply extends StatelessWidget {
         ],
       ),
     );
-    if (Theme.of(context).brightness == Brightness.dark) return reply;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ExtractStyle.bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: reply,
-    );
+    return reply;
   }
 }
 

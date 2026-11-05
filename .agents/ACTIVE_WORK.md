@@ -1,3 +1,7 @@
+## November 4 - Native photo and scan/Space polish delivered
+
+Apple acknowledged TestFlight 1.1.2 (180), delivery 3761bfc1-8702-416c-95d5-fcc79868253d. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41972582987). 1,378 Flutter tests passed (one existing skip), analyzer clean; 77 native checks passed across UIKit source selection, scan, keyboard, typography, Space and home icons. Signed archive/export and Apple validation passed. Source a6557c5c5814bdfe8dec071eea31bd1208198202. Physical iPhone acceptance remains unverified. See docs/scan180/testflight180-receipt.json. Branch `fix/mobile-scan-native-polish`, PR313.
+
 ## November 4 - Consistent mobile typography delivered
 
 Apple acknowledged TestFlight 1.1.2 (179), delivery b2a40740-8b41-44da-aaf4-db551f6bc0d6. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41966324519). 1,368 Flutter tests passed (one existing skip), analyzer clean, 18 native typography/popup/voice cases and 32 native Space cases passed. Signed archive/export and Apple validation passed. Source 29261130df0b1a8592e4f1eef4e08309084add66. Physical iPhone acceptance remains unverified. See docs/typography179/testflight179-receipt.json. Branch `fix/consistent-mobile-typography`, PR312.

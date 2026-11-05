@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/ui/scroll_glass.dart';
 
 /// Normal messages flow beneath softly blurred controls with measured insets.
-/// Extraction reserves space for its controls so content cannot overlap them.
+/// Scan cards share this viewport; sheet-based Space chat can reserve controls.
 class ChatViewport extends StatefulWidget {
   const ChatViewport({
     super.key,

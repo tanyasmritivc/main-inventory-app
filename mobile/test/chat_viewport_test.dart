@@ -21,56 +21,55 @@ void main() {
       expect(phase.advance('Scanning photo...'), phase);
     },
   );
-  testWidgets(
-    'extraction content stays between header and composer when scrolled',
-    (t) async {
-      t.view.physicalSize = const Size(390, 844);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.resetPhysicalSize);
-      addTearDown(t.view.resetDevicePixelRatio);
-      final controller = ScrollController();
-      addTearDown(controller.dispose);
-      await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatViewport(
-              keepControlsOutside: true,
-              controller: controller,
-              header: const SizedBox(
-                key: Key('header'),
-                height: 60,
-                child: Text('Ask'),
-              ),
-              footer: const SizedBox(
-                key: Key('composer'),
-                height: 120,
-                child: Text('Composer'),
-              ),
-              messages: List.generate(
-                20,
-                (i) => SizedBox(height: 80, child: Text('Message $i')),
-              ),
+  testWidgets('sheet chat can reserve header and composer when scrolled', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatViewport(
+            keepControlsOutside: true,
+            controller: controller,
+            header: const SizedBox(
+              key: Key('header'),
+              height: 60,
+              child: Text('Ask'),
+            ),
+            footer: const SizedBox(
+              key: Key('composer'),
+              height: 120,
+              child: Text('Composer'),
+            ),
+            messages: List.generate(
+              20,
+              (i) => SizedBox(height: 80, child: Text('Message $i')),
             ),
           ),
         ),
-      );
-      await t.drag(find.byType(ListView), const Offset(0, -600));
-      await t.pumpAndSettle();
-      final list = t.getRect(find.byType(ListView));
-      expect(
-        list.top,
-        greaterThanOrEqualTo(t.getRect(find.byKey(const Key('header'))).bottom),
-      );
-      expect(
-        list.bottom,
-        lessThanOrEqualTo(t.getRect(find.byKey(const Key('composer'))).top),
-      );
-      controller.jumpTo(controller.position.maxScrollExtent);
-      await t.pumpAndSettle();
-      expect(find.text('Message 19').hitTestable(), findsOneWidget);
-      expect(t.takeException(), isNull);
-    },
-  );
+      ),
+    );
+    await t.drag(find.byType(ListView), const Offset(0, -600));
+    await t.pumpAndSettle();
+    final list = t.getRect(find.byType(ListView));
+    expect(
+      list.top,
+      greaterThanOrEqualTo(t.getRect(find.byKey(const Key('header'))).bottom),
+    );
+    expect(
+      list.bottom,
+      lessThanOrEqualTo(t.getRect(find.byKey(const Key('composer'))).top),
+    );
+    controller.jumpTo(controller.position.maxScrollExtent);
+    await t.pumpAndSettle();
+    expect(find.text('Message 19').hitTestable(), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
   testWidgets(
     'messages scroll under glass while last message stays reachable',
     (t) async {

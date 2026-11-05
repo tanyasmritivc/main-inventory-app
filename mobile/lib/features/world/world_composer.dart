@@ -294,7 +294,7 @@ class _WorldComposerState extends State<WorldComposer>
                     widget.menuOpen
                         ? CupertinoIcons.xmark
                         : CupertinoIcons.plus,
-                    size: 19,
+                    size: 22,
                   ),
                 ),
                 if (widget.onFirstCamera != null)
@@ -308,7 +308,7 @@ class _WorldComposerState extends State<WorldComposer>
                         ).colorScheme.onSurface,
                         foregroundColor: Theme.of(context).colorScheme.surface,
                       ),
-                      icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                      icon: const Icon(Icons.camera_alt_outlined, size: 22),
                     ),
                   ),
                 const Spacer(),
@@ -316,7 +316,7 @@ class _WorldComposerState extends State<WorldComposer>
                   IconButton(
                     tooltip: 'Hide keyboard',
                     onPressed: widget.focusNode.unfocus,
-                    icon: const Icon(Icons.keyboard_hide_outlined, size: 21),
+                    icon: const Icon(Icons.keyboard_hide_outlined, size: 22),
                   ),
                 Tooltip(
                   message: widget.listening
@@ -336,7 +336,7 @@ class _WorldComposerState extends State<WorldComposer>
                         widget.listening
                             ? CupertinoIcons.mic_fill
                             : CupertinoIcons.mic,
-                        size: 21,
+                        size: 22,
                       ),
                     ),
                   ),
@@ -386,7 +386,7 @@ class _WorldComposerState extends State<WorldComposer>
                               ],
                             ),
                           )
-                        : const Icon(CupertinoIcons.arrow_up),
+                        : const Icon(CupertinoIcons.arrow_up, size: 22),
                   ),
                 ],
               ],

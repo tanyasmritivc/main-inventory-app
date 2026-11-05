@@ -5,8 +5,11 @@ import '../../../core/ui/swipe_down_sheet.dart';
 
 // Local to Space v2; never changes the app's global theme.
 abstract final class SpaceStyle {
-  static SpacePalette of(BuildContext context) =>
-      SpacePalette(Theme.of(context).brightness);
+  static SpacePalette of(BuildContext context) => SpacePalette(
+    Theme.of(context).brightness,
+    bodySize: AppTypography.bodySizeOf(context),
+    captionSize: AppTypography.captionSizeOf(context),
+  );
   static const bg = Color(0xFF0B0B0C);
   static const s1 = Color(0xFF1C1C1E);
   static const s2 = Color(0xFF252527);
@@ -60,7 +63,13 @@ abstract final class SpaceStyle {
 
 /// Immutable, context-bound colours also follow live System appearance changes.
 class SpacePalette {
-  const SpacePalette(this.brightness);
+  const SpacePalette(
+    this.brightness, {
+    this.bodySize = AppTypography.bodySize,
+    this.captionSize = AppTypography.captionSize,
+  });
+  final double bodySize;
+  final double captionSize;
   final Brightness brightness;
   bool get dark => brightness == Brightness.dark;
   Color get bg => dark ? SpaceStyle.bg : const Color(0xFFF8F8FA);
@@ -80,7 +89,11 @@ class SpacePalette {
   Color get button => dark ? const Color(0xFF242424) : const Color(0xFFE7E7E9);
   TextStyle text(double size, [Color? color]) => TextStyle(
     fontFamily: 'CupertinoSystemText',
-    fontSize: AppTypography.standardSize(size),
+    fontSize: AppTypography.standardSize(
+      size,
+      body: bodySize,
+      caption: captionSize,
+    ),
     height: 1.35,
     color: color ?? tx,
     fontWeight: FontWeight.w400,

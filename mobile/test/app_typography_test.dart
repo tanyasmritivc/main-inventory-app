@@ -58,6 +58,58 @@ FontWeight? _weight(WidgetTester tester, String label) => tester
     ?.fontWeight;
 
 void main() {
+  testWidgets(
+    'compact Space sizing is local and preserves accessibility scaling',
+    (t) async {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.create(Brightness.light),
+          builder: (context, child) => AppTypography(
+            child: MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(2.6)),
+              child: child!,
+            ),
+          ),
+          home: const Scaffold(
+            body: Column(
+              children: [
+                AppText('App body', style: TextStyle(fontSize: 15)),
+                AppTypography(
+                  bodyPointSize: 15,
+                  captionPointSize: 12,
+                  child: Column(
+                    children: [
+                      AppText('Space body', style: TextStyle(fontSize: 17)),
+                      AppText('Space caption', style: TextStyle(fontSize: 13)),
+                      Text('Space framework'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      for (final entry in {
+        'App body': 16.0,
+        'Space body': 15.0,
+        'Space caption': 12.0,
+        'Space framework': 15.0,
+      }.entries) {
+        final rich = t.widget<RichText>(
+          find.descendant(
+            of: find.text(entry.key),
+            matching: find.byType(RichText),
+          ),
+        );
+        expect(rich.text.style?.fontSize, entry.value, reason: entry.key);
+        expect(rich.text.style?.fontFamily, AppTypography.fontFamily);
+        expect(rich.textScaler.scale(entry.value), entry.value * 2.6);
+      }
+    },
+  );
   for (final brightness in Brightness.values) {
     testWidgets(
       'AI response headings and body remain regular ${brightness.name}',

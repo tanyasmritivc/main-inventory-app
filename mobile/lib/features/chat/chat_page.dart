@@ -3887,7 +3887,7 @@ class _ChatPageState extends State<ChatPage>
         resizeToAvoidBottomInset: !widget.inPageView,
         backgroundColor: Colors.transparent,
         body: ChatViewport(
-          keepControlsOutside: _scanningPreview || _previewDraft != null,
+          keepControlsOutside: false,
           header: _buildHeader(),
           controller: _scrollController,
 
@@ -3980,10 +3980,7 @@ class _ChatPageState extends State<ChatPage>
           ? Colors.transparent
           : AppTheme.bg(context),
       body: ChatViewport(
-        keepControlsOutside:
-            widget.spacePresentation != null ||
-            _scanningPreview ||
-            _previewDraft != null,
+        keepControlsOutside: widget.spacePresentation != null,
         header: widget.contextual || _session.messages.isNotEmpty
             ? _buildHeader()
             : const SizedBox.shrink(),

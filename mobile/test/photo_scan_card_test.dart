@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile/features/chat/auto_extract/extract_widgets.dart';
@@ -31,6 +33,7 @@ void main() {
     bool reduce = false,
     double scale = 1,
     double width = 390,
+    Brightness brightness = Brightness.dark,
   }) async {
     t.view.physicalSize = Size(width, width == 320 ? 568 : 844);
     t.view.devicePixelRatio = 1;
@@ -38,7 +41,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(
       MaterialApp(
-        theme: ThemeData.dark(),
+        theme: AppTheme.create(brightness),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             disableAnimations: reduce,
@@ -75,6 +78,76 @@ void main() {
       },
     },
   );
+  test(
+    'known scan items rank by identity confidence, unknowns last, ties stable',
+    () {
+      Map<String, dynamic> row(
+        int index,
+        String name, {
+        double? score,
+        double? legacy,
+      }) => {
+        'index': index,
+        'selected': true,
+        'item': {
+          'name': name,
+          if (score != null) 'scan_evidence': {'identity_confidence': score},
+          if (legacy != null) 'confidence': legacy,
+        },
+      };
+      final input = [
+        row(0, 'Unknown cable', score: .99),
+        row(1, 'Drill', score: .8),
+        row(2, 'Wrench', score: .95, legacy: .1),
+        row(3, 'Clamp', score: .8),
+        row(4, 'Screw'),
+        row(5, 'Item 6', score: 1),
+        row(6, '', score: .5),
+      ];
+      final sorted = sortedExtractRows(input);
+      expect(sorted.map((r) => r['index']), [2, 1, 3, 4, 5, 0, 6]);
+      expect(input.map((r) => r['index']), [0, 1, 2, 3, 4, 5, 6]);
+      expect(identical(sorted.first, input[2]), isTrue);
+    },
+  );
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'scan uses app colours and regular semantic sizes ${brightness.name}',
+      (t) async {
+        await mount(
+          t,
+          ExtractScanning(photo: landscape, message: ''),
+          reduce: true,
+          brightness: brightness,
+        );
+        final title = t.widget<RichText>(
+          find.descendant(
+            of: find.text('Looking at your photo'),
+            matching: find.byType(RichText),
+          ),
+        );
+        expect(title.text.style?.fontFamily, AppTypography.fontFamily);
+        expect(title.text.style?.fontSize, AppTypography.titleSize);
+        expect(title.text.style?.fontWeight, FontWeight.w400);
+        final context = t.element(find.byType(ExtractScanning));
+        expect(title.text.style?.color, AppTheme.textPrimary(context));
+        final placeholders = t
+            .widgetList<Container>(find.byType(Container))
+            .where((c) => c.constraints?.maxHeight == 76);
+        expect(placeholders, hasLength(3));
+        for (final placeholder in placeholders) {
+          final colour = (placeholder.decoration as BoxDecoration).color!;
+          expect(
+            colour.computeLuminance() > .5,
+            brightness == Brightness.light,
+          );
+        }
+        expect(t.takeException(), isNull);
+        await capture(t, 'scan-theme-${brightness.name}');
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
   for (final photo in [('portrait', portrait), ('landscape', landscape)]) {
     testWidgets(
       'photo scan ${photo.$1} preserves aspect in rounded 300-point stage',

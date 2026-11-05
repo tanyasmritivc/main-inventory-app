@@ -42,7 +42,22 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     token = data["token"] as? String
     result = reply
     model = data
-    if data["kind"] as? String == "alert" {
+    if data["kind"] as? String == "photoSource" {
+      let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+      alert.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
+        self?.finish(["action": "camera"])
+      })
+      alert.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
+        self?.finish(["action": "library"])
+      })
+      alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in self?.finish(nil) })
+      if let popover = alert.popoverPresentationController {
+        popover.sourceView = parent.view
+        popover.sourceRect = CGRect(x: parent.view.bounds.midX, y: parent.view.bounds.maxY - parent.view.safeAreaInsets.bottom - 1, width: 1, height: 1)
+        popover.permittedArrowDirections = .down
+      }
+      controller = alert
+    } else if data["kind"] as? String == "alert" {
       let alert = makeAlert(data) { [weak self] value in self?.finish(value) }
       controller = alert
     } else {

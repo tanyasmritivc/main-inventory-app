@@ -24,6 +24,36 @@ bool extractUncertain(Map row) {
   return confidence is num && confidence < .6;
 }
 
+/// Presentation order only. Keep original row indices and object identity so
+/// selection, edits, exclusion and save still address the server's exact item.
+List<Map<String, dynamic>> sortedExtractRows(List<Map<String, dynamic>> rows) {
+  bool unknown(Map<String, dynamic> row) {
+    final name = '${(row['item'] as Map)['name'] ?? ''}'.trim().toLowerCase();
+    return name.isEmpty ||
+        RegExp(r'^(unknown|unidentified|unrecognized)(\b|_)').hasMatch(name) ||
+        RegExp(r'^(item|object)(\s*#?\d+)?$').hasMatch(name);
+  }
+
+  double confidence(Map<String, dynamic> row) {
+    final item = row['item'] as Map;
+    final value =
+        (item['scan_evidence'] as Map?)?['identity_confidence'] ??
+        item['confidence'];
+    return value is num && value.isFinite && value >= 0 && value <= 1
+        ? value.toDouble()
+        : -1;
+  }
+
+  final ranked = rows.indexed.toList();
+  ranked.sort((a, b) {
+    final category = (unknown(a.$2) ? 1 : 0).compareTo(unknown(b.$2) ? 1 : 0);
+    if (category != 0) return category;
+    final score = confidence(b.$2).compareTo(confidence(a.$2));
+    return score != 0 ? score : a.$1.compareTo(b.$1);
+  });
+  return [for (final entry in ranked) entry.$2];
+}
+
 class ExtractPhoto extends StatelessWidget {
   const ExtractPhoto({
     super.key,
@@ -96,20 +126,20 @@ class ExtractTiles extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final row in rows)
+          for (final (position, row) in rows.indexed)
             SizedBox(
               width: width,
               child: ExtractReveal(
                 key: ValueKey(row['index']),
-                index: row['index'] as int,
-                child: _tile(row),
+                index: position,
+                child: _tile(context, row, position),
               ),
             ),
         ],
       );
     },
   );
-  Widget _tile(Map<String, dynamic> row) {
+  Widget _tile(BuildContext context, Map<String, dynamic> row, int position) {
     final selected = row['selected'] == true;
     final name = extractName(row);
     final item = row['item'] as Map;
@@ -121,13 +151,13 @@ class ExtractTiles extends StatelessWidget {
         duration: const Duration(milliseconds: 350),
         opacity: selected ? 1 : .42,
         child: Material(
-          color: ExtractStyle.s1,
+          color: ExtractStyle.of(context).s1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: highlight == row['index']
-                  ? ExtractStyle.white
-                  : ExtractStyle.line,
+                  ? ExtractStyle.of(context).white
+                  : ExtractStyle.of(context).line,
               width: highlight == row['index'] ? 1.5 : 1,
             ),
           ),
@@ -156,16 +186,15 @@ class ExtractTiles extends StatelessWidget {
                               width: 18,
                               height: 18,
                               alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: ExtractStyle.white,
+                              decoration: BoxDecoration(
+                                color: ExtractStyle.of(context).white,
                                 shape: BoxShape.circle,
                               ),
                               child: AppText(
-                                '${(row['index'] as int) + 1}',
-                                style: ExtractStyle.text(
-                                  10,
-                                  color: ExtractStyle.ink,
-                                ),
+                                '${position + 1}',
+                                style: ExtractStyle.of(
+                                  context,
+                                ).text(10, color: ExtractStyle.of(context).ink),
                               ),
                             ),
                           ),
@@ -180,22 +209,23 @@ class ExtractTiles extends StatelessWidget {
                               name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: ExtractStyle.text(13.5).copyWith(
-                                height: 1.2,
-                                decoration: selected
-                                    ? null
-                                    : TextDecoration.lineThrough,
-                              ),
+                              style: ExtractStyle.of(context)
+                                  .text(13.5)
+                                  .copyWith(
+                                    height: 1.2,
+                                    decoration: selected
+                                        ? null
+                                        : TextDecoration.lineThrough,
+                                  ),
                             ),
                             const SizedBox(height: 3),
                             AppText(
                               quantityMissing(row)
                                   ? 'Quantity needed'
                                   : '×${item['quantity'] ?? '?'}${extractUncertain(row) ? ' · not sure' : ''}',
-                              style: ExtractStyle.text(
-                                12,
-                                color: ExtractStyle.tx2,
-                              ),
+                              style: ExtractStyle.of(
+                                context,
+                              ).text(12, color: ExtractStyle.of(context).tx2),
                             ),
                           ],
                         ),
@@ -214,10 +244,10 @@ class ExtractTiles extends StatelessWidget {
                       minHeight: 44,
                     ),
                     padding: const EdgeInsets.only(left: 20, bottom: 20),
-                    icon: const Icon(
+                    icon: Icon(
                       CupertinoIcons.pencil,
                       size: 14,
-                      color: ExtractStyle.tx3,
+                      color: ExtractStyle.of(context).tx3,
                     ),
                   ),
                 ),
@@ -291,6 +321,7 @@ class ExtractScanning extends StatefulWidget {
 
 class _ExtractScanningState extends State<ExtractScanning>
     with TickerProviderStateMixin {
+  List<Map<String, dynamic>> get _rows => sortedExtractRows(widget.rows);
   late final _sweep = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2400),
@@ -365,9 +396,11 @@ class _ExtractScanningState extends State<ExtractScanning>
 
   TextStyle _text(
     double size, {
-    Color color = ExtractStyle.white,
+    Color? color,
     FontWeight weight = FontWeight.w400,
-  }) => ExtractStyle.text(size, color: color).copyWith(fontWeight: weight);
+  }) => ExtractStyle.of(
+    context,
+  ).text(size, color: color).copyWith(fontWeight: weight);
   Widget _chip(Widget child) => ClipRRect(
     borderRadius: BorderRadius.circular(15),
     child: BackdropFilter(
@@ -388,15 +421,15 @@ class _ExtractScanningState extends State<ExtractScanning>
     widget.photo,
     fit: fit,
     gaplessPlayback: true,
-    errorBuilder: (_, _, _) => const Center(
-      child: Icon(CupertinoIcons.photo, color: ExtractStyle.tx2),
+    errorBuilder: (_, _, _) => Center(
+      child: Icon(CupertinoIcons.photo, color: ExtractStyle.of(context).tx2),
     ),
   );
   Widget _stage() {
-    final count = widget.rows.where((r) => r['selected'] == true).length;
+    final count = _rows.where((r) => r['selected'] == true).length;
     return Semantics(
       label: widget.done
-          ? '${widget.rows.length} items found'
+          ? '${_rows.length} items found'
           : 'Scanning your photo',
       child: SizedBox(
         height: 300,
@@ -523,7 +556,11 @@ class _ExtractScanningState extends State<ExtractScanning>
                           ],
                           AppText(
                             widget.done ? 'Done' : 'Scanning',
-                            style: _text(13, weight: FontWeight.w400),
+                            style: _text(
+                              13,
+                              color: Colors.white,
+                              weight: FontWeight.w400,
+                            ),
                           ),
                         ],
                       ),
@@ -531,9 +568,9 @@ class _ExtractScanningState extends State<ExtractScanning>
                     _chip(
                       AppText(
                         widget.done
-                            ? '$count of ${widget.rows.length} selected'
-                            : '${widget.rows.length} found',
-                        style: _text(13),
+                            ? '$count of ${_rows.length} selected'
+                            : '${_rows.length} found',
+                        style: _text(13, color: Colors.white),
                       ),
                     ),
                   ],
@@ -653,12 +690,12 @@ class _ExtractScanningState extends State<ExtractScanning>
               height: 76,
               decoration: BoxDecoration(
                 color: Color.lerp(
-                  const Color(0xFF1B1B1E),
-                  const Color(0xFF29292D),
+                  ExtractStyle.of(context).s2,
+                  ExtractStyle.of(context).s3,
                   _reduce ? 0 : 1 - (_sweep.value * 2 - 1).abs(),
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: .07)),
+                border: Border.all(color: ExtractStyle.of(context).line),
               ),
             ),
             const SizedBox(height: 8),
@@ -666,7 +703,7 @@ class _ExtractScanningState extends State<ExtractScanning>
               height: 8,
               width: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1B1B1E),
+                color: ExtractStyle.of(context).s3,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -677,11 +714,9 @@ class _ExtractScanningState extends State<ExtractScanning>
   );
   @override
   Widget build(BuildContext context) {
-    final selected = widget.rows.where((r) => r['selected'] == true).length;
-    final names = widget.rows
-        .map(extractName)
-        .map((s) => s.toLowerCase())
-        .toList();
+    final rows = _rows;
+    final selected = rows.where((r) => r['selected'] == true).length;
+    final names = rows.map(extractName).map((s) => s.toLowerCase()).toList();
     final found = names.length < 2
         ? names.join()
         : '${names.take(names.length - 1).join(', ')} and ${names.last}';
@@ -690,12 +725,8 @@ class _ExtractScanningState extends State<ExtractScanning>
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF161618), Color(0xFF121214)],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
+        color: ExtractStyle.of(context).s1,
+        border: Border.all(color: ExtractStyle.of(context).line),
       ),
       child: terminal
           ? Padding(
@@ -715,7 +746,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                   AppText(
                     widget.stopped ? 'Nothing was saved.' : widget.error!,
                     textAlign: TextAlign.center,
-                    style: _text(14, color: ExtractStyle.tx2),
+                    style: _text(14, color: ExtractStyle.of(context).tx2),
                   ),
                   const SizedBox(height: 16),
                   _ScanButton(
@@ -739,12 +770,12 @@ class _ExtractScanningState extends State<ExtractScanning>
                         liveRegion: true,
                         child: AppText(
                           widget.done
-                              ? '${widget.rows.length} ${widget.rows.length == 1 ? 'item' : 'items'} found'
+                              ? '${rows.length} ${rows.length == 1 ? 'item' : 'items'} found'
                               : 'Looking at your photo',
                           key: const Key('extraction-status'),
-                          style: _text(26).copyWith(
+                          style: _text(AppTypography.titleSize).copyWith(
                             fontFamily: 'CupertinoSystemText',
-                            letterSpacing: -.52,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -755,7 +786,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                             : names.isEmpty
                             ? 'Checking shapes and labels…'
                             : 'Found $found so far',
-                        style: _text(14.5, color: ExtractStyle.tx2),
+                        style: _text(14.5, color: ExtractStyle.of(context).tx2),
                       ),
                       if (_active)
                         Padding(
@@ -775,10 +806,10 @@ class _ExtractScanningState extends State<ExtractScanning>
                                               _activity.value,
                                             ),
                                     minHeight: 3,
-                                    color: ExtractStyle.white,
-                                    backgroundColor: Colors.white.withValues(
-                                      alpha: .08,
-                                    ),
+                                    color: ExtractStyle.of(context).tx,
+                                    backgroundColor: ExtractStyle.of(
+                                      context,
+                                    ).s2,
                                   ),
                                 ),
                               ),
@@ -795,17 +826,13 @@ class _ExtractScanningState extends State<ExtractScanning>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var i = 0; i < widget.rows.length; i++)
+                        for (var i = 0; i < rows.length; i++)
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: _tile(widget.rows[i], i),
+                            child: _tile(rows[i], i),
                           ),
                         if (_active)
-                          for (
-                            var i = 0;
-                            i < (widget.rows.length < 2 ? 3 : 1);
-                            i++
-                          )
+                          for (var i = 0; i < (rows.length < 2 ? 3 : 1); i++)
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: _placeholder(),
@@ -856,19 +883,22 @@ class _ExtractScanningState extends State<ExtractScanning>
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
                         child: Icon(
                           CupertinoIcons.lock,
                           size: 14,
-                          color: ExtractStyle.tx3,
+                          color: ExtractStyle.of(context).tx3,
                         ),
                       ),
                       const SizedBox(width: 7),
                       Expanded(
                         child: AppText(
                           'Nothing is saved until you review and approve.',
-                          style: _text(12.5, color: ExtractStyle.tx3),
+                          style: _text(
+                            12.5,
+                            color: ExtractStyle.of(context).tx3,
+                          ),
                         ),
                       ),
                     ],
@@ -940,25 +970,9 @@ class _ScanButtonState extends State<_ScanButton> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-          gradient: widget.primary
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF4F4F5), Color(0xFFD4D4D8)],
-                )
-              : null,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: widget.primary ? .6 : .12),
-          ),
-          boxShadow: widget.primary
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .35),
-                    offset: const Offset(0, 8),
-                    blurRadius: 24,
-                  ),
-                ]
-              : null,
+          color: widget.primary
+              ? ExtractStyle.of(context).white
+              : ExtractStyle.of(context).s2,
         ),
         child: Material(
           color: Colors.transparent,
@@ -983,8 +997,8 @@ class _ScanButtonState extends State<_ScanButton> {
                     style: ExtractStyle.text(
                       15.5,
                       color: widget.primary
-                          ? ExtractStyle.ink
-                          : ExtractStyle.white,
+                          ? ExtractStyle.of(context).ink
+                          : ExtractStyle.of(context).white,
                     ).copyWith(fontWeight: FontWeight.w400),
                   ),
                 ),
