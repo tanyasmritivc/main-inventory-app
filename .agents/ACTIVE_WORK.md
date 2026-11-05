@@ -1,6 +1,6 @@
-## November 4 - Native photo choices and scan/Space polish
+## November 4 - Native photo and scan/Space polish delivered
 
-Active branch `fix/mobile-scan-native-polish` from delivered179. User explicitly authorizes native Auto-extract Camera/Photo Library choices, scan styling parity, full-screen blurred scan edges, confidence-first/unknown-last scan ordering, consistent home toolbar symbols and compact Space typography. Mobile only; existing capture and inventory contracts stay intact. Push/TestFlight authorized.
+Apple acknowledged TestFlight 1.1.2 (180), delivery 3761bfc1-8702-416c-95d5-fcc79868253d. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41972582987). 1,378 Flutter tests passed (one existing skip), analyzer clean; 77 native checks passed across UIKit source selection, scan, keyboard, typography, Space and home icons. Signed archive/export and Apple validation passed. Source a6557c5c5814bdfe8dec071eea31bd1208198202. Physical iPhone acceptance remains unverified. See docs/scan180/testflight180-receipt.json. Branch `fix/mobile-scan-native-polish`, PR313.
 
 ## November 4 - Consistent mobile typography delivered
 

@@ -1,0 +1,33 @@
+{
+  "version": "1.1.2",
+  "build": 180,
+  "source_commit": "a6557c5c5814bdfe8dec071eea31bd1208198202",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "23d98fc9294059bd9dff329553e0c5d5d24b52e8f0030ca0a3f0f84a01c68807",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "3761bfc1-8702-416c-95d5-fcc79868253d",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pull_request": 313,
+  "ci_run": 41972582987,
+  "ci_jobs_passed": 5,
+  "flutter_tests_passed": 1378,
+  "existing_skips": 1,
+  "analyzer": "clean",
+  "native_checks": {
+    "native": 19,
+    "space": 32,
+    "scan": 11,
+    "extract": 9,
+    "actions": 3,
+    "world": 3
+  },
+  "font_packaging": "Native SF Pro; only icon fonts bundled",
+  "physical_device_acceptance": "unverified"
+}
