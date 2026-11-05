@@ -1,6 +1,6 @@
-## November 4 - Consistent mobile typography
+## November 4 - Consistent mobile typography delivered
 
-Active branch `fix/consistent-mobile-typography` from delivered build 178. Audit inherited styles, raw text and local size overrides; unify SF Pro regular body/control/input sizing while preserving deliberate captions/headings and accessibility scaling. Mobile only; push and TestFlight remain authorized.
+Apple acknowledged TestFlight 1.1.2 (179), delivery b2a40740-8b41-44da-aaf4-db551f6bc0d6. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41966324519). 1,368 Flutter tests passed (one existing skip), analyzer clean, 18 native typography/popup/voice cases and 32 native Space cases passed. Signed archive/export and Apple validation passed. Source 29261130df0b1a8592e4f1eef4e08309084add66. Physical iPhone acceptance remains unverified. See docs/typography179/testflight179-receipt.json. Branch `fix/consistent-mobile-typography`, PR312.
 
 ## November 3 — Main Ask auto-extract source popup 178 delivered
 
