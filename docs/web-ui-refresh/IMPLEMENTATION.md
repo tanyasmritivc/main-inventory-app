@@ -1,6 +1,6 @@
 # Web UI refresh delivery
 
-Branch: `feat/web-ui-refresh`. Baseline: `a2309b3`. The implementation commit is the commit containing this report. This branch is for review only; it is not merged or deployed.
+Branch: `feat/web-ui-refresh`. Baseline: `a2309b3`. Implementation: `2e16bd0`. Deployed on explicit user request on November 4, 2026 (November 5 UTC); branch is not merged. See [deployment receipt](deployment-receipt.json). The production overlay preserves the current release rather than replacing it with the branch checkout.
 
 The external `CODEX_PROMPT_WEB-4.md` is preserved here as [CODEX_PROMPT_WEB.md](CODEX_PROMPT_WEB.md). The supplied HTML and eleven reference screens are included unchanged as visual references. Runtime changes are limited to the Next.js visual layer and the four approved additions. No backend, mobile, database, API implementation, dependency, auth or permission changes were made.
 

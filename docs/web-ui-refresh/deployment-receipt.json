@@ -1,0 +1,136 @@
+{
+  "published": true,
+  "published_at_utc": "2026-11-05T07:52:03Z",
+  "source_commit": "2e16bd04ab4a51aea5e23b15795c28e7a5b4c5bf",
+  "branch": "feat/web-ui-refresh",
+  "merged": false,
+  "build_id": "5j5TNU5stPq_8JgE-zzN0",
+  "user_authorization": "deploy",
+  "previous_build_id": "r4JxNAEUD3hp1rgmLA_8H",
+  "source_audit": {
+    "changed_files": [
+      "src/app/interior-tokens.css",
+      "src/app/layout.tsx",
+      "src/app/web-ui-refresh.css",
+      "src/components/founding-access/founding-access.module.css",
+      "src/components/founding-access/founding-access.tsx",
+      "src/components/site/app-shell.tsx",
+      "src/components/site/assist-client.tsx",
+      "src/components/site/context-chat.module.css",
+      "src/components/site/desktop-shell.module.css",
+      "src/components/site/home-inventory-client.tsx",
+      "src/components/site/use-app-theme.tsx",
+      "src/components/site/web-refresh-ui.tsx",
+      "src/components/site/world-tools.module.css",
+      "src/components/site/world-workspace.module.css",
+      "src/components/site/world-workspace.tsx",
+      "src/lib/riso-palettes.ts"
+    ],
+    "unchanged_files": 494,
+    "configuration_preserved": true,
+    "public_assets_preserved": true,
+    "previous_release": "/home/ubuntu/findez-web-releases/founding-access-20261104/frontend",
+    "release": "/home/ubuntu/findez-web-releases/web-ui-refresh-2e16bd0/frontend"
+  },
+  "staged_checks": {
+    "routes": {
+      "/": 200,
+      "/signin": 200,
+      "/signup": 200,
+      "/pricing": 200,
+      "/product": 200,
+      "/solutions": 200,
+      "/research": 200,
+      "/docs/api": 200,
+      "/privacy": 200,
+      "/terms": 200,
+      "/robots.txt": 200,
+      "/sitemap.xml": 200,
+      "/worlds/personal": "guarded",
+      "/settings/appearance": "guarded",
+      "/inventory": "guarded",
+      "/review": "guarded",
+      "/documents": "guarded",
+      "/workspaces": "guarded",
+      "/notifications": "guarded"
+    },
+    "static_assets_checked": 41,
+    "refresh_css_served": true
+  },
+  "public_checks": {
+    "https://findez.ai": {
+      "routes": {
+        "/": 200,
+        "/signin": 200,
+        "/signup": 200,
+        "/pricing": 200,
+        "/product": 200,
+        "/solutions": 200,
+        "/research": 200,
+        "/docs/api": 200,
+        "/privacy": 200,
+        "/terms": 200,
+        "/robots.txt": 200,
+        "/sitemap.xml": 200,
+        "/worlds/personal": "guarded",
+        "/settings/appearance": "guarded",
+        "/inventory": "guarded",
+        "/review": "guarded",
+        "/documents": "guarded",
+        "/workspaces": "guarded",
+        "/notifications": "guarded"
+      },
+      "static_assets_checked": 41,
+      "refresh_css_served": true
+    },
+    "https://www.findez.ai": {
+      "routes": {
+        "/": 200,
+        "/signin": 200,
+        "/signup": 200,
+        "/pricing": 200,
+        "/product": 200,
+        "/solutions": 200,
+        "/research": 200,
+        "/docs/api": 200,
+        "/privacy": 200,
+        "/terms": 200,
+        "/robots.txt": 200,
+        "/sitemap.xml": 200,
+        "/worlds/personal": "guarded",
+        "/settings/appearance": "guarded",
+        "/inventory": "guarded",
+        "/review": "guarded",
+        "/documents": "guarded",
+        "/workspaces": "guarded",
+        "/notifications": "guarded"
+      },
+      "static_assets_checked": 41,
+      "refresh_css_served": true
+    }
+  },
+  "production_build": "webpack passed, including TypeScript and route generation",
+  "backend_process_unchanged": true,
+  "database_changes": false,
+  "customer_data_writes": false,
+  "temporary_preview_stopped": true,
+  "public_page_visible_text_preserved": true,
+  "automated_validation": {
+    "lint": "0 errors; 52 existing warnings",
+    "jest_passed": 454,
+    "jest_failed": 70,
+    "new_failures": 0,
+    "baseline_failures": 70,
+    "focused_tests_passed": 33,
+    "ci_run": null
+  },
+  "limitations": [
+    "Full Jest suite retains exactly the 70 pre-existing failures documented in test-comparison.json. No new failures.",
+    "Live checks are anonymous route, auth-guard, content and asset checks. Signed-in browser acceptance was previously performed with local synthetic fixtures.",
+    "No new CI run or main-branch merge was performed."
+  ],
+  "rollback": {
+    "configuration_backup": "/home/ubuntu/findez-web-releases/web-ui-refresh-2e16bd0/previous-web-rebuild.conf",
+    "instructions": "Restore the backup to /etc/systemd/system/findez-web.service.d/web-rebuild.conf, run systemctl daemon-reload, then restart findez-web. Previous release is intact."
+  }
+}

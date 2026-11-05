@@ -1,8 +1,10 @@
-## November 4 - Web UI refresh, branch review only
+## November 4 - Web UI refresh deployed
 
-Implemented the supplied `CODEX_PROMPT_WEB-4.md` and ZIP reference on `feat/web-ui-refresh` from `a2309b3`. Scope is Next.js presentation only, plus the four explicitly approved UI additions. No API, backend, mobile, database, dependency or production changes. Light is the default; explicit dark/system preferences remain available. No merge or deployment is authorized for this task.
+User explicitly requested `deploy` after the branch review. Runtime `2e16bd0` is live at https://findez.ai and https://www.findez.ai from `/home/ubuntu/findez-web-releases/web-ui-refresh-2e16bd0/frontend`, build `5j5TNU5stPq_8JgE-zzN0`. Applied the 16-file visual patch cleanly over the actual `founding-access-20261104` production release; preserved 494 other files, production configuration, public content/assets and backend PID. No mobile, database or customer-data changes. Branch `feat/web-ui-refresh` remains unmerged.
 
-Lint passes with 52 existing warnings. Production webpack build passes. Full Jest: 454 passed, 70 failed, with exactly the same 70 failures as the pre-change baseline (449 passed). All five new tests pass. AST control audit: all 1,056 existing control declarations retained unchanged, plus three new declarations for the banner and mapped Quick start cards. Browser comparison of synthetic spreadsheet/photo Spaces confirms identical table columns, row values and actions. Local Chrome checks cover light/dark, navigation, add flows, export, contextual chat, settings and responsive layouts. See `docs/web-ui-refresh/IMPLEMENTATION.md` and `verification/` for evidence and limits. Commit and branch push are the delivery; production remains unchanged.
+Production-configured webpack build passed. Staged and both-domain verification: 12 public routes, seven sign-in guards and 41 static assets passed; refreshed typography CSS is served. Public-page visible text matches the previous release. Preview stopped. Previous release and service configuration backup retained for rollback. Receipt: `docs/web-ui-refresh/deployment-receipt.json`.
+
+Implementation validation remains: lint passes (52 existing warnings), full Jest 454 passed/70 failed with the exact same 70 baseline failures and zero new failures, focused checks 33 passed. No new CI run. Extensive local synthetic light/dark/responsive browser checks and control/data-preservation audits are recorded in `docs/web-ui-refresh/IMPLEMENTATION.md`. Live smoke checks are anonymous; they do not prove a real signed-in AI/camera/OAuth round trip.
 
 ## November 1 — Policies and public API audit
 

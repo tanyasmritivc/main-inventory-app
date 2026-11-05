@@ -1,3 +1,7 @@
+## Current web deployment - November 4, 2026
+
+The web UI refresh `2e16bd0` is now live on both public domains, explicitly authorized by the user's `deploy` request. Active frontend: `/home/ubuntu/findez-web-releases/web-ui-refresh-2e16bd0/frontend`; build `5j5TNU5stPq_8JgE-zzN0`. This is a reviewed 16-file overlay of the actual founding-access production runtime, with 494 other files/configuration preserved. Backend PID unchanged; no schema, mobile or customer-data changes. Production build and staged/public route, auth-guard and static-asset checks passed. Previous release is retained; rollback backup is `web-ui-refresh-2e16bd0/previous-web-rebuild.conf`. Branch remains unmerged. See `docs/web-ui-refresh/deployment-receipt.json` for verification and known test-suite limits. Older runtime paths below are historical, not the active service.
+
 ## Current brand favicons published (2026-10-18)
 
 Web runtime f087a84 (PR126) is live from
