@@ -2679,13 +2679,27 @@ class _ChatPageState extends State<ChatPage>
           IconButton(
             tooltip: 'Chat history',
             onPressed: _sending ? null : _openHistory,
-            icon: const Icon(Icons.history_rounded, size: 22),
+            icon: const Icon(CupertinoIcons.clock, size: 22),
           ),
-          const Spacer(),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppText('Ask FindEZ'),
+                if (widget.api.inventoryContext != null)
+                  AppText(
+                    'Only in ${widget.api.inventoryContext!.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
           IconButton(
             tooltip: 'New chat',
             onPressed: _sending ? null : _resetChat,
-            icon: const Icon(Icons.edit_square, size: 22),
+            icon: const Icon(CupertinoIcons.square_pencil, size: 22),
           ),
         ],
       );
@@ -3546,7 +3560,7 @@ class _ChatPageState extends State<ChatPage>
           onOpenResource: widget.onOpenDestination == null
               ? null
               : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
-          pendingMessage: _progress ?? 'Checking your things...',
+          pendingMessage: _progress ?? 'Thinking...',
           onOpenSource:
               message.navHint?['type'] != 'project_kit' ||
                   message.answerContext?.sources
@@ -3877,6 +3891,7 @@ class _ChatPageState extends State<ChatPage>
         (!_sending || _canQueueFollowUp);
 
     if (widget.worldHeading != null &&
+        !widget.contextual &&
         (_worldHome || _session.messages.isEmpty) &&
         _previewDraft == null &&
         !_scanningPreview) {
@@ -3892,6 +3907,8 @@ class _ChatPageState extends State<ChatPage>
           controller: _scrollController,
 
           messages: [
+            if (widget.contextual && _session.messages.isEmpty)
+              _buildEmptyState(),
             for (final message in _session.messages)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),

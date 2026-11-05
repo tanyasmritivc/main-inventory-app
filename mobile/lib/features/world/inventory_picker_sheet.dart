@@ -35,22 +35,9 @@ class InventoryPickerSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 12, 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AppText(
-                      'Choose inventory',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: AppText(
-                'Choose an inventory to continue.',
+                'Choose',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colors.onSurfaceVariant,
                 ),
@@ -61,59 +48,30 @@ class InventoryPickerSheet extends StatelessWidget {
                 shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: inventories.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final row = inventories[index];
-                  return Material(
-                    color: colors.surfaceContainerLow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(
-                        color: colors.outlineVariant.withValues(alpha: .5),
-                        width: .5,
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    title: AppText(
+                      row['name'].toString(),
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    subtitle: AppText(
+                      row['workspace_name'].toString(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () => Navigator.pop(context, row),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.cube_box,
-                              size: 22,
-                              color: colors.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AppText(
-                                    row['name'].toString(),
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  AppText(
-                                    row['workspace_name'].toString(),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              size: 14,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
+                    trailing: Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 14,
+                      color: colors.onSurfaceVariant,
                     ),
+                    onTap: () => Navigator.pop(context, row),
                   );
                 },
               ),

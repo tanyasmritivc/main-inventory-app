@@ -1,3 +1,7 @@
+## November 4 - Mobile consistency181 and AI retrieval diagnosis active
+
+Existing checkout, branch `fix/mobile-consistency-181`, follows uploaded180. Main Spaces directory is the typography reference for all Space features; compact immediate organization menu and opaque pill, shared compact inventory chooser, More/workspace/empty states, current inventory Ask UI. Investigate greeting inventory retrieval in the deployed backend separately; preserve AI decisions and authenticated scope, no scripted greeting. Push/TestFlight authorized. Physical acceptance pending.
+
 ## November 4 - Native photo and scan/Space polish delivered
 
 Apple acknowledged TestFlight 1.1.2 (180), delivery 3761bfc1-8702-416c-95d5-fcc79868253d. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41972582987). 1,378 Flutter tests passed (one existing skip), analyzer clean; 77 native checks passed across UIKit source selection, scan, keyboard, typography, Space and home icons. Signed archive/export and Apple validation passed. Source a6557c5c5814bdfe8dec071eea31bd1208198202. Physical iPhone acceptance remains unverified. See docs/scan180/testflight180-receipt.json. Branch `fix/mobile-scan-native-polish`, PR313.

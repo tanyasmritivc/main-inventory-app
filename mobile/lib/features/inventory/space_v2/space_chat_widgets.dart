@@ -121,16 +121,12 @@ class SpaceChatEmpty extends StatelessWidget {
         children: [
           AppText(
             'Ask about ${presentation.space}.',
-            style: SpaceStyle.of(
-              context,
-            ).text(28).copyWith(height: 1.15, letterSpacing: -.84),
+            style: SpaceStyle.of(context).text(16),
           ),
           const SizedBox(height: 6),
           AppText(
             'Find, count or change items in this Space.',
-            style: SpaceStyle.of(context)
-                .text(28, SpaceStyle.of(context).tx3)
-                .copyWith(height: 1.15, letterSpacing: -.84),
+            style: SpaceStyle.of(context).text(13, SpaceStyle.of(context).tx2),
           ),
           const SizedBox(height: 20),
           Material(

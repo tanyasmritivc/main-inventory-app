@@ -11,6 +11,7 @@ import '../teams/team_board_page.dart';
 import '../teams/team_documents_page.dart';
 import 'hierarchy_page.dart';
 import 'place_ui.dart';
+import '../world/world_style.dart';
 import 'inventory_actions.dart';
 import 'workspace_actions.dart';
 import 'organization_pill.dart';
@@ -379,9 +380,9 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
       value: Theme.of(context).brightness == Brightness.dark
           ? SystemUiOverlayStyle.light
           : SystemUiOverlayStyle.dark,
-      child: PlaceTheme(
+      child: WorldStyle(
         child: Scaffold(
-          backgroundColor: PlacePalette.of(context).background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             toolbarHeight:
                 (MediaQuery.textScalerOf(context).scale(13) * 1.4 + 24).clamp(
@@ -428,7 +429,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                   if (ready && data == null) ...[
                     AppText(
                       'Workspaces',
-                      style: PlacePalette.of(context).title,
+                      style: PlacePalette.of(context).text(20),
                     ),
                     const SizedBox(height: 24),
                     AppText(
@@ -486,7 +487,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                                             data.name,
                                             style: PlacePalette.of(
                                               context,
-                                            ).title,
+                                            ).text(20),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),

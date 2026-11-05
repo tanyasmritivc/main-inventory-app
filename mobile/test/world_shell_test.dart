@@ -16,6 +16,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/place_session.dart';
 import 'package:mobile/features/world/world_shell.dart';
+import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 import 'package:mobile/features/world/world_action_card.dart';
 import 'package:mobile/features/world/world_composer.dart';
@@ -108,6 +109,36 @@ void main() {
     },
   );
 
+  testWidgets('organization menu opens before its network response', (
+    tester,
+  ) async {
+    await mount(tester);
+    final pending = Completer<Object?>();
+    final fallback = fixture.respond;
+    fixture.respond = (request) =>
+        request.path == '/organizations' ? pending.future : fallback(request);
+    await tester.tap(find.byType(OrganizationPill));
+    await tester.pump();
+    expect(find.text('Loading organizations...'), findsOneWidget);
+    expect(find.text('New organization'), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(PopupMenuItem<String>)).width,
+      lessThanOrEqualTo(300),
+    );
+    pending.complete({
+      'organizations': [
+        {'organization_id': 'org-a', 'name': 'Workshop'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Loading organizations...'), findsNothing);
+    expect(find.text('Workshop'), findsOneWidget);
+    await worldAuditCapture?.call('organization-menu');
+    await tester.tapAt(const Offset(370, 700));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('More tools share the compact inventory picker', (tester) async {
     final fallback = fixture.respond;
     fixture.respond = (request) {
@@ -134,8 +165,15 @@ void main() {
       return fallback(request);
     };
     await mount(tester);
-    await tester.tap(find.byTooltip('More'));
+    if (usesNativeBottomTabs) {
+      tester
+          .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
+          .onSelected(2);
+    } else {
+      await tester.tap(find.byTooltip('More'));
+    }
     await tester.pumpAndSettle();
+    await worldAuditCapture?.call('more');
     for (final tool in ['Overview', 'Projects', 'Review']) {
       expect(find.widgetWithText(ListTile, tool), findsNothing);
     }
@@ -143,16 +181,17 @@ void main() {
       await tester.ensureVisible(find.text(tool));
       await tester.tap(find.text(tool));
       await tester.pumpAndSettle();
-      expect(find.text('Choose an inventory to continue.'), findsOneWidget);
+      expect(find.text('Choose'), findsOneWidget);
       expect(find.text('Hardware'), findsOneWidget);
       expect(find.text('Software'), findsOneWidget);
+      await worldAuditCapture?.call('inventory-chooser');
       await tester.dragFrom(
         tester.getRect(find.byType(BottomSheet)).topCenter +
             const Offset(0, 16),
         const Offset(0, 500),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Choose inventory'), findsNothing);
+      expect(find.text('Choose'), findsNothing);
     }
     expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
     await tester.pumpWidget(const SizedBox());
@@ -368,7 +407,13 @@ void main() {
     );
     final content = tester.getRect(find.byKey(const ValueKey('world-content')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('More'));
+    if (usesNativeBottomTabs) {
+      tester
+          .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
+          .onSelected(2);
+    } else {
+      await tester.tap(find.byTooltip('More'));
+    }
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(
@@ -416,7 +461,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Workbench'), findsNothing);
     expect(find.text('Parts drawers'), findsOneWidget);
-    await tester.tap(find.byTooltip('More'));
+    if (usesNativeBottomTabs) {
+      tester
+          .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
+          .onSelected(2);
+    } else {
+      await tester.tap(find.byTooltip('More'));
+    }
     await tester.pumpAndSettle();
     expect(find.text('Workspaces and team tools'), findsOneWidget);
     expect(find.byType(OrganizationPill), findsNothing);

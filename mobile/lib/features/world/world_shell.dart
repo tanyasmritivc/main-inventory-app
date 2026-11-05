@@ -533,7 +533,7 @@ class _WorldShellState extends State<WorldShell> {
     await _push(page);
   });
   Widget _more(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
     children: [
       for (final label in [
         ('Documents and notes', CupertinoIcons.doc_text),
@@ -549,7 +549,7 @@ class _WorldShellState extends State<WorldShell> {
       ListTile(
         leading: const Icon(CupertinoIcons.person_2),
         title: const AppText('Workspaces and team tools'),
-        subtitle: const AppText('People, tasks, files, activity and settings'),
+        subtitle: const AppText('People, tasks, files and activity'),
         trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: () => _push(
           WorkspaceHome(
@@ -591,7 +591,7 @@ class _WorldShellState extends State<WorldShell> {
                     name: widget.session.organizationName,
                     glass: true,
                     labelStyle: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 16,
                       fontWeight: FontWeight.w400,
                       letterSpacing: -0.2,
                     ),

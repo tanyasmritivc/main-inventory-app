@@ -155,7 +155,7 @@ class AskAnswerView extends StatefulWidget {
     this.contextData,
     this.isLoading = false,
     this.animateChunks = false,
-    this.pendingMessage = 'Checking your things...',
+    this.pendingMessage = 'Thinking...',
     this.onOpenSource,
     this.onOpenResource,
     this.onChooseDestination,

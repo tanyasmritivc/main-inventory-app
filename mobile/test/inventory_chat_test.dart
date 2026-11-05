@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -83,7 +84,10 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         viewPadding: const EdgeInsets.only(top: 24, bottom: 20),
         viewInsets: EdgeInsets.only(bottom: keyboard),
       ),
-      child: child!,
+      child: RepaintBoundary(
+        key: const ValueKey("inventory-frame"),
+        child: child!,
+      ),
     ),
     home: Scaffold(
       body: const Text('Inventory page'),
@@ -107,7 +111,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Where is my drill?');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byIcon(CupertinoIcons.arrow_up));
       await tester.pump();
       api.stream.add(
         AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'),
@@ -141,7 +145,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         expect(tester.widget<ChatPage>(find.byType(ChatPage)).api, same(api));
         await tester.enterText(find.byType(TextField), 'Where is my drill?');
         await tester.pump();
-        await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+        await tester.tap(find.byIcon(CupertinoIcons.arrow_up));
         await tester.pump();
         api.stream.add(
           AiStreamEvent(type: 'delta', delta: 'In Hardware, on shelf 2.'),
@@ -181,7 +185,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         'Private hardware question',
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byIcon(CupertinoIcons.arrow_up));
       await tester.pump();
       a.stream.add(
         AiStreamEvent(type: 'delta', delta: 'Hardware-only answer.'),
