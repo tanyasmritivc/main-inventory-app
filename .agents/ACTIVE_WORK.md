@@ -1,6 +1,6 @@
-## November 4 - AI chooses directory lookups
+## November 4 - AI-directed directory deployed
 
-Backend-only lane `fix/ai-on-demand-directory` removes the unconditional world directory read before every turn. Authorization remains upfront. The existing AI tool loop chooses directory and item tools when relevant; no greeting classifier or canned reply. Neutral initial status. Preserve all current live changes with a narrow hash-checked patch at deployment, not a checkout reset. Companion mobile181 normalizes presentation.
+Backend-only lane `fix/ai-on-demand-directory` removes the unconditional world directory read before every turn. Authorization remains upfront. The existing AI tool loop chooses directory and item tools when relevant; no greeting classifier or canned reply. Neutral initial status. Preserve all current live changes with a narrow hash-checked patch at deployment, not a checkout reset. Companion mobile181 normalizes presentation. Source39d3c46, PR314, five CI gates and1,495 backend tests passed; real-provider tool selection verified with a removed disposable account. See docs/ai-on-demand-directory-release.json.
 
 ## November 3 — Space chat deployed
 
