@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
@@ -18,9 +19,9 @@ class VoiceComposerPanel extends StatelessWidget {
     final reduced = MediaQuery.disableAnimationsOf(context);
     const textStyle = TextStyle(
       fontFamily: 'CupertinoSystemText',
-      fontSize: 19,
-      height: 1.38,
-      letterSpacing: -.19,
+      fontSize: AppTypography.bodySize,
+      height: 1.35,
+      letterSpacing: 0,
     );
     return SizedBox(
       height: (178 + (scale - 1).clamp(0, 3) * 110).clamp(178, 480).toDouble(),
@@ -41,7 +42,7 @@ class VoiceComposerPanel extends StatelessWidget {
                 Expanded(
                   child: Semantics(
                     liveRegion: true,
-                    child: Text(
+                    child: AppText(
                       session.status,
                       style: TextStyle(
                         fontFamily: 'CupertinoSystemText',
@@ -132,7 +133,7 @@ class VoiceComposerPanel extends StatelessWidget {
                                               ),
                                         ),
                                 ),
-                            child: Text(
+                            child: AppText(
                               session.text,
                               key: ValueKey(session.text),
                               style: textStyle.copyWith(
@@ -187,7 +188,7 @@ class VoiceComposerPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Semantics(
                   label: 'Recorded ${session.duration.inSeconds} seconds',
-                  child: Text(
+                  child: AppText(
                     voiceTime(session.duration),
                     textScaler: MediaQuery.textScalerOf(
                       context,

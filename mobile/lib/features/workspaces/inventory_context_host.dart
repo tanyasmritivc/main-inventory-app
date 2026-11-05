@@ -191,7 +191,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
           _places.organizationId != target.organizationId) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               'This invitation destination changed. Review the invitation again.',
             ),
           ),
@@ -250,7 +250,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('This phone could not clear your saved place.'),
+            content: AppText('This phone could not clear your saved place.'),
           ),
         );
       }

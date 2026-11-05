@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
@@ -21,16 +22,16 @@ Future<void> manageDirectoryInventory(
         children: [
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(name, style: PlacePalette.of(context).rowTitle),
+            child: AppText(name, style: PlacePalette.of(context).rowTitle),
           ),
           if (inventory['can_rename'] == true)
             ListTile(
-              title: const Text('Rename inventory'),
+              title: const AppText('Rename inventory'),
               onTap: () => Navigator.pop(sheet, 'rename'),
             ),
           if (inventory['can_manage'] == true)
             ListTile(
-              title: Text(
+              title: AppText(
                 'Delete inventory',
                 style: PlacePalette.of(
                   context,
@@ -64,7 +65,7 @@ Future<void> manageDirectoryInventory(
       builder: (dialog, update) => PopScope(
         canPop: !busy,
         child: AlertDialog(
-          title: const Text('Rename inventory'),
+          title: const AppText('Rename inventory'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -81,7 +82,7 @@ Future<void> manageDirectoryInventory(
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(
+                    child: AppText(
                       error!,
                       style: TextStyle(
                         color: PlacePalette.of(context).destructive,
@@ -94,7 +95,7 @@ Future<void> manageDirectoryInventory(
           actions: [
             TextButton(
               onPressed: busy ? null : () => Navigator.pop(dialog),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             TextButton(
               onPressed: busy || entered.trim().isEmpty
@@ -126,7 +127,7 @@ Future<void> manageDirectoryInventory(
                         }
                       }
                     },
-              child: Text(busy ? 'Saving...' : 'Save'),
+              child: AppText(busy ? 'Saving...' : 'Save'),
             ),
           ],
         ),
@@ -140,7 +141,7 @@ Future<void> manageDirectoryInventory(
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('The change was saved. Pull to refresh the list.'),
+          content: AppText('The change was saved. Pull to refresh the list.'),
         ),
       );
     }

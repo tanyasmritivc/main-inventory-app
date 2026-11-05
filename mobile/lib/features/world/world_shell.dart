@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../founding_access/founding_access_gate.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
@@ -223,7 +224,7 @@ class _WorldShellState extends State<WorldShell> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               'Create an inventory in Ask, or choose an inventory you can edit.',
             ),
           ),
@@ -243,7 +244,7 @@ class _WorldShellState extends State<WorldShell> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -260,12 +261,12 @@ class _WorldShellState extends State<WorldShell> {
       builder: (context) => ListView(
         shrinkWrap: true,
         children: [
-          const ListTile(title: Text('Save to Space')),
+          const ListTile(title: AppText('Save to Space')),
           if (spaces.isEmpty)
-            const ListTile(title: Text('Create a Space in Ask first.')),
+            const ListTile(title: AppText('Create a Space in Ask first.')),
           for (final row in spaces)
             ListTile(
-              title: Text(row['name'].toString()),
+              title: AppText(row['name'].toString()),
               onTap: () => Navigator.pop(context, row),
             ),
         ],
@@ -388,8 +389,8 @@ class _WorldShellState extends State<WorldShell> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(describeError(error).$1),
-              TextButton(onPressed: _load, child: const Text('Retry')),
+              AppText(describeError(error).$1),
+              TextButton(onPressed: _load, child: const AppText('Retry')),
             ],
           ),
         ),
@@ -437,7 +438,7 @@ class _WorldShellState extends State<WorldShell> {
           if (rows.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(
+              child: AppText(
                 query.isNotEmpty
                     ? 'No matching Spaces.'
                     : 'Your world starts with one thing. Describe it in Ask or add a photo.',
@@ -459,7 +460,7 @@ class _WorldShellState extends State<WorldShell> {
             ),
           TextButton.icon(
             icon: const Icon(Icons.folder_open_outlined),
-            label: const Text('Browse inventories'),
+            label: const AppText('Browse inventories'),
             onPressed: () => _guard(() async {
               final api = await _chooseInventory();
               if (api != null && mounted) {
@@ -498,10 +499,10 @@ class _WorldShellState extends State<WorldShell> {
         builder: (context) => ListView(
           shrinkWrap: true,
           children: [
-            const ListTile(title: Text('Choose a Space')),
+            const ListTile(title: AppText('Choose a Space')),
             for (final space in spaces)
               ListTile(
-                title: Text(space['name'].toString()),
+                title: AppText(space['name'].toString()),
                 onTap: () => Navigator.pop(context, space['name'].toString()),
               ),
           ],
@@ -517,7 +518,7 @@ class _WorldShellState extends State<WorldShell> {
       'Documents and notes' => DocumentsPage(api: api),
       'Lent items' => CheckoutPage(api: api),
       _ => Scaffold(
-        appBar: AppBar(title: const Text('Overview')),
+        appBar: AppBar(title: const AppText('Overview')),
         body: HomePage(
           api: api,
           onOpenAsk: (message) =>
@@ -540,15 +541,15 @@ class _WorldShellState extends State<WorldShell> {
       ])
         ListTile(
           leading: Icon(label.$2),
-          title: Text(label.$1),
+          title: AppText(label.$1),
           trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
           onTap: () => _tool(label.$1),
         ),
       const Divider(),
       ListTile(
         leading: const Icon(CupertinoIcons.person_2),
-        title: const Text('Workspaces and team tools'),
-        subtitle: const Text('People, tasks, files, activity and settings'),
+        title: const AppText('Workspaces and team tools'),
+        subtitle: const AppText('People, tasks, files, activity and settings'),
         trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: () => _push(
           WorkspaceHome(
@@ -559,7 +560,7 @@ class _WorldShellState extends State<WorldShell> {
       ),
       ListTile(
         leading: const Icon(CupertinoIcons.gear),
-        title: const Text('Account settings'),
+        title: const AppText('Account settings'),
         trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: _account,
       ),
@@ -578,7 +579,7 @@ class _WorldShellState extends State<WorldShell> {
             heightFactor: 1,
             alignment: Alignment.centerLeft,
             child: index != 0
-                ? Text(
+                ? AppText(
                     index == 1 ? 'Spaces' : 'More',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.w400,
@@ -652,10 +653,10 @@ class _WorldShellState extends State<WorldShell> {
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(describeError(widget.session.error!).$1),
+                      AppText(describeError(widget.session.error!).$1),
                       TextButton(
                         onPressed: widget.session.restoreNavigation,
-                        child: const Text('Retry'),
+                        child: const AppText('Retry'),
                       ),
                     ],
                   ),
@@ -755,7 +756,7 @@ class _WorldShellState extends State<WorldShell> {
                               child: TextButton.icon(
                                 onPressed: _creatingSpace ? null : _newSpace,
                                 icon: const Icon(CupertinoIcons.plus, size: 19),
-                                label: Text(
+                                label: AppText(
                                   _creatingSpace ? 'Creating...' : 'New space',
                                 ),
                                 style: TextButton.styleFrom(

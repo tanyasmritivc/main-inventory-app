@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -206,27 +207,27 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                 children: [
-                  const Text(
+                  const AppText(
                     'Save to a Space',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  const AppText(
                     'Choose a destination. Your items stay in the draft until you save.',
                   ),
                   for (final group in groups) ...[
                     Padding(
                       padding: const EdgeInsets.only(top: 20, bottom: 4),
-                      child: Text(
+                      child: AppText(
                         '${group['workspace_name']} · ${group['name']}',
                         style: const TextStyle(fontWeight: FontWeight.w400),
                       ),
                     ),
                     if ((group['spaces'] as List? ?? []).isEmpty)
-                      const Text('No Spaces yet. Create one through chat.'),
+                      const AppText('No Spaces yet. Create one through chat.'),
                     for (final space in group['spaces'] as List? ?? [])
                       ListTile(
-                        title: Text(space['name'] as String),
+                        title: AppText(space['name'] as String),
                         leading: const Icon(Icons.inventory_2_outlined),
                         onTap: () => Navigator.pop(context, {
                           'inventory_id': group['inventory_id'],
@@ -237,7 +238,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   if (groups.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 20),
-                      child: Text(
+                      child: AppText(
                         'No writable inventories. Ask chat to create one, or request edit access.',
                       ),
                     ),
@@ -292,7 +293,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  const AppText(
                     'Edit item',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                   ),
@@ -342,7 +343,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                                 : e.value.text.trim(),
                       });
                     },
-                    child: const Text('Update draft'),
+                    child: const AppText('Update draft'),
                   ),
                 ],
               ),
@@ -372,12 +373,12 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
         await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Possible existing items'),
+            title: const AppText('Possible existing items'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  const AppText(
                     'These may already be in your inventory. Open a match, ask chat to update it, or save this extraction as separate items.',
                   ),
                   for (final link in links)
@@ -386,7 +387,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                         Navigator.pop(context, false);
                         widget.onOpenResource?.call(link);
                       },
-                      child: Text('Open ${link.label}'),
+                      child: AppText('Open ${link.label}'),
                     ),
                 ],
               ),
@@ -394,11 +395,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep draft'),
+                child: const AppText('Keep draft'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Save separately'),
+                child: const AppText('Save separately'),
               ),
             ],
           ),
@@ -441,7 +442,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
+                  AppText(
                     'How many ${row['item']['name']}?',
                     style: const TextStyle(
                       fontSize: 18,
@@ -474,14 +475,14 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                         });
                       }
                     },
-                    child: const Text('Update quantity'),
+                    child: const AppText('Update quantity'),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, {
                       'index': row['index'],
                       'selected': false,
                     }),
-                    child: const Text('Leave this item out for now'),
+                    child: const AppText('Leave this item out for now'),
                   ),
                 ],
               ),
@@ -601,7 +602,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text(
+                child: AppText(
                   'Extraction details',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 ),
@@ -617,8 +618,8 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                               (entry) => entry['index'] == rows[index]['index'],
                             );
                     return ListTile(
-                      title: Text(item['name'] as String),
-                      subtitle: Text(
+                      title: AppText(item['name'] as String),
+                      subtitle: AppText(
                         '${item['category']} · Qty ${item['quantity']}${review ? ' · Sent to Review' : ''}',
                       ),
                     );
@@ -778,7 +779,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     Widget pill(String label, VoidCallback? tap) => FilledButton(
       style: ExtractStyle.pill(height: 38),
       onPressed: tap,
-      child: Text(label),
+      child: AppText(label),
     );
     return ExtractReply(
       child: AnimatedSize(
@@ -789,7 +790,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_undone)
-              Text(
+              AppText(
                 'Undone. Nothing from that photo was saved.',
                 style: ExtractStyle.text(15.5),
               )
@@ -815,7 +816,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         'Saved ${receipt?['saved_count'] ?? 0} ${(receipt?['saved_count'] ?? 0) == 1 ? 'item' : 'items'} to ${_draft['location'] ?? 'your Space'}${(receipt?['review_count'] ?? 0) > 0 ? ' · ${receipt!['review_count']} in Review' : ''}',
                         style: ExtractStyle.text(14.5),
                       ),
@@ -898,7 +899,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 ],
               ),
             ] else ...[
-              Text(
+              AppText(
                 'I found ${rows.length} ${rows.length == 1 ? 'item' : 'items'}.${excluded.isNotEmpty ? " I left out the $excluded because I’m not sure." : ""}',
                 style: ExtractStyle.text(15.5).copyWith(height: 1.5),
               ),
@@ -927,10 +928,10 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               if (rows.length > _visibleRows)
                 TextButton(
                   onPressed: () => setState(() => _visibleRows += 40),
-                  child: const Text('Show more items'),
+                  child: const AppText('Show more items'),
                 ),
               if (rows.isEmpty)
-                Text(
+                AppText(
                   'No items were detected. Try a closer, well-lit photo.',
                   style: ExtractStyle.text(14, color: ExtractStyle.tx2),
                 ),
@@ -942,7 +943,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       style: ExtractStyle.pill(),
                       onPressed: _editable ? _destination : null,
                       icon: const Icon(Icons.location_on_outlined, size: 17),
-                      label: Text(
+                      label: AppText(
                         '${_draft['location'] ?? 'Choose a Space'}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -953,7 +954,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       onPressed: _busy || widget.disabled || selected.isEmpty
                           ? null
                           : _save,
-                      child: Text(
+                      child: AppText(
                         _draft['status'] == 'saving'
                             ? 'Retry save safely'
                             : selected.isEmpty
@@ -982,12 +983,12 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 },
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 'Tap an item or its number to leave it out. Tap ✎ to edit.',
                 style: ExtractStyle.text(12.5, color: ExtractStyle.tx3),
               ),
               if (_missingRows.isNotEmpty)
-                Text(
+                AppText(
                   'Add the missing quantities before saving.',
                   style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
                 ),
@@ -1001,7 +1002,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   ))
                 TextButton(
                   onPressed: () => _run(() => _saveItems(confirmItems: false)),
-                  child: Text(
+                  child: AppText(
                     'Keep uncertain items in Review',
                     style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
                   ),
@@ -1014,12 +1015,12 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 backgroundColor: ExtractStyle.s2,
               ),
             if (_error != null)
-              Text(
+              AppText(
                 _error!,
                 style: ExtractStyle.text(14, color: ExtractStyle.red),
               ),
             for (final failure in receipt?['failures'] as List? ?? [])
-              Text(
+              AppText(
                 '${failure['reason']}',
                 style: ExtractStyle.text(14, color: ExtractStyle.red),
               ),
@@ -1058,7 +1059,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(
+                child: AppText(
                   _error!,
                   style: ExtractStyle.text(14, color: ExtractStyle.red),
                 ),
@@ -1094,7 +1095,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             const Icon(Icons.auto_awesome_outlined, size: 20),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
+            child: AppText(
               widget.embedded
                   ? '$selected of ${rows.length} selected · Not saved yet'
                   : saved
@@ -1119,7 +1120,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
         ],
       ),
       if (!widget.embedded)
-        Text(
+        AppText(
           saved
               ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
               : '$selected of ${rows.length} selected · Not saved yet',
@@ -1131,7 +1132,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
       if (!saved && rows.isEmpty)
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
-          child: Text('No items were detected. Try a closer, well-lit photo.'),
+          child: AppText(
+            'No items were detected. Try a closer, well-lit photo.',
+          ),
         ),
       for (final row
           in (saved
@@ -1182,7 +1185,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       row['item']['name'] as String,
                       style: const TextStyle(
                         fontSize: 15,
@@ -1190,7 +1193,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                         height: 1.25,
                       ),
                     ),
-                    Text(
+                    AppText(
                       _quantityMissing(row)
                           ? '${row['item']['category']} · Quantity needed'
                           : '${row['item']['category']} · Qty ${row['item']['quantity']}',
@@ -1202,14 +1205,14 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                     if (_quantityMissing(row) && row['selected'] == true)
                       TextButton(
                         onPressed: _editable ? () => _quantity(row) : null,
-                        child: const Text('Add quantity'),
+                        child: const AppText('Add quantity'),
                       ),
                     if ((row['item']['scan_evidence']
                             as Map?)?['needs_review'] ==
                         true)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text(
+                        child: AppText(
                           'Check extracted details',
                           style: TextStyle(
                             fontSize: 11,
@@ -1234,14 +1237,14 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
       if (!saved && rows.length > 4)
         TextButton(
           onPressed: () => setState(() => _expanded = !_expanded),
-          child: Text(
+          child: AppText(
             _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
           ),
         ),
       if (!saved && _expanded && rows.length > _visibleRows)
         TextButton(
           onPressed: () => setState(() => _visibleRows += 40),
-          child: const Text('Show more items'),
+          child: const AppText('Show more items'),
         ),
     ];
     final actions = <Widget>[
@@ -1251,13 +1254,13 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
           TextButton.icon(
             onPressed: _editable ? _destination : null,
             icon: const Icon(Icons.folder_outlined, size: 18),
-            label: Text(
+            label: AppText(
               _draft['space_id'] == null
                   ? 'Choose a Space'
                   : '${_draft['location']}',
             ),
           ),
-        Text(
+        AppText(
           _missingRows.isNotEmpty
               ? 'Add the missing quantities, or uncheck those items to save the rest.'
               : _draft['space_id'] == null
@@ -1271,7 +1274,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy || widget.disabled || selected == 0 ? null : _save,
-          child: Text(
+          child: AppText(
             saving
                 ? 'Retry save safely'
                 : _missingRows.isNotEmpty
@@ -1292,33 +1295,33 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             ))
           TextButton(
             onPressed: () => _run(() => _saveItems(confirmItems: false)),
-            child: const Text('Keep uncertain items in Review'),
+            child: const AppText('Keep uncertain items in Review'),
           ),
       ],
       if (_busy && !_choosing) const LinearProgressIndicator(),
       if (_error != null)
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text(
+          child: AppText(
             _error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ),
       if (receipt != null) ...[
         for (final failure in receipt['failures'] as List? ?? [])
-          Text(failure['reason'] as String),
+          AppText(failure['reason'] as String),
         if (destination != null)
           TextButton.icon(
             onPressed: widget.onOpenResource == null
                 ? null
                 : () => widget.onOpenResource!(destination),
             icon: const Icon(Icons.folder_outlined, size: 18),
-            label: Text('Open ${destination.label}'),
+            label: AppText('Open ${destination.label}'),
           ),
         if (saved && selected > 0)
           TextButton(
             onPressed: _showSavedItems,
-            child: Text('View $selected extracted items'),
+            child: AppText('View $selected extracted items'),
           ),
       ],
     ];

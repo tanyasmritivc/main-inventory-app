@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class _WorldAuthEntryState extends State<WorldAuthEntry> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Your setup could not be saved. Try again.'),
+            content: AppText('Your setup could not be saved. Try again.'),
           ),
         );
       }
@@ -48,7 +49,7 @@ class _WorldAuthEntryState extends State<WorldAuthEntry> {
           body: Center(
             child: TextButton(
               onPressed: widget.onAuthChanged,
-              child: const Text('Setup could not be loaded. Retry'),
+              child: const AppText('Setup could not be loaded. Retry'),
             ),
           ),
         );
@@ -103,7 +104,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            AppText(
               'Add ${setup.isTeam ? setup.orgName : setup.workspacePurpose} to your account?',
               style: const TextStyle(
                 fontFamily: 'CupertinoSystemText',
@@ -114,12 +115,12 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Add it'),
+              child: const AppText('Add it'),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Skip'),
+              child: const AppText('Skip'),
             ),
           ],
         ),
@@ -140,7 +141,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Getting your world ready...'),
+                AppText('Getting your world ready...'),
               ],
             ),
           ),
@@ -157,7 +158,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
                 children: [
                   Semantics(
                     liveRegion: true,
-                    child: Text(
+                    child: AppText(
                       "We couldn't finish setting up. Try again.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -168,7 +169,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
                   ),
                   if (snapshot.error is SetupOutcomeUncertain) ...[
                     const SizedBox(height: 12),
-                    const Text(
+                    const AppText(
                       'The last request is still unconfirmed. Retry checks it before creating anything else.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: Color(0xFF6B6965)),
@@ -177,7 +178,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: () => setState(() => _setup = _start()),
-                    child: const Text('Retry'),
+                    child: const AppText('Retry'),
                   ),
                 ],
               ),

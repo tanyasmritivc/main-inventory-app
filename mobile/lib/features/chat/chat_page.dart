@@ -308,7 +308,7 @@ class _ChatPageState extends State<ChatPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               'Could not remember this preference. Please try again.',
             ),
           ),
@@ -2604,7 +2604,7 @@ class _ChatPageState extends State<ChatPage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       _historyOpen = false;
@@ -2704,7 +2704,7 @@ class _ChatPageState extends State<ChatPage>
           const SizedBox(width: 12),
           Expanded(
             child: Center(
-              child: Text(
+              child: AppText(
                 'Ask',
                 key: const Key('ask-heading'),
                 style: Theme.of(context).textTheme.titleMedium,
@@ -2878,7 +2878,7 @@ class _ChatPageState extends State<ChatPage>
       if (mounted && current()) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(friendlyApiError(error))));
+        ).showSnackBar(SnackBar(content: AppText(friendlyApiError(error))));
       }
     } finally {
       if (mounted && current()) {
@@ -2908,7 +2908,7 @@ class _ChatPageState extends State<ChatPage>
                     ),
                     label: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 190),
-                      child: Text(
+                      child: AppText(
                         '${source.name}${source.truncated ? ' (excerpt)' : ''}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -2932,7 +2932,7 @@ class _ChatPageState extends State<ChatPage>
         _sources.where((s) => s.kind == 'file').length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Use up to 8 sources, including up to 4 files.'),
+          content: AppText('Use up to 8 sources, including up to 4 files.'),
         ),
       );
       return;
@@ -3001,7 +3001,7 @@ class _ChatPageState extends State<ChatPage>
           : null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             error is AskRequestException
                 ? error.message
                 : detail is String
@@ -3084,16 +3084,19 @@ class _ChatPageState extends State<ChatPage>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Import inventory', style: TextStyle(fontSize: 22)),
+                const AppText(
+                  'Import inventory',
+                  style: TextStyle(fontSize: 22),
+                ),
                 const SizedBox(height: 12),
-                const Text(
+                const AppText(
                   'Choose a CSV or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: () => Navigator.pop(context, true),
                   icon: const Icon(CupertinoIcons.folder),
-                  label: const Text('Choose spreadsheet'),
+                  label: const AppText('Choose spreadsheet'),
                 ),
               ],
             ),
@@ -3274,7 +3277,7 @@ class _ChatPageState extends State<ChatPage>
           // Extraction is durable even when the subsequent model reply fails.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
+              content: const AppText(
                 'Could not finish scanning. Your photo is ready to retry.',
               ),
               action: SnackBarAction(
@@ -3502,7 +3505,7 @@ class _ChatPageState extends State<ChatPage>
           child: TextButton.icon(
             onPressed: _sending ? null : message.onRetry,
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Retry response'),
+            label: const AppText('Retry response'),
           ),
         ),
       if (widget.spacePresentation != null)
@@ -3639,7 +3642,7 @@ class _ChatPageState extends State<ChatPage>
           ),
         ),
         const SizedBox(width: 12),
-        const Expanded(child: Text('Photo attached')),
+        const Expanded(child: AppText('Photo attached')),
         IconButton(
           tooltip: 'Remove photo',
           onPressed: _sending ? null : () => setState(() => _photo = null),
@@ -3661,7 +3664,7 @@ class _ChatPageState extends State<ChatPage>
           'What did I add recently?',
         ])
           ActionChip(
-            label: Text(
+            label: AppText(
               prompt,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
             ),

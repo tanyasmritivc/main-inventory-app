@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -99,21 +100,21 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_error!, textAlign: TextAlign.center),
+                  AppText(_error!, textAlign: TextAlign.center),
                   const SizedBox(height: 12),
-                  const Text(
+                  const AppText(
                     'Your setup draft is still on this device. You can retry now or continue and retry when you reopen the app.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _load,
-                    child: const Text('Retry save'),
+                    child: const AppText('Retry save'),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setState(() => _deferred = true),
-                    child: const Text('Continue to app'),
+                    child: const AppText('Continue to app'),
                   ),
                 ],
               ),
@@ -138,7 +139,7 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               draft.isSample
                   ? 'Snap a shelf to add your first items'
                   : 'Saved ${draft.items.length} items to ${draft.space}',

@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'pending_world.dart';
@@ -188,7 +189,7 @@ class _TagContents extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Flexible(
-          child: Text(
+          child: AppText(
             label,
             style: const TextStyle(
               fontFamily: 'CupertinoSystemText',

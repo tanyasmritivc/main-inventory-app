@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../../core/private_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -326,7 +327,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                         _photos[index].imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) =>
-                            const Center(child: Text('Photo unavailable')),
+                            const Center(child: AppText('Photo unavailable')),
                       ),
                     ),
                   ),
@@ -349,7 +350,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   : null,
               icon: const Icon(Icons.chevron_left),
             ),
-            Text(
+            AppText(
               '${_photoIndex + 1} of ${_photos.length}',
               style: SpaceStyle.of(context).text(13),
             ),
@@ -382,12 +383,12 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                       }
                     },
               icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: Text(_saving ? 'Adding...' : 'Add photos'),
+              label: AppText(_saving ? 'Adding...' : 'Add photos'),
             ),
           if (_galleryError != null)
             TextButton(
               onPressed: _loadPhotos,
-              child: Text('$_galleryError Retry'),
+              child: AppText('$_galleryError Retry'),
             ),
         ],
       ),
@@ -500,19 +501,19 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Save your changes?'),
+        title: const AppText('Save your changes?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Keep editing'),
+            child: const AppText('Keep editing'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
-            child: const Text('Discard'),
+            child: const AppText('Discard'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),
-            child: const Text('Save'),
+            child: const AppText('Save'),
           ),
         ],
       ),
@@ -573,11 +574,11 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                           _editFocus.unfocus();
                           setState(() => _editingField = null);
                         },
-                  child: const Text('Cancel'),
+                  child: const AppText('Cancel'),
                 ),
                 TextButton(
                   onPressed: _saving ? null : _saveField,
-                  child: Text(_saving ? 'Saving...' : 'Save'),
+                  child: AppText(_saving ? 'Saving...' : 'Save'),
                 ),
               ],
             ),
@@ -624,14 +625,14 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       _item.displayName,
                       style: SpaceStyle.of(
                         context,
                       ).text(24).copyWith(height: 1.15, letterSpacing: -.6),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    AppText(
                       spaceItemSubtitle(_item),
                       style: SpaceStyle.of(
                         context,
@@ -649,7 +650,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             low ? 'Quantity · Low' : 'Quantity',
                             style: SpaceStyle.of(context).text(
                               12.5,
@@ -658,7 +659,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                                   : SpaceStyle.of(context).tx2,
                             ),
                           ),
-                          Text(
+                          AppText(
                             '${_item.quantity}',
                             style: SpaceStyle.of(context).text(32),
                           ),
@@ -715,7 +716,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   padding: const EdgeInsets.all(10),
                   child: Semantics(
                     liveRegion: true,
-                    child: Text(
+                    child: AppText(
                       _error ?? _receipt!,
                       style: SpaceStyle.of(context).text(
                         14,
@@ -751,7 +752,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                   _item.expiresOn != null ||
                   _item.reorderEnabled) ...[
                 const SizedBox(height: 16),
-                Text(
+                AppText(
                   'Price, expiry and reordering',
                   style: SpaceStyle.of(context).text(15),
                 ),
@@ -765,7 +766,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
                 if (_item.reorderEnabled)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
+                    child: AppText(
                       'Request ${_item.reorderQuantity} when quantity reaches ${_item.reorderThreshold}',
                       style: SpaceStyle.of(context).text(14.5),
                     ),
@@ -836,7 +837,7 @@ class _SpaceQuickViewState extends State<SpaceQuickView> {
             ),
         onPressed: onTap,
         icon: Icon(icon, size: 18),
-        label: Text(title),
+        label: AppText(title),
       );
 }
 
@@ -846,11 +847,11 @@ class _Field extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = [
-      Text(
+      AppText(
         label,
         style: SpaceStyle.of(context).text(14.5, SpaceStyle.of(context).tx2),
       ),
-      Text(
+      AppText(
         value,
         textAlign: TextAlign.right,
         style: SpaceStyle.of(context).text(14.5),

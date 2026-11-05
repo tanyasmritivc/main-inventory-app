@@ -1,4 +1,4 @@
-import 'package:mobile/core/ui/app_typography.dart';
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -72,10 +72,10 @@ class FoundingAccessPlanRow extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
-              Expanded(child: Text('Your plan')),
+              Expanded(child: AppText('Your plan')),
               SizedBox(width: 12),
               Flexible(
-                child: Text('Founding Access', textAlign: TextAlign.right),
+                child: AppText('Founding Access', textAlign: TextAlign.right),
               ),
               SizedBox(width: 6),
               Icon(Icons.chevron_right, size: 20),
@@ -456,7 +456,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
                       horizontal: 12,
                       vertical: 5,
                     ),
-                    child: Text(
+                    child: AppText(
                       'Founding Access',
                       style: _style(12.5, weight: FontWeight.w400, height: 1.3),
                     ),
@@ -495,7 +495,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         ),
       ),
       const SizedBox(height: 20),
-      Text(
+      AppText(
         "You're in early.",
         style: _style(
           34,
@@ -503,7 +503,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         ).copyWith(fontFamily: 'CupertinoSystemText', letterSpacing: -.68),
       ),
       const SizedBox(height: 8),
-      Text(
+      AppText(
         "FindEZ is free while we get ready for launch. Here's how it works.",
         style: _style(15.5, color: _secondary, height: 1.45),
       ),
@@ -535,7 +535,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         500,
       ),
       const SizedBox(height: 18),
-      Text(
+      AppText(
         "We'll tell you before anything changes. You can find this anytime in Settings.",
         style: _style(12.5, color: _tertiary, height: 1.5),
       ),
@@ -566,7 +566,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
+            child: AppText(
               widget.fromSettings ? 'Your plan' : "What's included",
               style: _style(17, weight: FontWeight.w400),
             ),
@@ -588,11 +588,11 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
             final title = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   'Founding Access',
                   style: _style(16, weight: FontWeight.w400),
                 ),
-                Text(
+                AppText(
                   'Your plan right now',
                   style: _style(13, color: _secondary),
                 ),
@@ -648,7 +648,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
                     ring: future == 'Plan' ? .18 : 0,
                     color: future == 'Plan' ? _text : _secondary,
                   );
-            Widget heading(String text) => Text(
+            Widget heading(String text) => AppText(
               text,
               textAlign: TextAlign.center,
               style: _style(12, color: _tertiary, weight: FontWeight.w400),
@@ -675,7 +675,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(label, style: _style(14.5)),
+                          AppText(label, style: _style(14.5)),
                           const SizedBox(height: 12),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,7 +709,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
                       )
                     : Row(
                         children: [
-                          Expanded(child: Text(label, style: _style(14.5))),
+                          Expanded(child: AppText(label, style: _style(14.5))),
                           SizedBox(
                             width: nowWidth,
                             child: Center(
@@ -795,9 +795,9 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: _style(15.5, weight: FontWeight.w400)),
+            AppText(title, style: _style(15.5, weight: FontWeight.w400)),
             const SizedBox(height: 2),
-            Text(body, style: _style(14, color: _secondary)),
+            AppText(body, style: _style(14, color: _secondary)),
           ],
         ),
       ),
@@ -843,7 +843,7 @@ class _FoundingAccessSheetState extends State<FoundingAccessSheet>
               ? null
               : Border.all(color: Colors.white.withValues(alpha: ring)),
         ),
-        child: Text(
+        child: AppText(
           text,
           textAlign: TextAlign.center,
           style: _style(12, color: color, weight: FontWeight.w400),
@@ -907,7 +907,7 @@ class _FoundingButtonState extends State<_FoundingButton> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Center(
-                child: Text(
+                child: AppText(
                   widget.label,
                   textAlign: TextAlign.center,
                   style: _style(

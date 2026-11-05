@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -223,7 +224,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
+                            AppText(
                               'SAMPLE PHOTO',
                               style: TextStyle(
                                 color: Color(0xCCFFFFFF),
@@ -231,7 +232,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                                 letterSpacing: .8,
                               ),
                             ),
-                            Text(
+                            AppText(
                               'A workbench',
                               style: TextStyle(
                                 color: Colors.white,
@@ -262,7 +263,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                                 size: 16,
                               ),
                               SizedBox(width: 6),
-                              Text(
+                              AppText(
                                 'Scan it',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -457,7 +458,7 @@ class _SampleScanPhotoState extends State<SampleScanPhoto>
                     color: _orange,
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: Text(
+                  child: AppText(
                     (box['label'] as String).split(' · ').first,
                     style: const TextStyle(
                       fontFamily: 'CupertinoSystemText',

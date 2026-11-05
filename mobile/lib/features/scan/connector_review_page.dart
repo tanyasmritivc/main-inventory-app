@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:convert';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
@@ -181,16 +182,16 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
       canPop: !busy,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isBom ? 'Review parts list' : 'Review import'),
+          title: AppText(isBom ? 'Review parts list' : 'Review import'),
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
+            AppText(
               source['filename'].toString(),
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            Text(
+            AppText(
               '${source['location']} · ${rows.isEmpty ? sheets[sheet]['row_count'] : rows.length} rows',
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -200,8 +201,8 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                 ExpansionTile(
                   initiallyExpanded: rows.isEmpty,
                   tilePadding: EdgeInsets.zero,
-                  title: const Text('Column mapping'),
-                  subtitle: const Text(
+                  title: const AppText('Column mapping'),
+                  subtitle: const AppText(
                     'Unmapped category: Supplies. Unmapped quantity: 1.',
                   ),
                   children: [
@@ -213,7 +214,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                         for (var i = 0; i < sheets.length; i++)
                           DropdownMenuItem(
                             value: i,
-                            child: Text(sheets[i]['name'].toString()),
+                            child: AppText(sheets[i]['name'].toString()),
                           ),
                       ],
                       onChanged: busy
@@ -226,7 +227,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                     ),
                     for (final warning
                         in (sheets[sheet]['warnings'] as List? ?? []))
-                      Text(warning.toString()),
+                      AppText(warning.toString()),
                     for (final field in (source['fields'] as List? ?? []))
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
@@ -240,12 +241,12 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                           items: [
                             const DropdownMenuItem(
                               value: -1,
-                              child: Text('Not mapped'),
+                              child: AppText('Not mapped'),
                             ),
                             for (var i = 0; i < headers.length; i++)
                               DropdownMenuItem(
                                 value: i,
-                                child: Text(
+                                child: AppText(
                                   '${i + 1}. ${headers[i]}',
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -266,7 +267,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: busy ? null : _preview,
-                      child: const Text('Preview rows'),
+                      child: const AppText('Preview rows'),
                     ),
                   ],
                 ),
@@ -274,16 +275,16 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
             if (rows.isNotEmpty && !started && !isBom)
               const Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Text(
+                child: AppText(
                   'Invalid rows and likely duplicates start as Skip. Review each choice. Existing items are never overwritten.',
                 ),
               ),
             if (mappingDirty && rows.isNotEmpty)
-              const Text(
+              const AppText(
                 'Mapping changed. Preview rows again before continuing.',
               ),
             if (bom != null && (invalidBomRows > 0 || excludedBomRows > 0))
-              Text(
+              AppText(
                 '$invalidBomRows invalid rows omitted · $excludedBomRows do-not-populate rows excluded. ${invalidBomRows > 0 ? "Correct invalid rows before exporting the purchasing list." : ""}',
               ),
             if (started)
@@ -291,18 +292,18 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       source['status'] == 'complete'
                           ? 'Import results'
                           : 'Import in progress',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText(
                       '${counts['imported'] ?? 0} imported · ${counts['skipped'] ?? 0} skipped · ${counts['failed'] ?? 0} failed',
                     ),
                     if ((counts['pending'] as num? ?? 0) > 0)
-                      Text('${counts['pending']} rows remaining'),
+                      AppText('${counts['pending']} rows remaining'),
                   ],
                 ),
               ),
@@ -316,7 +317,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                     onPressed: page == 0 ? null : () => setState(() => page--),
                     icon: const Icon(Icons.chevron_left),
                   ),
-                  Text('${page + 1} / ${(shown.length / 50).ceil()}'),
+                  AppText('${page + 1} / ${(shown.length / 50).ceil()}'),
                   IconButton(
                     tooltip: 'Next rows',
                     onPressed: (page + 1) * 50 >= shown.length
@@ -329,7 +330,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
             if (error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
+                child: AppText(
                   error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -347,24 +348,26 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                   if (isBom)
                     FilledButton(
                       onPressed: busy || mappingDirty ? null : _analyze,
-                      child: const Text('Check available stock'),
+                      child: const AppText('Check available stock'),
                     )
                   else if (!started || source['status'] != 'complete')
                     FilledButton(
                       onPressed: busy || mappingDirty ? null : _commit,
-                      child: Text(started ? 'Resume import' : 'Confirm import'),
+                      child: AppText(
+                        started ? 'Resume import' : 'Confirm import',
+                      ),
                     ),
                   if (started && (counts['failed'] as num? ?? 0) > 0)
                     OutlinedButton(
                       onPressed: busy ? null : () => _commit(retry: true),
-                      child: const Text('Retry failed rows'),
+                      child: const AppText('Retry failed rows'),
                     ),
                   if (started)
                     TextButton(
                       onPressed: busy
                           ? null
                           : () => Navigator.of(context).pop(true),
-                      child: const Text('View inventory'),
+                      child: const AppText('View inventory'),
                     ),
                   if (purchasingCsv != null)
                     TextButton(
@@ -391,7 +394,7 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                                 ),
                               );
                             }),
-                      child: const Text('Export shortage CSV'),
+                      child: const AppText('Export shortage CSV'),
                     ),
                   if (bom != null && invalidBomRows == 0)
                     TextButton(
@@ -407,12 +410,12 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Shortage list copied'),
+                              content: AppText('Shortage list copied'),
                             ),
                           );
                         }
                       },
-                      child: const Text('Copy shortages'),
+                      child: const AppText('Copy shortages'),
                     ),
                 ],
               ),
@@ -428,16 +431,16 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             row['name'].toString(),
             style: Theme.of(context).textTheme.titleSmall,
           ),
-          Text(
+          AppText(
             'Required ${row['required_quantity']} · Available ${row['available_quantity']} · Short ${row['missing_quantity']}',
           ),
-          Text('Match: ${row['match_status']}'),
+          AppText('Match: ${row['match_status']}'),
           if (row['match_status'] == 'review')
-            const Text(
+            const AppText(
               'Possible matches need verification; they do not count as available.',
             ),
         ],
@@ -453,29 +456,29 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           item['name']?.toString().isNotEmpty == true
               ? item['name'].toString()
               : 'Missing name',
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        Text(
+        AppText(
           'Row ${row['source_row']} · Qty ${item['quantity']} · ${item['location']}',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         for (final e in errors)
-          Text(
+          AppText(
             e.toString(),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         if (duplicate)
-          Text(
+          AppText(
             'Possible duplicate${(row['duplicates'] as List).isNotEmpty ? ': ${(row['duplicates'] as List).map((e) => '${e['name']} (${e['location']})').join(', ')}' : ' in this file'}',
           ),
         if (isBom && row['excluded'] == true)
-          const Text('Excluded: do not populate'),
+          const AppText('Excluded: do not populate'),
         if (receipt != null)
-          Text(
+          AppText(
             '${receipt['status']}${receipt['message'] == null ? '' : ': ${receipt['message']}'}',
           ),
         if (!started && !isBom)
@@ -483,11 +486,11 @@ class _ConnectorReviewPageState extends State<ConnectorReviewPage> {
             isExpanded: true,
             value: decisions[row['index'].toString()],
             items: [
-              const DropdownMenuItem(value: 'skip', child: Text('Skip row')),
+              const DropdownMenuItem(value: 'skip', child: AppText('Skip row')),
               if (errors.isEmpty)
                 DropdownMenuItem(
                   value: duplicate ? 'create_duplicate' : 'create',
-                  child: Text(
+                  child: AppText(
                     duplicate ? 'Create a separate item' : 'Create item',
                   ),
                 ),

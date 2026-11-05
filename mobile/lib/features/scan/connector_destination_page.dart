@@ -168,16 +168,16 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
         const SizedBox(height: 20),
         if (busy) const LinearProgressIndicator(),
         if (error != null) ...[
-          Text(error!),
+          AppText(error!),
           TextButton(
             onPressed: busy ? null : _load,
-            child: const Text('Try again'),
+            child: const AppText('Try again'),
           ),
         ],
         if (!busy && scoped == null && inventories.isEmpty)
-          const Text('Create an inventory and a Space before importing.'),
+          const AppText('Create an inventory and a Space before importing.'),
         if (!busy && scoped != null && spaces.isEmpty)
-          const Text('Create a Space in this inventory before importing.'),
+          const AppText('Create a Space in this inventory before importing.'),
         if (scoped == null)
           for (final inventory in inventories)
             Padding(

@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -51,7 +52,7 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
     backgroundColor: Theme.of(context).colorScheme.surface,
     appBar: AppBar(
       automaticallyImplyLeading: false,
-      title: Text('Photo ${_index + 1} of ${widget.photos.length}'),
+      title: AppText('Photo ${_index + 1} of ${widget.photos.length}'),
       actions: [
         IconButton(
           tooltip: 'Close photo',
@@ -89,7 +90,7 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
                         ? child
                         : const Center(child: CircularProgressIndicator()),
                     errorBuilder: (_, _, _) => const Center(
-                      child: Text('Photo unavailable. Close and try again.'),
+                      child: AppText('Photo unavailable. Close and try again.'),
                     ),
                   ),
                 ),
@@ -112,7 +113,7 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
                     _transform.value = Matrix4.identity();
                     setState(() => _zoomed = false);
                   },
-                  child: const Text('Reset zoom'),
+                  child: const AppText('Reset zoom'),
                 ),
                 if (widget.photos.length > 1)
                   IconButton(

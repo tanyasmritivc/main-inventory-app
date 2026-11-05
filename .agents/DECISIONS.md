@@ -1,3 +1,7 @@
+## November 4 - One mobile typography policy
+
+All plain app-owned text uses AppText; normalize inherited as well as explicit sizes. Ordinary text and inputs use regular native SF Pro at 16pt, captions 13pt and standard titles 20pt. Preserve deliberate hero/badge sizes and accessibility scaling. Voice and native list controls must match body sizing. Main Ask behavior is unchanged by this typography-only authorization.
+
 ## November 3 — Isolate main Ask source-picker appearance
 
 The Auto-extract Camera/Library popup follows Light/Dark/System and enforces regular SF Pro locally (18pt heading, 16pt body/buttons). It must not inherit the older forced-dark extraction-review container. Preserve source return values and the existing main Ask photo/extraction pipeline.

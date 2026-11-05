@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 
 /// A quiet status for pending inventory data, without placeholder rows or motion.
@@ -12,7 +13,7 @@ class ContentLoading extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Semantics(
         liveRegion: true,
-        child: Text(
+        child: AppText(
           label,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(

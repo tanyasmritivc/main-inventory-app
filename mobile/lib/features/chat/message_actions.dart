@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
@@ -41,7 +42,9 @@ class _MessageActionsState extends State<MessageActions> {
   };
   void notice(String text) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: AppText(text)));
     }
   }
 
@@ -109,7 +112,9 @@ class _MessageActionsState extends State<MessageActions> {
               children: [
                 Row(
                   children: [
-                    const Expanded(child: Text('What went wrong? (optional)')),
+                    const Expanded(
+                      child: AppText('What went wrong? (optional)'),
+                    ),
                     if (widget.api.chatSpaceId == null)
                       IconButton(
                         tooltip: 'Close feedback details',
@@ -126,7 +131,7 @@ class _MessageActionsState extends State<MessageActions> {
                       .map(
                         (e) => DropdownMenuItem(
                           value: e.key,
-                          child: Text(e.value, maxLines: 2),
+                          child: AppText(e.value, maxLines: 2),
                         ),
                       )
                       .toList(),
@@ -144,7 +149,7 @@ class _MessageActionsState extends State<MessageActions> {
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Save details'),
+                  child: const AppText('Save details'),
                 ),
               ],
             ),
@@ -226,7 +231,7 @@ class _MessageActionsState extends State<MessageActions> {
           message: MaterialLocalizations.of(context).formatFullDate(date),
           child: Padding(
             padding: const EdgeInsets.only(left: 6),
-            child: Text(
+            child: AppText(
               MaterialLocalizations.of(
                 context,
               ).formatTimeOfDay(TimeOfDay.fromDateTime(date)),

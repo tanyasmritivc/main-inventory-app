@@ -1,3 +1,7 @@
+## Consistent mobile typography179
+
+Run the full Flutter suite and analyzer. `app_typography_test.dart` checks resolved inherited and explicit font sizes, regular SF Pro, input/body parity, intentional title/caption sizes, and retained accessibility scaling. `typography_consistency_audit_test.dart` runs typography, Auto-extract popup and voice cases on native iOS (filter `--name "AI response|text weights|inherited and local|typography preserves|app text retains|photo sheet|inline composer"`; exact fake-clock voice timing checks belong in the unit runner), emitting `TYPOGRAPHY_IMAGE` captures. Run `space_v2_audit_test.dart` for real Space/item layout captures and keyboard, gallery and chat regression checks. Preserve emitted images before the runner exits. Native screenshots do not establish physical iPhone acceptance.
+
 ## Auto-extract source popup178
 
 Run `flutter test test/extract_photo_sheet_test.dart test/chat_capture_card_test.dart`, full Flutter tests and analyzer. The six popup cases cover Light/Dark/System, live appearance changes, narrow phones with2.6x text/keyboard/reduced motion, source results, nested navigation, local regular SF Pro, opaque buttons and dismissal. Run `flutter test integration_test/auto_extract_popup_test.dart -d <simulator> --no-pub` for native rendering and preserve `PHOTO_SHEET_IMAGE` paths before test-runner cleanup. Physical camera/photo-library permissions and device acceptance remain separate from these controlled fixtures.

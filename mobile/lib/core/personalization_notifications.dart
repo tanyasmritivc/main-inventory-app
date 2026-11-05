@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
@@ -112,7 +113,7 @@ class PersonalizationNotifications {
       if (context.mounted && api.accountId == account) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       _opening.remove(key);

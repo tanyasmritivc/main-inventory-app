@@ -4,38 +4,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
-Widget _app({required Brightness brightness}) => MaterialApp(
-  theme: AppTheme.create(brightness),
-  builder: (_, child) => AppTypography(child: child!),
-  home: Scaffold(
-    appBar: AppBar(title: const Text('Framework toolbar')),
-    body: Builder(
-      builder: (context) => ListView(
-        children: [
-          const AppText(
-            'Heading',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
-          const AppText(
-            'Supporting text',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          ),
-          const Text('Framework body'),
-          TextField(
-            style: AppTypography.bodyStyleOf(
-              context,
-              const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+Future<void> Function(WidgetTester, String)? typographyCapture;
+
+Widget _app({required Brightness brightness}) => RepaintBoundary(
+  key: const Key('typography-frame'),
+  child: MaterialApp(
+    theme: AppTheme.create(brightness),
+    builder: (_, child) => AppTypography(child: child!),
+    home: Scaffold(
+      appBar: AppBar(title: const Text('Framework toolbar')),
+      body: Builder(
+        builder: (context) => ListView(
+          children: [
+            const AppText(
+              'Heading',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
-            decoration: InputDecoration(
-              hintText: 'Field hint',
-              hintStyle: AppTypography.bodyStyleOf(
+            const AppText(
+              'Supporting text',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+            ),
+            const Text('Framework body'),
+            TextField(
+              style: AppTypography.bodyStyleOf(
                 context,
-                const TextStyle(fontWeight: FontWeight.w400),
+                const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              decoration: InputDecoration(
+                hintText: 'Field hint',
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  const TextStyle(fontWeight: FontWeight.w400),
+                ),
               ),
             ),
-          ),
-          FilledButton(onPressed: () {}, child: const Text('Framework button')),
-        ],
+            FilledButton(
+              onPressed: () {},
+              child: const Text('Framework button'),
+            ),
+          ],
+        ),
       ),
     ),
   ),
@@ -104,6 +112,7 @@ void main() {
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
         await tester.pumpWidget(_app(brightness: brightness));
+        await typographyCapture?.call(tester, brightness.name);
         expect(_weight(tester, 'Heading'), FontWeight.w400);
         expect(_weight(tester, 'Supporting text'), FontWeight.w400);
         expect(_weight(tester, 'Framework body'), FontWeight.w400);
@@ -187,6 +196,87 @@ void main() {
     );
   }
 
+  for (final brightness in Brightness.values) {
+    testWidgets('inherited and local typography agrees ${brightness.name}', (
+      t,
+    ) async {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.create(brightness),
+          builder: (_, child) => AppTypography(child: child!),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ListView(
+                children: [
+                  for (final size in [14.0, 15.5, 16.0, 17.0, 18.0, 19.0])
+                    DefaultTextStyle(
+                      style: TextStyle(
+                        fontSize: size,
+                        fontFamily: 'serif',
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.4,
+                      ),
+                      child: AppText(
+                        'Inherited $size',
+                        style: const TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  const AppText(
+                    'Explicit body',
+                    style: TextStyle(fontSize: 19),
+                  ),
+                  const AppText('Caption', style: TextStyle(fontSize: 12.5)),
+                  const AppText('Title', style: TextStyle(fontSize: 22)),
+                  const AppText('Hero', style: TextStyle(fontSize: 34)),
+                  TextField(
+                    style: AppTypography.bodyStyleOf(
+                      context,
+                      const TextStyle(fontSize: 13),
+                    ),
+                    controller: TextEditingController(text: 'Input'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      for (final label in [
+        for (final size in [14.0, 15.5, 16.0, 17.0, 18.0, 19.0])
+          'Inherited $size',
+        'Explicit body',
+        'Caption',
+        'Title',
+        'Hero',
+      ]) {
+        final rich = t.widget<RichText>(
+          find.descendant(
+            of: find.text(label),
+            matching: find.byType(RichText),
+          ),
+        );
+        final style = rich.text.style!;
+        expect(style.fontFamily, 'CupertinoSystemText', reason: label);
+        expect(style.fontWeight, FontWeight.w400, reason: label);
+        expect(style.fontSize, switch (label) {
+          'Caption' => 13,
+          'Title' => 20,
+          'Hero' => 34,
+          _ => 16,
+        }, reason: label);
+        if (label.startsWith('Inherited')) {
+          expect(style.letterSpacing, 0);
+          expect(style.color, Colors.orange);
+        }
+      }
+      expect(
+        t.widget<EditableText>(find.byType(EditableText)).style.fontSize,
+        16,
+      );
+      expect(t.takeException(), isNull);
+    });
+  }
+
   testWidgets('typography preserves scaling and other accessibility features', (
     tester,
   ) async {
@@ -202,6 +292,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(_app(brightness: Brightness.dark));
+    await typographyCapture?.call(tester, 'large-text');
     final text = tester.widget<RichText>(
       find.descendant(
         of: find.text('Supporting text'),
@@ -251,7 +342,7 @@ void main() {
     expect(text.style?.fontWeight, FontWeight.w400);
     expect(text.style?.color, Colors.orange);
     expect(text.style?.fontFamily, 'CupertinoSystemText');
-    expect(text.style?.letterSpacing, .5);
+    expect(text.style?.letterSpacing, 0);
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     expect(text.textAlign, TextAlign.right);

@@ -1,3 +1,7 @@
+## November 4 - Consistent typography179 uploaded
+
+Apple acknowledged TestFlight 1.1.2 (179), delivery b2a40740-8b41-44da-aaf4-db551f6bc0d6. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41966324519). 1,368 Flutter tests passed (one existing skip), analyzer clean, 18 native typography/popup/voice cases and 32 native Space cases passed. Signed archive/export and Apple validation passed. Source 29261130df0b1a8592e4f1eef4e08309084add66. Physical iPhone acceptance remains unverified. See docs/typography179/testflight179-receipt.json.
+
 ## November 3 — Auto-extract popup178 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (178), delivery 22381432-74f8-441a-b8ae-55477d3b6aa4. Processing/tester availability pending and unpolled. All five exact-source CI gates passed (run 41786025561). Signed archive/export passed platform, strict-signature, privacy, production-configuration and font-packaging checks; Apple validation passed. Source ab3ca194b1cbce7475da8fcf49edb29abfa9ce02. See testflight178-receipt.json. The isolated main Ask source picker uses compact regular SF Pro, adaptive opaque-grey controls and keyboard/large-text-safe swipe dismissal. Other main Ask/extraction behavior remains unchanged. Physical iPhone acceptance unverified.

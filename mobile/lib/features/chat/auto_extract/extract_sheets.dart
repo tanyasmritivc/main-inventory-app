@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'extract_style.dart';
@@ -46,7 +47,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: ExtractStyle.text(11.5, color: ExtractStyle.tx2)),
+        AppText(label, style: ExtractStyle.text(11.5, color: ExtractStyle.tx2)),
         TextFormField(
           controller: _fields[key],
           style: ExtractStyle.text(16.5),
@@ -97,7 +98,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       'Quantity',
                       style: ExtractStyle.text(11.5, color: ExtractStyle.tx2),
                     ),
@@ -184,7 +185,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
         ),
         TextButton(
           onPressed: () => setState(() => _more = !_more),
-          child: Text(
+          child: AppText(
             _more ? 'Fewer details' : 'More details',
             style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
           ),
@@ -211,7 +212,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                   'index': widget.row['index'],
                   'selected': false,
                 }),
-                child: const Text('Leave out'),
+                child: const AppText('Leave out'),
               ),
             ),
             const SizedBox(width: 10),
@@ -230,7 +231,7 @@ class _ExtractEditSheetState extends State<ExtractEditSheet> {
                           : e.value.text.trim(),
                   });
                 },
-                child: const Text('Done'),
+                child: const AppText('Done'),
               ),
             ),
           ],
@@ -321,7 +322,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        AppText(
           'Save ${widget.count} ${widget.count == 1 ? 'item' : 'items'} to…',
           style: ExtractStyle.text(22),
         ),
@@ -355,7 +356,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
         for (final group in widget.groups) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 14, 10, 4),
-            child: Text(
+            child: AppText(
               '${group['workspace_name']} · ${group['name']}',
               style: ExtractStyle.text(12.5, color: ExtractStyle.tx3),
             ),
@@ -375,8 +376,11 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
                   vertical: 4,
                 ),
                 leading: tile('${space['name']}'),
-                title: Text('${space['name']}', style: ExtractStyle.text(15.5)),
-                subtitle: Text(
+                title: AppText(
+                  '${space['name']}',
+                  style: ExtractStyle.text(15.5),
+                ),
+                subtitle: AppText(
                   space['item_count'] == 0
                       ? 'Empty'
                       : '${group['name']}${space['item_count'] is num ? ' · ${space['item_count']} items' : ''}',
@@ -403,7 +407,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
             ),
         ],
         if (widget.groups.isEmpty)
-          Text(
+          AppText(
             'No writable inventories. Ask chat to create one, or request edit access.',
             style: ExtractStyle.text(14, color: ExtractStyle.tx2),
           ),
@@ -411,13 +415,13 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             leading: tile('', plus: true),
-            title: Text(
+            title: AppText(
               query.isEmpty
                   ? 'New Space'
                   : 'New Space “${_search.text.trim()}”',
               style: ExtractStyle.text(15.5),
             ),
-            subtitle: Text(
+            subtitle: AppText(
               'Create it and save here',
               style: ExtractStyle.text(12.5, color: ExtractStyle.tx2),
             ),
@@ -427,7 +431,7 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
           ),
         if (_newGroup != null) ...[
           if (query.isEmpty)
-            Text(
+            AppText(
               'Enter a name in Search Spaces above.',
               style: ExtractStyle.text(14, color: ExtractStyle.tx2),
             ),
@@ -439,7 +443,9 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
               for (final group in widget.groups)
                 DropdownMenuItem(
                   value: '${group['inventory_id']}',
-                  child: Text('${group['workspace_name']} · ${group['name']}'),
+                  child: AppText(
+                    '${group['workspace_name']} · ${group['name']}',
+                  ),
                 ),
             ],
             onChanged: _creating
@@ -454,11 +460,14 @@ class _ExtractSpaceSheetState extends State<ExtractSpaceSheet> {
           FilledButton(
             style: ExtractStyle.pill(primary: true),
             onPressed: _creating || query.isEmpty ? null : create,
-            child: Text(_creating ? 'Creating…' : 'Create Space'),
+            child: AppText(_creating ? 'Creating…' : 'Create Space'),
           ),
         ],
         if (_error != null)
-          Text(_error!, style: ExtractStyle.text(14, color: ExtractStyle.red)),
+          AppText(
+            _error!,
+            style: ExtractStyle.text(14, color: ExtractStyle.red),
+          ),
       ],
     );
   }

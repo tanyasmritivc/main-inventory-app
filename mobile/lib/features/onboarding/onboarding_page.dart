@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -360,7 +361,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                           ? const CircularProgressIndicator(color: worldInk)
                           : TextButton(
                               onPressed: _restore,
-                              child: Text(_error!),
+                              child: AppText(_error!),
                             ),
                     )
                   : _setup.step == WorldStep.intro
@@ -457,7 +458,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     const SizedBox(height: 10),
                     AnimatedBuilder(
                       animation: _intro,
-                      child: const Text(
+                      child: const AppText(
                         'Everything you own, remembered.',
                         style: TextStyle(
                           fontFamily: 'CupertinoSystemText',
@@ -488,7 +489,7 @@ class _OnboardingPageState extends State<OnboardingPage>
     children: [
       Semantics(
         header: true,
-        child: Text(
+        child: AppText(
           _title,
           style: const TextStyle(
             fontFamily: 'CupertinoSystemText',
@@ -501,7 +502,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         ),
       ),
       const SizedBox(height: 12),
-      Text(
+      AppText(
         _subtitle,
         style: const TextStyle(
           fontFamily: 'CupertinoSystemText',
@@ -815,7 +816,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                           top: 548,
                           child: WorldEntrance(
                             delay: 700,
-                            child: Text(
+                            child: AppText(
                               'Starting solo? You can add an organization anytime.',
                               style: TextStyle(
                                 fontFamily: 'CupertinoSystemText',
@@ -834,7 +835,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             child: TextButton(
                               key: const Key('onboarding-skip'),
                               onPressed: _busy ? null : _existing,
-                              child: const Text(
+                              child: const AppText(
                                 'I already have an account',
                                 style: TextStyle(
                                   fontFamily: 'CupertinoSystemText',
@@ -890,7 +891,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                           top: 54,
                           child: Semantics(
                             liveRegion: true,
-                            child: Text(
+                            child: AppText(
                               _error!,
                               style: const TextStyle(
                                 color: Color(0xFF414141),
@@ -956,7 +957,7 @@ class _OnboardingPageState extends State<OnboardingPage>
             const SizedBox(height: 14),
             _tile('team', flow: true),
             const SizedBox(height: 20),
-            const Text(
+            const AppText(
               'Starting solo? You can add an organization anytime.',
               style: TextStyle(color: worldSecondary, fontSize: 13.5),
             ),
@@ -981,13 +982,13 @@ class _OnboardingPageState extends State<OnboardingPage>
           ],
           const SizedBox(height: 24),
           if (_error != null)
-            Text(_error!, style: const TextStyle(color: Color(0xFF414141))),
+            AppText(_error!, style: const TextStyle(color: Color(0xFF414141))),
           if (_setup.step == WorldStep.world) _continue(),
           if (_setup.step == WorldStep.choose)
             TextButton(
               key: const Key('onboarding-skip'),
               onPressed: _busy ? null : _existing,
-              child: const Text(
+              child: const AppText(
                 'I already have an account',
                 style: TextStyle(color: worldSecondary),
               ),
@@ -1085,7 +1086,7 @@ class _OnboardingPageState extends State<OnboardingPage>
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      AppText(
         personal ? 'Just me' : 'My team',
         style: const TextStyle(
           fontFamily: 'CupertinoSystemText',
@@ -1097,7 +1098,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         ),
       ),
       const SizedBox(height: 4),
-      Text(
+      AppText(
         personal ? 'Home, garage, desk or dorm.' : 'A company, lab or team.',
         style: const TextStyle(
           fontFamily: 'CupertinoSystemText',
@@ -1170,7 +1171,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         if (organization)
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
-            child: Text(
+            child: AppText(
               'Your team will see this. You can change it later.',
               style: TextStyle(
                 fontFamily: 'CupertinoSystemText',
@@ -1190,7 +1191,10 @@ class _OnboardingPageState extends State<OnboardingPage>
                 : (PendingWorld.validName(_custom.text, 40)
                       ? _confirmCustom
                       : null),
-            child: const Text('Done', style: TextStyle(color: worldSecondary)),
+            child: const AppText(
+              'Done',
+              style: TextStyle(color: worldSecondary),
+            ),
           ),
         ),
       ],
@@ -1277,7 +1281,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             : const BorderSide(color: worldBorder),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1319,7 +1323,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 entry.$1,
                 style: const TextStyle(
                   fontFamily: 'CupertinoSystemText',
@@ -1330,7 +1334,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
+              AppText(
                 entry.$2,
                 style: const TextStyle(
                   fontFamily: 'CupertinoSystemText',
@@ -1369,7 +1373,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 strokeWidth: 2,
               ),
             )
-          : Text(
+          : AppText(
               'Open my dashboard',
               style: const TextStyle(
                 fontFamily: 'CupertinoSystemText',

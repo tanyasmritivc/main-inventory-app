@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -159,7 +160,7 @@ class ExtractTiles extends StatelessWidget {
                                 color: ExtractStyle.white,
                                 shape: BoxShape.circle,
                               ),
-                              child: Text(
+                              child: AppText(
                                 '${(row['index'] as int) + 1}',
                                 style: ExtractStyle.text(
                                   10,
@@ -175,7 +176,7 @@ class ExtractTiles extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -187,7 +188,7 @@ class ExtractTiles extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 3),
-                            Text(
+                            AppText(
                               quantityMissing(row)
                                   ? 'Quantity needed'
                                   : '×${item['quantity'] ?? '?'}${extractUncertain(row) ? ' · not sure' : ''}',
@@ -520,7 +521,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                             ),
                             const SizedBox(width: 7),
                           ],
-                          Text(
+                          AppText(
                             widget.done ? 'Done' : 'Scanning',
                             style: _text(13, weight: FontWeight.w400),
                           ),
@@ -528,7 +529,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                       ),
                     ),
                     _chip(
-                      Text(
+                      AppText(
                         widget.done
                             ? '$count of ${widget.rows.length} selected'
                             : '${widget.rows.length} found',
@@ -610,7 +611,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                                 color: ExtractStyle.white,
                                 shape: BoxShape.circle,
                               ),
-                              child: Text(
+                              child: AppText(
                                 '${index + 1}',
                                 style: _text(
                                   10.5,
@@ -624,7 +625,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    AppText(
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -701,7 +702,7 @@ class _ExtractScanningState extends State<ExtractScanning>
               padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 10),
               child: Column(
                 children: [
-                  Text(
+                  AppText(
                     widget.stopped
                         ? 'Scan stopped'
                         : "Couldn't read this photo",
@@ -711,7 +712,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                     ).copyWith(fontFamily: 'CupertinoSystemText'),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     widget.stopped ? 'Nothing was saved.' : widget.error!,
                     textAlign: TextAlign.center,
                     style: _text(14, color: ExtractStyle.tx2),
@@ -736,7 +737,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                     children: [
                       Semantics(
                         liveRegion: true,
-                        child: Text(
+                        child: AppText(
                           widget.done
                               ? '${widget.rows.length} ${widget.rows.length == 1 ? 'item' : 'items'} found'
                               : 'Looking at your photo',
@@ -748,7 +749,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      AppText(
                         widget.done
                             ? 'Tap an item to leave it out, then review and save.'
                             : names.isEmpty
@@ -865,7 +866,7 @@ class _ExtractScanningState extends State<ExtractScanning>
                       ),
                       const SizedBox(width: 7),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           'Nothing is saved until you review and approve.',
                           style: _text(12.5, color: ExtractStyle.tx3),
                         ),
@@ -976,7 +977,7 @@ class _ScanButtonState extends State<_ScanButton> {
                   vertical: 12,
                 ),
                 child: Center(
-                  child: Text(
+                  child: AppText(
                     widget.label,
                     textAlign: TextAlign.center,
                     style: ExtractStyle.text(

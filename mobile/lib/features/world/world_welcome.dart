@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/findez_wordmark.dart';
 import '../onboarding/onboarding_prefs.dart';
@@ -48,7 +49,7 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                     children: [
                       const Center(child: FindEZWordmark()),
                       const SizedBox(height: 48),
-                      const Text(
+                      const AppText(
                         'Your world, remembered.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -58,7 +59,7 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      const AppText(
                         'Capture what you have. Ask where it is.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18, height: 1.5),
@@ -66,14 +67,14 @@ class _WorldWelcomeState extends State<WorldWelcome> {
                       const SizedBox(height: 48),
                       FilledButton(
                         onPressed: _busy ? null : _continue,
-                        child: Text(_busy ? 'Opening…' : 'Get started'),
+                        child: AppText(_busy ? 'Opening…' : 'Get started'),
                       ),
                       TextButton(
                         onPressed: _busy ? null : _continue,
-                        child: const Text('I already have an account'),
+                        child: const AppText('I already have an account'),
                       ),
                       if (_error != null)
-                        Text(_error!, textAlign: TextAlign.center),
+                        AppText(_error!, textAlign: TextAlign.center),
                     ],
                   ),
                 ),

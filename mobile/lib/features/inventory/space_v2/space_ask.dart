@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
@@ -70,7 +71,7 @@ Future<void> showSpaceAsk(
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 }
@@ -313,7 +314,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
                         backgroundColor: SpaceStyle.of(context).s2,
                         foregroundColor: SpaceStyle.of(context).tx,
                       ),
-                      child: const Text('− I used one'),
+                      child: const AppText('− I used one'),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -327,7 +328,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
                         backgroundColor: SpaceStyle.of(context).s2,
                         foregroundColor: SpaceStyle.of(context).tx,
                       ),
-                      child: const Text('Move'),
+                      child: const AppText('Move'),
                     ),
                   ),
                 ],
@@ -338,7 +339,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
               padding: const EdgeInsets.only(top: 8),
               child: Semantics(
                 liveRegion: true,
-                child: Text(
+                child: AppText(
                   _writeStatus!,
                   style: SpaceStyle.of(
                     context,
@@ -352,7 +353,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
                 Navigator.pop(context);
                 widget.onShowItems(resultItems.map((i) => i.itemId).toSet());
               },
-              child: Text('See all ${resultItems.length} in the list'),
+              child: AppText('See all ${resultItems.length} in the list'),
             ),
           if (canShowInList &&
               resultItems.indexed.every(
@@ -367,7 +368,7 @@ class _SpaceAskState extends State<_SpaceAsk> {
                 Navigator.pop(context);
                 widget.onShowLow();
               },
-              child: const Text('Show low quantity in list'),
+              child: const AppText('Show low quantity in list'),
             ),
           const SizedBox(height: 8),
           SizedBox(
@@ -389,14 +390,14 @@ class _SpaceAskState extends State<_SpaceAsk> {
                         side: BorderSide(color: SpaceStyle.of(context).line2),
                       ),
                       onPressed: () => _send?.call(question),
-                      child: Text(question),
+                      child: AppText(question),
                     ),
                   ),
               ],
             ),
           ),
           if (data.rowsTruncated)
-            Text(
+            AppText(
               'Additional results are not shown here.',
               style: SpaceStyle.of(
                 context,

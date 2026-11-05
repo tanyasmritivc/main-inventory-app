@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -233,7 +234,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
     final status = count == null
         ? widget.status
         : 'Found $count ${count == 1 ? 'item' : 'items'}';
-    final statusText = Text(
+    final statusText = AppText(
       status,
       key: ValueKey(status),
       textAlign: TextAlign.center,
@@ -369,7 +370,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText(
                         count == null
                             ? (_elapsed < 30
                                   ? '$_elapsed s elapsed'
@@ -427,7 +428,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                             side: const BorderSide(color: Color(0x99FFFFFF)),
                             shape: const StadiumBorder(),
                           ),
-                          child: const Text('Stop extraction'),
+                          child: const AppText('Stop extraction'),
                         ),
                       ],
                     ],

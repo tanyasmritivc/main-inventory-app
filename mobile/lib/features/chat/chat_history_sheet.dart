@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/ui/skeleton.dart';
 import '../../core/ui/native_presentation.dart';
 import 'dart:async';
@@ -109,7 +110,7 @@ Future<String?> showChatHistory(
   if (selected?['error'] is String) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(selected!['error'] as String)));
+    ).showSnackBar(SnackBar(content: AppText(selected!['error'] as String)));
   }
   return selected?['action'] as String?;
 }
@@ -184,7 +185,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       _deleting.remove(row.id);
@@ -210,7 +211,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   'Chats',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
@@ -250,10 +251,10 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text("Couldn't load history."),
+                        const AppText("Couldn't load history."),
                         TextButton(
                           onPressed: _load,
-                          child: const Text('Retry'),
+                          child: const AppText('Retry'),
                         ),
                       ],
                     ),
@@ -262,7 +263,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                 ? const SkeletonPage(layout: SkeletonLayout.history)
                 : rows.isEmpty
                 ? Center(
-                    child: Text(
+                    child: AppText(
                       _query.isEmpty
                           ? 'Start your first chat'
                           : 'No matching chats',
@@ -290,12 +291,12 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                             horizontal: 4,
                             vertical: 4,
                           ),
-                          title: Text(
+                          title: AppText(
                             row.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          subtitle: Text(
+                          subtitle: AppText(
                             historyTime(row.updatedAt),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
@@ -318,7 +319,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                   onPressed: () =>
                       Navigator.pop(context, ChatHistorySheet.newChat),
                   icon: const Icon(CupertinoIcons.plus, size: 19),
-                  label: const Text('New chat'),
+                  label: const AppText('New chat'),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 22,

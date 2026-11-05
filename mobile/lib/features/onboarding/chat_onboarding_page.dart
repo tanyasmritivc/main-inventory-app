@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -706,7 +707,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
-      const Text(
+      const AppText(
         'Memory for',
         style: TextStyle(
           fontSize: 36,
@@ -730,7 +731,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
             stops: [0, .64, .64, .92, .92],
           ),
         ),
-        child: const Text(
+        child: const AppText(
           'physical things.',
           style: TextStyle(
             fontSize: 36,
@@ -742,7 +743,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
       ),
       const Padding(
         padding: EdgeInsets.only(top: 10, bottom: 18),
-        child: Text(
+        child: AppText(
           'Try a sample photo. No account needed.',
           style: TextStyle(color: trialMuted, fontSize: 15.5),
         ),
@@ -770,7 +771,10 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           child: const Text.rich(
             TextSpan(
               text: 'Already have an account? ',
-              style: TextStyle(color: trialMuted, fontSize: 14),
+              style: TextStyle(
+                color: trialMuted,
+                fontSize: AppTypography.bodySize,
+              ),
               children: [
                 TextSpan(
                   text: 'Sign in',
@@ -786,14 +790,14 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
       ),
       if (_error != null) _errorView(),
       if (_error != null && _templates == null)
-        TextButton(onPressed: _restore, child: const Text('Try again')),
+        TextButton(onPressed: _restore, child: const AppText('Try again')),
     ],
   );
   Widget _option(String value, String title, IconData icon) =>
       OutlinedButton.icon(
         onPressed: () => _start(value),
         icon: Icon(icon, size: 14),
-        label: Text(
+        label: AppText(
           title,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
         ),
@@ -892,7 +896,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
             Text.rich(
               TextSpan(children: _bold(message.text)),
               style: TextStyle(
-                fontSize: 15,
+                fontSize: AppTypography.bodySize,
                 height: 1.45,
                 color: message.user ? Colors.white : trialInk,
               ),
@@ -908,7 +912,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   color: const Color(0xFFECECEC),
                   borderRadius: BorderRadius.circular(99),
                 ),
-                child: Text(
+                child: AppText(
                   message.location!,
                   style: const TextStyle(
                     fontSize: 12.5,
@@ -950,7 +954,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           child: Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   _draft.space,
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
@@ -958,7 +962,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                   ),
                 ),
               ),
-              Text(
+              AppText(
                 '$_visible items',
                 style: const TextStyle(
                   fontFamily: 'CupertinoSystemText',
@@ -1009,9 +1013,9 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.name, style: const TextStyle(fontSize: 14)),
+                  AppText(item.name, style: const TextStyle(fontSize: 14)),
                   if (trial.detail != null)
-                    Text(
+                    AppText(
                       trial.detail!,
                       style: const TextStyle(
                         fontFamily: 'CupertinoSystemText',
@@ -1026,7 +1030,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               Flexible(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8),
-                  child: Text(
+                  child: AppText(
                     trial.spot,
                     textAlign: TextAlign.right,
                     style: const TextStyle(fontSize: 12, color: trialMuted),
@@ -1046,7 +1050,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
                 foregroundColor: edit ? const Color(0xFF595959) : trialInk,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
-              child: Text(
+              child: AppText(
                 item.scanEvidence?.quantityMissing == true
                     ? '?'
                     : '${item.quantity}',
@@ -1146,7 +1150,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
     padding: const EdgeInsets.symmetric(vertical: 8),
     child: Semantics(
       liveRegion: true,
-      child: Text(
+      child: AppText(
         _error!,
         style: const TextStyle(color: Color(0xFF595959), fontSize: 14),
       ),
@@ -1173,7 +1177,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText(
               _draft.isSample
                   ? 'Now try it on real stuff'
                   : 'Keep these ${_draft.items.length} items',
@@ -1185,7 +1189,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 20),
-              child: Text(
+              child: AppText(
                 _draft.isSample
                     ? 'Make a free account, snap a shelf, and FindEZ remembers every item on every device.'
                     : 'Make an account and FindEZ remembers them, on every device.',
@@ -1210,14 +1214,14 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               Icons.mail_outline,
               false,
             ),
-            const Text(
+            const AppText(
               'Free to start. Nothing is shared without permission.',
               textAlign: TextAlign.center,
               style: TextStyle(color: trialMuted, fontSize: 12.5),
             ),
             TextButton(
               onPressed: _askAnother,
-              child: const Text(
+              child: const AppText(
                 'Ask another question',
                 style: TextStyle(color: trialInk),
               ),
@@ -1245,7 +1249,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           icon: method == 'google'
               ? const GoogleAuthLogo(size: 20)
               : Icon(icon, size: 20),
-          label: Text(
+          label: AppText(
             label,
             style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w400),
           ),
@@ -1384,7 +1388,7 @@ class _TrialThinkingState extends State<TrialThinking>
         animation: _motion,
         builder: (context, child) {
           final t = _motion.value, bob = math.sin(t * math.pi) * -5;
-          final text = Text(
+          final text = AppText(
             widget.text,
             style: const TextStyle(color: trialMuted, fontSize: 15),
           );
@@ -1503,7 +1507,7 @@ class _TrialChipState extends State<TrialChip>
           side: BorderSide(color: widget.highlight ? trialInk : trialLine),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         ),
-        child: Text(
+        child: AppText(
           widget.text,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         ),

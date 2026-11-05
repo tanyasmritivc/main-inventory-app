@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'native_chat_menu_button.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
@@ -168,7 +169,7 @@ class _SourceMenuState extends State<_SourceMenu> {
                         if (filtered.isEmpty)
                           const Padding(
                             padding: EdgeInsets.all(12),
-                            child: Text(
+                            child: AppText(
                               'No matching options',
                               style: TextStyle(fontSize: 14),
                             ),
@@ -194,7 +195,7 @@ class _SourceMenuState extends State<_SourceMenu> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     leading: Icon(choice.$2, size: 18),
-                                    title: Text(
+                                    title: AppText(
                                       choice.$3,
                                       style: const TextStyle(
                                         fontSize: 15,

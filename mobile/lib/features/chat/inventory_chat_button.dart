@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -63,7 +64,7 @@ class InventoryChatButton extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      const AppText(
                                         'Ask FindEZ',
                                         style: TextStyle(
                                           fontSize: 17,
@@ -71,7 +72,7 @@ class InventoryChatButton extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 3),
-                                      Text(
+                                      AppText(
                                         'Only in ${api.inventoryContext!.name}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -107,7 +108,7 @@ class InventoryChatButton extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -137,7 +138,7 @@ class InventoryChatButton extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       'Ask FindEZ',
                       style: TextStyle(
                         color: colors.onSurface,
@@ -177,7 +178,7 @@ class InventoryChatButton extends StatelessWidget {
                   children: [
                     Icon(Icons.chat_bubble_outline_rounded, size: 18),
                     SizedBox(width: 9),
-                    Text('Ask FindEZ'),
+                    AppText('Ask FindEZ'),
                   ],
                 ),
               ),
