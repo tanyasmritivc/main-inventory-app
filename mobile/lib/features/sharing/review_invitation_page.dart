@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/invitation.dart';
@@ -56,15 +57,15 @@ class _ReviewInvitationPageState extends State<ReviewInvitationPage> {
             await showDialog<String>(
               context: context,
               builder: (context) => SimpleDialog(
-                title: const Text('Invitation type'),
+                title: const AppText('Invitation type'),
                 children: [
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(context, 'team'),
-                    child: const Text('Workspace'),
+                    child: const AppText('Workspace'),
                   ),
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(context, 'space'),
-                    child: const Text('Shared Space'),
+                    child: const AppText('Shared Space'),
                   ),
                 ],
               ),
@@ -101,7 +102,7 @@ class _ReviewInvitationPageState extends State<ReviewInvitationPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Review invitation')),
+    appBar: AppBar(title: const AppText('Review invitation')),
     body: ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -119,7 +120,7 @@ class _ReviewInvitationPageState extends State<ReviewInvitationPage> {
         if (_error != null)
           Semantics(
             liveRegion: true,
-            child: Text(
+            child: AppText(
               _error!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
@@ -127,7 +128,7 @@ class _ReviewInvitationPageState extends State<ReviewInvitationPage> {
         const SizedBox(height: 16),
         FilledButton(
           onPressed: _busy ? null : _review,
-          child: const Text('Review invitation'),
+          child: const AppText('Review invitation'),
         ),
       ],
     ),

@@ -11,10 +11,17 @@ class AppTypography extends StatelessWidget {
 
   static const double bodySize = 16;
   static const double captionSize = 13;
+  static const double titleSize = 20;
+  static const String fontFamily = 'CupertinoSystemText';
   // Ordinary body, form and control text shares one default size. Deliberate
   // captions and larger headings/hero values keep their hierarchy and scaling.
-  static double? standardSize(double? size) =>
-      size != null && size >= 14 && size <= 17 ? bodySize : size;
+  static double? standardSize(double? size) {
+    if (size == null) return null;
+    if (size >= 12 && size < 14) return captionSize;
+    if (size >= 14 && size < 20) return bodySize;
+    if (size >= 20 && size < 24) return titleSize;
+    return size;
+  }
 
   static FontWeight _weight(TextStyle style, {bool body = false}) {
     return FontWeight.w400;
@@ -24,25 +31,33 @@ class AppTypography extends StatelessWidget {
     final effective = DefaultTextStyle.of(context).style.merge(style);
     final result = (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective),
-      fontFamily: 'CupertinoSystemText',
-      fontSize: standardSize(style?.fontSize),
+      fontStyle: FontStyle.normal,
+      letterSpacing:
+          effective.fontSize != null &&
+              effective.fontSize! >= 14 &&
+              effective.fontSize! < 20
+          ? 0
+          : style?.letterSpacing,
+      fontFamily: fontFamily,
+      fontSize: standardSize(effective.fontSize) ?? bodySize,
     );
     return result;
   }
 
-  static TextStyle bodyStyleOf(BuildContext context, [TextStyle? style]) {
-    final effective = DefaultTextStyle.of(context).style.merge(style);
-    return (style ?? const TextStyle()).copyWith(
-      fontWeight: _weight(effective, body: true),
-      fontFamily: 'CupertinoSystemText',
-      fontSize: standardSize(style?.fontSize),
-    );
-  }
+  static TextStyle bodyStyleOf(BuildContext context, [TextStyle? style]) =>
+      styleOf(context, style).copyWith(fontSize: bodySize);
 
   static ThemeData _theme(ThemeData theme) {
     TextStyle? adapt(TextStyle? style, {bool body = false}) => style?.copyWith(
       fontWeight: _weight(style, body: body),
-      fontFamily: 'CupertinoSystemText',
+      fontStyle: FontStyle.normal,
+      letterSpacing:
+          style.fontSize != null &&
+              style.fontSize! >= 14 &&
+              style.fontSize! < 20
+          ? 0
+          : style.letterSpacing,
+      fontFamily: fontFamily,
       fontSize: standardSize(style.fontSize),
     );
     TextTheme textTheme(TextTheme text) => TextTheme(

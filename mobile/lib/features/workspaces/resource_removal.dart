@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -131,47 +132,47 @@ class _RemovalState extends State<_RemovalDialog> {
     canPop: !busy,
     child: AlertDialog(
       scrollable: true,
-      title: Text('Delete ${widget.kind}'),
+      title: AppText('Delete ${widget.kind}'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             'Choose what happens to “${widget.name}” and its contents before continuing.',
           ),
           if (preview == null && error == null)
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Checking contents…'),
+              child: AppText('Checking contents…'),
             ),
           if (error != null)
-            Text(
+            AppText(
               error!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           if (preview == null && error != null)
-            TextButton(onPressed: load, child: const Text('Retry')),
+            TextButton(onPressed: load, child: const AppText('Retry')),
           if (preview != null) ...[
             const SizedBox(height: 12),
-            Text(
+            AppText(
               '${preview!['workspaces']} workspaces · ${preview!['inventories']} inventories · ${preview!['spaces']} Spaces · ${preview!['items']} items',
             ),
             const SizedBox(height: 12),
-            const Text('What would you like to do?'),
+            const AppText('What would you like to do?'),
             if (preview!['can_move'] == true)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(moveLabel),
+                title: AppText(moveLabel),
                 value: action == 'move',
                 onChanged: busy ? null : (_) => setState(() => action = 'move'),
               ),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text('Delete ${widget.kind} and all its contents'),
+              title: AppText('Delete ${widget.kind} and all its contents'),
               value: action == 'delete',
               onChanged: busy ? null : (_) => setState(() => action = 'delete'),
             ),
-            if (action == 'move') Text(moveExplanation),
+            if (action == 'move') AppText(moveExplanation),
             if (action == 'move' &&
                 (widget.kind == 'space' || widget.kind == 'inventory'))
               DropdownButtonFormField<String>(
@@ -182,7 +183,7 @@ class _RemovalState extends State<_RemovalDialog> {
                   for (final value in preview!['destinations'] as List)
                     DropdownMenuItem(
                       value: value['id'].toString(),
-                      child: Text(
+                      child: AppText(
                         value['name'].toString(),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -193,7 +194,7 @@ class _RemovalState extends State<_RemovalDialog> {
                     : (value) => setState(() => destination = value ?? ''),
               ),
             if (action == 'delete')
-              Text(
+              AppText(
                 'All contents inside this ${widget.kind} will be permanently removed. This cannot be undone. Other resources are preserved.',
               ),
             const SizedBox(height: 16),
@@ -216,7 +217,7 @@ class _RemovalState extends State<_RemovalDialog> {
             children: [
               TextButton(
                 onPressed: busy ? null : () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: const AppText('Cancel'),
               ),
               TextButton(
                 onPressed:
@@ -230,7 +231,7 @@ class _RemovalState extends State<_RemovalDialog> {
                             destination.isEmpty
                     ? null
                     : save,
-                child: Text(
+                child: AppText(
                   busy
                       ? 'Saving…'
                       : action == 'move'

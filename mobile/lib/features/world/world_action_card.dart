@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/content_card.dart';
 import '../../core/api_client.dart';
@@ -59,7 +60,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
         widget.onSaved?.call();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Created and saved.')));
+        ).showSnackBar(const SnackBar(content: AppText('Created and saved.')));
       }
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);
@@ -107,7 +108,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 pending
                     ? inventories.length == 1
                           ? 'Create ${inventories.first['name']}'
@@ -121,13 +122,13 @@ class _WorldActionCardState extends State<WorldActionCard> {
               ),
               const SizedBox(height: 12),
               if (_action['workspace_label'] != null)
-                Text(
+                AppText(
                   _action['workspace_label'].toString(),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               for (final inventory in inventories) ...[
                 if (inventories.length > 1)
-                  Text(
+                  AppText(
                     inventory['name'].toString(),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
@@ -137,14 +138,14 @@ class _WorldActionCardState extends State<WorldActionCard> {
                         : const []))
                   Padding(
                     padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    child: Text(space.toString()),
+                    child: AppText(space.toString()),
                   ),
                 for (final item
                     in (inventory['items'] is List
                             ? inventory['items'] as List
                             : const [])
                         .whereType<Map>())
-                  Text(
+                  AppText(
                     '${item['name']} · Qty ${item['quantity']} · ${item['location']}',
                   ),
                 for (final item
@@ -152,7 +153,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
                             ? inventory['moves'] as List
                             : const [])
                         .whereType<Map>())
-                  Text('Move ${item['name']} to ${item['target_location']}'),
+                  AppText('Move ${item['name']} to ${item['target_location']}'),
                 const SizedBox(height: 8),
               ],
               if (!pending && _action['status'] == 'confirmed')
@@ -162,12 +163,12 @@ class _WorldActionCardState extends State<WorldActionCard> {
                         ? null
                         : () => widget.onOpenResource!(link),
                     icon: const Icon(Icons.open_in_new, size: 18),
-                    label: Text('Open ${link.label}'),
+                    label: AppText('Open ${link.label}'),
                   ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
+                  child: AppText(
                     _error!,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -180,7 +181,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
                   children: [
                     FilledButton(
                       onPressed: _busy ? null : () => _decide('confirm'),
-                      child: Text(
+                      child: AppText(
                         _busy
                             ? 'Saving...'
                             : hasItems
@@ -190,7 +191,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
                     ),
                     TextButton(
                       onPressed: _busy ? null : () => _decide('cancel'),
-                      child: const Text('Cancel'),
+                      child: const AppText('Cancel'),
                     ),
                   ],
                 ),

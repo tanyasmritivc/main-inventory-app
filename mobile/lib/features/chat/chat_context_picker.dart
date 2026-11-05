@@ -129,7 +129,7 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
     if (!checked && selected.length >= 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AppText(
             'Use up to 8 sources. Remove one before adding another.',
           ),
         ),

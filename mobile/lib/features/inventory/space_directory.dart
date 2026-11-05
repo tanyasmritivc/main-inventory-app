@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/ui/content_loading.dart';
@@ -83,7 +84,7 @@ class _DirectorySpacePageState extends State<_DirectorySpacePage> {
     builder: (context, snapshot) {
       if (snapshot.hasData) return snapshot.data!;
       return Scaffold(
-        appBar: AppBar(title: Text(widget.space['name'].toString())),
+        appBar: AppBar(title: AppText(widget.space['name'].toString())),
         body: snapshot.hasError
             ? Center(
                 child: Padding(
@@ -91,10 +92,10 @@ class _DirectorySpacePageState extends State<_DirectorySpacePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(describeError(snapshot.error!).$1),
+                      AppText(describeError(snapshot.error!).$1),
                       TextButton(
                         onPressed: () => setState(() => _page = _load()),
-                        child: const Text('Retry'),
+                        child: const AppText('Retry'),
                       ),
                     ],
                   ),
@@ -151,7 +152,7 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -245,10 +246,10 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
   Widget build(BuildContext context) => ListTile(
     contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
     leading: SpaceTexture(identity: id.isEmpty ? name : id),
-    title: Text(name),
+    title: AppText(name),
     subtitle: Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Text(widget.subtitle),
+      child: AppText(widget.subtitle),
     ),
     trailing: IconButton(
       key: _anchor,
@@ -289,7 +290,7 @@ class _MenuLabel extends StatelessWidget {
       Icon(icon, size: 21, color: color),
       const SizedBox(width: 14),
       Flexible(
-        child: Text(label, style: TextStyle(color: color)),
+        child: AppText(label, style: TextStyle(color: color)),
       ),
     ],
   );
@@ -331,7 +332,7 @@ class _SpaceNameDialogState extends State<_SpaceNameDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.name == null ? 'New Space' : 'Rename Space'),
+    title: AppText(widget.name == null ? 'New Space' : 'Rename Space'),
     content: TextField(
       controller: _text,
       autofocus: true,
@@ -343,11 +344,11 @@ class _SpaceNameDialogState extends State<_SpaceNameDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: const AppText('Cancel'),
       ),
       TextButton(
         onPressed: _text.text.trim().isEmpty ? null : _save,
-        child: const Text('Save'),
+        child: const AppText('Save'),
       ),
     ],
   );
@@ -399,7 +400,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       if (mounted) setState(() => _creating = false);
@@ -436,7 +437,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             flexibleSpace: const ScrollGlass(child: SizedBox.expand()),
-            title: const Text('Spaces'),
+            title: const AppText('Spaces'),
             leading: BackButton(onPressed: widget.onBack),
             actions: [NotificationBell(api: widget.api)],
           ),
@@ -452,7 +453,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
               ),
               children: [
                 if (inventory != null)
-                  Text(
+                  AppText(
                     inventory.label,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -465,8 +466,8 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
                   ),
                 ),
                 if (_error != null) ...[
-                  Text(describeError(_error!).$1),
-                  TextButton(onPressed: _load, child: const Text('Retry')),
+                  AppText(describeError(_error!).$1),
+                  TextButton(onPressed: _load, child: const AppText('Retry')),
                 ] else ...[
                   const SizedBox(height: 16),
                   if (_spaces == null)
@@ -474,7 +475,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
                   else if (rows.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
+                      child: AppText(
                         _query.isEmpty
                             ? 'No Spaces yet.'
                             : 'No matching Spaces.',
@@ -494,7 +495,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
                   TextButton.icon(
                     onPressed: _creating || _spaces == null ? null : _create,
                     icon: const Icon(CupertinoIcons.plus),
-                    label: const Text('New Space'),
+                    label: const AppText('New Space'),
                   ),
               ],
             ),

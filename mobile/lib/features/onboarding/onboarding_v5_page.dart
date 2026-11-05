@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -270,13 +271,13 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
     super.dispose();
   }
 
-  Text _text(
+  AppText _text(
     String value, {
     double size = 15,
     Color color = _ink,
     FontWeight weight = FontWeight.w400,
     TextAlign? align,
-  }) => Text(
+  }) => AppText(
     value,
     textAlign: align,
     style: TextStyle(
@@ -356,7 +357,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[icon, const SizedBox(width: 9)],
-              Flexible(child: Text(title, textAlign: TextAlign.center)),
+              Flexible(child: AppText(title, textAlign: TextAlign.center)),
             ],
           ),
           Positioned(
@@ -443,7 +444,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
                       padding: EdgeInsets.zero,
                       foregroundColor: _secondary,
                     ),
-                    child: const Text('Skip'),
+                    child: const AppText('Skip'),
                   )
                 : null,
           ),

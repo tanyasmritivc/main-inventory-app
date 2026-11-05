@@ -129,7 +129,7 @@ class AskQuestionCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(
+                      child: AppText(
                         'Voice · ${voiceTime(voiceDuration!)}',
                         style: const TextStyle(
                           fontSize: 11.5,
@@ -417,7 +417,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                           : Icons.inventory_2_outlined,
                       size: 16,
                     ),
-                    label: Text(link.label, overflow: TextOverflow.ellipsis),
+                    label: AppText(link.label, overflow: TextOverflow.ellipsis),
                     tooltip:
                         link.kind == 'space' &&
                             widget.onChooseDestination != null

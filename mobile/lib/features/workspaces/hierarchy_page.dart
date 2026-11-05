@@ -45,7 +45,10 @@ class _HierarchySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-    child: Text(title.toUpperCase(), style: PlacePalette.of(context).section),
+    child: AppText(
+      title.toUpperCase(),
+      style: PlacePalette.of(context).section,
+    ),
   );
 }
 
@@ -902,7 +905,7 @@ class _HierarchyPageState extends State<HierarchyPage>
 
   Widget _placeSection(String title) => Padding(
     padding: const EdgeInsets.only(left: 4, bottom: 8),
-    child: Text(
+    child: AppText(
       title.toUpperCase(),
       style: PlacePalette.of(context).section.copyWith(
         color: PlacePalette.of(
@@ -943,7 +946,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         child: OutlinedButton.icon(
           onPressed: _busy ? null : () => _create('organization'),
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('New organization'),
+          label: const AppText('New organization'),
         ),
       ),
       const SizedBox(height: 16),
@@ -981,8 +984,8 @@ class _HierarchyPageState extends State<HierarchyPage>
     return [
       SegmentedButton<bool>(
         segments: const [
-          ButtonSegment(value: false, label: Text('Workspaces')),
-          ButtonSegment(value: true, label: Text('People')),
+          ButtonSegment(value: false, label: AppText('Workspaces')),
+          ButtonSegment(value: true, label: AppText('People')),
         ],
         selected: {_organizationPeople},
         showSelectedIcon: false,
@@ -999,7 +1002,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             child: FilledButton.icon(
               onPressed: _busy ? null : () => _create('workspace'),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('New workspace'),
+              label: const AppText('New workspace'),
               style: FilledButton.styleFrom(
                 backgroundColor: PlaceTokens.darkOrange,
               ),
@@ -1015,14 +1018,14 @@ class _HierarchyPageState extends State<HierarchyPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       _query.isNotEmpty
                           ? 'No matching workspaces'
                           : 'No workspaces yet',
                       style: PlacePalette.of(context).rowTitle,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText(
                       _manager
                           ? 'Create a workspace for your team or project.'
                           : 'Workspaces shared with you will appear here.',
@@ -1068,7 +1071,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         if (_manager && rows(_data?['attachable']).isNotEmpty)
           TextButton(
             onPressed: _busy ? null : _attachWorkspace,
-            child: const Text('Add existing workspace'),
+            child: const AppText('Add existing workspace'),
           ),
       ] else ...[
         if (_manager) ...[
@@ -1076,7 +1079,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             alignment: Alignment.centerRight,
             child: FilledButton(
               onPressed: _busy ? null : _inviteOrganization,
-              child: const Text('Invite member'),
+              child: const AppText('Invite member'),
             ),
           ),
           const SizedBox(height: 14),
@@ -1198,7 +1201,7 @@ class _HierarchyPageState extends State<HierarchyPage>
           toolbarHeight: MediaQuery.textScalerOf(context).scale(24) > 36
               ? 96
               : 64,
-          title: Text(
+          title: AppText(
             widget.panel == HierarchyPanel.people
                 ? 'People'
                 : widget.panel == HierarchyPanel.activity
@@ -1230,13 +1233,13 @@ class _HierarchyPageState extends State<HierarchyPage>
             children: [
               if (_loading || _busy) const LinearProgressIndicator(),
               if (_error != null) ...[
-                Text(
+                AppText(
                   describeError(_error!).$1,
                   style: PlacePalette.of(context).rowTitle,
                 ),
                 TextButton(
                   onPressed: _busy ? null : _load,
-                  child: const Text('Retry'),
+                  child: const AppText('Retry'),
                 ),
               ],
               if (_data != null) ...[
@@ -1377,7 +1380,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 foregroundColor: PlacePalette.of(context).destructive,
                 minimumSize: const Size(44, 44),
               ),
-              child: Text(
+              child: AppText(
                 'Leave workspace',
                 style: PlacePalette.of(context).text(
                   16,
@@ -1476,7 +1479,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             child: FilledButton.icon(
               onPressed: _busy ? null : () => _create('inventory'),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('New inventory'),
+              label: const AppText('New inventory'),
             ),
           ),
         for (final inv in _inventories.where((row) => _matches(row['name'])))
@@ -1530,7 +1533,7 @@ class _HierarchyPageState extends State<HierarchyPage>
               style: TextButton.styleFrom(
                 foregroundColor: PlacePalette.of(context).destructive,
               ),
-              child: const Text('Delete workspace'),
+              child: const AppText('Delete workspace'),
             ),
           if (_manager) ..._locations(),
           _row(

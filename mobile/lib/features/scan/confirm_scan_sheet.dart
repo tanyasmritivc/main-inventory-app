@@ -798,7 +798,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
+                    child: AppText(
                       _quantityConfirmed.any((confirmed) => !confirmed)
                           ? 'Enter the missing quantities to add items to ${widget.defaultLocation}, or keep uncertain items in Review.'
                           : 'Adding confirms these details for ${widget.defaultLocation}. You can edit them later.',
@@ -850,7 +850,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                               context,
                             ).pop(_buildResult(keepUncertain: true))
                           : null,
-                      child: const Text('Keep uncertain items in Review'),
+                      child: const AppText('Keep uncertain items in Review'),
                     ),
                   const SizedBox(height: 12),
                   GestureDetector(

@@ -125,8 +125,8 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
         children: [
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            title: const Text('Appearance'),
-            subtitle: Text(
+            title: const AppText('Appearance'),
+            subtitle: AppText(
               '${controller.themeMode.name} · ${controller.textSize.label} text',
             ),
             trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),

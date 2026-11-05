@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
@@ -140,20 +141,20 @@ Future<bool> showAppConfirmation(
     if (context.mounted && result?['error'] is String) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result!['error'] as String)));
+      ).showSnackBar(SnackBar(content: AppText(result!['error'] as String)));
     }
     return result?['action'] == 'confirm';
   }
   return await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
+          title: AppText(title),
+          content: AppText(message),
           scrollable: true,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialog, false),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialog, true),
@@ -162,7 +163,7 @@ Future<bool> showAppConfirmation(
                       foregroundColor: Theme.of(context).colorScheme.error,
                     )
                   : null,
-              child: Text(confirmLabel),
+              child: AppText(confirmLabel),
             ),
           ],
         ),
@@ -191,7 +192,7 @@ Future<String?> showNativeNamePrompt(
   if (result?['error'] is String) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(result!['error'] as String)));
+    ).showSnackBar(SnackBar(content: AppText(result!['error'] as String)));
   }
   final text = (result?['text'] as String?)?.trim();
   return result?['action'] == 'confirm' && text != null && text.isNotEmpty
@@ -217,7 +218,7 @@ Future<String?> showNativeChoices(
   if (selected?['error'] is String) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(selected!['error'] as String)));
+    ).showSnackBar(SnackBar(content: AppText(selected!['error'] as String)));
   }
   final id = selected?['action'];
   return id is String && rows.any((r) => r['id'] == id) ? id : null;

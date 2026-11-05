@@ -1,4 +1,4 @@
-import 'package:mobile/core/ui/app_typography.dart';
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:mobile/core/ui/swipe_down_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -174,13 +174,13 @@ class _ExtractPhotoPicker extends StatelessWidget {
       style: style,
       onPressed: () => Navigator.pop(context, true),
       icon: const Icon(CupertinoIcons.camera, size: 20),
-      label: const Text('Camera'),
+      label: const AppText('Camera'),
     );
     final library = FilledButton.icon(
       style: style,
       onPressed: () => Navigator.pop(context, false),
       icon: const Icon(CupertinoIcons.photo, size: 20),
-      label: const Text('Library'),
+      label: const AppText('Library'),
     );
     return SafeArea(
       top: false,
@@ -225,9 +225,12 @@ class _ExtractPhotoPicker extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Text('Add from a photo', style: text(18)),
+                        AppText(
+                          'Add from a photo',
+                          style: text(AppTypography.titleSize),
+                        ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           'Take a photo or choose one from your library. Review the items before saving.',
                           style: text(AppTypography.bodySize, muted),
                         ),
@@ -342,7 +345,7 @@ void extractToast(BuildContext context, String message) {
                   horizontal: 16,
                   vertical: 10,
                 ),
-                child: Text(
+                child: AppText(
                   message,
                   style: ExtractStyle.text(14, color: ExtractStyle.ink),
                 ),

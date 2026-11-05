@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -20,20 +21,20 @@ Future<bool> confirmOrganizationLeave(
           builder: (dialog, update) => PopScope(
             canPop: !busy,
             child: AlertDialog(
-              title: Text('Leave $name?'),
+              title: AppText('Leave $name?'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       isOwner
                           ? 'Transfer organization ownership to another member before leaving.'
                           : "You will lose access to this organization and its workspaces, inventories and Spaces. The team's items, photos, tasks and files will stay. You will need an invitation to rejoin.",
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 12),
-                      Text(
+                      AppText(
                         error!,
                         style: TextStyle(
                           color: Theme.of(dialog).colorScheme.error,
@@ -46,7 +47,7 @@ Future<bool> confirmOrganizationLeave(
               actions: [
                 TextButton(
                   onPressed: busy ? null : () => Navigator.pop(dialog, false),
-                  child: Text(isOwner ? 'Close' : 'Cancel'),
+                  child: AppText(isOwner ? 'Close' : 'Cancel'),
                 ),
                 if (!isOwner)
                   TextButton(
@@ -90,7 +91,7 @@ Future<bool> confirmOrganizationLeave(
                               }
                             }
                           },
-                    child: Text(busy ? 'Leaving...' : 'Leave organization'),
+                    child: AppText(busy ? 'Leaving...' : 'Leave organization'),
                   ),
               ],
             ),

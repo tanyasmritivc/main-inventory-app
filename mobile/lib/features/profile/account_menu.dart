@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/ui/native_presentation.dart';
 import 'native_account_menu.dart';
 import 'package:flutter/material.dart';
@@ -32,13 +33,15 @@ Future<void> showAccountMenu(
               photoUrl: profile.photoUrl,
               size: 44,
             ),
-            title: Text(profile.name.isEmpty ? 'Your profile' : profile.name),
-            subtitle: const Text('Edit profile'),
+            title: AppText(
+              profile.name.isEmpty ? 'Your profile' : profile.name,
+            ),
+            subtitle: const AppText('Edit profile'),
 
             onTap: () => Navigator.of(sheet).push(
               MaterialPageRoute<void>(
                 builder: (_) => Scaffold(
-                  appBar: AppBar(title: const Text('Profile')),
+                  appBar: AppBar(title: const AppText('Profile')),
                   body: ProfilePage(
                     api: api,
                     accountOnly: true,
@@ -51,7 +54,7 @@ Future<void> showAccountMenu(
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
             leading: const Icon(Icons.notifications_none),
-            title: const Text('Notifications'),
+            title: const AppText('Notifications'),
 
             onTap: () => Navigator.of(sheet).push(
               MaterialPageRoute<void>(

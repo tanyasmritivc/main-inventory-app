@@ -206,7 +206,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     let label = UILabel()
     label.text = (search?.searchBar.text ?? "").isEmpty ? (data["empty"] as? String ?? "No items") : "No matching results"
     label.textColor = .secondaryLabel; label.textAlignment = .center
-    label.font = appFont(15, style: .body)
+    label.font = appFont(16, style: .body)
     label.adjustsFontForContentSizeCategory = true
     label.numberOfLines = 0
     if data["loading"] as? Bool == true {
@@ -217,12 +217,12 @@ private final class NativeListController: UITableViewController, UISearchResults
       navigationController?.navigationBar.titleTextAttributes = [
         .font: appFont(17, style: .headline, weight: .regular)
       ]
-      search?.searchBar.searchTextField.font = appFont(15, style: .body)
+      search?.searchBar.searchTextField.font = appFont(16, style: .body)
       search?.searchBar.searchTextField.adjustsFontForContentSizeCategory = true
     }
     tableView.reloadData()
   }
-  // Match Flutter's 15pt body / 13pt detail at the same app-size factor.
+  // Match Flutter's 16pt body / 13pt detail at the same app-size factor.
   // UIFontMetrics applies the system Dynamic Type curve exactly once.
   private func appFont(_ size: CGFloat, style: UIFont.TextStyle,
                        weight: UIFont.Weight = .regular) -> UIFont {
@@ -249,7 +249,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   }
   override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
     guard page["textSizeFactor"] != nil, let footer = view as? UITableViewHeaderFooterView else { return }
-    footer.textLabel?.font = appFont(12, style: .footnote)
+    footer.textLabel?.font = appFont(13, style: .footnote)
     footer.textLabel?.adjustsFontForContentSizeCategory = true
   }
   private var visibleSections: [[String: Any]] {
@@ -275,7 +275,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     var content = cell.defaultContentConfiguration()
     content.text = data["title"] as? String; content.secondaryText = data["subtitle"] as? String
     if page["textSizeFactor"] != nil {
-      content.textProperties.font = appFont(15, style: .body)
+      content.textProperties.font = appFont(16, style: .body)
       content.secondaryTextProperties.font = appFont(13, style: .subheadline)
       content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
     }

@@ -115,7 +115,7 @@ class AppTheme {
           height: 1.35,
         ),
         bodySmall: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w400,
           height: 1.35,
         ),

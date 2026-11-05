@@ -21,7 +21,9 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
     final ok = await tryOpenExternalUrl(Uri.parse('https://findez.ai$path'));
     if (!mounted || ok) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not open FindEZ. Please try again.')),
+      const SnackBar(
+        content: AppText('Could not open FindEZ. Please try again.'),
+      ),
     );
   }
 
@@ -133,12 +135,12 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               entry.$1,
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: 12),
-                            Text(entry.$3),
+                            AppText(entry.$3),
                             const SizedBox(height: 20),
                             FilledButton.icon(
                               onPressed: () => _open('/docs/api#ai-assistants'),
@@ -146,7 +148,7 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
                                 CupertinoIcons.arrow_up_right,
                                 size: 16,
                               ),
-                              label: const Text('Open setup'),
+                              label: const AppText('Open setup'),
                             ),
                           ],
                         ),
@@ -173,7 +175,7 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
         OutlinedButton.icon(
           onPressed: () => _open('/settings/api-keys'),
           icon: const Icon(CupertinoIcons.lock),
-          label: const Text('Manage API keys'),
+          label: const AppText('Manage API keys'),
         ),
       ],
     ),

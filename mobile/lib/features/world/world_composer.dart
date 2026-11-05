@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../chat/voice_composer_session.dart';
 import '../chat/voice_composer_panel.dart';
 import '../onboarding/sample_scan.dart' show TrialCameraPulse;
@@ -220,7 +221,7 @@ class _WorldComposerState extends State<WorldComposer>
             if (widget.voiceSession?.errorText != null) ...[
               Semantics(
                 liveRegion: true,
-                child: Text(
+                child: AppText(
                   widget.voiceSession!.errorText!,
                   style: const TextStyle(fontSize: 13),
                 ),
@@ -234,7 +235,7 @@ class _WorldComposerState extends State<WorldComposer>
             if (widget.listening)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
+                child: AppText(
                   widget.voiceTranscript.isEmpty
                       ? 'Listening... Release to send'
                       : widget.voiceTranscript,

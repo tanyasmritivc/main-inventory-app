@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -119,7 +120,7 @@ class _NotificationBellState extends State<NotificationBell>
     onPressed: _open,
     icon: Badge(
       isLabelVisible: count > 0,
-      label: Text(count > 99 ? '99+' : '$count'),
+      label: AppText(count > 99 ? '99+' : '$count'),
       child: const Icon(Icons.notifications_none_rounded),
     ),
   );

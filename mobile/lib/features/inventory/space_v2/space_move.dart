@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import 'space_style.dart';
@@ -31,7 +32,7 @@ Future<String?> chooseSpaceLocation(
         if (spaces.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
-            child: Text('No other Spaces available.'),
+            child: AppText('No other Spaces available.'),
           ),
       ],
     ),

@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'native_presentation.dart';
@@ -48,7 +49,7 @@ class AppMenuButton extends StatelessWidget {
             for (final item in items)
               PopupMenuItem(
                 value: item.id,
-                child: Text(
+                child: AppText(
                   item.title,
                   style: item.destructive
                       ? TextStyle(color: Theme.of(context).colorScheme.error)

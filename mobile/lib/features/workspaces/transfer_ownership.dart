@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -115,13 +116,13 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
     child: AlertDialog(
-      title: Text('Transfer ${widget.scope} ownership'),
+      title: AppText('Transfer ${widget.scope} ownership'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            const AppText(
               'The selected member becomes Owner and you become Admin. Restricted inventory access stays unchanged.',
             ),
             const SizedBox(height: 16),
@@ -134,7 +135,7 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
                 for (final member in _members)
                   DropdownMenuItem(
                     value: member['user_id'].toString(),
-                    child: Text(
+                    child: AppText(
                       member['display_name']?.toString() ?? 'Member',
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -155,11 +156,11 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(describeError(_error!).$1),
+              AppText(describeError(_error!).$1),
               if (!_busy)
                 TextButton(
                   onPressed: _load,
-                  child: const Text('Reload members'),
+                  child: const AppText('Reload members'),
                 ),
             ],
           ],
@@ -168,7 +169,7 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: const AppText('Cancel'),
         ),
         FilledButton(
           onPressed:
@@ -178,7 +179,7 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
                   _confirmation.text != widget.name
               ? null
               : _transfer,
-          child: Text(_busy ? 'Transferring...' : 'Confirm transfer'),
+          child: AppText(_busy ? 'Transferring...' : 'Confirm transfer'),
         ),
       ],
     ),

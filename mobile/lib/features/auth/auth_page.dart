@@ -886,7 +886,7 @@ class _AuthPageState extends State<AuthPage> {
     children: [
       Semantics(
         header: true,
-        child: Text(
+        child: AppText(
           _headline,
           textAlign: TextAlign.center,
           style: const TextStyle(
@@ -900,7 +900,7 @@ class _AuthPageState extends State<AuthPage> {
         ),
       ),
       const SizedBox(height: 10),
-      Text(
+      AppText(
         _subtitle,
         textAlign: TextAlign.center,
         style: const TextStyle(
@@ -931,7 +931,7 @@ class _AuthPageState extends State<AuthPage> {
   ];
   Widget _legalFooter() => Column(
     children: [
-      const Text(
+      const AppText(
         'By continuing, you acknowledge that you have read and agreed to our',
         textAlign: TextAlign.center,
         style: TextStyle(
@@ -950,7 +950,7 @@ class _AuthPageState extends State<AuthPage> {
                 builder: (_) => const TermsOfServicePage(),
               ),
             ),
-            child: const Text(
+            child: const AppText(
               'Terms of Service',
               style: TextStyle(
                 decoration: TextDecoration.underline,
@@ -964,7 +964,7 @@ class _AuthPageState extends State<AuthPage> {
                 builder: (_) => const PrivacyPolicyPage(),
               ),
             ),
-            child: const Text(
+            child: const AppText(
               'Privacy Policy',
               style: TextStyle(
                 decoration: TextDecoration.underline,
@@ -989,7 +989,7 @@ class _AuthPageState extends State<AuthPage> {
               Flexible(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
-                  child: Text(
+                  child: AppText(
                     'or use email',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -1356,7 +1356,7 @@ class _AuthPageState extends State<AuthPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
+                              child: const AppText(
                                 'Continue with Email',
                                 style: TextStyle(
                                   fontFamily: 'CupertinoSystemText',
@@ -1374,7 +1374,7 @@ class _AuthPageState extends State<AuthPage> {
                                 : () => setState(
                                     () => _moreOptions = !_moreOptions,
                                   ),
-                            child: Text(
+                            child: AppText(
                               _moreOptions ? 'Fewer options' : 'More options',
                               style: const TextStyle(
                                 fontFamily: 'CupertinoSystemText',
@@ -1387,7 +1387,7 @@ class _AuthPageState extends State<AuthPage> {
                           if (_error != null)
                             Semantics(
                               liveRegion: true,
-                              child: Text(
+                              child: AppText(
                                 _error!,
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.error,

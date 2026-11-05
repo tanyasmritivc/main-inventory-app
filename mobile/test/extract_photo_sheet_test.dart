@@ -120,7 +120,7 @@ void main() {
             );
             final style = t.widget<RichText>(richText).text.style!;
             expect(style.fontFamily, 'CupertinoSystemText');
-            expect(style.fontSize, label == 'Add from a photo' ? 18 : 16);
+            expect(style.fontSize, label == 'Add from a photo' ? 20 : 16);
           }
           // A pre-existing keyboard must not hide the final source choice.
           if (compact) {

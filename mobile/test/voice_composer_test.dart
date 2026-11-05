@@ -21,12 +21,16 @@ void main() {
   late Meter recorder;
   late VoiceComposerSession session;
   late List<String> sent;
+  Duration captureDelay = Duration.zero;
+  DateTime? captureTime;
   void create(WidgetTester t) {
+    captureDelay = Duration.zero;
+    captureTime = null;
     recorder = Meter();
     sent = [];
     session = VoiceComposerSession(
       recorder: recorder,
-      now: t.binding.clock.now,
+      now: () => captureTime ?? t.binding.clock.now().subtract(captureDelay),
       onSend: (words, duration) => sent.add(words),
     );
     addTearDown(session.dispose);
@@ -234,16 +238,30 @@ void main() {
           expect(t.takeException(), isNull);
           Future<void> capture(String state) async {
             if (voiceComposerCapture == null) return;
-            final boundary = t.renderObject<RenderRepaintBoundary>(
-              find.byKey(const Key('voice-frame')),
-            );
-            final image = await boundary.toImage(pixelRatio: 2);
-            final data = await image.toByteData(format: ui.ImageByteFormat.png);
-            await voiceComposerCapture!(
-              '$state-${brightness.name}-$scale',
-              data!.buffer.asUint8List(),
-            );
-            image.dispose();
+            // PNG encoding/file I/O is not time spent by the user. Keep the
+            // injected session clock still while native visual evidence saves.
+            final started = t.binding.clock.now();
+            captureTime = started.subtract(captureDelay);
+            try {
+              final boundary = t.renderObject<RenderRepaintBoundary>(
+                find.byKey(const Key('voice-frame')),
+              );
+              final image = await boundary.toImage(pixelRatio: 2);
+              try {
+                final data = await image.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                await voiceComposerCapture!(
+                  '$state-${brightness.name}-$scale',
+                  data!.buffer.asUint8List(),
+                );
+              } finally {
+                image.dispose();
+              }
+            } finally {
+              captureDelay += t.binding.clock.now().difference(started);
+              captureTime = null;
+            }
           }
 
           await capture('listening');
@@ -255,6 +273,9 @@ void main() {
           await t.pump();
           await t.pump(const Duration(milliseconds: 600));
           expect(find.byKey(const Key('voice-editor')), findsOneWidget);
+          final input = t.widget<EditableText>(find.byType(EditableText));
+          expect(input.style.fontSize, 16);
+          expect(input.style.fontFamily, 'CupertinoSystemText');
           expect(
             t.getSize(find.byKey(const Key('voice-editor'))).height,
             greaterThanOrEqualTo(19 * 1.38 * scale),

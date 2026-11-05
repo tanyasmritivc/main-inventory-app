@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -222,7 +223,7 @@ Future<void> showNativeAccountMenu(
     if (selected['error'] is String) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(selected['error'] as String)));
+      ).showSnackBar(SnackBar(content: AppText(selected['error'] as String)));
       return;
     }
     api.assertCurrentContext();
@@ -231,7 +232,7 @@ Future<void> showNativeAccountMenu(
     switch (action) {
       case 'profile':
         page = Scaffold(
-          appBar: AppBar(title: const Text('Profile')),
+          appBar: AppBar(title: const AppText('Profile')),
           body: ProfileEditorPage(api: api, store: profile),
         );
       case 'notifications':
@@ -260,7 +261,7 @@ Future<void> showNativeAccountMenu(
         );
         if (!opened && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email us at info@findez.ai')),
+            const SnackBar(content: AppText('Email us at info@findez.ai')),
           );
         }
         return;
@@ -277,7 +278,7 @@ Future<void> showNativeAccountMenu(
           if (context.mounted) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+            ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
           }
         }
         return;

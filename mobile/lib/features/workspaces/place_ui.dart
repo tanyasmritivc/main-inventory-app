@@ -1,4 +1,4 @@
-import 'package:mobile/core/ui/app_typography.dart';
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 
 abstract final class PlaceTokens {
@@ -258,7 +258,7 @@ class PlaceBadge extends StatelessWidget {
             ? PlaceTokens.orange
             : PlaceTokens.blue,
       ),
-      child: Text(
+      child: AppText(
         name.isEmpty ? '' : name.characters.first.toUpperCase(),
         textScaler: TextScaler.noScaling,
         style: PlaceTokens.text(
@@ -295,7 +295,7 @@ class RoleTag extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
+      child: AppText(
         name,
         style: PlaceTokens.text(12, weight: FontWeight.w400, color: fg),
       ),
@@ -328,7 +328,7 @@ class PlaceAvatar extends StatelessWidget {
         height: 30,
         alignment: Alignment.center,
         decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
-        child: Text(
+        child: AppText(
           name.isEmpty ? '' : name.characters.first.toUpperCase(),
           textScaler: TextScaler.noScaling,
           style: PlaceTokens.text(13, weight: FontWeight.w400, color: fg),
@@ -414,10 +414,10 @@ class PlaceRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: PlacePalette.of(context).rowTitle),
+                  AppText(title, style: PlacePalette.of(context).rowTitle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       subtitle!,
                       style: PlacePalette.of(context).subtitle.copyWith(
                         color: PlacePalette.of(

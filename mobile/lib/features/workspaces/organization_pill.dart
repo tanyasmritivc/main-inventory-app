@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
@@ -116,7 +117,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
       }
     } finally {
       if (mounted) {
@@ -133,10 +134,10 @@ class _OrganizationPillState extends State<OrganizationPill> {
           children: [
             Icon(icon, size: 20),
             const SizedBox(width: 14),
-            Expanded(child: Text(name)),
+            Expanded(child: AppText(name)),
           ],
         )
-      : Text(name);
+      : AppText(name);
 
   Widget _row(String name, bool selected) => Row(
     children: [
@@ -146,7 +147,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
           backgroundColor: Theme.of(
             context,
           ).colorScheme.onSurface.withValues(alpha: .14),
-          child: Text(
+          child: AppText(
             name.isEmpty ? '?' : name.characters.first.toUpperCase(),
             style: TextStyle(
               fontSize: 13,
@@ -158,7 +159,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
         const SizedBox(width: 12),
       ],
       Expanded(
-        child: Text(
+        child: AppText(
           name,
           style: TextStyle(
             fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
@@ -214,7 +215,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
           return PopScope(
             canPop: !saving,
             child: AlertDialog(
-              title: const Text('New organization'),
+              title: const AppText('New organization'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -231,18 +232,18 @@ class _OrganizationPillState extends State<OrganizationPill> {
                       onChanged: (_) => update(() {}),
                       onSubmitted: (_) => save(),
                     ),
-                    if (error != null) Text(describeError(error!).$1),
+                    if (error != null) AppText(describeError(error!).$1),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: saving ? null : () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const AppText('Cancel'),
                 ),
                 TextButton(
                   onPressed: saving || text.text.trim().isEmpty ? null : save,
-                  child: Text(saving ? 'Creating...' : 'Create'),
+                  child: AppText(saving ? 'Creating...' : 'Create'),
                 ),
               ],
             ),
@@ -290,7 +291,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.onSurface.withValues(alpha: .18),
-                child: Text(
+                child: AppText(
                   widget.name.isEmpty
                       ? '?'
                       : widget.name.characters.first.toUpperCase(),
@@ -304,7 +305,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
               const SizedBox(width: 8),
             ],
             Flexible(
-              child: Text(
+              child: AppText(
                 widget.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

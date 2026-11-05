@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../core/account_refresh.dart';
 import 'dart:async';
 import '../notifications/notification_bell.dart';
@@ -67,7 +68,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(notice)));
+          ).showSnackBar(SnackBar(content: AppText(notice)));
         }
       });
     }
@@ -123,11 +124,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         for (final workspace in session.workspaces)
           PopupMenuItem(
             value: workspace['workspace_id'].toString(),
-            child: Text(workspace['name'].toString()),
+            child: AppText(workspace['name'].toString()),
           ),
         if (session.canCreateWorkspace) ...[
           const PopupMenuDivider(),
-          const PopupMenuItem(value: '__new', child: Text('New workspace')),
+          const PopupMenuItem(value: '__new', child: AppText('New workspace')),
         ],
       ],
     );
@@ -221,7 +222,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
       }
       return false;
     } finally {
@@ -256,7 +257,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
           spacing: 16,
           runSpacing: 8,
           children: [
-            Text(
+            AppText(
               '${data.inventories.length} ${data.inventories.length == 1 ? 'inventory' : 'inventories'}',
               style: PlacePalette.of(
                 context,
@@ -266,7 +267,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
               FilledButton.icon(
                 onPressed: _creating ? null : () => _create('inventory'),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('New inventory'),
+                label: const AppText('New inventory'),
                 style: FilledButton.styleFrom(
                   backgroundColor: PlaceTokens.darkOrange,
                   foregroundColor: Colors.white,
@@ -287,12 +288,12 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'No inventories yet',
                     style: PlacePalette.of(context).rowTitle,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     data.canCreate
                         ? 'Create a collection for this workspace.'
                         : 'Inventories shared with you will appear here.',
@@ -415,19 +416,22 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                 children: [
                   if (session.loading) const LinearProgressIndicator(),
                   if (!session.loading && session.error != null) ...[
-                    Text(
+                    AppText(
                       describeError(session.error!).$1,
                       style: PlacePalette.of(context).rowTitle,
                     ),
                     TextButton(
                       onPressed: session.refresh,
-                      child: const Text('Retry'),
+                      child: const AppText('Retry'),
                     ),
                   ],
                   if (ready && data == null) ...[
-                    Text('Workspaces', style: PlacePalette.of(context).title),
+                    AppText(
+                      'Workspaces',
+                      style: PlacePalette.of(context).title,
+                    ),
                     const SizedBox(height: 24),
-                    Text(
+                    AppText(
                       'No workspaces yet',
                       style: PlacePalette.of(context).rowTitle,
                     ),
@@ -439,7 +443,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                               ? null
                               : () => _create('workspace'),
                           icon: const Icon(Icons.add),
-                          label: const Text('New workspace'),
+                          label: const AppText('New workspace'),
                         ),
                       ),
                   ],
@@ -451,7 +455,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText(
                                 'Workspace',
                                 style: PlacePalette.of(
                                   context,
@@ -478,7 +482,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                                     child: Row(
                                       children: [
                                         Flexible(
-                                          child: Text(
+                                          child: AppText(
                                             data.name,
                                             style: PlacePalette.of(
                                               context,
@@ -505,11 +509,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                             itemBuilder: (_) => [
                               const PopupMenuItem(
                                 value: 'settings',
-                                child: Text('Workspace settings'),
+                                child: AppText('Workspace settings'),
                               ),
                               const PopupMenuItem(
                                 value: 'activity',
-                                child: Text('Activity'),
+                                child: AppText('Activity'),
                               ),
                               if ((data.resource['owner_user_id'] ==
                                       session.accountId ||
@@ -518,7 +522,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                                   )))
                                 PopupMenuItem(
                                   value: 'delete',
-                                  child: Text(
+                                  child: AppText(
                                     'Delete workspace',
                                     style: TextStyle(
                                       color: PlacePalette.of(
@@ -546,7 +550,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                               onPressed: () =>
                                   _workspaceAction(entry.key, data),
                               icon: Icon(entry.value.$1, size: 18),
-                              label: Text(entry.value.$2),
+                              label: AppText(entry.value.$2),
                             ),
                         ],
                       ),
@@ -555,7 +559,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             'Inventories',
                             style: PlacePalette.of(
                               context,
@@ -609,7 +613,7 @@ class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text('New ${widget.kind}'),
+    title: AppText('New ${widget.kind}'),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -632,11 +636,11 @@ class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
               items: const [
                 DropdownMenuItem(
                   value: 'workspace',
-                  child: Text('Inherited workspace access'),
+                  child: AppText('Inherited workspace access'),
                 ),
                 DropdownMenuItem(
                   value: 'restricted',
-                  child: Text('Custom access'),
+                  child: AppText('Custom access'),
                 ),
               ],
               onChanged: (value) =>
@@ -648,11 +652,11 @@ class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: const AppText('Cancel'),
       ),
       TextButton(
         onPressed: _text.text.trim().isEmpty ? null : _submit,
-        child: const Text('Create'),
+        child: const AppText('Create'),
       ),
     ],
   );

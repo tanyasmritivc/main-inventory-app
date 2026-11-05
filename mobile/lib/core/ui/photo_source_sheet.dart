@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'liquid_surface.dart';
@@ -27,7 +28,7 @@ Future<bool?> showPhotoSourceSheet(
               children: [
                 ListTile(
                   leading: const Icon(CupertinoIcons.camera),
-                  title: const Text('Take photo'),
+                  title: const AppText('Take photo'),
                   trailing: const Icon(CupertinoIcons.chevron_right, size: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -37,7 +38,7 @@ Future<bool?> showPhotoSourceSheet(
                 const Divider(height: 1, indent: 54, endIndent: 16),
                 ListTile(
                   leading: const Icon(CupertinoIcons.photo_on_rectangle),
-                  title: const Text('Choose photo'),
+                  title: const AppText('Choose photo'),
                   trailing: const Icon(CupertinoIcons.chevron_right, size: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -47,7 +48,7 @@ Future<bool?> showPhotoSourceSheet(
                 if (showCancel)
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const AppText('Cancel'),
                   ),
               ],
             ),

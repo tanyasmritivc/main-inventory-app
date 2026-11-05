@@ -595,9 +595,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
   Widget build(BuildContext context) {
     if (_removed) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Space unavailable')),
+        appBar: AppBar(title: const AppText('Space unavailable')),
         body: const Center(
-          child: Text('This Space was deleted or is no longer available.'),
+          child: AppText('This Space was deleted or is no longer available.'),
         ),
       );
     }
@@ -682,7 +682,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                               : 0) /
                                                           100)
                                                   .clamp(0.0, 1.0),
-                                          child: Text(
+                                          child: AppText(
                                             _location,
                                             textAlign: TextAlign.center,
                                             maxLines: 1,
@@ -771,7 +771,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Center(
-                                    child: Text(
+                                    child: AppText(
                                       '${spaceCount(_items.length)} items · ${spaceCount(_totalCount())} units',
                                       key: const ValueKey('space-unit-count'),
                                       textAlign: TextAlign.center,
@@ -912,7 +912,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.all(8),
-                              child: Text(
+                              child: AppText(
                                 _syncError!,
                                 style: SpaceStyle.of(
                                   context,
@@ -930,7 +930,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                       ? Align(
                                           alignment: Alignment.centerLeft,
                                           child: InputChip(
-                                            label: Text(
+                                            label: AppText(
                                               _onlyLowQuantity
                                                   ? 'Low quantity'
                                                   : 'Ask results',
@@ -952,7 +952,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                             }),
                                           ),
                                         )
-                                      : Text(
+                                      : AppText(
                                           '${spaceCount(filtered.length)} ${_spaceSearchQuery.isEmpty ? 'items' : 'results'}',
                                           style: SpaceStyle.of(context).text(
                                             12.5,
@@ -961,7 +961,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                         ),
                                 ),
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     itemSortLabel(_sortOption),
                                     textAlign: TextAlign.right,
                                     style: SpaceStyle.of(
@@ -986,7 +986,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                 separatorBuilder: (_, _) =>
                                     const SizedBox(width: 8),
                                 itemBuilder: (_, i) => ChoiceChip(
-                                  label: Text(categories[i]),
+                                  label: AppText(categories[i]),
                                   selected: categories[i] == _selectedCategory,
                                   showCheckmark: false,
                                   selectedColor: SpaceStyle.of(context).white,
@@ -1014,7 +1014,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                               ),
                               child: Column(
                                 children: [
-                                  Text(
+                                  AppText(
                                     _items.isEmpty
                                         ? 'This space is empty'
                                         : _spaceSearchQuery.isNotEmpty
@@ -1024,7 +1024,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                     textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 12),
-                                  Text(
+                                  AppText(
                                     _items.isEmpty
                                         ? 'Add items here when you are ready.'
                                         : 'Try another search, or ask FindEZ to look across this inventory.',
@@ -1040,7 +1040,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                         onPressed: () => _openAsk(
                                           initial: _spaceSearchQuery,
                                         ),
-                                        child: const Text('Ask FindEZ'),
+                                        child: const AppText('Ask FindEZ'),
                                       ),
                                     ),
                                 ],
@@ -1061,7 +1061,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 20, 20, 154),
-                            child: Text(
+                            child: AppText(
                               'Showing ${spaceCount(filtered.length)} of ${spaceCount(filtered.length)}',
                               textAlign: TextAlign.center,
                               style: SpaceStyle.of(
@@ -1143,7 +1143,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Expanded(
-                                                  child: Text(
+                                                  child: AppText(
                                                     'Ask about $_location',
                                                     maxLines: 1,
                                                     overflow:
@@ -1216,7 +1216,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
         child: Row(
           children: [
             Expanded(
-              child: Text(title, style: SpaceStyle.of(context).text(15.5)),
+              child: AppText(title, style: SpaceStyle.of(context).text(15.5)),
             ),
             Icon(icon, size: 20),
           ],
@@ -1275,15 +1275,15 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
       popUpAnimationStyle: AnimationStyle.noAnimation,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       items: [
-        const PopupMenuItem(value: 'camera', child: Text('Take photo')),
-        const PopupMenuItem(value: 'library', child: Text('Photo library')),
+        const PopupMenuItem(value: 'camera', child: AppText('Take photo')),
+        const PopupMenuItem(value: 'library', child: AppText('Photo library')),
         const PopupMenuItem(
           value: 'spreadsheet',
-          child: Text('Import spreadsheet'),
+          child: AppText('Import spreadsheet'),
         ),
         if (sourceContext == null && widget.api.inventoryContext != null)
-          const PopupMenuItem(value: 'type', child: Text('Type it in')),
-        const PopupMenuItem(value: 'barcode', child: Text('Scan barcode')),
+          const PopupMenuItem(value: 'type', child: AppText('Type it in')),
+        const PopupMenuItem(value: 'barcode', child: AppText('Scan barcode')),
       ],
     );
     if (!mounted || !activeContext.mounted || choice == null) return;

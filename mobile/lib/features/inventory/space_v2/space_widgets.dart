@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import '../../../core/ui/scroll_glass.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -114,7 +115,7 @@ class SpaceItemRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         item.displayName,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -127,7 +128,7 @@ class SpaceItemRow extends StatelessWidget {
                             ),
                       ),
                       const SizedBox(height: 3),
-                      Text(
+                      AppText(
                         '${spaceItemSubtitle(item)}$subtitleSuffix',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -142,7 +143,7 @@ class SpaceItemRow extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       '${quantity ?? item.quantity}',
                       style: SpaceStyle.of(context)
                           .text(
@@ -155,7 +156,7 @@ class SpaceItemRow extends StatelessWidget {
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                     ),
-                    Text(
+                    AppText(
                       low ? 'low' : 'qty',
                       style: SpaceStyle.of(context).text(
                         11,
@@ -215,7 +216,7 @@ class SpaceStatusCard extends StatelessWidget {
           alignment: Alignment.center,
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Text(
+          child: AppText(
             title,
             textAlign: TextAlign.center,
             style: SpaceStyle.of(context).text(16, const Color(0xFF19191B)),
@@ -372,10 +373,10 @@ class SpaceAction extends StatelessWidget {
       decoration: SpaceStyle.of(context).card(14, SpaceStyle.of(context).s2),
       child: Icon(icon),
     ),
-    title: Text(title, style: SpaceStyle.of(context).text(16)),
+    title: AppText(title, style: SpaceStyle.of(context).text(16)),
     subtitle: subtitle == null
         ? null
-        : Text(
+        : AppText(
             subtitle!,
             style: SpaceStyle.of(context).text(13, SpaceStyle.of(context).tx2),
           ),
@@ -409,7 +410,7 @@ class SpaceSheetList extends StatelessWidget {
           const SpaceHandle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-            child: Text(title, style: SpaceStyle.of(context).text(20)),
+            child: AppText(title, style: SpaceStyle.of(context).text(20)),
           ),
           ...children,
         ],

@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/app_text.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import '../../../core/ask_answer.dart';
@@ -39,11 +40,11 @@ class SpaceChatHeader extends StatelessWidget {
   final VoidCallback? onHistory, onNew;
   @override
   Widget build(BuildContext context) {
-    final title = Text('Ask FindEZ', style: SpaceStyle.of(context).text(19));
+    final title = AppText('Ask FindEZ', style: SpaceStyle.of(context).text(19));
     final scope = Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: SpaceStyle.of(context).card(13, SpaceStyle.of(context).s2),
-      child: Text(
+      child: AppText(
         presentation.scopeLabel,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -118,14 +119,14 @@ class SpaceChatEmpty extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             'Ask about ${presentation.space}.',
             style: SpaceStyle.of(
               context,
             ).text(28).copyWith(height: 1.15, letterSpacing: -.84),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'Find, count or change items in this Space.',
             style: SpaceStyle.of(context)
                 .text(28, SpaceStyle.of(context).tx3)
@@ -173,7 +174,7 @@ class SpaceChatEmpty extends StatelessWidget {
                             size: 34,
                             radius: 10,
                           ),
-                    title: Text(
+                    title: AppText(
                       suggestion.$1,
                       style: SpaceStyle.of(context).text(15.5),
                     ),
@@ -326,7 +327,7 @@ class _SpaceChatTypingState extends State<SpaceChatTyping>
           if (widget.status != null) ...[
             const SizedBox(width: 7),
             Flexible(
-              child: Text(
+              child: AppText(
                 widget.status!,
                 style: SpaceStyle.of(
                   context,
