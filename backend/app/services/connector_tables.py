@@ -41,9 +41,10 @@ def parse_source(raw, filename, mime=None):
     allowed = {
         'csv': {'text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'},
         'xlsx': {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
+        'json': {'application/json', 'text/json', 'text/plain'},
     }
     if ext not in allowed:
-        raise ValueError('Choose CSV or Excel (.xlsx). Legacy .xls files must be saved as .xlsx first.')
+        raise ValueError('Choose CSV, JSON, or Excel (.xlsx). Legacy .xls files must be saved as .xlsx first.')
     if mime and mime.split(';')[0].lower() not in allowed[ext] | {'application/octet-stream'}:
         raise ValueError('The file type does not match its extension.')
     tables = parse_import_tables(raw, filename, review=True)

@@ -1,3 +1,7 @@
+## November 4 - Import column semantics182 deployed
+
+Deployed runtime 4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0 from PR316 after all five CI gates passed (run 41979118056). 1,538 backend tests, 12 final update-return regression tests, and three staged/live-source regressions passed. Authenticated HTTPS limits and connector catalog returned200; invalid authentication returned401. The disposable QA account was removed. API/database health passed; unrelated live source is unchanged. No customer database rewrite or schema migration. See docs/import-column-semantics182-release.json.
+
 ## October 24 - Extraction count units deployed (PR209)
 
 Runtime 962dddc3175202a30933166c57178c13fef0e64f is live. All five CI checks passed
