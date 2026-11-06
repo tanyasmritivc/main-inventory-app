@@ -1,0 +1,37 @@
+{
+  "version": "1.1.2",
+  "build": 188,
+  "source_commit": "f6ea0a42a4458daad2cfb6caf8ccb5822685f153",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "b6b4d156b16e2ce7ba019faef4fc9803b22b1645a18197bbd34c94a46f2967ff",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "8ac8b87e-589c-4d9c-990a-d278c874b9b4",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "qa": {
+    "flutter_tests_passed": 1288,
+    "existing_skips": 1,
+    "analyzer": "clean",
+    "native_typography_tests_passed": 4,
+    "settings_unchanged": {
+      "mobile/lib/features/profile/native_account_menu.dart": "c8a272c70e8ce2f2ee254fbcff047d82c6ab024e69c4c6f1bd8561eaf3130e5d",
+      "mobile/ios/Runner/NativePresentation.swift": "aff692c1302fbb42fd7bc610cd93eaf07dd606a7ec87d419731318a3600045f7",
+      "mobile/lib/core/appearance_controller.dart": "b31f64cda55fc014c774d639b66d46e0a87ae798200d4a0526201f31a21c56fb",
+      "mobile/lib/features/profile/profile_page.dart": "e714b563a99e78e8c686ca67e18ff3bc22098bfdea039fc8f3f3c80076e19586",
+      "mobile/lib/features/profile/settings_page.dart": "6745f79dd1a631d8ca8603a636dedb834fa55db8a1a639ef65e8c9b2c83ed2dd"
+    },
+    "physical_device_acceptance": "not repeated",
+    "native_light_dark_captures_inspected": true
+  },
+  "ci_run": 42179782572,
+  "all_five_ci_gates_passed": true,
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/327",
+  "scope": "Mobile typography only; native Settings unchanged",
+  "backend_web_database_changes": false
+}
