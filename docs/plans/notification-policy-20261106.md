@@ -68,7 +68,7 @@ Review: [PR332](https://github.com/tanyasmritivc/main-inventory-app/pull/332),
 runtime `7dc3531a1d54622fc261b04235b47b5e26c75c9b`. All five CI jobs passed in
 [42249433722](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42249433722).
 The live-function rehearsal passed all 57 SQL assertions. The local test database
-was stopped after verification. Production schema, code and push gate remain unchanged.
+was stopped after verification. These checks preceded the authorized activation below.
 
 ## Activation and rollback
 
@@ -87,7 +87,7 @@ was stopped after verification. Production schema, code and push gate remain unc
    API code only after checking compatibility. Restoring old SQL queue functions
    requires a reviewed database rollback and must not replay old candidates.
 
-Real-device APNs delivery and production activation remain pending. Recaps,
+Real-device APNs delivery remains pending; production API/inbox activation is recorded below. Recaps,
 re-engagement, cleanup insights, user-scheduled reminders and failed-import retry
 notifications remain unsupported/off. They are not represented as working features.
 
@@ -105,4 +105,17 @@ the API maps it to the existing public409 refresh message. This matches the
 [provider's documented retry issue](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b).
 Regression verification:1,543 Python tests and58 isolated SQL assertions, including
 unchanged preferences after a stale write and idempotent follow-up migration replay.
-Follow-up publication and live acceptance are in progress; no push sends enabled.
+The follow-up is deployed as runtime `a2d16cf4f079154de57b8471c36100f4f33b5084`.
+All five [CI checks](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42260526841)
+passed. Live HTTPS acceptance passed preference persistence/conflicts/validation,
+account isolation, personal threshold import and tombstones, real stock crossings,
+private destination authorization, read/dismiss/clear and in-app disable. Both
+synthetic accounts and their inventory were removed. Five private RLS tables,
+16 private RPCs, three triggers, API/database health and push-disabled retention
+worker verified. Push remains off; no real-user notifications sent. Receipt:
+`notification-policy-release.json`.
+
+Emergency rollback keeps push off and preserves the additive schema. The private
+backup includes the pre-activation database dump, schema, six-file source snapshot,
+environment and worker wrapper. Any database restore needs a separate reviewed
+rollback; do not restore stale candidate states or reset the production checkout.

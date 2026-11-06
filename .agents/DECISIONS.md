@@ -1,3 +1,15 @@
+## November 6 - Independent notification policy and non-retryable conflicts
+
+Notification preferences are independent of Memory opt-in/reset. Private account
+rules preserve personal thresholds without changing inventory values. Only recorded
+stock crossings and saved pending reviews create candidates; unsupported workflows
+stay off. Global delivery caps survive inbox clearing. Push activation is separate
+from API/inbox activation and remains off until real-device acceptance.
+
+A stale preference revision uses SQLSTATE PT409, never a fabricated serialization
+failure: production PostgREST14 retries40001. Map PT409 to the existing safe409
+refresh response and test the real HTTP boundary when changing conflict behavior.
+
 ## October 25 — Evidence-based personalization without new UI
 
 Keep behavioral learning opt-in under the existing Memory master control. Use
