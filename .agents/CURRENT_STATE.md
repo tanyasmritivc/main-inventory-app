@@ -1,6 +1,8 @@
-## November 5 - Restore public App Store build166 as TestFlight183
+## November 5 - Public App Store source restored as TestFlight183
 
-User canceled the web regression task and requested the exact public App Store app as a new TestFlight build. Apple verified version1.1.1/build166 READY_FOR_SALE on November5. Isolated branch release/restore-app-store-166-build183 starts at exact source00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6. Only mobile release metadata changes to1.1.2+183; the already released1.1.1 train is closed. No application, dependency, backend, database or web changes. All 1,261 Flutter tests passed (one existing skip), analysis clean, and all 662 non-version mobile files match the original commit. Signed packaging/upload is next; no public submission requested.
+Apple verified the current public version as 1.1.1 (166), READY_FOR_SALE. At the user's request, the exact source 00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6 was restored on release/restore-app-store-166-build183. All 662 non-version mobile files match that source, including dependencies, original fonts, screens and native code. The only application change is release metadata: 1.1.1+166 to 1.1.2+183. Runtime commit: 369febecd06fefd84bba5d0158211e6274bab06f.
+
+All 1,261 Flutter tests pass (one existing skip); analysis is clean. Signed archive and export each passed 33 device-executable checks, strict signatures, 27 privacy manifests, production configuration and original font-asset verification. Apple validation passed and upload was acknowledged as delivery 26cc9926-7277-4658-8f06-54c484347e79. Processing/tester availability remain pending and were not polled. Physical acceptance was not repeated. No public App Store submission, backend, database or website change. See docs/plans/restore-app-store166-testflight183.json. The previous web regression task was canceled; its uncommitted work is preserved separately and was not deployed.
 
 ## November 1 - Stop chat response and replace App Store build (166)
 

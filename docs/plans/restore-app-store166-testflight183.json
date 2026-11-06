@@ -1,0 +1,36 @@
+{
+  "version": "1.1.2",
+  "build": 183,
+  "source_commit": "369febecd06fefd84bba5d0158211e6274bab06f",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "d90ed5d91eaf262baaf266a1813b05f21f42dfc991d452e5d02119f8f06b977f",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "26cc9926-7277-4658-8f06-54c484347e79",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "restored_app_store_version": "1.1.1",
+  "restored_app_store_build": 166,
+  "restored_app_store_source": "00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6",
+  "mobile_source_parity": {
+    "baseline_commit": "00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6",
+    "unchanged_mobile_files": 662,
+    "only_mobile_change": "pubspec.yaml version: 1.1.1+166 -> 1.1.2+183",
+    "pubspec_lock_unchanged": true,
+    "podfile_lock_unchanged": true
+  },
+  "checks": {
+    "flutter_tests_passed": 1261,
+    "existing_skips": 1,
+    "analysis": "No issues found",
+    "source_parity_files": 662
+  },
+  "physical_device_acceptance": "not repeated; no application or native code changes",
+  "backend_web_database_changes": false,
+  "branch": "release/restore-app-store-166-build183"
+}
