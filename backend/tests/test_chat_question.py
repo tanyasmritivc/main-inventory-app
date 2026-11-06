@@ -110,10 +110,22 @@ def test_world_turn_streams_prose_before_question_without_extra_model_request():
     with patch.object(w, 'authorize'), patch('app.services.agent_gateway_client.gateway_completion', return_value=response()) as model:
         events = w.stream_turn('actor', 'personal', 'Where could these go?', [], 'cid')
         assert next(events)['type'] == 'status'
-        assert next(events) == {'type': 'delta', 'delta': 'You can keep these together.'}
+        first = next(e for e in events if e['type'] == 'delta')
+        assert first == {'type': 'delta', 'delta': 'You can keep these together.'}
         assert len(chunks) == 1
         rest = list(events)
     assert model.call_count == 1
     assert all(q.MARKER not in e.get('delta', '') for e in rest)
     assert rest[-1]['assistant_message'] == 'You can keep these together. Which place fits?'
     assert rest[-1]['answer_context']['question']['choices'][0]['label'] == 'Robotics spares'
+
+
+def test_incremental_public_reply_checks_receipts_and_hides_unverified_links():
+    from app.services.assistant_tool_safety import validate_model_answer
+    reply = q.PublicReply(lambda text: validate_model_answer('Where is it?', [], text), {})
+    assert reply.feed('Look in [Workshop](') == 'Look in '
+    assert reply.feed('findez://space/invented/id)') == 'Workshop'
+    assert reply.finish() == ''
+    reply = q.PublicReply(lambda text: validate_model_answer('Add a motor', [], text), {})
+    with pytest.raises(RuntimeError):
+        reply.feed('I added the motor to your inventory.')

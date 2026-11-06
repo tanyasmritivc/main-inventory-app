@@ -483,8 +483,17 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     prior_states = {a.get('id'): a for row in history for a in row.get('action_states', [])}
     prior_pending = any(a.get('status') == 'pending' for a in prior_states.values())
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
-    from app.services.chat_question import GUIDANCE, QuestionStream, separate, present
+    from app.services.chat_question import GUIDANCE, PublicReply, ReceiptClaimError, separate, present
     messages.append({'role': 'system', 'content': GUIDANCE})
+    def validate_public(text):
+        import re
+        from app.services.assistant_tool_safety import validate_model_answer
+        try:
+            validate_model_answer(message, trace, text)
+        except RuntimeError as error:
+            raise ReceiptClaimError(str(error)) from error
+        if re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b', text, re.I | re.S) and not (actions or item_actions or attachment or capture and capture['draft'] or prior_pending):
+            raise RuntimeError('The reply referenced an action card that does not exist')
     client_tools = available_tools
     card_repair_available = True
     repairing = False
@@ -502,7 +511,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     max_tokens=generation_limit, stream=True,
                     **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
                 content, calls = '', []
-                presentation = QuestionStream()
+                presentation = PublicReply(validate_public, references)
                 for event in completion_events(response):
                     if event['type'] == 'delta':
                         visible = presentation.feed(event['delta'])
@@ -516,6 +525,15 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 if not content.strip() and not calls:
                     raise RuntimeError('Empty model response')
                 break
+            except ReceiptClaimError:
+                if not retry_available:
+                    raise
+                retry_available = False
+                repairing = True
+                enabled = False
+                generation_limit = 2400
+                messages.append({'role': 'system', 'content': 'Correct the reply using the existing receipts. Do not repeat actions or claim an unsaved draft was saved. Explain the pending choice concisely.'})
+                yield {'type': 'reset'}
             except (RuntimeError, httpx.HTTPError):
                 if not retry_available:
                     raise

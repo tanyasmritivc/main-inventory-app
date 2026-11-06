@@ -141,3 +141,43 @@ GUIDANCE = (
     'Keep the question in prose too for older clients. Do not call another tool just to present choices. '
     'Be warm and concise; never claim a save without its receipt.'
 )
+
+
+def public_links(text, allowed, final=False):
+    """Do not briefly expose an invented internal link while its URL is arriving."""
+    import re
+    if not final:
+        start = text.rfind('[')
+        if start >= 0 and re.fullmatch(r'\[[^\]\n]*|\[[^\]\n]+\](?:\([^\)\n]*)?', text[start:]):
+            text = text[:start]
+    return re.sub(r'\[([^\]]+)\]\((findez://[^)]+)\)',
+                  lambda m: m.group(0) if m.group(2) in allowed else m.group(1), text)
+
+
+class PublicReply:
+    def __init__(self, validate, allowed_links):
+        self.question = QuestionStream()
+        self.validate = validate
+        self.allowed_links = allowed_links
+        self.raw = self.visible = ''
+
+    def _emit(self, final=False):
+        candidate = public_links(self.raw, self.allowed_links, final=final)
+        self.validate(candidate)
+        if not candidate.startswith(self.visible):
+            raise RuntimeError('The answer changed its streamed prefix')
+        delta = candidate[len(self.visible):]
+        self.visible = candidate
+        return delta
+
+    def feed(self, delta):
+        self.raw += self.question.feed(delta)
+        return self._emit()
+
+    def finish(self):
+        self.raw += self.question.finish()
+        return self._emit(final=True)
+
+
+class ReceiptClaimError(RuntimeError):
+    """A public reply claimed a write without the corresponding receipt."""

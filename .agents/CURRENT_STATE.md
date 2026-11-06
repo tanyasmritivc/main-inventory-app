@@ -2,7 +2,7 @@
 
 Lane `feat/chat-progress-choices` adds model-authored optional follow-up choices after streamed prose. A fragmented hidden UI trailer is filtered incrementally, validated, and persisted only in the existing answer context. Ordinary text is forwarded immediately; no extra model generation is needed to render choices. Existing Space choices are checked against actor/world permissions and current names. New names only request reviewed creation. One bounded destination metadata query replaces per-inventory Space lookups when suggestions are needed; it never loads item records. The model still decides whether a question is appropriate. No scan inference, limits, models, save semantics, or schema changes.
 
-Validation: 1,555 Python tests passed. A direct configured-gateway probe received its first text in 20.503 seconds, then 30 text events over 1.32 seconds. This establishes upstream first-token latency, not app buffering; these UI changes do not promise to eliminate that delay. Deployment and mobile186 delivery pending.
+Validation: 1,556 Python tests passed. A direct configured-gateway probe received its first text in 20.503 seconds, then 30 text events over 1.32 seconds. This establishes upstream first-token latency, not app buffering; these UI changes do not promise to eliminate that delay. Live-source reconciliation also removes its redundant private READY/final-answer pass while retaining prefix receipt validation; 76 compatible staged-source checks passed. Deployment and mobile186 delivery pending.
 
 ## November 5 - Backend scan rollback completed
 
