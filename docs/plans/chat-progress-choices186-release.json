@@ -1,0 +1,75 @@
+{
+  "backend": {
+    "source_commit": "c563044859e736ba2bcda807ecdbf99f68854df7",
+    "base_runtime_commit": "3d8a2e04c44b9ebe507240e18bdf92206590a211",
+    "deployed": true,
+    "health": 200,
+    "database_health": 200,
+    "invalid_authentication": 401,
+    "unrelated_source_preserved": true,
+    "database_migrations": false,
+    "customer_inventory_changes": false,
+    "tests": 1556,
+    "staged_compatibility_tests": 76,
+    "final_targeted_tests": 79,
+    "ci_run": 42170344268,
+    "ci_jobs_passed": 5,
+    "review": "https://github.com/tanyasmritivc/main-inventory-app/pull/323"
+  },
+  "mobile": {
+    "version": "1.1.2",
+    "build": 186,
+    "source_commit": "4ca37e05c41ebc4563d30000f6027f8422f4a85e",
+    "archive_device_executables_verified": 33,
+    "export_device_executables_verified": 33,
+    "strict_signatures": true,
+    "privacy_manifests": 27,
+    "production_configuration_verified": true,
+    "ipa_sha256": "82b2f29f7c0979765fd9b76308a5fb4f1875895b80bf30ec85eb41278411d8fb",
+    "uploaded": true,
+    "apple_validation": true,
+    "delivery_uuid": "b25f9858-a362-4074-a239-2ad2627a2697",
+    "processing": "pending, not polled",
+    "tester_availability": "unverified",
+    "public_app_store_submission_changed": false,
+    "tests_passed": 1286,
+    "existing_tests_skipped": 1,
+    "analysis": "No issues found",
+    "native_tests": 2,
+    "native_captures": 6,
+    "ci_run": 42168980384,
+    "ci_jobs_passed": 5,
+    "review": "https://github.com/tanyasmritivc/main-inventory-app/pull/324"
+  },
+  "timing_evidence": {
+    "world_greeting_real_model": {
+      "variant": "after",
+      "complete": true,
+      "first_text_seconds": 1.555,
+      "last_text_seconds": 2.496,
+      "text_events": 65,
+      "characters": 784,
+      "model_requests": 1,
+      "seconds": 2.513
+    },
+    "draft_choices_real_model_synthetic_data": {
+      "synthetic_inventory_real_model": true,
+      "complete": true,
+      "first_text_seconds": 3.205,
+      "text_events": 12,
+      "model_requests": 2,
+      "metadata_tools": [
+        "world_destination_options"
+      ],
+      "question_options": 2,
+      "kinds": [
+        "existing_space",
+        "new_space"
+      ],
+      "seconds": 3.826
+    },
+    "limitation": "Individual probes, not an SLA. Upstream model latency varies."
+  },
+  "scan_inference_changed": false,
+  "public_app_store_changed": false
+}
