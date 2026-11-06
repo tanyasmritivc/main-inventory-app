@@ -141,18 +141,31 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     from app.services.photo_extraction import extract_inventory_items
                     progress = asyncio.Queue()
                     loop = asyncio.get_running_loop()
+                    def enqueue(update):
+                        try:
+                            running_loop = asyncio.get_running_loop()
+                        except RuntimeError:
+                            running_loop = None
+                        if running_loop is loop:
+                            progress.put_nowait(update)
+                        else:
+                            loop.call_soon_threadsafe(progress.put_nowait, update)
                     def report(message):
-                        loop.call_soon_threadsafe(progress.put_nowait, message)
+                        enqueue(message)
+                    def report_regions(result):
+                        enqueue({'type': 'scan_regions', 'result': result})
                     extraction = asyncio.create_task(extract_inventory_items(
                         filename='photo.jpg', image_bytes=photo, content_type='image/jpeg',
-                        user_id=actor, source_frame_url=stored.url, on_progress=report))
+                        user_id=actor, source_frame_url=stored.url, on_progress=report,
+                        on_regions=report_regions))
                     try:
                         while not extraction.done() or not progress.empty():
                             try:
                                 update = await asyncio.wait_for(progress.get(), timeout=0.2)
                             except asyncio.TimeoutError:
                                 continue
-                            yield encode({'type': 'status', 'message': update})
+                            yield encode(update if isinstance(update, dict)
+                                         else {'type': 'status', 'message': update})
                         result = await extraction
                     finally:
                         # A worker thread cannot be cancelled mid-upload. Settle it

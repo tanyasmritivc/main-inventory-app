@@ -259,6 +259,49 @@ def test_expired_budget_makes_no_provider_request():
         g._deadline.reset(token)
 
 
+def test_regions_describe_actual_accepted_crops_and_real_batch_activity():
+    events = []
+    boxes = [g.Box(label='first', box=[0, 0, 400, 1000]),
+             g.Box(label='duplicate', box=[0, 0, 400, 1000]),
+             g.Box(label='second', box=[600, 0, 1000, 1000])]
+    def model(prompt, images, schema):
+        if schema is g.Grounding:
+            assert events == []  # No guessed rectangles while grounding.
+            return g.Grounding(items=boxes, partial=False)
+        assert events[-1] == {'states': [{'id': 0, 'state': 'checking'},
+                                        {'id': 1, 'state': 'checking'}]}
+        return g.Identities(items=[identity(), identity().model_copy(update={'index': 1})])
+    with patch.object(g, '_json', side_effect=model):
+        result = g.extract(image_bytes(), None, None, on_regions=events.append)
+    assert events[0] == {'regions': [
+        {'id': 0, 'box': [0, 0, 400, 1000], 'state': 'pending'},
+        {'id': 1, 'box': [600, 0, 1000, 1000], 'state': 'pending'}]}
+    assert events[-1] == {'states': [{'id': 0, 'state': 'checked'},
+                                    {'id': 1, 'state': 'checked'}]}
+    assert len(result['items']) == 2
+
+
+def test_failed_detail_batch_marks_regions_unreadable_without_inventing_results():
+    import httpx
+    events = []
+    ground = g.Grounding(items=[g.Box(label='tool', box=[0, 0, 1000, 1000])], partial=False)
+    with patch.object(g, '_json', side_effect=[ground, httpx.ReadTimeout('timeout')]):
+        result = g.extract(image_bytes(), None, None, on_regions=events.append)
+    assert events[-1] == {'states': [{'id': 0, 'state': 'unreadable'}]}
+    assert result['items'][0]['name'] == 'Unknown item'
+    assert result['items'][0]['confidence'] is None
+
+
+def test_optional_regions_callback_does_not_change_extracted_payload():
+    ground = g.Grounding(items=[g.Box(label='tool', box=[0, 0, 1000, 1000])], partial=False)
+    details = g.Identities(items=[identity()])
+    with patch.object(g, '_json', side_effect=[ground, details, ground, details]) as call:
+        original = g.extract(image_bytes(), None, None)
+        observed = g.extract(image_bytes(), None, None, on_regions=lambda event: None)
+    assert original == observed
+    assert call.call_count == 4
+
+
 def test_partial_part_number_is_not_accepted_from_a_longer_label():
     item = g._item(
         g.Box(label="part", box=[0, 0, 1000, 1000]),

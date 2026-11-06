@@ -1,3 +1,7 @@
+## November 5 - Actual crop progress for photo scanning
+
+Branch `feat/scan-box-progress` adds optional, transient `scan_regions` SSE events for accepted crop coordinates and actual pending/checking/checked/unreadable batch states. The mobile overlay consumes these without another inference request. The restored backend limits (40-second call, 100-second deadline, two workers), models, prompts, extraction results and save contracts stay unchanged. No migration or new provider. Full backend suite: 1,542 passed. Deployed runtime `177a807` after all five CI gates (42161346041) and 58 exact staged-source tests passed. API/database health passed, unrelated live source was preserved, and no inventory data changed. See `docs/plans/scan-box-progress.md`.
+
 ## November 5 - Backend scan rollback completed
 
 The user canceled performance experiments and explicitly clarified that only the backend should be restored; keep the new Auto Extract UI in TestFlight184. Lane `revert/photo-scan-timeout-changes` restores the pre-PR318 extraction/stream implementation. The unshipped concurrency candidate PR319 is closed. Mobile is back on `feat/scan-live-review` with no changes; no185build was made or uploaded. Guarded restoration uses the original two-file production backup and verifies unrelated files remain intact. Restored runtime ed68c44: 1,538 tests passed; original file hashes restored, API/database healthy, invalid authentication denied. See docs/photo-scan-backend-rollback.json.

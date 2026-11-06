@@ -560,18 +560,20 @@ def _group_identical(image, selected, prepared):
         match['crop'] = _final_crop(image, merged, Identity(index=0, name=target['name'], category=target['category'], uncertainty='Review the grouped objects.'))
     return [(g['item'], g['crop']) for g in groups]
 
-def extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
+def extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, on_regions=None):
     token = _deadline.set(time.monotonic() + 100)
     try:
         return _extract(
-            image_bytes, actor, source_url, upload=upload, on_progress=on_progress
+            image_bytes, actor, source_url, upload=upload, on_progress=on_progress,
+            on_regions=on_regions,
         )
     finally:
         _deadline.reset(token)
 
 
-def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
+def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, on_regions=None):
     report = on_progress or (lambda message: None)
+    regions = on_regions or (lambda event: None)
     report("Finding objects in your photo…")
     # Normalize orientation and MIME before inference, while retaining original
     # resolution for final crops. Never send EXIF metadata to the provider.
@@ -583,10 +585,16 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
         Grounding,
     )
     selected = crops(image_bytes, grounding.items)
+    # Stable IDs refer to accepted, deduplicated crops. Coordinates use the
+    # EXIF-oriented source photo (integer xyxy 0..1000), not a contact sheet.
+    regions({"regions": [{"id": i, "box": list(box.box), "state": "pending"}
+                         for i, (box, _) in enumerate(selected)]})
     report(f"Reading details for {len(selected)} objects…")
 
     def identify(offset):
         batch = selected[offset : offset + BATCH_SIZE]
+        regions({"states": [{"id": i, "state": "checking"}
+                            for i in range(offset, offset + len(batch))]})
         order = [
             {"index": i, "candidate": box.label} for i, (box, _) in enumerate(batch)
         ]
@@ -616,6 +624,7 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
         }
         for future in as_completed(futures):
             index = futures[future]
+            batch_indices = range(index, min(index + BATCH_SIZE, len(selected)))
             try:
                 identities, missing = future.result()
                 by_index.update({i.index: i for i in identities})
@@ -624,6 +633,8 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
                 for index in range(index, min(index + BATCH_SIZE, len(selected))):
                     failed.add(index)
                     by_index[index] = _unknown(index)
+            regions({"states": [{"id": i, "state": "unreadable" if i in failed else "checked"}
+                                for i in batch_indices]})
             report(f"Checked {len(by_index)} of {len(selected)} objects…")
     # Grounded crops are useful editable Review drafts even when all detail
     # calls fail. No identity/count is invented and the summary stays partial.
