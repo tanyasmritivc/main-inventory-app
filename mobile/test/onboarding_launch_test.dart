@@ -298,7 +298,7 @@ void main() {
         await tester.tap(find.byTooltip('More'));
       }
       await settleHome(tester);
-      await tester.tap(find.text('Workspaces and team tools'));
+      await tester.tap(find.text('Workspaces'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
       await tester.tap(find.text('My inventory'));
@@ -343,7 +343,7 @@ void main() {
         await tester.tap(find.byTooltip('More'));
       }
       await settleHome(tester);
-      await tester.tap(find.text('Workspaces and team tools'));
+      await tester.tap(find.text('Workspaces'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
       await tester.tap(find.text('My inventory'));

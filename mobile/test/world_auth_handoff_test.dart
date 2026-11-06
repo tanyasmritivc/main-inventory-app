@@ -369,7 +369,7 @@ void main() {
         await tester.pump();
         await tester.tap(find.byTooltip('More'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Workspaces and team tools'));
+        await tester.tap(find.text('Workspaces'));
         await settle(tester);
         expect(find.byType(WorkspaceHome), findsOneWidget);
         await tester.tap(find.text(signup ? 'Tools' : 'Hardware'));

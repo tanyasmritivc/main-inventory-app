@@ -21,6 +21,7 @@ class ChatCaptureCard extends StatefulWidget {
     this.disabled = false,
     this.embedded = false,
     this.photo,
+    this.creationAction,
   });
   final ApiClient api;
   final String conversationId;
@@ -30,6 +31,7 @@ class ChatCaptureCard extends StatefulWidget {
   final ValueChanged<AskResourceLink>? onOpenResource;
   final bool disabled, embedded;
   final ImageProvider? photo;
+  final Map<String, dynamic>? creationAction;
   @override
   State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
@@ -438,9 +440,59 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
     await _run(_saveItems);
   }
 
+  Map<String, dynamic>? get _creation {
+    final action = widget.creationAction;
+    final binding = action?['capture_destination'];
+    if (_draft['space_id'] != null ||
+        binding is! Map ||
+        binding['capture_id'] != _draft['id'] ||
+        !['pending', 'confirmed'].contains(action?['status'])) {
+      return null;
+    }
+    return action;
+  }
+
+  String get _destinationHint => _creation == null
+      ? 'Choose where to keep these items.'
+      : 'New Space: ${(_creation!['capture_destination'] as Map)['place']}';
+
+  Future<void> _createAndSave() => _run(() async {
+    final action = _creation;
+    if (action == null) return;
+    final response = await widget.api.collaboration(
+      '/worlds/${widget.api.worldKey}/structure-actions/${action['id']}',
+      method: 'POST',
+      data: {'decision': 'confirm', 'supports_task_actions': true},
+    );
+    widget.api.assertCurrentContext();
+    if (!mounted) return;
+    final confirmed = response['action'];
+    if (confirmed is! Map ||
+        confirmed['id'] != action['id'] ||
+        confirmed['status'] != 'confirmed') {
+      throw const FormatException(
+        'Creation could not be confirmed. Retry this same draft.',
+      );
+    }
+    action.addAll(Map<String, dynamic>.from(confirmed));
+    widget.onSaved
+        ?.call(); // Refresh the directory even if item saving needs retry.
+    if (response['capture'] is! Map) {
+      throw FormatException(
+        response['capture_warning'] is String
+            ? response['capture_warning'] as String
+            : 'Space created. Refresh the draft and choose it to continue.',
+      );
+    }
+    _accept(response);
+    if (_draft['status'] != 'saved') await _saveItems();
+  });
+
   Future<void> _save() async {
     if (_missingRows.isNotEmpty) {
       await _quantity(_missingRows.first);
+    } else if (_creation != null) {
+      await _createAndSave();
     } else if (_draft['space_id'] == null) {
       await _destination();
     } else {
@@ -568,7 +620,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
             _missingRows.isNotEmpty
                 ? 'Add the missing quantities, or uncheck those items to save the rest.'
                 : _draft['space_id'] == null
-                ? 'Choose where to keep these items.'
+                ? _destinationHint
                 : 'Ready to save to ${_draft['location']}.',
             style: TextStyle(fontSize: 13.5, color: secondary),
           ),
@@ -596,7 +648,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
                   : _missingRows.isNotEmpty
                   ? 'Add missing quantity'
                   : _draft['space_id'] == null
-                  ? 'Choose a Space'
+                  ? (_creation != null
+                        ? 'Create Space & save items'
+                        : 'Choose a Space')
                   : 'Save items',
             ),
           ),
@@ -1198,13 +1252,15 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
     final actions = <Widget>[
       if (!saved) ...[
         const SizedBox(height: 12),
-        if (!widget.embedded || _draft['space_id'] != null)
+        if (_creation != null || _draft['space_id'] != null)
           TextButton.icon(
             onPressed: _editable ? _destination : null,
             icon: const Icon(Icons.folder_outlined, size: 18),
             label: Text(
               _draft['space_id'] == null
-                  ? 'Choose a Space'
+                  ? (_creation != null
+                        ? 'Choose another Space'
+                        : 'Choose a Space')
                   : '${_draft['location']}',
             ),
           ),
@@ -1212,7 +1268,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
           _missingRows.isNotEmpty
               ? 'Add the missing quantities, or uncheck those items to save the rest.'
               : _draft['space_id'] == null
-              ? 'Choose where to keep these items.'
+              ? _destinationHint
               : 'Ready to save to ${_draft['location']}.',
           style: TextStyle(
             fontSize: 12,
@@ -1228,7 +1284,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
                 : _missingRows.isNotEmpty
                 ? 'Add missing quantity'
                 : _draft['space_id'] == null
-                ? 'Choose a Space'
+                ? (_creation != null
+                      ? 'Create Space & save items'
+                      : 'Choose a Space')
                 : 'Save items',
           ),
         ),

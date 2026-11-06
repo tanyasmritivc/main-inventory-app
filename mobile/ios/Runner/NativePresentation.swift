@@ -47,8 +47,13 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       controller = alert
     } else {
       let list = NativeListController(page: data, owner: self)
+      list.overrideUserInterfaceStyle = data["dark"] as? Bool == true ? .dark : .light
       let navigation = UINavigationController(rootViewController: list)
+      navigation.overrideUserInterfaceStyle = list.overrideUserInterfaceStyle
       navigation.modalPresentationStyle = .pageSheet
+      if data["opaque"] as? Bool == true {
+        navigation.view.backgroundColor = UIColor(white: data["dark"] as? Bool == true ? 0.08 : 0.95, alpha: 1)
+      }
       if let sheet = navigation.sheetPresentationController {
         sheet.detents = [.medium(), .large()]
         sheet.selectedDetentIdentifier = data["large"] as? Bool == true ? .large : .medium
@@ -178,6 +183,9 @@ private final class NativeListController: UITableViewController, UISearchResults
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   override func viewDidLoad() {
     super.viewDidLoad()
+    if page["opaque"] as? Bool == true {
+      tableView.backgroundColor = UIColor(white: page["dark"] as? Bool == true ? 0.08 : 0.95, alpha: 1)
+    }
     tableView.rowHeight = UITableView.automaticDimension
     tableView.estimatedRowHeight = 58
     tableView.keyboardDismissMode = .onDrag
@@ -272,6 +280,9 @@ private final class NativeListController: UITableViewController, UISearchResults
   override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     let data = row(indexPath)
     let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+    if page["opaque"] as? Bool == true {
+      cell.backgroundColor = UIColor(white: page["dark"] as? Bool == true ? 0.16 : 1, alpha: 1)
+    }
     var content = cell.defaultContentConfiguration()
     content.text = data["title"] as? String; content.secondaryText = data["subtitle"] as? String
     if page["textSizeFactor"] != nil {

@@ -1,3 +1,15 @@
+## November 5 — Native Scan and draft-flow187 delivered
+
+TestFlight1.1.2(187), runtime `d3807e9`, was signed, validated and acknowledged by Apple (delivery `f3c9daa0-ccfb-4145-8f87-3ff40ffebc9c`). Processing/tester availability is pending and was not polled. The public App Store submission is unchanged. Backend `92ff7d4` is live with exact saved-photo comparison and draft destination binding.
+
+Validation:1,288 Flutter tests passed (one existing skip), clean analyzer, two native creation/retry cases, actual native plus/Scan and inventory picker taps in light/dark, all five CI gates (42176732144),33 device binaries verified in both archive/export,27 privacy manifests and strict signatures. Physical iPhone/VoiceOver acceptance remains unverified. See `docs/plans/native-scan-draft187-release.json`.
+
+## November 5 — Native Scan and simpler draft destinations187
+
+Branch `fix/space-flow-native-scan` adds the system circular plus/Scan menu beside the native tabs, reusing Auto Extract. Spaces new-Space selection uses an opaque native grouped inventory picker with concise names and subtitles only for ambiguous duplicate names. More contains only Documents and notes, Workspaces and Account settings. A server-bound creation proposal appears in the existing item draft as Create Space & save items; a successful creation remains selected if saving needs retry. Duplicate empty Choose a Space controls are removed. This depends on the backend saved-photo/draft-flow fix.
+
+Validation: 1,288 Flutter tests passed, one existing skip; clean analysis; two native creation/retry tests passed. Real UIKit menu/picker taps and dark/light visual checks use synthetic data. Build187 packaging/upload pending. Physical TestFlight and VoiceOver acceptance remain unverified. Public App Store unchanged.
+
 ## November 5 — Progress and streamed choices186 delivered
 
 Backend runtime `c563044` is live over the reviewed `3d8a2e0` streaming patch. The redundant READY/final-generation pass is removed; public chunks still pass receipt/control-markup/link safeguards. Concrete destination questions include verified existing/new Space choices without another presentation-only model request. Stage-based mobile scan progress, varied activity wording, reduced-motion-aware shimmer, summary-before-cards ordering and optional choice sheets are in signed TestFlight1.1.2(186), runtime `4ca37e0`. Apple acknowledged upload `b25f9858-a362-4074-a239-2ad2627a2697`; processing/tester availability pending, not polled. Public App Store remains unchanged.

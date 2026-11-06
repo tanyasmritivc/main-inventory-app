@@ -108,6 +108,7 @@ void main() {
     Brightness brightness = Brightness.light,
     double scale = 1,
     ValueChanged<AskResourceLink>? onOpen,
+    Map<String, dynamic>? creation,
   }) async {
     t.view.physicalSize = const Size(390, 844);
     t.view.devicePixelRatio = 1;
@@ -131,6 +132,7 @@ void main() {
               api: api,
               conversationId: 'conversation',
               draft: value,
+              creationAction: creation,
               onChanged: (_) {},
               onOpenResource: onOpen,
             ),
@@ -140,6 +142,99 @@ void main() {
     );
     await t.pumpAndSettle();
   }
+
+  testWidgets(
+    'one creation action selects the new Space and saves the same draft',
+    (t) async {
+      final action = <String, dynamic>{
+        'id': 'creation',
+        'status': 'pending',
+        'capture_destination': {
+          'capture_id': id,
+          'place': 'Beauty',
+          'revision': 1,
+        },
+      };
+      final regular = f.respond;
+      f.respond = (r) {
+        if (r.path.endsWith('/structure-actions/creation')) {
+          value = {
+            ...value,
+            'revision': 2,
+            'inventory_id': inv,
+            'space_id': space,
+            'location': 'Beauty',
+          };
+          return {
+            'action': {...action, 'status': 'confirmed'},
+            'capture': value,
+          };
+        }
+        return regular(r);
+      };
+      await mount(t, creation: action);
+      expect(find.text('New Space: Beauty'), findsOneWidget);
+      await t.ensureVisible(find.text('Create Space & save items'));
+      await t.tap(find.text('Create Space & save items'));
+      await t.pumpAndSettle();
+      expect(value['status'], 'saved');
+      final writes = f.requests.where((r) => r.method == 'POST').toList();
+      expect(writes.map((r) => r.path), [
+        '/worlds/personal/structure-actions/creation',
+        '/worlds/personal/conversations/conversation/captures/$id/save',
+      ]);
+      expect(writes.last.data['revision'], 2);
+    },
+  );
+
+  testWidgets(
+    'created Space stays selected when item save fails and retry does not recreate it',
+    (t) async {
+      final action = <String, dynamic>{
+        'id': 'creation',
+        'status': 'pending',
+        'capture_destination': {
+          'capture_id': id,
+          'place': 'Beauty',
+          'revision': 1,
+        },
+      };
+      final regular = f.respond;
+      var failSave = true;
+      f.respond = (r) {
+        if (r.path.endsWith('/structure-actions/creation')) {
+          value = {
+            ...value,
+            'revision': 2,
+            'inventory_id': inv,
+            'space_id': space,
+            'location': 'Beauty',
+          };
+          return {
+            'action': {...action, 'status': 'confirmed'},
+            'capture': value,
+          };
+        }
+        if (r.path.endsWith('/save') && failSave) throw StateError('offline');
+        return regular(r);
+      };
+      await mount(t, creation: action);
+      await t.ensureVisible(find.text('Create Space & save items'));
+      await t.tap(find.text('Create Space & save items'));
+      await t.pumpAndSettle();
+      expect(value['space_id'], space);
+      expect(value['status'], 'draft');
+      failSave = false;
+      await t.ensureVisible(find.text('Save items'));
+      await t.tap(find.text('Save items'));
+      await t.pumpAndSettle();
+      expect(value['status'], 'saved');
+      expect(
+        f.requests.where((r) => r.path.endsWith('/structure-actions/creation')),
+        hasLength(1),
+      );
+    },
+  );
 
   testWidgets(
     'chat save confirms once and a failed save is not retried silently',

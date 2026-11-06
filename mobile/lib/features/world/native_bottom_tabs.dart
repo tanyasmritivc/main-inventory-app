@@ -15,9 +15,11 @@ class NativeBottomTabs extends StatefulWidget {
     super.key,
     required this.selected,
     required this.onSelected,
+    this.onScan,
   });
   final int selected;
   final ValueChanged<int> onSelected;
+  final VoidCallback? onScan;
   @override
   State<NativeBottomTabs> createState() => _NativeBottomTabsState();
 }
@@ -26,6 +28,7 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
   MethodChannel? _channel;
   Map<String, Object> get _configuration => {
     'selected': widget.selected,
+    'scanEnabled': widget.onScan != null,
     'dark': Theme.of(context).brightness == Brightness.dark,
     'reduceMotion':
         MediaQuery.disableAnimationsOf(context) ||
@@ -65,7 +68,12 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
         if (!mounted) return;
         _channel = MethodChannel('com.findez.app/native-tabs/$id');
         _channel!.setMethodCallHandler((call) async {
-          if (!mounted || call.method != 'selected') return;
+          if (!mounted) return;
+          if (call.method == 'scan') {
+            widget.onScan?.call();
+            return;
+          }
+          if (call.method != 'selected') return;
           final index = call.arguments;
           if (index is int &&
               index >= 0 &&

@@ -40,6 +40,7 @@ void main() {
       var selected = 0;
       var dark = false;
       var changes = 0;
+      var scans = 0;
       late StateSetter update;
       await tester.pumpWidget(
         StatefulBuilder(
@@ -61,6 +62,7 @@ void main() {
                   width: 288,
                   child: NativeBottomTabs(
                     selected: selected,
+                    onScan: () => scans++,
                     onSelected: (index) => setState(() {
                       selected = index;
                       changes++;
@@ -75,6 +77,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(configurations.last, {
         'selected': 0,
+        'scanEnabled': true,
         'dark': false,
         'reduceMotion': false,
       });
@@ -104,6 +107,9 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      await nativeEvent(null, method: 'scan');
+      expect(scans, 1);
+      expect(selected, 0);
       await nativeEvent(1);
       expect(selected, 1);
       expect(changes, 1);
@@ -120,6 +126,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(configurations.last, {
         'selected': 2,
+        'scanEnabled': true,
         'dark': true,
         'reduceMotion': false,
       });
