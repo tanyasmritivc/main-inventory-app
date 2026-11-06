@@ -1267,7 +1267,7 @@ void main() {
               find.byType(LinearProgressIndicator),
             )
             .value,
-        isNull,
+        0,
       );
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byKey(const Key('scan-photo-frame')), findsOneWidget);

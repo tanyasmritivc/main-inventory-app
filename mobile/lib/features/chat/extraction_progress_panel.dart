@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'scan_region.dart';
+import 'activity_label.dart';
 
 const scanMotion = Cubic(.32, .72, 0, 1);
 
@@ -269,11 +270,15 @@ class _ScanSweep extends CustomPainter {
   bool shouldRepaint(_ScanSweep old) => old.progress != progress;
 }
 
-/// Only received public status messages are recorded. A numeric bar is shown
-/// only when the status supplies a real checked/total count.
+/// Stage completion advances only on received activity, never a looping timer.
 class ExtractionProgressPanel extends StatefulWidget {
-  const ExtractionProgressPanel({super.key, required this.message});
+  const ExtractionProgressPanel({
+    super.key,
+    required this.message,
+    this.regions = const [],
+  });
   final String message;
+  final List<ScanRegion> regions;
   @override
   State<ExtractionProgressPanel> createState() =>
       _ExtractionProgressPanelState();
@@ -282,6 +287,7 @@ class ExtractionProgressPanel extends StatefulWidget {
 class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
   final _steps = <String>[];
   bool _expanded = false;
+  double _completedProgress = 0;
   void _record() {
     final message = widget.message.trim();
     if (message.isNotEmpty && (_steps.isEmpty || _steps.last != message)) {
@@ -312,9 +318,37 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
     ).firstMatch(widget.message);
     final checked = match == null ? null : int.tryParse(match[1]!);
     final total = match == null ? null : int.tryParse(match[2]!);
-    final progress = total != null && total > 0 && checked != null
-        ? (checked / total).clamp(0.0, 1.0)
-        : null;
+    final status = widget.message.toLowerCase();
+    final done = widget.regions
+        .where(
+          (r) =>
+              r.phase == ScanRegionPhase.checked ||
+              r.phase == ScanRegionPhase.unreadable,
+        )
+        .length;
+    var progress =
+        status.contains('finding objects') || status.contains('extracting')
+        ? .25
+        : 0.0;
+    if (widget.regions.isNotEmpty) {
+      progress = .5 + .25 * done / widget.regions.length;
+    }
+    if (total != null && total > 0 && checked != null) {
+      progress = .5 + .25 * (checked / total).clamp(0.0, 1.0);
+    }
+    if (status.contains('reading details')) progress = math.max(progress, .5);
+    if (status.contains('confidence') ||
+        status.contains('preparing your review')) {
+      progress = .875;
+    }
+    _completedProgress = math.max(_completedProgress, progress);
+    final stage = _completedProgress >= .75
+        ? 4
+        : _completedProgress >= .5
+        ? 3
+        : _completedProgress >= .25
+        ? 2
+        : 1;
     final reduced = MediaQuery.disableAnimationsOf(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -333,9 +367,12 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
               Expanded(
                 child: Semantics(
                   liveRegion: true,
-                  child: Text(
+                  child: ActivityLabel(
                     widget.message,
-                    style: const TextStyle(fontSize: 14, height: 1.3),
+                    builder: (text) => Text(
+                      text,
+                      style: const TextStyle(fontSize: 14, height: 1.3),
+                    ),
                   ),
                 ),
               ),
@@ -381,16 +418,19 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
                 ),
               ),
           const SizedBox(height: 4),
-          if (reduced && progress == null)
-            Container(height: 3, color: secondary.withValues(alpha: .15))
-          else
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 3,
-              color: dark ? Colors.white : Colors.black,
-              backgroundColor: secondary.withValues(alpha: .15),
-              borderRadius: BorderRadius.circular(2),
-            ),
+          LinearProgressIndicator(
+            value: _completedProgress,
+            semanticsLabel: 'Scan stages. Stage $stage of 4',
+            minHeight: 3,
+            color: dark ? Colors.white : Colors.black,
+            backgroundColor: secondary.withValues(alpha: .15),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          const SizedBox(height: 16),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(width: 220, child: ScanPlaceholders()),
+          ),
           const SizedBox(height: 8),
           Text(
             'Nothing is saved until you review and approve.',

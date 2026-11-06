@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'activity_label.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_text.dart';
 
@@ -56,7 +57,10 @@ class _ChatProgressState extends State<ChatProgress> {
                   Flexible(
                     child: Semantics(
                       liveRegion: true,
-                      child: ShinyStatusText(widget.message),
+                      child: ActivityLabel(
+                        widget.message,
+                        builder: (text) => ShinyStatusText(text),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),

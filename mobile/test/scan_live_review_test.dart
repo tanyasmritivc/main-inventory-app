@@ -345,14 +345,19 @@ void main() {
     );
     await show('Reading your photo...');
     await t.pumpAndSettle();
-    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      t
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .value,
+      0,
+    );
     await show('Checked 2 of 5 objects...');
     await t.pumpAndSettle();
     expect(
       t
           .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
           .value,
-      .4,
+      .6,
     );
     await t.tap(find.text('Steps'));
     await t.pumpAndSettle();

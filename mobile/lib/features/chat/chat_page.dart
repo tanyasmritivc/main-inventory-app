@@ -1,3 +1,5 @@
+import '../../core/chat_question.dart';
+import 'chat_question_sheet.dart';
 import 'voice_composer_session.dart';
 import 'voice_composer_panel.dart' show voiceCurve;
 import '../../core/ui/photo_source_sheet.dart';
@@ -247,6 +249,8 @@ class _ChatPageState extends State<ChatPage>
   String? _progress;
   late final _ChatSession _session;
   int _requestGeneration = 0;
+  final _answeredQuestions = <String>{};
+  bool _questionOpen = false;
   final List<ChatSource> _sources = [];
   bool _sourceMenuOpen = false;
   StreamIterator<AiStreamEvent>? _activeReply;
@@ -2323,6 +2327,17 @@ class _ChatPageState extends State<ChatPage>
         });
         widget.onInventoryMutated?.call();
         unawaited(_prefetchInventorySnapshot());
+        final question = answerContext?.question;
+        if (question != null && _queuedFollowUps.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted &&
+                requestGeneration == _requestGeneration &&
+                !_sending &&
+                ModalRoute.of(context)?.isCurrent == true) {
+              unawaited(_answerQuestion(question));
+            }
+          });
+        }
       }
     } on dio.DioException catch (e) {
       if (!mounted || requestGeneration != _requestGeneration) return;
@@ -3300,6 +3315,7 @@ class _ChatPageState extends State<ChatPage>
                   child: SingleChildScrollView(
                     child: ExtractionProgressPanel(
                       message: _progress ?? 'Reading your photo...',
+                      regions: _scanRegions,
                     ),
                   ),
                 ),
@@ -3340,6 +3356,7 @@ class _ChatPageState extends State<ChatPage>
           answerContext: AskAnswerContext(
             chatCapture: updated,
             photoAttachment: data!.photoAttachment,
+            question: data.question,
             worldActions: data.worldActions,
             resourceLinks: data.resourceLinks,
             sources: data.sources,
@@ -3371,6 +3388,7 @@ class _ChatPageState extends State<ChatPage>
           answerContext: AskAnswerContext(
             chatCapture: data.chatCapture,
             photoAttachment: data.photoAttachment,
+            question: data.question,
             worldActions: data.worldActions,
             resourceLinks: data.resourceLinks,
             sources: data.sources,
@@ -3414,6 +3432,32 @@ class _ChatPageState extends State<ChatPage>
     _completePresentation(index, null, canonical: text);
   }
 
+  Future<void> _answerQuestion(ChatQuestion question) async {
+    if (_sending || _questionOpen || _answeredQuestions.contains(question.id)) {
+      return;
+    }
+    final generation = _requestGeneration;
+    _questionOpen = true;
+    _focusNode.unfocus();
+    try {
+      final reply = await showChatQuestion(context, question);
+      if (!mounted ||
+          generation != _requestGeneration ||
+          _sending ||
+          reply == null) {
+        return;
+      }
+      if (reply.isEmpty) {
+        _focusNode.requestFocus();
+        return;
+      }
+      setState(() => _answeredQuestions.add(question.id));
+      unawaited(_submit(reply));
+    } finally {
+      _questionOpen = false;
+    }
+  }
+
   Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -3450,7 +3494,27 @@ class _ChatPageState extends State<ChatPage>
             ? null
             : () => unawaited(_openNavHint(message.navHint!)),
       ),
-      if (message.answerContext?.chatCapture != null &&
+      if (!isTyping &&
+          !message.failed &&
+          message.content.trim().isNotEmpty &&
+          message.answerContext?.question != null &&
+          identical(message, _session.messages.last) &&
+          !_answeredQuestions.contains(message.answerContext!.question!.id))
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _sending
+                ? null
+                : () => unawaited(
+                    _answerQuestion(message.answerContext!.question!),
+                  ),
+            icon: const Icon(Icons.tune, size: 18),
+            label: const Text('Choose an answer'),
+          ),
+        ),
+      if (!isTyping &&
+          message.content.trim().isNotEmpty &&
+          message.answerContext?.chatCapture != null &&
           _currentConversationId != null &&
           identical(
             message,
