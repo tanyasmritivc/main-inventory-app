@@ -425,6 +425,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       await LowStockPrefs.setThreshold(
         itemId: widget.item.itemId,
         threshold: threshold,
+        api: widget.api,
       );
       _lastSavedThreshold = threshold;
       widget.onThresholdChanged?.call(threshold);

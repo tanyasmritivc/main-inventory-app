@@ -9,6 +9,8 @@ import '../../core/api_client.dart';
 import '../../core/appearance_controller.dart';
 import '../../core/ui/native_presentation.dart';
 import 'native_notifications.dart';
+import 'notification_preferences.dart';
+import '../../core/personalization_notifications.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/notification_snapshot.dart';
@@ -74,6 +76,7 @@ class _NotificationsPageState extends State<NotificationsPage>
   String? _testNotice;
   bool _loading = false;
   bool _reading = false;
+  bool _policy = false;
   int _unreadCount = 0;
   int _generation = 0;
   late final String? _account;
@@ -220,15 +223,15 @@ class _NotificationsPageState extends State<NotificationsPage>
     final generation = ++_generation;
     setState(() => _loading = true);
     try {
-      final snapshot = NotificationSnapshot.parse(
-        await widget.api.getNotifications(),
-      );
+      final response = await widget.api.getNotifications();
+      final snapshot = NotificationSnapshot.parse(response);
       if (!_current(generation)) {
         _clearChangedAccount();
         return;
       }
       setState(() {
         _items = snapshot.items;
+        _policy = response['policy_version'] == 1;
         _unreadCount = snapshot.unreadCount;
         _error = null;
       });
@@ -277,6 +280,7 @@ class _NotificationsPageState extends State<NotificationsPage>
   }
 
   bool _canOpen(Map<String, dynamic> item) {
+    if (item['action'] == 'personalization') return item['id'] is String;
     if (item['action'] == 'access_invitation') {
       final status = (item['invitation'] as Map?)?['status'];
       return status == null || status == 'pending';
@@ -287,6 +291,15 @@ class _NotificationsPageState extends State<NotificationsPage>
 
   Future<void> _openItem(Map<String, dynamic> item) async {
     if (!mounted || widget.api.accountId != _account || !_canOpen(item)) return;
+    if (item['action'] == 'personalization') {
+      await PersonalizationNotifications.open(context, widget.api, {
+        'action': 'personalization',
+        'notification_id': item['id'],
+        'recipient_user_id': _account,
+      });
+      if (mounted) await _load();
+      return;
+    }
     if (item['action'] != 'access_invitation') {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -314,6 +327,37 @@ class _NotificationsPageState extends State<NotificationsPage>
   String _itemKey(Map<String, dynamic> item) =>
       'item:${item['id'] ?? '${item['action']}:${item['team_id']}:${item['created_at']}:${item['summary']}'}';
 
+  Future<void> _dismiss(String? id) async {
+    if (!_policy || _reading || _loading || widget.api.accountId != _account) {
+      return;
+    }
+    setState(() => _reading = true);
+    try {
+      if (id == null) {
+        await widget.api.clearNotifications();
+      } else {
+        await widget.api.dismissNotification(id);
+      }
+      if (mounted && widget.api.accountId == _account) {
+        await _load(afterRead: true);
+      }
+    } catch (e) {
+      if (mounted && widget.api.accountId == _account) {
+        setState(() => _error = describeError(e).$1);
+      }
+    } finally {
+      if (mounted) setState(() => _reading = false);
+    }
+  }
+
+  Future<void> _preferences() async {
+    await showNotificationPreferences(context, widget.api);
+    if (mounted) {
+      await _checkPush();
+      await _load();
+    }
+  }
+
   Map<String, dynamic> _nativeModel() => {
     'dark': Theme.of(context).brightness == Brightness.dark,
     'textSizeFactor':
@@ -321,8 +365,21 @@ class _NotificationsPageState extends State<NotificationsPage>
             .factor,
     'loading': _loading,
     'busy': _loading || _reading,
-    'empty': 'No updates yet',
+    'empty': _policy ? 'All caught up' : 'No updates yet',
     'options': [
+      if (_policy) ...[
+        {
+          'id': 'preferences',
+          'title': 'Notification preferences',
+          'symbol': 'slider.horizontal.3',
+        },
+        {
+          'id': 'clear',
+          'title': 'Clear notifications',
+          'symbol': 'tray',
+          'disabled': _loading || _reading || _items?.isNotEmpty != true,
+        },
+      ],
       {
         'id': 'refresh',
         'title': 'Refresh',
@@ -335,7 +392,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         'symbol': 'checkmark',
         'disabled': _unreadCount == 0 || _loading || _reading,
       },
-      if (_pushReady) ...[
+      if (_pushReady && !_policy) ...[
         {
           'id': 'settings',
           'title': 'Phone notification settings',
@@ -350,7 +407,7 @@ class _NotificationsPageState extends State<NotificationsPage>
       ],
     ],
     'sections': [
-      if (PushNotifications.supported && !_pushReady)
+      if (PushNotifications.supported && !_pushReady && !_policy)
         {
           'title': 'Phone alerts',
           'footer':
@@ -404,6 +461,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                 'symbol': _symbol(_items![i]['action']?.toString() ?? ''),
                 'unread': _items![i]['is_read'] != true,
                 'open': _canOpen(_items![i]),
+                'dismissible': _policy,
               },
           ],
         },
@@ -420,7 +478,15 @@ class _NotificationsPageState extends State<NotificationsPage>
 
   Future<void> _nativeAction(String id) async {
     if (!mounted || widget.api.accountId != _account) return;
+    if (id.startsWith('dismiss:item:')) {
+      await _dismiss(id.substring('dismiss:item:'.length));
+      return;
+    }
     switch (id) {
+      case 'preferences':
+        await _preferences();
+      case 'clear':
+        await _dismiss(null);
       case 'refresh':
         await _load();
       case 'read':
@@ -479,17 +545,30 @@ class _NotificationsPageState extends State<NotificationsPage>
         tooltip: 'Notification options',
         icon: const Icon(CupertinoIcons.ellipsis, size: 22),
         onSelected: (value) {
+          if (value == 'preferences') _preferences();
+          if (value == 'clear') _dismiss(null);
           if (value == 'refresh') _load();
           if (value == 'settings') _openPhoneSettings();
           if (value == 'test') _testPhoneAlert();
         },
         itemBuilder: (_) => [
+          if (_policy) ...[
+            const PopupMenuItem(
+              value: 'preferences',
+              child: AppText('Notification preferences'),
+            ),
+            PopupMenuItem(
+              value: 'clear',
+              enabled: !_loading && !_reading && _items?.isNotEmpty == true,
+              child: const AppText('Clear notifications'),
+            ),
+          ],
           PopupMenuItem(
             value: 'refresh',
             enabled: !_reading && !_loading,
             child: const AppText('Refresh'),
           ),
-          if (_pushReady) ...[
+          if (_pushReady && !_policy) ...[
             const PopupMenuItem(
               value: 'settings',
               child: AppText('Phone notification settings'),
@@ -514,7 +593,7 @@ class _NotificationsPageState extends State<NotificationsPage>
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
-        if (PushNotifications.supported && !_pushReady)
+        if (PushNotifications.supported && !_pushReady && !_policy)
           UtilityCard(
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -570,10 +649,12 @@ class _NotificationsPageState extends State<NotificationsPage>
             child: LinearProgressIndicator(),
           ),
         if (_items != null && _items!.isEmpty)
-          const UtilityEmpty(
+          UtilityEmpty(
             icon: CupertinoIcons.bell,
-            title: 'No updates yet',
-            message: 'Workspace updates and invitations appear here.',
+            title: _policy ? 'All caught up' : 'No updates yet',
+            message: _policy
+                ? 'Alerts that need your attention will appear here.'
+                : 'Workspace updates and invitations appear here.',
           ),
         if (_items?.isNotEmpty == true) ...[
           UtilitySection(
@@ -613,7 +694,15 @@ class _NotificationsPageState extends State<NotificationsPage>
                         child: UtilityHint(details),
                       ),
                 onTap: _canOpen(item) ? () => _openItem(item) : null,
-                trailing: unread
+                trailing: _policy
+                    ? IconButton(
+                        tooltip: 'Dismiss notification',
+                        onPressed: _reading || _loading
+                            ? null
+                            : () => _dismiss(item['id'] as String),
+                        icon: const Icon(CupertinoIcons.xmark, size: 18),
+                      )
+                    : unread
                     ? const Icon(
                         CupertinoIcons.circle_fill,
                         size: 7,

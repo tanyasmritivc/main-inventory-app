@@ -29,7 +29,7 @@ class PushNotifications {
         'notDetermined';
   }
 
-  /// Ask once through iOS before sign-in; never register an anonymous device.
+  /// Ask only following an explicit contextual action, never at launch.
   /// iOS owns the durable decision, so upgrades and relaunches do not re-prompt.
   static Future<bool> requestPermissionIfNeeded() async {
     if (!supported) return false;

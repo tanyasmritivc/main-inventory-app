@@ -1,3 +1,19 @@
+## November 6 — Notification preferences prepared (193)
+
+Lane `feat/notification-preferences193` implements the supplied notification package's
+mobile interface. Preferences use the existing native grouped-sheet renderer;
+Settings and Chats presentation source is unchanged. New policy inbox supports
+read/dismiss/clear and preferences. OS permission is contextual, never requested on
+launch. Personal thresholds synchronize to account-owned server rules without
+changing inventory counts; failures retain the last confirmed local value.
+
+1,304 Flutter tests passed (one existing skip), analyzer clean. Actual iOS26.2
+simulator reviewed in light/dark: preferences load, quiet-hour child selection,
+inbox dismissal and menus. Backend PR332 adds private policy API/schema, 1,541
+Python tests and 57 SQL checks. Production migration requires approval; the API
+flag and real-device APNs delivery remain pending. No production data changed.
+Build193 publication is being prepared; prior192 release remains preserved.
+
 ## November 6 - Navigation and scan return delivered (192)
 
 TestFlight 1.1.2 (192), runtime `03a2c8ca095894183a5064ecc027702294257597`, PR331.

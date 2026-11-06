@@ -147,6 +147,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       });
       unawaited(
         LowStockNotifications.evaluate(
+          api: widget.api,
           _items.map((item) {
             final itemId = (item['item_id'] ?? '').toString();
             final quantity = (item['quantity'] is num)

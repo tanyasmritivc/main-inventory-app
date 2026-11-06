@@ -1739,6 +1739,7 @@ class _InventoryPageState extends State<InventoryPage>
       _thresholds.value = plan.thresholds;
       unawaited(
         LowStockNotifications.evaluate(
+          api: widget.api,
           _items
               .map(
                 (item) => LowStockCandidate(
@@ -2080,6 +2081,7 @@ class _InventoryPageState extends State<InventoryPage>
       await LowStockPrefs.setThreshold(
         itemId: out.itemId,
         threshold: created.threshold,
+        api: widget.api,
       );
       final next = Map<String, int>.from(_thresholds.value);
       if (created.threshold == null || created.threshold! <= 0) {

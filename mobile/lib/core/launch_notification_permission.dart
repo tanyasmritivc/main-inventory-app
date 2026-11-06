@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'push_notifications.dart';
 
-/// Requests the iOS system permission after the first active app frame.
-/// It never holds up onboarding, authentication or inventory navigation.
+/// Reconnects already-authorized alerts without requesting launch-time consent.
 class LaunchNotificationPermission extends StatefulWidget {
   const LaunchNotificationPermission({
     super.key,
@@ -47,8 +46,7 @@ class _LaunchNotificationPermissionState
 
   Future<void> _request() async {
     try {
-      final allowed = await PushNotifications.requestPermissionIfNeeded();
-      if (mounted && allowed && widget.api.accountId != null) {
+      if (mounted && widget.api.accountId != null) {
         await PushNotifications.registerIfAuthorized(widget.api);
       }
     } catch (_) {

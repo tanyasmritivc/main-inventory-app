@@ -1725,6 +1725,54 @@ class ApiClient {
     );
   }
 
+  Future<Map<String, dynamic>?> syncNotificationStockRules(
+    Map<String, int?> rules, {
+    bool importOnly = false,
+  }) async {
+    try {
+      final result = await collaboration(
+        '/notifications/stock-rules',
+        method: 'POST',
+        data: {
+          'rules': [
+            for (final entry in rules.entries)
+              {'item_id': entry.key, 'threshold': entry.value},
+          ],
+          'import_only': importOnly,
+        },
+      );
+      return Map<String, dynamic>.from(result['rules'] as Map);
+    } on dio.DioException catch (e) {
+      // Older deployments do not expose the policy yet. All other failures
+      // remain visible; a failed network write must never look successful.
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getNotificationPreferences() =>
+      collaboration('/notifications/preferences');
+
+  Future<Map<String, dynamic>> updateNotificationPreferences(
+    int revision,
+    Map<String, dynamic> changes,
+  ) => collaboration(
+    '/notifications/preferences',
+    method: 'PATCH',
+    data: {...changes, 'expected_revision': revision},
+  );
+
+  Future<void> dismissNotification(String id) async {
+    await collaboration(
+      '/notifications/${Uri.encodeComponent(id)}/dismiss',
+      method: 'POST',
+    );
+  }
+
+  Future<void> clearNotifications() async {
+    await collaboration('/notifications/clear', method: 'POST');
+  }
+
   Future<Map<String, dynamic>> createTeamBoardTask(
     String teamId, {
     required String title,
