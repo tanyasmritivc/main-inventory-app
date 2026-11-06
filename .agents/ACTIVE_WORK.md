@@ -1,6 +1,6 @@
 ## November 5 - Actual crop progress for photo scanning
 
-Branch `feat/scan-box-progress` adds optional, transient `scan_regions` SSE events for accepted crop coordinates and actual pending/checking/checked/unreadable batch states. The mobile overlay consumes these without another inference request. The restored backend limits (40-second call, 100-second deadline, two workers), models, prompts, extraction results and save contracts stay unchanged. No migration or new provider. Full backend suite: 1,542 passed. Deployment pending exact-source CI and staged production-source verification.
+Branch `feat/scan-box-progress` adds optional, transient `scan_regions` SSE events for accepted crop coordinates and actual pending/checking/checked/unreadable batch states. The mobile overlay consumes these without another inference request. The restored backend limits (40-second call, 100-second deadline, two workers), models, prompts, extraction results and save contracts stay unchanged. No migration or new provider. Full backend suite: 1,542 passed. Deployed runtime `177a807` after all five CI gates (42161346041) and 58 exact staged-source tests passed. API/database health passed, unrelated live source was preserved, and no inventory data changed. See `docs/plans/scan-box-progress.md`.
 
 ## November 5 - Backend scan rollback completed
 
