@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'scan_region.dart';
 
 const scanMotion = Cubic(.32, .72, 0, 1);
 
@@ -36,10 +37,12 @@ class ScanPhotoFrame extends StatefulWidget {
     required this.image,
     required this.height,
     required this.scanning,
+    this.regions = const [],
   });
   final ImageProvider image;
   final double height;
   final bool scanning;
+  final List<ScanRegion> regions;
   @override
   State<ScanPhotoFrame> createState() => _ScanPhotoFrameState();
 }
@@ -72,7 +75,10 @@ class _ScanPhotoFrameState extends State<ScanPhotoFrame>
   }
 
   void _motion() {
-    if (widget.scanning && !_reduced && TickerMode.valuesOf(context).enabled) {
+    if (widget.scanning &&
+        widget.regions.isEmpty &&
+        !_reduced &&
+        TickerMode.valuesOf(context).enabled) {
       if (!_sweep.isAnimating) _sweep.repeat();
     } else {
       _sweep.stop();
@@ -136,7 +142,10 @@ class _ScanPhotoFrameState extends State<ScanPhotoFrame>
               errorBuilder: (_, _, _) =>
                   const Center(child: Icon(Icons.image_not_supported_outlined)),
             ),
-            if (widget.scanning && !_reduced && _size != null)
+            if (widget.scanning &&
+                widget.regions.isEmpty &&
+                !_reduced &&
+                _size != null)
               Positioned.fromRect(
                 rect: rect,
                 child: ClipRect(
@@ -150,6 +159,86 @@ class _ScanPhotoFrameState extends State<ScanPhotoFrame>
                   ),
                 ),
               ),
+            if (widget.scanning && _size != null)
+              for (final region in widget.regions)
+                Positioned.fromRect(
+                  key: ValueKey('scan-region-${region.id}'),
+                  rect: scanBoxRect(region.box, _size!, bounds.biggest),
+                  child: IgnorePointer(
+                    child: Semantics(
+                      label: 'Object ${region.id + 1}, ${region.status}',
+                      child: AnimatedContainer(
+                        duration: _reduced
+                            ? Duration.zero
+                            : const Duration(milliseconds: 180),
+                        decoration: BoxDecoration(
+                          color: region.phase == ScanRegionPhase.checking
+                              ? Colors.white.withValues(alpha: .10)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.black.withValues(alpha: .5),
+                            width: region.phase == ScanRegionPhase.checking
+                                ? 3
+                                : 2,
+                          ),
+                        ),
+                        foregroundDecoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.white.withValues(
+                              alpha: region.phase == ScanRegionPhase.checking
+                                  ? 1
+                                  : .55,
+                            ),
+                            width: region.phase == ScanRegionPhase.checking
+                                ? 2
+                                : 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            if (widget.scanning && _size != null)
+              for (final region in widget.regions)
+                Positioned(
+                  left: scanBoxRect(
+                    region.box,
+                    _size!,
+                    bounds.biggest,
+                  ).left.clamp(rect.left, math.max(rect.left, rect.right - 22)),
+                  top: scanBoxRect(
+                    region.box,
+                    _size!,
+                    bounds.biggest,
+                  ).top.clamp(rect.top, math.max(rect.top, rect.bottom - 20)),
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: Container(
+                        key: ValueKey('scan-region-badge-${region.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: region.phase == ScanRegionPhase.checking
+                              ? Colors.white
+                              : const Color(0xffdddddf),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          '${region.id + 1}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
           ],
         );
       },

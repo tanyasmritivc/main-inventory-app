@@ -1285,12 +1285,57 @@ void main() {
         image.dispose();
       }
 
+      expect(find.byKey(const ValueKey('scan-region-0')), findsNothing);
+      pending.add(
+        AiStreamEvent(
+          type: 'scan_regions',
+          result: {
+            'regions': [
+              {
+                'id': 0,
+                'box': [100, 100, 900, 900],
+                'state': 'pending',
+              },
+            ],
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(find.byKey(const ValueKey('scan-region-0')), findsOneWidget);
+      pending.add(
+        AiStreamEvent(
+          type: 'scan_regions',
+          result: {
+            'states': [
+              {'id': 0, 'state': 'checking'},
+            ],
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+        find.bySemanticsLabel('Object 1, Reading details'),
+        findsOneWidget,
+      );
+
       await tester.enterText(find.byType(TextField).first, 'Keep this draft');
       await tester.pump();
       await tester.tap(find.byTooltip('Stop scanning'));
       await tester.pumpAndSettle();
       expect(find.text('Keep this draft'), findsOneWidget);
       expect(find.text('Review extraction'), findsNothing);
+      pending.add(
+        AiStreamEvent(
+          type: 'scan_regions',
+          result: {
+            'states': [
+              {'id': 0, 'state': 'checked'},
+            ],
+          },
+        ),
+      );
+      await tester.pump();
+      expect(find.byKey(const ValueKey('scan-region-0')), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
