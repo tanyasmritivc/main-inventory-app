@@ -1,3 +1,13 @@
+## November 5 — Saved-photo/draft-flow backend deployed
+
+Runtime `92ff7d4` from PR325 is live. All five CI jobs passed (42176414806), as did 1,562 backend tests and 123 compatible staged-source tests. Exact staged hashes matched the deployed six-file patch; unrelated live code was preserved. A real-model synthetic image probe used the exact gallery tool, recognized identical photos and explained conflicting metadata. API/database health passed and invalid authentication returned401. No schema or customer-data mutations. Mobile187 delivery is recorded in its own branch. See `docs/plans/saved-photo-draft-flow187-release.json`.
+
+## November 5 — Saved photo comparison and draft destination creation
+
+Branch `fix/saved-photo-draft-flow` adds an authorized exact-item gallery read for model visual comparison. The model must distinguish matching saved pixels from conflicting labels and unverifiable physical identity; no record is rewritten. Creation-only proposals bind to an unnamed existing draft with its revision. Confirmation selects the receipt Space, and repeated confirmation can recover the same destination. Mobile187 combines this with an explicit save action; original draft IDs, counts, photos, duplicate checks and retry semantics remain intact. Claims about a creation card require an actual action.
+
+Validation: 1,562 backend tests;123 compatible staged-live-source tests (three unrelated existing source-drift cases excluded). Production has a newer broad gallery tool and other local changes; the six-file compatibility patch preserves those. No schema or customer-data change. Deployment pending.
+
 ## November 5 — Progress and streamed choices186 delivered
 
 Backend runtime `c563044` is live over the reviewed `3d8a2e0` streaming patch. The redundant READY/final-generation pass is removed; public chunks still pass receipt/control-markup/link safeguards. Concrete destination questions include verified existing/new Space choices without another presentation-only model request. Stage-based mobile scan progress, varied activity wording, reduced-motion-aware shimmer, summary-before-cards ordering and optional choice sheets are in signed TestFlight1.1.2(186), runtime `4ca37e0`. Apple acknowledged upload `b25f9858-a362-4074-a239-2ad2627a2697`; processing/tester availability pending, not polled. Public App Store remains unchanged.

@@ -355,13 +355,18 @@ def attach_created_destination(actor, key, action):
         return None
     row = load(actor, key, binding['conversation_id'], binding['capture_id'])
     draft = row['answer_context']['chat_capture']
-    if (draft['status'] != 'draft' or draft.get('space_id') or
-            draft.get('summary', {}).get('described_place') != binding.get('place')):
-        return None
     links = [link for link in action.get('receipt', {}).get('resource_links', [])
              if link.get('kind') == 'space' and
              str(link.get('label', '')).strip().casefold() == binding['place'].strip().casefold()]
     if len(links) != 1:
+        return None
+    if binding.get('revision') is not None and draft.get('space_id') == links[0]['id'] and draft.get('inventory_id') == links[0]['inventory_id']:
+        # A lost response can retry the same creation receipt without creating a
+        # second destination or changing the frozen capture's idempotency key.
+        return draft
+    if (draft['status'] != 'draft' or draft.get('space_id') or
+            (binding.get('revision') is not None and draft['revision'] != binding['revision']) or
+            (binding.get('revision') is None and draft.get('summary', {}).get('described_place') != binding.get('place'))):
         return None
     return edit(actor, key, binding['conversation_id'], draft['id'], draft['revision'],
                 {'inventory_id': links[0]['inventory_id'], 'space_id': links[0]['id']})
