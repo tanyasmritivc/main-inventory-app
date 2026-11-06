@@ -1457,7 +1457,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         _heading('Account'),
         _row(
           'Notifications and invitations',
-          onTap: () => _push(NotificationsPage(api: widget.api)),
+          onTap: () => NotificationsPage.open(context, api: widget.api),
         ),
         _row('Join with a code', onTap: _join),
         _row(

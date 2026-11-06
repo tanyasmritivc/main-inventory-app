@@ -234,11 +234,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       await _session.chooseAnother();
       await switching;
     } else {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => NotificationsPage(api: _places.api),
-        ),
-      );
+      await NotificationsPage.open(context, api: _places.api);
     }
   }
 

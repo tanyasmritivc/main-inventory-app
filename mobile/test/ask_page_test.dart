@@ -223,6 +223,7 @@ Widget _page(
   Future<AskPhoto?> Function(bool camera)? photoPicker,
   Brightness brightness = Brightness.dark,
   ValueChanged<bool>? onChatStateChanged,
+  void Function(VoidCallback)? onRegisterScan,
 }) => MaterialApp(
   theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
@@ -244,6 +245,7 @@ Widget _page(
       voiceRecorder: voiceRecorder,
       worldHeading: api.worldKey == null ? null : 'Find your things.',
       onChatStateChanged: onChatStateChanged,
+      onRegisterScan: onRegisterScan,
     ),
     bottomNavigationBar: api.worldKey != null
         ? null
@@ -252,6 +254,33 @@ Widget _page(
 );
 
 void main() {
+  testWidgets(
+    'bottom Scan opens camera directly and cancellation makes no AI request',
+    (tester) async {
+      final api = _AskApi(world: true);
+      late VoidCallback scan;
+      final sources = <bool>[];
+      await tester.pumpWidget(
+        _page(
+          api,
+          onRegisterScan: (callback) => scan = callback,
+          photoPicker: (camera) async {
+            sources.add(camera);
+            return null;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      scan();
+      await tester.pumpAndSettle();
+      expect(sources, [true]);
+      expect(find.text('Choose photo'), findsNothing);
+      expect(find.text('Auto Extract'), findsNothing);
+      expect(api.photos, isEmpty);
+      expect(api.commands, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('voice editing sends through chat and labels the message', (
     tester,
   ) async {

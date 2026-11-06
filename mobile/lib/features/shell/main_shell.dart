@@ -521,21 +521,17 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     _notificationGeneration++;
     HapticFeedback.lightImpact();
     try {
-      await Navigator.push(
+      await NotificationsPage.open(
         context,
-        MaterialPageRoute(
-          builder: (_) => NotificationsPage(
-            api: widget.api,
-            onReadStarting: () => _notificationGeneration++,
-            onUnreadChanged: (count) {
-              if (!mounted || widget.api.accountId != _notificationAccount) {
-                return;
-              }
-              _notificationGeneration++;
-              setState(() => _notificationCount.value = count);
-            },
-          ),
-        ),
+        api: widget.api,
+        onReadStarting: () => _notificationGeneration++,
+        onUnreadChanged: (count) {
+          if (!mounted || widget.api.accountId != _notificationAccount) {
+            return;
+          }
+          _notificationGeneration++;
+          setState(() => _notificationCount.value = count);
+        },
       );
     } finally {
       _openingNotifications = false;

@@ -1,3 +1,4 @@
+import 'package:mobile/features/world/smooth_typing_hint.dart';
 import 'dart:convert';
 import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/ui/skeleton.dart';
@@ -155,10 +156,7 @@ void main() {
       final hint = tester.widget<RichText>(
         find.descendant(
           of: find.text(
-            tester
-                .widget<TextField>(find.byType(TextField).first)
-                .decoration!
-                .hintText!,
+            tester.widget<SmoothTypingHint>(find.byType(SmoothTypingHint)).text,
           ),
           matching: find.byType(RichText),
         ),
@@ -204,6 +202,8 @@ void main() {
         expect(find.byType(WorldComposer), findsOneWidget);
         expect(tester.takeException(), isNull);
         expect(find.text('Dashboard'), findsNothing);
+        expect(find.text('What is running low?'), findsNothing);
+        expect(find.text('What did I add recently?'), findsNothing);
         if (profile.$1 == const Size(390, 844) &&
             profile.$2 == 1 &&
             profile.$3 == 0) {

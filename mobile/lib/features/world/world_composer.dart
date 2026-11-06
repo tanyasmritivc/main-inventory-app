@@ -1,3 +1,4 @@
+import 'smooth_typing_hint.dart';
 import '../chat/voice_composer_session.dart';
 import '../chat/voice_composer_panel.dart';
 import '../onboarding/sample_scan.dart' show TrialCameraPulse;
@@ -254,11 +255,25 @@ class _WorldComposerState extends State<WorldComposer>
                 height: 1.4,
               ),
               decoration: InputDecoration(
-                hintText:
-                    _hint ??
-                    (widget.compact
-                        ? 'Ask FindEZ…'
-                        : 'Describe your inventory…'),
+                hintText: _hint == null
+                    ? (widget.compact
+                          ? 'Ask FindEZ…'
+                          : 'Describe your inventory…')
+                    : null,
+                hint: _hint == null
+                    ? null
+                    : Semantics(
+                        label: widget.compact
+                            ? 'Ask FindEZ'
+                            : 'Describe your inventory',
+                        child: ExcludeSemantics(
+                          child: SmoothTypingHint(
+                            key: ValueKey(_idea),
+                            text: _ideas[_idea],
+                            visibleCharacters: _length,
+                          ),
+                        ),
+                      ),
                 hintMaxLines: 1,
                 hintStyle: const TextStyle(
                   fontSize: 16,

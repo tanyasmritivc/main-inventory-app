@@ -1,3 +1,11 @@
+## November 6 — Notifications sheet and direct camera
+
+Keep existing Chats and Settings native presentation untouched. Notifications
+uses an isolated grouped UIKit controller with the existing feed/permission logic.
+The separate bottom plus opens the system camera directly and offers Photos on
+that capture surface; no intermediate Scan menu. Placeholder motion only changes
+visual hint text, respects Reduce Motion and never edits the composer draft.
+
 ## November 5 — Settings is the typography reference
 
 User explicitly requires the rest of the app to match the current native Settings

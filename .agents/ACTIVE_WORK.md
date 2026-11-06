@@ -1,3 +1,15 @@
+## November 6 — Native Notifications and direct camera (189)
+
+Active branch `feat/native-notifications-camera`, based on build188. Notifications
+uses its own native grouped popup; Chats/Settings UI is unchanged. Home suggestion
+chips are removed, placeholders reveal smoothly, and bottom plus opens camera
+directly with “Take a photo to add items” and native Photos selection.
+1,293 Flutter tests pass (one existing skip); analysis and native compilation pass.
+Simulator light/dark sheet, read state, dismissal, Photos bytes/cancellation
+verified. Physical camera acceptance remains pending. Signed TestFlight189 delivery
+is in progress. No backend/web/schema or public App Store submission changes.
+See `docs/plans/native-inbox-camera189.md`.
+
 ## November 5 — Native Settings font matched, TestFlight188 uploaded
 
 Mobile runtime `f6ea0a42a4458daad2cfb6caf8ccb5822685f153`, PR327, branch `fix/native-settings-font`.

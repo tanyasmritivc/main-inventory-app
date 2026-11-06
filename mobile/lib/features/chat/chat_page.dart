@@ -1,3 +1,5 @@
+import '../scan/native_scan_camera.dart';
+import '../../core/ui/native_presentation.dart';
 import '../../core/chat_question.dart';
 import 'chat_question_sheet.dart';
 import 'voice_composer_session.dart';
@@ -262,6 +264,7 @@ class _ChatPageState extends State<ChatPage>
   set _currentConversationId(String? value) => _session.conversationId = value;
   bool _historyOpen = false;
 
+  final _nativeScanCamera = NativeScanCamera();
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
@@ -465,6 +468,7 @@ class _ChatPageState extends State<ChatPage>
     final active = _activeReply;
     _activeReply = null;
     if (active != null) unawaited(active.cancel());
+    _nativeScanCamera.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -493,6 +497,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _nativeScanCamera.cancel();
     _voice.cancel();
     _requestGeneration++;
     final active = _activeReply;
@@ -2456,7 +2461,11 @@ class _ChatPageState extends State<ChatPage>
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
     widget.onRegisterScan?.call(() {
-      if (mounted) unawaited(_selectChatSource('auto_extract'));
+      if (mounted) {
+        unawaited(
+          _attachPhoto(source: true, autoExtract: true, nativeScan: true),
+        );
+      }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2527,6 +2536,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
+    _nativeScanCamera.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _requestGeneration++;
     final active = _activeReply;
@@ -3043,7 +3053,11 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Future<void> _attachPhoto({bool? source, bool autoExtract = false}) async {
+  Future<void> _attachPhoto({
+    bool? source,
+    bool autoExtract = false,
+    bool nativeScan = false,
+  }) async {
     if (_sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
@@ -3057,6 +3071,11 @@ class _ChatPageState extends State<ChatPage>
       AskPhoto? photo;
       if (widget.photoPicker != null) {
         photo = await widget.photoPicker!(camera);
+      } else if (nativeScan && usesNativePresentation) {
+        final bytes = await _nativeScanCamera.pick(
+          dark: Theme.of(context).brightness == Brightness.dark,
+        );
+        if (bytes != null) photo = AskPhoto(bytes: bytes);
       } else {
         final file = await ImagePicker().pickImage(
           source: camera ? ImageSource.camera : ImageSource.gallery,
@@ -3639,44 +3658,6 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
-  Widget _newChatSuggestions() => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 4,
-      children: [
-        for (final prompt in const [
-          'What is running low?',
-          'What did I add recently?',
-        ])
-          ActionChip(
-            label: Text(
-              prompt,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF242424)
-                : const Color(0xFFF0F0F0),
-            surfaceTintColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            elevation: 0,
-            pressElevation: 0,
-            side: BorderSide.none,
-            shape: const StadiumBorder(),
-            onPressed: () {
-              _controller.text = prompt;
-              _controller.selection = TextSelection.collapsed(
-                offset: prompt.length,
-              );
-              _focusNode.requestFocus();
-              setState(() {});
-            },
-          ),
-      ],
-    ),
-  );
-
   Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
     builder: (context, bounds) {
       return SingleChildScrollView(
@@ -3726,10 +3707,6 @@ class _ChatPageState extends State<ChatPage>
                       listening: _isListening,
                       compact: compact,
                     ),
-                    if (_controller.text.trim().isEmpty &&
-                        _photo == null &&
-                        !compact)
-                      _voiceDimmed(_newChatSuggestions()),
                   ],
                 ),
               ),
@@ -3926,7 +3903,6 @@ class _ChatPageState extends State<ChatPage>
           if (_session.messages.isEmpty &&
               !(widget.contextual && keyboardVisible)) ...[
             _buildEmptyState(),
-            if (_controller.text.trim().isEmpty) _newChatSuggestions(),
           ],
           for (final message in _session.messages)
             Padding(

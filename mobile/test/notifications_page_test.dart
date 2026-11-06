@@ -1,3 +1,5 @@
+import 'package:mobile/features/notifications/native_notifications.dart';
+import 'package:mobile/core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -79,6 +81,92 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
+  testWidgets(
+    'native inbox keeps its host visible, updates read state and closes cleanly',
+    (tester) async {
+      debugNativePresentationOverride = true;
+      final completion = Completer<String?>();
+      final models = <Map<String, dynamic>>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(NativeNotifications.channel, (
+        call,
+      ) async {
+        if (call.method == 'present' || call.method == 'update') {
+          models.add(Map<String, dynamic>.from(call.arguments as Map));
+        }
+        if (call.method == 'present') return completion.future;
+        return null;
+      });
+      addTearDown(() {
+        debugNativePresentationOverride = null;
+        messenger.setMockMethodCallHandler(NativeNotifications.channel, null);
+      });
+      final api = _InboxApi();
+      final counts = <int>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => NotificationsPage.open(
+                  context,
+                  api: api,
+                  onUnreadChanged: counts.add,
+                ),
+                child: const Text('Open inbox'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open inbox'));
+      await tester.pumpAndSettle();
+      expect(find.text('Open inbox'), findsOneWidget);
+      expect(
+        ModalRoute.of(tester.element(find.byType(NotificationsPage))),
+        isA<PopupRoute>(),
+      );
+      expect(api.writes, 0);
+      expect(
+        models.last['sections'].toString(),
+        contains('A teammate joined.'),
+      );
+      Future<void> action(String id) async {
+        await messenger.handlePlatformMessage(
+          NativeNotifications.channel.name,
+          const StandardMethodCodec().encodeMethodCall(
+            MethodCall('action', {'token': models.last['token'], 'id': id}),
+          ),
+          (_) {},
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await action('read');
+      expect(api.writes, 1);
+      expect(counts, [1, 1]);
+      expect(
+        models.last['sections'].toString(),
+        contains('A new task arrived.'),
+      );
+      api.failFetch = true;
+      await action('refresh');
+      expect(models.last['sections'].toString(), contains('Tap to retry'));
+      expect(models.last.toString(), isNot(contains('SECRET')));
+      api.user = 'another-account';
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(
+        models.last['sections'].toString(),
+        isNot(contains('A teammate joined.')),
+      );
+      completion.complete(null);
+      await tester.pumpAndSettle();
+      expect(find.byType(NotificationsPage), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets(
     'authorized phone alerts expose a test with honest acceptance feedback',
     (tester) async {

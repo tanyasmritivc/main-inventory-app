@@ -68,7 +68,7 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ),
         onOpenDocuments: () => _open(DocumentsPage(api: _api)),
-        onOpenNotifications: () => _open(NotificationsPage(api: _api)),
+        onOpenNotifications: () => NotificationsPage.open(context, api: _api),
         onOpenCheckouts: () => _open(CheckoutPage(api: _api)),
         onOpenTour: () async {
           await Navigator.of(context).push<void>(
