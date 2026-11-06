@@ -90,3 +90,19 @@ was stopped after verification. Production schema, code and push gate remain unc
 Real-device APNs delivery and production activation remain pending. Recaps,
 re-engagement, cleanup insights, user-scheduled reminders and failed-import retry
 notifications remain unsupported/off. They are not represented as working features.
+
+## November 6 activation verification
+
+The user authorized production migration and API/inbox activation, with push still
+disabled. The initial migration and six reviewed files are live; both health checks
+passed and all136 unrelated Python files were preserved. Private backups are at
+`/home/ubuntu/findez-notifications193-20261106/backup`.
+
+Live acceptance found that PostgREST14.12 retries the `40001` code used for stale
+notification preferences instead of returning promptly. The follow-up migration
+`20261106_notification_conflicts.sql` changes only that revision guard to `PT409`;
+the API maps it to the existing public409 refresh message. This matches the
+[provider's documented retry issue](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b).
+Regression verification:1,543 Python tests and58 isolated SQL assertions, including
+unchanged preferences after a stale write and idempotent follow-up migration replay.
+Follow-up publication and live acceptance are in progress; no push sends enabled.

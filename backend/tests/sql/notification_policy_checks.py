@@ -57,6 +57,14 @@ def check(ok,label):
 a,i=account()
 p=json.loads(sql(f"SELECT findez_notification_preferences('{a}')"))
 check(not p['push_enabled'] and p['in_app_enabled'] and p['quiet_start']==1260 and p['quiet_end']==480 and p['timezone']=='America/Los_Angeles' and not any(p[k] for k in ('weekly_recap','cleanup_insights','reengagement','user_reminders','show_details')),'defaults and privacy')
+sql(f"""DO $$ BEGIN
+ BEGIN
+  PERFORM findez_notification_preferences('{a}','{{"show_details":true}}',-1);
+  RAISE EXCEPTION 'Stale revision unexpectedly accepted';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END $$;""")
+check(json.loads(sql(f"SELECT findez_notification_preferences('{a}')"))==p,'stale revision returns non-retryable PT409 and leaves preferences unchanged')
 n,item=candidate(a,i)
 check(not claim(n) and sql(f"SELECT count(*) FROM notification_delivery_attempts WHERE user_id='{a}'")=='0','push off suppresses without consuming a slot')
 enable(a)

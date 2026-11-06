@@ -227,7 +227,7 @@ def _policy_rpc(name, values):
     except APIError as error:
         if error.code == '42501':
             raise HTTPException(403, 'This item is no longer available to your account.') from None
-        if error.code == '40001':
+        if error.code in {'PT409', '40001'}:
             raise HTTPException(409, 'Preferences changed on another device. Refresh and try again.') from None
         if error.code in {'22023','23514','22P02','23502'}:
             raise HTTPException(422, 'Choose valid notification preferences.') from None

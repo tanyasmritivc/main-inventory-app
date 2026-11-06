@@ -19,3 +19,5 @@ INSERT INTO public.test_grants SELECT id,'20000000-0000-0000-0000-000000000001',
 INSERT INTO public.user_memory SELECT id,'__settings_v1','settings','{"enabled":true,"generation":0}' FROM auth.users;
 \ir ../../supabase/migrations/081_personalization_engine.sql
 \ir ../../supabase/migrations/20261106_notification_policy.sql
+\ir ../../supabase/migrations/20261106_notification_conflicts.sql
+\ir ../../supabase/migrations/20261106_notification_conflicts.sql

@@ -5,6 +5,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from postgrest.exceptions import APIError
 from app.api.routes import notifications as routes
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import notification_delivery as delivery, notification_policy, push_notifications
@@ -40,6 +41,17 @@ def test_unavailable_and_errors_do_not_expose_internals(api,monkeypatch):
     monkeypatch.setattr(routes,'get_supabase_raw',lambda:db)
     response=api.get('/notifications/preferences')
     assert response.status_code==503 and 'SECRET' not in response.text
+
+
+@pytest.mark.parametrize('code',['PT409','40001'])
+def test_stale_preferences_return_refresh_conflict(api,monkeypatch,code):
+    db=MagicMock()
+    db.rpc.return_value.execute.side_effect=APIError({'code':code,'message':'PRIVATE_DATABASE_DETAIL','details':None,'hint':None})
+    monkeypatch.setattr(routes,'get_supabase_raw',lambda:db)
+    response=api.patch('/notifications/preferences',json={'expected_revision':0,'show_details':True})
+    assert response.status_code==409
+    assert 'Refresh' in response.json()['detail'] and 'PRIVATE' not in response.text
+    assert db.rpc.return_value.execute.call_count==1
 
 
 def test_policy_default_blocks_legacy_push_paths(monkeypatch):
