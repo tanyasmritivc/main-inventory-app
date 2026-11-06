@@ -11,11 +11,15 @@ item details/editors, scanning, sharing, documents, teams and profile pages use
 adaptiveBorder; dark values are resolved exactly as before. Photo content,
 printed labels, colored status borders, text and scrims are not remapped.
 
-Validation: focused 53 tests passed. Existing theme/composer tests now measure
-composited control-edge contrast (3:1), placeholder contrast (4.5:1) and minimum
-light outline width. Full 1,293 tests passed (one existing skip); analysis is clean. Native visual
-review is in progress.
-Run integration_test/light_contrast_audit_test.dart filtered to Ask layout,
-lower item info and photo chooser to retain native Flutter frames for review.
-Release must use lib/main.dart with production defines. Upload TestFlight191 and
-stop at Apple's acknowledgment; processing/device acceptance remain separate.
+Validation: 53 focused checks and all 1,293 Flutter tests passed (one existing
+skip); analysis is clean. Regression checks measure the composited field edge
+(3:1), placeholder text (4.5:1) and minimum light outline width. The native iOS
+integration audit passed in both themes, including narrow/large-text/keyboard
+Ask layouts, attachment menus, item fields and photo choices. Retained screenshots
+were visually reviewed. Native Chats/Settings sources match build190.
+
+All five CI gates passed at the runtime commit. Signed production lib/main.dart
+archive/export passed platform, privacy, signature and configuration checks.
+Apple validated and acknowledged TestFlight1.1.2(191) upload. See
+light-mode-contrast191-release.json. Processing/tester availability and physical
+acceptance remain pending; no processing polling or public App Store changes.
