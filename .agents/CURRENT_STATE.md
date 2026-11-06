@@ -1,3 +1,21 @@
+## November 5 — Native Settings font matched, TestFlight188 uploaded
+
+Mobile runtime `f6ea0a42a4458daad2cfb6caf8ccb5822685f153`, PR327, branch `fix/native-settings-font`.
+App text now consistently uses Apple's native system-font proxies with normal
+tracking and a display face for larger roles. Voice text/status/timer use the same
+regular family. Role sizes, line heights, scaling and behavior remain intact.
+The native Settings model, renderer, appearance controller and profile/settings
+sources match their baseline hashes exactly. No backend/web/database changes.
+
+Validation: 1,288 Flutter tests passed with one existing skip, clean analysis,
+four native typography checks, and inspected light/dark simulator captures.
+All five exact-source CI gates passed (42179782572). Archive and IPA each verify
+33 device executables, signatures, 27 privacy manifests and production settings.
+Apple validation and upload succeeded; delivery `8ac8b87e-589c-4d9c-990a-d278c874b9b4`.
+Processing and tester availability are pending and were not polled. Physical-device
+acceptance was not repeated. Public App Store submission remains unchanged.
+See `docs/plans/native-settings-font188-release.json`.
+
 ## November 5 — Native Scan and draft-flow187 delivered
 
 TestFlight1.1.2(187), runtime `d3807e9`, was signed, validated and acknowledged by Apple (delivery `f3c9daa0-ccfb-4145-8f87-3ff40ffebc9c`). Processing/tester availability is pending and was not polled. The public App Store submission is unchanged. Backend `92ff7d4` is live with exact saved-photo comparison and draft destination binding.

@@ -91,17 +91,17 @@ class AppTheme {
         headlineSmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w400,
-          letterSpacing: -0.4,
+          letterSpacing: 0,
         ),
         titleLarge: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w400,
-          letterSpacing: -0.3,
+          letterSpacing: 0,
         ),
         titleMedium: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
-          letterSpacing: -0.1,
+          letterSpacing: 0,
         ),
         titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         bodyLarge: TextStyle(
@@ -122,7 +122,7 @@ class AppTheme {
         labelLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          letterSpacing: 0.1,
+          letterSpacing: 0,
         ),
       ).apply(fontFamily: 'CupertinoSystemText'),
       appBarTheme: AppBarTheme(
@@ -194,7 +194,7 @@ class AppTheme {
               color: navigationForegroundFor(brightness),
               fontSize: 11,
               fontWeight: FontWeight.w400,
-              letterSpacing: 0.2,
+              letterSpacing: 0,
             );
           }
           return TextStyle(
@@ -232,7 +232,7 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w400,
-            letterSpacing: 0.1,
+            letterSpacing: 0,
           ),
         ).copyWith(backgroundBuilder: glassBackground),
       ),
@@ -261,7 +261,7 @@ class AppTheme {
           foregroundColor: adapt(AppColors.primaryText),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w400,
-            letterSpacing: 0.1,
+            letterSpacing: 0,
           ),
         ),
       ),

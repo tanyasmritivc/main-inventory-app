@@ -17,10 +17,10 @@ class VoiceComposerPanel extends StatelessWidget {
     final scale = MediaQuery.textScalerOf(context).scale(13) / 13;
     final reduced = MediaQuery.disableAnimationsOf(context);
     const textStyle = TextStyle(
-      fontFamily: 'VoiceInter',
+      fontFamily: 'CupertinoSystemText',
       fontSize: 19,
       height: 1.38,
-      letterSpacing: -.19,
+      letterSpacing: 0,
     );
     return SizedBox(
       height: (178 + (scale - 1).clamp(0, 3) * 110).clamp(178, 480).toDouble(),
@@ -44,9 +44,9 @@ class VoiceComposerPanel extends StatelessWidget {
                     child: Text(
                       session.status,
                       style: TextStyle(
-                        fontFamily: 'VoiceInter',
+                        fontFamily: 'CupertinoSystemText',
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         color: secondary,
                       ),
                     ),
@@ -193,9 +193,10 @@ class VoiceComposerPanel extends StatelessWidget {
                       context,
                     ).clamp(maxScaleFactor: 1.8),
                     style: TextStyle(
-                      fontFamily: 'GeistMono',
+                      fontFamily: 'CupertinoSystemText',
+                      fontFeatures: [ui.FontFeature.tabularFigures()],
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       color: secondary,
                     ),
                   ),

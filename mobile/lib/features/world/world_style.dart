@@ -16,16 +16,16 @@ class WorldStyle extends StatelessWidget {
       FontWeight weight = FontWeight.w400,
       bool secondary = false,
     }) => TextStyle(
-      fontFamily: 'CupertinoSystemText',
+      fontFamily: AppTypography.systemFont(size),
       fontSize: size,
       fontWeight: weight,
-      letterSpacing: -.25,
+      letterSpacing: 0,
       height: 1.35,
       color: secondary ? muted : ink,
     );
     final title = text(30, weight: FontWeight.w400).copyWith(
-      fontFamily: 'CupertinoSystemText',
-      letterSpacing: -.7,
+      fontFamily: 'CupertinoSystemDisplay',
+      letterSpacing: 0,
       height: 1.15,
     );
     final border = OutlineInputBorder(

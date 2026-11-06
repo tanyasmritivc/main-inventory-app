@@ -197,7 +197,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                       color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      letterSpacing: 0.7,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 8),

@@ -160,7 +160,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                                   fontSize: 28,
                                   height: 1.15,
                                   fontWeight: FontWeight.w400,
-                                  letterSpacing: -0.8,
+                                  letterSpacing: 0,
                                   color: AppTheme.foreground(
                                     context,
                                     HomeColors.text,

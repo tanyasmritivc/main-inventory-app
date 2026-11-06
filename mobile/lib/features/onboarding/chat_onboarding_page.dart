@@ -712,7 +712,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
           fontSize: 36,
           height: 1.05,
           fontWeight: FontWeight.w400,
-          letterSpacing: -1.5,
+          letterSpacing: 0,
         ),
       ),
       Container(
@@ -736,7 +736,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
             fontSize: 36,
             height: 1.05,
             fontWeight: FontWeight.w400,
-            letterSpacing: -1.5,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -1180,7 +1180,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage>
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w400,
-                letterSpacing: -1,
+                letterSpacing: 0,
               ),
             ),
             Padding(

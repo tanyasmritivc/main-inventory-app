@@ -649,7 +649,7 @@ class _TaskSection extends StatelessWidget {
               color: sectionColor,
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              letterSpacing: .5,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 9),

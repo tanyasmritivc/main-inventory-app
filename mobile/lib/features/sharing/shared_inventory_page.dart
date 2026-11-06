@@ -364,7 +364,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 20,
-                    letterSpacing: 4,
+                    letterSpacing: 0,
                   ),
                 ),
                 decoration: InputDecoration(
@@ -1023,7 +1023,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
               fontSize: 10,
               fontWeight: FontWeight.w400,
-              letterSpacing: 1.5,
+              letterSpacing: 0,
             ),
           ),
         ),
@@ -1515,7 +1515,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   fontSize: 10,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: 1.4,
+                  letterSpacing: 0,
                 ),
               ),
             );
@@ -1760,7 +1760,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
           fontSize: 10,
           fontWeight: FontWeight.w400,
-          letterSpacing: 1.4,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -1968,7 +1968,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   fontSize: 10,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: 1.4,
+                  letterSpacing: 0,
                 ),
               ),
             );
@@ -2681,7 +2681,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                   color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: -0.5,
+                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -2760,7 +2760,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        letterSpacing: 0.6,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: 8),

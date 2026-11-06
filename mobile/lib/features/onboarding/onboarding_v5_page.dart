@@ -289,7 +289,7 @@ class _OnboardingV5PageState extends State<OnboardingV5Page>
           : size >= 26
           ? 1.14
           : 1.32,
-      letterSpacing: size >= 26 ? -.9 : -.15,
+      letterSpacing: 0,
     ),
   );
 

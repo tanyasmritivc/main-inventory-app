@@ -1,3 +1,14 @@
+## November 5 — Settings is the typography reference
+
+User explicitly requires the rest of the app to match the current native Settings
+font and forbids changes to Settings. UIKit's `UIFont.systemFont` is the source of
+truth. Flutter uses `CupertinoSystemText` and `CupertinoSystemDisplay` (20pt+),
+normal tracking and regular weight. Remove separate voice font choices and custom
+tracking across app screens. Preserve role sizes, line heights and existing text
+scaling/weight preferences. Settings model/renderer and appearance source are
+protected and verified by hashes. Keep native system fonts unbundled; old assets
+remain packaged for compatibility but are no longer selected by app text styles.
+
 ## November 5 — One draft, one explicit create-and-save action
 
 New destination proposals belong inside their existing draft, not in a separate hidden creation step. Creation and item save reuse the existing endpoints and stable draft IDs. A failed save retains the created destination so retry does not create a second Space. The bottom-right system plus offers Scan and keeps the existing Auto Extract UI.

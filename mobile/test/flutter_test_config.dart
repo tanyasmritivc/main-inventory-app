@@ -12,10 +12,12 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   final fixture = systemFont.existsSync()
       ? systemFont
       : File('assets/fonts/Geist-Regular.ttf');
-  await (FontLoader('CupertinoSystemText')..addFont(
-        Future.value(ByteData.sublistView(await fixture.readAsBytes())),
-      ))
-      .load();
+  for (final family in ['CupertinoSystemText', 'CupertinoSystemDisplay']) {
+    await (FontLoader(family)..addFont(
+          Future.value(ByteData.sublistView(await fixture.readAsBytes())),
+        ))
+        .load();
+  }
   for (final face in {
     'VoiceInter': 'assets/fonts/inter/Inter.ttf',
     'GeistMono': 'assets/fonts/brand/GeistMono-Regular.ttf',

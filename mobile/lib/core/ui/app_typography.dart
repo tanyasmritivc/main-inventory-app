@@ -9,6 +9,11 @@ class AppTypography extends StatelessWidget {
 
   final Widget child;
 
+  /// Flutter's proxies resolve to Apple's installed SF Pro optical faces.
+  /// UIKit uses the display face for larger type; neither face is bundled.
+  static String systemFont(double? size) =>
+      (size ?? 17) >= 20 ? 'CupertinoSystemDisplay' : 'CupertinoSystemText';
+
   static FontWeight _weight(TextStyle style, {bool body = false}) {
     return FontWeight.w400;
   }
@@ -17,7 +22,8 @@ class AppTypography extends StatelessWidget {
     final effective = DefaultTextStyle.of(context).style.merge(style);
     final result = (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective),
-      fontFamily: 'CupertinoSystemText',
+      fontFamily: systemFont(effective.fontSize),
+      letterSpacing: 0,
     );
     return result;
   }
@@ -26,14 +32,16 @@ class AppTypography extends StatelessWidget {
     final effective = DefaultTextStyle.of(context).style.merge(style);
     return (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective, body: true),
-      fontFamily: 'CupertinoSystemText',
+      fontFamily: systemFont(effective.fontSize),
+      letterSpacing: 0,
     );
   }
 
   static ThemeData _theme(ThemeData theme) {
     TextStyle? adapt(TextStyle? style, {bool body = false}) => style?.copyWith(
       fontWeight: _weight(style, body: body),
-      fontFamily: 'CupertinoSystemText',
+      fontFamily: systemFont(style.fontSize),
+      letterSpacing: 0,
     );
     TextTheme textTheme(TextTheme text) => TextTheme(
       displayLarge: adapt(text.displayLarge),
