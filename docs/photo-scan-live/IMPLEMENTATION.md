@@ -17,7 +17,7 @@ Sorting operates on a display list and uses the original row index as its durabl
 - Three real-photo variants through the actual Ask flow: mixed workbench (8 items, 6 unknowns), parts bin (6 items, 1 unknown), obscured objects (7 items, 4 unknowns). Each completed without mutating the returned draft; crop URLs and existing item fields were used. Two initial server timeouts succeeded on retry. Backend unchanged.
 - Disposable account and all 24 test images removed; no inventory writes were made.
 - Save parity was checked through exact request assertions and unchanged mutation/save code. A separate old/new live-cloud save comparison and physical-device acceptance were not performed; those are not claimed.
-- Signed-package verification and Apple upload receipt follow in the delivery record.
+- Signed archive/export each passed all 33 iOS device executable checks, strict signatures, 27 privacy manifests, production configuration and unchanged font assets. Apple validation and upload succeeded for 1.1.2 (184), delivery `5b391775-07b8-4aa7-90df-765ee273b9e2`. Processing and tester availability are pending; see `delivery.json`.
 
 ## What to Test
 
