@@ -9,17 +9,17 @@ changing inventory counts; failures retain the last confirmed local value.
 
 1,304 Flutter tests passed (one existing skip), analyzer clean. Actual iOS26.2
 simulator reviewed in light/dark: preferences load, quiet-hour child selection,
-inbox dismissal and menus. Backend PR332 adds private policy API/schema, 1,541
-Python tests and 57 SQL checks. Production migration requires approval; the API
-flag and real-device APNs delivery remain pending. No production data changed.
+inbox dismissal and menus. Backend PR332 is activated after user approval:
+runtime `a2d16cf4f079154de57b8471c36100f4f33b5084`,1,543 Python tests and58 SQL checks.
+Live disposable-account API checks and all five backend CI gates passed. Notification
+preferences and policy inbox are available; real-device APNs delivery remains pending.
 Apple acknowledged 1.1.2 (193), runtime `3ce1959f9e1adbc25deddf0f50c1c735da63cd7d`,
 PR333, delivery `66387503-b2f4-4fb2-b6a8-cece838b0cb7`. All five exact-runtime CI
 jobs passed in42250147908. Apple validation, strict signatures, 33 device
 executables and27 privacy manifests passed. Processing/tester availability were
 not polled. IPA/archive and prior192 remain preserved. Receipt:
 `docs/plans/notification-mobile193-release.json`.
-Until backend activation, new preferences stay hidden and legacy inbox remains;
-phone-local alert sends are retired. Push delivery is not yet device-verified.
+Phone-local alert sends are retired; server push remains disabled pending device acceptance.
 
 ## November 6 - Navigation and scan return delivered (192)
 

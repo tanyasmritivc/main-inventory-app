@@ -11,13 +11,12 @@ changed. Uncoordinated local alerts are retired so server caps govern new pushes
 
 Validation: 1,304 Flutter tests passed, one existing skip; analyzer clean. Native
 preferences reviewed in both appearances, initial load and quiet-hour selection,
-plus inbox dismiss/menu/clear. Physical-device APNs and production API activation
-remain pending. Backend PR332 contains the reviewed migration and delivery policy.
+plus inbox dismiss/menu/clear. Physical-device APNs remains pending. Backend PR332
+is activated after user approval, with live API acceptance passing.
 
-Until the policy API is deployed, the app retains the legacy inbox and hides the
-new preferences entry. Existing phone thresholds remain saved locally; background
-phone-local alerts are retired in this build. Production rollout should accompany
-this build after explicit database approval. Recap/cleanup/re-engagement and
+The policy API and new preferences entry are now active. Existing phone thresholds
+import when the inventory opens online; phone-local alerts are retired. Server push
+remains disabled pending device acceptance. Recap/cleanup/re-engagement and
 scheduled reminders are unavailable and remain off.
 
 ## Delivery
@@ -29,5 +28,6 @@ Apple acknowledged TestFlight **1.1.2 (193)**, runtime
 [CI jobs](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42250147908)
 passed. Signed archive/export verification and Apple validation passed. Receipt:
 `notification-mobile193-release.json`. Processing/tester availability were not
-polled; no public App Store submission. Production activation requires explicit
-database authorization and actual APNs/device acceptance remains pending.
+polled; no public App Store submission. The user approved production activation;
+API/inbox runtime `a2d16cf4f079154de57b8471c36100f4f33b5084` is live. Actual APNs/device
+acceptance remains pending and push stays off. No new binary is needed for activation.

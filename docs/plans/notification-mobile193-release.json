@@ -42,10 +42,10 @@
   },
   "physical_device_acceptance": "pending",
   "backend_pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/332",
-  "backend_runtime": "7dc3531a1d54622fc261b04235b47b5e26c75c9b",
-  "backend_ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42249433722",
-  "backend_tests_passed": 1541,
-  "sql_assertions_passed": 57,
-  "production_activation": "pending explicit database authorization",
+  "backend_runtime": "a2d16cf4f079154de57b8471c36100f4f33b5084",
+  "backend_ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42260526841",
+  "backend_tests_passed": 1543,
+  "sql_assertions_passed": 58,
+  "production_activation": "API and inbox active; push delivery disabled; device acceptance pending",
   "real_user_pushes_sent": false
 }
