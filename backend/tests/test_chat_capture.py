@@ -341,7 +341,7 @@ def test_first_turn_can_resolve_destination_after_drafting_without_another_messa
     else:
         action, = events[-1]['answer_context']['world_actions']
         assert action['status'] == 'pending'
-        assert action['capture_destination'] == {'conversation_id': CID, 'capture_id': draft['id'], 'place': 'Fridge'}
+        assert action['capture_destination'] == {'conversation_id': CID, 'capture_id': draft['id'], 'place': 'Fridge', 'revision': draft['revision']}
         assert action['plan']['inventories'][0]['items'] == []
         assert draft['space_id'] is None
     store.bulk.assert_not_called()
@@ -435,3 +435,32 @@ def test_capture_contract_keeps_old_clients_unconfirmed():
     from app.api.routes.world_chat import CaptureSave
     assert CaptureSave(revision=1).confirm_items is False
     assert CaptureSave(revision=1, confirm_items=True).confirm_items is True
+
+
+def test_later_suggested_space_binds_unnamed_draft_and_rejects_stale_revision(store):
+    from app.services import world_tasks
+    plan = {'workspace_id': 'personal', 'inventories': [{'name': 'Beauty', 'spaces': ['Beauty']}]}
+    with c.use_capture(ACTOR, WORLD, CID, None) as state, patch.object(w, 'propose_structure', return_value={'id': 'action', 'status': 'pending', 'plan': deepcopy(plan)}):
+        c.draft_description({'items': [{'name': 'Mascara', 'quantity': 1}]})
+        draft = state['draft']
+        action = world_tasks.propose(ACTOR, WORLD, plan)['world_action']
+    assert action['capture_destination']['place'] == 'Beauty'
+    action.update(status='confirmed', receipt={'resource_links': [{'kind': 'space', 'id': SPACE, 'inventory_id': INV, 'label': 'Beauty'}]})
+    stale = deepcopy(action)
+    stale['capture_destination']['revision'] -= 1
+    assert c.attach_created_destination(ACTOR, WORLD, stale) is None
+    selected = c.attach_created_destination(ACTOR, WORLD, action)
+    assert selected['space_id'] == SPACE and selected['items'] == draft['items']
+    assert c.attach_created_destination(ACTOR, WORLD, action) == selected
+    store.bulk.assert_not_called()
+
+
+def test_creation_promise_with_existing_draft_requires_a_real_creation_card(store):
+    from backend.tests.test_world_chat import completion
+    responses = iter([completion("I've queued a creation proposal for a new Beauty Space."), completion('Choose a name for the new destination.')])
+    with c.use_capture(ACTOR, WORLD, CID, None), patch.object(w, 'authorize'), patch('app.services.agent_gateway_client.gateway_completion', side_effect=lambda **kw: next(responses)):
+        c.draft_description({'items': [{'name': 'Mascara', 'quantity': 1}]})
+        events = list(w.stream_turn(ACTOR, WORLD, 'Create a Space', [], CID, supports_task_actions=True))
+    assert any(e['type'] == 'reset' for e in events)
+    assert events[-1]['assistant_message'] == 'Choose a name for the new destination.'
+    assert not events[-1]['answer_context']['world_actions']

@@ -92,12 +92,13 @@ def propose(actor, world, args):
     capture = current_capture.get()
     draft = capture and capture.get('draft')
     place = (draft or {}).get('summary', {}).get('described_place')
-    if (draft and draft['status'] == 'draft' and not draft.get('space_id') and place
+    if (draft and draft['status'] == 'draft' and not draft.get('space_id')
             and len(task.inventories) == 1 and not task.inventories[0].items
             and not task.inventories[0].moves and len(task.inventories[0].spaces) == 1
-            and task.inventories[0].spaces[0].strip().casefold() == place.strip().casefold()):
+            and (not place or task.inventories[0].spaces[0].strip().casefold() == place.strip().casefold())):
         action['capture_destination'] = {'conversation_id': capture['cid'],
-            'capture_id': draft['id'], 'place': place}
+            'capture_id': draft['id'], 'place': task.inventories[0].spaces[0].strip(),
+            'revision': draft['revision']}
 
     return {'world_action': action, 'saved': False,
         'next_step': ('Offer to create this destination. Confirmation creates it and selects it for the existing draft; '

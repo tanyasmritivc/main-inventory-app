@@ -19,6 +19,8 @@ def tool_status(name):
         return "Checking project requirements…"
     if name in {"world_tracking", "world_reorders"}:
         return "Checking stock and reminders…"
+    if name == "world_compare_item_photo":
+        return "Comparing the saved photos..."
     if name == "world_attach_item_photo":
         return "Finding the item for your photo…"
     return "Checking the details…"

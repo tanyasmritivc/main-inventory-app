@@ -1,3 +1,7 @@
+## November 5 — Saved pixels and draft identity
+
+A saved photo can match an uploaded photo even when its item label is wrong. Compare pixels before rejecting a match. New destination creation must keep the original draft and its stable save IDs; a missing destination must not copy the draft into a second item-creation plan.
+
 ## October 24 — Offer missing destinations on the first turn
 
 A named missing Space/inventory is an opportunity to offer a real creation card,
