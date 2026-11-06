@@ -4,6 +4,8 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private var nativeNotifications: NativeNotifications?
+  private var nativeScanCamera: NativeScanCamera?
   private var nativePresentation: NativePresentation?
   private var nativeMotion: NativeMotionPreferences?
   private var pushResult: FlutterResult?
@@ -40,6 +42,8 @@ import UserNotifications
     registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     registrar.register(NativeControlFactory(messenger: registrar.messenger()), withId: "com.findez.app/toolbar-control")
     nativePresentation = NativePresentation(messenger: registrar.messenger())
+    nativeNotifications = NativeNotifications(messenger: registrar.messenger())
+    nativeScanCamera = NativeScanCamera(messenger: registrar.messenger())
     nativeMotion = NativeMotionPreferences(messenger: registrar.messenger())
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
@@ -301,10 +305,10 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     container.frame = frame
     container.scan.accessibilityIdentifier = "findez.scan.menu"
     container.scan.accessibilityLabel = "Add"
-    container.scan.showsMenuAsPrimaryAction = true
-    container.scan.menu = UIMenu(children: [UIAction(title: "Scan", image: UIImage(systemName: "viewfinder")) { [weak self] _ in
+    container.scan.accessibilityHint = "Take a photo to add items, or choose from Photos"
+    container.scan.addAction(UIAction { [weak self] _ in
       self?.channel.invokeMethod("scan", arguments: nil)
-    }])
+    }, for: .touchUpInside)
     bar.items = [("Ask", "bubble.left", "bubble.left.fill"),
                  ("Spaces", "square.grid.2x2", "square.grid.2x2.fill"),
                  ("More", "ellipsis", "ellipsis")].enumerated().map { index, tab in

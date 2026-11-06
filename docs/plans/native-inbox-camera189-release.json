@@ -1,0 +1,44 @@
+{
+  "version": "1.1.2",
+  "build": 189,
+  "source_commit": "f45f46cdac940b3edca6f0e2de30f6b260aff119",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "141baaeec7fb08def31f209a7218290d4653748816c85bd54bc449b8e18273bd",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "2964ea2b-d43b-4129-9f0b-3cdcf9619005",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": 328,
+  "flutter_tests": 1293,
+  "existing_skips": 1,
+  "flutter_analysis": "clean",
+  "ci_run": 42184910386,
+  "ci_gates": 5,
+  "native_audit": {
+    "checks": {
+      "native_ios_compilation": true,
+      "notifications_light_dark_visual_review": true,
+      "native_mark_read_reflected_on_reopen": true,
+      "native_sheet_close_and_reopen": true,
+      "native_photos_selected_bytes": true,
+      "native_photos_cancellation": true,
+      "chats_settings_ui_protected": true
+    },
+    "device": "iPhone 16e simulator, iOS 26.2",
+    "physical_camera_verified": false,
+    "photos_selected_bytes": 315806
+  },
+  "protected_ui": {
+    "mobile/ios/Runner/NativePresentation.swift": true,
+    "mobile/lib/core/ui/native_presentation.dart": true,
+    "mobile/lib/core/appearance_controller.dart": true,
+    "mobile/lib/features/chat/chat_history_sheet.dart": true,
+    "Settings: only Notifications destination changed": true
+  }
+}

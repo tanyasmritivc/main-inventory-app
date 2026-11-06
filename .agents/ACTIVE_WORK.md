@@ -1,3 +1,18 @@
+## November 6 — Native Notifications and direct camera delivered (189)
+
+TestFlight 1.1.2 (189), runtime `f45f46cdac940b3edca6f0e2de30f6b260aff119`, PR328.
+Notifications uses a native grouped sheet, home suggestion chips are removed,
+placeholders reveal smoothly, and bottom plus opens the system camera with Photos.
+Chats and Settings retain their existing UI. Full 1,293 Flutter tests pass with
+one existing skip; analysis is clean. Native compilation and simulator light/dark
+sheet, read state, dismissal, Photos selection and cancellation checks passed.
+All five exact-source CI gates passed. Archive/export signatures, 33 device
+executables each, 27 privacy manifests and production configuration verified.
+Apple validated and acknowledged upload: `2964ea2b-d43b-4129-9f0b-3cdcf9619005`.
+Processing/tester availability remains pending and was not polled. Physical
+camera/permissions/VoiceOver acceptance remains pending. Public App Store,
+backend, web and database are unchanged. See `docs/plans/native-inbox-camera189-release.json`.
+
 ## November 5 — Native Settings font matched, TestFlight188 uploaded
 
 Mobile runtime `f6ea0a42a4458daad2cfb6caf8ccb5822685f153`, PR327, branch `fix/native-settings-font`.

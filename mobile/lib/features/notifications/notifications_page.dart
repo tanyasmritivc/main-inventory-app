@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/appearance_controller.dart';
+import '../../core/ui/native_presentation.dart';
+import 'native_notifications.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/notification_snapshot.dart';
@@ -21,7 +24,36 @@ class NotificationsPage extends StatefulWidget {
     required this.api,
     this.onUnreadChanged,
     this.onReadStarting,
+    this.native = false,
   });
+  final bool native;
+  static Future<void> open(
+    BuildContext context, {
+    required ApiClient api,
+    ValueChanged<int>? onUnreadChanged,
+    VoidCallback? onReadStarting,
+  }) async {
+    final native = usesNativePresentation;
+    Widget page() => NotificationsPage(
+      api: api,
+      native: native,
+      onUnreadChanged: onUnreadChanged,
+      onReadStarting: onReadStarting,
+    );
+    if (native) {
+      await showGeneralDialog<void>(
+        context: context,
+        barrierColor: Colors.transparent,
+        transitionDuration: Duration.zero,
+        pageBuilder: (_, _, _) => page(),
+      );
+    } else {
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => page()));
+    }
+  }
+
   final ApiClient api;
   final ValueChanged<int>? onUnreadChanged;
   final VoidCallback? onReadStarting;
@@ -46,6 +78,7 @@ class _NotificationsPageState extends State<NotificationsPage>
   int _generation = 0;
   late final String? _account;
   Timer? _timer;
+  final _native = NativeNotifications();
 
   @override
   void initState() {
@@ -54,6 +87,9 @@ class _NotificationsPageState extends State<NotificationsPage>
     WidgetsBinding.instance.addObserver(this);
     unawaited(_checkPush());
     unawaited(_load());
+    if (widget.native) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _presentNative());
+    }
     _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       final lifecycle = WidgetsBinding.instance.lifecycleState;
       if ((lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
@@ -74,6 +110,7 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   void dispose() {
     _generation++;
+    _native.dispose();
     _timer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -239,8 +276,196 @@ class _NotificationsPageState extends State<NotificationsPage>
     }
   }
 
+  bool _canOpen(Map<String, dynamic> item) {
+    if (item['action'] == 'access_invitation') {
+      final status = (item['invitation'] as Map?)?['status'];
+      return status == null || status == 'pending';
+    }
+    return (item['action']?.toString() ?? '').startsWith('task_') &&
+        item['team_id'] != null;
+  }
+
+  Future<void> _openItem(Map<String, dynamic> item) async {
+    if (!mounted || widget.api.accountId != _account || !_canOpen(item)) return;
+    if (item['action'] != 'access_invitation') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TeamBoardPage(
+            api: widget.api,
+            initialTeamId: item['team_id'].toString(),
+          ),
+        ),
+      );
+    } else {
+      final id =
+          (item['invitation'] as Map?)?['invitation_id']?.toString() ??
+          (item['metadata'] as Map?)?['invitation_id']?.toString();
+      if (id == null) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              AccessInvitationPage(api: widget.api, invitationId: id),
+        ),
+      );
+      if (mounted) await _load();
+    }
+  }
+
+  String _itemKey(Map<String, dynamic> item) =>
+      'item:${item['id'] ?? '${item['action']}:${item['team_id']}:${item['created_at']}:${item['summary']}'}';
+
+  Map<String, dynamic> _nativeModel() => {
+    'dark': Theme.of(context).brightness == Brightness.dark,
+    'textSizeFactor':
+        (AppearanceScope.maybeOf(context)?.textSize ?? AppTextSize.standard)
+            .factor,
+    'loading': _loading,
+    'busy': _loading || _reading,
+    'empty': 'No updates yet',
+    'options': [
+      {
+        'id': 'refresh',
+        'title': 'Refresh',
+        'symbol': 'arrow.clockwise',
+        'disabled': _loading || _reading,
+      },
+      {
+        'id': 'read',
+        'title': 'Mark all as read',
+        'symbol': 'checkmark',
+        'disabled': _unreadCount == 0 || _loading || _reading,
+      },
+      if (_pushReady) ...[
+        {
+          'id': 'settings',
+          'title': 'Phone notification settings',
+          'symbol': 'gear',
+        },
+        {
+          'id': 'test',
+          'title': _testingPush ? 'Sending test…' : 'Send test notification',
+          'symbol': 'bell',
+          'disabled': _testingPush,
+        },
+      ],
+    ],
+    'sections': [
+      if (PushNotifications.supported && !_pushReady)
+        {
+          'title': 'Phone alerts',
+          'footer':
+              _pushError ??
+              'Get workspace updates on your phone. Your feed works without alerts.',
+          'rows': [
+            {
+              'id': _permission == 'denied' ? 'settings' : 'enable',
+              'title': _checkingPush
+                  ? 'Connecting…'
+                  : _permission == 'denied'
+                  ? 'Open Settings'
+                  : 'Enable phone alerts',
+              'symbol': 'bell',
+              'action': !_checkingPush,
+            },
+          ],
+        },
+      if (_error != null)
+        {
+          'rows': [
+            {
+              'id': 'refresh',
+              'title': _error,
+              'subtitle': 'Tap to retry',
+              'symbol': 'arrow.clockwise',
+              'action': true,
+            },
+          ],
+        },
+      if (_testNotice != null)
+        {
+          'rows': [
+            {'id': 'notice', 'title': _testNotice, 'symbol': 'bell'},
+          ],
+        },
+      if (_items?.isNotEmpty == true)
+        {
+          'title': _unreadCount > 0
+              ? 'Updates · $_unreadCount unread'
+              : 'All caught up',
+          'rows': [
+            for (var i = 0; i < _items!.length; i++)
+              {
+                'id': _itemKey(_items![i]),
+                'title': _describedActivity(_items![i]),
+                'subtitle': [
+                  _items![i]['team_name']?.toString() ?? '',
+                  _time(_items![i]['created_at']?.toString()),
+                ].where((x) => x.isNotEmpty).join(' · '),
+                'symbol': _symbol(_items![i]['action']?.toString() ?? ''),
+                'unread': _items![i]['is_read'] != true,
+                'open': _canOpen(_items![i]),
+              },
+          ],
+        },
+    ],
+  };
+
+  String _symbol(String action) {
+    if (action.startsWith('task_')) return 'checkmark.circle';
+    if (action.startsWith('item_')) return 'shippingbox';
+    if (action.startsWith('space_')) return 'archivebox';
+    if (action.startsWith('member_')) return 'person.2';
+    return 'bell';
+  }
+
+  Future<void> _nativeAction(String id) async {
+    if (!mounted || widget.api.accountId != _account) return;
+    switch (id) {
+      case 'refresh':
+        await _load();
+      case 'read':
+        await _markRead();
+      case 'enable':
+        await _checkPush(request: true);
+      case 'settings':
+        await _openPhoneSettings();
+      case 'test':
+        await _testPhoneAlert();
+    }
+  }
+
+  Future<void> _presentNative() async {
+    try {
+      while (mounted) {
+        final id = await _native.show(_nativeModel(), _nativeAction);
+        if (!mounted) return;
+        if (id == null) break;
+        final index = _items?.indexWhere((item) => _itemKey(item) == id) ?? -1;
+        if (index >= 0) await _openItem(_items![index]);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open notifications. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => UtilityPage(
+  Widget build(BuildContext context) {
+    if (widget.native) {
+      unawaited(_native.update(_nativeModel()));
+      return const SizedBox.expand();
+    }
+    return _page(context);
+  }
+
+  Widget _page(BuildContext context) => UtilityPage(
     title: 'Notifications',
     actions: [
       IconButton(
@@ -387,39 +612,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                         padding: const EdgeInsets.only(top: 5),
                         child: UtilityHint(details),
                       ),
-                onTap:
-                    action == 'access_invitation' &&
-                        (item['invitation'] as Map?)?['status'] != null &&
-                        (item['invitation'] as Map?)?['status'] != 'pending'
-                    ? null
-                    : action != 'access_invitation'
-                    ? (action.startsWith('task_') && item['team_id'] != null
-                          ? () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => TeamBoardPage(
-                                  api: widget.api,
-                                  initialTeamId: item['team_id'].toString(),
-                                ),
-                              ),
-                            )
-                          : null)
-                    : () async {
-                        final id =
-                            (item['invitation'] as Map?)?['invitation_id']
-                                ?.toString() ??
-                            (item['metadata'] as Map?)?['invitation_id']
-                                ?.toString();
-                        if (id == null) return;
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => AccessInvitationPage(
-                              api: widget.api,
-                              invitationId: id,
-                            ),
-                          ),
-                        );
-                        if (mounted) await _load();
-                      },
+                onTap: _canOpen(item) ? () => _openItem(item) : null,
                 trailing: unread
                     ? const Icon(
                         CupertinoIcons.circle_fill,

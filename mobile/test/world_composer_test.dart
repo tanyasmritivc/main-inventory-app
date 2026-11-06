@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/features/world/smooth_typing_hint.dart';
 
 void main() {
   for (final brightness in Brightness.values) {
@@ -100,9 +101,20 @@ void main() {
         await tester.pump(const Duration(milliseconds: 65));
         expect(controller.text, isEmpty);
         expect(
-          find.text(reduced ? 'Describe your inventory…' : 'Wh'),
+          find.text(
+            reduced ? 'Describe your inventory…' : 'Where did I put my drill?',
+          ),
           findsOneWidget,
         );
+        if (!reduced) {
+          expect(
+            tester
+                .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))
+                .visibleCharacters,
+            2,
+          );
+          expect(find.byType(ShaderMask), findsOneWidget);
+        }
         await tester.enterText(find.byType(TextField), 'Keep this draft');
         await tester.pump(const Duration(seconds: 5));
         expect(controller.text, 'Keep this draft');

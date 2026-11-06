@@ -53,11 +53,7 @@ Future<void> showAccountMenu(
             leading: const Icon(Icons.notifications_none),
             title: const Text('Notifications'),
 
-            onTap: () => Navigator.of(sheet).push(
-              MaterialPageRoute<void>(
-                builder: (_) => NotificationsPage(api: api),
-              ),
-            ),
+            onTap: () => NotificationsPage.open(sheet, api: api),
           ),
           Expanded(
             child: ProfilePage(api: api, settingsOnly: true, store: profile),

@@ -85,18 +85,15 @@ class _NotificationBellState extends State<NotificationBell>
       if (widget.onOpen != null) {
         await widget.onOpen!();
       } else {
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => NotificationsPage(
-              api: widget.api,
-              onReadStarting: () => ++_generation,
-              onUnreadChanged: (count) {
-                if (mounted && widget.api.accountId == _account) {
-                  setState(() => _count = count);
-                }
-              },
-            ),
-          ),
+        await NotificationsPage.open(
+          context,
+          api: widget.api,
+          onReadStarting: () => ++_generation,
+          onUnreadChanged: (count) {
+            if (mounted && widget.api.accountId == _account) {
+              setState(() => _count = count);
+            }
+          },
         );
       }
     } finally {

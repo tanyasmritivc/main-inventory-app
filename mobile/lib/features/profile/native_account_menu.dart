@@ -235,7 +235,8 @@ Future<void> showNativeAccountMenu(
           body: ProfileEditorPage(api: api, store: profile),
         );
       case 'notifications':
-        page = NotificationsPage(api: api);
+        await NotificationsPage.open(context, api: api);
+        return;
       case 'memory':
         page = MemoryPage(api: api);
       case 'plans':

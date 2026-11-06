@@ -965,20 +965,13 @@ class _WorldShellState extends State<WorldShell> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              PopupMenuButton<String>(
+                              IconButton(
                                 tooltip: 'Add',
-                                onSelected: (_) => _openScan(),
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: 'scan',
-                                    child: Text('Scan'),
-                                  ),
-                                ],
-                                child: const SizedBox(
-                                  width: 56,
-                                  height: 56,
-                                  child: Icon(CupertinoIcons.plus, size: 26),
+                                onPressed: _openScan,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(56, 56),
                                 ),
+                                icon: const Icon(CupertinoIcons.plus, size: 26),
                               ),
                             ],
                           ),
