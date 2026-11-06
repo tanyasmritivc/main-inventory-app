@@ -1,3 +1,7 @@
+## November 5 — Saved-photo/draft-flow backend deployed
+
+Runtime `92ff7d4` from PR325 is live. All five CI jobs passed (42176414806), as did 1,562 backend tests and 123 compatible staged-source tests. Exact staged hashes matched the deployed six-file patch; unrelated live code was preserved. A real-model synthetic image probe used the exact gallery tool, recognized identical photos and explained conflicting metadata. API/database health passed and invalid authentication returned401. No schema or customer-data mutations. Mobile187 delivery is recorded in its own branch. See `docs/plans/saved-photo-draft-flow187-release.json`.
+
 ## November 5 — Saved photo comparison and draft destination creation
 
 Branch `fix/saved-photo-draft-flow` adds an authorized exact-item gallery read for model visual comparison. The model must distinguish matching saved pixels from conflicting labels and unverifiable physical identity; no record is rewritten. Creation-only proposals bind to an unnamed existing draft with its revision. Confirmation selects the receipt Space, and repeated confirmation can recover the same destination. Mobile187 combines this with an explicit save action; original draft IDs, counts, photos, duplicate checks and retry semantics remain intact. Claims about a creation card require an actual action.

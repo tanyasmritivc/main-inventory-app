@@ -1,0 +1,18 @@
+{
+  "runtime": "92ff7d43a8db255b4420869fbe407a45c430e2b9",
+  "pull_request": 325,
+  "ci_run": 42176414806,
+  "all_five_ci_jobs_passed": true,
+  "backend_tests": 1562,
+  "staged_tests": 123,
+  "staged_unrelated_baseline_exclusions": 3,
+  "real_model_photo_match": true,
+  "server_stage_hashes_match": true,
+  "no_database_mutations": true,
+  "api_health": 200,
+  "database_health": 200,
+  "invalid_authentication": 401,
+  "unrelated_live_source_preserved": true,
+  "schema_changes": false,
+  "public_app_store_changed": false
+}
