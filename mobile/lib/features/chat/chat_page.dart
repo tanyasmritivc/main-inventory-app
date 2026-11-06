@@ -271,6 +271,8 @@ class _ChatPageState extends State<ChatPage>
 
   final List<String> _pendingAttachments = [];
   AskPhoto? _photo;
+  // Display-only reference; never sent as a second scan request.
+  MemoryImage? _previewPhoto;
   Map<String, dynamic>? _previewDraft;
   bool _scanningPreview = false;
   bool _savingCapture = false;
@@ -506,6 +508,7 @@ class _ChatPageState extends State<ChatPage>
     setState(() {
       _worldHome = true;
       _previewDraft = null;
+      _previewPhoto = null;
       _scanningPreview = false;
       _photo = null;
       _pickingPhoto = false;
@@ -3105,6 +3108,7 @@ class _ChatPageState extends State<ChatPage>
         ),
       );
       _previewDraft = null;
+      _previewPhoto = null;
     });
     widget.onChatStateChanged?.call(true);
   }
@@ -3115,6 +3119,7 @@ class _ChatPageState extends State<ChatPage>
     final generation = ++_requestGeneration;
     _focusNode.unfocus();
     setState(() {
+      _previewPhoto = MemoryImage(photo.bytes);
       _photo = null;
       _scanningPreview = true;
       _pickingPhoto = true;
@@ -3181,14 +3186,39 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
+  Widget _capturePreviewSurface(BoxConstraints bounds, Widget child) {
+    if (_previewPhoto == null &&
+        const ['text', 'spreadsheet'].contains(_previewDraft?['source_kind'])) {
+      return LiquidSurface(radius: 26, child: child);
+    }
+    return Container(
+      height: _previewPhoto == null ? null : bounds.maxHeight,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xff1c1c1e)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: .08)
+              : Colors.black.withValues(alpha: .07),
+        ),
+      ),
+      child: child,
+    );
+  }
+
   Widget _capturePreview() => ConstrainedBox(
     constraints: BoxConstraints(
-      maxHeight: MediaQuery.sizeOf(context).height * .64,
+      maxHeight:
+          MediaQuery.sizeOf(context).height *
+          (_previewPhoto == null ? .64 : .78),
     ),
     child: LayoutBuilder(
-      builder: (context, bounds) => LiquidSurface(
-        radius: 26,
-        child: Material(
+      builder: (context, bounds) => _capturePreviewSurface(
+        bounds,
+        Material(
           color: Colors.transparent,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3247,6 +3277,14 @@ class _ChatPageState extends State<ChatPage>
                   ],
                 ),
               ),
+              if (_previewPhoto != null && bounds.maxHeight > 200)
+                ScanPhotoFrame(
+                  image: _previewPhoto!,
+                  scanning: _scanningPreview,
+                  height: _scanningPreview
+                      ? math.min(300, math.max(64, bounds.maxHeight - 200))
+                      : math.min(128, math.max(48, bounds.maxHeight - 330)),
+                ),
               if (_scanningPreview)
                 Flexible(
                   child: SingleChildScrollView(
@@ -3263,6 +3301,7 @@ class _ChatPageState extends State<ChatPage>
                     conversationId: _currentConversationId!,
                     draft: _previewDraft!,
                     embedded: true,
+                    photo: _previewPhoto,
                     disabled: _scanningPreview,
                     onChanged: _onCaptureChanged,
                     onSaved: () {

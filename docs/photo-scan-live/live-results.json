@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "scenario": "obscured",
+      "items": 7,
+      "confidence_values": [
+        0.85,
+        0.75,
+        0.65,
+        0.45,
+        0.35,
+        0.3,
+        0.05
+      ],
+      "unknowns": 4,
+      "returned_fields": [
+        "category",
+        "confidence",
+        "image_url",
+        "name",
+        "notes",
+        "part_number",
+        "quantity",
+        "scan_evidence",
+        "source_frame_url",
+        "subcategory",
+        "tags"
+      ],
+      "crop_count": 7,
+      "display_preserved_draft": true,
+      "no_inventory_save_requested": true
+    },
+    {
+      "scenario": "mixed-workbench",
+      "items": 8,
+      "confidence_values": [
+        0.85,
+        0.8,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "unknowns": 6,
+      "returned_fields": [
+        "category",
+        "confidence",
+        "image_url",
+        "name",
+        "notes",
+        "quantity",
+        "scan_evidence",
+        "source_frame_url",
+        "subcategory",
+        "tags"
+      ],
+      "crop_count": 8,
+      "display_preserved_draft": true,
+      "no_inventory_save_requested": true
+    },
+    {
+      "scenario": "parts-bin",
+      "items": 6,
+      "confidence_values": [
+        0.85,
+        0.8,
+        0.7,
+        0.55,
+        0.5,
+        null
+      ],
+      "unknowns": 1,
+      "returned_fields": [
+        "category",
+        "confidence",
+        "image_url",
+        "name",
+        "notes",
+        "quantity",
+        "scan_evidence",
+        "source_frame_url",
+        "subcategory",
+        "tags"
+      ],
+      "crop_count": 6,
+      "display_preserved_draft": true,
+      "no_inventory_save_requested": true
+    }
+  ],
+  "initial_server_timeouts": 2,
+  "retry_passed": true,
+  "live_save_comparison_performed": false
+}

@@ -1,0 +1,11 @@
+{
+  "base": "fc47b0d",
+  "mutation_edit_save_region_identical": true,
+  "allowed_runtime_files": [
+    "mobile/lib/features/chat/chat_capture_card.dart",
+    "mobile/lib/features/chat/chat_page.dart",
+    "mobile/lib/features/chat/extraction_progress_panel.dart",
+    "mobile/pubspec.yaml"
+  ],
+  "no_backend_api_model_dependency_changes": true
+}

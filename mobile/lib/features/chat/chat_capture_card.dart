@@ -1,4 +1,5 @@
 import '../../core/ui/content_card.dart';
+import 'extraction_progress_panel.dart' show scanMotion;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -19,6 +20,7 @@ class ChatCaptureCard extends StatefulWidget {
     this.onOpenResource,
     this.disabled = false,
     this.embedded = false,
+    this.photo,
   });
   final ApiClient api;
   final String conversationId;
@@ -27,25 +29,45 @@ class ChatCaptureCard extends StatefulWidget {
   final VoidCallback? onSaved;
   final ValueChanged<AskResourceLink>? onOpenResource;
   final bool disabled, embedded;
+  final ImageProvider? photo;
   @override
   State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
 
-class ChatCaptureCardState extends State<ChatCaptureCard> {
+class ChatCaptureCardState extends State<ChatCaptureCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _arrival;
   late Map<String, dynamic> _draft;
   bool _busy = false, _expanded = false, _choosing = false;
   String? _error;
+  Object? _highlightedRow;
   int _visibleRows = 40;
   @override
   void initState() {
     super.initState();
     _draft = widget.draft;
+    _arrival = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _arrival.dispose();
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(ChatCaptureCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.draft != widget.draft) _draft = widget.draft;
+    if (oldWidget.draft != widget.draft) {
+      if (oldWidget.draft['id'] != widget.draft['id']) {
+        _highlightedRow = null;
+        _arrival.forward(from: 0);
+      }
+      _draft = widget.draft;
+    }
   }
 
   String get _path =>
@@ -499,8 +521,504 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     );
   }
 
+  Widget _photoReview(BuildContext context) {
+    final rows = scanDisplayRows(
+      _rows,
+      missing: _rows.where(_quantityMissing).map((r) => r['index']).toSet(),
+    );
+    final selected = rows.where((r) => r['selected'] == true).length;
+    final unknown = rows.where(scanUnknown).length;
+    final firstUnknown = rows.indexWhere(scanUnknown);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final secondary = dark ? const Color(0xff98989f) : const Color(0xff6c6c70);
+    final primary = dark ? Colors.white : Colors.black;
+    final saving = _draft['status'] == 'saving';
+    final receipt = _draft['receipt'] as Map?;
+    final status = Row(
+      children: [
+        Expanded(
+          child: Text(
+            '$selected of ${rows.length} selected · Not saved yet',
+            style: TextStyle(fontSize: 13, color: secondary),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Refresh extraction',
+          onPressed: _busy || widget.disabled ? null : _refresh,
+          icon: const Icon(Icons.refresh, size: 20),
+        ),
+      ],
+    );
+    final footer = Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: primary.withValues(alpha: .08))),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_draft['space_id'] != null)
+            TextButton.icon(
+              onPressed: _editable ? _destination : null,
+              icon: const Icon(Icons.folder_outlined, size: 18),
+              label: Text('${_draft['location']}'),
+            ),
+          Text(
+            _missingRows.isNotEmpty
+                ? 'Add the missing quantities, or uncheck those items to save the rest.'
+                : _draft['space_id'] == null
+                ? 'Choose where to keep these items.'
+                : 'Ready to save to ${_draft['location']}.',
+            style: TextStyle(fontSize: 13.5, color: secondary),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: _busy || widget.disabled || selected == 0 ? null : _save,
+            style:
+                FilledButton.styleFrom(
+                  backgroundColor: primary,
+                  foregroundColor: dark ? Colors.black : Colors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(fontSize: 15),
+                ).copyWith(
+                  backgroundBuilder: (_, _, child) =>
+                      child ?? const SizedBox.shrink(),
+                ),
+            child: Text(
+              saving
+                  ? 'Retry save safely'
+                  : _missingRows.isNotEmpty
+                  ? 'Add missing quantity'
+                  : _draft['space_id'] == null
+                  ? 'Choose a Space'
+                  : 'Save items',
+            ),
+          ),
+          if (_busy && !_choosing) const LinearProgressIndicator(),
+          if (_error != null)
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          if (receipt != null) ...[
+            for (final failure in receipt['failures'] as List? ?? [])
+              Text('${failure['reason']}'),
+            for (final link
+                in (receipt['resource_links'] as List? ?? [])
+                    .map(AskResourceLink.parse)
+                    .whereType<AskResourceLink>())
+              TextButton(
+                onPressed: widget.onOpenResource == null
+                    ? null
+                    : () => widget.onOpenResource!(link),
+                child: Text('Open ${link.label}'),
+              ),
+          ],
+        ],
+      ),
+    );
+    Widget reviewStatus() => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!widget.embedded)
+          const Padding(
+            padding: EdgeInsets.only(top: 8, bottom: 4),
+            child: Text('Auto Extract', style: TextStyle(fontSize: 17)),
+          ),
+        status,
+      ],
+    );
+    Widget rowAt(int index) {
+      final row = rows[index];
+      final item = row['item'] as Map;
+      final name = scanDisplayName(row);
+      final detail = scanDetail(row);
+      final confidence = scanConfidence(row);
+      final certainty = confidence == null
+          ? null
+          : confidence >= .85
+          ? 'Confident'
+          : confidence >= .6
+          ? 'Likely'
+          : 'Not sure';
+      final color = confidence != null && confidence >= .85
+          ? const Color(0xff34c759)
+          : confidence != null && confidence >= .6
+          ? const Color(0xffe3b45c)
+          : const Color(0xff8e8e93);
+      final needsReview =
+          (item['scan_evidence'] as Map?)?['needs_review'] == true;
+      final info = _quantityMissing(row)
+          ? '${item['category'] ?? ''} · Quantity needed'
+          : '${item['category'] ?? ''} · Qty ${item['quantity']}';
+      final thumbnail =
+          item['image_url'] is String &&
+              (item['image_url'] as String).isNotEmpty
+          ? PrivateImage(
+              item['image_url'],
+              width: 52,
+              height: 52,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _thumbnailFallback(),
+            )
+          : _thumbnailFallback();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (index == firstUnknown)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+              child: Text(
+                unknown == 1
+                    ? 'Not sure about this one'
+                    : 'Not sure about these',
+                style: TextStyle(fontSize: 12, color: secondary),
+              ),
+            ),
+          Semantics(
+            container: true,
+            explicitChildNodes: true,
+            label:
+                '${index + 1}. $name. $detail. $info${certainty == null ? '' : '. $certainty'}${needsReview ? '. Needs Review' : ''}',
+            child: Material(
+              color: _highlightedRow == row['index']
+                  ? primary.withValues(alpha: .06)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                key: ValueKey('scan-row-${row['index']}'),
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => setState(() => _highlightedRow = row['index']),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 36,
+                        height: 52,
+                        child: Checkbox(
+                          key: ValueKey('scan-select-${row['index']}'),
+                          semanticLabel: '$name selected',
+                          value: row['selected'] == true,
+                          fillColor: WidgetStateProperty.resolveWith(
+                            (states) => states.contains(WidgetState.selected)
+                                ? primary
+                                : Colors.transparent,
+                          ),
+                          checkColor: dark ? Colors.black : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          onChanged: !_editable
+                              ? null
+                              : (value) => _patch({
+                                  'items': [
+                                    {'index': row['index'], 'selected': value},
+                                  ],
+                                }),
+                        ),
+                      ),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(13),
+                            child: thumbnail,
+                          ),
+                          Positioned(
+                            top: -4,
+                            left: -4,
+                            child: ExcludeSemantics(
+                              child: Container(
+                                constraints: const BoxConstraints(
+                                  minWidth: 19,
+                                  minHeight: 19,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${index + 1}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: dark ? Colors.black : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ExcludeSemantics(
+                              child: Text(
+                                name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 15.5,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                            if (detail.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 3),
+                                child: ExcludeSemantics(
+                                  child: Text(
+                                    detail,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.25,
+                                      color: primary.withValues(alpha: .78),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 5),
+                              child: ExcludeSemantics(
+                                child: Text(
+                                  info,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: secondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (certainty != null || needsReview)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Wrap(
+                                  spacing: 7,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    if (certainty != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: color,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            certainty,
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              color: secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (needsReview)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xffe3b45c,
+                                          ).withValues(alpha: dark ? .14 : .20),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Needs Review',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: dark
+                                                ? const Color(0xffe3b45c)
+                                                : const Color(0xff8a5a00),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            if (_quantityMissing(row) &&
+                                row['selected'] == true)
+                              TextButton(
+                                onPressed: _editable
+                                    ? () => _quantity(row)
+                                    : null,
+                                child: const Text('Add quantity'),
+                              ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 36,
+                        child: IconButton(
+                          tooltip: 'Edit $name',
+                          key: ValueKey('scan-edit-${row['index']}'),
+                          onPressed: _editable ? () => _edit(row) : null,
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget list({required bool bounded}) => ListView.builder(
+      key: const Key('extraction-preview-scroll'),
+      shrinkWrap: !bounded,
+      physics: bounded ? null : const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      itemCount: rows.isEmpty ? 1 : rows.length,
+      itemBuilder: (_, i) => rows.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                'No items were detected. Try a closer, well-lit photo.',
+              ),
+            )
+          : i >= 4 || MediaQuery.disableAnimationsOf(context)
+          ? rowAt(i)
+          : FadeTransition(
+              // Stagger the initially visible rows only. Offscreen rows and all
+              // controls remain immediately usable, even with a long scan.
+              opacity: _arrival.drive(
+                CurveTween(
+                  curve: Interval(
+                    i * 250 / 1200,
+                    (i * 250 + 450) / 1200,
+                    curve: scanMotion,
+                  ),
+                ),
+              ),
+              child: rowAt(i),
+            ),
+    );
+    return LayoutBuilder(
+      builder: (context, bounds) {
+        final pin =
+            bounds.hasBoundedHeight &&
+            bounds.maxHeight >= 220 &&
+            MediaQuery.textScalerOf(context).scale(16) < 28 &&
+            _error == null;
+        if (pin) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: reviewStatus(),
+              ),
+              Expanded(
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (rect) => LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: const [
+                      Colors.white,
+                      Colors.white,
+                      Colors.transparent,
+                    ],
+                    stops: [
+                      0,
+                      ((rect.height - 18) / rect.height).clamp(0.0, 1.0),
+                      1,
+                    ],
+                  ).createShader(rect),
+                  child: list(bounded: true),
+                ),
+              ),
+              footer,
+            ],
+          );
+        }
+        return SingleChildScrollView(
+          key: const Key('extraction-preview-scroll'),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: reviewStatus(),
+              ),
+              for (var i = 0; i < rows.length; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: rowAt(i),
+                ),
+              if (rows.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'No items were detected. Try a closer, well-lit photo.',
+                  ),
+                ),
+              footer,
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _thumbnailFallback() => widget.photo == null
+      ? const SizedBox(width: 52, height: 52, child: Icon(Icons.image_outlined))
+      : Image(
+          image: widget.photo!,
+          width: 52,
+          height: 52,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const SizedBox(
+            width: 52,
+            height: 52,
+            child: Icon(Icons.image_outlined),
+          ),
+        );
+
   @override
   Widget build(BuildContext context) {
+    final photo = !['text', 'spreadsheet'].contains(_draft['source_kind']);
+    if (photo && _draft['status'] != 'saved') {
+      final review = _photoReview(context);
+      return widget.embedded
+          ? review
+          : ContentCard(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              child: review,
+            );
+    }
     final rows = _rows;
     final selected = rows.where((r) => r['selected'] == true).length;
     final receipt = _draft['receipt'] as Map?;
@@ -796,4 +1314,92 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
       child: content,
     );
   }
+}
+
+/// Presentation only. The protocol's original `index` is the stable row ID;
+/// never replace it with the sorted position or mutate the draft's items.
+double? scanConfidence(Map row) {
+  final item = row['item'] as Map;
+  final raw =
+      (item['scan_evidence'] as Map?)?['identity_confidence'] ??
+      item['confidence'];
+  final value = raw is num ? raw.toDouble() : double.tryParse('$raw');
+  return value != null && value.isFinite && value >= 0 && value <= 1
+      ? value
+      : null;
+}
+
+bool scanUnknown(Map row) {
+  final name = '${(row['item'] as Map)['name'] ?? ''}'.trim().toLowerCase();
+  final confidence = scanConfidence(row);
+  return name.isEmpty ||
+      RegExp(
+        r'^(unknown|unidentified|unrecognized|unrecognised)(\b|_)',
+      ).hasMatch(name) ||
+      RegExp(r'^(object|item)(?:\s+\d+)?[.!?]?$').hasMatch(name) ||
+      (confidence != null && confidence < .5);
+}
+
+String scanDisplayName(Map row) {
+  final name = '${(row['item'] as Map)['name'] ?? ''}';
+  return name.trim().isEmpty ? 'Unknown item' : name;
+}
+
+String scanDetail(Map row) {
+  final item = row['item'] as Map;
+  final values = [
+    item['brand'] ?? item['maker'],
+    item['model'],
+    item['color'] ?? item['colour'],
+    item['material'],
+    item['size'] ?? item['dimensions'],
+    item['condition'],
+    item['description'],
+    item['notes'],
+    item['what_it_is'],
+  ];
+  return values
+      .where((v) => v != null && '$v'.trim().isNotEmpty)
+      .map((v) => '$v')
+      .join(' · ');
+}
+
+List<Map<String, dynamic>> scanDisplayRows(
+  List<Map<String, dynamic>> rows, {
+  Set<Object?> missing = const {},
+}) {
+  int group(Map row) {
+    final item = row['item'] as Map;
+    final evidence = item['scan_evidence'] as Map? ?? {};
+    if (missing.contains(row['index']) ||
+        item['quantity'] == null ||
+        '${item['category'] ?? ''}'.trim().isEmpty ||
+        evidence['quantity_basis'] == 'unknown') {
+      return 2;
+    }
+    if (evidence['needs_review'] == true ||
+        (evidence['warnings'] as List? ?? []).isNotEmpty ||
+        (evidence['review_reasons'] as List? ?? []).isNotEmpty) {
+      return 1;
+    }
+    return 0;
+  }
+
+  final indexed = rows.indexed.toList();
+  indexed.sort((a, b) {
+    final unknown = (scanUnknown(a.$2) ? 1 : 0).compareTo(
+      scanUnknown(b.$2) ? 1 : 0,
+    );
+    if (unknown != 0) return unknown;
+    final ac = scanConfidence(a.$2), bc = scanConfidence(b.$2);
+    if (ac != null && bc != null) {
+      final score = bc.compareTo(ac);
+      return score != 0 ? score : a.$1.compareTo(b.$1);
+    }
+    if (ac != null || bc != null) return ac != null ? -1 : 1;
+    if (scanUnknown(a.$2)) return a.$1.compareTo(b.$1);
+    final flags = group(a.$2).compareTo(group(b.$2));
+    return flags != 0 ? flags : a.$1.compareTo(b.$1);
+  });
+  return indexed.map((r) => r.$2).toList();
 }

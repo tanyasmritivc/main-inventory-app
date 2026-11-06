@@ -1261,8 +1261,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(focused.last, isTrue);
       expect(find.text('Reading your photo...'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        isNull,
+      );
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byKey(const Key('scan-photo-frame')), findsOneWidget);
       expect(find.byTooltip('Stop scanning').hitTestable(), findsOneWidget);
       if (previewAuditCapture != null) {
         final boundary = tester.renderObject<RenderRepaintBoundary>(

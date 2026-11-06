@@ -1,3 +1,9 @@
+## November 5 - Auto Extract review UI, TestFlight184 preparation
+
+Active branch `feat/scan-live-review`, based on exact App Store restore build183 (`fc47b0d`). User-provided `docs/photo-scan-live/` authorizes a mobile-only in-place scan/review UI and TestFlight upload. Only three existing UI files plus release metadata change at runtime. Display-only confidence sorting keeps unknowns last, stable row IDs, payloads and saved order. Fixed photo, plain sweep, opaque review card, scrollable detail list and pinned footer follow the supplied design; unavailable boxes/incremental items use the specified truthful fallback. Text/spreadsheet captures keep their existing surface.
+
+Full Flutter suite: 1,275 passed, one existing skip; final focused suite: 80 passed; analysis clean. Three real-photo scenarios completed through native Ask; two initial server timeouts passed on retry. No backend/schema/API/model/dependency/web changes. Disposable account and 24 test images cleaned up. Exact original mutation/edit/save method region and request payloads verified; no old/new live-cloud save comparison or physical-device acceptance claimed. All 11 final native layout/keyboard checks passed. Signed packaging/upload are underway. See `docs/photo-scan-live/IMPLEMENTATION.md` for scope and limitations. Do not resume the canceled web task or change the public App Store submission.
+
 ## November 5 - Public App Store source restored as TestFlight183
 
 Apple verified the current public version as 1.1.1 (166), READY_FOR_SALE. At the user's request, the exact source 00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6 was restored on release/restore-app-store-166-build183. All 662 non-version mobile files match that source, including dependencies, original fonts, screens and native code. The only application change is release metadata: 1.1.1+166 to 1.1.2+183. Runtime commit: 369febecd06fefd84bba5d0158211e6274bab06f.
