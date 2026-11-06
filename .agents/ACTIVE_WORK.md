@@ -1,3 +1,12 @@
+## November 6 — Notification policy prepared; production approval pending
+
+Lane `feat/notification-policy` adds the supplied notification package over existing
+APNs/081 queue: independent preferences, atomic global caps, quiet hours, actionable
+inbox, personal threshold migration, private payloads and bounded delivery attempts.
+1,541 Python tests and disposable PostgreSQL concurrency/schema rehearsal passed.
+No production migration, code deployment or real-user sends. Push remains disabled.
+See `docs/plans/notification-policy-20261106.md` for supported events and activation.
+
 ## October 25 — Personalization API and migration081 deployed (PR223)
 
 User explicitly authorized deployment and migration. Runtime `fbd19aa` is live with

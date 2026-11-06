@@ -10,6 +10,7 @@ import jwt
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
+from app.services import notification_policy
 
 logger = logging.getLogger(__name__)
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="apns")
@@ -61,6 +62,10 @@ def _send(
     max_attempts: int = 3,
     collapse_id: str | None = None,
 ) -> bool:
+    # Once the shared policy is active, every automatic push must use its
+    # recorded dispatcher. Legacy team CRUD/test/invitation sends cannot bypass it.
+    if notification_policy.enabled():
+        return False
     credentials = _credentials()
     if credentials is None:
         return False
