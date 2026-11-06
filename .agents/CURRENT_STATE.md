@@ -1,3 +1,7 @@
+## November 5 - Auto Extract timeout repair live
+
+Backend runtime `ed734e5` (PR #318) extends photo inference budgets and keeps quiet streams alive. Five CI gates, 1,543 backend tests, 59 staged-source checks and two first-attempt authenticated live scans passed. No mobile binary or model change; current TestFlight184 uses the repair. Details: docs/photo-scan-timeouts.md and docs/photo-scan-timeouts-release.json.
+
 ## November 4 - Import column semantics182 deployed
 
 Deployed runtime 4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0 from PR316 after all five CI gates passed (run 41979118056). 1,538 backend tests, 12 final update-return regression tests, and three staged/live-source regressions passed. Authenticated HTTPS limits and connector catalog returned200; invalid authentication returned401. The disposable QA account was removed. API/database health passed; unrelated live source is unchanged. No customer database rewrite or schema migration. See docs/import-column-semantics182-release.json.

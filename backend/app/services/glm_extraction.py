@@ -35,6 +35,10 @@ from app.services.chat_vision import image_part
 logger = logging.getLogger(__name__)
 MAX_ITEMS = 8
 BATCH_SIZE = 2
+# Grounding can legitimately take over a minute on crowded photos. Keep each
+# model call bounded and share one budget across grounding, repair and workers.
+MODEL_TIMEOUT_SECONDS = 110
+EXTRACTION_TIMEOUT_SECONDS = 240
 _deadline = ContextVar("extraction_deadline", default=None)
 Score = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
 Text = Annotated[str, Field(max_length=100)]
@@ -227,8 +231,11 @@ def _json(prompt, images, schema):
             ],
         },
     ]
+    deadline = _deadline.get()
+    if deadline is None:
+        deadline = time.monotonic() + EXTRACTION_TIMEOUT_SECONDS
     for attempt in range(2):
-        remaining = (_deadline.get() or (time.monotonic() + 90)) - time.monotonic()
+        remaining = deadline - time.monotonic()
         if remaining < 2:
             raise TimeoutError("Photo extraction deadline exceeded")
         try:
@@ -237,7 +244,7 @@ def _json(prompt, images, schema):
                 conversation_id="extraction-" + uuid4().hex,
                 max_tokens=4000,
                 options={"enabled_tools": [], "max_steps": 2},
-                request_timeout_seconds=min(40, remaining),
+                request_timeout_seconds=min(MODEL_TIMEOUT_SECONDS, remaining),
                 messages=messages,
             )
             content = (response.choices[0].message.content or "").strip()
@@ -561,7 +568,7 @@ def _group_identical(image, selected, prepared):
     return [(g['item'], g['crop']) for g in groups]
 
 def extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
-    token = _deadline.set(time.monotonic() + 100)
+    token = _deadline.set(time.monotonic() + EXTRACTION_TIMEOUT_SECONDS)
     try:
         return _extract(
             image_bytes, actor, source_url, upload=upload, on_progress=on_progress
