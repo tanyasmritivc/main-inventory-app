@@ -17,7 +17,6 @@ from app.api.routes.ai import _authorized_stream
 
 router = APIRouter(prefix='/worlds/{world_id}', tags=['world-chat'])
 logger = logging.getLogger(__name__)
-SCAN_KEEPALIVE_SECONDS = 10
 
 
 class Question(BaseModel):
@@ -148,19 +147,12 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                         filename='photo.jpg', image_bytes=photo, content_type='image/jpeg',
                         user_id=actor, source_frame_url=stored.url, on_progress=report))
                     try:
-                        last_event = loop.time()
                         while not extraction.done() or not progress.empty():
                             try:
                                 update = await asyncio.wait_for(progress.get(), timeout=0.2)
                             except asyncio.TimeoutError:
-                                if loop.time() - last_event >= SCAN_KEEPALIVE_SECONDS:
-                                    # SSE comment: keep the transport alive without
-                                    # inventing progress or restarting paid analysis.
-                                    yield ': scan keepalive\n\n'
-                                    last_event = loop.time()
                                 continue
                             yield encode({'type': 'status', 'message': update})
-                            last_event = loop.time()
                         result = await extraction
                     finally:
                         # A worker thread cannot be cancelled mid-upload. Settle it
