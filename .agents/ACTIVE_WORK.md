@@ -1,6 +1,6 @@
-## November 5 - Photo scan timeout repair
+## November 5 - Photo scan timeout repair deployed
 
-Backend lane `fix/photo-scan-timeouts` repairs repeated Auto Extract grounding ReadTimeout failures. The deployed model completed real grounding in66.9s, beyond the old40s cutoff; the whole eight-item diagnostic completed in130s. Model calls now allow110s within a shared240s extraction budget. World photo scans send SSE comment keepalives during quiet analysis; these do not invent UI progress. No provider, model, schema, save, confidence or mobile changes. Local1,543 tests and59 focused checks pass. Deployment remains pending exact-source CI and live-source QA; preserve the dirty live checkout with a two-file hash-checked patch.
+Runtime `ed734e56a3e292b23eb295b38c2a2a979af46626`, PR #318, fixes valid photo scans being cut off after 40 seconds. Calls allow 110 seconds within a shared 240-second inference budget; SSE comment keepalives preserve idle connections without fake progress. Existing model, confidence, review/save behavior and mobile184 are unchanged. All five CI gates, 1,543 backend tests and 59 staged-live-source checks passed. Two authenticated live scans returned eight-item drafts on their first attempts in 72.9/110.1 seconds. No inventory writes; temporary account and 18 images removed. Two-file guarded deployment preserved unrelated live source; API/database healthy. See docs/photo-scan-timeouts-release.json.
 
 ## November 4 - Import column semantics182 deployed
 

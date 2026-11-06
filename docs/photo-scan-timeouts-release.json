@@ -1,0 +1,49 @@
+{
+  "before": {
+    "app/api/routes/world_chat.py": "a14afdc17ae2f1889d5508520a1385d8e7f3167496b1ca60b8fba7141f274450",
+    "app/services/glm_extraction.py": "eaa6651bd991585a92b4c555e8a5fae77b51534d52f3bfcffcf61ffbd245b7e8"
+  },
+  "after": {
+    "app/api/routes/world_chat.py": "104878f1333d51fab5602387ca0457dfefa8207a38c34ccb3fdc5cb818c93b93",
+    "app/services/glm_extraction.py": "523f9f23f956c239cbe200bfe786c0e3a943b0b12cc26c6321485a42390bcaa6"
+  },
+  "source": "ed734e56a3e292b23eb295b38c2a2a979af46626",
+  "health": 200,
+  "database_health": 200,
+  "unrelated_source_preserved": true,
+  "customer_database_mutations": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/318",
+  "ci_run": 42155054509,
+  "ci_gates_passed": 5,
+  "backend_tests": 1543,
+  "staged_source_tests": 59,
+  "live_qa": {
+    "invalid_auth_denied": true,
+    "scans": [
+      {
+        "scenario": "workbench",
+        "seconds": 72.9,
+        "items": 8,
+        "unknowns": 1,
+        "keepalives": 5,
+        "max_line_gap_seconds": 10.0,
+        "draft_received": true,
+        "automatic_retries": 0
+      },
+      {
+        "scenario": "close-up",
+        "seconds": 110.1,
+        "items": 8,
+        "unknowns": 0,
+        "keepalives": 9,
+        "max_line_gap_seconds": 10.0,
+        "draft_received": true,
+        "automatic_retries": 0
+      }
+    ],
+    "no_inventory_writes": true,
+    "disposable_account_removed": true,
+    "test_images_removed": 18
+  },
+  "mobile_binary_changed": false
+}
