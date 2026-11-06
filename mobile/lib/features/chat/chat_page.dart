@@ -2,6 +2,7 @@ import 'voice_composer_session.dart';
 import 'voice_composer_panel.dart' show voiceCurve;
 import '../../core/ui/photo_source_sheet.dart';
 import 'extraction_progress_panel.dart';
+import 'scan_region.dart';
 import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
@@ -275,6 +276,7 @@ class _ChatPageState extends State<ChatPage>
   MemoryImage? _previewPhoto;
   Map<String, dynamic>? _previewDraft;
   bool _scanningPreview = false;
+  List<ScanRegion> _scanRegions = const [];
   bool _savingCapture = false;
   final _previewKey = GlobalKey<ChatCaptureCardState>();
   bool _pickingPhoto = false;
@@ -510,6 +512,7 @@ class _ChatPageState extends State<ChatPage>
       _previewDraft = null;
       _previewPhoto = null;
       _scanningPreview = false;
+      _scanRegions = const [];
       _photo = null;
       _pickingPhoto = false;
       _sending = false;
@@ -3120,6 +3123,7 @@ class _ChatPageState extends State<ChatPage>
     _focusNode.unfocus();
     setState(() {
       _previewPhoto = MemoryImage(photo.bytes);
+      _scanRegions = const [];
       _photo = null;
       _scanningPreview = true;
       _pickingPhoto = true;
@@ -3145,6 +3149,11 @@ class _ChatPageState extends State<ChatPage>
           _currentConversationId = event.conversationId;
         }
         if (event.type == 'status') setState(() => _progress = event.message);
+        if (event.type == 'scan_regions') {
+          setState(
+            () => _scanRegions = applyScanRegions(_scanRegions, event.result),
+          );
+        }
         if (event.answerContext?.chatCapture != null) {
           setState(() => _previewDraft = event.answerContext!.chatCapture);
         }
@@ -3281,6 +3290,7 @@ class _ChatPageState extends State<ChatPage>
                 ScanPhotoFrame(
                   image: _previewPhoto!,
                   scanning: _scanningPreview,
+                  regions: _scanningPreview ? _scanRegions : const [],
                   height: _scanningPreview
                       ? math.min(300, math.max(64, bounds.maxHeight - 200))
                       : math.min(128, math.max(48, bounds.maxHeight - 330)),

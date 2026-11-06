@@ -1,3 +1,9 @@
+## November 5 - Real crop overlays (build 185 delivered)
+
+Branch `feat/scan-box-overlay` preserves build184's scan/review surface and consumes additive backend `scan_regions` events. Boxes map accepted normalized crop coordinates into the actual letterboxed photo, with pending/checking/completed states, stable crop numbers and accessible descriptions. No fabricated timer-based regions; old-server fallback stays the existing sweep. Clearing/stopping/completing a scan removes overlays. Models, inference limits, concurrency, output ordering and save payloads are unchanged. Backend lane is `feat/scan-box-progress`.
+
+Validation complete: 1,281 Flutter tests passed with one existing skip; analyzer clean. Two native iOS cases and four inspected captures cover light/dark and reduced motion. All five exact-source CI gates passed (42161649041). Signed build185 and archive verify 33 device binaries each, 27 privacy manifests, signatures and production configuration. Apple validation and upload passed; delivery `34bbbcc1-2e1d-4ced-ae7c-1e24ad5bd17d`. Processing/tester availability remains pending and was not polled. See `docs/photo-scan-live/BOXES.md`. Public App Store build remains untouched.
+
 ## November 5 - Auto Extract review UI delivered as TestFlight184
 
 Active branch `feat/scan-live-review`, based on exact App Store restore build183 (`fc47b0d`). User-provided `docs/photo-scan-live/` authorizes a mobile-only in-place scan/review UI and TestFlight upload. Only three existing UI files plus release metadata change at runtime. Display-only confidence sorting keeps unknowns last, stable row IDs, payloads and saved order. Fixed photo, plain sweep, opaque review card, scrollable detail list and pinned footer follow the supplied design; unavailable boxes/incremental items use the specified truthful fallback. Text/spreadsheet captures keep their existing surface.
