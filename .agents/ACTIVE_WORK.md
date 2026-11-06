@@ -1,3 +1,7 @@
+## November 5 - Backend scan rollback completed
+
+The user canceled performance experiments and explicitly clarified that only the backend should be restored; keep the new Auto Extract UI in TestFlight184. Lane `revert/photo-scan-timeout-changes` restores the pre-PR318 extraction/stream implementation. The unshipped concurrency candidate PR319 is closed. Mobile is back on `feat/scan-live-review` with no changes; no185build was made or uploaded. Guarded restoration uses the original two-file production backup and verifies unrelated files remain intact. Restored runtime ed68c44: 1,538 tests passed; original file hashes restored, API/database healthy, invalid authentication denied. See docs/photo-scan-backend-rollback.json.
+
 ## November 5 - Photo scan timeout repair deployed
 
 Runtime `ed734e56a3e292b23eb295b38c2a2a979af46626`, PR #318, fixes valid photo scans being cut off after 40 seconds. Calls allow 110 seconds within a shared 240-second inference budget; SSE comment keepalives preserve idle connections without fake progress. Existing model, confidence, review/save behavior and mobile184 are unchanged. All five CI gates, 1,543 backend tests and 59 staged-live-source checks passed. Two authenticated live scans returned eight-item drafts on their first attempts in 72.9/110.1 seconds. No inventory writes; temporary account and 18 images removed. Two-file guarded deployment preserved unrelated live source; API/database healthy. See docs/photo-scan-timeouts-release.json.

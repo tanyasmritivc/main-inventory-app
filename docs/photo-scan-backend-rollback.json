@@ -1,0 +1,16 @@
+{
+  "restored_hashes": {
+    "app/api/routes/world_chat.py": "a14afdc17ae2f1889d5508520a1385d8e7f3167496b1ca60b8fba7141f274450",
+    "app/services/glm_extraction.py": "eaa6651bd991585a92b4c555e8a5fae77b51534d52f3bfcffcf61ffbd245b7e8"
+  },
+  "health": 200,
+  "database_health": 200,
+  "unrelated_source_preserved": true,
+  "new_scan_ui_preserved": true,
+  "mobile_binary_uploaded": false,
+  "database_changed": false,
+  "speed_experiment_deployed": false,
+  "source_commit": "ed68c44",
+  "backend_tests": 1538,
+  "invalid_auth_status": 401
+}

@@ -279,53 +279,6 @@ def test_network_timeout_does_not_retry_an_inflight_paid_request():
     assert call.call_count == 1
 
 
-@pytest.mark.parametrize('remaining,expected', [(240, 110), (27, 27)])
-def test_model_timeout_allows_slow_grounding_but_respects_remaining_budget(remaining, expected):
-    token = g._deadline.set(1000 + remaining)
-    try:
-        response = NS(choices=[NS(message=NS(content='{"items": [], "partial": false}'))])
-        with patch.object(g.time, 'monotonic', return_value=1000), \
-             patch.object(g, 'gateway_completion', return_value=response) as call:
-            g._json('test', [image_bytes()], g.Grounding)
-        assert call.call_args.kwargs['request_timeout_seconds'] == expected
-    finally:
-        g._deadline.reset(token)
-
-
-def test_json_repair_uses_remaining_budget_instead_of_starting_another_full_timeout():
-    token = g._deadline.set(1240)
-    response = NS(choices=[NS(message=NS(content='not JSON'))])
-    try:
-        with patch.object(g.time, 'monotonic', side_effect=[1000, 1239]), \
-             patch.object(g, 'gateway_completion', return_value=response) as call:
-            with pytest.raises(TimeoutError):
-                g._json('test', [image_bytes()], g.Grounding)
-        assert call.call_count == 1
-    finally:
-        g._deadline.reset(token)
-
-
-def test_extraction_workers_share_budget_and_restore_callers_context():
-    import time
-    deadlines = []
-    boxes = [g.Box(label='a', box=[0, 0, 400, 1000]),
-             g.Box(label='b', box=[600, 0, 1000, 1000])]
-    def model(prompt, images, schema):
-        deadlines.append(g._deadline.get())
-        return (g.Grounding(items=boxes, partial=False) if schema is g.Grounding
-                else g.Identities(items=[identity(), identity().model_copy(update={'index': 1})]))
-    token = g._deadline.set(17)
-    started = time.monotonic()
-    try:
-        with patch.object(g, '_json', side_effect=model):
-            g.extract(image_bytes(), None, None)
-        assert len(deadlines) == 2 and len(set(deadlines)) == 1
-        assert started + 240 <= deadlines[0] <= time.monotonic() + 240
-        assert g._deadline.get() == 17
-    finally:
-        g._deadline.reset(token)
-
-
 def test_one_failed_batch_is_explicit_unknown_partial_not_lost():
     import httpx
     boxes = [g.Box(label=name, box=coords) for name, coords in [
