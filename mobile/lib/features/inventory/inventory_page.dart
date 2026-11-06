@@ -438,7 +438,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontSize: 20,
-                    letterSpacing: 4,
+                    letterSpacing: 0,
                   ),
                 ),
                 decoration: InputDecoration(
@@ -2506,7 +2506,7 @@ class _InventoryPageState extends State<InventoryPage>
                                             fontSize: 16,
                                             height: 1.2,
                                             fontWeight: FontWeight.w400,
-                                            letterSpacing: -0.2,
+                                            letterSpacing: 0,
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
@@ -2695,7 +2695,7 @@ class _InventoryPageState extends State<InventoryPage>
                   fontSize: 10,
                   fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                  letterSpacing: 1.5,
+                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -2750,7 +2750,7 @@ class _InventoryPageState extends State<InventoryPage>
                                       ),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
-                                      letterSpacing: -0.2,
+                                      letterSpacing: 0,
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -2983,7 +2983,7 @@ class _InventoryPageState extends State<InventoryPage>
                         TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
                           fontSize: 20,
-                          letterSpacing: 4,
+                          letterSpacing: 0,
                         ),
                       ),
                       decoration: InputDecoration(
@@ -3333,7 +3333,7 @@ class _InventoryPageState extends State<InventoryPage>
                   color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: -0.5,
+                  letterSpacing: 0,
                 ),
               ),
               actions: [

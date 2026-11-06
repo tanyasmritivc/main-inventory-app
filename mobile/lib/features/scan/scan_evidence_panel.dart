@@ -184,7 +184,7 @@ class _EvidenceRow extends StatelessWidget {
                     color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                     fontSize: 10,
                     fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 2),

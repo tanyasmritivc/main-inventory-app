@@ -231,6 +231,9 @@ void main() {
           await t.pump();
           await t.pump(const Duration(milliseconds: 650));
           expect(find.text('Listening'), findsOneWidget);
+          final statusStyle = t.widget<Text>(find.text('Listening')).style!;
+          expect(statusStyle.fontFamily, 'CupertinoSystemText');
+          expect(statusStyle.fontWeight, FontWeight.w400);
           expect(t.takeException(), isNull);
           Future<void> capture(String state) async {
             if (voiceComposerCapture == null) return;
@@ -255,6 +258,11 @@ void main() {
           await t.pump();
           await t.pump(const Duration(milliseconds: 600));
           expect(find.byKey(const Key('voice-editor')), findsOneWidget);
+          final editor = t.widget<TextField>(
+            find.byKey(const Key('voice-editor')),
+          );
+          expect(editor.style?.fontFamily, 'CupertinoSystemText');
+          expect(editor.style?.letterSpacing, 0);
           expect(
             t.getSize(find.byKey(const Key('voice-editor'))).height,
             greaterThanOrEqualTo(19 * 1.38 * scale),

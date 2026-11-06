@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/app_typography.dart';
 
 abstract final class PlaceTokens {
   static const background = Color(0xFFF5F5F5),
@@ -29,12 +30,12 @@ abstract final class PlaceTokens {
     Color color = primary,
     double? spacing,
   }) => TextStyle(
-    fontFamily: 'CupertinoSystemText',
+    fontFamily: AppTypography.systemFont(size),
     fontSize: size,
     fontWeight: weight,
     color: color,
     height: 1.25,
-    letterSpacing: spacing,
+    letterSpacing: 0,
   );
   static TextStyle get title =>
       text(24, weight: FontWeight.w400, spacing: -.6).copyWith(height: 1.2);
@@ -46,7 +47,7 @@ abstract final class PlaceTokens {
     fontFamily: 'CupertinoSystemText',
     fontSize: 11,
     fontWeight: FontWeight.w400,
-    letterSpacing: .66,
+    letterSpacing: 0,
     height: 1.4,
     color: label,
   );

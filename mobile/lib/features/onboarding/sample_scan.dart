@@ -228,7 +228,7 @@ class _SampleScanCardState extends State<SampleScanCard>
                               style: TextStyle(
                                 color: Color(0xCCFFFFFF),
                                 fontSize: 11.5,
-                                letterSpacing: .8,
+                                letterSpacing: 0,
                               ),
                             ),
                             Text(

@@ -310,7 +310,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 10,
         fontWeight: FontWeight.w400,
-        letterSpacing: 1.4,
+        letterSpacing: 0,
       ),
     ),
   );

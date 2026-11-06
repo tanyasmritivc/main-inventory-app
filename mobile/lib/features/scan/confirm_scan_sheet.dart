@@ -14,7 +14,7 @@ TextStyle _kLabelStyle(BuildContext context) => TextStyle(
   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
   fontSize: 11,
   fontWeight: FontWeight.w400,
-  letterSpacing: 0.6,
+  letterSpacing: 0,
 );
 
 /// Bottom sheet that lets the user review and edit AI-detected items

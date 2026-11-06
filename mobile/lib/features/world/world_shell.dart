@@ -627,7 +627,7 @@ class _WorldShellState extends State<WorldShell> {
                     labelStyle: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      letterSpacing: -0.2,
+                      letterSpacing: 0,
                     ),
                     onSelected: widget.session.selectOrganization,
                   ),

@@ -124,7 +124,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                 style: TextStyle(
                   color: AppTheme.foreground(context, AppColors.muted),
                   fontSize: 11,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0,
                 ),
               ),
               const SizedBox(height: 16),
@@ -133,7 +133,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: -0.5,
+                  letterSpacing: 0,
                 ),
               ),
               const SizedBox(height: 14),

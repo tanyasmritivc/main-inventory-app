@@ -612,7 +612,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                       color: AppTheme.foreground(context, Colors.white38),
                       fontSize: 11,
                       fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 8),

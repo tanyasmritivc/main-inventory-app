@@ -105,7 +105,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
             Text(
               'Add ${setup.isTeam ? setup.orgName : setup.workspacePurpose} to your account?',
               style: const TextStyle(
-                fontFamily: 'CupertinoSystemText',
+                fontFamily: 'CupertinoSystemDisplay',
                 fontSize: 22,
                 fontWeight: FontWeight.w400,
               ),

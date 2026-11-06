@@ -2784,7 +2784,7 @@ class _ChatPageState extends State<ChatPage>
             fontSize: widget.worldHeading == null ? 22 : 24,
             fontWeight: FontWeight.w400,
             fontFamily: 'CupertinoSystemText',
-            letterSpacing: widget.worldHeading == null ? null : -0.6,
+            letterSpacing: 0,
             height: 1.25,
           ),
         ),

@@ -1126,7 +1126,7 @@ class _ProfilePage extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   fontWeight: FontWeight.w400,
-                                  letterSpacing: -0.1,
+                                  letterSpacing: 0,
                                 ),
                           );
                         },

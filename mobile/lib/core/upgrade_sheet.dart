@@ -96,7 +96,7 @@ class _LimitSheet extends StatelessWidget {
                       color: AppTheme.textPrimary(context),
                       fontSize: 20,
                       fontWeight: FontWeight.w400,
-                      letterSpacing: -0.3,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),
@@ -290,7 +290,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
               TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 22,
-                letterSpacing: 5,
+                letterSpacing: 0,
               ),
             ),
             decoration: InputDecoration(

@@ -491,7 +491,7 @@ class _SetupQuestionsPageState extends State<SetupQuestionsPage> {
               fontSize: 28,
               fontWeight: FontWeight.w400,
               height: 1.12,
-              letterSpacing: -.4,
+              letterSpacing: 0,
               color: AppTheme.textPrimary(context),
             ),
           ),

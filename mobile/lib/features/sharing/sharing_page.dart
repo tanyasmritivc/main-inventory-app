@@ -327,7 +327,7 @@ class _SharingPageState extends State<SharingPage> {
                                                 ),
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w400,
-                                                letterSpacing: 2,
+                                                letterSpacing: 0,
                                               ),
                                             ),
                                           ),
@@ -720,7 +720,7 @@ class _SharingPageState extends State<SharingPage> {
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 11,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.8,
+        letterSpacing: 0,
       ),
     ),
   );
@@ -1022,7 +1022,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
       fontSize: 11,
       fontWeight: FontWeight.w400,
-      letterSpacing: 0.8,
+      letterSpacing: 0,
     ),
   );
 }
@@ -1082,11 +1082,11 @@ class _ShareCodeSheet extends StatelessWidget {
               child: AppText(
                 code,
                 style: TextStyle(
-                  fontFamily: 'CupertinoSystemText',
+                  fontFamily: 'CupertinoSystemDisplay',
                   fontSize: 32,
                   fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Colors.white),
-                  letterSpacing: 10,
+                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -1261,11 +1261,11 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               style: AppTypography.bodyStyleOf(
                 context,
                 TextStyle(
-                  fontFamily: 'CupertinoSystemText',
+                  fontFamily: 'CupertinoSystemDisplay',
                   fontSize: 28,
                   fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, Colors.white),
-                  letterSpacing: 8,
+                  letterSpacing: 0,
                 ),
               ),
               decoration: InputDecoration(
@@ -1275,9 +1275,9 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                   context,
                   TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                    fontFamily: 'CupertinoSystemText',
+                    fontFamily: 'CupertinoSystemDisplay',
                     fontSize: 28,
-                    letterSpacing: 8,
+                    letterSpacing: 0,
                   ),
                 ),
                 filled: true,

@@ -1,3 +1,16 @@
+## November 5 — Match the native Settings font (build188 in validation)
+
+Active branch `fix/native-settings-font`, based on delivered build187. The user's
+latest instruction protects the Settings popup absolutely. Its Dart menu model,
+UIKit renderer, appearance controller, and profile/settings source files remain
+byte-for-byte unchanged. App-owned Flutter text uses Apple's system font proxies,
+with the display face for larger roles and normal tracking. Voice transcription,
+status and timer use the same regular system family; timer digits remain tabular.
+Existing role sizes, line heights, regular-weight policy, scaling, routes and
+behavior are preserved. Host font fixtures now load both system aliases; native
+font checks run with iOS's actual fonts. Full suite, analysis and signed TestFlight
+188 delivery are in progress. No backend, web or App Store submission changes.
+
 ## November 5 — Native Scan and draft-flow187 delivered
 
 TestFlight1.1.2(187), runtime `d3807e9`, was signed, validated and acknowledged by Apple (delivery `f3c9daa0-ccfb-4145-8f87-3ff40ffebc9c`). Processing/tester availability is pending and was not polled. The public App Store submission is unchanged. Backend `92ff7d4` is live with exact saved-photo comparison and draft destination binding.

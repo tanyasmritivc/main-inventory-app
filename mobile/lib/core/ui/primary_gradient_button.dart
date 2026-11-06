@@ -56,7 +56,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
                 ),
                 child: Center(
                   child: DefaultTextStyle.merge(
-                    style: const TextStyle(letterSpacing: 0.2),
+                    style: const TextStyle(letterSpacing: 0),
                     child: IconTheme.merge(
                       data: IconThemeData(color: fg),
                       child: DefaultTextStyle.merge(

@@ -3,38 +3,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
-Widget _app({required Brightness brightness}) => MaterialApp(
-  theme: AppTheme.create(brightness),
-  builder: (_, child) => AppTypography(child: child!),
-  home: Scaffold(
-    appBar: AppBar(title: const Text('Framework toolbar')),
-    body: Builder(
-      builder: (context) => ListView(
-        children: [
-          const AppText(
-            'Heading',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
-          const AppText(
-            'Supporting text',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          ),
-          const Text('Framework body'),
-          TextField(
-            style: AppTypography.bodyStyleOf(
-              context,
-              const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+Future<void> Function(WidgetTester tester, String name)? typographyCapture;
+
+Widget _app({required Brightness brightness}) => RepaintBoundary(
+  key: const Key('system-font-frame'),
+  child: MaterialApp(
+    theme: AppTheme.create(brightness),
+    builder: (_, child) => AppTypography(child: child!),
+    home: Scaffold(
+      appBar: AppBar(title: const Text('Framework toolbar')),
+      body: Builder(
+        builder: (context) => ListView(
+          children: [
+            const AppText(
+              'Heading',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
-            decoration: InputDecoration(
-              hintText: 'Field hint',
-              hintStyle: AppTypography.bodyStyleOf(
+            const AppText(
+              'Supporting text',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+            ),
+            const Text('Framework body'),
+            TextField(
+              style: AppTypography.bodyStyleOf(
                 context,
-                const TextStyle(fontWeight: FontWeight.w400),
+                const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              decoration: InputDecoration(
+                hintText: 'Field hint',
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  const TextStyle(fontWeight: FontWeight.w400),
+                ),
               ),
             ),
-          ),
-          FilledButton(onPressed: () {}, child: const Text('Framework button')),
-        ],
+            FilledButton(
+              onPressed: () {},
+              child: const Text('Framework button'),
+            ),
+          ],
+        ),
       ),
     ),
   ),
@@ -81,9 +89,12 @@ void main() {
           );
           expect(
             text.text.style?.fontFamily,
-            'CupertinoSystemText',
+            label == 'Heading'
+                ? 'CupertinoSystemDisplay'
+                : 'CupertinoSystemText',
             reason: label,
           );
+          expect(text.text.style?.letterSpacing, 0, reason: label);
         }
         await tester.enterText(find.byType(TextField), 'Retained input');
         expect(
@@ -107,6 +118,7 @@ void main() {
         expect(_weight(tester, 'Framework body'), FontWeight.w400);
         expect(_weight(tester, 'Heading'), FontWeight.w400);
         expect(find.text('Retained input'), findsOneWidget);
+        await typographyCapture?.call(tester, brightness.name);
         expect(tester.takeException(), isNull);
       },
     );
@@ -176,7 +188,7 @@ void main() {
     expect(text.style?.fontWeight, FontWeight.w400);
     expect(text.style?.color, Colors.orange);
     expect(text.style?.fontFamily, 'CupertinoSystemText');
-    expect(text.style?.letterSpacing, .5);
+    expect(text.style?.letterSpacing, 0);
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     expect(text.textAlign, TextAlign.right);

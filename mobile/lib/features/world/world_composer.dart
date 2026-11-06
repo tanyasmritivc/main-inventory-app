@@ -250,7 +250,7 @@ class _WorldComposerState extends State<WorldComposer>
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
-                letterSpacing: -0.3,
+                letterSpacing: 0,
                 height: 1.4,
               ),
               decoration: InputDecoration(
@@ -263,7 +263,7 @@ class _WorldComposerState extends State<WorldComposer>
                 hintStyle: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  letterSpacing: -0.3,
+                  letterSpacing: 0,
                   height: 1.4,
                 ),
                 border: InputBorder.none,

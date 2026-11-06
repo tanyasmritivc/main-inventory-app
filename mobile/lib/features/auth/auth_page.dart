@@ -874,10 +874,10 @@ class _AuthPageState extends State<AuthPage> {
           _headline,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontFamily: 'CupertinoSystemText',
+            fontFamily: 'CupertinoSystemDisplay',
             fontSize: 30,
             fontWeight: FontWeight.w400,
-            letterSpacing: -.75,
+            letterSpacing: 0,
             height: 1.12,
             color: Color(0xFF303030),
           ),

@@ -693,7 +693,7 @@ class _InviteCodeCard extends StatelessWidget {
                     color: AppTheme.foreground(context, AppColors.muted),
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
-                    letterSpacing: .5,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -702,7 +702,7 @@ class _InviteCodeCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w400,
-                    letterSpacing: 2,
+                    letterSpacing: 0,
                   ),
                 ),
               ],
