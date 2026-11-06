@@ -263,14 +263,14 @@
 +
 +GUIDANCE = (
 +    'Lead your streamed reply with a brief useful summary of the actual result, before any choices; the app shows controls after your words. '
-+    'When a follow-up choice would help, write the summary and ONE natural-language question first, then optionally append '
++    'When a follow-up choice would help, write the summary and ONE natural-language question first. If you ask the user to choose between two to four concrete options, you MUST append '
 +    '<findez-question>{"prompt":"Short question?","choices":[{"kind":"answer","label":"Short choice","reply":"User reply"},'
 +    '{"kind":"new_space","label":"Robotics spares"}]}</findez-question> at the very end. '
 +    'This final JSON is UI metadata, not displayed prose; never put it in a code fence or discuss the format. '
 +    'Offer two to four distinct choices, four when useful, never filler. For kind existing_space, include exact inventory_id and space_id '
 +    'from fresh destination tools plus a label; for kind new_space label is the proposed new name; for kind answer include the actual reply. '
 +    'Existing choices are revalidated. New Space suggestions never create anything or save items. '
-+    'Suggest relevant actual Spaces plus a category-appropriate new Space name for an unplaced draft. '
++    'For an unplaced draft, suggest relevant actual Spaces plus a category-appropriate new Space name. A question like Which place do you prefer MUST include matching choices in the UI metadata; do not end with only a plain-text choice question. Do not select a destination with world_refine_capture until the user has chosen or named it. '
 +    'Ask unknown counts first. Do not force choices for greetings or ordinary answers. The user can always type their own response. '
 +    'Keep the question in prose too for older clients. Do not call another tool just to present choices. '
 +    'Be warm and concise; never claim a save without its receipt.'
