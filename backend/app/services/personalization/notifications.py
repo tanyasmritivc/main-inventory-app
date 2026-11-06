@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from app.services.supabase_client import get_supabase_raw
 from app.services import push_notifications
+from app.services import notification_policy
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,9 @@ log = logging.getLogger(__name__)
 def dispatch(limit=50):
     if os.environ.get('FINDEZ_PERSONALIZATION_PUSH_ENABLED') != '1': return {'configured':False,'accepted':0}
     if push_notifications._credentials() is None: return {'configured':False,'accepted':0}
+    if notification_policy.enabled():
+        from app.services.notification_delivery import dispatch as policy_dispatch
+        return policy_dispatch(limit)
     client = get_supabase_raw()
     candidates = client.rpc('findez_personalization_candidates', {'p_limit':min(100,max(1,limit))}).execute().data or []
     accepted = 0
@@ -46,6 +50,9 @@ def dispatch(limit=50):
 def main():
     result=dispatch()
     get_supabase_raw().rpc('findez_personalization_cleanup',{}).execute()
+    get_supabase_raw().rpc('findez_response_feedback_cleanup',{}).execute()
+    if notification_policy.enabled():
+        get_supabase_raw().rpc('findez_notification_cleanup',{}).execute()
     print(result)  # Aggregate counts only, never tokens or content.
 
 

@@ -1,0 +1,51 @@
+{
+  "source": "a2d16cf4f079154de57b8471c36100f4f33b5084",
+  "files": {
+    "app/api/routes/notifications.py": "c4c7379b85436945f2956799a624518cbf0b83c4da3ec472d34b8026d09279b0",
+    "app/schemas/notification_preferences.py": "52533b2fcd7e344367ed0048304adcfbe33766202de79358fc0cc95ac1edaf4d",
+    "app/services/notification_delivery.py": "ed21023c4267ff413e116130abd6be4119bc719ffadfc3a063b300df24e5f3d5",
+    "app/services/notification_policy.py": "b342da2bd09edd0eb2831eae7272570e20741fff66e430fada942cc1161732a1",
+    "app/services/personalization/notifications.py": "f19132fbf0aaa57d1c58202297053fd9b6bb1f69e22d0e71a2b997cd41672dff",
+    "app/services/push_notifications.py": "3a6f1426fb085a4d3d096fd5c7bcbd143d5231f46f4ede68a05cb501c614a936"
+  },
+  "migration_sha256": "40c50de986b0d7b45c2a68fb9f063cb9ff708e19bc69bc616c6b1029fe80ca08",
+  "migration_applied": true,
+  "api_health": 200,
+  "database_health": 200,
+  "flags": {
+    "FINDEZ_NOTIFICATION_POLICY_ENABLED": "1",
+    "FINDEZ_PERSONALIZATION_PUSH_ENABLED": "0"
+  },
+  "unrelated_python_files_preserved": 136,
+  "worker_unchanged": true,
+  "push_delivery_enabled": false,
+  "backup": "/home/ubuntu/findez-notifications193-20261106/backup",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42260526841",
+  "ci_gates_passed": 5,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/332",
+  "followup_migration_sha256": "a0f656ba9e1cbcfdda32333c2352c4f830ffffcfa09e6ffcd72b1957435d52f8",
+  "backend_tests_passed": 1543,
+  "sql_assertions_passed": 58,
+  "schema_checks": {
+    "private_rls_tables": 5,
+    "private_rpcs": 16,
+    "enabled_triggers": 3,
+    "legacy_pending_replay_suppressed": true
+  },
+  "live_acceptance": {
+    "checks": {
+      "https_health_and_anonymous_denial": true,
+      "preferences_persistence_validation_conflict_and_account_isolation": true,
+      "threshold_import_server_precedence_tombstone_and_access": true,
+      "recorded_crossing_generic_inbox_deep_link_and_read_isolation": true,
+      "resolution_new_crossing_dismiss_and_clear": true,
+      "in_app_preference_applies": true,
+      "push_gate_closed_no_devices_or_delivery_attempts": true
+    },
+    "real_user_pushes_sent": false,
+    "disposable_accounts_removed": true
+  },
+  "retention_worker": "success; push gate off",
+  "physical_device_apns_acceptance": "pending",
+  "public_app_store_submission_changed": false
+}

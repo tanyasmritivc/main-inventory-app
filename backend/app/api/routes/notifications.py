@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends
+from uuid import UUID
+from zoneinfo import available_timezones
+from fastapi import APIRouter, Depends, HTTPException
+from postgrest.exceptions import APIError
+from app.schemas.notification_preferences import PreferenceChange, StockRulesChange
+from app.services import notification_policy
+from app.services.account_memory import actor_id
+from app.services.supabase_client import get_supabase_raw
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
@@ -99,6 +106,8 @@ def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, s
 
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
+    if notification_policy.enabled():
+        return policy_inbox(user)
     client = get_supabase_admin()
     invitations = notification_rows(user.user_id)
     recipient_rows = client.table("team_notification_recipients").select(
@@ -178,6 +187,11 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
 
 @router.post("/read")
 def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user)):
+    if notification_policy.enabled():
+        actor = actor_id(user)
+        count = _policy_rpc('findez_notification_inbox_action', {'p_actor':actor,'p_action':'read'})
+        invitation_rpc(actor, 'read')
+        return {'marked_read':count}
     client = get_supabase_admin()
     invitation_rpc(user.user_id, 'read')
     recipient_rows = client.table("team_notification_recipients").select(
@@ -203,3 +217,94 @@ def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user))
             rows, on_conflict="user_id,activity_id"
         ).execute()
     return {"marked_read": len(rows)}
+
+
+def _policy_rpc(name, values):
+    if not notification_policy.enabled():
+        raise HTTPException(404, 'Notification preferences are not available yet.')
+    try:
+        return get_supabase_raw().rpc(name, values).execute().data
+    except APIError as error:
+        if error.code == '42501':
+            raise HTTPException(403, 'This item is no longer available to your account.') from None
+        if error.code in {'PT409', '40001'}:
+            raise HTTPException(409, 'Preferences changed on another device. Refresh and try again.') from None
+        if error.code in {'22023','23514','22P02','23502'}:
+            raise HTTPException(422, 'Choose valid notification preferences.') from None
+        raise HTTPException(503, 'Notifications could not be updated. Try again.') from None
+    except Exception:
+        raise HTTPException(503, 'Notifications are unavailable. Try again.') from None
+
+
+@router.post('/stock-rules')
+def stock_rules(body: StockRulesChange, user: AuthenticatedUser = Depends(get_current_user)):
+    return {'rules':_policy_rpc('findez_notification_stock_rules', {
+        'p_actor':actor_id(user),'p_rules':[r.model_dump(mode='json') for r in body.rules],
+        'p_import':body.import_only})}
+
+
+@router.get('/preferences')
+def read_preferences(user: AuthenticatedUser = Depends(get_current_user)):
+    preferences = _policy_rpc('findez_notification_preferences', {'p_actor':actor_id(user),'p_timezone':notification_policy.fallback_timezone()})
+    return {'preferences':preferences,'capabilities':notification_policy.CAPABILITIES,
+            'timezones':sorted(available_timezones()),
+            'policy':{'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}}
+
+
+@router.patch('/preferences')
+def change_preferences(body: PreferenceChange, user: AuthenticatedUser = Depends(get_current_user)):
+    values = body.model_dump(mode='json',exclude_unset=True,exclude={'expected_revision'})
+    return {'preferences':_policy_rpc('findez_notification_preferences', {
+        'p_actor':actor_id(user),'p_data':values,'p_expected':body.expected_revision,
+        'p_timezone':notification_policy.fallback_timezone()})}
+
+
+def policy_inbox(user):
+    actor = actor_id(user)
+    preferences = _policy_rpc('findez_notification_preferences', {'p_actor':actor,'p_timezone':notification_policy.fallback_timezone()})
+    if not preferences['in_app_enabled']:
+        return {'notifications':[],'unread_count':0,'policy_version':1}
+    rows = _policy_rpc('findez_notification_inbox', {'p_actor':actor})
+    try:
+        hidden = {row['invitation_id'] for row in get_supabase_raw().table('notification_inbox_hidden').select('invitation_id').eq('user_id',actor).execute().data or []}
+        invitations = [dict(row,id=row['activity_id']) for row in notification_rows(actor)
+                       if row.get('invitation',{}).get('status')=='pending' and row['activity_id'] not in hidden]
+    except Exception:
+        raise HTTPException(503, 'Notifications could not be loaded. Try again.') from None
+    rows = sorted(rows+invitations,key=lambda row:row['created_at'],reverse=True)
+    return {'notifications':rows,'unread_count':sum(not row['is_read'] for row in rows),'policy_version':1}
+
+
+@router.post('/{notification_id}/dismiss')
+def dismiss_notification(notification_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    actor = actor_id(user)
+    # Authorize against the current actionable feed before hiding an invitation.
+    rows = policy_inbox(user)['notifications']
+    row = next((row for row in rows if row['id']==str(notification_id)),None)
+    if row is None:
+        return {'dismissed':True}  # idempotent; never discloses another account's ID
+    if row['action']=='access_invitation':
+        try:
+            get_supabase_raw().table('notification_inbox_hidden').upsert({'user_id':actor,'invitation_id':str(notification_id)},on_conflict='user_id,invitation_id').execute()
+        except Exception:
+            raise HTTPException(503, 'This notification could not be dismissed.') from None
+    else:
+        _policy_rpc('findez_notification_inbox_action', {'p_actor':actor,'p_action':'dismiss','p_id':str(notification_id)})
+    return {'dismissed':True}
+
+
+@router.post('/clear')
+def clear_notifications(user: AuthenticatedUser = Depends(get_current_user)):
+    # One request clears the visible snapshot; new arrivals remain visible.
+    actor = actor_id(user)
+    rows = policy_inbox(user)['notifications']
+    for row in rows:
+        if row['action']!='access_invitation':
+            _policy_rpc('findez_notification_inbox_action', {'p_actor':actor,'p_action':'dismiss','p_id':row['id']})
+    invitations = [{'user_id':actor,'invitation_id':row['id']} for row in rows if row['action']=='access_invitation']
+    if invitations:
+        try:
+            get_supabase_raw().table('notification_inbox_hidden').upsert(invitations,on_conflict='user_id,invitation_id').execute()
+        except Exception:
+            raise HTTPException(503, 'Some notifications could not be cleared. Try again.') from None
+    return {'cleared':True}

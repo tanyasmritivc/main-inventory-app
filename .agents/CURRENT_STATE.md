@@ -1,3 +1,21 @@
+## November 6 - Notification API and inbox activated; push stays off
+
+User approved production migration and API/inbox activation. Runtime
+`a2d16cf4f079154de57b8471c36100f4f33b5084`, PR332, is live with both notification
+migrations applied. All five CI checks passed in42260526841;1,543 Python tests and
+58 isolated SQL checks passed. Private backups:
+`/home/ubuntu/findez-notifications193-20261106/backup`.
+
+Live HTTPS disposable-account checks passed preferences, revision conflicts,
+threshold import/clear, recorded crossings, read/dismiss/clear, private destinations
+and account isolation. Both accounts and their synthetic inventory were removed.
+Five private RLS tables,16 private RPCs and three triggers verified; API/database
+health and retention worker pass. All136 unrelated original Python files preserved.
+The notification-only follow-up fixes PostgREST14 retries of stale revisions by
+using PT409. Push remains disabled in API environment and the existing timer wrapper;
+real-device APNs acceptance is pending. No real-user notifications were sent.
+Receipt: `docs/plans/notification-policy-release.json`. Mobile193 is uploaded (PR333).
+
 ## October 25 — Personalization API and migration081 deployed (PR223)
 
 User explicitly authorized deployment and migration. Runtime `fbd19aa` is live with
