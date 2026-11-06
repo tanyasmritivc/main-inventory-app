@@ -21,7 +21,13 @@ web, data or feature behavior changes.
 
 ## Validation and delivery
 
-Full 1,293 Flutter tests passed with one existing skip; analysis is clean.
-Native visual review and production package checks are pending. Physical-device appearance acceptance remains pending. Production target
-must be lib/main.dart; debug fixtures must never be packaged. Deliver TestFlight
-1.1.2 (190), then stop after Apple upload acknowledgment without polling processing.
+Full 1,293 Flutter tests passed with one existing skip; analysis is clean. Native
+simulator review confirmed #111111 on dark Ask, Spaces and More;
+light mode retained its original background. Native Chats/Settings renderer,
+profile and appearance sources match build189. Five CI gates passed at the exact
+runtime commit. Signed production target lib/main.dart, archive/export platform,
+signatures, privacy manifests and production configuration verified. Apple
+validation and upload succeeded. See charcoal-dark-background190-release.json.
+
+Processing/tester availability and physical-device appearance acceptance remain
+pending. No processing polling or public App Store submission changes.
