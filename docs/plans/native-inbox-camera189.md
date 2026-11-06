@@ -39,3 +39,5 @@ notification sheet, mark-read reflected on reopening, close/reopen, Photos
 selection returning 315,806 encoded bytes, and cancellation returning null.
 Protected Chats/Settings UI comparisons passed. Physical camera acceptance is
 pending.
+
+Apple validated and acknowledged TestFlight 1.1.2 (189), delivery `2964ea2b-d43b-4129-9f0b-3cdcf9619005`. Processing and tester availability were not polled. See the adjacent release JSON for source/package provenance.
