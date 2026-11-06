@@ -1,3 +1,7 @@
+## November 5 — One draft, one explicit create-and-save action
+
+New destination proposals belong inside their existing draft, not in a separate hidden creation step. Creation and item save reuse the existing endpoints and stable draft IDs. A failed save retains the created destination so retry does not create a second Space. The bottom-right system plus offers Scan and keeps the existing Auto Extract UI.
+
 ## November 1 - Stop chat response and replace App Store build (166)
 
 The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.

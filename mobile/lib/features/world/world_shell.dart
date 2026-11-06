@@ -60,7 +60,7 @@ class _WorldShellState extends State<WorldShell> {
   int _tab = 0, _revision = 0;
   bool _chatFocused = false;
   bool _loadedNavigation = false;
-  VoidCallback? _history;
+  VoidCallback? _history, _scan;
   Map<String, dynamic>? _directory;
   List<Map<String, dynamic>>? _spaceGroups;
   Object? _spacesError;
@@ -228,23 +228,43 @@ class _WorldShellState extends State<WorldShell> {
       }
       return null;
     }
-    final choice = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        children: [
-          const ListTile(title: Text('Choose inventory')),
+    final Map<String, dynamic>? choice;
+    if (usesNativePresentation) {
+      final id = await showNativeChoices(
+        context,
+        title: 'Inventory',
+        opaque: true,
+        rows: [
           for (final row in rows)
-            ListTile(
-              title: Text(row['name'].toString()),
-              subtitle: Text(row['workspace_name'].toString()),
-              onTap: () => Navigator.pop(context, row),
-            ),
+            {
+              'id': row['inventory_id'],
+              'title': row['name'],
+              'subtitle': rows.where((r) => r['name'] == row['name']).length > 1
+                  ? row['workspace_name']
+                  : '',
+            },
         ],
-      ),
-    );
+      );
+      choice = rows.where((row) => row['inventory_id'] == id).firstOrNull;
+    } else {
+      choice = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        showDragHandle: true,
+        useSafeArea: true,
+        builder: (context) => ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('Choose inventory')),
+            for (final row in rows)
+              ListTile(
+                title: Text(row['name'].toString()),
+                subtitle: Text(row['workspace_name'].toString()),
+                onTap: () => Navigator.pop(context, row),
+              ),
+          ],
+        ),
+      );
+    }
     if (choice == null || !mounted) return null;
     return _inventory(choice);
   }
@@ -547,24 +567,16 @@ class _WorldShellState extends State<WorldShell> {
   Widget _more(BuildContext context) => ListView(
     padding: const EdgeInsets.all(20),
     children: [
-      for (final label in [
-        ('Overview', CupertinoIcons.square_grid_2x2),
-        ('Review', CupertinoIcons.checkmark_seal),
-        ('Projects', CupertinoIcons.cube_box),
-        ('Documents and notes', CupertinoIcons.doc_text),
-        ('Lent items', CupertinoIcons.arrow_right_arrow_left),
-      ])
+      for (final label in [('Documents and notes', CupertinoIcons.doc_text)])
         ListTile(
           leading: Icon(label.$2),
           title: Text(label.$1),
           trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
           onTap: () => _tool(label.$1),
         ),
-      const Divider(),
       ListTile(
         leading: const Icon(CupertinoIcons.person_2),
-        title: const Text('Workspaces and team tools'),
-        subtitle: const Text('People, tasks, files, activity and settings'),
+        title: const Text('Workspaces'),
         trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: () => _push(
           WorkspaceHome(
@@ -581,6 +593,13 @@ class _WorldShellState extends State<WorldShell> {
       ),
     ],
   );
+  void _openScan() {
+    setState(() => _tab = 0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scan?.call();
+    });
+  }
+
   @override
   Widget build(BuildContext context) =>
       WorldStyle(child: Builder(builder: _buildWorld));
@@ -726,6 +745,7 @@ class _WorldShellState extends State<WorldShell> {
                             onChatStateChanged: (value) {
                               if (mounted) setState(() => _chatFocused = value);
                             },
+                            onRegisterScan: (callback) => _scan = callback,
                             onRegisterOpenHistory: (callback) {
                               _history = callback;
                             },
@@ -799,133 +819,168 @@ class _WorldShellState extends State<WorldShell> {
               ),
               if (!focused && !keyboard)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(54, 8, 54, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 288),
+                    constraints: const BoxConstraints(maxWidth: 400),
                     child: usesNativeBottomTabs
                         ? NativeBottomTabs(
                             selected: _tab,
+                            onScan: _openScan,
                             onSelected: (index) => setState(() => _tab = index),
                           )
-                        : LiquidSurface(
-                            radius: 40,
-                            quiet: true,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: SizedBox(
-                                height: 48,
-                                child: Stack(
-                                  children: [
-                                    AnimatedAlign(
-                                      alignment: Alignment(
-                                        (_tab - 1).toDouble(),
-                                        0,
-                                      ),
-                                      duration: Duration(
-                                        milliseconds:
-                                            MediaQuery.disableAnimationsOf(
-                                              context,
-                                            )
-                                            ? 0
-                                            : RetainedTabTransition
-                                                  .duration
-                                                  .inMilliseconds,
-                                      ),
-                                      curve: RetainedTabTransition.curve,
-                                      child: FractionallySizedBox(
-                                        widthFactor: 1 / 3,
-                                        heightFactor: 1,
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              28,
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: LiquidSurface(
+                                  radius: 40,
+                                  quiet: true,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: Stack(
+                                        children: [
+                                          AnimatedAlign(
+                                            alignment: Alignment(
+                                              (_tab - 1).toDouble(),
+                                              0,
                                             ),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: dark
-                                                  ? [
-                                                      Colors.white.withValues(
-                                                        alpha: .19,
-                                                      ),
-                                                      Colors.white.withValues(
-                                                        alpha: .08,
-                                                      ),
-                                                    ]
-                                                  : [
-                                                      Colors.white.withValues(
-                                                        alpha: .96,
-                                                      ),
-                                                      Colors.white.withValues(
-                                                        alpha: .64,
-                                                      ),
-                                                    ],
+                                            duration: Duration(
+                                              milliseconds:
+                                                  MediaQuery.disableAnimationsOf(
+                                                    context,
+                                                  )
+                                                  ? 0
+                                                  : RetainedTabTransition
+                                                        .duration
+                                                        .inMilliseconds,
                                             ),
-                                            border: Border.all(
-                                              color: Colors.white.withValues(
-                                                alpha: dark ? .2 : .8,
-                                              ),
-                                              width: .6,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        for (final entry in [
-                                          (
-                                            0,
-                                            CupertinoIcons.chat_bubble,
-                                            CupertinoIcons.chat_bubble_fill,
-                                            'Ask',
-                                          ),
-                                          (
-                                            1,
-                                            CupertinoIcons.square_grid_2x2,
-                                            CupertinoIcons.square_grid_2x2_fill,
-                                            'Spaces',
-                                          ),
-                                          (
-                                            2,
-                                            CupertinoIcons.ellipsis,
-                                            CupertinoIcons.ellipsis,
-                                            'More',
-                                          ),
-                                        ])
-                                          Expanded(
-                                            child: Semantics(
-                                              selected: _tab == entry.$1,
-                                              child: Tooltip(
-                                                message: entry.$4,
-                                                child: IconButton(
-                                                  tooltip: null,
-                                                  onPressed: () => setState(
-                                                    () => _tab = entry.$1,
+                                            curve: RetainedTabTransition.curve,
+                                            child: FractionallySizedBox(
+                                              widthFactor: 1 / 3,
+                                              heightFactor: 1,
+                                              child: DecoratedBox(
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(28),
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: dark
+                                                        ? [
+                                                            Colors.white
+                                                                .withValues(
+                                                                  alpha: .19,
+                                                                ),
+                                                            Colors.white
+                                                                .withValues(
+                                                                  alpha: .08,
+                                                                ),
+                                                          ]
+                                                        : [
+                                                            Colors.white
+                                                                .withValues(
+                                                                  alpha: .96,
+                                                                ),
+                                                            Colors.white
+                                                                .withValues(
+                                                                  alpha: .64,
+                                                                ),
+                                                          ],
                                                   ),
-                                                  style: IconButton.styleFrom(
-                                                    minimumSize: const Size(
-                                                      48,
-                                                      48,
-                                                    ),
-                                                  ),
-                                                  icon: Icon(
-                                                    _tab == entry.$1
-                                                        ? entry.$3
-                                                        : entry.$2,
-                                                    size: 23,
-                                                    semanticLabel: entry.$4,
+                                                  border: Border.all(
+                                                    color: Colors.white
+                                                        .withValues(
+                                                          alpha: dark ? .2 : .8,
+                                                        ),
+                                                    width: .6,
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                      ],
+                                          Row(
+                                            children: [
+                                              for (final entry in [
+                                                (
+                                                  0,
+                                                  CupertinoIcons.chat_bubble,
+                                                  CupertinoIcons
+                                                      .chat_bubble_fill,
+                                                  'Ask',
+                                                ),
+                                                (
+                                                  1,
+                                                  CupertinoIcons
+                                                      .square_grid_2x2,
+                                                  CupertinoIcons
+                                                      .square_grid_2x2_fill,
+                                                  'Spaces',
+                                                ),
+                                                (
+                                                  2,
+                                                  CupertinoIcons.ellipsis,
+                                                  CupertinoIcons.ellipsis,
+                                                  'More',
+                                                ),
+                                              ])
+                                                Expanded(
+                                                  child: Semantics(
+                                                    selected: _tab == entry.$1,
+                                                    child: Tooltip(
+                                                      message: entry.$4,
+                                                      child: IconButton(
+                                                        tooltip: null,
+                                                        onPressed: () =>
+                                                            setState(
+                                                              () => _tab =
+                                                                  entry.$1,
+                                                            ),
+                                                        style:
+                                                            IconButton.styleFrom(
+                                                              minimumSize:
+                                                                  const Size(
+                                                                    48,
+                                                                    48,
+                                                                  ),
+                                                            ),
+                                                        icon: Icon(
+                                                          _tab == entry.$1
+                                                              ? entry.$3
+                                                              : entry.$2,
+                                                          size: 23,
+                                                          semanticLabel:
+                                                              entry.$4,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 10),
+                              PopupMenuButton<String>(
+                                tooltip: 'Add',
+                                onSelected: (_) => _openScan(),
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(
+                                    value: 'scan',
+                                    child: Text('Scan'),
+                                  ),
+                                ],
+                                child: const SizedBox(
+                                  width: 56,
+                                  height: 56,
+                                  child: Icon(CupertinoIcons.plus, size: 26),
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                 ),

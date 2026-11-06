@@ -270,14 +270,41 @@ private final class NativeTabsFactory: NSObject, FlutterPlatformViewFactory {
   }
 }
 
+private final class NativeTabsContainer: UIView {
+  let bar = UITabBar()
+  let scan = UIButton(type: .system)
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    addSubview(bar)
+    addSubview(scan)
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    let gap: CGFloat = scan.isHidden ? 0 : 68
+    bar.frame = CGRect(x: 0, y: 0, width: max(0, bounds.width - gap), height: bounds.height)
+    // UITabBar reserves space below its visible capsule. Align the separate
+    // action with that capsule, not the full platform-view height.
+    let controlsHeight: CGFloat = min(bounds.height, 64)
+    scan.frame = CGRect(x: bounds.width - 56, y: max(0, (controlsHeight - 56) / 2), width: 56, height: 56)
+  }
+}
+
 private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDelegate {
-  private let bar = UITabBar()
+  private let container = NativeTabsContainer()
+  private var bar: UITabBar { container.bar }
   private let channel: FlutterMethodChannel
   private var reduceMotion = false
   init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
     channel = FlutterMethodChannel(name: "com.findez.app/native-tabs/\(id)", binaryMessenger: messenger)
     super.init()
-    bar.frame = frame
+    container.frame = frame
+    container.scan.accessibilityIdentifier = "findez.scan.menu"
+    container.scan.accessibilityLabel = "Add"
+    container.scan.showsMenuAsPrimaryAction = true
+    container.scan.menu = UIMenu(children: [UIAction(title: "Scan", image: UIImage(systemName: "viewfinder")) { [weak self] _ in
+      self?.channel.invokeMethod("scan", arguments: nil)
+    }])
     bar.items = [("Ask", "bubble.left", "bubble.left.fill"),
                  ("Spaces", "square.grid.2x2", "square.grid.2x2.fill"),
                  ("More", "ellipsis", "ellipsis")].enumerated().map { index, tab in
@@ -300,7 +327,15 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     let values = args as? [String: Any] ?? [:]
     reduceMotion = values["reduceMotion"] as? Bool ?? false
     updateMotion()
-    bar.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
+    container.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
+    container.scan.isHidden = values["scanEnabled"] as? Bool != true
+    var style: UIButton.Configuration = .gray()
+    if #available(iOS 26.0, *) { style = .glass() }
+    style.cornerStyle = .capsule
+    style.baseForegroundColor = .label
+    style.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 25, weight: .regular))
+    container.scan.configuration = style
+    container.setNeedsLayout()
     if let index = values["selected"] as? Int, let items = bar.items, items.indices.contains(index), bar.selectedItem !== items[index] {
       bar.selectedItem = items[index]
     }
@@ -321,7 +356,7 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
   func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
     channel.invokeMethod("selected", arguments: item.tag)
   }
-  func view() -> UIView { bar }
+  func view() -> UIView { container }
   deinit {
     NotificationCenter.default.removeObserver(self)
     channel.setMethodCallHandler(nil)

@@ -339,7 +339,10 @@ void main() {
     expect(find.text('Parts drawers'), findsOneWidget);
     await tester.tap(find.byTooltip('More'));
     await tester.pumpAndSettle();
-    expect(find.text('Workspaces and team tools'), findsOneWidget);
+    expect(find.text('Workspaces'), findsOneWidget);
+    for (final removed in ['Overview', 'Review', 'Projects', 'Lent items']) {
+      expect(find.text(removed), findsNothing);
+    }
     expect(find.byType(OrganizationPill), findsNothing);
     expect(tester.getTopLeft(find.text('More')).dy, lessThan(110));
     await worldAuditCapture?.call('more');

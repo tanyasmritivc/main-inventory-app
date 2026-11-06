@@ -203,11 +203,13 @@ Future<String?> showNativeChoices(
   BuildContext context, {
   required String title,
   required List<Map<String, dynamic>> rows,
+  bool opaque = false,
 }) async {
   final selected = await NativePresentation.show(
     context,
     model: {
       'title': title,
+      'opaque': opaque,
       'sections': [
         {'rows': rows},
       ],

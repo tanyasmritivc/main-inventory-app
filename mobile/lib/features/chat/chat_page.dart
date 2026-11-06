@@ -62,6 +62,7 @@ class ChatPage extends StatefulWidget {
     this.inPageView = false,
     this.onRegisterReset,
     this.onRegisterOpenHistory,
+    this.onRegisterScan,
     this.onChatStateChanged,
     this.onBack,
     this.pageController,
@@ -90,6 +91,7 @@ class ChatPage extends StatefulWidget {
   final bool inPageView;
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
+  final void Function(VoidCallback)? onRegisterScan;
   final void Function(bool hasMessages)? onChatStateChanged;
   final VoidCallback? onBack;
   final PageController? pageController;
@@ -2453,6 +2455,9 @@ class _ChatPageState extends State<ChatPage>
     unawaited(_prefetchInventorySnapshot());
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
+    widget.onRegisterScan?.call(() {
+      if (mounted) unawaited(_selectChatSource('auto_extract'));
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -3532,6 +3537,9 @@ class _ChatPageState extends State<ChatPage>
           api: widget.api,
           conversationId: _currentConversationId!,
           draft: message.answerContext!.chatCapture!,
+          creationAction: _creationForCapture(
+            message.answerContext!.chatCapture!,
+          ),
           disabled: _sending,
           onChanged: _onCaptureChanged,
           onSaved: widget.onInventoryMutated,
@@ -3554,22 +3562,45 @@ class _ChatPageState extends State<ChatPage>
       if (!isTyping)
         for (final action
             in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])
-          WorldActionCard(
-            key: ValueKey(action['id']),
-            onCaptureChanged: _onCaptureChanged,
-            api: widget.api,
-            action: action,
-            onOpenResource: widget.onOpenDestination == null
-                ? null
-                : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
-            onSaved: widget.onInventoryMutated,
-            onChanged: (updated) {
-              action.clear();
-              action.addAll(updated);
-            },
-          ),
+          if (action['capture_destination'] is! Map ||
+              !_session.messages.any(
+                (m) =>
+                    m.answerContext?.chatCapture?['id'] ==
+                    (action['capture_destination'] as Map)['capture_id'],
+              ))
+            WorldActionCard(
+              key: ValueKey(action['id']),
+              onCaptureChanged: _onCaptureChanged,
+              api: widget.api,
+              action: action,
+              onOpenResource: widget.onOpenDestination == null
+                  ? null
+                  : (link) =>
+                        unawaited(widget.onOpenDestination!(link.toJson())),
+              onSaved: widget.onInventoryMutated,
+              onChanged: (updated) {
+                action.clear();
+                action.addAll(updated);
+              },
+            ),
     ],
   );
+
+  Map<String, dynamic>? _creationForCapture(Map<String, dynamic> draft) {
+    for (final message in _session.messages.reversed) {
+      for (final action
+          in message.answerContext?.worldActions ?? <Map<String, dynamic>>[]) {
+        final binding = action['capture_destination'];
+        if (binding is Map &&
+            binding['capture_id'] == draft['id'] &&
+            (action['status'] == 'pending' ||
+                action['status'] == 'confirmed')) {
+          return action;
+        }
+      }
+    }
+    return null;
+  }
 
   Widget _photoPreview() => Padding(
     key: const Key('ask-photo-preview'),

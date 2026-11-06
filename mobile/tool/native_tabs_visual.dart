@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 
@@ -42,7 +43,39 @@ class _AuditState extends State<_Audit> {
                 children: [
                   for (final title in ['Ask', 'Spaces', 'More'])
                     Center(
-                      child: Text(title, style: const TextStyle(fontSize: 30)),
+                      child: Builder(
+                        builder: (context) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(title, style: const TextStyle(fontSize: 30)),
+                            TextButton(
+                              onPressed: () async {
+                                final chosen = await showNativeChoices(
+                                  context,
+                                  title: 'Inventory',
+                                  opaque: true,
+                                  rows: [
+                                    for (final name in [
+                                      'Bathroom',
+                                      'Garage',
+                                      'Home Workshop',
+                                      'Keyboard',
+                                      'Travel',
+                                    ])
+                                      {'id': name, 'title': name},
+                                  ],
+                                );
+                                if (context.mounted && chosen != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(chosen)),
+                                  );
+                                }
+                              },
+                              child: const Text('New space'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -55,9 +88,10 @@ class _AuditState extends State<_Audit> {
               padding: const EdgeInsets.only(bottom: 10),
               child: Center(
                 child: SizedBox(
-                  width: 288,
+                  width: 358,
                   child: NativeBottomTabs(
                     selected: selected,
+                    onScan: () => setState(() => selected = 0),
                     onSelected: (i) => setState(() => selected = i),
                   ),
                 ),
