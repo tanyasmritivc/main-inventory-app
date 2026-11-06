@@ -276,21 +276,14 @@ private final class NativeTabsFactory: NSObject, FlutterPlatformViewFactory {
 
 private final class NativeTabsContainer: UIView {
   let bar = UITabBar()
-  let scan = UIButton(type: .system)
   override init(frame: CGRect) {
     super.init(frame: frame)
     addSubview(bar)
-    addSubview(scan)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   override func layoutSubviews() {
     super.layoutSubviews()
-    let gap: CGFloat = scan.isHidden ? 0 : 68
-    bar.frame = CGRect(x: 0, y: 0, width: max(0, bounds.width - gap), height: bounds.height)
-    // UITabBar reserves space below its visible capsule. Align the separate
-    // action with that capsule, not the full platform-view height.
-    let controlsHeight: CGFloat = min(bounds.height, 64)
-    scan.frame = CGRect(x: bounds.width - 56, y: max(0, (controlsHeight - 56) / 2), width: 56, height: 56)
+    bar.frame = bounds
   }
 }
 
@@ -299,22 +292,23 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
   private var bar: UITabBar { container.bar }
   private let channel: FlutterMethodChannel
   private var reduceMotion = false
+  private var selectedIndex = 0
   init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
     channel = FlutterMethodChannel(name: "com.findez.app/native-tabs/\(id)", binaryMessenger: messenger)
     super.init()
     container.frame = frame
-    container.scan.accessibilityIdentifier = "findez.scan.menu"
-    container.scan.accessibilityLabel = "Add"
-    container.scan.accessibilityHint = "Take a photo to add items, or choose from Photos"
-    container.scan.addAction(UIAction { [weak self] _ in
-      self?.channel.invokeMethod("scan", arguments: nil)
-    }, for: .touchUpInside)
-    bar.items = [("Ask", "bubble.left", "bubble.left.fill"),
-                 ("Spaces", "square.grid.2x2", "square.grid.2x2.fill"),
-                 ("More", "ellipsis", "ellipsis")].enumerated().map { index, tab in
-      let item = UITabBarItem(title: tab.0, image: UIImage(systemName: tab.1), selectedImage: UIImage(systemName: tab.2))
-      item.tag = index
-      item.accessibilityIdentifier = "findez.tab.\(tab.0.lowercased())"
+    bar.items = [("Ask", "bubble.left", "bubble.left.fill", 0),
+                 ("", "plus", "plus", -1),
+                 ("Spaces", "square.grid.2x2", "square.grid.2x2.fill", 1)].map { tab in
+      let item = UITabBarItem(title: tab.0.isEmpty ? nil : tab.0,
+        image: UIImage(systemName: tab.1), selectedImage: UIImage(systemName: tab.2))
+      item.tag = tab.3
+      item.accessibilityIdentifier = tab.3 == -1 ? "findez.scan.menu" : "findez.tab.\(tab.0.lowercased())"
+      if tab.3 == -1 {
+        item.accessibilityLabel = "Add"
+        item.accessibilityHint = "Take a photo to add items, or choose from Photos"
+        item.imageInsets = UIEdgeInsets(top: 6, left: 0, bottom: -6, right: 0)
+      }
       return item
     }
     bar.delegate = self
@@ -332,16 +326,12 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     reduceMotion = values["reduceMotion"] as? Bool ?? false
     updateMotion()
     container.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
-    container.scan.isHidden = values["scanEnabled"] as? Bool != true
-    var style: UIButton.Configuration = .gray()
-    if #available(iOS 26.0, *) { style = .glass() }
-    style.cornerStyle = .capsule
-    style.baseForegroundColor = .label
-    style.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 25, weight: .regular))
-    container.scan.configuration = style
-    container.setNeedsLayout()
-    if let index = values["selected"] as? Int, let items = bar.items, items.indices.contains(index), bar.selectedItem !== items[index] {
-      bar.selectedItem = items[index]
+    bar.items?.first(where: { $0.tag == -1 })?.isEnabled = values["scanEnabled"] as? Bool == true
+    if let index = values["selected"] as? Int,
+       let item = bar.items?.first(where: { $0.tag == index }), item.tag >= 0,
+       bar.selectedItem !== item {
+      selectedIndex = index
+      bar.selectedItem = item
     }
   }
   // Pace UIKit's own Liquid Glass animations through the public layer clock.
@@ -358,6 +348,13 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     layer.beginTime = parentTime
   }
   func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+    if item.tag == -1 {
+      // The center item is an action, never a retained destination.
+      tabBar.selectedItem = tabBar.items?.first(where: { $0.tag == selectedIndex })
+      channel.invokeMethod("scan", arguments: nil)
+      return
+    }
+    selectedIndex = item.tag
     channel.invokeMethod("selected", arguments: item.tag)
   }
   func view() -> UIView { container }

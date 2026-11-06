@@ -21,6 +21,7 @@ class _Audit extends StatefulWidget {
 class _AuditState extends State<_Audit> {
   int selected = 0;
   bool dark = true;
+  int scans = 0;
   @override
   Widget build(BuildContext context) => MaterialApp(
     builder: (context, child) => GestureDetector(
@@ -41,7 +42,7 @@ class _AuditState extends State<_Audit> {
               child: RetainedTabTransition(
                 index: selected,
                 children: [
-                  for (final title in ['Ask', 'Spaces', 'More'])
+                  for (final title in ['Ask', 'Spaces'])
                     Center(
                       child: Builder(
                         builder: (context) => Column(
@@ -80,6 +81,7 @@ class _AuditState extends State<_Audit> {
                 ],
               ),
             ),
+            Text('Camera action: $scans'),
             TextButton(
               onPressed: () => setState(() => dark = !dark),
               child: const Text('Switch appearance'),
@@ -91,7 +93,10 @@ class _AuditState extends State<_Audit> {
                   width: 358,
                   child: NativeBottomTabs(
                     selected: selected,
-                    onScan: () => setState(() => selected = 0),
+                    onScan: () => setState(() {
+                      scans++;
+                      selected = 0;
+                    }),
                     onSelected: (i) => setState(() => selected = i),
                   ),
                 ),

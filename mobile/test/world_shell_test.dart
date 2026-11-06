@@ -262,6 +262,13 @@ void main() {
       return fallback(request);
     };
     await mount(tester);
+    final ask = tester.getCenter(find.byTooltip('Ask'));
+    final add = tester.getCenter(find.byTooltip('Add'));
+    final spaces = tester.getCenter(find.byTooltip('Spaces'));
+    expect(add.dx, closeTo((ask.dx + spaces.dx) / 2, 1));
+    expect(add.dy, ask.dy);
+    expect(spaces.dy, ask.dy);
+    expect(find.byTooltip('More'), findsNothing);
     final heading = find.text('Create your inventory world.');
     await tester.tap(find.byTooltip('Spaces'));
     await tester.pump();
@@ -289,7 +296,7 @@ void main() {
     );
     final content = tester.getRect(find.byKey(const ValueKey('world-content')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('More'));
+    await tester.tap(find.byTooltip('Ask'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(
@@ -337,14 +344,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Workbench'), findsNothing);
     expect(find.text('Parts drawers'), findsOneWidget);
-    await tester.tap(find.byTooltip('More'));
+    await tester.tap(find.byTooltip('Close Space search'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Account settings'));
     await tester.pumpAndSettle();
     expect(find.text('Workspaces'), findsOneWidget);
+    expect(find.byTooltip('More'), findsNothing);
     for (final removed in ['Overview', 'Review', 'Projects', 'Lent items']) {
       expect(find.text(removed), findsNothing);
     }
     expect(find.byType(OrganizationPill), findsNothing);
-    expect(tester.getTopLeft(find.text('More')).dy, lessThan(110));
     await worldAuditCapture?.call('more');
     await tester.tap(find.byTooltip('Ask'));
     await tester.pumpAndSettle();
@@ -397,7 +406,7 @@ void main() {
     await tester.tap(find.text('Classroom books'));
     await tester.pumpAndSettle();
     expect(find.textContaining('On the classroom shelf.'), findsWidgets);
-    expect(find.byTooltip('More'), findsNothing);
+    expect(find.byTooltip('Spaces'), findsNothing);
     expect(
       fixture.requests.map((r) => r.path),
       contains('/worlds/personal/conversations/chat-books'),
@@ -414,7 +423,7 @@ void main() {
     fixture.respond = (request) =>
         request.path.endsWith('/conversations') ? [] : fallback(request);
     await mount(tester, size: const Size(320, 568), scale: 2);
-    for (final label in ['Spaces', 'More', 'Ask']) {
+    for (final label in ['Spaces', 'Ask']) {
       await tester.tap(find.byTooltip(label));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -467,7 +476,7 @@ void main() {
             'HapticFeedbackType.lightImpact',
           ]),
         );
-        expect(find.byTooltip('More'), findsNothing);
+        expect(find.byTooltip('Spaces'), findsNothing);
         expect(find.byTooltip('Account'), findsNothing);
         expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
         final list = find.byType(ListView).first;
@@ -494,7 +503,7 @@ void main() {
         );
         await tester.tap(find.byTooltip('Back'));
         await tester.pumpAndSettle();
-        expect(find.byTooltip('More'), findsOneWidget);
+        expect(find.byTooltip('Spaces'), findsOneWidget);
         expect(find.text('What about the charger?'), findsOneWidget);
         expect(find.text('Create your inventory world.'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());

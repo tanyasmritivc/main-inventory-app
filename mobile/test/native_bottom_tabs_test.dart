@@ -114,18 +114,18 @@ void main() {
       expect(selected, 1);
       expect(changes, 1);
       expect(configurations.last['selected'], 1);
-      for (final invalid in [-1, 3, '2', null, 1]) {
+      for (final invalid in [-1, 2, 3, '2', null, 1]) {
         await nativeEvent(invalid);
       }
       await nativeEvent(2, method: 'unknown');
       expect(changes, 1);
       update(() {
-        selected = 2;
+        selected = 0;
         dark = true;
       });
       await tester.pumpAndSettle();
       expect(configurations.last, {
-        'selected': 2,
+        'selected': 0,
         'scanEnabled': true,
         'dark': true,
         'reduceMotion': false,

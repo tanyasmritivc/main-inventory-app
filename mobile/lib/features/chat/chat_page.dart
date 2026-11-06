@@ -3133,6 +3133,31 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
+  void _closeCapturePreview() {
+    if (!_scanningPreview && _previewDraft != null) {
+      _publishPreview();
+      return;
+    }
+    // Closing an unfinished extraction must retire its stream and restore the
+    // regular home when there is no conversation, without clearing typed text.
+    _requestGeneration++;
+    final active = _activeReply;
+    _activeReply = null;
+    if (active != null) unawaited(active.cancel());
+    final hasMessages = _session.messages.isNotEmpty;
+    setState(() {
+      _scanningPreview = false;
+      _pickingPhoto = false;
+      _progress = null;
+      _previewDraft = null;
+      _previewPhoto = null;
+      _scanRegions = const [];
+      _worldHome = !hasMessages;
+      if (!hasMessages) _currentConversationId = null;
+    });
+    widget.onChatStateChanged?.call(hasMessages);
+  }
+
   void _publishPreview() {
     final draft = _previewDraft;
     if (draft == null) return;
@@ -3299,6 +3324,8 @@ class _ChatPageState extends State<ChatPage>
                     IconButton(
                       tooltip: _scanningPreview
                           ? 'Stop scanning'
+                          : _previewDraft == null
+                          ? 'Cancel extraction'
                           : 'Keep draft in chat',
                       icon: const Icon(CupertinoIcons.xmark, size: 18),
                       style: IconButton.styleFrom(
@@ -3307,20 +3334,7 @@ class _ChatPageState extends State<ChatPage>
                         ).colorScheme.onSurface.withValues(alpha: .05),
                         minimumSize: const Size(44, 44),
                       ),
-                      onPressed: () {
-                        if (_scanningPreview) {
-                          _requestGeneration++;
-                          final active = _activeReply;
-                          _activeReply = null;
-                          if (active != null) unawaited(active.cancel());
-                          setState(() {
-                            _scanningPreview = false;
-                            _pickingPhoto = false;
-                            _progress = null;
-                          });
-                        }
-                        _publishPreview();
-                      },
+                      onPressed: _closeCapturePreview,
                     ),
                   ],
                 ),
