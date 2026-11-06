@@ -1270,11 +1270,12 @@ void main() {
       final pending = StreamController<AiStreamEvent>();
       addTearDown(pending.close);
       final focused = <bool>[];
+      final api = _AskApi(world: true, pending: pending);
       await tester.pumpWidget(
         RepaintBoundary(
           key: const Key('preview-audit-frame'),
           child: _page(
-            _AskApi(world: true, pending: pending),
+            api,
             photoPicker: (_) async => AskPhoto(bytes: png),
             onChatStateChanged: focused.add,
           ),
@@ -1353,6 +1354,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Keep this draft'), findsOneWidget);
       expect(find.text('Review extraction'), findsNothing);
+      expect(focused.last, isFalse);
+      expect(find.text('Find your things.'), findsOneWidget);
       pending.add(
         AiStreamEvent(
           type: 'scan_regions',
@@ -1365,10 +1368,52 @@ void main() {
       );
       await tester.pump();
       expect(find.byKey(const ValueKey('scan-region-0')), findsNothing);
+      api.pending = null;
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pumpAndSettle();
+      expect(api.commands, ['Keep this draft']);
+      expect(api.conversationIds, [null]);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets('closing extraction preserves an existing conversation', (
+    tester,
+  ) async {
+    final api = _AskApi(world: true);
+    final focused = <bool>[];
+    late VoidCallback scan;
+    await tester.pumpWidget(
+      _page(
+        api,
+        initialMessage: 'Where are my tools?',
+        photoPicker: (_) async => AskPhoto(bytes: png),
+        onRegisterScan: (callback) => scan = callback,
+        onChatStateChanged: focused.add,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final pending = StreamController<AiStreamEvent>();
+    addTearDown(pending.close);
+    api.pending = pending;
+    scan();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byTooltip('Stop scanning'));
+    await tester.pumpAndSettle();
+    expect(find.text('Review extraction'), findsNothing);
+    expect(find.text('Where are my tools?'), findsOneWidget);
+    expect(focused.last, isTrue);
+    api.pending = null;
+    await tester.enterText(find.byType(TextField).first, 'And the drill?');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    expect(api.conversationIds, [null, 'conversation-1']);
+    expect(api.commands.last, 'And the drill?');
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('reset ignores late photo picker completion', (tester) async {
     final picker = Completer<AskPhoto?>();

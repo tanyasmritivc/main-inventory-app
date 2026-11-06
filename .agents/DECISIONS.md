@@ -1,3 +1,11 @@
+## November 6 - Center scan action and Spaces utilities
+
+The native bottom bar has two destinations, Ask and Spaces, with an unlabeled
+plus action between them. Plus retains direct camera/Photos entry. More is a
+compact section inside Spaces with the same three links. Unfinished extraction
+cancellation returns empty chat to the full home and preserves existing messages
+or typed text; completed draft retention remains unchanged.
+
 ## November 6 — Light-mode surface and border roles
 
 Keep light pages white, use opaque light-gray surfaces for cards/inputs, and give

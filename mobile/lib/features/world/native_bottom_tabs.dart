@@ -77,7 +77,7 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
           final index = call.arguments;
           if (index is int &&
               index >= 0 &&
-              index < 3 &&
+              index < 2 &&
               index != widget.selected) {
             widget.onSelected(index);
           }

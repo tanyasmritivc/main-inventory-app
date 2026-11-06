@@ -1,3 +1,10 @@
+## November 6 - Navigation and scan cancellation (192), in progress
+
+Mobile-only fix/navigation-scan-return192: move the three More links into a
+compact Spaces section; center Ask, plus action, Spaces in the same native bar.
+Preserve direct camera/Photos functionality. Closing unfinished extraction returns
+to usable chat/home and retires late stream events. No other product changes.
+
 ## November 6 — Light-mode contrast delivered (191)
 
 TestFlight 1.1.2 (191), runtime `d0a137a09e8bbbdcd7ef5722199f807b857333fb`, PR330.

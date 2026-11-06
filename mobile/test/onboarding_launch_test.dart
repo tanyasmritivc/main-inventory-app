@@ -293,11 +293,13 @@ void main() {
       if (usesNativeBottomTabs) {
         tester
             .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
-            .onSelected(2);
+            .onSelected(1);
       } else {
-        await tester.tap(find.byTooltip('More'));
+        await tester.tap(find.byTooltip('Spaces'));
       }
       await settleHome(tester);
+      await tester.ensureVisible(find.text('Workspaces'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
@@ -338,11 +340,13 @@ void main() {
       if (usesNativeBottomTabs) {
         tester
             .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
-            .onSelected(2);
+            .onSelected(1);
       } else {
-        await tester.tap(find.byTooltip('More'));
+        await tester.tap(find.byTooltip('Spaces'));
       }
       await settleHome(tester);
+      await tester.ensureVisible(find.text('Workspaces'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
