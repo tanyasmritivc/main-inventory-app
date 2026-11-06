@@ -1,0 +1,52 @@
+{
+  "version": "1.1.2",
+  "build": 194,
+  "source_commit": "0ed6e31bd8f11ae877e41e8c37f204d4cc9ada49",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "9704e8543ae2be2abc28db84a6399db5c8c047ff53493280edfb183ddf781e3c",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "c8d554da-0751-4359-9cae-a14b328743ff",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/334",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42264330435",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1305,
+  "flutter_tests_skipped": 1,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "simulator": "iPhone 16e, iOS26.2",
+    "fixture": "tool/plans_extraction_visual.dart",
+    "checks": {
+      "plans_light_visual": true,
+      "plans_dark_visual": true,
+      "yearly_selection_prices": true,
+      "extraction_light_visual": true,
+      "extraction_dark_visual": true,
+      "native_close_returns_to_app": true,
+      "read_only_row_tap_no_action": true,
+      "native_long_list_scroll": true,
+      "native_read_only_accessibility_trait": true
+    },
+    "physical_device_acceptance": "pending; Dynamic Type, VoiceOver and swipe dismissal not certified",
+    "screenshots": {
+      "extraction-dark.png": "a6768514c37caa5804bb0612e35b12dd6a3c52ccd1e9de92e575eefd3be81d28",
+      "extraction-light.png": "85bd7e372a35af34693fe11abbc1c1fc69b52bce71e159d99454b815339b983e",
+      "extraction-long-dark.png": "a3c8c1ccd65549ec8370825f398f898315cf28b45b9657f8af73cf7a6fc58190",
+      "plans-dark.png": "cf5f829b442005aad6cc8879d45c0d8f981e7d19dbe574e055e82b119b5b35d8",
+      "plans-light.png": "f964539287e78350cd229ef03464907b74667c5b2499c68f46f16d0e37d1d562",
+      "plans-yearly-dark.png": "07a4eb1f2bdfe21134098d18851e69b7a672dc4a5adc46d7413648c4ddb3e274"
+    }
+  },
+  "physical_device_acceptance": "pending",
+  "backend_changed": false,
+  "web_changed": false,
+  "settings_and_chats_presentation_changed": false,
+  "pricing_or_entitlements_changed": false
+}

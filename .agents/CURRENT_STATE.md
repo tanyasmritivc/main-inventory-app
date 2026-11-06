@@ -1,15 +1,21 @@
-## November 6 — Plans and extraction presentation (194, in progress)
+## November 6 — Plans and extraction presentation delivered (194)
 
-Lane `fix/plans-extraction194` scopes theme-aware surfaces and a segmented billing
-selector to the mobile Plans page. Pricing, quotas and prelaunch behavior are unchanged;
-onboarding keeps its existing presentation. Extraction details uses the existing native
-grouped-sheet renderer with read-only rows, a native close button and dynamic type.
-Settings and Chats models and their existing row behavior remain unchanged.
+TestFlight 1.1.2 (194), runtime `0ed6e31bd8f11ae877e41e8c37f204d4cc9ada49`, PR334,
+branch `fix/plans-extraction194`. Plans now uses theme-aware cards, the consistent
+page background and a Cupertino billing-period selector. Pricing, quotas,
+prelaunch behavior and onboarding presentation are unchanged. Extraction details
+uses the existing UIKit grouped-sheet renderer with native close and read-only
+rows. Settings and Chats retain their existing presentation and behavior.
 
-All 1,305 Flutter tests passed (one existing skip); analysis is clean. Native iOS26.2
-simulator review passed for both themes, annual pricing, read-only rows, long-list
-scrolling and close dismissal. Signed delivery is in progress. Physical-device
-acceptance remains pending. No backend, web or database changes.
+All 1,305 Flutter tests passed (one existing skip); analysis is clean. iOS26.2
+simulator visual review passed in both themes, annual pricing, read-only row taps,
+long-list scrolling and close dismissal. All five exact-runtime CI gates passed
+in42264330435. Signed archive/export verification passed for33 device executables,
+27 privacy manifests and production configuration. Apple validation passed and
+upload was acknowledged: `c8d554da-0751-4359-9cae-a14b328743ff`.
+Processing/tester availability were not polled. Physical-device Dynamic Type,
+VoiceOver and swipe acceptance remain pending. No backend, web or database changes.
+Receipt: `docs/plans/plans-extraction194-release.json`. Signed IPA/archive preserved.
 
 ## November 6 — Notification preferences uploaded (193)
 
