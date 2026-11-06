@@ -1,3 +1,20 @@
+## November 6 — Charcoal dark background delivered (190)
+
+TestFlight 1.1.2 (190), runtime `baf086e89eaeb35bc7129cf870754bce66219eb2`, PR329.
+The shared dark page background is #111111, sampled from the user's ElevenLabs
+reference. Main tabs, nested pages, retained-tab paint and scroll fades use the
+same shade. Light mode, elevated cards and native Chats/Settings styling remain.
+
+Validation: 1,293 Flutter tests passed (one existing skip), clean analysis,
+simulator dark Ask/Spaces/More pixel checks plus light-mode
+visual review. All five exact-source CI gates passed. Production archive/export
+signatures, 33 device executables each,
+27 privacy manifests and production configuration verified.
+Apple validated and acknowledged upload: `5d99dd9c-6700-4809-ac83-801ad35e1a34`. Processing and
+tester availability are pending and were not polled; physical-device appearance
+acceptance remains pending. Public App Store, backend, web and database unchanged.
+See `docs/plans/charcoal-dark-background190-release.json`.
+
 ## November 6 — Native Notifications and direct camera delivered (189)
 
 TestFlight 1.1.2 (189), runtime `f45f46cdac940b3edca6f0e2de30f6b260aff119`, PR328.

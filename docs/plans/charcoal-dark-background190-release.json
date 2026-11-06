@@ -1,0 +1,92 @@
+{
+  "version": "1.1.2",
+  "build": 190,
+  "source_commit": "baf086e89eaeb35bc7129cf870754bce66219eb2",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "5d02fbcf4ec4971a9617e720be88a06e7acc6bdf3883915107f7faf98aea620f",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "5d99dd9c-6700-4809-ac83-801ad35e1a34",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/329",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42188069377",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1293,
+  "flutter_tests_skipped": 1,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "checks": {
+      "reference_sampled": true,
+      "native_compilation": true,
+      "dark_main_tabs_match_111111": true,
+      "scoped_route_error_background_matches_111111": true,
+      "light_mode_retains_white": true,
+      "visual_review_completed": true,
+      "protected_settings_chats_sources_unchanged": true
+    },
+    "screenshots": {
+      "spaces-dark.png": {
+        "dominant_rgb": [
+          17,
+          17,
+          17
+        ],
+        "pixel_count": 2431576
+      },
+      "ask-light.png": {
+        "dominant_rgb": [
+          255,
+          255,
+          255
+        ],
+        "pixel_count": 2338772
+      },
+      "more-light.png": {
+        "dominant_rgb": [
+          255,
+          255,
+          255
+        ],
+        "pixel_count": 2519376
+      },
+      "space-error-dark.png": {
+        "dominant_rgb": [
+          17,
+          17,
+          17
+        ],
+        "pixel_count": 2930194
+      },
+      "more-dark.png": {
+        "dominant_rgb": [
+          17,
+          17,
+          17
+        ],
+        "pixel_count": 2765740
+      },
+      "ask-dark.png": {
+        "dominant_rgb": [
+          17,
+          17,
+          17
+        ],
+        "pixel_count": 2285016
+      }
+    },
+    "limitations": [
+      "Synthetic nested inventory fixture lacks detail data; scoped route check covered its error background, not populated detail content.",
+      "Physical-device appearance acceptance pending."
+    ],
+    "simulator": "iPhone16e iOS26.2"
+  },
+  "reference_background": "#111111",
+  "previous_main_tab_background": "#000000",
+  "physical_device_acceptance": "pending"
+}

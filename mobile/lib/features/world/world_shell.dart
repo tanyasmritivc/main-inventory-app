@@ -1,3 +1,4 @@
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
 import '../../core/ui/content_loading.dart';
@@ -702,7 +703,7 @@ class _WorldShellState extends State<WorldShell> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final focused = _tab == 0 && _chatFocused;
     return Scaffold(
-      backgroundColor: dark ? Colors.black : Colors.white,
+      backgroundColor: dark ? AppColors.background : Colors.white,
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: !dark && !_chatFocused && _tab == 0

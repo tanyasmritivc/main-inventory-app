@@ -1,3 +1,4 @@
+import '../../core/ui/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/navigation_motion.dart';
 
@@ -128,7 +129,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
                           child: Material(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                ? Colors.black
+                                ? AppColors.background
                                 : Colors.white,
                             child: widget.children[i],
                           ),

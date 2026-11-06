@@ -1,3 +1,10 @@
+## November 6 — Charcoal dark page background
+
+Use #111111 (sampled RGB17,17,17 from the user's ElevenLabs screenshots) as the
+shared dark page background. Main tabs, retained transition layers and scroll-edge
+fades must consume AppColors.background rather than opaque black. Keep light mode,
+elevated cards, native Chats/Settings sheets, shadows and media/QR colors intact.
+
 ## November 6 — Notifications sheet and direct camera
 
 Keep existing Chats and Settings native presentation untouched. Notifications
