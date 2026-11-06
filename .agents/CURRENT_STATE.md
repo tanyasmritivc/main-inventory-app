@@ -1,3 +1,16 @@
+## November 6 — Plans and extraction presentation (194, in progress)
+
+Lane `fix/plans-extraction194` scopes theme-aware surfaces and a segmented billing
+selector to the mobile Plans page. Pricing, quotas and prelaunch behavior are unchanged;
+onboarding keeps its existing presentation. Extraction details uses the existing native
+grouped-sheet renderer with read-only rows, a native close button and dynamic type.
+Settings and Chats models and their existing row behavior remain unchanged.
+
+All 1,305 Flutter tests passed (one existing skip); analysis is clean. Native iOS26.2
+simulator review passed for both themes, annual pricing, read-only rows, long-list
+scrolling and close dismissal. Signed delivery is in progress. Physical-device
+acceptance remains pending. No backend, web or database changes.
+
 ## November 6 — Notification preferences uploaded (193)
 
 Lane `feat/notification-preferences193` implements the supplied notification package's

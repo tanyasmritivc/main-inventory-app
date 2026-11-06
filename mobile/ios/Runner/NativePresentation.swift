@@ -298,7 +298,8 @@ private final class NativeListController: UITableViewController, UISearchResults
     cell.accessibilityIdentifier = data["id"] as? String
     cell.isAccessibilityElement = data["value"] == nil
     cell.accessibilityLabel = [data["title"] as? String, data["subtitle"] as? String].compactMap { $0 }.joined(separator: ", ")
-    cell.accessibilityTraits = .button
+    cell.accessibilityTraits = data["readOnly"] as? Bool == true ? .staticText : .button
+    if data["readOnly"] as? Bool == true { cell.selectionStyle = .none }
     if data["checked"] as? Bool == true { cell.accessibilityTraits.insert(.selected) }
 
     if let value = data["value"] as? Bool {
@@ -314,7 +315,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     tableView.deselectRow(at: indexPath, animated: true)
     let data = row(indexPath)
-    if data["value"] is Bool { return }
+    if data["value"] is Bool || data["readOnly"] as? Bool == true { return }
     if let child = data["children"] as? [String: Any], let owner = owner {
       navigationController?.pushViewController(NativeListController(page: child, owner: owner), animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions))
     } else { owner?.perform(data) }

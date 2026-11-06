@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/app_theme.dart';
+import '../../core/ui/content_card.dart';
 import '../../core/plan_catalog.dart';
 
 /// Static highlights keep the glass finish calm and respect reduced motion.
@@ -64,95 +66,93 @@ class PlanPeriodSelector extends StatelessWidget {
 }
 
 class PlanCard extends StatelessWidget {
-  const PlanCard({super.key, required this.plan, required this.annual});
+  const PlanCard({
+    super.key,
+    required this.plan,
+    required this.annual,
+    this.adaptive = false,
+  });
+  final bool adaptive;
   final FindEZPlan plan;
   final bool annual;
   @override
   Widget build(BuildContext context) {
     final price = annual ? plan.annual : plan.monthly;
-    return BluePlanSurface(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText(
-              plan.name,
-              style: const TextStyle(color: BluePlanSurface.ink, fontSize: 20),
-            ),
+    final ink = adaptive ? AppTheme.textPrimary(context) : BluePlanSurface.ink;
+    final muted = adaptive
+        ? AppTheme.textSecondary(context)
+        : BluePlanSurface.muted;
+    final content = Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(plan.name, style: TextStyle(color: ink, fontSize: 20)),
+          const SizedBox(height: 6),
+          AppText(
+            plan.description,
+            style: TextStyle(color: muted, fontSize: 14, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          AppText(
+            '\$$price${price == 0
+                ? ''
+                : annual
+                ? '/year'
+                : '/month'}',
+            style: TextStyle(color: ink, fontSize: 28),
+          ),
+          if (annual && price > 0) ...[
             const SizedBox(height: 6),
             AppText(
-              plan.description,
-              style: const TextStyle(
-                color: BluePlanSurface.muted,
-                fontSize: 14,
-                height: 1.4,
-              ),
+              'About \$${(price / 12).toStringAsFixed(2)}/month, billed yearly',
+              style: TextStyle(color: muted, fontSize: 12),
             ),
-            const SizedBox(height: 12),
-            AppText(
-              '\$$price${price == 0
-                  ? ''
-                  : annual
-                  ? '/year'
-                  : '/month'}',
-              style: const TextStyle(color: BluePlanSurface.ink, fontSize: 28),
-            ),
-            if (annual && price > 0) ...[
-              const SizedBox(height: 6),
-              AppText(
-                'About \$${(price / 12).toStringAsFixed(2)}/month, billed yearly',
-                style: const TextStyle(
-                  color: BluePlanSurface.muted,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            ...plan.features.map(
-              (feature) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Icon(
-                        Icons.check_rounded,
-                        size: 16,
-                        color: BluePlanSurface.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: AppText(
-                        feature,
-                        style: const TextStyle(
-                          color: BluePlanSurface.ink,
-                          fontSize: 14,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (price > 0)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: null,
-                  style: OutlinedButton.styleFrom(
-                    disabledForegroundColor: BluePlanSurface.muted,
-                    side: const BorderSide(color: Color(0x558D8D8D)),
-                  ),
-                  child: const AppText('Coming soon'),
-                ),
-              ),
           ],
-        ),
+          const SizedBox(height: 16),
+          ...plan.features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(Icons.check_rounded, size: 16, color: ink),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AppText(
+                      feature,
+                      style: TextStyle(color: ink, fontSize: 14, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (price > 0)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: null,
+                style: OutlinedButton.styleFrom(
+                  disabledForegroundColor: muted,
+                  backgroundColor: adaptive ? Colors.transparent : null,
+                  side: BorderSide(
+                    color: adaptive
+                        ? AppTheme.border(context)
+                        : const Color(0x558D8D8D),
+                  ),
+                ),
+                child: const AppText('Coming soon'),
+              ),
+            ),
+        ],
       ),
     );
+    return adaptive
+        ? ContentCard(padding: EdgeInsets.zero, child: content)
+        : BluePlanSurface(child: content);
   }
 }
