@@ -1,4 +1,4 @@
-## November 6 — Notification preferences prepared (193)
+## November 6 — Notification preferences uploaded (193)
 
 Lane `feat/notification-preferences193` implements the supplied notification package's
 mobile interface. Preferences use the existing native grouped-sheet renderer;
@@ -12,7 +12,14 @@ simulator reviewed in light/dark: preferences load, quiet-hour child selection,
 inbox dismissal and menus. Backend PR332 adds private policy API/schema, 1,541
 Python tests and 57 SQL checks. Production migration requires approval; the API
 flag and real-device APNs delivery remain pending. No production data changed.
-Build193 publication is being prepared; prior192 release remains preserved.
+Apple acknowledged 1.1.2 (193), runtime `3ce1959f9e1adbc25deddf0f50c1c735da63cd7d`,
+PR333, delivery `66387503-b2f4-4fb2-b6a8-cece838b0cb7`. All five exact-runtime CI
+jobs passed in42250147908. Apple validation, strict signatures, 33 device
+executables and27 privacy manifests passed. Processing/tester availability were
+not polled. IPA/archive and prior192 remain preserved. Receipt:
+`docs/plans/notification-mobile193-release.json`.
+Until backend activation, new preferences stay hidden and legacy inbox remains;
+phone-local alert sends are retired. Push delivery is not yet device-verified.
 
 ## November 6 - Navigation and scan return delivered (192)
 
