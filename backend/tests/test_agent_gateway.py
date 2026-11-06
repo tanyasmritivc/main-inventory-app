@@ -80,3 +80,14 @@ def test_legacy_memory_extraction_does_not_promote_answers_or_call_gateway():
         asyncio.run(extract_and_save_memory('user-1', 'Where are the M4 screws?', 'Invented fact'))
     gateway.assert_not_called()
     database.assert_not_called()
+
+
+def test_raw_stream_is_explicit_without_replacing_supplied_tools():
+    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()):
+        client = AgentGatewayClient()
+    with patch.object(client.chat.completions, '_stream', return_value=iter([])) as stream:
+        client.chat.completions.create(messages=[], stream=True)
+        assert stream.call_args.args[0]['tools'] == []
+        tools = [{'type': 'function', 'function': {'name': 'lookup'}}]
+        client.chat.completions.create(messages=[], stream=True, tools=tools)
+        assert stream.call_args.args[0]['tools'] == tools
