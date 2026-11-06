@@ -1,0 +1,6 @@
+{
+  "build": 184,
+  "locale": "en-US",
+  "whatsNew": "Photo scan: your photo stays on screen while it scans. Review shows the most confident items first with full returned details, and unknown items last. UI only; scanning and saving work the same. The current API has no object boxes, so this build uses the no-outline fallback. Test light/dark/System mode, selection, editing, missing quantities, keyboard, stop and saving to a Space.",
+  "verified": true
+}

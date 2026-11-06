@@ -11,8 +11,8 @@
   "uploaded": true,
   "apple_validation": true,
   "delivery_uuid": "5b391775-07b8-4aa7-90df-765ee273b9e2",
-  "processing": "pending, not polled",
-  "tester_availability": "unverified",
+  "processing": "VALID, observed while adding requested notes",
+  "tester_availability": "not checked",
   "public_app_store_submission_changed": false,
   "full_mobile_tests_passed": 1275,
   "existing_skips": 1,
@@ -29,5 +29,5 @@
   "qa_account_removed": true,
   "qa_images_removed": 24,
   "branch": "feat/scan-live-review",
-  "testflight_notes": "pending build record"
+  "testflight_notes": "saved and verified"
 }
