@@ -1,3 +1,7 @@
+## November 5 — Progress and streamed follow-up choices186
+
+Branch `feat/chat-progress-choices-mobile` retains the scan review and real crop boxes from185. Scan progress now advances on received stages and checked crops, with three diagonal shimmer placeholders; reduced motion is static. Public scan/chat status wording varies within its actual activity. Draft cards wait for the model summary. The optional model-authored question sheet presents two to four choices, supports a custom reply, ignores stale turns, and never saves/creates anything itself. New text chunks still render immediately with the existing glyph fade. Full regression validation and delivery are in progress; native light/dark/reduced-motion progress and chooser checks passed (six retained images). Backend companion removes an unnecessary READY/final model pass; upstream first-token generation still adds latency.
+
 ## November 5 - Auto Extract review UI delivered as TestFlight184
 
 Active branch `feat/scan-live-review`, based on exact App Store restore build183 (`fc47b0d`). User-provided `docs/photo-scan-live/` authorizes a mobile-only in-place scan/review UI and TestFlight upload. Only three existing UI files plus release metadata change at runtime. Display-only confidence sorting keeps unknowns last, stable row IDs, payloads and saved order. Fixed photo, plain sweep, opaque review card, scrollable detail list and pinned footer follow the supplied design; unavailable boxes/incremental items use the specified truthful fallback. Text/spreadsheet captures keep their existing surface.

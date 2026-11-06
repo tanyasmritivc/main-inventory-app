@@ -1,3 +1,7 @@
+## November 5 — Progress and streamed follow-up choices186
+
+Branch `feat/chat-progress-choices-mobile` retains the scan review and real crop boxes from185. Scan progress now advances on received stages and checked crops, with three diagonal shimmer placeholders; reduced motion is static. Public scan/chat status wording varies within its actual activity. Draft cards wait for the model summary. The optional model-authored question sheet presents two to four choices, supports a custom reply, ignores stale turns, and never saves/creates anything itself. New text chunks still render immediately with the existing glyph fade. Full regression validation and delivery are in progress; native light/dark/reduced-motion progress and chooser checks passed (six retained images). Backend companion removes an unnecessary READY/final model pass; upstream first-token generation still adds latency.
+
 ## November 5 - Real crop overlays (build 185 delivered)
 
 Branch `feat/scan-box-overlay` preserves build184's scan/review surface and consumes additive backend `scan_regions` events. Boxes map accepted normalized crop coordinates into the actual letterboxed photo, with pending/checking/completed states, stable crop numbers and accessible descriptions. No fabricated timer-based regions; old-server fallback stays the existing sweep. Clearing/stopping/completing a scan removes overlays. Models, inference limits, concurrency, output ordering and save payloads are unchanged. Backend lane is `feat/scan-box-progress`.

@@ -1,3 +1,5 @@
+import 'package:mobile/features/chat/chat_capture_card.dart';
+import 'package:mobile/features/chat/chat_question_sheet.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -199,6 +201,92 @@ void main() {
       (_) async => null,
     );
   });
+
+  testWidgets(
+    'draft waits for streamed summary; choices send one reply after completion',
+    (tester) async {
+      final stream = StreamController<AiStreamEvent>();
+      final api = _FocusApi(pending: stream);
+      await _mount(tester, api);
+      await _send(tester, 'I have two motors');
+      final data = AskAnswerContext.fromJson({
+        'chat_capture': {
+          'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          'version': 1,
+          'revision': 1,
+          'status': 'draft',
+          'source_kind': 'text',
+          'items': [
+            {
+              'index': 0,
+              'selected': true,
+              'item': {'name': 'Motors', 'category': 'Robotics', 'quantity': 2},
+            },
+          ],
+        },
+        'question': {
+          'id': 'question-1',
+          'prompt': 'Where should these go?',
+          'choices': [
+            {
+              'kind': 'existing_space',
+              'label': 'Workshop',
+              'detail': 'Hardware',
+              'reply': 'Use Workshop.',
+            },
+            {
+              'kind': 'new_space',
+              'label': 'Robotics spares',
+              'detail': 'New Space',
+              'reply': 'Create Robotics spares for review.',
+            },
+          ],
+        },
+      });
+      stream.add(
+        AiStreamEvent(
+          type: 'capture',
+          conversationId: 'capture-chat',
+          answerContext: data,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(ChatCaptureCard), findsNothing);
+      expect(find.byType(ChatQuestionSheet), findsNothing);
+      stream.add(
+        AiStreamEvent(type: 'delta', delta: 'Your motors are drafted. '),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining('Your motors are drafted.'), findsOneWidget);
+      expect(find.byType(ChatCaptureCard), findsNothing);
+      stream.add(AiStreamEvent(type: 'delta', delta: 'Where should these go?'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining('Where should these go?'), findsOneWidget);
+      stream.add(
+        AiStreamEvent(
+          type: 'done',
+          conversationId: 'capture-chat',
+          answerContext: data,
+        ),
+      );
+      await stream.close();
+      await tester.pumpAndSettle();
+      expect(find.byType(ChatQuestionSheet), findsOneWidget);
+      expect(find.text('Robotics spares'), findsOneWidget);
+      await tester.tap(find.text('Robotics spares'));
+      await tester.pumpAndSettle();
+      expect(
+        api.requests.where((r) => r == 'Create Robotics spares for review.'),
+        hasLength(1),
+      );
+      expect(find.byType(ChatQuestionSheet), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   for (final brightness in Brightness.values) {
     testWidgets(

@@ -1,3 +1,4 @@
+import 'chat_question.dart';
 import 'chat_item_action.dart';
 import 'dart:typed_data';
 
@@ -93,7 +94,9 @@ class AskAnswerContext {
     this.worldActions = const [],
     this.chatCapture,
     this.photoAttachment,
+    this.question,
   });
+  final ChatQuestion? question;
   final Map<String, dynamic>? chatCapture, photoAttachment;
   final List<AskResourceLink> resourceLinks;
   final List<AskSource> sources;
@@ -177,6 +180,7 @@ class AskAnswerContext {
       }
     }
     return AskAnswerContext(
+      question: ChatQuestion.parse(json['question']),
       chatCapture: parseChatCapture(json['chat_capture']),
       photoAttachment: parsePhotoAttachment(json['photo_attachment']),
       resourceLinks:
