@@ -64,6 +64,12 @@ migration and Memory independence. Rehearsed against production function definit
 in a disposable local database; no production data was copied or changed.
 The worker change preserves the deployed response-feedback retention call.
 
+Review: [PR332](https://github.com/tanyasmritivc/main-inventory-app/pull/332),
+runtime `7dc3531a1d54622fc261b04235b47b5e26c75c9b`. All five CI jobs passed in
+[42249433722](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42249433722).
+The live-function rehearsal passed all 57 SQL assertions. The local test database
+was stopped after verification. Production schema, code and push gate remain unchanged.
+
 ## Activation and rollback
 
 1. Obtain explicit production database approval. Preserve a schema/function backup
