@@ -1,3 +1,4 @@
+import '../app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'native_menu_button.dart';
 import 'native_presentation.dart';
@@ -22,7 +23,7 @@ class LiquidSurface extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final solid = MediaQuery.highContrastOf(context);
     final rounding = BorderRadius.circular(radius);
-    final base = dark ? const Color(0xFF262626) : const Color(0xFFF4F4F4);
+    final base = dark ? const Color(0xFF262626) : AppTheme.lightSurface;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: rounding,
@@ -38,7 +39,7 @@ class LiquidSurface extends StatelessWidget {
       child: ClipRRect(
         borderRadius: rounding,
         child: BackdropFilter(
-          enabled: !solid,
+          enabled: !solid && dark,
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -48,37 +49,32 @@ class LiquidSurface extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   base.withValues(
-                    alpha: solid
+                    alpha: solid || !dark
                         ? 1
                         : quiet
-                        ? (dark ? .85 : .60)
-                        : (dark ? .95 : .78),
+                        ? .85
+                        : .95,
                   ),
                   base.withValues(
-                    alpha: solid
+                    alpha: solid || !dark
                         ? 1
                         : quiet
-                        ? (dark ? .75 : .44)
-                        : (dark ? .85 : .60),
+                        ? .75
+                        : .85,
                   ),
                 ],
               ),
               border: Border.all(
-                width: .7,
-                color: (dark ? Colors.white : const Color(0xFF555555))
-                    .withValues(
-                      alpha: solid
-                          ? .5
-                          : dark
-                          ? .18
-                          : .14,
-                    ),
+                width: dark ? .7 : 1,
+                color: !dark
+                    ? AppTheme.adaptiveBorder(context, Colors.white)
+                    : Colors.white.withValues(alpha: solid ? .5 : .18),
               ),
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: rounding,
-                gradient: solid
+                gradient: solid || !dark
                     ? null
                     : LinearGradient(
                         begin: Alignment.topCenter,

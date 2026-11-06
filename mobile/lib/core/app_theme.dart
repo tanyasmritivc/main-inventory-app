@@ -66,7 +66,7 @@ class AppTheme {
             surfaceContainer: lightSurface2,
             surfaceContainerHigh: Color(0xFFE6E6E6),
             outline: BrandColors.inkSoft,
-            outlineVariant: BrandColors.hairline,
+            outlineVariant: lightBorder,
             error: BrandColors.danger,
             onError: BrandColors.paper,
             errorContainer: Color(0xFFF2F2F2),
@@ -143,8 +143,8 @@ class AppTheme {
       ),
       dividerTheme: DividerThemeData(
         color: adapt(AppColors.border),
-        thickness: 0.5,
-        space: 0.5,
+        thickness: brightness == Brightness.dark ? 0.5 : 1,
+        space: brightness == Brightness.dark ? 0.5 : 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -155,7 +155,12 @@ class AppTheme {
         contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: adapt(AppColors.border), width: 0.5),
+          borderSide: BorderSide(
+            color: brightness == Brightness.dark
+                ? adapt(AppColors.border)
+                : lightControlBorder,
+            width: brightness == Brightness.dark ? 0.5 : 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
@@ -171,7 +176,10 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
-          side: BorderSide(color: adapt(AppColors.border), width: 0.5),
+          side: BorderSide(
+            color: adapt(AppColors.border),
+            width: brightness == Brightness.dark ? 0.5 : 1,
+          ),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -366,9 +374,10 @@ class AppTheme {
 
   // Light mode colors
   static const Color lightBg = BrandColors.paper;
-  static const Color lightSurface = BrandColors.paper;
-  static const Color lightSurface2 = BrandColors.surface;
-  static const Color lightBorder = BrandColors.hairline;
+  static const Color lightSurface = Color(0xFFF3F3F5);
+  static const Color lightSurface2 = Color(0xFFE9E9ED);
+  static const Color lightBorder = Color(0xFFB8B8BF);
+  static const Color lightControlBorder = Color(0xFF85858A);
   static const Color lightBorderHover = Color(0x66000000);
   static const Color lightTextPrimary = BrandColors.ink;
   static const Color lightTextSecondary = BrandColors.inkSoft;
@@ -438,6 +447,21 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark
       ? darkBorder
       : lightBorder;
+
+  /// Visible neutral outlines for legacy surfaces, without treating a translucent
+  /// decoration color as a text color or changing its dark-mode treatment.
+  static Color adaptiveBorder(BuildContext context, Color darkColor) =>
+      isDark(context)
+      ? adaptive(context, darkColor)
+      : MediaQuery.highContrastOf(context)
+      ? lightControlBorder
+      : lightBorder;
+
+  static Color controlBorder(BuildContext context) => isDark(context)
+      ? darkBorder
+      : MediaQuery.highContrastOf(context)
+      ? lightTextSecondary
+      : lightControlBorder;
 
   static Color borderHover(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark

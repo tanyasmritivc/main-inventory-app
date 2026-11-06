@@ -1,3 +1,21 @@
+## November 6 — Light-mode contrast delivered (191)
+
+TestFlight 1.1.2 (191), runtime `d0a137a09e8bbbdcd7ef5722199f807b857333fb`, PR330.
+Light mode now separates white pages, opaque gray surfaces and inset fills;
+field outlines and neutral separators remain visible across shared themes,
+composer, cards, item forms, scanning, sharing and secondary pages. Native
+Chats/Settings presentation and dark-mode treatment are preserved.
+
+Validation: 53 focused checks and all 1,293 Flutter tests passed (one existing
+skip); analysis is clean. Native light/dark layout, form and photo-popup checks
+passed with retained screenshots reviewed. Border and hint contrast are measured
+in regression checks. All five exact-source CI gates passed. Production archive
+and export signatures, 33 device executables
+and 27 privacy manifests verified. Apple validated and
+acknowledged upload: `4df7bdeb-5fc6-49ab-b36d-eaf513474dd2`. Processing/tester availability and
+physical-device acceptance are pending; no processing polling. Public App Store,
+backend, web and database unchanged. See `docs/plans/light-mode-contrast191-release.json`.
+
 ## November 6 — Charcoal dark background delivered (190)
 
 TestFlight 1.1.2 (190), runtime `baf086e89eaeb35bc7129cf870754bce66219eb2`, PR329.

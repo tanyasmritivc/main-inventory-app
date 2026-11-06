@@ -1,0 +1,54 @@
+{
+  "version": "1.1.2",
+  "build": 191,
+  "source_commit": "d0a137a09e8bbbdcd7ef5722199f807b857333fb",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "e3bafa72bd10bedd4f6a9b6ea3f1cde24d19256a4f4f5ec20c2013dc9fb10b37",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "4df7bdeb-5fc6-49ab-b36d-eaf513474dd2",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/330",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42192431667",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1293,
+  "flutter_tests_skipped": 1,
+  "focused_tests_passed": 53,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "checks": {
+      "native_fourteen_cases_passed": true,
+      "composited_input_border_and_hint_contrast_passed": true,
+      "light_composer_menu_forms_and_photo_choices_visually_reviewed": true,
+      "dark_composer_forms_and_photo_choices_visually_reviewed": true,
+      "native_settings_chats_sources_unchanged": true,
+      "ten_frames_retained": true
+    },
+    "cases_passed": 14,
+    "frame_retention_rerun_cases_passed": 4,
+    "simulator": "iPhone16e iOS26.2",
+    "screenshots": {
+      "item-details-dark.png": "7b21d13141eaf1d5209bb66ae7273eac61ee60551487238f709439d1688c6c73",
+      "item-details-bottom-light.png": "268fbe43b808499395b6ada73b7d9f87c5919c06a1038dca2ce789c1ef7061be",
+      "item-details-light.png": "268fbe43b808499395b6ada73b7d9f87c5919c06a1038dca2ce789c1ef7061be",
+      "ask-light.png": "ce6a4f0df553630d061c71448ffb0168a206ee0c0062154d747e21ac3cd82e49",
+      "attachments-dark.png": "b82c30f17e2867c18b215634c5a1bfa1243c6f3b02bf1247ae427fdc2cebec8f",
+      "item-details-bottom-dark.png": "7b21d13141eaf1d5209bb66ae7273eac61ee60551487238f709439d1688c6c73",
+      "photo-textures-dark.png": "27adabf50b29f7071bb4077ca58319ddfd0d46e99262f6915bf3701371d401e7",
+      "attachments-light.png": "924fee948e78724307805b4ed6ba43c077b62bc62a179d8adbe71992aa9c9b70",
+      "ask-dark.png": "b08a13d753c3ffe03f26e95df602db05353c9c045132dfb8eee19ce9e83c30e8",
+      "photo-textures-light.png": "5b3dc3d84b96432bb3463d4f49e3a80f55b7a1824b9dbed0df832599e1df75de"
+    },
+    "limitations": [
+      "Flutter test driver uses Flutter navigation/menu fallbacks; unchanged UIKit sheet sources verified separately.",
+      "Physical iPhone appearance/VoiceOver acceptance remains pending."
+    ]
+  },
+  "physical_device_acceptance": "pending"
+}

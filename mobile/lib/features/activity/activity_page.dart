@@ -365,7 +365,7 @@ class _ActivityPageState extends State<ActivityPage> {
                           Colors.white.withValues(alpha: 0.92),
                         ),
                         side: BorderSide(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             Colors.white.withValues(alpha: 0.18),
                           ),

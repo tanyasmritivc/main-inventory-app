@@ -159,7 +159,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 color: AppTheme.adaptive(context, const Color(0xFF19191B)),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppTheme.adaptive(
+                  color: AppTheme.adaptiveBorder(
                     context,
                     Colors.white.withValues(alpha: .08),
                   ),

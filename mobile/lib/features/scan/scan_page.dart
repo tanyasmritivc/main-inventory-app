@@ -846,7 +846,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: AppTheme.adaptive(
+                            color: AppTheme.adaptiveBorder(
                               ctx,
                               const Color(0x14FFFFFF),
                             ),
@@ -888,7 +888,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: AppTheme.adaptive(
+                            color: AppTheme.adaptiveBorder(
                               ctx,
                               const Color(0x14FFFFFF),
                             ),
@@ -976,7 +976,7 @@ class _ScanPageState extends State<ScanPage> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.adaptive(ctx, Colors.white),
                       side: BorderSide(
-                        color: AppTheme.adaptive(ctx, Color(0x33FFFFFF)),
+                        color: AppTheme.adaptiveBorder(ctx, Color(0x33FFFFFF)),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -1452,19 +1452,28 @@ class _ScanPageState extends State<ScanPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                            color: AppTheme.adaptiveBorder(
+                              ctx,
+                              Color(0x14FFFFFF),
+                            ),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                            color: AppTheme.adaptiveBorder(
+                              ctx,
+                              Color(0x14FFFFFF),
+                            ),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: AppTheme.adaptive(ctx, Color(0x40FFFFFF)),
+                            color: AppTheme.adaptiveBorder(
+                              ctx,
+                              Color(0x40FFFFFF),
+                            ),
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -1997,7 +2006,7 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x33FFFFFF),
                         ),
@@ -2073,7 +2082,10 @@ class _ScanPageState extends State<ScanPage> {
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(99),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                     width: 0.5,
                   ),
                 ),
@@ -2329,7 +2341,7 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -2389,7 +2401,7 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -2485,12 +2497,13 @@ class _ScanPageState extends State<ScanPage> {
                                                 borderRadius:
                                                     BorderRadius.circular(14),
                                                 border: Border.all(
-                                                  color: AppTheme.adaptive(
-                                                    context,
-                                                    Colors.white.withValues(
-                                                      alpha: 0.25,
-                                                    ),
-                                                  ),
+                                                  color:
+                                                      AppTheme.adaptiveBorder(
+                                                        context,
+                                                        Colors.white.withValues(
+                                                          alpha: 0.25,
+                                                        ),
+                                                      ),
                                                   width: 1.0,
                                                 ),
                                               ),

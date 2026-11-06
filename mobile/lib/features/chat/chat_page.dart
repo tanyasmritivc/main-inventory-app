@@ -3250,7 +3250,7 @@ class _ChatPageState extends State<ChatPage>
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withValues(alpha: .08)
-              : Colors.black.withValues(alpha: .07),
+              : AppTheme.border(context),
         ),
       ),
       child: child,

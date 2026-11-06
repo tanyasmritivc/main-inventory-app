@@ -307,7 +307,7 @@ class _SharingPageState extends State<SharingPage> {
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                color: AppTheme.adaptive(
+                                                color: AppTheme.adaptiveBorder(
                                                   context,
                                                   Colors.white.withValues(
                                                     alpha: 0.25,
@@ -506,7 +506,7 @@ class _SharingPageState extends State<SharingPage> {
                         ),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             Colors.white.withValues(alpha: 0.20),
                           ),
@@ -583,7 +583,10 @@ class _SharingPageState extends State<SharingPage> {
                           Colors.white,
                         ),
                         side: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(99),
@@ -737,7 +740,7 @@ class _SharingPageState extends State<SharingPage> {
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.adaptive(
+            color: AppTheme.adaptiveBorder(
               context,
               Colors.white.withValues(alpha: 0.18),
             ),
@@ -763,7 +766,7 @@ class _SharingPageState extends State<SharingPage> {
         shape: BoxShape.circle,
         color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.08)),
         border: Border.all(
-          color: AppTheme.adaptive(
+          color: AppTheme.adaptiveBorder(
             context,
             Colors.white.withValues(alpha: 0.15),
           ),
@@ -883,21 +886,21 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x33FFFFFF)),
                     width: 0.5,
                   ),
                 ),
@@ -1074,7 +1077,10 @@ class _ShareCodeSheet extends StatelessWidget {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x14FFFFFF),
+                ),
                 width: 0.5,
               ),
             ),
@@ -1127,7 +1133,7 @@ class _ShareCodeSheet extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.adaptive(context, Colors.white),
                 side: BorderSide(
-                  color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                  color: AppTheme.adaptiveBorder(context, Color(0x33FFFFFF)),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(99),
@@ -1285,21 +1291,21 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x33FFFFFF)),
                     width: 0.5,
                   ),
                 ),

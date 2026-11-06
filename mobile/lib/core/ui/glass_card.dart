@@ -28,7 +28,7 @@ class GlassCard extends StatelessWidget {
         ),
         borderRadius: radius,
         border: Border.all(
-          color: AppTheme.adaptive(
+          color: AppTheme.adaptiveBorder(
             context,
             Colors.white.withValues(alpha: 0.10),
           ),

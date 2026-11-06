@@ -634,12 +634,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                      color: AppTheme.adaptiveBorder(ctx, Color(0x14FFFFFF)),
                     ),
                   ),
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: AppTheme.adaptive(ctx, Colors.white38),
+                      color: AppTheme.adaptiveBorder(ctx, Colors.white38),
                     ),
                   ),
                 ),
@@ -664,12 +664,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                      color: AppTheme.adaptiveBorder(ctx, Color(0x14FFFFFF)),
                     ),
                   ),
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: AppTheme.adaptive(ctx, Colors.white38),
+                      color: AppTheme.adaptiveBorder(ctx, Colors.white38),
                     ),
                   ),
                 ),
@@ -702,7 +702,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: AppTheme.adaptive(
+                                color: AppTheme.adaptiveBorder(
                                   ctx,
                                   const Color(0x14FFFFFF),
                                 ),
@@ -746,7 +746,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: AppTheme.adaptive(
+                                color: AppTheme.adaptiveBorder(
                                   ctx,
                                   const Color(0x14FFFFFF),
                                 ),
@@ -795,7 +795,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     color: AppTheme.adaptive(ctx, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: AppTheme.adaptive(ctx, const Color(0x14FFFFFF)),
+                      color: AppTheme.adaptiveBorder(
+                        ctx,
+                        const Color(0x14FFFFFF),
+                      ),
                     ),
                   ),
                   child: Row(
@@ -1563,8 +1566,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Widget _divider() => Container(
-    height: 0.5,
-    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+    height: AppTheme.isDark(context) ? 0.5 : 1,
+    color: AppTheme.adaptiveBorder(context, const Color(0x14FFFFFF)),
     margin: const EdgeInsets.symmetric(horizontal: 18),
   );
 
@@ -1611,7 +1614,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x1FFFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x1FFFFFFF),
+                ),
               ),
             ),
             child: Column(
@@ -1875,7 +1881,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -1944,7 +1950,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                     width: 0.5,
                   ),
                 ),
@@ -2097,7 +2106,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: AppTheme.adaptive(
+                                color: AppTheme.adaptiveBorder(
                                   context,
                                   const Color(0x14FFFFFF),
                                 ),
@@ -2302,7 +2311,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -2420,7 +2429,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: AppTheme.adaptive(
+                                color: AppTheme.adaptiveBorder(
                                   context,
                                   const Color(0x14FFFFFF),
                                 ),
@@ -2467,7 +2476,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -2517,7 +2526,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -2626,7 +2635,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                              color: AppTheme.adaptive(
+                              color: AppTheme.adaptiveBorder(
                                 context,
                                 const Color(0x14FFFFFF),
                               ),
@@ -2690,7 +2699,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: AppTheme.adaptive(
+                                color: AppTheme.adaptiveBorder(
                                   context,
                                   const Color(0x14FFFFFF),
                                 ),
@@ -2737,7 +2746,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -2939,7 +2948,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         ),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -3003,7 +3012,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -3074,7 +3083,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         const Color(0x14FFFFFF),
                       ),

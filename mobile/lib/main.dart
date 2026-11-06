@@ -366,7 +366,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                     ),
                     borderRadius: BorderRadius.circular(26),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         Colors.white.withValues(alpha: 0.06),
                       ),

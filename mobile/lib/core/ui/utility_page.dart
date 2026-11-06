@@ -1,3 +1,4 @@
+import '../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'app_text.dart';
 
@@ -19,8 +20,10 @@ class UtilityPage extends StatelessWidget {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide(
-        color: theme.colorScheme.outlineVariant,
-        width: .5,
+        color: AppTheme.isDark(context)
+            ? theme.colorScheme.outlineVariant
+            : AppTheme.controlBorder(context),
+        width: AppTheme.isDark(context) ? .5 : 1,
       ),
     );
     return AppTypography(
@@ -102,7 +105,7 @@ class UtilityCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       side: BorderSide(
         color: Theme.of(context).colorScheme.outlineVariant,
-        width: .5,
+        width: AppTheme.isDark(context) ? .5 : 1,
       ),
     ),
     child: child,

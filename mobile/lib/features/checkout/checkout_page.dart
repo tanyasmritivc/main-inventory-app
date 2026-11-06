@@ -397,7 +397,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),

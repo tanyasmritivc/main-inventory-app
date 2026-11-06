@@ -1,3 +1,4 @@
+import '../app_theme.dart';
 import 'package:flutter/material.dart';
 
 /// Quiet content surface. Glass is reserved for controls above the content.
@@ -17,13 +18,15 @@ class ContentCard extends StatelessWidget {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: dark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: dark ? const Color(0xFF1C1C1E) : AppTheme.lightSurface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(
-            alpha: MediaQuery.highContrastOf(context) ? .45 : .10,
-          ),
-          width: .5,
+          color: !dark
+              ? AppTheme.adaptiveBorder(context, Colors.white)
+              : Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: MediaQuery.highContrastOf(context) ? .45 : .10,
+                ),
+          width: dark ? .5 : 1,
         ),
       ),
       child: child,

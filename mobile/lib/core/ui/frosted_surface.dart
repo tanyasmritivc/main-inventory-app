@@ -24,13 +24,9 @@ class FrostedSurface extends StatelessWidget {
     final base = tint ?? AppTheme.surface(context);
     final outline =
         border ??
-        AppTheme.textPrimary(context).withValues(
-          alpha: solid
-              ? .35
-              : dark
-              ? .17
-              : .13,
-        );
+        (dark
+            ? AppTheme.textPrimary(context).withValues(alpha: solid ? .35 : .17)
+            : AppTheme.controlBorder(context));
     final rounding = BorderRadius.circular(radius);
     return Container(
       decoration: BoxDecoration(
@@ -48,7 +44,7 @@ class FrostedSurface extends StatelessWidget {
       child: ClipRRect(
         borderRadius: rounding,
         child: BackdropFilter(
-          enabled: !solid,
+          enabled: !solid && dark,
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -57,8 +53,8 @@ class FrostedSurface extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  base.withValues(alpha: solid ? 1 : .88),
-                  base.withValues(alpha: solid ? 1 : .76),
+                  base.withValues(alpha: solid || !dark ? 1 : .88),
+                  base.withValues(alpha: solid || !dark ? 1 : .76),
                 ],
               ),
               border: Border.all(color: outline),

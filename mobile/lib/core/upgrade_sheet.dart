@@ -309,7 +309,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
               ),
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
-                  color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
+                  color: AppTheme.adaptiveBorder(context, Color(0x33FFFFFF)),
                 ),
               ),
               focusedBorder: UnderlineInputBorder(

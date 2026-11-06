@@ -1154,7 +1154,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: AppTheme.adaptive(context, AppColors.border),
+                color: AppTheme.adaptiveBorder(context, AppColors.border),
               ),
             ),
             child: Row(
@@ -2258,7 +2258,10 @@ class _InventoryPageState extends State<InventoryPage>
                 color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  color: AppTheme.adaptiveBorder(
+                    context,
+                    const Color(0x14FFFFFF),
+                  ),
                 ),
               ),
               child: AppText(
@@ -2305,7 +2308,10 @@ class _InventoryPageState extends State<InventoryPage>
                         color: AppTheme.adaptive(context, AppColors.surface),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppTheme.adaptive(context, AppColors.border),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            AppColors.border,
+                          ),
                           width: 1,
                         ),
                       ),
@@ -2349,7 +2355,10 @@ class _InventoryPageState extends State<InventoryPage>
                       color: AppTheme.adaptive(context, AppColors.surface),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(context, AppColors.border),
+                        color: AppTheme.adaptiveBorder(
+                          context,
+                          AppColors.border,
+                        ),
                         width: 1,
                       ),
                     ),
@@ -2398,7 +2407,10 @@ class _InventoryPageState extends State<InventoryPage>
                       borderRadius: BorderRadius.circular(18),
                       color: AppTheme.adaptive(context, AppColors.surface),
                       border: Border.all(
-                        color: AppTheme.adaptive(context, AppColors.border),
+                        color: AppTheme.adaptiveBorder(
+                          context,
+                          AppColors.border,
+                        ),
                         width: 1,
                       ),
                     ),
@@ -2457,7 +2469,10 @@ class _InventoryPageState extends State<InventoryPage>
                         borderRadius: BorderRadius.circular(20),
                         color: AppTheme.adaptive(context, AppColors.surface),
                         border: Border.all(
-                          color: AppTheme.adaptive(context, AppColors.border),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            AppColors.border,
+                          ),
                           width: 1,
                         ),
                       ),
@@ -2657,7 +2672,7 @@ class _InventoryPageState extends State<InventoryPage>
                   color: AppTheme.adaptive(context, AppColors.surface),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, AppColors.border),
+                    color: AppTheme.adaptiveBorder(context, AppColors.border),
                   ),
                 ),
                 child: Row(
@@ -2722,7 +2737,10 @@ class _InventoryPageState extends State<InventoryPage>
                           color: AppTheme.adaptive(context, AppColors.surface),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: AppTheme.adaptive(context, AppColors.border),
+                            color: AppTheme.adaptiveBorder(
+                              context,
+                              AppColors.border,
+                            ),
                             width: 1,
                           ),
                         ),
@@ -2956,7 +2974,7 @@ class _InventoryPageState extends State<InventoryPage>
                   color: AppTheme.adaptive(context, AppColors.surface2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, AppColors.border),
+                    color: AppTheme.adaptiveBorder(context, AppColors.border),
                     width: 1,
                   ),
                 ),
@@ -3020,7 +3038,10 @@ class _InventoryPageState extends State<InventoryPage>
                             Radius.circular(12),
                           ),
                           borderSide: BorderSide(
-                            color: AppTheme.adaptive(context, AppColors.border),
+                            color: AppTheme.adaptiveBorder(
+                              context,
+                              AppColors.border,
+                            ),
                             width: 1,
                           ),
                         ),
@@ -3029,7 +3050,10 @@ class _InventoryPageState extends State<InventoryPage>
                             Radius.circular(12),
                           ),
                           borderSide: BorderSide(
-                            color: AppTheme.adaptive(context, AppColors.border),
+                            color: AppTheme.adaptiveBorder(
+                              context,
+                              AppColors.border,
+                            ),
                             width: 1,
                           ),
                         ),
@@ -3818,7 +3842,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -3870,7 +3894,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
               separatorBuilder: (_, _) => Divider(
-                color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                 height: 1,
               ),
               itemBuilder: (_, i) {
@@ -4039,21 +4063,21 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x40FFFFFF)),
         width: 0.5,
       ),
     ),
@@ -4071,7 +4095,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),

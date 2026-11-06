@@ -63,6 +63,20 @@ void main() {
         final decoration = box.decoration;
         if (decoration is BoxDecoration && decoration.color != null) {
           neutral(decoration.color!);
+          if (brightness == Brightness.light && decoration.border is Border) {
+            final edge = (decoration.border! as Border).top;
+            final fill = Color.alphaBlend(decoration.color!, Colors.white);
+            final line = Color.alphaBlend(edge.color, fill);
+            final luminance = [fill.computeLuminance(), line.computeLuminance()]
+              ..sort();
+            expect(
+              (luminance.last + .05) / (luminance.first + .05),
+              greaterThanOrEqualTo(3),
+              reason:
+                  'The idle composer must have a visible boundary against its fill.',
+            );
+            expect(edge.width, greaterThanOrEqualTo(1));
+          }
         }
       }
       await tester.pumpWidget(const SizedBox());
