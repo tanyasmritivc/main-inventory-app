@@ -19,5 +19,6 @@ keyboard layout and cancellation with empty/existing chat. Actual UIKit taps
 verified both destinations and repeated center-plus actions; light/dark native
 bar and compact Spaces screenshots were reviewed. Native camera, Chats/Settings
 and theme source files match build191. Physical camera and VoiceOver acceptance
-remain pending. Signed TestFlight192 delivery is pending CI/package checks and
-will stop at Apple acknowledgment without polling processing.
+remain pending. All five exact-source CI gates passed. Signed TestFlight 1.1.2 (192) validated
+and upload acknowledged by Apple. Processing/tester availability remain pending,
+not polled. See navigation-scan-return192-release.json.

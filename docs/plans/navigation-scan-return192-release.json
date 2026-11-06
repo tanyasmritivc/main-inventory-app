@@ -1,0 +1,50 @@
+{
+  "version": "1.1.2",
+  "build": 192,
+  "source_commit": "03a2c8ca095894183a5064ecc027702294257597",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "fc31c5413a39fd0292566525bd3bd2a4c524bf1ed1a998c70a1ed80358e25c2c",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "bd4324e2-fc6b-41e7-91cc-2666af80294a",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/331",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42196804179",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1294,
+  "flutter_tests_skipped": 1,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "checks": {
+      "fifteen_native_flow_cases_passed": true,
+      "native_tab_selection_and_repeated_plus_taps_passed": true,
+      "native_bar_light_dark_visually_reviewed": true,
+      "spaces_utilities_visually_reviewed": true,
+      "camera_settings_chats_and_themes_unchanged": true
+    },
+    "cases_passed": 15,
+    "simulator": "iPhone 16e iOS 26.2",
+    "screenshots": {
+      "spaces.png": "0d97275551259fb8a47e3b0a8eed81f9cd103698e88d761e315de99f59c9bd8c",
+      "extraction-loading-dark.png": "96db794e730ace0c921092f6666a41cd5c61f67696b52c5af562aed82687abaa",
+      "native-tabs-dark.png": "c3d9b6099928014603c6579bb64fc5f48483e790ff6c56ab59088994368e7233",
+      "native-tabs-light.png": "fac9b108b23f79b097c8c4a2a2f6edb3f61b038c42a49fdaa10df552469a34aa",
+      "ask-light.png": "3a6196435ea9123a23ddc528d08f7a3618b84ec52e07db8a717d8bad092d088d",
+      "attachments-dark.png": "ec81a9fbe22a02c713c7243e8991823fe46f5adde7f4dbeebe2d96d4f9a1de16",
+      "attachments-light.png": "29ab3fdf9a1f443f7dab302c8f8df624acaac0c68cb3c201764c69eb46b996ea",
+      "ask-dark.png": "20a8a87c06ba5b0a6cc66589f8780fcbf2c1f0baac06e2b07e6fe533b1384736",
+      "more.png": "47076c9ae38a8b22bd0c081ba608f51e04e4c7dfc06bad46d79bab66dbca126b"
+    },
+    "limitations": [
+      "Flow audit uses Flutter control fallbacks; actual UIKit bar taps checked separately via Computer Use.",
+      "Physical camera and VoiceOver acceptance remain pending."
+    ]
+  },
+  "physical_device_acceptance": "pending"
+}

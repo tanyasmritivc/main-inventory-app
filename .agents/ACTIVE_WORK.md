@@ -1,9 +1,22 @@
-## November 6 - Navigation and scan cancellation (192), in progress
+## November 6 - Navigation and scan return delivered (192)
 
-Mobile-only fix/navigation-scan-return192: move the three More links into a
-compact Spaces section; center Ask, plus action, Spaces in the same native bar.
-Preserve direct camera/Photos functionality. Closing unfinished extraction returns
-to usable chat/home and retires late stream events. No other product changes.
+TestFlight 1.1.2 (192), runtime `03a2c8ca095894183a5064ecc027702294257597`, PR331.
+Ask, an unlabeled plus action, and Spaces now share the centered native tab bar.
+The three More links sit in a compact section of Spaces. Plus retains the same
+camera/Photos entry. Closing unfinished extraction restores the regular home
+and controls when chat is empty, preserving typed text and existing conversations.
+Completed drafts retain Keep draft in chat. Themes, native Chats/Settings, camera
+implementation, scan/backend services, and web are unchanged.
+
+All 1,294 Flutter tests passed (one existing skip); analysis is clean. Fifteen
+native simulator flow cases passed. Actual UIKit taps verified both tabs and
+repeated plus actions; light/dark bar and Spaces screenshots were reviewed.
+All five exact-source CI gates passed. Signed production archive/export,
+33 device binaries and 27 privacy manifests verified.
+Apple validated and acknowledged upload: `bd4324e2-fc6b-41e7-91cc-2666af80294a`.
+Processing/tester availability and physical camera/VoiceOver acceptance remain
+pending; no processing polling or public App Store submission. See
+`docs/plans/navigation-scan-return192-release.json`.
 
 ## November 6 — Light-mode contrast delivered (191)
 
