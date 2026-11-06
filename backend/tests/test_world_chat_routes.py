@@ -248,3 +248,24 @@ def test_extraction_activity_is_forwarded_before_the_draft(transport):
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
             data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
     assert response.text.index('Finding objects') < response.text.index('Checking confidence') < response.text.index('"type": "capture"')
+
+
+def test_quiet_scan_sends_keepalive_then_one_draft_without_restarting(transport):
+    from app.services import chat_capture as capture
+    out = io.BytesIO(); Image.new('RGB', (20, 20)).save(out, format='PNG')
+    async def extract(**kwargs):
+        kwargs['on_progress']('Finding objects in your photo…')
+        await asyncio.sleep(.45)
+        return {'items': [], 'summary': {}}
+    with patch.object(route, 'SCAN_KEEPALIVE_SECONDS', .01), \
+         patch('app.services.storage.upload_image', return_value=NS(url='https://fixture.test/source', path='fixture/source')), \
+         patch('app.services.photo_extraction.extract_inventory_items', side_effect=extract) as scan, \
+         patch.object(capture, 'create', return_value={'id': 'draft', 'status': 'draft', 'items': []}) as draft, \
+         patch.object(world, 'stream_turn', return_value=events()):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
+            data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert response.status_code == 200
+    assert response.text.index('Finding objects') < response.text.index(': scan keepalive\n\n') < response.text.index('"type": "capture"')
+    scan.assert_awaited_once()
+    draft.assert_called_once()
+    assert '"type": "done"' in response.text

@@ -1,3 +1,7 @@
+## November 5 - Photo scan timeout repair
+
+Backend lane `fix/photo-scan-timeouts` repairs repeated Auto Extract grounding ReadTimeout failures. The deployed model completed real grounding in66.9s, beyond the old40s cutoff; the whole eight-item diagnostic completed in130s. Model calls now allow110s within a shared240s extraction budget. World photo scans send SSE comment keepalives during quiet analysis; these do not invent UI progress. No provider, model, schema, save, confidence or mobile changes. Local1,543 tests and59 focused checks pass. Deployment remains pending exact-source CI and live-source QA; preserve the dirty live checkout with a two-file hash-checked patch.
+
 ## November 4 - Import column semantics182 deployed
 
 Deployed runtime 4cd2eb7c6a4b433f8bc2129dddf846ff41f189e0 from PR316 after all five CI gates passed (run 41979118056). 1,538 backend tests, 12 final update-return regression tests, and three staged/live-source regressions passed. Authenticated HTTPS limits and connector catalog returned200; invalid authentication returned401. The disposable QA account was removed. API/database health passed; unrelated live source is unchanged. No customer database rewrite or schema migration. See docs/import-column-semantics182-release.json. Companion mobile182.
