@@ -1080,7 +1080,7 @@ class _ProfilePage extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         Colors.white.withValues(alpha: 0.15),
                       ),
@@ -1159,7 +1159,7 @@ class _ProfilePage extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         Colors.white.withValues(alpha: 0.15),
                       ),
@@ -1278,7 +1278,7 @@ class _ProfilePage extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         Colors.white.withValues(alpha: 0.15),
                       ),

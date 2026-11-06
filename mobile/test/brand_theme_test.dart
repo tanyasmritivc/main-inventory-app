@@ -42,6 +42,20 @@ void main() {
         brightness == Brightness.dark ? BrandColors.ink : BrandColors.paper,
       );
       expect(theme.bottomSheetTheme.showDragHandle, isFalse);
+      if (brightness == Brightness.light) {
+        final input = theme.inputDecorationTheme;
+        final edge = input.enabledBorder!.borderSide;
+        expect(
+          _contrast(edge.color, input.fillColor!),
+          greaterThanOrEqualTo(3),
+        );
+        expect(
+          _contrast(input.hintStyle!.color!, input.fillColor!),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(edge.width, greaterThanOrEqualTo(1));
+        expect(theme.dividerTheme.thickness, greaterThanOrEqualTo(1));
+      }
       final scheme = theme.colorScheme;
       final accent = AppTheme.accentForegroundFor(brightness);
       for (final background in [

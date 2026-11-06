@@ -126,7 +126,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
           if (i > 0)
             Divider(
               height: 1,
-              color: AppTheme.adaptive(context, Color(0xFF2A2A2E)),
+              color: AppTheme.adaptiveBorder(context, Color(0xFF2A2A2E)),
               indent: 16,
               endIndent: 16,
             ),

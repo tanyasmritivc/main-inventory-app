@@ -254,7 +254,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x14FFFFFF),
+                ),
                 width: 0.5,
               ),
             ),
@@ -328,7 +331,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+          color: AppTheme.adaptiveBorder(context, const Color(0x14FFFFFF)),
           width: 0.5,
         ),
       ),
@@ -418,7 +421,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         const Color(0x14FFFFFF),
                       ),
@@ -443,7 +446,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x14FFFFFF),
+                ),
                 width: 0.5,
               ),
             ),
@@ -484,7 +490,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  color: AppTheme.adaptiveBorder(
+                    context,
+                    const Color(0x14FFFFFF),
+                  ),
                   width: 0.5,
                 ),
               ),
@@ -671,7 +680,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x14FFFFFF),
+                ),
                 width: 0.5,
               ),
             ),
@@ -722,7 +734,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
           border: Border(
             top: BorderSide(
-              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
               width: 0.5,
             ),
           ),
@@ -788,7 +800,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
@@ -919,7 +931,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
           ),
           border: Border(
             top: BorderSide(
-              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
               width: 0.5,
             ),
           ),
@@ -947,7 +959,10 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                     width: 0.5,
                   ),
                 ),

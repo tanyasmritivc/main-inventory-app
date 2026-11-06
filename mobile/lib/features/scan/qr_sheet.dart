@@ -30,7 +30,7 @@ class QrOfferSheet extends StatelessWidget {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -81,7 +81,7 @@ class QrOfferSheet extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -200,7 +200,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -339,7 +339,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -400,7 +400,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),
@@ -465,7 +465,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -510,7 +510,10 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                 color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  color: AppTheme.adaptiveBorder(
+                    context,
+                    const Color(0x14FFFFFF),
+                  ),
                   width: 0.5,
                 ),
               ),
@@ -607,7 +610,10 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                 color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  color: AppTheme.adaptiveBorder(
+                    context,
+                    const Color(0x14FFFFFF),
+                  ),
                   width: 0.5,
                 ),
               ),
@@ -649,7 +655,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
           ),
           border: Border(
             top: BorderSide(
-              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
               width: 0.5,
             ),
           ),
@@ -891,7 +897,10 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                 color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  color: AppTheme.adaptiveBorder(
+                    context,
+                    const Color(0x14FFFFFF),
+                  ),
                   width: 0.5,
                 ),
               ),

@@ -375,7 +375,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.adaptive(
+                  color: AppTheme.adaptiveBorder(
                     context,
                     Colors.white.withValues(alpha: 0.09),
                   ),
@@ -540,7 +540,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         Colors.white.withValues(alpha: 0.12),
                       ),
@@ -565,7 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   color: _hexToColor(_avatarColor),
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: AppTheme.adaptive(
+                                    color: AppTheme.adaptiveBorder(
                                       context,
                                       Colors.white.withValues(alpha: 0.18),
                                     ),
@@ -1061,7 +1061,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         const Color(0x14FFFFFF),
                       ),
@@ -1256,7 +1256,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppTheme.adaptive(
+                      color: AppTheme.adaptiveBorder(
                         context,
                         const Color(0x14FFFFFF),
                       ),

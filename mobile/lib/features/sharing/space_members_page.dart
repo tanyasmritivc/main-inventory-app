@@ -115,7 +115,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.adaptive(
+                        color: AppTheme.adaptiveBorder(
                           context,
                           const Color(0x14FFFFFF),
                         ),

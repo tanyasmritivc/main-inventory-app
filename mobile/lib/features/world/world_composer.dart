@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'smooth_typing_hint.dart';
 import '../chat/voice_composer_session.dart';
 import '../chat/voice_composer_panel.dart';
@@ -411,8 +412,8 @@ class _ComposerSurface extends StatelessWidget {
         color:
             (dark
                     ? Color(active ? 0xFF1C1C1E : 0xFF262626)
-                    : const Color(0xFFFFFFFF))
-                .withValues(alpha: active || highContrast ? 1 : .78),
+                    : AppTheme.lightSurface)
+                .withValues(alpha: !dark || active || highContrast ? 1 : .78),
         boxShadow: active && !dark
             ? [
                 const BoxShadow(
@@ -424,12 +425,12 @@ class _ComposerSurface extends StatelessWidget {
             : null,
         borderRadius: radius,
         border: Border.all(
-          color: active
-              ? (dark ? const Color(0xFF3A3A3C) : const Color(0xFFE2E2E2))
-              : (dark ? Colors.white : const Color(0xFF373737)).withValues(
-                  alpha: highContrast ? .45 : (dark ? .07 : .08),
-                ),
-          width: active ? 1 : .5,
+          color: !dark
+              ? AppTheme.controlBorder(context)
+              : active
+              ? const Color(0xFF3A3A3C)
+              : Colors.white.withValues(alpha: highContrast ? .45 : .07),
+          width: !dark || active ? 1 : .5,
         ),
       ),
       child: child,

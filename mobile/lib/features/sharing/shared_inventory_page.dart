@@ -675,7 +675,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -757,7 +757,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -916,7 +916,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(99),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                     width: 0.5,
                   ),
                 ),
@@ -1035,7 +1038,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             color: AppTheme.adaptive(context, const Color(0xFF171717)),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+              color: AppTheme.adaptiveBorder(context, const Color(0x14FFFFFF)),
               width: 0.5,
             ),
           ),
@@ -1140,7 +1143,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               shape: BoxShape.circle,
               color: AppTheme.surface2(context),
               border: Border.all(
-                color: AppTheme.adaptive(
+                color: AppTheme.adaptiveBorder(
                   context,
                   Colors.white.withValues(alpha: 0.3),
                 ),
@@ -1201,7 +1204,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 ),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppTheme.adaptive(
+                  color: AppTheme.adaptiveBorder(
                     context,
                     Colors.white.withValues(alpha: 0.15),
                   ),
@@ -1425,7 +1428,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                   ),
                 ),
                 child: Row(
@@ -1545,7 +1551,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+          color: AppTheme.adaptiveBorder(context, const Color(0x14FFFFFF)),
           width: 0.5,
         ),
       ),
@@ -1893,7 +1899,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                   ),
                 ),
                 child: AppText(
@@ -1987,7 +1996,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+          color: AppTheme.adaptiveBorder(context, const Color(0x14FFFFFF)),
           width: 0.5,
         ),
       ),
@@ -2374,21 +2383,21 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
     border: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x40FFFFFF)),
         width: 0.5,
       ),
     ),
@@ -2406,7 +2415,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -2481,7 +2490,10 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                color: AppTheme.adaptiveBorder(
+                  context,
+                  const Color(0x14FFFFFF),
+                ),
                 width: 0.5,
               ),
             ),
@@ -2649,7 +2661,7 @@ class _SharedItemDetailContent extends StatelessWidget {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),
@@ -2704,7 +2716,10 @@ class _SharedItemDetailContent extends StatelessWidget {
                   color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                    color: AppTheme.adaptiveBorder(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                     width: 0.5,
                   ),
                 ),
@@ -2774,7 +2789,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             const Color(0x14FFFFFF),
                           ),
@@ -2943,21 +2958,21 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
     border: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
         width: 0.5,
       ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)),
       borderSide: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        color: AppTheme.adaptiveBorder(context, Color(0x40FFFFFF)),
         width: 0.5,
       ),
     ),
@@ -2975,7 +2990,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
         ),
         border: Border(
           top: BorderSide(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            color: AppTheme.adaptiveBorder(context, Color(0x14FFFFFF)),
             width: 0.5,
           ),
         ),

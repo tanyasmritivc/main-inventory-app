@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_typography.dart';
 
@@ -30,7 +31,12 @@ class WorldStyle extends StatelessWidget {
     );
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(24),
-      borderSide: BorderSide(color: ink.withValues(alpha: .10), width: .7),
+      borderSide: BorderSide(
+        color: dark
+            ? ink.withValues(alpha: .10)
+            : AppTheme.controlBorder(context),
+        width: dark ? .7 : 1,
+      ),
     );
     return AppTypography(
       child: Theme(
@@ -59,7 +65,9 @@ class WorldStyle extends StatelessWidget {
             border: border,
             enabledBorder: border,
             focusedBorder: border.copyWith(borderSide: BorderSide(color: ink)),
-            fillColor: ink.withValues(alpha: .035),
+            fillColor: dark
+                ? ink.withValues(alpha: .035)
+                : AppTheme.lightSurface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 18,
               vertical: 14,
@@ -74,7 +82,7 @@ class WorldStyle extends StatelessWidget {
             ),
           ),
           popupMenuTheme: PopupMenuThemeData(
-            color: dark ? const Color(0xFF262626) : const Color(0xF2FFFFFF),
+            color: dark ? const Color(0xFF262626) : AppTheme.lightSurface,
             surfaceTintColor: Colors.transparent,
             textStyle: text(16),
             elevation: 12,
@@ -85,15 +93,15 @@ class WorldStyle extends StatelessWidget {
           bottomSheetTheme: theme.bottomSheetTheme.copyWith(
             backgroundColor: dark
                 ? const Color(0xFF262626)
-                : const Color(0xF7FFFFFF),
+                : AppTheme.lightSurface,
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
             ),
           ),
           dividerTheme: DividerThemeData(
-            color: ink.withValues(alpha: .09),
-            thickness: .5,
+            color: dark ? ink.withValues(alpha: .09) : AppTheme.border(context),
+            thickness: dark ? .5 : 1,
             space: 24,
           ),
         ),

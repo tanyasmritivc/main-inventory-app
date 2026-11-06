@@ -154,21 +154,30 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x40FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
@@ -206,21 +215,30 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x40FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
@@ -333,21 +351,30 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x40FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
@@ -462,21 +489,30 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
                         borderSide: BorderSide(
-                          color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+                          color: AppTheme.adaptiveBorder(
+                            context,
+                            Color(0x40FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),

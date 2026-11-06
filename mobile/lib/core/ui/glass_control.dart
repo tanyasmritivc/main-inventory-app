@@ -50,15 +50,17 @@ class GlassControl extends StatelessWidget {
     final tint = selected
         ? AppTheme.neutralSelectionTint(context)
         : AppTheme.surface(context);
-    final border = AppTheme.textPrimary(context).withValues(
-      alpha: highContrast
-          ? .4
-          : !enabled
-          ? .08
-          : selected
-          ? .22
-          : .12,
-    );
+    final border = !AppTheme.isDark(context) && enabled
+        ? AppTheme.controlBorder(context)
+        : AppTheme.textPrimary(context).withValues(
+            alpha: highContrast
+                ? .4
+                : !enabled
+                ? .08
+                : selected
+                ? .22
+                : .12,
+          );
     return FrostedSurface(
       radius: radius,
       tint: tint,

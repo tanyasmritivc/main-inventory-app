@@ -1,3 +1,11 @@
+## November 6 — Light-mode surface and border roles
+
+Keep light pages white, use opaque light-gray surfaces for cards/inputs, and give
+neutral separators their own color role. Critical field boundaries use a stronger
+outline and at least one logical pixel; do not reuse near-transparent fills as
+borders. Shared World/Utility overrides must preserve these roles. Dark-mode
+values and native Chats/Settings presentation remain unchanged.
+
 ## November 6 — Charcoal dark page background
 
 Use #111111 (sampled RGB17,17,17 from the user's ElevenLabs screenshots) as the

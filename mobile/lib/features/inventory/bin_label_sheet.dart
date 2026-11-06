@@ -86,7 +86,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
-                color: AppTheme.adaptive(
+                color: AppTheme.adaptiveBorder(
                   context,
                   Colors.white.withValues(alpha: 0.20),
                 ),
@@ -392,7 +392,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppTheme.adaptive(
+                          color: AppTheme.adaptiveBorder(
                             context,
                             Colors.white.withValues(alpha: 0.20),
                           ),

@@ -604,7 +604,13 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
     final footer = Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: primary.withValues(alpha: .08))),
+        border: Border(
+          top: BorderSide(
+            color: dark
+                ? primary.withValues(alpha: .08)
+                : AppTheme.border(context),
+          ),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

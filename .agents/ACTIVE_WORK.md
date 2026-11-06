@@ -1,3 +1,12 @@
+## November 6 — Light-mode contrast (191), in progress
+
+Branch `fix/light-mode-contrast` from build190. Light-only fixes separate page,
+card and inset surfaces, strengthen field boundaries and dividers, and give
+legacy neutral borders their own role rather than reusing translucent fills.
+Dark rendering and native Chats/Settings sources are preserved. Focused theme,
+composer, surface and item-detail checks passed (53). All 1,293 Flutter tests passed (one existing skip); analysis is clean.
+iOS visual review and signed TestFlight191 delivery are pending.
+
 ## November 6 — Charcoal dark background delivered (190)
 
 TestFlight 1.1.2 (190), runtime `baf086e89eaeb35bc7129cf870754bce66219eb2`, PR329.
