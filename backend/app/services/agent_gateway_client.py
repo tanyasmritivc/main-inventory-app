@@ -41,6 +41,8 @@ class _Completions:
         payload = dict(kwargs)
         payload["stream"] = bool(payload.get("stream"))
         if payload["stream"]:
+            # Explicit [] selects raw streaming; omitted tools invokes managed-agent buffering.
+            payload.setdefault("tools", [])
             return self._stream(payload, extra_headers)
         with httpx.Client(timeout=self._owner.timeout) as client:
             response = client.post(

@@ -4,7 +4,7 @@
 def tool_status(name):
     if name in {"world_search", "world_inventory", "world_query"}:
         return "Searching your saved items…"
-    if name in {"world_spaces", "world_structure"}:
+    if name in {"world_spaces", "world_structure", "world_destination_options"}:
         return "Checking your Spaces…"
     if name in {
         "world_draft_items",

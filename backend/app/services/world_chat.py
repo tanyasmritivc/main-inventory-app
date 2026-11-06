@@ -226,6 +226,9 @@ def execute(actor, world, name, args):
     if name == 'world_attach_item_photo':
         from app.services.chat_photo_attachment import propose
         return propose(actor, world, args)
+    if name == 'world_destination_options':
+        from app.services.chat_question import destinations
+        return destinations(actor, world)
     if name == 'world_draft_items':
         from app.services.chat_capture import draft_description
         return draft_description(args)
@@ -448,6 +451,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         trace.append({'tool': 'world_saved_receipt', 'result': {'pending_action': saved, 'receipt': saved.get('receipt'), 'inventory_changed': True}})
         item_actions.append(saved)
     attachment = None
+    question = None
     memo = {}
     references = {}
     if capture and capture['draft'] and capture['draft']['status'] == 'saved':
@@ -467,7 +471,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Preserve the stated place and meaningful details in notes. A peanut butter jar almost out means one jar '
             'with an almost-out note, not zero jars or a made-up remaining percentage. Two packets of Takis means quantity 2 '
             'and six apples means quantity 6. Unknown counts stay null in the tool; ask one short follow-up after drafting. '
-            'The draft card shows the items: do not repeat that list. Ask for a missing count first, otherwise ask Where should these go? if no place was named. '
+            'The draft card shows the items: do not repeat that list. Ask for a missing count first. If counts are clear but no destination is named, use world_destination_options (metadata only, no stock lookup) to find relevant writable Spaces. Suggest the best actual matches AND a new Space named for the category or purpose, such as Robotics spares or Beauty. Do not just ask Where should these go. '
             'Use at most two short sentences. Do not offer optional reorder rules or expose workspace/inventory hierarchy. '
             'If destination and counts are already clear, use the existing reviewed creation/add tools. '
             'For an existing unsaved draft, use world_refine_capture; never create duplicate text drafts or lose photo evidence. '
@@ -479,6 +483,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     prior_states = {a.get('id'): a for row in history for a in row.get('action_states', [])}
     prior_pending = any(a.get('status') == 'pending' for a in prior_states.values())
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
+    from app.services.chat_question import GUIDANCE, QuestionStream, separate, present
+    messages.append({'role': 'system', 'content': GUIDANCE})
     client_tools = available_tools
     card_repair_available = True
     repairing = False
@@ -496,11 +502,17 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     max_tokens=generation_limit, stream=True,
                     **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
                 content, calls = '', []
+                presentation = QuestionStream()
                 for event in completion_events(response):
                     if event['type'] == 'delta':
-                        yield event
+                        visible = presentation.feed(event['delta'])
+                        if visible:
+                            yield {'type': 'delta', 'delta': visible}
                     else:
                         content, calls = event['content'], event['tool_calls']
+                tail = presentation.finish()
+                if tail:
+                    yield {'type': 'delta', 'delta': tail}
                 if not content.strip() and not calls:
                     raise RuntimeError('Empty model response')
                 break
@@ -570,6 +582,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         'Handle a destination the user already named with tools, but defer asking any new destination question until this count is resolved.'})
             yield {'type': 'status', 'message': 'Preparing your response…'}
             continue
+        content, question_args = separate(content)
+        question = None
+        if question_args and content.strip():
+            try:
+                question = present(actor, world, question_args)['question']
+            except (ValueError, KeyError, HTTPException):
+                # Invalid/stale choices disappear; the streamed question remains answerable in text.
+                pass
         if not content.strip():
             raise RuntimeError('Empty model response')
         # Never invent a confirmation control. Regenerate with tools available
@@ -611,7 +631,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         content = re.sub(r'\[([^\]]+)\]\((findez://[^)]+)\)',
             lambda match: match.group(0) if match.group(2) in references else match.group(1), content)
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
-            'answer_context': {**({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
+            'answer_context': {**({'question': question} if question else {}), **({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
         return
     raise RuntimeError('No completed response')
@@ -775,3 +795,9 @@ from app.services.chat_capture import DescriptionDraft
 _description_schema = task_schema(DescriptionDraft)
 TOOLS.append(tool('world_draft_items', 'Prepare an editable unsaved draft of belongings the user described, even before a destination is chosen. Preserve their counts, place and notes; use null for an unstated quantity. No stock writes.', _description_schema['properties'], _description_schema.get('required', [])))
 ARGUMENTS['world_draft_items'] = DescriptionDraft
+
+
+class DestinationOptions(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+TOOLS.append(tool('world_destination_options', 'Read writable inventory/Space names and IDs together to suggest a destination for a draft. Metadata only, never stock. Do not use for greetings or unrelated questions.', {}))
+ARGUMENTS['world_destination_options'] = DestinationOptions

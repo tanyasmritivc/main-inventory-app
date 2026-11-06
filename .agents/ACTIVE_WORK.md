@@ -1,3 +1,9 @@
+## November 5 — Streamed summaries and optional choices
+
+Lane `feat/chat-progress-choices` adds model-authored optional follow-up choices after streamed prose. A fragmented hidden UI trailer is filtered incrementally, validated, and persisted only in the existing answer context. Ordinary text is forwarded immediately; no extra model generation is needed to render choices. Existing Space choices are checked against actor/world permissions and current names. New names only request reviewed creation. One bounded destination metadata query replaces per-inventory Space lookups when suggestions are needed; it never loads item records. The model still decides whether a question is appropriate. No scan inference, limits, models, save semantics, or schema changes.
+
+Validation: 1,555 Python tests passed. A direct configured-gateway probe received its first text in 20.503 seconds, then 30 text events over 1.32 seconds. This establishes upstream first-token latency, not app buffering; these UI changes do not promise to eliminate that delay. Deployment and mobile186 delivery pending.
+
 ## November 5 - Actual crop progress for photo scanning
 
 Branch `feat/scan-box-progress` adds optional, transient `scan_regions` SSE events for accepted crop coordinates and actual pending/checking/checked/unreadable batch states. The mobile overlay consumes these without another inference request. The restored backend limits (40-second call, 100-second deadline, two workers), models, prompts, extraction results and save contracts stay unchanged. No migration or new provider. Full backend suite: 1,542 passed. Deployed runtime `177a807` after all five CI gates (42161346041) and 58 exact staged-source tests passed. API/database health passed, unrelated live source was preserved, and no inventory data changed. See `docs/plans/scan-box-progress.md`.

@@ -1,3 +1,9 @@
+## November 5 — Streamed summaries and optional choices
+
+Lane `feat/chat-progress-choices` adds model-authored optional follow-up choices after streamed prose. A fragmented hidden UI trailer is filtered incrementally, validated, and persisted only in the existing answer context. Ordinary text is forwarded immediately; no extra model generation is needed to render choices. Existing Space choices are checked against actor/world permissions and current names. New names only request reviewed creation. One bounded destination metadata query replaces per-inventory Space lookups when suggestions are needed; it never loads item records. The model still decides whether a question is appropriate. No scan inference, limits, models, save semantics, or schema changes.
+
+Validation: 1,555 Python tests passed. A direct configured-gateway probe received its first text in 20.503 seconds, then 30 text events over 1.32 seconds. This establishes upstream first-token latency, not app buffering; these UI changes do not promise to eliminate that delay. Deployment and mobile186 delivery pending.
+
 ## November 5 - Backend scan rollback completed
 
 The user canceled performance experiments and explicitly clarified that only the backend should be restored; keep the new Auto Extract UI in TestFlight184. Lane `revert/photo-scan-timeout-changes` restores the pre-PR318 extraction/stream implementation. The unshipped concurrency candidate PR319 is closed. Mobile is back on `feat/scan-live-review` with no changes; no185build was made or uploaded. Guarded restoration uses the original two-file production backup and verifies unrelated files remain intact. Restored runtime ed68c44: 1,538 tests passed; original file hashes restored, API/database healthy, invalid authentication denied. See docs/photo-scan-backend-rollback.json.
