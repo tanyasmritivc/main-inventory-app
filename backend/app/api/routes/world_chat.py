@@ -143,16 +143,21 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     loop = asyncio.get_running_loop()
                     def report(message):
                         loop.call_soon_threadsafe(progress.put_nowait, message)
+                    def report_regions(result):
+                        loop.call_soon_threadsafe(progress.put_nowait,
+                            {'type': 'scan_regions', 'result': result})
                     extraction = asyncio.create_task(extract_inventory_items(
                         filename='photo.jpg', image_bytes=photo, content_type='image/jpeg',
-                        user_id=actor, source_frame_url=stored.url, on_progress=report))
+                        user_id=actor, source_frame_url=stored.url, on_progress=report,
+                        on_regions=report_regions))
                     try:
                         while not extraction.done() or not progress.empty():
                             try:
                                 update = await asyncio.wait_for(progress.get(), timeout=0.2)
                             except asyncio.TimeoutError:
                                 continue
-                            yield encode({'type': 'status', 'message': update})
+                            yield encode(update if isinstance(update, dict)
+                                         else {'type': 'status', 'message': update})
                         result = await extraction
                     finally:
                         # A worker thread cannot be cancelled mid-upload. Settle it

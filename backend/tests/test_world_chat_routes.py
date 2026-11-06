@@ -248,3 +248,29 @@ def test_extraction_activity_is_forwarded_before_the_draft(transport):
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
             data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
     assert response.text.index('Finding objects') < response.text.index('Checking confidence') < response.text.index('"type": "capture"')
+
+
+def test_real_crop_regions_are_streamed_before_detail_completion_and_draft(transport):
+    from app.services import chat_capture as capture
+    out = io.BytesIO(); Image.new('RGB', (20, 20)).save(out, format='PNG')
+    async def extract(**kwargs):
+        kwargs['on_progress']('Finding objects in your photo...')
+        kwargs['on_regions']({'regions': [{'id': 0, 'box': [10, 20, 500, 800], 'state': 'pending'}]})
+        kwargs['on_regions']({'states': [{'id': 0, 'state': 'checking'}]})
+        await asyncio.sleep(.001)
+        kwargs['on_regions']({'states': [{'id': 0, 'state': 'checked'}]})
+        return {'items': [], 'summary': {}}
+    with patch('app.services.storage.upload_image', return_value=NS(url='https://fixture.test/source', path='fixture/source')), \
+         patch('app.services.photo_extraction.extract_inventory_items', side_effect=extract), \
+         patch.object(capture, 'create', return_value={'id': 'draft', 'status': 'draft', 'items': []}), \
+         patch.object(world, 'stream_turn', return_value=events()):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
+            data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    data = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: {')]
+    regions = [event['result'] for event in data if event['type'] == 'scan_regions']
+    assert regions == [
+        {'regions': [{'id': 0, 'box': [10, 20, 500, 800], 'state': 'pending'}]},
+        {'states': [{'id': 0, 'state': 'checking'}]},
+        {'states': [{'id': 0, 'state': 'checked'}]},
+    ]
+    assert response.text.index('"state": "checked"') < response.text.index('"type": "capture"')
