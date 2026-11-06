@@ -1,3 +1,7 @@
+## November 5 - Restore public App Store build166 as TestFlight183
+
+User canceled the web regression task and requested the exact public App Store app as a new TestFlight build. Apple verified version1.1.1/build166 READY_FOR_SALE on November5. Isolated branch release/restore-app-store-166-build183 starts at exact source00605ebda6c4f22a3a36eb3d4fdb88c0beb75cb6. Only mobile release metadata changes to1.1.2+183; the already released1.1.1 train is closed. No application, dependency, backend, database or web changes. All 1,261 Flutter tests passed (one existing skip), analysis clean, and all 662 non-version mobile files match the original commit. Signed packaging/upload is next; no public submission requested.
+
 ## November 1 - Stop chat response and replace App Store build (166)
 
 The user requests tapping the loading circular send button to stop the current response, then testing and submitting the newest build in place of the existing App Store review build. Preserve the listing, screenshots and manual-release setting. This explicitly authorizes review withdrawal/build replacement/resubmission and waiting for build processing, superseding the beta-only stop-at-upload rule for this task. Active branch `fix/chat-stop-166`, worktree `Projects/findez-voice-composer`.
