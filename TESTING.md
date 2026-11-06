@@ -1,3 +1,14 @@
+## Plans and extraction details (194)
+
+Run the full Flutter suite and analyzer. Existing Plans and plan-introduction tests
+cover unchanged monthly/yearly facts, informational controls and 320pt large-text
+layout. Native presentation regression covers selected-only extraction facts,
+zero/missing counts, review status and dismissal. Existing capture-card tests retain
+lazy 1,000-item details in both themes. Use `tool/plans_extraction_visual.dart` on iOS
+to review Plans monthly/yearly and native extraction sheets in light/dark, close/swipe
+and long-list scrolling with synthetic data. Settings and Chats must remain unchanged.
+Physical-device Dynamic Type and VoiceOver acceptance must be reported separately.
+
 ## Notification policy — November 6, 2026
 
 Run `flutter analyze` and full `flutter test`. Focused behavior lives in

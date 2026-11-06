@@ -1,3 +1,4 @@
+import 'extraction_details_sheet.dart';
 import '../../core/ui/content_card.dart';
 import 'extraction_progress_panel.dart' show scanMotion;
 import 'package:dio/dio.dart';
@@ -532,45 +533,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
   }
 
   void _showSavedItems() {
-    final rows = _rows.where((row) => row['selected'] == true).toList();
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .75,
-          child: Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Extraction details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: rows.length,
-                  itemBuilder: (context, index) {
-                    final item = rows[index]['item'] as Map;
-                    final review =
-                        (item['scan_evidence'] as Map?)?['needs_review'] ==
-                        true;
-                    return ListTile(
-                      title: Text(item['name'] as String),
-                      subtitle: Text(
-                        '${item['category']} · Qty ${item['quantity']}${review ? ' · Sent to Review' : ''}',
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    showExtractionDetails(context, _rows);
   }
 
   Widget _photoReview(BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_theme.dart';
@@ -47,8 +48,13 @@ class _PlansPageState extends State<PlansPage> {
     final primary = AppTheme.textPrimary(context);
     final secondary = AppTheme.textSecondary(context);
     return Scaffold(
-      backgroundColor: AppTheme.surface2(context),
-      appBar: AppBar(title: const AppText('Plans')),
+      backgroundColor: AppTheme.bg(context),
+      appBar: AppBar(
+        title: const AppText('Plans'),
+        backgroundColor: AppTheme.bg(context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
@@ -62,15 +68,29 @@ class _PlansPageState extends State<PlansPage> {
             style: TextStyle(color: secondary, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 20),
-          PlanPeriodSelector(
-            annual: _annual,
-            onChanged: (value) => setState(() => _annual = value),
+          CupertinoSlidingSegmentedControl<bool>(
+            groupValue: _annual,
+            backgroundColor: AppTheme.surface2(context),
+            thumbColor: AppTheme.surface(context),
+            onValueChanged: (value) {
+              if (value != null) setState(() => _annual = value);
+            },
+            children: {
+              for (final annual in [false, true])
+                annual: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: AppText(
+                    annual ? 'Yearly' : 'Monthly',
+                    style: TextStyle(color: primary, fontSize: 14),
+                  ),
+                ),
+            },
           ),
           const SizedBox(height: 20),
           ...findEZPlans.map(
             (plan) => Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: PlanCard(plan: plan, annual: _annual),
+              child: PlanCard(plan: plan, annual: _annual, adaptive: true),
             ),
           ),
           const SizedBox(height: 14),

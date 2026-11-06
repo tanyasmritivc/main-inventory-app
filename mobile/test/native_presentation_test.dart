@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:mobile/features/chat/extraction_details_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,6 +98,52 @@ void main() {
     );
     return context;
   }
+
+  testWidgets(
+    'extraction details preserves selected facts and native dismissal',
+    (tester) async {
+      final context = await mount(tester);
+      final pending = showExtractionDetails(context, [
+        {
+          'selected': true,
+          'item': {'name': 'H1B', 'category': 'Other', 'quantity': 2},
+        },
+        {
+          'selected': false,
+          'item': {'name': 'Excluded', 'category': 'Other', 'quantity': 1},
+        },
+        {
+          'selected': true,
+          'item': {
+            'name': 'Eraser',
+            'category': 'Stationery',
+            'quantity': 0,
+            'scan_evidence': {'needs_review': true},
+          },
+        },
+        {
+          'selected': true,
+          'item': {'name': 'Unknown count', 'category': 'Other'},
+        },
+      ]);
+      await tester.pumpAndSettle();
+      expect(presented['title'], 'Extraction details');
+      expect(presented['textSizeFactor'], AppTextSize.standard.factor);
+      final rows = (presented['sections'] as List).single['rows'] as List;
+      expect(rows.map((r) => r['title']), ['H1B', 'Eraser', 'Unknown count']);
+      expect(rows.map((r) => r['subtitle']), [
+        'Other · Qty 2',
+        'Stationery · Qty 0 · Sent to Review',
+        'Other · Qty Not specified',
+      ]);
+      expect(rows.every((r) => r['readOnly'] == true), isTrue);
+      completion.complete(null);
+      await tester.pumpAndSettle();
+      await pending;
+      expect(find.text('Home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'presentation returns cancellation and ignores foreign callbacks',
