@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'account_preferences.dart';
+import 'api_client.dart';
 import 'restock_plan.dart';
 
 class LowStockCandidate {
@@ -44,99 +45,55 @@ class LowStockNotifications {
     _initialized = true;
   }
 
-  static Future<bool> enable() => _enableFor(RestockPrefs.accountKey);
+  // Phone-local sends cannot enforce account-wide quiet hours or frequency caps.
+  // Retain the compatibility entry point while the server owns all new alerts.
+  static Future<bool> enable() async => false;
 
-  static Future<bool> _enableFor(String account) async {
-    if (!Platform.isIOS) return false;
-    await initialize();
-    if (account != RestockPrefs.accountKey) return false;
-    final ios = _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    final allowed =
-        await ios?.requestPermissions(alert: true, badge: true, sound: true) ??
-        false;
-    final prefs = await SharedPreferences.getInstance();
-    if (account != RestockPrefs.accountKey) return false;
-    await prefs.setBool(accountPreferenceKey(_enabledKey), allowed);
-    return allowed;
-  }
-
-  static Future<void> evaluate(List<LowStockCandidate> candidates) async {
-    if (!Platform.isIOS || candidates.isEmpty) return;
+  static Future<void> evaluate(
+    List<LowStockCandidate> candidates, {
+    required ApiClient api,
+  }) async {
+    if (!Platform.isIOS) return;
     final account = RestockPrefs.accountKey;
-    final plan = await RestockPrefs.load();
-    if (account != RestockPrefs.accountKey) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (account != RestockPrefs.accountKey) return;
-    final enabledKey = accountPreferenceKey(_enabledKey);
-    final enabled = prefs.getBool(enabledKey);
-    // Inventory refreshes must never trigger a new OS permission prompt.
-    // The user can enable reminders while setting a stock threshold.
-    if (enabled != true) return;
-    await initialize();
-    if (account != RestockPrefs.accountKey) return;
-
-    final rawActive = prefs.getString(accountPreferenceKey(_activeKey));
-    final active = <String>{};
-    if (rawActive != null) {
-      try {
-        active.addAll(
-          (json.decode(rawActive) as List).map((e) => e.toString()),
-        );
-      } catch (_) {
-        // A corrupt deduplication cache should never block inventory loading.
+    // Import only absent rules. A saved server edit/tombstone always wins over
+    // another phone's older local copy. Quantities never leave this request.
+    for (var offset = 0; offset < candidates.length; offset += 500) {
+      if (account != RestockPrefs.accountKey) return;
+      final batch = candidates.skip(offset).take(500);
+      final rules = await api.syncNotificationStockRules({
+        for (final item in batch)
+          item.itemId: item.threshold < 0 ? null : item.threshold,
+      }, importOnly: true);
+      if (account != RestockPrefs.accountKey) return;
+      if (rules != null) {
+        for (final item in batch) {
+          if (!rules.containsKey(item.itemId)) continue;
+          final value = (rules[item.itemId] as num?)?.toInt();
+          if (value != (item.threshold < 0 ? null : item.threshold)) {
+            if (account != RestockPrefs.accountKey) return;
+            await RestockPrefs.setThreshold(item.itemId, value);
+          }
+        }
       }
     }
-
-    final currentlyLow = candidates
-        .where((item) => plan.needsBuying(item.itemId, item.quantity))
-        .map((item) => item.itemId)
-        .toSet();
-    final evaluatedIds = candidates.map((item) => item.itemId).toSet();
-    for (final itemId
-        in active
-            .where(
-              (id) => evaluatedIds.contains(id) && !currentlyLow.contains(id),
-            )
-            .toList()) {
-      if (account != RestockPrefs.accountKey) return;
-      await _plugin.cancel(id: itemId.hashCode & 0x7fffffff);
-      active.remove(itemId);
-    }
-
-    for (final item in candidates.where(
-      (item) =>
-          plan.needsBuying(item.itemId, item.quantity) &&
-          !active.contains(item.itemId),
-    )) {
-      if (account != RestockPrefs.accountKey) return;
-      final location = item.spaceName.trim().isEmpty
-          ? ''
-          : ' in ${item.spaceName.trim()}';
-      await _plugin.show(
-        id: item.itemId.hashCode & 0x7fffffff,
-        title: '${item.name} is on your to-buy list',
-        body:
-            '${item.quantity} on hand$location. Open the restock planner to track your purchase.',
-        notificationDetails: const NotificationDetails(
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBanner: true,
-            presentList: true,
-            presentSound: true,
-          ),
-        ),
-        payload: 'inventory-item:${item.itemId}',
-      );
-      active.add(item.itemId);
-    }
-
+    final prefs = await SharedPreferences.getInstance();
     if (account != RestockPrefs.accountKey) return;
-    await prefs.setString(
-      accountPreferenceKey(_activeKey),
-      json.encode(active.toList()),
-    );
+    final key = accountPreferenceKey(_activeKey);
+    final raw = prefs.getString(key);
+    if (raw == null) return;
+    await initialize();
+    List<dynamic> active;
+    try {
+      active = json.decode(raw) as List<dynamic>;
+    } catch (_) {
+      active = [];
+    }
+    for (final itemId in active) {
+      if (account != RestockPrefs.accountKey) return;
+      await _plugin.cancel(id: itemId.toString().hashCode & 0x7fffffff);
+    }
+    if (account != RestockPrefs.accountKey) return;
+    await prefs.remove(key);
+    await prefs.remove(accountPreferenceKey(_enabledKey));
   }
 }

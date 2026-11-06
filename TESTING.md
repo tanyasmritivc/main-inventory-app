@@ -1,3 +1,21 @@
+## Notification policy — November 6, 2026
+
+Run `flutter analyze` and full `flutter test`. Focused behavior lives in
+`test/notification_preferences_test.dart`, `test/launch_notification_permission_test.dart`,
+`test/notifications_page_test.dart`, `test/push_notifications_test.dart` and
+`test/item_detail_sheet_test.dart`. Preferences load must set the native `load`
+flag; loading alone does not request a model. Denied OS permission remains
+separate from server opt-in; failed saves and account changes never confirm stale
+values. The personal threshold bridge must save server rules before local changes.
+
+`tool/notification_policy_visual.dart` is a synthetic debug-only UIKit harness;
+release uses `lib/main.dart`. Review preferences and inbox in light/dark, child
+quiet-hour/timezone navigation, read/dismiss/clear, and large-text fallback.
+No real-user notification tests. After production schema approval and a designated
+test device/account, verify actual APNs foreground/background/cold-start and
+signed-out deep links, permission denial, and lock-screen privacy. Simulator UI
+checks and provider mocks do not certify physical delivery.
+
 ## Native Settings font match (build188)
 
 Run full Flutter tests and analysis. `app_typography_test.dart` checks regular

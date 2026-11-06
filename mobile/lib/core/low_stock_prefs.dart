@@ -1,5 +1,5 @@
-import 'low_stock_notifications.dart';
 import 'restock_plan.dart';
+import 'api_client.dart';
 
 class LowStockPrefs {
   static Future<Map<String, int>> loadAll() async {
@@ -9,10 +9,13 @@ class LowStockPrefs {
   static Future<void> setThreshold({
     required String itemId,
     required int? threshold,
+    ApiClient? api,
   }) async {
-    await RestockPrefs.setThreshold(itemId, threshold);
-    if (threshold != null && threshold >= 0) {
-      await LowStockNotifications.enable();
+    final account = RestockPrefs.accountKey;
+    if (api != null) await api.syncNotificationStockRules({itemId: threshold});
+    if (account != RestockPrefs.accountKey) {
+      throw StateError('Account changed. Reopen the item.');
     }
+    await RestockPrefs.setThreshold(itemId, threshold);
   }
 }

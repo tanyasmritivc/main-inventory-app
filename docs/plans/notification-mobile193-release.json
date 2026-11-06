@@ -1,0 +1,51 @@
+{
+  "version": "1.1.2",
+  "build": 193,
+  "source_commit": "3ce1959f9e1adbc25deddf0f50c1c735da63cd7d",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "894b16ad1a695445de77b923ad97ff6db324d157bf81614557b292f8228eac30",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "66387503-b2f4-4fb2-b6a8-cece838b0cb7",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/333",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42250147908",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1304,
+  "flutter_tests_skipped": 1,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "checks": {
+      "native_preferences_loads": true,
+      "native_preferences_light_dark_reviewed": true,
+      "native_quiet_hour_selection_and_return_verified": true,
+      "native_inbox_dismiss_and_clear_verified": true,
+      "large_text_fallback_tests_passed": true,
+      "settings_and_chats_presentation_unchanged": true
+    },
+    "simulator": "iPhone16e iOS26.2",
+    "fixture": "Synthetic debug-only notification_policy_visual.dart; no production API or APNs sends",
+    "screenshots": {
+      "preferences-light.jpg": "ff59d3743b8f2043cc149ff6364a60bce9afd9020fbf542084a94ec529509f7f",
+      "preferences-dark.jpg": "79380705b962d5e808bd200a7b481b188e23f4196b790b79856ef569f13739d2",
+      "inbox-light.jpg": "b095deb36ca1b0dd5a59ff3e78466659eaf3a12a2b770d375ca12f388b41778a"
+    },
+    "limitations": [
+      "Real-device APNs delivery, background/cold/signed-out navigation and physical VoiceOver acceptance pending."
+    ]
+  },
+  "physical_device_acceptance": "pending",
+  "backend_pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/332",
+  "backend_runtime": "a2d16cf4f079154de57b8471c36100f4f33b5084",
+  "backend_ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42260526841",
+  "backend_tests_passed": 1543,
+  "sql_assertions_passed": 58,
+  "production_activation": "API and inbox active; push delivery disabled; device acceptance pending",
+  "real_user_pushes_sent": false
+}

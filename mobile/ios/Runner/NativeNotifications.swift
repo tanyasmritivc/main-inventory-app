@@ -156,4 +156,17 @@ private final class NotificationListController: UITableViewController {
     if data["open"] as? Bool == true { onOpen?(id) }
     else if data["action"] as? Bool == true && !busy { onAction?(id) }
   }
+  override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    let data = row(indexPath)
+    guard !busy, data["dismissible"] as? Bool == true, let id = data["id"] as? String else { return nil }
+    let action = UIContextualAction(style: .normal, title: "Dismiss") { [weak self] _, _, complete in
+      complete(false)
+      self?.onAction?("dismiss:" + id)
+    }
+    action.image = UIImage(systemName: "xmark")
+    action.backgroundColor = .secondaryLabel
+    let configuration = UISwipeActionsConfiguration(actions: [action])
+    configuration.performsFirstActionWithFullSwipe = false
+    return configuration
+  }
 }

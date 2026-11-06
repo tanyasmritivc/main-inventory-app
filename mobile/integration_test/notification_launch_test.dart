@@ -24,7 +24,7 @@ class _SignedOutApi extends ApiClient {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-    'first active frame requests native permission and retains the choice',
+    'launch is passive and explicit enable requests native permission once',
     (tester) async {
       final initial = await PushNotifications.authorizationStatus();
       debugPrint('NOTIFICATION_QA initial=$initial');
@@ -42,6 +42,10 @@ void main() {
       await tester.pumpWidget(app());
       await tester.pump();
       expect(find.text('Welcome to FindEZ'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(await PushNotifications.authorizationStatus(), 'notDetermined');
+      // The explicit user action is simulated only in this opt-in native QA.
+      final request = PushNotifications.requestPermissionIfNeeded();
       String status = initial;
       final deadline = DateTime.now().add(const Duration(minutes: 3));
       while (status == 'notDetermined' && DateTime.now().isBefore(deadline)) {
@@ -49,6 +53,7 @@ void main() {
         status = await PushNotifications.authorizationStatus();
       }
       expect(['authorized', 'denied'], contains(status));
+      expect(await request, status == 'authorized');
       debugPrint('NOTIFICATION_QA decision=$status');
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(app());

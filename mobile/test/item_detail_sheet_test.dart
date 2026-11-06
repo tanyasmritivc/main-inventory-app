@@ -33,6 +33,18 @@ const _data = <String, dynamic>{
 
 class _Api extends ApiClient {
   _Api() : super(baseUrl: 'https://api.test');
+  bool failAlertSave = false;
+  @override
+  Future<Map<String, dynamic>?> syncNotificationStockRules(
+    Map<String, int?> rules, {
+    bool importOnly = false,
+  }) async {
+    if (failAlertSave) {
+      throw StateError('Alert preferences could not be saved.');
+    }
+    return rules;
+  }
+
   Map<String, dynamic> data = Map.from(_data);
   final writes = <UpdateItemRequest>[];
   final photoShares = <String?>[];
@@ -197,6 +209,33 @@ Future<void> _editNotes(WidgetTester tester, String text) async {
 
 void main() {
   for (final brightness in Brightness.values) {
+    test(
+      'failed server threshold write preserves the previously confirmed value',
+      () async {
+        await LowStockPrefs.setThreshold(itemId: 'alert-item', threshold: 3);
+        final api = _Api()..failAlertSave = true;
+        await expectLater(
+          LowStockPrefs.setThreshold(
+            itemId: 'alert-item',
+            threshold: 7,
+            api: api,
+          ),
+          throwsStateError,
+        );
+        expect((await LowStockPrefs.loadAll())['alert-item'], 3);
+        api.failAlertSave = false;
+        await LowStockPrefs.setThreshold(
+          itemId: 'alert-item',
+          threshold: null,
+          api: api,
+        );
+        expect(
+          (await LowStockPrefs.loadAll()).containsKey('alert-item'),
+          isFalse,
+        );
+      },
+    );
+
     testWidgets('lower item info uses one field surface ${brightness.name}', (
       tester,
     ) async {

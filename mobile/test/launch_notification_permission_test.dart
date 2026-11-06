@@ -81,13 +81,13 @@ void main() {
   );
 
   iosTestWidgets(
-    'launch asks before sign-in without blocking onboarding or registering a token',
+    'launch never requests consent or registers an anonymous token',
     (tester) async {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpWidget(app());
       await tester.pump();
       expect(find.text('Welcome to FindEZ'), findsOneWidget);
-      expect(calls, ['authorizationStatus', 'requestPermission']);
+      expect(calls, isEmpty);
       permission.complete(true);
       await tester.pumpAndSettle();
       expect(api.writes, 0);
@@ -108,7 +108,7 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(find.text('Welcome to FindEZ'), findsOneWidget);
-      expect(calls.where((value) => value == 'requestPermission').length, 1);
+      expect(calls, isNot(contains('requestPermission')));
       expect(api.writes, 0);
     },
   );
@@ -123,13 +123,14 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     await tester.pump();
-    expect(calls, contains('requestPermission'));
+    expect(calls, isNot(contains('requestPermission')));
     permission.complete(false);
     await tester.pumpAndSettle();
   });
 
   iosTestWidgets('allow connects an already signed-in account', (tester) async {
     api.user = 'test-account';
+    status = 'authorized';
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(app());
     await tester.pump();
