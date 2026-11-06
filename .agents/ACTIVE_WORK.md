@@ -1,3 +1,7 @@
+## November 5 - Photo detail latency investigation
+
+Lane `perf/photo-scan-latency` permits four bounded detail batches concurrently instead of two waves. Only the worker limit changes; existing model, prompts, two-crop batches, confidence, review/save and timeout repair remain.42 focused extraction tests pass, including a barrier regression for concurrent starts and correct item association. Matched real-provider comparison, full checks and guarded deployment are pending. See docs/photo-scan-latency.md.
+
 ## November 5 - Photo scan timeout repair deployed
 
 Runtime `ed734e56a3e292b23eb295b38c2a2a979af46626`, PR #318, fixes valid photo scans being cut off after 40 seconds. Calls allow 110 seconds within a shared 240-second inference budget; SSE comment keepalives preserve idle connections without fake progress. Existing model, confidence, review/save behavior and mobile184 are unchanged. All five CI gates, 1,543 backend tests and 59 staged-live-source checks passed. Two authenticated live scans returned eight-item drafts on their first attempts in 72.9/110.1 seconds. No inventory writes; temporary account and 18 images removed. Two-file guarded deployment preserved unrelated live source; API/database healthy. See docs/photo-scan-timeouts-release.json.

@@ -173,6 +173,37 @@ def test_no_actor_does_not_upload_private_files():
     assert result["items"][0]["image_url"] is None
 
 
+def test_eight_objects_start_all_four_detail_batches_without_a_second_wave():
+    from threading import Barrier, Lock
+    barrier = Barrier(4, timeout=3)
+    lock = Lock()
+    active = 0
+    peak = 0
+    boxes = [g.Box(label=f'object-{i}', box=[i * 120, 0, i * 120 + 100, 1000])
+             for i in range(8)]
+    def model(prompt, images, schema):
+        nonlocal active, peak
+        if schema is g.Grounding:
+            return g.Grounding(items=boxes, partial=False)
+        candidates = re.findall(r'"candidate": "object-(\d+)"', prompt)
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        # All four must start before any completes. Two workers would deadlock
+        # here until the bounded barrier fails, revealing the extra wave.
+        barrier.wait()
+        with lock:
+            active -= 1
+        return g.Identities(items=[g.Identity(index=j, name=f'object-{i}',
+            category='Tools', uncertainty='Verify.', identity_confidence=.8)
+            for j, i in enumerate(candidates)])
+    with patch.object(g, '_json', side_effect=model):
+        result = g.extract(image_bytes(), None, None)
+    assert peak == 4
+    assert [i['name'] for i in result['items']] == [f'object-{i}' for i in range(8)]
+    assert all(i['confidence'] == .8 for i in result['items'])
+
+
 def test_provider_switch_has_no_silent_fallback_and_preserves_find():
     import asyncio
 

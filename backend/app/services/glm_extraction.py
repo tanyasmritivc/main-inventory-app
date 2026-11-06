@@ -35,6 +35,9 @@ from app.services.chat_vision import image_part
 logger = logging.getLogger(__name__)
 MAX_ITEMS = 8
 BATCH_SIZE = 2
+# The gateway supports ten concurrent inferences. Start the bounded detail
+# batches together so a crowded photo does not wait through a second wave.
+MAX_DETAIL_WORKERS = 4
 # Grounding can legitimately take over a minute on crowded photos. Keep each
 # model call bounded and share one budget across grounding, repair and workers.
 MODEL_TIMEOUT_SECONDS = 110
@@ -616,7 +619,7 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
 
     by_index = {}
     failed = set()
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=MAX_DETAIL_WORKERS) as pool:
         futures = {
             pool.submit(copy_context().run, identify, offset): offset
             for offset in range(0, len(selected), BATCH_SIZE)
