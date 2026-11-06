@@ -7,7 +7,8 @@ abstract final class BrandColors {
   static const blueTint = Color(0xFFF2F2F2);
   static const orangeInk = Color(0xFF555555);
   static const orangeTint = Color(0xFFE8E8E8);
-  static const night = Color(0xFF0B0B0D);
+  // Sampled from the requested ElevenLabs dark background (#111111).
+  static const night = Color(0xFF111111);
   static const signal = Color(0xFFE6E6E6);
   static const paper = Color(0xFFFFFFFF);
   static const surface = Color(0xFFF7F7F7);

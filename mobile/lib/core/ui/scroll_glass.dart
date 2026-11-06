@@ -1,3 +1,4 @@
+import 'app_colors.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -10,7 +11,7 @@ class ScrollGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final background = Theme.of(context).brightness == Brightness.dark
-        ? Colors.black
+        ? AppColors.background
         : Colors.white;
     return Stack(
       children: [

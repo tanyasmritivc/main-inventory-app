@@ -1,3 +1,13 @@
+## November 6 — Charcoal dark background (190), in progress
+
+Branch `fix/charcoal-dark-background`, based on delivered build189. Sampled the
+supplied ElevenLabs screenshots: dominant page background RGB(17,17,17), #111111;
+FindEZ main pages were #000000. Set the shared night token to #111111 and remove
+pure-black overrides from the World shell, retained tabs, Spaces directory and
+scroll-edge gradients. Preserve light colors, elevated surfaces and native
+Chats/Settings UI. Full 1,293 Flutter tests passed with one existing skip; analysis is clean. Native visual checks are in progress;
+build190 is reserved after Apple preflight found189 as the highest uploaded build.
+
 ## November 6 — Native Notifications and direct camera delivered (189)
 
 TestFlight 1.1.2 (189), runtime `f45f46cdac940b3edca6f0e2de30f6b260aff119`, PR328.
