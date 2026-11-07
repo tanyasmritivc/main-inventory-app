@@ -1,0 +1,20 @@
+{
+  "runtime_commit": "903bb501",
+  "release": "/home/ubuntu/findez-web-releases/header-compact-20261107/frontend",
+  "build_id": "sEIACkxr-lA1wfvrcfgEH",
+  "status": "live",
+  "runtime_changed": [
+    "src/components/marketing-dark/landing.css"
+  ],
+  "other_runtime_files_preserved": 541,
+  "build": "passed using prior release cache after external Google Fonts errors",
+  "lint": "zero errors; 53 existing warnings",
+  "live_viewport_checks": 18,
+  "mobile_menu": "passed",
+  "runtime_exceptions": 0,
+  "backend_changed": false,
+  "favicon_assets_changed": false,
+  "favicon_audit": "Current advertised icons match approved files and are crawlable on apex and www; Google cached search icon remains externally controlled",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/336",
+  "known_existing_issue": "Founders page body has overflow at 320px; header is contained and this change adds no overflow"
+}

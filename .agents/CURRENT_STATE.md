@@ -8,7 +8,10 @@ returned extensionless font URLs. Lint: zero errors, 53 existing warnings.
 Eighteen viewport checks across home/Solutions/Founders pass for header containment,
 links and phone-menu behavior, with no runtime exceptions or new page overflow.
 Existing Founders body overflow at 320px remains outside this header-only change.
-The source audit preserves 541 other runtime/config/public files. Deployment pending.
+The source audit preserves 541 other runtime/config/public files. Published runtime
+`903bb501`, PR336, release `header-compact-20261107`, build `sEIACkxr-lA1wfvrcfgEH`.
+All 18 live viewport checks pass; sign-in/sign-up respond and backend PID is unchanged.
+Receipt: `docs/plans/compact-header-receipt.json`.
 
 Both public hostnames advertise the current four-petal 96px PNG favicon. All
 advertised icons and root ICO match the current assets, return correct MIME types,
