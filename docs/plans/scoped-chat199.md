@@ -31,7 +31,7 @@ The empty-history explanation is excluded from active extraction previews.
 Regression coverage includes scoped clients, immediate streaming, dismissal,
 keyboard clearance, narrow/large-text layouts, deleted selections, refresh errors,
 saved photo drafts, empty Photo conversations and failed history loads retaining
-the retry prompt. Flutter 1331 pass/1 skip; analyzer clean. Native checks in progress:
+the retry prompt. Flutter 1331 pass/1 skip; analyzer clean. All 11 native checks passed, with both themes and keyboard screenshots inspected:
 
 `context_chat_test.dart` and `space_chat_layout_test.dart` on the iPhone simulator.
 
