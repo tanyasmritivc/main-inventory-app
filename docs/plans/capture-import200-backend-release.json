@@ -1,0 +1,12 @@
+{
+  "healthy": true,
+  "changed_files": [
+    "app/api/routes/connectors.py",
+    "app/services/connector_tables.py",
+    "app/services/direct_spreadsheet.py",
+    "app/services/spreadsheet_import.py",
+    "app/services/storage.py"
+  ],
+  "unrelated_python_files_preserved": 141,
+  "schema_changes": false
+}
