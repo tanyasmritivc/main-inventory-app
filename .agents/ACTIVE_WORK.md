@@ -1,3 +1,11 @@
+## November 7 - Organization chooser finish (198)
+
+Branch `style/organization-pill198`: replace the chooser glass face with a flat
+charcoal/light surface, subtle sheen and rounded edge. Preserve dimensions,
+labels, icons, menu and organization switching. Flutter analysis clean; full
+suite passes (1329 tests, 1 skip). Native layout checks and TestFlight delivery
+remain in progress. No API, background behavior, or inventory changes.
+
 ## November 7 - Mobile197 deployed and uploaded
 
 Runtime `8c735f6b3718a99f6f858d67c7181cc217339df3` (PR341, `fix/mobile-space-capture197`)

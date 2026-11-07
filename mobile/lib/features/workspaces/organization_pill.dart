@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../core/ui/liquid_surface.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
@@ -259,9 +258,50 @@ class _OrganizationPillState extends State<OrganizationPill> {
   @override
   Widget build(BuildContext context) {
     final button = _button(context);
-    return widget.glass
-        ? LiquidSurface(radius: 30, quiet: true, shadow: false, child: button)
-        : button;
+    if (!widget.glass) return button;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final highContrast = MediaQuery.highContrastOf(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        color: dark ? const Color(0xFF202020) : const Color(0xFFF5F5F5),
+        border: Border.all(
+          color: highContrast
+              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: .5)
+              : dark
+              ? const Color(0xFF383838)
+              : const Color(0xFFD8D8D8),
+          width: 1,
+        ),
+        boxShadow: highContrast
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: dark ? .2 : .06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: highContrast
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0, .18, 1],
+                  colors: [
+                    Colors.white.withValues(alpha: dark ? .035 : .5),
+                    Colors.white.withValues(alpha: 0),
+                    Colors.white.withValues(alpha: 0),
+                  ],
+                ),
+        ),
+        child: button,
+      ),
+    );
   }
 
   Widget _button(BuildContext context) => Semantics(
