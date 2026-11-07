@@ -6,9 +6,9 @@ returning so a lost response cannot replay on another device. Mobile local stora
 is only an account-bound receipt outbox. Show at most one announcement per session,
 after the shell is ready and idle. Access copy follows existing runtime allowances
 and the approved policy, "Saved items stay accessible when plans change."
-Draft campaigns are inactive until explicitly published. This feature remains on
-`feat/announcement-design`; no production migration or TestFlight upload is part
-of the supplied package's authorization. See `docs/plans/announcements-20261107.md`.
+Draft campaigns are inactive until explicitly published. The user subsequently
+authorized deployment: build196 and the API are delivered, with welcome at
+10 percent and other campaigns held in draft. See `docs/plans/announcements-20261107.md`.
 
 ## November 7 - Contextual inventory chat uses a Cupertino route
 

@@ -1,0 +1,45 @@
+{
+  "version": "1.1.2",
+  "build": 196,
+  "source_commit": "5118c196e13f5794ed2f0ff76b646782021fa568",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "86b1692429e98b9389939fdf914783825fcbba3448f183c2e8504fb6984da041",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "0945f019-1c25-4f02-bfc7-59ec03f6b186",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "backend": {
+    "source": "5118c196",
+    "migration_applied": true,
+    "api_health": 200,
+    "database_health": 200,
+    "campaigns": "draft",
+    "unrelated_python_files_preserved": 141,
+    "backup": "/home/ubuntu/findez-announcements196-20261107/backup"
+  },
+  "live_checks": {
+    "checks": {
+      "https_health_auth_and_verified_access": true,
+      "draft_campaigns_inactive": true,
+      "capability_target_and_authenticated_claim": true,
+      "owned_idempotent_receipts_and_cross_session_suppression": true,
+      "push_policy_unchanged": true,
+      "disposable_accounts_and_campaign_removed": true
+    },
+    "real_user_pushes_sent": false
+  },
+  "campaign_rollout": {
+    "founders-access-v1": "published, 10 percent",
+    "pricing-note-v1": "draft",
+    "auto-extract-v1": "draft"
+  },
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42407158806",
+  "pr": 339,
+  "physical_acceptance": "pending"
+}

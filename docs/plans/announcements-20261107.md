@@ -225,3 +225,11 @@ mobile/test/plan_introduction_test.dart
 mobile/test/profile_navigation_test.dart
 mobile/test/support/announcement_fixture.dart
 ```
+
+## Authorized delivery
+
+The user subsequently requested deployment before the web item-info update.
+API, migration and welcome at 10 percent are activated; Apple acknowledged
+build196. Pricing and product-update drafts remain inactive. See
+`announcements196-release.json` for exact runtime, checks and delivery receipt.
+Physical acceptance and Apple processing remain unverified.
