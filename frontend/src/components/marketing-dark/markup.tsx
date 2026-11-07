@@ -54,6 +54,7 @@ export function Markup({html, audience='robotics'}: {html: string; audience?: Au
         if(ext)props.href=EXT[ext];
         else if(v.includes('mnav('))props['data-menu']=v.includes('mnav(1)')?'open':'close';
         else if(v.includes("classList.toggle('open')")){props['data-faq']='';props['aria-expanded']=false;}
+        else if(v.includes("getElementById('how')")){props.href='#how';props['data-scroll-target']='how';}
         else if(v.includes('[data-chap]'))props['data-chapter-start']='';
       } else if(k==='class')props.className=v;
       else if(k==='style')props.style=style(v);
@@ -64,7 +65,10 @@ export function Markup({html, audience='robotics'}: {html: string; audience?: Au
     let children:ReactNode = node.children.map(render);
     if(a.id==='lg'||a.id==='lg2')children=<Brand size={a.id==='lg'?24:22}/>;
     if(a.class==='ivl')children=<SceneInventory audience={audience}/>;
-    if(a.class==='wsbg'||a.class==='ph') {
+    if(a['data-photo']) {
+      const photo=<Image src={a['data-photo']} alt="" fill sizes="(max-width:900px) 100vw, 600px" unoptimized className="sf-photo"/>;
+      children=<>{a.class==='ph'?<div className="photo-plane">{photo}</div>:photo}{children}</>;
+    } else if(a.class==='wsbg'||a.class==='ph') {
       const styles = props.style as CSSProperties|undefined;
       if(styles)delete styles.backgroundImage;
       children=<Image src={BENCH} alt="" fill sizes="100vw" unoptimized className="asset-photo"/>;

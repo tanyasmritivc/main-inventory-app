@@ -1,3 +1,4 @@
+import './solutions-founders.css';
 import type { Metadata } from 'next';
 import { pageContent, navigation, footer } from './sections';
 import { Markup } from './markup';
@@ -11,7 +12,7 @@ export function LandingPage({page}: {page:PageKey}) {
   const content=pageContent(page);
   return <Motion key={page} page={page}>
     <Markup html={navigation}/>
-    <main id="main"><Markup html={content.html} audience={(content.k||'robotics') as Audience}/></main>
+    <main id="main" className={page==='solutions'||page==='founders'?'solutions-founders':undefined}><Markup html={content.html} audience={(content.k||'robotics') as Audience}/></main>
     <Markup html={footer}/>
   </Motion>;
 }

@@ -1,3 +1,4 @@
+import {mountSolutionsFounders} from './solutions-founders-motion';
 import {SOL,ORDER,TINT,IC,ROUTES} from './data';
 import {lifecycle} from './lifecycle';
 import {layoutMotion} from './layout-motion';
@@ -11,15 +12,17 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const moveLayout=layoutMotion(life,reduce);
 const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),ease=t=>1-Math.pow(1-t,3);
 let timers=[],io;
+const newPages=key==='solutions'||key==='founders';
+const pageFrame=newPages?mountSolutionsFounders(root,life,reduce,FZ_MARK):()=>{};
 
 /* ===== smooth word slide-up for all text ===== */
 const SPLIT_SEL='main h1,main h2,main h3,main .sub,main .lead,main .eb,main .free,main .nr2 .n,main .nr2 p,main .qa2 .qt,main .qa2 p,main .later b,main .later p,main .plan li,main .plan .pr,main .plan>div>div:first-child,main .ws small,main .sx-hero h1,main .sx-hero .eb';
-function split(el){if(el.dataset.sp||el.closest('.fz,.win,.qa,.btn,.scard,footer,.demo,.way,.cmp,.note,.ct,.rack,.ix,.fban'))return;el.dataset.sp=1;let i=0;
+function split(el){if(newPages&&el.closest('.chrome,.fan,.tabsx,.wt,.plan2,.at,.deck,.cmd,.v4p,.qtabs,.wv'))return;if(el.dataset.sp||el.closest('.fz,.win,.qa,.btn,.scard,footer,.demo,.way,.cmp,.note,.ct,.rack,.ix,.fban'))return;el.dataset.sp=1;let i=0;
  const walk=n=>{[...n.childNodes].forEach(c=>{if(c.nodeType===3){if(!c.textContent.trim())return;const f=document.createDocumentFragment();c.textContent.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p)){f.appendChild(document.createTextNode(p));return}const o=document.createElement('span');o.className='w';const inn=document.createElement('span');inn.textContent=p;inn.style.setProperty('--i',i++);if(n.classList&&n.classList.contains('ember'))inn.className='ember';o.appendChild(inn);f.appendChild(o)});c.replaceWith(f)}
   else if(c.nodeType===1&&c.tagName!=='BR'&&c.tagName.toLowerCase()!=='svg'&&!c.classList.contains('w'))walk(c)})};
  walk(el);el.querySelectorAll('.ember').forEach(e=>{if(!e.querySelector('.ember'))return;e.classList.remove('ember')});el.classList.add('split')}
-let tio;function splitAll(){tio?.disconnect();tio=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');tio.unobserve(x.target)}}),{threshold:.15,rootMargin:'0px 0px -6% 0px'});
- root.querySelectorAll(SPLIT_SEL).forEach(e=>{split(e);if(e.classList.contains('split')){if(e.closest('[data-hero]'))setTimeout(()=>e.classList.add('in'),e.matches('h1')?80:e.matches('.eb')?0:320);else tio.observe(e)}})}
+let tio;function splitAll(){tio?.disconnect();tio=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');tio.unobserve(x.target)}}),{threshold:newPages?0:.15,rootMargin:newPages?'0px':'0px 0px -6% 0px'});
+ root.querySelectorAll(SPLIT_SEL).forEach(e=>{split(e);if(e.classList.contains('split')){if(e.closest('[data-hero]'))setTimeout(()=>e.classList.add('in'),e.matches('h1')?80:e.matches('.eb')?0:320);else if(reduce&&newPages)e.classList.add('in');else tio.observe(e)}})}
 
 
 /* hero stage: cover-fit the photo so detection boxes stay on their objects */
@@ -63,7 +66,7 @@ function chapSet(c,i,first){const k=ORDER[i],S=SOL[k],sc=S.scene;c.style.setProp
  const rq=c.querySelector('[data-rq]');rq.innerHTML=`<div class="u">${sc.q[0]}</div><div class="a"><span class="k">${FZ_MARK(13)}</span><div>${sc.a[0]}</div></div>`;
  (c._tm||[]).forEach(clearTimeout);const d=first?150:520;c._tm=[setTimeout(()=>rq.children[0].classList.add('on'),d),setTimeout(()=>rq.children[1].classList.add('on'),d+550),
   setTimeout(()=>{const hi=names.findIndex(x=>x.n===sc.hit);if(hi>=0){bins[hi].classList.add('hit');bx.classList.add('hl')}},d+800)]}
-function frame(){root.querySelector('#nav').classList.toggle('sc',scrollY>20);
+function frame(){pageFrame();root.querySelector('#nav').classList.toggle('sc',scrollY>20);
  root.querySelectorAll('[data-scene]').forEach(sc=>{const p=reduce?1:prog(sc);const S=SOL[sc.dataset.scene].scene;const win=sc.querySelector('.win');const vis=reduce||sc.getBoundingClientRect().top<innerHeight*.8;win.classList.toggle('in',vis);
   const T=[.22,.3,.44,.52,.66,.74];const messages=[...sc.querySelectorAll('.wth .mw')];if(messages.some(m=>m.classList.contains('on')!==(p>=T[+m.dataset.s-1])))moveLayout(messages,()=>messages.forEach(m=>m.classList.toggle('on',p>=T[+m.dataset.s-1])),600);
   sc.querySelector('.wchat').classList.toggle('started',p>=T[0]);
@@ -91,7 +94,7 @@ life.listen(root,'click',e=>{const a=e.target.closest('a,button');if(!a)return;
  if(a.dataset.ck){e.preventDefault();const j=ORDER.indexOf(a.dataset.ck),c=root.querySelector('[data-chap]');if(reduce){chapSet(c,j,true)}else window.scrollTo({top:c.offsetTop+(c.offsetHeight-innerHeight)*(j+.5)/ORDER.length,behavior:'smooth'});}
 });
 life.listen(window,'keydown',e=>{if(e.key==='Escape')root.querySelector('#mnav').classList.remove('on')});
-io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.12});root.querySelectorAll('.rv').forEach(e=>reduce?e.classList.add('in'):io.observe(e));splitAll();frame();
+io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:newPages?0:.12});root.querySelectorAll('.rv').forEach(e=>reduce?e.classList.add('in'):io.observe(e));splitAll();frame();
 life.dispose(()=>{io?.disconnect();tio?.disconnect()});
 let lastY=-1;function frameNow(){if(scrollY===lastY)return;lastY=scrollY;frame()}life.listen(window,'scroll',frameNow,{passive:true});
 let rz;life.listen(window,'resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{clearT();bins(hero,labels);root.querySelectorAll('[data-rail]').forEach(railSize);frame()},200)});
