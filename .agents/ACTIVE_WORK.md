@@ -1470,3 +1470,13 @@ has six failures in unchanged signup/callback tests that expect historical
 implementations are outside this change. Staging overlays six runtime files on
 the current tools-cleanup release and preserves 536 unrelated files. Production
 build and live acceptance evidence: `../findez-session-resume-report/`.
+
+Published runtime `49da064a` through the existing `findez-web` service, release
+`session-resume-20261107`, build `fqPGYxWdE1stL8aQh8XOW`. Production webpack build
+and TypeScript pass. All six runtime hashes match the committed source; 536
+unrelated files, configuration, public assets and backend process are preserved.
+Native Safari verified full reload, opening the site root in a new tab, restoring
+Tools, and closing/reopening the selected saved conversation without signing in.
+Anonymous guards and private/no-store headers pass. Existing expired or revoked
+sessions still require authentication; no multi-day elapsed test is claimed.
+Receipt and screenshots: `../findez-session-resume-report/`.
