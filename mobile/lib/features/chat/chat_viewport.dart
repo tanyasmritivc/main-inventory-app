@@ -11,17 +11,26 @@ class ChatViewport extends StatefulWidget {
     required this.messages,
     required this.controller,
     this.preview,
+    this.chromeBackgroundColor,
   });
   final Widget header, footer;
   final List<Widget> messages;
   final ScrollController controller;
   final Widget? preview;
+  final Color? chromeBackgroundColor;
   @override
   State<ChatViewport> createState() => _ChatViewportState();
 }
 
 class _ChatViewportState extends State<ChatViewport> {
   double _header = 80, _footer = 150;
+  Widget _chrome({required Widget child, bool top = true}) {
+    final color = widget.chromeBackgroundColor;
+    return color == null
+        ? ScrollGlass(top: top, child: child)
+        : ColoredBox(color: color, child: child);
+  }
+
   // Extraction controls keep their established keyboard/large-text layout.
   Widget _previewLayout(BuildContext context) => Column(
     children: [
@@ -87,7 +96,7 @@ class _ChatViewportState extends State<ChatViewport> {
                       setState(() => _header = size.height);
                     }
                   },
-                  child: ScrollGlass(
+                  child: _chrome(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
                         16,
@@ -110,7 +119,7 @@ class _ChatViewportState extends State<ChatViewport> {
                       setState(() => _footer = size.height);
                     }
                   },
-                  child: ScrollGlass(
+                  child: _chrome(
                     top: false,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
