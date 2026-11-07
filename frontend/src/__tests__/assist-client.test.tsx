@@ -9,6 +9,7 @@ jest.mock('@/components/site/app-dialog-provider', () => ({ useAppDialog: () => 
 jest.mock('@/lib/ask-stream', () => ({ askQuestion: jest.fn() }));
 
 beforeEach(() => {
+  jest.clearAllMocks();
   localStorage.clear();
   jest.mocked(accountRequest).mockImplementation(async (_account, path) => {
     if (path === '/conversations') return [{ id: 'fixture-chat', title: 'Workshop tools' }] as never;
@@ -31,4 +32,43 @@ test('history stays accessible without displacing the centered composer, and ope
   fireEvent.click(screen.getByRole('button', { name: 'New conversation' }));
   expect(screen.queryByText('The recorded location is Workbench.')).toBeNull();
   expect((screen.getByRole('textbox', { name: 'Your question' }) as HTMLTextAreaElement).value).toBe('');
+});
+
+test('reopening restores the selected saved conversation and draft', async()=>{
+  localStorage.setItem('findez-active-chat:fixture-account','fixture-chat');
+  localStorage.setItem('findez-ask-draft:fixture-account','My unsent question');
+  const view=render(<AssistClient/>);
+  expect(await screen.findByText('The recorded location is Workbench.')).toBeTruthy();
+  expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('My unsent question');
+  view.unmount();
+  render(<AssistClient/>);
+  expect(await screen.findByText('The recorded location is Workbench.')).toBeTruthy();
+});
+
+test('New conversation clears remembered selection, so reopening stays new',async()=>{
+  localStorage.setItem('findez-active-chat:fixture-account','fixture-chat');
+  const view=render(<AssistClient/>);
+  await screen.findByText('The recorded location is Workbench.');
+  fireEvent.click(screen.getByRole('button',{name:'New conversation'}));
+  expect(localStorage.getItem('findez-active-chat:fixture-account')).toBeNull();
+  view.unmount();
+  render(<AssistClient/>);
+  await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('fixture-account','/conversations'));
+  expect(screen.queryByText('The recorded location is Workbench.')).toBeNull();
+});
+
+test('deleted and foreign-account remembered chats are not restored',async()=>{
+  localStorage.setItem('findez-active-chat:fixture-account','deleted-chat');
+  localStorage.setItem('findez-active-chat:other-account','fixture-chat');
+  render(<AssistClient/>);
+  await waitFor(()=>expect(localStorage.getItem('findez-active-chat:fixture-account')).toBeNull());
+  expect(accountRequest).not.toHaveBeenCalledWith('fixture-account','/conversations/deleted-chat');
+  expect(accountRequest).not.toHaveBeenCalledWith('fixture-account','/conversations/fixture-chat');
+});
+
+test('a fresh prompt does not revive the previous conversation',async()=>{
+  localStorage.setItem('findez-active-chat:fixture-account','fixture-chat');
+  render(<AssistClient initialQuery="Where is the drill?"/>);
+  await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('fixture-account','/conversations'));
+  expect(screen.queryByText('The recorded location is Workbench.')).toBeNull();
 });

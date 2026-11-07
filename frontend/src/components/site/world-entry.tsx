@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useApiSession } from "@/lib/use-api-session";
 import { accountRequest } from "@/lib/account-request";
 import { chooseWorld, worldPreferenceKey } from "@/lib/world-entry";
+import { rememberedPage } from "@/lib/app-resume";
 import { worldHref } from "@/lib/world-navigation";
 import {
   requireInventoryContext,
@@ -36,6 +37,8 @@ function AccountEntry({
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!accountId) return;
+    const previous = !query && rememberedPage(accountId);
+    if (previous) { router.replace(previous); return; }
     let live = true;
     requireInventoryContext(false);
     selectInventory(null);

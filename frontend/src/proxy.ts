@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { normalizeAuthNext } from "@/lib/auth-callback";
 import { previewAuthDestination, previewPrompt } from "@/lib/landing-preview";
+import { readResume, RESUME_COOKIE } from "@/lib/app-resume";
 import { signInPath } from "@/lib/auth-paths";
 import { isProtectedPath } from "@/lib/protected-routes";
 
@@ -26,7 +27,9 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+          const previousCookies = response.cookies.getAll();
           response = NextResponse.next({ request });
+          for (const cookie of previousCookies) response.cookies.set(cookie);
           for (const { name, value, options } of cookiesToSet) {
             response.cookies.set(name, value, options);
           }
@@ -50,7 +53,7 @@ export async function proxy(request: NextRequest) {
   if ((pathname === "/" || pathname === "/signin" || pathname === "/signup") && user) {
     // Signed-in visitors continue to their requested local destination.
     const destination = previewAuthDestination(
-      normalizeAuthNext(request.nextUrl.searchParams.get("redirect")),
+      normalizeAuthNext(request.nextUrl.searchParams.get("redirect") || readResume(request.cookies.get(RESUME_COOKIE)?.value, user.id)),
       previewPrompt(request.nextUrl.searchParams.get("prompt")),
       false,
     );
@@ -61,6 +64,10 @@ export async function proxy(request: NextRequest) {
     return redirect;
   }
 
+  // Never reuse a signed-out entry page or an authenticated refresh response.
+  if (user || isProtectedPath(pathname) || ["/", "/signin", "/signup"].includes(pathname)) {
+    response.headers.set("Cache-Control", "private, no-store");
+  }
   return response;
 }
 

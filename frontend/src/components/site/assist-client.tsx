@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
+import { conversationResumeKey } from "@/lib/app-resume";
 import { accountRequest } from "@/lib/account-request";
 import {
   parseAskContext,
@@ -270,7 +271,7 @@ function AssistClientWorkspace({
             "The draft could not be verified. Check history before trying again.",
           );
         if (current()) {
-          setConversationId(result.conversation_id);
+          selectConversation(result.conversation_id);
           setBarcodeOpen(false);
           setMessages((m) => [
             ...m,
@@ -303,6 +304,56 @@ function AssistClientWorkspace({
       if (current()) setSourceBusy(false);
     }
   }
+  const selectConversation = useCallback((id: string | null) => {
+    setConversationId(id);
+    if (!accountId || contextual) return;
+    try {
+      const key = conversationResumeKey(accountId, draftScope);
+      if (id) localStorage.setItem(key, id);
+      else localStorage.removeItem(key);
+    } catch { /* The current conversation still works without storage. */ }
+  }, [accountId, draftScope, contextual]);
+  const restoreConversation = useCallback(async (id: string) => {
+    if (!accountId) return;
+    setHistoryOpen(false);
+    const account = accountId,
+      generation = epoch.current,
+      ticket = ++request.current;
+    setOpening(true);
+    setError("");
+    try {
+      const result = await accountRequest<{
+        messages: (ConversationMessage & { answer_context?: unknown })[];
+      }>(account, `${prefix}/conversations/${encodeURIComponent(id)}`);
+      if (
+        owner.current === account &&
+        epoch.current === generation &&
+        ticket === request.current
+      ) {
+        setSources([]);
+        setPhoto(undefined);
+        setAutoExtract(false);
+        followReply.current = true;
+        selectConversation(id);
+        setMessages(
+          result.messages.map((m) => ({
+            ...m,
+            context: parseAskContext(m.answer_context),
+          })),
+        );
+      }
+    } catch (e) {
+      if (owner.current === account && ticket === request.current)
+        setError(userFacingError(e, "Could not open this conversation."));
+    } finally {
+      if (owner.current === account && ticket === request.current)
+        setOpening(false);
+    }
+  }, [accountId, prefix, selectConversation]);
+
+  function openConversation(id: string) {
+    if (!sending) void restoreConversation(id);
+  }
   const [historyOpen, setHistoryOpen] = useState(false);
   const loadHistory = useCallback(async () => {
     if (!accountId) return;
@@ -314,6 +365,7 @@ function AssistClientWorkspace({
     );
     if (owner.current === account && epoch.current === generation)
       setConversations(list);
+    return list;
   }, [accountId, prefix]);
   useEffect(() => {
     epoch.current++;
@@ -339,7 +391,14 @@ function AssistClientWorkspace({
     } catch {
       setInput(initialQuery);
     }
-    void loadHistory().catch(() => {
+    const generation = epoch.current;
+    void loadHistory().then((list) => {
+      if (owner.current !== accountId || epoch.current !== generation || initialQuery || contextual) return;
+      let remembered: string | null = null;
+      try { remembered = localStorage.getItem(conversationResumeKey(accountId, draftScope)); } catch {}
+      if (remembered && list?.some(row => row.id === remembered)) void restoreConversation(remembered);
+      else if (remembered) selectConversation(null);
+    }).catch(() => {
       if (owner.current === accountId)
         setError("Could not load conversation history. Try again.");
     });
@@ -347,7 +406,7 @@ function AssistClientWorkspace({
       controller.current?.abort();
       epoch.current++;
     };
-  }, [accountId, initialQuery, loadHistory, worldId, draftScope]);
+  }, [accountId, initialQuery, loadHistory, worldId, draftScope, contextual, restoreConversation, selectConversation]);
   useEffect(() => {
     if (!photo) {
       setPreview(undefined);
@@ -370,43 +429,6 @@ function AssistClientWorkspace({
       }
     }
   }
-  async function openConversation(id: string) {
-    if (!accountId || sending) return;
-    setHistoryOpen(false);
-    const account = accountId,
-      generation = epoch.current,
-      ticket = ++request.current;
-    setOpening(true);
-    setError("");
-    try {
-      const result = await accountRequest<{
-        messages: (ConversationMessage & { answer_context?: unknown })[];
-      }>(account, `${prefix}/conversations/${encodeURIComponent(id)}`);
-      if (
-        owner.current === account &&
-        epoch.current === generation &&
-        ticket === request.current
-      ) {
-        setSources([]);
-        setPhoto(undefined);
-        setAutoExtract(false);
-        followReply.current = true;
-        setConversationId(id);
-        setMessages(
-          result.messages.map((m) => ({
-            ...m,
-            context: parseAskContext(m.answer_context),
-          })),
-        );
-      }
-    } catch (e) {
-      if (owner.current === account && ticket === request.current)
-        setError(userFacingError(e, "Could not open this conversation."));
-    } finally {
-      if (owner.current === account && ticket === request.current)
-        setOpening(false);
-    }
-  }
   function newChat() {
     // A draft upload may already be committed. Keep it in its originating chat
     // until its receipt returns, including when New chat comes from the sidebar.
@@ -420,7 +442,7 @@ function AssistClientWorkspace({
     request.current++;
     setOpening(false);
     followReply.current = true;
-    setConversationId(null);
+    selectConversation(null);
     setMessages([]);
     setError("");
     setPhoto(undefined);
@@ -556,7 +578,7 @@ function AssistClientWorkspace({
         onCapture: (id, context) => {
           if (current() && !control.signal.aborted) {
             receivedCapture = true;
-            setConversationId(id);
+            selectConversation(id);
             setMessages((m) =>
               m.map((msg) =>
                 msg.id === assistantId ? { ...msg, context } : msg,
@@ -611,7 +633,7 @@ function AssistClientWorkspace({
         ),
       );
       retry.current = undefined;
-      setConversationId(final.conversationId);
+      selectConversation(final.conversationId);
       setPhoto(undefined);
       if (!scanFile) setSources([]);
       setAutoExtract(false);

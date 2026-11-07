@@ -4,7 +4,7 @@ import { accountRequest } from "@/lib/account-request";
 import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Menu,
   Search,
@@ -46,6 +46,8 @@ import accountStyles from "./account-layout.module.css";
 import { NotificationPreview } from "./notification-preview";
 import { ContextChat, hasContextChat } from "./context-chat";
 import { FoundingAccessProvider, FoundingBanner } from "@/components/founding-access/founding-access";
+
+import { SessionLocation } from "./session-location";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -393,6 +395,7 @@ export function AppShell({
   );
   return (
     <AppThemeProvider>
+      <Suspense fallback={null}><SessionLocation accountId={userId} /></Suspense>
       <FoundingAccessProvider accountId={userId} createdAt={userCreatedAt} pathname={pathname}>
       {!accountPage && <AccountVerification prompt />}
       <div

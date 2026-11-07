@@ -242,3 +242,35 @@ describe("protected route inventory", () => {
     }
   });
 });
+
+describe('persistent session reopening', () => {
+  test('uses the last page only after verifying its account', async () => {
+    jest.mocked(createServerClient).mockReturnValue({auth:{getUser:async()=>({data:{user:{id:'u1'}}})}} as never);
+    const cookie=encodeURIComponent(JSON.stringify({accountId:'u1',path:'/worlds/personal?view=spaces'}));
+    const response=await middleware(new NextRequest('https://findez.ai/',{headers:{cookie:`findez-resume=${cookie}`}}));
+    expect(response.headers.get('location')).toBe('https://findez.ai/worlds/personal?view=spaces');
+    const other=encodeURIComponent(JSON.stringify({accountId:'u2',path:'/settings'}));
+    const isolated=await middleware(new NextRequest('https://findez.ai/',{headers:{cookie:`findez-resume=${other}`}}));
+    expect(isolated.headers.get('location')).toBe('https://findez.ai/worlds');
+    const explicit=await middleware(new NextRequest('https://findez.ai/signin?redirect=/documents',{headers:{cookie:`findez-resume=${cookie}`}}));
+    expect(explicit.headers.get('location')).toBe('https://findez.ai/documents');
+  });
+  test('keeps all persistent refresh cookies, including on a reopening redirect',async()=>{
+    jest.mocked(createServerClient).mockImplementation((_url,_key,options)=>({auth:{getUser:async()=>{
+      options.cookies!.setAll!([{name:'refreshed.0',value:'part-one',options:{path:'/',maxAge:34560000,sameSite:'lax'}}]);
+      options.cookies!.setAll!([{name:'refreshed.1',value:'part-two',options:{path:'/',maxAge:34560000,sameSite:'lax'}}]);
+      return {data:{user:{id:'u1'}}};
+    }}}) as never);
+    const response=await middleware(new NextRequest('https://findez.ai/signin'));
+    expect(response.cookies.get('refreshed.0')?.maxAge).toBe(34560000);
+    expect(response.cookies.get('refreshed.1')?.value).toBe('part-two');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+  test('a remembered location never authenticates a signed-out visitor',async()=>{
+    jest.mocked(createServerClient).mockReturnValue({auth:{getUser:async()=>({data:{user:null}})}} as never);
+    const cookie=encodeURIComponent(JSON.stringify({accountId:'u1',path:'/settings'}));
+    const response=await middleware(new NextRequest('https://findez.ai/',{headers:{cookie:`findez-resume=${cookie}`}}));
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+});

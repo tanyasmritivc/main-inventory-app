@@ -1451,3 +1451,22 @@ pass. Native Safari verified the live Tools layout and Founders link navigation.
 Only three frontend runtime files changed; 537 unrelated files, configuration,
 public assets and backend process are preserved. No data or mobile changes.
 Evidence: `../findez-tools-cleanup-report/`.
+
+
+## November 7: persistent web session and resume
+
+Branch `fix/web-session-resume` adds account-bound last-page navigation and
+last saved conversation restoration, retaining the existing unsent text draft.
+Auth entry and protected responses are private/no-store; refreshed cookie chunks
+are preserved across callbacks and redirects. Supabase already persists sessions
+with refresh tokens and persistent cookies; no auth expiration, backend, database,
+mobile or service configuration is changed. Explicit sign-out, invitation links,
+new prompts and New conversation retain their existing meaning.
+
+55 focused auth/resume/chat/extraction checks pass. Scoped lint has zero errors
+and the three existing AssistClient warnings. The broader auth smoke run still
+has six failures in unchanged signup/callback tests that expect historical
+/home or /onboarding destinations or mocked client navigation; those files and
+implementations are outside this change. Staging overlays six runtime files on
+the current tools-cleanup release and preserves 536 unrelated files. Production
+build and live acceptance evidence: `../findez-session-resume-report/`.
