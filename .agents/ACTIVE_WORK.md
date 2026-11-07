@@ -1429,3 +1429,11 @@ fields expand on demand, and the Space drawer has a top close control. Existing
 field edits, photo permissions, confirmation and account isolation are preserved.
 Focused item/import/gallery tests pass. Production build and visual acceptance
 are tracked in `../findez-item-details-report/`; no backend or mobile changes.
+
+Published item panel source `dc77ff5c` to the existing `findez-web` service in
+`item-details-fit-20261106`. Production build/TypeScript and focused tests pass.
+Native Safari verified the live photo preview, imported-field disclosure,
+full-image fit and return focus at desktop and 390x844 phone widths. Four runtime
+files differ from the footer release; configuration, public assets, unrelated
+frontend source and backend process are preserved. Screenshots and deployment
+audits are in `../findez-item-details-report/`. No inventory data was mutated.
