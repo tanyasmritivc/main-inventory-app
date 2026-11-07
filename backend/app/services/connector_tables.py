@@ -8,7 +8,7 @@ from pathlib import PurePosixPath
 
 from pydantic import ValidationError
 from app.schemas.inventory import AddItemRequest
-from app.services.spreadsheet_import import parse_import_tables
+from app.services.spreadsheet_import import parse_import_tables, _json_value
 from app.services.project_kits_service import available_stock, allocate_stock
 
 FIELDS = ('name', 'category', 'quantity', 'location', 'barcode', 'part_number',
@@ -36,17 +36,28 @@ def safe_filename(filename):
     return PurePosixPath(filename.replace('\\', '/')).name[:200] or 'inventory.csv'
 
 
-def parse_source(raw, filename, mime=None):
+def parse_source(raw, filename, mime=None, *, direct=False):
     ext = filename.lower().rsplit('.', 1)[-1]
     allowed = {
         'csv': {'text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'},
         'xlsx': {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
+        'json': {'application/json', 'text/json', 'text/plain'},
     }
     if ext not in allowed:
-        raise ValueError('Choose CSV or Excel (.xlsx). Legacy .xls files must be saved as .xlsx first.')
+        raise ValueError('Choose CSV, JSON, or Excel (.xlsx). Legacy .xls files must be saved as .xlsx first.')
     if mime and mime.split(';')[0].lower() not in allowed[ext] | {'application/octet-stream'}:
         raise ValueError('The file type does not match its extension.')
     tables = parse_import_tables(raw, filename, review=True)
+    if direct and ext == 'xlsx':
+        import openpyxl
+        workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True, keep_links=False)
+        try:
+            for table in tables:
+                numbers = set(table['row_numbers'])
+                values = {n: list(row) for n, row in enumerate(workbook[table['name']].iter_rows(values_only=True), 1) if n in numbers}
+                table['computed_rows'] = [_json_value(values.get(n, [])) for n in table['row_numbers']]
+        finally:
+            workbook.close()
     for table in tables:
         headers = table['headers']
         mapping = {}

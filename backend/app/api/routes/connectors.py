@@ -22,6 +22,7 @@ from app.services.supabase_client import get_supabase_raw, get_supabase_admin
 from app.services.spreadsheet_import import MAX_IMPORT_BYTES
 from app.services.limits import check_item_limit
 from app.services.project_kits_service import _list_reservations
+from app.services.direct_spreadsheet import automatic_rows
 
 router = APIRouter(tags=['connectors'])
 logger = logging.getLogger(__name__)
@@ -101,7 +102,7 @@ def _public(s, *, include_tables=False, include_rows=True):
 @router.get('/connectors')
 def connector_status(user: AuthenticatedUser = Depends(get_current_user)):
     return {'connectors': [
-        {'id': 'spreadsheet', 'name': 'CSV & Excel', 'status': 'available', 'action': 'upload'},
+        {'id': 'spreadsheet', 'name': 'CSV, Excel & JSON', 'status': 'available', 'action': 'upload'},
         {'id': 'bom', 'name': 'KiCad / Fusion BOM', 'status': 'available', 'action': 'upload'},
     ]}
 
@@ -110,6 +111,7 @@ def connector_status(user: AuthenticatedUser = Depends(get_current_user)):
 @limiter.limit('5/minute')
 async def upload_source(request: Request, file: UploadFile = File(...), location: str = Form(...),
                         kind: Literal['inventory', 'bom'] = Form('inventory'), share_id: str | None = Form(None),
+                        direct: bool = Form(False), space_id: UUID | None = Form(None),
                         user: AuthenticatedUser = Depends(get_current_user)):
     owner, location = _resolve_import_target(requesting_user_id=user.user_id, location=location, share_id=share_id)
     scope = current_inventory.get()
@@ -117,22 +119,39 @@ async def upload_source(request: Request, file: UploadFile = File(...), location
         if not scope.can_edit:
             raise HTTPException(403, 'You have view-only access to this inventory.')
         owner = scope.owner_id
-    places = get_supabase_admin().table('spaces').select('id,name,inventory_id,user_id').eq('user_id', owner).eq('name', location).limit(2).execute().data or []
+    query = get_supabase_admin().table('spaces').select('id,name,inventory_id,user_id').eq('user_id', owner)
+    if scope:
+        query = query.eq('inventory_id', scope.inventory_id)
+    query = query.eq('id', str(space_id)) if space_id else query.eq('name', location)
+    places = query.limit(2).execute().data or []
     if len(places) != 1 or not places[0].get('inventory_id'):
         raise HTTPException(422, 'Select an existing Space in a single inventory before importing.')
     inv = places[0]['inventory_id']
+    if share_id and places[0]['name'] != location:
+        raise HTTPException(403, 'Choose the shared Space for this import.')
+    location = places[0]['name']
+    if direct and kind != 'inventory':
+        raise HTTPException(422, 'Direct import is available for inventory files only.')
     raw = await file.read(MAX_IMPORT_BYTES + 1)
     filename = safe_filename(file.filename or '')
     try:
-        tables = await run_in_threadpool(parse_source, raw, filename, file.content_type)
+        tables = await run_in_threadpool(parse_source, raw, filename, file.content_type, direct=direct)
     except ValueError as exc:
         raise HTTPException(413 if len(raw) > MAX_IMPORT_BYTES else 422, str(exc)) from exc
     digest = hashlib.sha256(raw).hexdigest()
     identity = f'findez:import:{user.user_id}:{inv}:{location}:{share_id}:{kind}:{digest}'
+    if direct:
+        identity += f":direct:{places[0]['id']}"
     session_id = str(uuid5(NAMESPACE_URL, identity))
     client = get_supabase_raw()
     existing = client.table('connector_import_sessions').select('id,decisions,expires_at,revision').eq('id', session_id).eq('actor_id', user.user_id).execute().data
-    if existing and existing[0]['decisions'] is None and datetime.fromisoformat(existing[0]['expires_at'].replace('Z', '+00:00')) < datetime.now(timezone.utc):
+    if existing and direct and existing[0]['decisions'] is None:
+        # Renew an untouched direct import without changing its identity, rows,
+        # revision or receipts. A concurrent commit cannot be reset by re-upload.
+        client.table('connector_import_sessions').update({
+            'expires_at': (datetime.now(timezone.utc)+timedelta(days=7)).isoformat(),
+        }).eq('id', session_id).eq('actor_id', user.user_id).is_('decisions', 'null').execute()
+    if existing and not direct and existing[0]['decisions'] is None and datetime.fromisoformat(existing[0]['expires_at'].replace('Z', '+00:00')) < datetime.now(timezone.utc):
         # A new upload renews only an uncommitted draft. Old previews become stale.
         client.table('connector_import_sessions').update({
             'review': [], 'mapping': {}, 'status': 'draft', 'revision': existing[0]['revision'] + 1,
@@ -141,6 +160,12 @@ async def upload_source(request: Request, file: UploadFile = File(...), location
     if not existing:
         payload = {'id': session_id, 'actor_id': user.user_id, 'owner_id': owner, 'inventory_id': inv,
                    'share_id': share_id, 'location': location, 'filename': filename, 'source_hash': digest, 'kind': kind, 'tables': tables}
+        if direct:
+            try:
+                rows = automatic_rows(tables, filename=filename, destination=places[0])
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            payload.update(review=rows, revision=1, status='review', mapping={'direct': True, 'space_id': places[0]['id']})
         try:
             client.table('connector_import_sessions').insert(payload).execute()
         except Exception:
@@ -148,6 +173,19 @@ async def upload_source(request: Request, file: UploadFile = File(...), location
             if not client.table('connector_import_sessions').select('id').eq('id', session_id).eq('actor_id', user.user_id).execute().data:
                 raise HTTPException(503, 'The file could not be retained. Please retry.')
     return _public(_session(session_id, user.user_id, include_tables=True), include_tables=True)
+
+
+@router.post('/connectors/imports/{session_id}/import')
+@limiter.limit('30/minute')
+def import_direct(request: Request, session_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    s = _session(session_id, user.user_id)
+    if not (s.get('mapping') or {}).get('direct') or s['kind'] != 'inventory':
+        raise HTTPException(409, 'Upload the file again to start a direct import.')
+    # One choice per source row, including repeated rows. Existing durable RPC
+    # receipts make each batch and lost-response retry idempotent.
+    choices = {str(row['index']): 'create_duplicate' for row in s['review']}
+    return commit_import.__wrapped__(request=request, session_id=session_id,
+        payload=CommitRequest(revision=s['revision'], decisions=choices, retry_failed=s['status'] == 'complete'), user=user)
 
 
 @router.get('/connectors/imports/{session_id}')

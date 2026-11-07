@@ -21,11 +21,11 @@ def _text(value: object) -> str:
     return '' if value is None else str(value).strip()
 
 
-def _table(name: str, headers: list, rows) -> dict | None:
+def _table(name: str, headers: list, rows, *, header_row: int = 1) -> dict | None:
     source_rows = []
     row_numbers = []
-    for number, row in enumerate(rows, 2):
-        if number > MAX_IMPORT_ROWS + 1:
+    for number, row in enumerate(rows, header_row + 1):
+        if number > MAX_IMPORT_ROWS + header_row:
             raise ValueError('Choose a file with at most 5,000 rows per sheet.')
         if len(row) > MAX_IMPORT_COLUMNS or any(len(_text(cell)) > MAX_CELL_CHARS for cell in row):
             raise ValueError('A sheet exceeds 200 columns or 10,000 characters per cell.')
@@ -98,13 +98,11 @@ def parse_import_tables(raw: bytes, filename: str, *, review: bool = False) -> l
             try:
                 for worksheet in workbook.worksheets:
                     rows = worksheet.iter_rows(values_only=True)
-                    headers = next(
-                        (row for row in rows if any(_text(cell) for cell in row)),
-                        None,
-                    )
-                    if headers is None:
+                    header = next(((number, row) for number, row in enumerate(rows, 1) if any(_text(cell) for cell in row)), None)
+                    if header is None:
                         continue
-                    table = _table(worksheet.title, list(headers), rows)
+                    header_row, headers = header
+                    table = _table(worksheet.title, list(headers), rows, header_row=header_row)
                     if table:
                         tables.append(table)
             finally:
@@ -132,7 +130,14 @@ def parse_import_tables(raw: bytes, filename: str, *, review: bool = False) -> l
             raise ValueError('This CSV file could not be read as UTF-8.') from exc
     elif name.endswith('.json'):
         try:
-            document = json.loads(raw.decode('utf-8-sig'))
+            def unique_object(pairs):
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise ValueError('JSON contains repeated keys in an object. Give each field a unique key before importing.')
+                    result[key] = value
+                return result
+            document = json.loads(raw.decode('utf-8-sig'), object_pairs_hook=unique_object)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError('This JSON file could not be read.') from exc
         records = document
