@@ -20,6 +20,19 @@ def _filter(row: dict, filters: dict) -> bool:
             if not all(_word(token) in {_word(t) for t in _tokens(str(row.get(key) or ''))}
                        for token in _tokens(value)):
                 return False
+        elif key == 'stock_status':
+            quantity = recorded_quantity(row.get('quantity'))
+            threshold = recorded_quantity(row.get('reorder_threshold'))
+            if quantity is None:
+                return False
+            if value == 'out':
+                if quantity != 0:
+                    return False
+            elif value == 'low':
+                if quantity != 0 and not (row.get('reorder_enabled') is True and threshold is not None and quantity <= threshold):
+                    return False
+            else:
+                raise ValueError('Choose low or out for stock status')
         elif key == 'space_id':
             if str(row.get('space_id')) != value:
                 return False
@@ -48,6 +61,23 @@ def _filter(row: dict, filters: dict) -> bool:
     return True
 
 
+def _stock_candidates(*, user_id: str, terms: list[str], filters: dict) -> dict:
+    """Filter stock in the authorized database before bounding matching rows."""
+    client = get_supabase_admin()
+    items = []
+    for offset in range(0, 10000, 500):
+        query = client.table('items').select('*').eq('user_id', user_id)
+        query = (query.eq('quantity', 0) if filters['stock_status'] == 'out'
+                 else query.or_('quantity.eq.0,reorder_enabled.eq.true'))
+        page = query.order('item_id').range(offset, offset + 499).execute().data or []
+        for row in page:
+            if _filter(row, filters) and (not terms or match_item(row, terms)):
+                items.append(row)
+        if len(page) < 500:
+            return {'items': items, 'truncated': False}
+    return {'items': items, 'truncated': True}
+
+
 def query_inventory(*, user_id: str, terms: list[str], filters: dict | None = None) -> dict:
     """Apply explicit model arguments through the current authorized repository."""
     filters = dict(filters or {})
@@ -72,7 +102,10 @@ def query_inventory(*, user_id: str, terms: list[str], filters: dict | None = No
         rows = get_supabase_admin().table('spaces').select('id').eq('id', filters['space_id']).limit(1).execute().data or []
         if not rows:
             return {'error': 'space_unavailable', 'items': [], 'complete': False}
-    data = search_memory_candidates(user_id=user_id, terms=normalized)
+    if filters.get('stock_status') not in (None, 'low', 'out'):
+        raise ValueError('Choose low or out for stock status')
+    data = (_stock_candidates(user_id=user_id, terms=normalized, filters=filters)
+            if filters.get('stock_status') else search_memory_candidates(user_id=user_id, terms=normalized))
     from app.services.personalization.scoring import rank_rows
     from app.services.personalization.repository import record_search
     context = data.get('_personalization')

@@ -8,6 +8,7 @@ class Model(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
 class Filters(Model):
+    stock_status: Literal['low', 'out'] | None = Field(default=None, description='low checks saved enabled reorder thresholds and zero stock; out checks zero stock only. Never invent a threshold.')
     location: str | None = Field(default=None, max_length=100)
     category: str | None = Field(default=None, max_length=100)
     brand: str | None = Field(default=None, max_length=100)
@@ -45,7 +46,7 @@ class Activity(Model):
 
 MODELS = {'world_query': Query, 'world_projects': Projects, 'world_project_readiness': Readiness, 'world_activity': Activity}
 DESCRIPTIONS = {
-    'world_query': 'Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
+    'world_query': 'For what am I running low on or what needs restocking, call this ONCE with filters.stock_status=low and no inventory_id to check the whole organization. No directory lookup is needed. Answer from that result; do not repeatedly guess quantity cutoffs or load full inventories. Items without enabled thresholds cannot be called low unless quantity is zero. Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
     'world_projects': 'Find saved projects by name in one authorized inventory. Returns exact project IDs for readiness.',
     'world_project_readiness': 'Compare a saved project BOM with current stock and reservations. Returns deterministic shortages. Similar names do not prove compatibility. This does not reserve or purchase parts.',
     'world_activity': 'Read the signed-in user\'s inventory changes since an optional ISO timestamp. Results are limited to 100 and may be incomplete. Historical events are not current inventory facts.',
@@ -75,7 +76,9 @@ def execute(actor, world, name, args):
             'unknown_quantity_records': sum(s.get('unknown_quantity_records') or 0 for s in summaries),
             'complete': all(s.get('complete') is True for s in summaries),
             'rows_truncated': sum(s.get('record_count') or 0 for s in summaries) > len(items),
-            'quantity_basis': 'Saved physical quantities, before project reservations.'}
+            'quantity_basis': 'Saved physical quantities, before project reservations.',
+            **({'stock_basis': 'Zero quantity or at/below an enabled saved reorder threshold. Positive quantities without enabled thresholds are not classified as low.'}
+               if parsed.filters.stock_status else {})}
     with w.in_inventory(actor, world, parsed.inventory_id) as inv:
         if name == 'world_projects':
             query = get_supabase_admin().table('project_kits').select('id,name,location').eq('owner_user_id', inv['owner_user_id'])
