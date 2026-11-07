@@ -301,12 +301,12 @@ private final class NativeListController: UITableViewController, UISearchResults
       content.image = announcementTile()
       content.imageProperties.maximumSize = CGSize(width: 42, height: 42)
       content.imageProperties.cornerRadius = 12
-      let background = UIView()
+      // Let the inset-grouped table own its corner mask. A separately rounded
+      // background view creates a second, visibly clipped curve in this row.
+      var background = UIBackgroundConfiguration.listGroupedCell()
       background.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.086, green: 0.086, blue: 0.094, alpha: 1) : .white }
-      background.layer.cornerRadius = 20
-      background.layer.borderWidth = 1
-      background.layer.borderColor = UIColor.label.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
-      cell.backgroundView = background
+      background.strokeWidth = 0
+      cell.backgroundConfiguration = background
       if let badge = data["badge"] as? String {
         let label = UILabel()
         label.text = "  \(badge)  "

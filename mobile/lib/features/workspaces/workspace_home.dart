@@ -44,7 +44,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
     );
     WidgetsBinding.instance.addObserver(this);
     session.addListener(_changed);
-    unawaited(session.initializeNavigation());
+    unawaited(
+      session.navigationReady
+          ? session.refresh(quiet: true)
+          : session.initializeNavigation(),
+    );
   }
 
   @override
@@ -89,6 +93,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         place.place.id,
         place.organizationId,
       );
+      if (mounted) await session.refresh(quiet: true);
     } else {
       await _push(
         inventory['can_manage'] == true

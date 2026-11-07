@@ -102,14 +102,11 @@ class _AnnouncementGateState extends State<AnnouncementGate>
     with WidgetsBindingObserver {
   Timer? _timer;
   AnnouncementController? _controller;
-  late DateTime _lastInteraction;
-  DateTime get _now => widget.clock?.call() ?? DateTime.now();
   bool _evaluating = false;
   Route<String>? _route;
   @override
   void initState() {
     super.initState();
-    _lastInteraction = _now;
     WidgetsBinding.instance.addObserver(this);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
@@ -118,11 +115,14 @@ class _AnnouncementGateState extends State<AnnouncementGate>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller = AnnouncementScope.of(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_tick());
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _lastInteraction = _now;
+    if (state == AppLifecycleState.resumed) unawaited(_tick());
   }
 
   bool get _safe =>
@@ -134,8 +134,7 @@ class _AnnouncementGateState extends State<AnnouncementGate>
       (WidgetsBinding.instance.lifecycleState == null ||
           WidgetsBinding.instance.lifecycleState ==
               AppLifecycleState.resumed) &&
-      MediaQuery.viewInsetsOf(context).bottom == 0 &&
-      _now.difference(_lastInteraction) >= const Duration(seconds: 2);
+      MediaQuery.viewInsetsOf(context).bottom == 0;
   Future<void> _tick() async {
     final c = _controller;
     if (c == null || c.presented || _evaluating || !_safe) return;
@@ -213,10 +212,7 @@ class _AnnouncementGateState extends State<AnnouncementGate>
   }
 
   @override
-  Widget build(BuildContext context) => Listener(
-    onPointerDown: (_) => _lastInteraction = _now,
-    child: widget.child,
-  );
+  Widget build(BuildContext context) => widget.child;
 }
 
 Route<String> announcementRoute(
@@ -228,87 +224,51 @@ Route<String> announcementRoute(
   final reduced =
       MediaQuery.of(context).disableAnimations ||
       MediaQuery.of(context).accessibleNavigation;
-  return _AnnouncementRoute(
-    dark: c.dark,
-    reduced: reduced,
+  return ModalBottomSheetRoute<String>(
+    isScrollControlled: true,
+    useSafeArea: true,
+    enableDrag: true,
+    isDismissible: true,
+    backgroundColor: Colors.transparent,
+    modalBarrierColor: Colors.black.withValues(alpha: c.dark ? .55 : .30),
+    barrierLabel: 'Dismiss announcement',
+    constraints: const BoxConstraints(maxWidth: 536),
+    sheetAnimationStyle: AnimationStyle(
+      duration: Duration(milliseconds: reduced ? 0 : 600),
+      reverseDuration: Duration(milliseconds: reduced ? 0 : 300),
+    ),
     builder: (sheet) {
       final design = campaign['design'];
-      return AnnouncementSheet(
-        title: campaign['title'] as String,
-        line: design == 'message' ? null : campaign['body'] as String?,
-        body: design == 'access' || design == 'pricing'
-            ? AnnouncementPlanBody(access: access)
-            : design == 'whats_new'
-            ? const AnnouncementProductBody()
-            : Text(
-                campaign['body'] as String? ?? '',
-                style: TextStyle(fontSize: 15, height: 1.5, color: c.secondary),
-              ),
-        fine: design == 'access' || design == 'pricing'
-            ? access['fine'] as String?
-            : null,
-        primaryLabel: campaign['cta'] as String? ?? 'Got it',
-        onPrimary: () => Navigator.pop(
-          sheet,
-          campaign['action'] == 'capture' ? 'clicked' : 'acknowledged',
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: AnnouncementSheet(
+          title: campaign['title'] as String,
+          line: design == 'message' ? null : campaign['body'] as String?,
+          body: design == 'access' || design == 'pricing'
+              ? AnnouncementPlanBody(access: access)
+              : design == 'whats_new'
+              ? const AnnouncementProductBody()
+              : Text(
+                  campaign['body'] as String? ?? '',
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: c.secondary,
+                  ),
+                ),
+          fine: design == 'access' || design == 'pricing'
+              ? access['fine'] as String?
+              : null,
+          primaryLabel: campaign['cta'] as String? ?? 'Got it',
+          onPrimary: () => Navigator.pop(
+            sheet,
+            campaign['action'] == 'capture' ? 'clicked' : 'acknowledged',
+          ),
+          onClose: () => Navigator.pop(sheet, 'dismissed'),
         ),
-        onClose: () => Navigator.pop(sheet, 'dismissed'),
       );
     },
   );
-}
-
-class _AnnouncementRoute extends PopupRoute<String> {
-  _AnnouncementRoute({
-    required this.dark,
-    required this.reduced,
-    required this.builder,
-  });
-  final bool dark, reduced;
-  final WidgetBuilder builder;
-  @override
-  Duration get transitionDuration =>
-      Duration(milliseconds: reduced ? 160 : 600);
-  @override
-  bool get barrierDismissible => true;
-  @override
-  String get barrierLabel => 'Dismiss announcement';
-  @override
-  Color get barrierColor => Colors.black.withValues(alpha: dark ? .55 : .30);
-  @override
-  Curve get barrierCurve => const Interval(0, .667, curve: Curves.easeOut);
-  @override
-  Widget buildPage(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-  ) => SafeArea(
-    bottom: false,
-    child: Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: builder(context),
-        ),
-      ),
-    ),
-  );
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) => reduced
-      ? FadeTransition(opacity: animation, child: child)
-      : SlideTransition(
-          position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
-            CurvedAnimation(parent: animation, curve: announcementCurve),
-          ),
-          child: child,
-        );
 }
 
 Future<void> openAnnouncementPlan(BuildContext context, ApiClient api) async {

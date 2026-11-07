@@ -1,3 +1,4 @@
+import 'background_http.dart';
 import 'item_search.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -789,6 +790,77 @@ class ApiClient {
             filename.toLowerCase().endsWith('.jpeg')
         ? filename
         : '${filename.split('.').first}.jpg';
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      assertCurrentContext();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(
+          '${baseUrl.replaceFirst(RegExp(r"/$"), "")}${inventoryPath('/inventory/extract_from_image')}',
+        ),
+      );
+      request.headers['Authorization'] = 'Bearer ${_requireToken()}';
+      request.headers['Accept'] = 'text/event-stream';
+      request.fields['preview_only'] = 'true';
+      request.files.add(
+        http.MultipartFile.fromBytes('file', outBytes, filename: outName),
+      );
+      final client = assistantHttpClient();
+      var active = true;
+      unawaited(
+        cancelToken?.whenCancel.then((_) {
+          if (active) client.close();
+        }),
+      );
+      try {
+        onProgress?.call('Uploading your photo...');
+        final response = await client.send(request);
+        if (response.statusCode != 200) {
+          throw dio.DioException(
+            requestOptions: dio.RequestOptions(path: request.url.path),
+            type: dio.DioExceptionType.badResponse,
+            response: dio.Response(
+              requestOptions: dio.RequestOptions(path: request.url.path),
+              statusCode: response.statusCode,
+            ),
+          );
+        }
+        if (!(response.headers['content-type'] ?? '').contains(
+          'text/event-stream',
+        )) {
+          final text = await response.stream.bytesToString();
+          assertCurrentContext();
+          return MultiExtractResult.fromJson(
+            jsonDecode(text) as Map<String, dynamic>,
+          );
+        }
+        await for (final line
+            in response.stream
+                .transform(utf8.decoder)
+                .transform(const LineSplitter())) {
+          assertCurrentContext();
+          if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
+          if (!line.startsWith('data: ')) continue;
+          final event = jsonDecode(line.substring(6)) as Map<String, dynamic>;
+          if (event['type'] == 'status') {
+            onProgress?.call(event['message'] as String);
+          }
+          if (event['type'] == 'error') {
+            throw AskRequestException(event['message'] as String);
+          }
+          if (event['type'] == 'done') {
+            return MultiExtractResult.fromJson(
+              event['result'] as Map<String, dynamic>,
+            );
+          }
+        }
+        throw const AskRequestException(
+          'Photo analysis was interrupted. Please retry.',
+        );
+      } finally {
+        active = false;
+        client.close();
+      }
+    }
     final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
     final form = dio.FormData.fromMap({'file': file, 'preview_only': true});
     debugPrint(
@@ -1971,7 +2043,7 @@ Stream<AiStreamEvent> _sendAiRequest(
   http.BaseRequest request,
   String Function(int) errorMessage,
 ) {
-  final client = http.Client();
+  final client = assistantHttpClient();
   var ended = false, clientClosed = false;
   StreamSubscription<AiStreamEvent>? subscription;
   late StreamController<AiStreamEvent> controller;
@@ -1994,9 +2066,9 @@ Stream<AiStreamEvent> _sendAiRequest(
   controller = StreamController<AiStreamEvent>(
     onListen: () async {
       try {
-        final response = await client
-            .send(request)
-            .timeout(const Duration(minutes: 2));
+        final response = client is BackgroundHttpClient
+            ? await client.send(request)
+            : await client.send(request).timeout(const Duration(minutes: 2));
         if (ended) return;
         if (response.statusCode != 200) {
           throw AskRequestException(errorMessage(response.statusCode));

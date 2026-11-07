@@ -389,7 +389,7 @@ class AnnouncementSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AnnouncementColors(context);
-    var dragDistance = 0.0;
+    var pulled = 0.0;
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height - 66,
@@ -418,114 +418,123 @@ class AnnouncementSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragStart: (_) => dragDistance = 0,
-                onVerticalDragUpdate: (d) =>
-                    dragDistance += d.primaryDelta ?? 0,
-                onVerticalDragEnd: (d) {
-                  if (dragDistance > 60 || (d.primaryVelocity ?? 0) > 200) {
-                    onClose();
-                  }
-                },
-                child: SizedBox(
-                  height: 22,
-                  width: double.infinity,
-                  child: Center(
-                    child: Container(
-                      width: 38,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: c.tertiary.withValues(alpha: .5),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
+              SizedBox(
+                height: 22,
+                width: double.infinity,
+                child: Center(
+                  child: Container(
+                    width: 38,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: c.tertiary.withValues(alpha: .5),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
               ),
               Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    4,
-                    20,
-                    24 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 5),
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  height: 1.15,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: -.65,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollStartNotification) pulled = 0;
+                    if (notification is OverscrollNotification &&
+                        notification.dragDetails != null &&
+                        notification.overscroll < 0 &&
+                        notification.metrics.pixels <=
+                            notification.metrics.minScrollExtent) {
+                      pulled -= notification.overscroll;
+                      if (pulled > 60) {
+                        pulled = double.negativeInfinity;
+                        onClose();
+                      }
+                    }
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
+                    ),
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      4,
+                      20,
+                      24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    height: 1.15,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -.65,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 44,
-                            height: 44,
-                            child: IconButton(
-                              tooltip: 'Close announcement',
-                              onPressed: onClose,
-                              padding: const EdgeInsets.all(2),
-                              icon: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: c.ring),
-                                ),
-                                child: Icon(
-                                  CupertinoIcons.xmark,
-                                  size: 16,
-                                  color: c.text,
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: IconButton(
+                                tooltip: 'Close announcement',
+                                onPressed: onClose,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: c.ring),
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.xmark,
+                                    size: 16,
+                                    color: c.text,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      if (line != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            line!,
-                            style: TextStyle(
-                              fontSize: 15,
-                              height: 1.5,
-                              color: c.secondary,
+                          ],
+                        ),
+                        if (line != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              line!,
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: c.secondary,
+                              ),
                             ),
                           ),
-                        ),
-                      const SizedBox(height: 16),
-                      body,
-                      if (fine != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 18),
-                          child: Text(
-                            fine!,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              height: 1.5,
-                              color: c.secondary,
+                        const SizedBox(height: 16),
+                        body,
+                        if (fine != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 18),
+                            child: Text(
+                              fine!,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                height: 1.5,
+                                color: c.secondary,
+                              ),
                             ),
                           ),
-                        ),
-                      const SizedBox(height: 22),
-                      _Primary(label: primaryLabel, onTap: onPrimary),
-                    ],
+                        const SizedBox(height: 22),
+                        _Primary(label: primaryLabel, onTap: onPrimary),
+                      ],
+                    ),
                   ),
                 ),
               ),

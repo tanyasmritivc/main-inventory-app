@@ -1,3 +1,13 @@
+## November 7 - Preserve inventories and native background exchanges
+
+Deleting a Space must not delete its parent inventory. Confirmed mutations refresh
+Space listings and inventory counts. Captures initiated inside a Space keep that
+destination through review/save. iOS uses a system-owned upload for assistant
+requests; a bounded read-only mirror preserves live streaming without a second
+model invocation or write. No private response spool or database schema is added.
+Native welcome remains once per eligible account, supports drag dismissal, and
+is considered immediately when the authenticated home is safe.
+
 ## November 7 - Account-scoped announcement delivery
 
 Campaign eligibility and frequency live in the backend, with an atomic per-user

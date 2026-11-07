@@ -1,3 +1,15 @@
+## November 7 - Mobile197 validated, delivery pending
+
+Branch `fix/mobile-space-capture197` preserves inventories while refreshing deleted
+Spaces/counts, fixes Space capture presentation/destination, adds iOS background
+assistant exchanges with a bounded foreground response mirror, makes welcome
+swipe-dismissable and promptly eligible after authentication, and removes the
+clipped native Settings plan border. Full Flutter 1329 pass/1 skip, analysis clean,
+backend805 pass, native14 pass. Physical-device acceptance remains pending.
+Server candidate is staged and tested; production deployment, welcome rollout
+expansion and Apple upload are not yet recorded. See
+`docs/plans/mobile-space-capture197.md`. Previous web task deployed separately.
+
 ## November 7 - Announcements activated and build196 uploaded
 
 User explicitly authorized deployment before the web item-info task. Runtime

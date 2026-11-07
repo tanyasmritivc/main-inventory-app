@@ -121,6 +121,14 @@ void main() {
         } else if (variant == 'plan') {
           await tester.tap(find.text('Your plan'));
           expect(clicked, true);
+        } else if (variant == 'access') {
+          await tester.dragFrom(
+            tester.getTopLeft(find.byType(AnnouncementSheet)) +
+                const Offset(180, 12),
+            const Offset(0, 650),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AnnouncementSheet), findsNothing);
         } else {
           await tester.ensureVisible(
             find.text(variant == 'whats_new' ? 'Try it' : 'Got it'),

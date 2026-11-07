@@ -572,6 +572,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       context: context,
       api: widget.api,
       preselectedSpace: _location,
+      preselectedSpaceId: widget.spaceId,
       onItemsSaved: () async {
         if (!mounted) return;
         _changed = true;

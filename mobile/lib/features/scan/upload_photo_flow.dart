@@ -220,6 +220,7 @@ Future<void> runUploadPhotoFlow({
   required BuildContext context,
   required ApiClient api,
   required String preselectedSpace,
+  String? preselectedSpaceId,
   required Future<void> Function() onItemsSaved,
   String? barcodeToAssociate,
 }) async {
@@ -304,6 +305,7 @@ Future<void> runUploadPhotoFlow({
     extracted = await runWithCaptureProgress(
       context: context,
       retryOnFailure: true,
+      photo: MemoryImage(bytes),
       itemCount: (result) => result.items.length,
       extract: (cancelToken) => api.extractInventoryFromImage(
         bytes: bytes,
@@ -377,6 +379,7 @@ Future<void> runUploadPhotoFlow({
     builder: (_) => ConfirmScanSheet(
       items: extracted.items,
       defaultLocation: preselectedSpace,
+      lockLocation: true,
       existingItems: InventoryCache.forContext(api.cacheKey),
     ),
   );
@@ -397,12 +400,8 @@ Future<void> runUploadPhotoFlow({
       continue;
     }
 
-    // Respect per-item location the user may have edited in ConfirmScanSheet;
-    // fall back to preselectedSpace for empty or "Unsorted" values.
-    final rawLoc = (it.location ?? '').trim();
-    final itemLocation = (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
-        ? preselectedSpace
-        : rawLoc;
+    // A capture started inside a Space always belongs to that Space.
+    final itemLocation = preselectedSpace;
 
     normalized.add(
       ExtractedInventoryItem(
@@ -445,7 +444,24 @@ Future<void> runUploadPhotoFlow({
 
   ReviewCapturePlan plan;
   try {
-    plan = await prepareCaptureForSave(api: api, items: normalized);
+    api.assertCurrentContext();
+    if (preselectedSpaceId != null) {
+      final spaces = await api.listSpaces();
+      if (!spaces.any(
+        (space) =>
+            (space['id'] ?? space['space_id']) == preselectedSpaceId &&
+            space['name'] == preselectedSpace,
+      )) {
+        throw const AskRequestException(
+          'This Space changed. Reopen it before saving your photo.',
+        );
+      }
+    }
+    plan = await prepareCaptureForSave(
+      api: api,
+      items: normalized,
+      isCurrent: () => context.mounted && isCurrent(),
+    );
   } catch (error) {
     if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(
