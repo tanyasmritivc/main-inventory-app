@@ -1,3 +1,16 @@
+## November 7 — capture/import repair200 verified
+
+History closes before Delete confirmation to release the modal focus/pointer trap. Space photo upload uses the existing main photo service and capture widgets, then verifies and locks the invoking inventory/Space before saving. Manual/barcode additions retain the originating Space.
+
+Inventory spreadsheet imports bypass Review, choose a Space from main chat or use the invoking Space, and resume durable receipts after failures. CSV, XLSX and JSON supported; BOM review unchanged. Main chat/photo presentation and behavior otherwise unchanged.
+
+Validation: TypeScript passed; changed-file lint has no errors; 13 focused tests pass. Full web suite retains the pre-existing 76 failures with identical failure headings and no new failures. Updated spreadsheet wrapper tests pass separately. Isolated production build is staged; deployment receipt will follow.
+
+## November 7 — capture/import repair200 (active)
+
+Owner: current Codex task. Web Space capture and direct spreadsheet imports. Preserve main chat/photo extraction and unrelated landing UI.
+Implementation and verification are in progress; nothing from this lane is deployed yet.
+
 ## November 7 - Home presentation deployed
 
 Runtime `9ff5803f`, PR342, branch `style/simplify-home-headings`. Release

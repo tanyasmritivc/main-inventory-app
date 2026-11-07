@@ -1,4 +1,5 @@
 "use client";
+import { WorldSpreadsheetImport } from "./world-spreadsheet-import";
 import { QuickStart, useHomePlaceholder } from "./web-refresh-ui";
 import { MessageActions, type ResponseRating } from "./message-actions";
 import { ChatProgress } from "./chat-progress";
@@ -133,6 +134,7 @@ function AssistClientWorkspace({
   const dragDepth = useRef(0);
   const [draggingPhoto, setDraggingPhoto] = useState(false);
   useEffect(() => { const urls = photoUrls.current; return () => { urls.forEach(url => URL.revokeObjectURL(url)); }; }, []);
+  const [spreadsheetFile, setSpreadsheetFile] = useState<File>();
   const [input, setInput] = useState(initialQuery),
     [photo, setPhoto] = useState<File>(),
     [preview, setPreview] = useState<string>(),
@@ -217,17 +219,18 @@ function AssistClientWorkspace({
     if (
       file &&
       !new RegExp(
-        kind === "spreadsheet" ? "\\.(csv|xlsx)$" : "\\.(pdf|txt|md)$",
+        kind === "spreadsheet" ? "\\.(csv|xlsx|json)$" : "\\.(pdf|txt|md)$",
         "i",
       ).test(file.name)
     ) {
       setError(
         kind === "spreadsheet"
-          ? "Choose a CSV or Excel (.xlsx) file."
+          ? "Choose a CSV, JSON, or Excel (.xlsx) file."
           : "Choose a photo, PDF, TXT or Markdown file. Use Import inventory for spreadsheets.",
       );
       return;
     }
+    if (kind === "spreadsheet" && file) { setSpreadsheetFile(file); return; }
     const account = accountId,
       generation = epoch.current;
     const current = () =>
@@ -460,17 +463,14 @@ function AssistClientWorkspace({
     return () => window.removeEventListener("findez-new-world-chat", fresh);
   });
   async function removeConversation(id: string) {
-    if (
-      !accountId ||
-      sending ||
-      !(await confirmAction({
-        title: "Delete conversation?",
-        message: "This removes the conversation from your history.",
-        confirmLabel: "Delete",
-        danger: true,
-      }))
-    )
-      return;
+    if (!accountId || sending) return;
+    // Release the history modal's pointer/focus trap before opening the app
+    // confirmation. Otherwise the confirmation is visible but cannot be used.
+    setHistoryOpen(false);
+    if (!(await confirmAction({title: "Delete conversation?",
+      message: "This removes the conversation from your history.", confirmLabel: "Delete", danger: true}))) {
+      setHistoryOpen(true); return;
+    }
     const account = accountId;
     try {
       await accountRequest(
@@ -698,6 +698,7 @@ function AssistClientWorkspace({
       onDragLeave={event => { if (worldId && event.dataTransfer.types.includes("Files")) { dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDraggingPhoto(false); } }}
       onDrop={event => { if (!worldId) return; event.preventDefault(); dragDepth.current = 0; setDraggingPhoto(false); attach(Array.from(event.dataTransfer.files).find(file => file.type.startsWith("image/"))); }}>
       {draggingPhoto && <div className={captureStyles.drop} role="status"><div><ImagePlus size={28} /><b>Drop a photo to scan</b><small>FindEZ will find the items for you to review.</small></div></div>}
+      {spreadsheetFile && accountId && worldId && <WorldSpreadsheetImport file={spreadsheetFile} accountId={accountId} worldId={worldId} onClose={() => setSpreadsheetFile(undefined)}/>}
       {contextKind && accountId && worldId && (
         <ChatContextPicker
           key={`${worldId}:${contextKind}`}
@@ -1189,7 +1190,7 @@ function AssistClientWorkspace({
                 <input
                   ref={spreadsheetInput}
                   type="file"
-                  accept=".csv,.xlsx"
+                  accept=".csv,.xlsx,.json"
                   hidden
                   onChange={(e) => {
                     void uploadSource(e.target.files?.[0], "spreadsheet");

@@ -1,11 +1,12 @@
 /** @jest-environment jsdom */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import { AssistClient } from '@/components/site/assist-client';
 import { accountRequest } from '@/lib/account-request';
 
 jest.mock('@/lib/use-api-session', () => ({ useApiSession: () => ({ accountId: 'fixture-account', error: null }) }));
 jest.mock('@/lib/account-request', () => ({ accountRequest: jest.fn() }));
-jest.mock('@/components/site/app-dialog-provider', () => ({ useAppDialog: () => ({ confirmAction: jest.fn() }) }));
+import {AppDialogProvider} from '@/components/site/app-dialog-provider';
+const render = (ui: React.ReactNode) => rtlRender(<AppDialogProvider>{ui}</AppDialogProvider>);
 jest.mock('@/lib/ask-stream', () => ({ askQuestion: jest.fn() }));
 
 beforeEach(() => {
@@ -72,3 +73,18 @@ test('a fresh prompt does not revive the previous conversation',async()=>{
   await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('fixture-account','/conversations'));
   expect(screen.queryByText('The recorded location is Workbench.')).toBeNull();
 });
+
+ test('history Delete releases its modal so real confirmation accepts the click',async()=>{
+   jest.mocked(accountRequest).mockImplementation(async (_account,path,options)=>{
+     if(options?.method==='DELETE') return {deleted:true} as never;
+     if(path==='/conversations') return [{id:'fixture-chat',title:'Workshop tools'}] as never;
+     return {} as never;
+   });
+   render(<AppDialogProvider><AssistClient/></AppDialogProvider>);
+   fireEvent.click(await screen.findByRole('button',{name:'History'}));
+   const button = await screen.findByRole('button',{name:'Delete Workshop tools'});
+   fireEvent.click(button);
+   expect(screen.queryByRole('dialog',{name:'History'})).toBeNull();
+   fireEvent.click(await screen.findByRole('button',{name:'Delete'}));
+   await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('fixture-account','/conversations/fixture-chat',{method:'DELETE'}));
+ });

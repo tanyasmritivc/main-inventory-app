@@ -1,4 +1,5 @@
 "use client";
+import { SpaceExtraction } from "./space-extraction";
 import { SpaceInfoLine } from "./web-refresh-ui";
 import { ResourceArt } from "./app-theme-ui";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
@@ -18,7 +19,7 @@ import Link from "@/components/site/inventory-link";
 
 import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import { getAccessToken } from "@/lib/session";
-import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
+import type { InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
   apiRequest,
@@ -254,6 +255,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const [spaceCapture, setSpaceCapture] = useState<{file: File; inventoryId: string; worldId: string; spaceId: string; spaceName: string}>();
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
   const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
   const [spacesLoadError, setSpacesLoadError] = useState<string | null>(null);
@@ -544,36 +546,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   async function onExtractMultiImage(file: File, spaceOverride?: string) {
     const targetSpace = spaceOverride ?? selectedSpace;
     if (!targetSpace) { setError('Choose a Space before uploading a photo.'); return; }
-    setLoading(true);
-    setError(null);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const res = await extractFromImageMulti({ token: t, file });
-      if (res.items.length > 0) {
-        const located = res.items.map((it: ExtractedInventoryItem) => ({ ...it, location: targetSpace }));
-        const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
-        const ready = located.filter((item) => !item.scan_evidence?.needs_review);
-        for (const item of uncertain) {
-          if (!item.review_id) {
-            throw new Error('An uncertain item was not safely stored. Please scan the photo again.');
-          }
-          if (item.review_status !== 'pending' && item.review_status !== 'preview') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
-          await updateReviewItem({ token: t, reviewId: item.review_id, item });
-        }
-        if (ready.length > 0) await bulkCreate({ token: t, items: ready });
-        if (uncertain.length > 0) setSuccess(`${uncertain.length} uncertain item${uncertain.length === 1 ? '' : 's'} saved in Review.`);
-        await load(t, '');
-        const reviews = await getReviewItems({ token: t, limit: 1 });
-        setPendingReviewCount(reviews.pending_count);
-      }
-    } catch (err: any) {
-      if (!handleApiError(err)) {
-        setError(errorMessage(err, 'Failed to extract from image'));
-      }
-    } finally {
-      setLoading(false);
+    const inventory = activeInventory();
+    const space = serverSpaces.find(s => s.name === targetSpace);
+    if (!inventory || !space || !accountId || !inventory.can_edit) {
+      setError('Open an editable Space before uploading a photo.'); return;
     }
+    setSpaceCapture({file, inventoryId: inventory.inventory_id,
+      worldId: inventory.workspace.organization_id || 'personal', spaceId: space.id, spaceName: space.name});
   }
 
   // ── Barcode ────────────────────────────────────────────────────────────────
@@ -582,7 +561,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     setBarcodeProgressStep(0);
     const step1 = window.setTimeout(() => setBarcodeProgressStep(1), 700);
     const step2 = window.setTimeout(() => setBarcodeProgressStep(2), 2500);
-    setDraft((d) => ({ ...d, barcode }));
+    setDraft((d) => ({ ...d, barcode, location: viewingSharedSpace?.spaceName || selectedSpace || d.location }));
     try {
       const t = token || (await refreshToken());
       if (!t) return;
@@ -1664,6 +1643,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </DialogContent>
       </Dialog>
 
+      {spaceCapture && accountId && <SpaceExtraction {...spaceCapture} accountId={accountId}
+        onClose={() => setSpaceCapture(undefined)} onSaved={() => void load(token ?? undefined, query)}/>}
       {/* Spreadsheet import */}
       <Dialog open={spreadsheetOpen} onOpenChange={(open) => { setSpreadsheetOpen(open); if (!open) setSpreadsheetSpace(null); }}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 600 }}>
@@ -1673,6 +1654,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {spreadsheetSpace ? (
             <SpreadsheetImportModal
               spaceName={spreadsheetSpace}
+              spaceId={serverSpaces.find(s => s.name === spreadsheetSpace)?.id}
               token={token ?? ''}
               onSuccess={() => void load(token ?? undefined, query)}
             />
@@ -1805,7 +1787,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 if (!t) { setError('Session expired. Please refresh the page.'); return; }
                 if (!draft.name?.trim()) throw new Error('Name is required');
                 if (!draft.category?.trim()) throw new Error('Category is required');
-                const destination = draft.location?.trim() || selectedSpace;
+                const destination = viewingSharedSpace?.spaceName || selectedSpace || draft.location?.trim();
                 if (!destination) throw new Error('Choose a Space for this item.');
                 const res = await addItem({
                   token: t,
@@ -1862,7 +1844,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               </div>
               <div>
                 <label htmlFor="create-item-location" style={labelStyle}>Space *</label>
-                <select id="create-item-location" value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
+                <select id="create-item-location" disabled={!!selectedSpace || !!viewingSharedSpace} value={viewingSharedSpace?.spaceName || selectedSpace || draft.location || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
                   <option value="">Choose a Space</option>
                   {serverSpaces.filter((row) => row.name !== 'Unsorted').map((row) => <option key={row.id} value={row.name}>{row.name}</option>)}
                   <option value="Unsorted">Unsorted (only if chosen)</option>

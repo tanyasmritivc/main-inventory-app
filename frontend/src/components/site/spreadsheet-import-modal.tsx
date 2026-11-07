@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 import { apiRequest } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
+import { DirectSpreadsheetImport } from "./direct-spreadsheet-import";
 type Row = {
   index: number;
   source_row: number;
@@ -56,8 +57,15 @@ type Props = {
   token: string;
   onSuccess: (count: number) => void;
   kind?: "inventory" | "bom";
+  spaceId?: string;
 };
-export function SpreadsheetImportModal({
+export function SpreadsheetImportModal(props: Props) {
+  if ((props.kind ?? "inventory") === "inventory") return <DirectSpreadsheetImport
+    spaceName={props.spaceName} spaceId={props.spaceId} onSuccess={props.onSuccess}
+    request={(path, body) => apiRequest(path, {method: "POST", token: props.token, body})}/>;
+  return <ReviewedSpreadsheetImport {...props}/>;
+}
+function ReviewedSpreadsheetImport({
   spaceName,
   token,
   onSuccess,

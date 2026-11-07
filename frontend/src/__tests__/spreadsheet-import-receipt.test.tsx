@@ -1,16 +1,13 @@
 /** @jest-environment jsdom */
-import {render,screen,fireEvent} from '@testing-library/react';
+import {render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {SpreadsheetImportModal} from '@/components/site/spreadsheet-import-modal';
-import {importSpreadsheet} from '@/lib/api';
-const push=jest.fn();
-jest.mock('@/components/site/inventory-link',()=>({useInventoryRouter:()=>({push})}));
-jest.mock('@/components/ui/dialog',()=>({DialogClose:({children}:{children:React.ReactNode})=><>{children}</>}));
-jest.mock('@/lib/api',()=>({importSpreadsheet:jest.fn()}));
+import {apiRequest} from '@/lib/api';
+jest.mock('@/components/site/inventory-link',()=>({useInventoryRouter:()=>({push:jest.fn()})}));
+jest.mock('@/lib/api',()=>({apiRequest:jest.fn()}));
 beforeEach(()=>jest.clearAllMocks());
-function upload(){const onSuccess=jest.fn();const {container}=render(<SpreadsheetImportModal spaceName="QA Shelf" token="test" onSuccess={onSuccess}/>);fireEvent.change(container.querySelector('input[type=file]')!,{target:{files:[new File(['name\nWasher'],'qa.csv')]}});return onSuccess;}
-test('partial import explains missing rows and View Items opens the destination',async()=>{
- jest.mocked(importSpreadsheet).mockResolvedValue({inserted:2,failures:1});const success=upload();
- expect(await screen.findByText('Import partially completed')).toBeTruthy();expect(screen.getByRole('alert').textContent).toContain('1 rows were not saved');expect(success).toHaveBeenCalledWith(2);
- fireEvent.click(screen.getByRole('button',{name:'View Items'}));expect(push).toHaveBeenCalledWith('/inventory?space=QA%20Shelf');
+function upload(){const onSuccess=jest.fn();render(<SpreadsheetImportModal spaceName="QA Shelf" spaceId="qa-space" token="test" onSuccess={onSuccess}/>);fireEvent.change(screen.getByLabelText('Choose spreadsheet'),{target:{files:[new File(['name\nWasher'],'qa.csv')]}});return onSuccess;}
+test('inventory modal imports directly to its Space and reports verified completion',async()=>{
+ jest.mocked(apiRequest).mockResolvedValueOnce({id:'session',status:'review',counts:{total:2,imported:0,pending:2,failed:0,skipped:0}}).mockResolvedValueOnce({id:'session',status:'complete',counts:{total:2,imported:2,pending:0,failed:0,skipped:0}});
+ const success=upload();await waitFor(()=>expect(success).toHaveBeenCalledWith(2));expect(apiRequest).toHaveBeenCalledWith('/connectors/imports/session/import',expect.objectContaining({method:'POST',token:'test'}));
 });
-test('malformed receipt never claims success',async()=>{jest.mocked(importSpreadsheet).mockResolvedValue({} as never);const success=upload();expect(await screen.findByRole('alert')).toBeTruthy();expect(success).not.toHaveBeenCalled();expect(screen.queryByText('Import complete!')).toBeNull();});
+test('malformed receipt never claims success',async()=>{jest.mocked(apiRequest).mockResolvedValue({});const success=upload();expect(await screen.findByRole('alert')).toBeTruthy();expect(success).not.toHaveBeenCalled();});
