@@ -118,3 +118,5 @@ html[data-app-theme] .refresh-item-panel > h2 { margin:0 0 24px; }
 html[data-app-theme] .refresh-item-panel .item-gallery h2 { font:500 14px/1.4 var(--font-main); margin:0; }
 html[data-app-theme] .refresh-item-panel .workspace-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 html[data-app-theme] .refresh-item-panel .workspace-actions { display:flex; align-items:center; gap:6px; }
+
+html[data-app-theme] .app-frame.app-frame .ask-world-title { font-size:clamp(28px,3.2vw,38px); margin-bottom:32px; }

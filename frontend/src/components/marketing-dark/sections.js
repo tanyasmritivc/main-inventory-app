@@ -2,8 +2,8 @@ import {solutionsSections,foundersSections} from './solutions-founders-sections'
 import {SOL,ORDER,ART,FAQ,IC,BENCH} from './data';
 const ic=(n,s)=>`<svg class="i" viewBox="0 0 24 24"${s?` style="width:${s}px;height:${s}px"`:''}>${IC[n]}</svg>`;
 const FZ_MARK=s=>`<span data-brand="${s}"></span>`;
-const HERO=(h,sub,{eb='',chat=true,short=false,cta=''}={})=>`<header class="hero ${short?'short':''}" data-hero><div class="bgx"><div class="bins"></div><div class="binfade"></div></div><div class="wrap hin">
- ${eb?`<div class="eb rise">${eb}</div>`:''}<h1 class="rise">${h}</h1><p class="sub rise" style="animation-delay:.08s">${sub}</p>
+const HERO=(h,sub,{eb='',chat=true,short=false,cta='',home=false}={})=>`<header class="hero ${short?'short':''} ${home?'home-hero':''}" data-hero><div class="bgx"><div class="bins"></div><div class="binfade"></div></div><div class="wrap hin">
+ ${eb?`<div class="eb rise">${eb}</div>`:''}<h1 class="rise">${h}</h1>${sub?`<p class="sub rise" style="animation-delay:.08s">${sub}</p>`:''}
  ${chat?`<div class="rise" style="animation-delay:.16s"><div data-chat></div></div><p class="free rise" style="animation-delay:.24s">Free through Founders Access. <a onclick="ext('signup')">Get started</a></p>`:''}${cta}</div></header>`;
 const SCENE=k=>{const s=SOL[k].scene;const M=FZ_MARK(13);return `<section class="scene" data-scene="${k}"><div class="zs"><div class="zgrid"></div>
  <div class="zcap"><div class="zbar"><i></i><i></i><i></i></div><div class="zt"><h3>Ask in plain words.</h3></div></div>
@@ -14,7 +14,7 @@ const SCENE=k=>{const s=SOL[k].scene;const M=FZ_MARK(13);return `<section class=
    <div class="winv"><div class="ivh"><span>Inventory</span><span class="ivf"><span class="fl">All items</span></span><span class="ivc">298 items</span></div><div class="ivcols"><span>Item</span><span>Location</span><span style="text-align:right">Qty</span></div><div class="ivl"><div class="sweep"></div></div></div></div></div>
 </div></section>`};
 const CARD=(k)=>{const s=SOL[k];return `<a class="scard" href="#/${k}"><div class="art ${ART[k]}"></div><div class="sh"></div><div class="dim"></div><div class="qa"><div class="q">${s.card[0]}</div><div class="a"><div class="ab"><span class="dots"><i></i><i></i><i></i></span><span class="tx">${s.card[1]}</span></div></div></div><div class="in"><small>${s.t}</small><h3>${s.h}</h3></div><span class="go">${ic('arrow',20)}</span></a>`};
-const RAIL=(skip)=>{const ks=ORDER.filter(k=>k!==skip);return `<section class="rail" data-rail><div class="rs"><div class="hd"><h2>Built for people who manage a lot of physical things.</h2><a class="btn s" href="#/solutions">All solutions</a></div><div class="rprog"><div class="bar"><i></i></div><div class="nm">${ks.map((k,i)=>`<span${i?'':' class="on"'}>${SOL[k].t}</span>`).join('')}</div></div><div class="track">${ks.map((k,i)=>CARD(k).replace('class="scard"',`class="scard" style="--ci:${i}" data-k="${k}"`)).join('')}</div></div></section>`};
+const RAIL=(skip)=>{const ks=ORDER.filter(k=>k!==skip);return `<section class="rail" data-rail><div class="rs"><div class="hd"><h2>Built for people who manage a lot of physical things.</h2><a class="btn s" href="#/solutions">All solutions</a></div><div class="rprog"><div class="nm">${ks.map((k,i)=>`<span${i?'':' class="on"'}>${SOL[k].t}</span>`).join('')}</div></div><div class="track">${ks.map((k,i)=>CARD(k).replace('class="scard"',`class="scard" style="--ci:${i}" data-k="${k}"`)).join('')}</div></div></section>`};
 const WORDS=(txt,btn='Join Founders Access')=>`<section class="words" data-words><div class="ws"><div class="wsbg" style="background-image:url(${BENCH})"></div><div class="wrap"><div class="eb">Founders Access</div><p class="big">${txt.split(' ').map(w=>`<span class="w"><span>${w}</span></span>`).join(' ')}</p>
  <div class="act"><a class="btn p lg" onclick="ext('signup')">${btn}</a><small>Founders Access is currently free. Paid plans may be introduced in the future; we'll communicate changes in advance.</small></div></div></div></section>`;
 const FA_TXT="We're opening FindEZ to our first wave of users. Explore the app, build your inventory, and help shape what comes next.";
@@ -24,7 +24,7 @@ const NUMS=rows=>`<div class="nums">${rows.map((r,i)=>`<div class="nr2 rv"><span
 const PROB=(h,b,close)=>`<section class="blk" style="padding-bottom:60px"><div class="wrap prob"><h2 class="h2 rv">${h}</h2><p class="rv">${b}${close?`<b>${close}</b>`:''}</p></div></section>`;
 const NOTE=n=>`<section class="blk" style="padding-top:0"><div class="wrap"><div class="note rv"><div class="lb">From the founder</div><div><blockquote>${n[0]}</blockquote><cite><b>${n[1]}</b>, ${n[2]}</cite></div></div></div></section>`;
 const P={
- home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','Import what you already have, capture items with photos, and ask FindEZ in plain language.')+SCENE('robotics')+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.')}),
+ home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','',{home:true})+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.')}),
  solutions:()=>({k:null,html:solutionsSections()}),
  sol:k=>{const s=SOL[k];return {k,labels:s.labels,html:HERO(s.h,s.p,{eb:s.t})+(s.prob?PROB(s.prob[0],s.prob[1]):'')+SCENE(k)+`<section class="blk"><div class="wrap"><h2 class="h2 rv">${s.uh?s.uh[0]:'How it helps'}</h2>${s.uh?`<p class="lead rv">${s.uh[1]}</p>`:''}${NUMS(s.uses)}</div></section>`+(s.note?NOTE(s.note):'')+RAIL(k)+WORDS(s.cta+' '+FA_TXT,'Get Free Founders Access')}},
  founders:()=>({k:null,html:foundersSections()}),

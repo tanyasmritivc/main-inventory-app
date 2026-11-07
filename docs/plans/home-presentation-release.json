@@ -1,0 +1,34 @@
+{
+  "runtime_commit": "9ff5803fb75792464bf7ef0fccc73b31afcdb50a",
+  "pr": 342,
+  "deployed": true,
+  "build_id": "x6ZmtLuoVXxuDZjcWiJAm",
+  "release": "/home/ubuntu/findez-web-releases/home-simplify-20261107/frontend",
+  "preserved_files": 540,
+  "changed_files": [
+    "src/app/web-ui-refresh.css",
+    "src/components/marketing-dark/landing.css",
+    "src/components/marketing-dark/motion-runtime.js",
+    "src/components/marketing-dark/sections.js",
+    "src/components/site/assist-client.tsx"
+  ],
+  "backend_unchanged": true,
+  "live_browser_checks": 4,
+  "ask_fixture_checks": 4,
+  "typescript": "pass",
+  "eslint": "zero errors, three existing warnings",
+  "production_build": "pass",
+  "ci_run": 42418071421,
+  "ci_web": {
+    "baseline_failure_headings": 72,
+    "current_failure_headings": 72,
+    "new_failures": [],
+    "resolved": []
+  },
+  "other_four_ci_jobs": "pass",
+  "local_jest": {
+    "passed": 514,
+    "failed": 76,
+    "failure_baseline_unchanged": true
+  }
+}

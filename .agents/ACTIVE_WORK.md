@@ -1,3 +1,18 @@
+## November 7 - Home presentation deployed
+
+Runtime `9ff5803f`, PR342, branch `style/simplify-home-headings`. Release
+`home-simplify-20261107` is live, build `x6ZmtLuoVXxuDZjcWiJAm`. Organization Ask
+heading is smaller and has no subtitle. Landing home hero is smaller with no
+subtitle; the home demo scene and solution-card progress line are removed.
+Cards, navigation, other page headings and inventory behavior are preserved.
+
+TypeScript, changed-file lint and production build pass. Four live landing
+viewport/motion checks and four isolated Ask theme/viewport checks pass. The
+five-file overlay preserved540 unrelated files, configuration and backend PID.
+Web CI retains exactly the same72 failure headings as the preceding release;
+no new failures. The other four CI jobs passed. Local Jest514 pass/76 baseline
+failures. Receipt: `docs/plans/home-presentation-release.json`.
+
 ## November 7 - Web item info and printable labels deployed
 
 Runtime `ceeb4baf`, PR340, branch `feat/web-item-info-labels`. Release
