@@ -62,6 +62,7 @@ function ItemPhotoGalleryWorkspace({
   const [deleting, setDeleting] = useState<ItemPhoto | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const previewButton = useRef<HTMLButtonElement>(null);
+  const viewerTitle = useRef<HTMLHeadingElement>(null);
   const load = useCallback(async () => {
     if (!accountId) return;
     const account = accountId,
@@ -215,8 +216,8 @@ function ItemPhotoGalleryWorkspace({
           if (!open) setViewing(null);
         }}
       >
-        <DialogContent className="workspace-dialog item-photo-viewer" aria-describedby={undefined} onCloseAutoFocus={event => { event.preventDefault(); previewButton.current?.focus(); }}>
-          <DialogTitle>Item photo</DialogTitle>
+        <DialogContent className="workspace-dialog item-photo-viewer" aria-describedby={undefined} onOpenAutoFocus={event => { event.preventDefault(); viewerTitle.current?.focus(); }} onCloseAutoFocus={event => { event.preventDefault(); previewButton.current?.focus(); }}>
+          <DialogTitle ref={viewerTitle} tabIndex={-1}>Item photo</DialogTitle>
           {imageError ? (
             <p role="alert">
               This photo could not be loaded. Close and refresh the gallery to
