@@ -1,3 +1,4 @@
+import 'support/announcement_fixture.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -118,6 +119,13 @@ class _InventoryAppearanceApi extends _ProfileApi {
 class _PilotProfileApi extends _ProfileApi {
   _PilotProfileApi(this.notice);
   final String? notice;
+  @override
+  Future<Map<String, dynamic>> collaboration(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? query,
+  }) async => announcementAccess;
 
   @override
   Future<Map<String, dynamic>> getMyLimits() async => {
@@ -490,14 +498,15 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            expect(find.text('Plans'), findsOneWidget);
+            expect(find.text('Your plan'), findsOneWidget);
             expect(find.text('Free Pilot'), findsNothing);
             expect(find.textContaining('begin November 2'), findsNothing);
             if (scale == 1.0) {
-              await tester.tap(find.text('Plans'));
+              await tester.tap(find.text('Your plan'));
               await tester.pumpAndSettle();
-              expect(find.text('Remember more of your world.'), findsOneWidget);
-              await tester.pageBack();
+              expect(find.text("You're in early."), findsOneWidget);
+              await tester.ensureVisible(find.text('Got it'));
+              await tester.tap(find.text('Got it'));
               await tester.pumpAndSettle();
             }
             await tester.scrollUntilVisible(find.text('Appearance'), 160);

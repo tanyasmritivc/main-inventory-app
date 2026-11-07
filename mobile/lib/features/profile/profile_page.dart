@@ -24,7 +24,7 @@ import 'terms_of_service_page.dart';
 import 'profile_editor_page.dart';
 import 'appearance_settings.dart';
 import 'memory_page.dart';
-import 'plans_page.dart';
+import '../announcements/announcement_host.dart';
 import '../../core/plan_visibility.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -1347,16 +1347,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
             Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: ListTile(
-                title: const AppText('Plans'),
-                subtitle: const AppText(
-                  'Compare Free, Plus and Team. Paid plans coming soon.',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute(builder: (_) => const PlansPage()),
-                ),
-              ),
+              child: AnnouncementSettingsRow(api: widget.api),
             ),
             const AppearanceSettings(),
             // ── Scanning ─────────────────────────────────────────────────────

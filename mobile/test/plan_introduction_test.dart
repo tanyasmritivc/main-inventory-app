@@ -1,12 +1,8 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/plan_introduction.dart';
-import 'package:mobile/features/profile/plans_welcome.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,20 +34,6 @@ Session sessionFor(User user) => Session(
   user: user,
   expiresIn: 3600,
 );
-
-class FakePlanStore extends PlanIntroductionStore {
-  FakePlanStore({this.result = true, this.pending});
-  final bool result;
-  final Completer<bool>? pending;
-  final dismissed = <String>[];
-  @override
-  Future<bool> shouldShow(User user) async => pending?.future ?? result;
-  @override
-  Future<bool> dismiss(User user) async {
-    dismissed.add(user.id);
-    return true;
-  }
-}
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -200,94 +182,4 @@ void main() {
     );
     expect(await store.shouldShow(older), isTrue);
   });
-  for (final action in ['Continue with Free', 'Skip for now', 'Close plans']) {
-    testWidgets('$action closes once without replacing chat', (tester) async {
-      final store = FakePlanStore();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.create(Brightness.dark),
-          home: PlansWelcomeGate(
-            user: signupUser(action),
-            store: store,
-            child: const Scaffold(body: Text('Existing chat')),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(PlansWelcomeDialog), findsOneWidget);
-      await tester.tap(
-        action == 'Close plans' ? find.byTooltip(action) : find.text(action),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(PlansWelcomeDialog), findsNothing);
-      expect(find.text('Existing chat'), findsOneWidget);
-      expect(store.dismissed, [action]);
-    });
-  }
-  testWidgets('disposed account cannot open a late popup', (tester) async {
-    final ready = Completer<bool>();
-    final store = FakePlanStore(pending: ready);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlansWelcomeGate(
-          key: const ValueKey('a'),
-          user: signupUser('late-a'),
-          store: store,
-          child: const Scaffold(body: Text('A')),
-        ),
-      ),
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlansWelcomeGate(
-          key: const ValueKey('b'),
-          user: signupUser('late-b'),
-          store: FakePlanStore(result: false),
-          child: const Scaffold(body: Text('B')),
-        ),
-      ),
-    );
-    ready.complete(true);
-    await tester.pumpAndSettle();
-    expect(find.byType(PlansWelcomeDialog), findsNothing);
-    expect(find.text('B'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-  for (final brightness in Brightness.values) {
-    testWidgets(
-      'popup remains scrollable and dismissible at large text $brightness',
-      (tester) async {
-        tester.view.physicalSize = const Size(320, 700);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        var closed = false;
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.create(brightness),
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: const TextScaler.linear(2.6),
-                disableAnimations: true,
-              ),
-              child: child!,
-            ),
-            home: Scaffold(
-              body: PlansWelcomeDialog(onClose: () => closed = true),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        await tester.scrollUntilVisible(find.text('Team'), 150);
-        await tester.tap(find.text('Team'));
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(find.text('10 people included'), 200);
-        expect(tester.takeException(), isNull);
-        await tester.tap(find.text('Continue with Free'));
-        await tester.pumpAndSettle();
-        expect(closed, isTrue);
-      },
-    );
-  }
 }

@@ -1,3 +1,18 @@
+## November 7 - Announcements activated and build196 uploaded
+
+User explicitly authorized deployment before the web item-info task. Runtime
+`5118c196` (PR339) passed all five CI gates. Additive announcement migration and
+three-file API overlay are live, preserving 141 unrelated Python files and push
+settings. Disposable HTTPS checks passed access, auth, private claims, receipts
+and duplicate suppression; test accounts/campaign were removed. Welcome is
+published at 10 percent; pricing and product update remain drafts.
+
+Apple acknowledged TestFlight 1.1.2 (196), delivery
+`0945f019-1c25-4f02-bfc7-59ec03f6b186`. Validation, strict signatures, 33 device
+executables and 27 privacy manifests passed. Processing/tester availability were
+not polled; physical acceptance remains pending. Existing mobile item info is
+unchanged. Receipt: `docs/plans/announcements196-release.json`.
+
 ## November 7 - Contextual Ask FindEZ Cupertino sheet delivered (195)
 
 TestFlight 1.1.2 (195), runtime `f3b5c293bde1fcb17feb0faa415cae8106270031`, PR335,

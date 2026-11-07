@@ -65,6 +65,7 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onRegisterScan,
+    this.onRegisterAnnouncementIdle,
     this.onChatStateChanged,
     this.onBack,
     this.pageController,
@@ -94,6 +95,7 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(VoidCallback)? onRegisterScan;
+  final void Function(bool Function())? onRegisterAnnouncementIdle;
   final void Function(bool hasMessages)? onChatStateChanged;
   final VoidCallback? onBack;
   final PageController? pageController;
@@ -3804,6 +3806,16 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   Widget build(BuildContext context) {
+    widget.onRegisterAnnouncementIdle?.call(
+      () =>
+          mounted &&
+          !_sending &&
+          !_pickingPhoto &&
+          !_scanningPreview &&
+          _previewDraft == null &&
+          !_voice.active &&
+          _controller.text.trim().isEmpty,
+    );
     super.build(context);
     final keyboardVisible =
         View.of(context).viewInsets.bottom > 0 ||

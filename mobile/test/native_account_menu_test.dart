@@ -9,7 +9,8 @@ import 'package:mobile/core/profile_store.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/profile/native_account_menu.dart';
 import 'package:mobile/features/profile/account_menu.dart';
-import 'package:mobile/features/profile/plans_page.dart';
+import 'package:mobile/features/announcements/announcement_widgets.dart';
+import 'support/announcement_fixture.dart';
 import 'support/hierarchy_fixture.dart';
 
 class Storage implements AppearanceStorage {
@@ -30,7 +31,9 @@ void main() {
   final fixture = HierarchyFixture();
   setUpAll(() async {
     await fixture.initialize();
-    fixture.respond = (_) => {'user_id': 'actor-a', 'display_name': 'Alex'};
+    fixture.respond = (r) => r.path.startsWith('/announcements/')
+        ? announcementAccess
+        : {'user_id': 'actor-a', 'display_name': 'Alex'};
   });
   tearDownAll(() => Supabase.instance.dispose());
   for (final brightness in Brightness.values) {
@@ -88,17 +91,19 @@ void main() {
         (section) => section['rows'] as List,
       );
       final plans = rows.singleWhere((row) => row['id'] == 'plans');
-      expect(plans['title'], 'Plans');
+      expect(plans['title'], 'Your plan');
+      expect(plans['announcementPlan'], false);
       expect(plans['disclosure'], true);
       expect(model['dark'], brightness == Brightness.dark);
       completion.complete({'action': 'plans'});
       await tester.pumpAndSettle();
-      expect(find.byType(PlansPage), findsOneWidget);
-      expect(find.text(plansNotice), findsOneWidget);
-      await tester.pageBack();
+      expect(find.byType(AnnouncementSheet), findsOneWidget);
+      expect(find.text(announcementAccess['fine'] as String), findsOneWidget);
+      await tester.ensureVisible(find.text('Got it'));
+      await tester.tap(find.text('Got it'));
       await tester.pumpAndSettle();
       expect(presentations, 2);
-      expect(find.byType(PlansPage), findsNothing);
+      expect(find.byType(AnnouncementSheet), findsNothing);
       completion.complete(null);
       await tester.pumpAndSettle();
       await pending;
@@ -174,7 +179,11 @@ void main() {
       expect(model['textSizeFactor'], AppTextSize.standard.factor);
       final resized = await action('size:large');
       expect(resized['textSizeFactor'], AppTextSize.large.factor);
-      final preferences = (resized['sections'] as List)[1] as Map;
+      final preferences =
+          (resized['sections'] as List).firstWhere(
+                (s) => s['title'] == 'Preferences',
+              )
+              as Map;
       final appearancePage = (preferences['rows'] as List).first['children'];
       expect(appearancePage['textSizeFactor'], AppTextSize.large.factor);
       final changed = await action('theme:dark');

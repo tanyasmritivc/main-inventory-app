@@ -294,6 +294,32 @@ private final class NativeListController: UITableViewController, UISearchResults
     content.secondaryTextProperties.numberOfLines = 0
     content.textProperties.color = data["destructive"] as? Bool == true ? .systemRed : .label
     if let symbol = data["symbol"] as? String { content.image = UIImage(systemName: symbol); content.imageProperties.tintColor = .secondaryLabel }
+    if data["announcementPlan"] as? Bool == true {
+      content.textProperties.font = appFont(16, style: .body, weight: .medium)
+      content.secondaryTextProperties.font = appFont(13, style: .subheadline)
+      content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 14)
+      content.image = announcementTile()
+      content.imageProperties.maximumSize = CGSize(width: 42, height: 42)
+      content.imageProperties.cornerRadius = 12
+      let background = UIView()
+      background.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.086, green: 0.086, blue: 0.094, alpha: 1) : .white }
+      background.layer.cornerRadius = 20
+      background.layer.borderWidth = 1
+      background.layer.borderColor = UIColor.label.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
+      cell.backgroundView = background
+      if let badge = data["badge"] as? String {
+        let label = UILabel()
+        label.text = "  \(badge)  "
+        label.font = appFont(12.5, style: .caption1, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.layer.cornerRadius = 13
+        label.layer.borderWidth = 1
+        label.layer.borderColor = UIColor.label.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
+        label.sizeToFit()
+        label.frame.size.height = max(26, label.frame.height + 8)
+        cell.accessoryView = label
+      }
+    }
     cell.contentConfiguration = content
     cell.accessibilityIdentifier = data["id"] as? String
     cell.isAccessibilityElement = data["value"] == nil
@@ -311,6 +337,23 @@ private final class NativeListController: UITableViewController, UISearchResults
     } else if data["children"] != nil || data["disclosure"] as? Bool == true { cell.accessoryType = .disclosureIndicator }
     else if data["checked"] as? Bool == true { cell.accessoryType = .checkmark }
     return cell
+  }
+  private func announcementTile() -> UIImage {
+    UIGraphicsImageRenderer(size: CGSize(width: 42, height: 42)).image { renderer in
+      let ctx = renderer.cgContext
+      let rect = CGRect(x: 0, y: 0, width: 42, height: 42)
+      UIBezierPath(roundedRect: rect, cornerRadius: 12).addClip()
+      let colors = [UIColor(red: 0.27, green: 0.20, blue: 0.29, alpha: 1).cgColor,
+                    UIColor(red: 0.47, green: 0.25, blue: 0.26, alpha: 1).cgColor,
+                    UIColor(red: 0.60, green: 0.38, blue: 0.31, alpha: 1).cgColor]
+      if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 0.55, 1]) {
+        ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 42), end: CGPoint(x: 42, y: 0), options: [])
+      }
+      let key = FlutterDartProject.lookupKey(forAsset: "assets/brand/findez-mark-white.png")
+      if let path = Bundle.main.path(forResource: key, ofType: nil), let mark = UIImage(contentsOfFile: path) {
+        mark.draw(in: CGRect(x: 12, y: 12, width: 18, height: 18))
+      }
+    }
   }
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     tableView.deselectRow(at: indexPath, animated: true)
