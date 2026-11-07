@@ -895,7 +895,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                         ),
                         if (_items.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          IconButton.outlined(
+                          IconButton(
                             tooltip: 'Sort items',
                             icon: const Icon(Icons.sort),
                             onPressed: () => showItemSortSheet(
@@ -1268,48 +1268,36 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     }
   }
 
-  Widget _buildReviewCard() => Material(
-    color: AppTheme.adaptive(context, AppColors.surface),
-    borderRadius: BorderRadius.circular(16),
-    clipBehavior: Clip.antiAlias,
-    child: IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(
-            child: _reviewAction(
-              icon: Icons.photo_library_outlined,
-              title: 'Review',
-              subtitle: 'Items to finish',
-              onTap: () => Navigator.of(context).push<void>(
-                MaterialPageRoute(
-                  builder: (_) => ReviewQueuePage(
-                    api: widget.api,
-                    location: _location,
-                    onInventoryMutated: () => _changed = true,
-                  ),
-                ),
+  Widget _buildReviewCard() => Row(
+    children: [
+      Expanded(
+        child: _reviewAction(
+          icon: CupertinoIcons.photo_on_rectangle,
+          title: 'Review',
+          subtitle: 'Items to finish',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => ReviewQueuePage(
+                api: widget.api,
+                location: _location,
+                onInventoryMutated: () => _changed = true,
               ),
             ),
           ),
-          VerticalDivider(
-            width: 1,
-            indent: 16,
-            endIndent: 16,
-            color: AppTheme.border(context),
-          ),
-          Expanded(
-            child: _reviewAction(
-              icon: Icons.inventory_2_outlined,
-              title: 'Low quantity',
-              subtitle: _onlyLowQuantity
-                  ? 'Showing low · Tap to reset'
-                  : '${_lowCount()} items',
-              onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
-            ),
-          ),
-        ],
+        ),
       ),
-    ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: _reviewAction(
+          icon: CupertinoIcons.archivebox,
+          title: 'Low quantity',
+          subtitle: _onlyLowQuantity
+              ? 'Showing low · Tap to reset'
+              : '${_lowCount()} items',
+          onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
+        ),
+      ),
+    ],
   );
 
   Widget _reviewAction({
@@ -1317,40 +1305,46 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-  }) => InkWell(
-    onTap: onTap,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 60),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(icon, size: 23),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
+  }) => Material(
+    color: const Color(0xFFF5F5F5),
+    borderRadius: BorderRadius.circular(32),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 60),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 21, color: const Color(0xFF202020)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF202020),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  AppText(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary(context),
+                    const SizedBox(height: 3),
+                    AppText(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFF606060),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

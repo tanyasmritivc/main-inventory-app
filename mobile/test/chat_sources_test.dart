@@ -9,6 +9,7 @@ import 'package:http/testing.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/chat_source.dart';
+import 'package:mobile/core/inventory_cache.dart';
 import 'package:mobile/features/chat/chat_page.dart';
 import 'package:mobile/features/chat/chat_context_picker.dart';
 import 'package:mobile/features/chat/assistant_connections_page.dart';
@@ -22,6 +23,10 @@ class _Api extends ApiClient {
   final sent = <List<ChatSource>>[];
   final reads = <String>[];
   bool fail = false;
+  bool failSpaces = false;
+  final spaceRows = <Map<String, dynamic>>[
+    {'id': 'shelf', 'name': 'Tool shelf'},
+  ];
   Completer<ChatSource>? pendingFile;
   Completer<Map<String, dynamic>>? pendingSearch;
   @override
@@ -32,11 +37,20 @@ class _Api extends ApiClient {
     String method = 'GET',
     Map<String, dynamic>? data,
     Map<String, dynamic>? query,
-  }) async => {
-    'inventories': [
-      {'inventory_id': 'inv', 'name': 'Workshop', 'workspace_name': 'Home'},
-    ],
-  };
+  }) async {
+    if (path.endsWith('/spaces') && failSpaces) throw StateError('offline');
+    return {
+      'inventories': [
+        {
+          'inventory_id': 'inv',
+          'name': 'Workshop',
+          'workspace_name': 'Home',
+          if (path.endsWith('/spaces')) 'spaces': List.of(spaceRows),
+        },
+      ],
+    };
+  }
+
   @override
   Future<Map<String, dynamic>> chatSourceChoices({
     required String inventoryId,
@@ -197,6 +211,36 @@ void main() {
     },
   );
   testWidgets(
+    'Space choices refresh deletion without listing or deleting inventories',
+    (tester) async {
+      final api = _Api();
+      await tester.pumpWidget(
+        frame(ChatContextPicker(api: api, kind: 'space', selected: const [])),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      await tester.tap(find.text('Tool shelf'));
+      await tester.pump();
+      expect(find.text('Done (1)'), findsOneWidget);
+      api.failSpaces = true;
+      InventoryCache.changes.value++;
+      await tester.pumpAndSettle();
+      expect(find.text('Tool shelf'), findsOneWidget);
+      expect(find.text('Done (1)'), findsOneWidget);
+      expect(find.text('Could not refresh Spaces. Try again.'), findsOneWidget);
+      api.failSpaces = false;
+      api.spaceRows.clear();
+      InventoryCache.changes.value++;
+      await tester.pumpAndSettle();
+      expect(find.text('Tool shelf'), findsNothing);
+      expect(find.text('Workshop'), findsNothing);
+      expect(find.text('Done (0)'), findsOneWidget);
+      expect(find.text('No spaces yet'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
     'file cancellation keeps prompt and failed send keeps attachment for retry',
     (tester) async {
       final picker = _Picker();
@@ -275,7 +319,7 @@ void main() {
   ) async {
     final api = _Api()..pendingSearch = Completer();
     await tester.pumpWidget(
-      frame(ChatContextPicker(api: api, kind: 'space', selected: const [])),
+      frame(ChatContextPicker(api: api, kind: 'item', selected: const [])),
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'old');

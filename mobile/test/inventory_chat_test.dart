@@ -12,6 +12,7 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/chat_source.dart';
 import 'package:mobile/core/inventory_context.dart';
 import 'package:mobile/features/chat/chat_page.dart';
+import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/chat/inventory_chat_button.dart';
 
 InventoryContext scope(String id) => InventoryContext(
@@ -108,7 +109,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Where is my drill?');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byTooltip('Send message'));
       await tester.pump();
       api.stream.add(
         AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'),
@@ -139,6 +140,9 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         await tester.tap(find.text('Ask FindEZ'));
         await tester.pumpAndSettle();
         expect(find.text('Only in Hardware'), findsOneWidget);
+        expect(find.text('Ask FindEZ').hitTestable(), findsNothing);
+        expect(find.byType(WorldComposer), findsOneWidget);
+        await capture?.call(tester, '${brightness.name}-empty');
         expect(find.byType(CupertinoPageScaffold), findsOneWidget);
         expect(
           ModalRoute.of(tester.element(find.byType(CupertinoPageScaffold))),
@@ -147,7 +151,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         expect(tester.widget<ChatPage>(find.byType(ChatPage)).api, same(api));
         await tester.enterText(find.byType(TextField), 'Where is my drill?');
         await tester.pump();
-        await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+        await tester.tap(find.byTooltip('Send message'));
         await tester.pump();
         api.stream.add(
           AiStreamEvent(type: 'delta', delta: 'In Hardware, on shelf 2.'),
@@ -184,7 +188,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         'Private hardware question',
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byTooltip('Send message'));
       await tester.pump();
       a.stream.add(
         AiStreamEvent(type: 'delta', delta: 'Hardware-only answer.'),
@@ -247,6 +251,10 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     expect(
       find.byTooltip('Close contextual chat').hitTestable(),
       findsOneWidget,
+    );
+    expect(
+      tester.getBottomRight(find.byType(WorldComposer)).dy,
+      lessThanOrEqualTo(568 - 220),
     );
     await capture?.call(tester, 'narrow-keyboard');
     await tester.tap(find.byTooltip('Close contextual chat'));

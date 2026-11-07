@@ -16,6 +16,7 @@ import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 import 'package:mobile/features/world/world_action_card.dart';
 import 'package:mobile/features/world/world_composer.dart';
+import 'package:mobile/features/chat/chat_capture_card.dart';
 import 'package:mobile/features/workspaces/organization_pill.dart';
 import 'support/hierarchy_fixture.dart';
 
@@ -415,6 +416,108 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'Photo history opens an empty failed scan and a later load failure preserves the retry prompt',
+    (tester) async {
+      final fallback = fixture.respond;
+      fixture.respond = (request) {
+        if (request.path.endsWith('/conversations')) {
+          return [
+            {'id': 'empty-photo', 'title': 'Photo'},
+            {'id': 'saved-photo', 'title': 'Saved photo'},
+            {'id': 'unavailable', 'title': 'Unavailable photo'},
+          ];
+        }
+        if (request.path.endsWith('/conversations/saved-photo')) {
+          return {
+            'conversation': {'id': 'saved-photo', 'title': 'Saved photo'},
+            'messages': [
+              {
+                'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'role': 'assistant',
+                'content':
+                    'Auto Extract found 1 item(s). Review the draft before saving.',
+                'answer_context': {
+                  'chat_capture': {
+                    'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                    'version': 1,
+                    'revision': 1,
+                    'status': 'draft',
+                    'items': [
+                      {
+                        'index': 0,
+                        'selected': true,
+                        'item': {
+                          'name': 'Drill',
+                          'category': 'Tools',
+                          'quantity': 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          };
+        }
+        if (request.path.endsWith('/conversations/empty-photo')) {
+          return {
+            'conversation': {'id': 'empty-photo', 'title': 'Photo'},
+            'messages': [],
+          };
+        }
+        if (request.path.endsWith('/conversations/unavailable')) {
+          fixture.status = 503;
+          return {'detail': 'Please try again.'};
+        }
+        return fallback(request);
+      };
+      await mount(tester, brightness: Brightness.dark);
+      await tester.tap(find.byTooltip('Chat history'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Saved photo'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChatCaptureCard), findsOneWidget);
+      expect(
+        tester
+            .widget<ChatCaptureCard>(find.byType(ChatCaptureCard))
+            .conversationId,
+        'saved-photo',
+      );
+      expect(
+        fixture.requests.where((request) => request.method != 'GET'),
+        isEmpty,
+      );
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Chat history'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Photo'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('No messages were saved in this chat.'),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Spaces'), findsNothing);
+      expect(find.byTooltip('Capture or attach'), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Keep my retry prompt',
+      );
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Chat history'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unavailable photo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Keep my retry prompt'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      fixture.status = 200;
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('Glass navigation and history fit narrow screens at large text', (
     tester,

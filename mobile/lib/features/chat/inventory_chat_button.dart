@@ -70,27 +70,13 @@ class InventoryChatButton extends StatelessWidget {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Ask FindEZ',
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        'Only in ${api.inventoryContext!.name}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                    ],
+                                  child: Text(
+                                    'Only in ${api.inventoryContext!.name}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
                                 ),
                                 IconButton(
@@ -133,12 +119,17 @@ class InventoryChatButton extends StatelessWidget {
     if (api.inventoryContext == null) return primary ?? const SizedBox.shrink();
     if (prominent) {
       final colors = Theme.of(context).colorScheme;
-      return LiquidSurface(
-        radius: 18,
-        shadow: false,
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1B1B1B)
+              : const Color(0xFFF3F3F3),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: colors.onSurface.withValues(alpha: .06)),
+        ),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(30),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => _open(context),
@@ -147,24 +138,19 @@ class InventoryChatButton extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    Icons.chat_bubble_outline_rounded,
+                    CupertinoIcons.search,
                     size: 20,
-                    color: colors.onSurface,
+                    color: colors.onSurface.withValues(alpha: .55),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Ask FindEZ',
                       style: TextStyle(
-                        color: colors.onSurface,
+                        color: colors.onSurface.withValues(alpha: .65),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: colors.onSurface,
                   ),
                 ],
               ),
@@ -223,15 +209,24 @@ class _InventoryChatSheet extends StatelessWidget {
         backgroundColor: surface,
         border: null,
         automaticallyImplyLeading: false,
-        middle: const Text('Ask FindEZ'),
+        middle: Text(
+          'Only in ${api.inventoryContext!.name}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          ),
+        ),
         trailing: Tooltip(
           message: 'Close contextual chat',
           child: CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: () => CupertinoSheetRoute.popSheet(context),
             child: Icon(
-              CupertinoIcons.xmark_circle_fill,
-              size: 30,
+              CupertinoIcons.xmark,
+              size: 20,
               color: CupertinoColors.secondaryLabel.resolveFrom(context),
               semanticLabel: 'Close contextual chat',
             ),
@@ -240,25 +235,9 @@ class _InventoryChatSheet extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Text(
-                'Only in ${api.inventoryContext!.name}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                  fontSize: 13,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                ),
-              ),
-            ),
-            Expanded(
-              child: ChatPage(api: api, contextual: true, inPageView: true),
-            ),
-          ],
-        ),
+        maintainBottomViewPadding: true,
+        minimum: const EdgeInsets.only(bottom: 12),
+        child: ChatPage(api: api, contextual: true, inPageView: true),
       ),
     );
   }

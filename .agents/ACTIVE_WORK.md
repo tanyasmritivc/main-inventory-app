@@ -1,3 +1,24 @@
+## November 7 - Contextual chat build199 uploaded
+
+Runtime `0f63e89e`, PR344, branch `fix/scoped-chat199`.
+Contextual Ask reuses the main composer and answer rendering with a quieter scope
+label, Cupertino sheet dismissal, cleaner icons and bottom safe-area spacing.
+Space actions have a search-style Ask pill and separate white Review/Low quantity
+pills. Context choices list actual Spaces and refresh/prune deleted selections
+without deleting inventories. Photo history restores saved drafts and explicitly
+opens empty failed scans; failed history loads preserve the current draft.
+Main chat presentation, web, backend and database are unchanged.
+
+Flutter 1331 pass/1 skip, analysis clean, native contextual-sheet and Space layout
+checks pass. Screenshots inspected in both themes and narrow/keyboard conditions.
+All five exact-commit CI gates passed in 42421146654. Signed production
+archive/export and Apple validation passed. Physical iPhone acceptance is pending.
+
+Apple acknowledged TestFlight 1.1.2 (199), delivery `f9632043-8b5e-4f58-9ece-8026008b1ee0`.
+Processing and tester availability were not polled. Public App Store submission
+is unchanged. Receipt: `docs/plans/mobile199-release.json`; implementation and
+device checklist: `docs/plans/scoped-chat199.md`. IPA/archive retained privately.
+
 ## November 7 - Organization chooser build198 uploaded
 
 Runtime `b6674343`, PR343, branch `style/organization-pill198`.
