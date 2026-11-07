@@ -138,7 +138,7 @@ function ItemPhotoGalleryWorkspace({
   }
   return (
     <section className="item-gallery item-photo-preview" aria-label="Item photos">
-      <div className="workspace-section-heading">
+      {(photos.length > 0 || loading || error) && <div className="workspace-section-heading">
         <h2>Photos {photos.length ? `(${photos.length}/10)` : ""}</h2>
         <div className="workspace-actions">
           <button
@@ -163,6 +163,7 @@ function ItemPhotoGalleryWorkspace({
           )}
         </div>
       </div>
+      }
       <input
         ref={input}
         type="file"
@@ -208,7 +209,7 @@ function ItemPhotoGalleryWorkspace({
         </>
       )}
       {!loading && !error && !photos.length && (
-        <p className="workspace-muted">No photos attached.</p>
+        <button type="button" className="item-empty-card item-photo-empty" disabled={!canEdit || busy} onClick={() => input.current?.click()}><ImagePlus size={32} /><strong>{canEdit ? "Add an item photo" : "No item photo"}</strong>{canEdit && <span>Take a photo or choose one from your library</span>}</button>
       )}
       <Dialog
         open={!!viewing}

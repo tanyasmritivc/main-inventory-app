@@ -7,6 +7,8 @@ import { PageHeader } from "./app-theme-ui";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare, Printer, Square } from "lucide-react";
 import QRCode from "qrcode";
+import { printLabels, saveLabel } from "@/lib/item-label";
+import { inventoryHref } from "@/lib/inventory-selection";
 import { InventoryItem, Space, getSpaces, itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 
@@ -58,7 +60,7 @@ export function LabelStudioClient({ initialItemId }: { initialItemId?: string })
           title: space.name,
           subtitle: `${rows.length} item${rows.length === 1 ? "" : "s"}`,
           group: "Spaces",
-          data: `https://findez.ai/inventory?space=${encodeURIComponent(space.name)}`,
+          data: `https://findez.ai${inventoryHref(`/inventory?space=${encodeURIComponent(space.name)}`)}`,
           details: [...categoryCounts.entries()]
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6)
@@ -72,7 +74,7 @@ export function LabelStudioClient({ initialItemId }: { initialItemId?: string })
       title: itemDisplayName(item),
       subtitle: [itemDisplayDescription(item), item.brand].filter(Boolean).join(" · ") || item.category,
       group: item.location?.trim() || "Unsorted",
-      data: `https://findez.ai/inventory?item=${encodeURIComponent(item.item_id)}`,
+      data: `https://findez.ai${inventoryHref(`/inventory?item=${encodeURIComponent(item.item_id)}`)}`,
       details: [
         item.location,
         `Quantity ${item.quantity}`,
@@ -135,13 +137,14 @@ export function LabelStudioClient({ initialItemId }: { initialItemId?: string })
       <PageHeader className="product-page-header">
         <h1>Labels</h1>
         <div className="product-actions">
+          {chosen.length === 1 && <button className="product-button" onClick={() => { setError(""); void saveLabel(chosen[0]).catch(() => setError("The label could not be saved. Please try again.")); }}>Save label</button>}
           {selected.size > 0 && <button className="product-button" onClick={() => setSelected(new Set())}>Clear</button>}
           <button
             className="product-button primary"
             disabled={chosen.length === 0}
-            onClick={() => window.print()}
+            onClick={() => { setError(""); void printLabels(chosen).catch(() => setError("The labels could not be printed. Please try again.")); }}
           >
-            <Printer size={14} /> Print{chosen.length > 0 ? ` ${chosen.length}` : ""}
+            <Printer size={14} /> Print / PDF{chosen.length > 0 ? ` ${chosen.length}` : ""}
           </button>
         </div>
       </PageHeader>

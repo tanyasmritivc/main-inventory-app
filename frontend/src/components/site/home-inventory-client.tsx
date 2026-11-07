@@ -1261,13 +1261,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
-                    <Dialog open onOpenChange={open => { if (!open) setExpandedSharedItemId(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle><div style={{ background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
-                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', gap: 8 }}>
-                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
-                      </div>
-                    </div></DialogContent></Dialog>
+                    <Dialog open onOpenChange={open => { if (!open && !detailEditing) setExpandedSharedItemId(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle>
+                      <ItemDetails showTitle={false} showClose item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onEditingChange={setDetailEditing} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))} />
+                      <div className="item-info-actions"><button disabled={viewingSharedSpace.permission !== "edit"} onClick={() => void checkOut(item as InventoryItem)}>Check out</button><button onClick={() => void showCheckoutHistory(item as InventoryItem)}>History</button></div>
+                    </DialogContent></Dialog>
                   )}
                 </React.Fragment>
               ))}
@@ -1417,22 +1414,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                     })}
                   </div>
                   {expandedItemId === item.item_id && (
-                    <Dialog open onOpenChange={open => { if (!open) setExpandedItemId(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle><div style={{
-                      background: 'var(--surf2)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 10,
-                      padding: '16px 20px',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                      gap: '12px 24px',
-                      marginBottom: 4,
-                    }}>
-                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></div>
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', gap: 8 }}>
-                        <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'var(--surf2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
-                      </div>
-                    </div></DialogContent></Dialog>
+                    <Dialog open onOpenChange={open => { if (!open && !detailEditing) setExpandedItemId(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>{item.name}</DialogTitle>
+                      <ItemDetails showTitle={false} showClose item={item} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }} />
+                    </DialogContent></Dialog>
                   )}
                 </React.Fragment>
               ))}
@@ -1804,7 +1788,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       </Dialog>
 
       {accountId && removingSpace && <ResourceRemovalDialog kind="space" id={removingSpace.id} name={removingSpace.name} accountId={accountId} onClose={()=>setRemovingSpace(null)} onDone={()=>{setRemovingSpace(null);setSelectedSpace(null);setCategoryFilter('');setQuery('');void refreshToken().then(async t=>{if(t)await refreshAll(t);});}}/>}
-      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle className="sr-only">Item details</DialogTitle>{detailItem && <><ItemDetails showClose item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>
