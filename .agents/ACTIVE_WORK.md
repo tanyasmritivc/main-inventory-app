@@ -1,3 +1,12 @@
+## November 7 - Founders hero copy simplified
+
+Published runtime `f3fc4911`, PR338, branch `fix/founders-hero-copy`, release
+`founders-copy-20261107`, build `zbiZ3-d9-akJD_Sqo-U0m`. Removed the descriptive
+FindEZ AI paragraph and moved the unchanged Join FindEZ early invitation into
+its primary paragraph position. Titles, signup CTA, card and other content remain.
+Production build, one-file audit, desktop/phone staged and live copy checks passed.
+No runtime exceptions. All 541 other runtime files and backend PID preserved.
+
 ## November 7 - Floating marketing header correction
 
 Published runtime `7f981b67`, PR337, branch `style/floating-marketing-header`,
