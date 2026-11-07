@@ -1,0 +1,46 @@
+{
+  "version": "1.1.2",
+  "build": 195,
+  "source_commit": "f3b5c293bde1fcb17feb0faa415cae8106270031",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "321e762a3e194345c4934da633c2908b2bab93f5a18b5e3a647209af6fb15984",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "32f991af-8e4c-4bd4-8dc2-50ae9e375b4d",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/335",
+  "ci": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42358588953",
+  "ci_gates_passed": 5,
+  "flutter_tests_passed": 1306,
+  "flutter_tests_skipped": 1,
+  "analyzer": "clean",
+  "native_visual_checks": {
+    "simulator": "iPhone 16e, iOS 26.2",
+    "fixture": "integration_test/context_chat_test.dart",
+    "checks": {
+      "dark_visual": true,
+      "light_visual": true,
+      "inventory_scope_and_streaming": true,
+      "close_returns_to_inventory": true,
+      "swipe_returns_to_inventory": true,
+      "large_text_and_keyboard_close_reachable": true,
+      "dismissal_cancels_stream": true
+    },
+    "physical_device_acceptance": "pending; VoiceOver, Dynamic Type and motion require physical-device acceptance",
+    "screenshots": {
+      "context-chat-0-dark.png": "0187282a5cfa55f1c09ddde2b978fad669fa282a7f8beca8008709fbbe88afc3",
+      "context-chat-1-light.png": "9bbe4359d2db0c7ed85f64ec2dacdace98aa2e84090bee45e2dd1d49ed2671e3"
+    },
+    "note": "Seven integration tests passed on iOS. Captures show sheet content; route geometry is exercised by the swipe test."
+  },
+  "physical_device_acceptance": "pending",
+  "backend_changed": false,
+  "web_changed": false,
+  "settings_and_chats_presentation_changed": false
+}

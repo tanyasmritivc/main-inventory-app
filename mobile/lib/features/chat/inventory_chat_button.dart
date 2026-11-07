@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/liquid_surface.dart';
 import '../../core/api_error.dart';
@@ -22,6 +23,17 @@ class InventoryChatButton extends StatelessWidget {
     if (api.inventoryContext == null) return;
     try {
       api.assertCurrentContext();
+      if (Theme.of(context).platform == TargetPlatform.iOS) {
+        await showCupertinoSheet<void>(
+          context: context,
+          useNestedNavigation: true,
+          showDragHandle: true,
+          // Keep compatibility with the release SDK, which lacks scrollableBuilder.
+          // ignore: deprecated_member_use
+          builder: (context) => _InventoryChatSheet(api: api),
+        );
+        return;
+      }
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -190,6 +202,64 @@ class InventoryChatButton extends StatelessWidget {
         ),
         if (primary != null) ...[const SizedBox(height: 12), primary!],
       ],
+    );
+  }
+}
+
+/// Cupertino owns sheet motion, corner geometry, safe areas and drag dismissal.
+/// The same scoped ChatPage retains streaming, attachments and cancellation.
+class _InventoryChatSheet extends StatelessWidget {
+  const _InventoryChatSheet({required this.api});
+  final ApiClient api;
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = CupertinoColors.systemGroupedBackground.resolveFrom(
+      context,
+    );
+    return CupertinoPageScaffold(
+      backgroundColor: surface,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: surface,
+        border: null,
+        automaticallyImplyLeading: false,
+        middle: const Text('Ask FindEZ'),
+        trailing: Tooltip(
+          message: 'Close contextual chat',
+          child: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => CupertinoSheetRoute.popSheet(context),
+            child: Icon(
+              CupertinoIcons.xmark_circle_fill,
+              size: 30,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              semanticLabel: 'Close contextual chat',
+            ),
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Text(
+                'Only in ${api.inventoryContext!.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                  fontSize: 13,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ChatPage(api: api, contextual: true, inPageView: true),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

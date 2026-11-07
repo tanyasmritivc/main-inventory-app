@@ -1,3 +1,23 @@
+## November 7 - Contextual Ask FindEZ Cupertino sheet delivered (195)
+
+TestFlight 1.1.2 (195), runtime `f3b5c293bde1fcb17feb0faa415cae8106270031`, PR335,
+branch `fix/mobile-context-chat-sheet195`, based on `fix/plans-extraction194`.
+The iOS contextual inventory chat uses a Cupertino sheet with a centered title,
+round close control, system grouped surface and interactive drag dismissal.
+The same scoped ChatPage preserves streaming, attachments and cancellation.
+Only contextual iOS chat disables the old blurred header/footer bands.
+Settings, Chats, other platforms, web and backend are unchanged.
+
+All 1,306 Flutter tests passed (one existing skip), analysis is clean, and seven
+iOS simulator integration cases passed: both themes, inventory isolation,
+streaming cancellation, close, swipe and large-text keyboard layout. Dark/light
+captures reviewed. All five exact-commit CI gates passed in42358588953.
+Signed archive/export checks passed for33 device executables and27 privacy
+manifests. Apple validation passed and upload was acknowledged:
+`32f991af-8e4c-4bd4-8dc2-50ae9e375b4d`. Processing/tester availability were not polled.
+Physical-device VoiceOver, Dynamic Type and motion acceptance remain pending.
+Receipt: `docs/plans/context-chat195-release.json`. IPA/archive preserved.
+
 ## November 6 — Plans and extraction presentation delivered (194)
 
 TestFlight 1.1.2 (194), runtime `0ed6e31bd8f11ae877e41e8c37f204d4cc9ada49`, PR334,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -75,7 +76,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     double scale = 1,
     double keyboard = 0,
   }) => MaterialApp(
-    theme: AppTheme.create(brightness),
+    theme: AppTheme.create(brightness).copyWith(platform: TargetPlatform.iOS),
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
         textScaler: TextScaler.linear(scale),
@@ -98,25 +99,33 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     expect(find.text('Ask FindEZ'), findsNothing);
     await api.stream.close();
   });
-  testWidgets('interruption retains the answer prefix with an incomplete notice', (tester) async {
-    final api = ChatApi('Hardware');
-    await tester.pumpWidget(host(api));
-    await tester.tap(find.text('Ask FindEZ'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Where is my drill?');
-    await tester.pump();
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-    await tester.pump();
-    api.stream.add(AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'));
-    await tester.pump();
-    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
-    api.stream.addError(StateError('interrupted'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
-    expect(find.textContaining('This response was interrupted.'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-    await api.stream.close();
-  });
+  testWidgets(
+    'interruption retains the answer prefix with an incomplete notice',
+    (tester) async {
+      final api = ChatApi('Hardware');
+      await tester.pumpWidget(host(api));
+      await tester.tap(find.text('Ask FindEZ'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Where is my drill?');
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.pump();
+      api.stream.add(
+        AiStreamEvent(type: 'delta', delta: 'The drill is on shelf 2.'),
+      );
+      await tester.pump();
+      expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+      api.stream.addError(StateError('interrupted'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('The drill is on shelf 2.'), findsOneWidget);
+      expect(
+        find.textContaining('This response was interrupted.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+      await api.stream.close();
+    },
+  );
   for (final brightness in Brightness.values) {
     testWidgets(
       '${brightness.name} scoped sheet has close, original client, immediate stream, and cancels on dismissal',
@@ -130,6 +139,11 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         await tester.tap(find.text('Ask FindEZ'));
         await tester.pumpAndSettle();
         expect(find.text('Only in Hardware'), findsOneWidget);
+        expect(find.byType(CupertinoPageScaffold), findsOneWidget);
+        expect(
+          ModalRoute.of(tester.element(find.byType(CupertinoPageScaffold))),
+          isA<CupertinoPageRoute<void>>(),
+        );
         expect(tester.widget<ChatPage>(find.byType(ChatPage)).api, same(api));
         await tester.enterText(find.byType(TextField), 'Where is my drill?');
         await tester.pump();
@@ -151,6 +165,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
         );
         await tester.pump();
         expect(find.byType(ChatPage), findsNothing);
+        expect(find.text('Inventory page').hitTestable(), findsOneWidget);
         expect(find.textContaining('Late text'), findsNothing);
         await api.stream.close();
         expect(tester.takeException(), isNull);
@@ -192,6 +207,27 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       await b.stream.close();
     },
   );
+  testWidgets('dragging the iOS sheet down returns to the same inventory', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = ChatApi('Hardware');
+    await tester.pumpWidget(host(api));
+    await tester.tap(find.text('Ask FindEZ'));
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(CupertinoNavigationBar),
+      const Offset(0, 700),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ChatPage), findsNothing);
+    expect(find.text('Inventory page').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await api.stream.close();
+  });
   testWidgets('narrow sheet and large text keep the close action reachable', (
     tester,
   ) async {

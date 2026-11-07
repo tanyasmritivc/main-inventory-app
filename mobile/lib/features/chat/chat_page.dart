@@ -3906,6 +3906,11 @@ class _ChatPageState extends State<ChatPage>
           ? Colors.transparent
           : AppTheme.bg(context),
       body: ChatViewport(
+        chromeBackgroundColor:
+            widget.contextual &&
+                Theme.of(context).platform == TargetPlatform.iOS
+            ? CupertinoColors.systemGroupedBackground.resolveFrom(context)
+            : null,
         header: widget.contextual || _session.messages.isNotEmpty
             ? _buildHeader()
             : const SizedBox.shrink(),

@@ -1,3 +1,10 @@
+## November 7 - Contextual inventory chat uses a Cupertino route
+
+Use Flutter's Cupertino sheet route on iOS for the existing scoped chat, with
+nested navigation and `CupertinoSheetRoute.popSheet` for explicit dismissal.
+Keep the content surface opaque and remove blurred chrome only for this sheet.
+Do not replace the scoped client or change native Settings/Chats presentation.
+
 ## November 6 - Center scan action and Spaces utilities
 
 The native bottom bar has two destinations, Ask and Spaces, with an unlabeled
