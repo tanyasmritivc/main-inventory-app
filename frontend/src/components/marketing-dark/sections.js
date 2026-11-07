@@ -41,8 +41,7 @@ export const navigation=`<nav class="top" id="nav"><div class="wrap"><a class="l
 `;
 export const footer=`<footer><div class="wrap"><div class="cols">
  <div><a class="logo" href="#/" style="display:flex"><span id="lg2"></span>FindEZ AI</a><p style="color:var(--tx2);margin-top:12px;max-width:300px">Know what you have. Find what you need. Instantly.</p></div>
- <div><h4>Product</h4><a href="#/founders">Founders Access</a><a href="#/plans">Plans &amp; access</a><a onclick="ext('ios')">iPhone app</a><a onclick="ext('docs')">Developers</a></div>
- <div><h4>Solutions</h4>${ORDER.map(k=>`<a href="#/${k}">${SOL[k].t}</a>`).join('')}<a href="#/solutions">All solutions</a></div>
+ <div><h4>Product</h4><a href="#/founders">Founders Access</a><a onclick="ext('ios')">iPhone app</a><a onclick="ext('docs')">Developers</a></div>
  <div><h4>Company</h4><a onclick="ext('research')">Research</a><a onclick="ext('contact')">Contact</a><a onclick="ext('privacy')">Privacy</a><a onclick="ext('terms')">Terms</a></div></div>
  <div class="bot"><span>© 2026 AI Robots Inc.</span><span>FindEZ AI answers from what's recorded in your inventory.</span></div></div></footer>
 `;
