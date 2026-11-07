@@ -23,8 +23,7 @@ const CKI='<svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>'
 const FA_PASS=(refl)=>`<div class="card fa-tile"><div class="grain"></div>${refl?'':'<div class="sheen"></div>'}<div class="top"><span class="fa-pill">Founders Access</span><b>$0</b></div><div class="mid"><span class="fa-mark">${FZ_MARK(46)}</span></div><p>Your inventory stays yours, whatever plan you're on.</p></div>`;
 const FAHERO=()=>`<header class="fah" data-hero><div class="spot"></div><div class="floor"></div><div class="wrap"><div>
  <h1 class="chrome">Get ahead of the search.</h1><p class="tag rise" style="animation-delay:.15s">Your inventory. One conversation away.</p>
- <p class="sub rise" style="animation-delay:.22s">FindEZ AI helps you keep track of the parts, tools, equipment, and supplies you already own, so you can spend less time searching and more time doing.</p>
- <p class="sub2 rise" style="animation-delay:.28s">Join FindEZ early and get free Founders Access while we build the future of inventory.</p>
+ <p class="sub rise" style="animation-delay:.22s">Join FindEZ early and get free Founders Access while we build the future of inventory.</p>
  <div class="acts rise" style="animation-delay:.36s"><a class="btn p lg" onclick="ext('signup')">Get Free Founders Access ${ARR()}</a><small>Available now. No payment required to get started.</small></div></div>
  <div class="stage3d rise" style="animation-delay:.2s" data-stage3d><div class="pass">${FA_PASS()}<div class="refl">${FA_PASS(1)}</div></div></div></div></header>`;
 const FABEN=()=>`<section class="blk fab"><div class="wrap"><div class="hd"><h2 class="rv">Be here from the beginning.</h2><div><p class="rv">FindEZ is building a better way to manage the things you own, use, and depend on.</p><p class="rv">Founders Access gives you the opportunity to start using FindEZ early, experience the product firsthand, and help shape what comes next.</p></div></div>
