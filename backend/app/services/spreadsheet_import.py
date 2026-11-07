@@ -169,17 +169,17 @@ def parse_import_tables(raw: bytes, filename: str, *, review: bool = False) -> l
 
 def infer_import_mapping(headers: list[str]) -> dict | None:
     """Map familiar columns; arbitrary layouts keep a descriptive sheet-based name."""
-    normalized = {
-        re.sub(r'[^a-z0-9]', '', str(header).lower()): header
-        for header in headers
-        if str(header).strip()
-    }
+    normalized = {}
+    for header in headers:
+        key = re.sub(r'[^a-z0-9]', '', str(header).lower())
+        if key:
+            normalized.setdefault(key, []).append(header)
 
     def column(*names: str) -> str | None:
         for name in names:
             found = normalized.get(re.sub(r'[^a-z0-9]', '', name.lower()))
-            if found:
-                return found
+            if found and len(found) == 1:
+                return found[0]
         return None
 
     part = column('part number', 'part #', 'part no', 'partnumber', 'sku',
@@ -284,3 +284,27 @@ def build_import_items(tables: list[dict], *, filename: str, location: str) -> l
                 },
             })
     return items
+
+
+def correct_legacy_purchase_source(item: dict) -> dict:
+    """Project proven old identifier aliases out of purchase source; keep evidence.
+
+    No database mutation. Preserve manual values and any matching genuine source
+    column, including numeric store names. Unknown source fields remain untouched.
+    """
+    source = item.get('purchase_source')
+    data = item.get('import_data')
+    if not source or not isinstance(data, dict):
+        return item
+    fields = data.get('fields')
+    if not isinstance(fields, list):
+        return item
+    def key(value):
+        return re.sub(r'[^a-z0-9]', '', str(value).lower())
+    matching = {key(f.get('name', '')) for f in fields if isinstance(f, dict)
+                and f.get('value') is not None and str(f['value']).strip() == str(source).strip()}
+    purchase_labels = {'purchasesource', 'source', 'supplierurl', 'purchaseurl', 'producturl', 'wheretobuy'}
+    legacy_identifiers = {'vendorpartnumber', 'vendorpart', 'suppliercode'}
+    if matching & legacy_identifiers and not matching & purchase_labels:
+        return {**item, 'purchase_source': None}
+    return item
