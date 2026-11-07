@@ -9,9 +9,14 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark h1,.landing-dark h2,.landing-dark h3{font-weight:400;letter-spacing:-.04em;line-height:1.02}
 .landing-dark svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 /* nav */
-.landing-dark nav.top{position:fixed;top:0;left:0;right:0;z-index:40;transition:none}
-.landing-dark nav.top.sc{background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 1px 0 rgba(255,255,255,.06)}
-.landing-dark nav.top .wrap{height:72px;display:flex;align-items:center;gap:30px}
+.landing-dark nav.top{position:fixed;top:12px;left:max(16px,calc((100% - 1080px)/2));right:max(16px,calc((100% - 1080px)/2));z-index:40;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(18,18,19,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 28px rgba(0,0,0,.16);transition:none}
+.landing-dark nav.top.sc{background:rgba(18,18,19,.97)}
+.landing-dark nav.top .wrap{height:60px;max-width:none;padding:0 16px;display:flex;align-items:center;gap:20px}
+.landing-dark nav.top .logo{font-size:16px;gap:8px}
+.landing-dark nav.top .logo svg{width:22px;height:22px}
+.landing-dark nav.top .nl{font-size:13px;gap:2px}
+.landing-dark nav.top .nl>a{padding:0 10px}
+.landing-dark nav.top .btn{height:36px;padding:0 14px;font-size:13px}
 .landing-dark .logo{white-space:nowrap;display:flex;align-items:center;gap:9px;font-weight:600;font-size:18px;letter-spacing:-.02em}
 .landing-dark .nl{display:flex;gap:4px;font-size:15px}
 .landing-dark .nl>a{height:36px;padding:0 12px;border-radius:18px;display:flex;align-items:center;gap:4px;color:var(--tx2);transition:none}
@@ -566,3 +571,14 @@ html:has(.landing-dark),body:has(.landing-dark) { scrollbar-width:none; }
 .landing-dark :is(.k,.fz-a .m) svg image[href$="-white.svg"]{display:none}
 .landing-dark :is(.k,.fz-a .m) svg image:not([href$="-white.svg"]){display:block}
 @media(prefers-reduced-motion:reduce){.landing-dark .bins i::before,.landing-dark .bins i::after{transition:none}}
+
+/* Keep the compact header within the viewport without shrinking touch targets. */
+@media (max-width:900px){
+ .landing-dark nav.top{top:10px;left:12px;right:12px;border-radius:16px}
+ .landing-dark nav.top .wrap{height:56px;padding:0 10px;gap:8px}
+ .landing-dark nav.top .logo{font-size:14px;gap:6px}
+ .landing-dark nav.top .logo svg{width:20px;height:20px}
+ .landing-dark nav.top .nr{gap:4px}
+ .landing-dark nav.top .btn{height:36px;padding:0 12px;font-size:12px}
+ .landing-dark nav.top .ib{width:44px;height:44px}
+}
