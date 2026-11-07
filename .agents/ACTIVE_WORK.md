@@ -1437,3 +1437,17 @@ full-image fit and return focus at desktop and 390x844 phone widths. Four runtim
 files differ from the footer release; configuration, public assets, unrelated
 frontend source and backend process are preserved. Screenshots and deployment
 audits are in `../findez-item-details-report/`. No inventory data was mutated.
+
+## November 6: Tools cleanup and Founders Access sidebar
+
+Published `70eebe04` on `fix/tools-menu-cleanup` through the existing self-hosted
+`findez-web` service, release `tools-cleanup-20261106`, build
+`fGWzPVr7fM4jKKgKPKodk`. Removed Project kits and Collections tiles from Tools.
+The sidebar Upgrade modal trigger is now a direct `/founders` link with the
+existing Founders rose palette, raised shadow and subtle floating motion;
+reduced-motion preferences stop the animation. Mobile drawer dismissal remains.
+Scoped ESLint, production webpack build/TypeScript and protected-source audit
+pass. Native Safari verified the live Tools layout and Founders link navigation.
+Only three frontend runtime files changed; 537 unrelated files, configuration,
+public assets and backend process are preserved. No data or mobile changes.
+Evidence: `../findez-tools-cleanup-report/`.
