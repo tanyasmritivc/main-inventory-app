@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/liquid_surface.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import 'chat_page.dart';
 
 /// A contextual assistant always receives the already-authorized inventory client.
@@ -123,7 +124,7 @@ class InventoryChatButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFF1B1B1B)
-              : const Color(0xFFF3F3F3),
+              : Colors.white,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: colors.onSurface.withValues(alpha: .06)),
         ),
@@ -200,9 +201,9 @@ class _InventoryChatSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = CupertinoColors.systemGroupedBackground.resolveFrom(
-      context,
-    );
+    final surface = Theme.of(context).brightness == Brightness.light
+        ? AppTheme.lightBg
+        : CupertinoColors.systemGroupedBackground.resolveFrom(context);
     return CupertinoPageScaffold(
       backgroundColor: surface,
       navigationBar: CupertinoNavigationBar(
