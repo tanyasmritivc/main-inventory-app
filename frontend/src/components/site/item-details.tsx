@@ -8,6 +8,7 @@ import { userFacingError } from "@/lib/user-facing-error";
 import { type InventoryItem, itemDisplayName } from "@/lib/api";
 import { type PhotoContext } from "@/lib/item-photos";
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
+import "./item-details.css";
 export function ItemDetails({
   item,
   context,
@@ -77,20 +78,19 @@ export function ItemDetails({
     ["Where to buy", source],
   ];
   return (
-    <div>
+    <div className="item-details">
       {showTitle && <h2>{itemDisplayName(item)}</h2>}
-      <dl
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-          gap: 18,
-          marginTop: 20,
-        }}
-      >
+      <ItemPhotoGallery
+        itemId={item.item_id}
+        context={context}
+        canEdit={canEdit}
+        onChanged={onChanged}
+      />
+      <dl className="item-details-fields">
         {fields
           .filter(([label, value]) => value || (canEdit && label && keys[label]))
           .map(([label, value]) => (
-            <div key={label}>
+            <div key={label} className={label === "Notes" || label === "Tags" || label === "Where to buy" || label === "Name" ? "item-details-wide" : undefined}>
               <dt className="workspace-muted" style={{ fontSize: 11 }}>
                 {label}
               </dt>
@@ -112,8 +112,8 @@ export function ItemDetails({
           ))}
       </dl>
       {item.import_data?.fields?.length ? (
-        <section style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--app-border)" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 500 }}>Imported details</h3>
+        <details className="item-import-details">
+          <summary><h3>Imported details</h3></summary>
           <p className="workspace-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
             {item.import_data.filename} / {item.import_data.sheet}
           </p>
@@ -131,14 +131,9 @@ export function ItemDetails({
               </div>
             ))}
           </dl>
-        </section>
+        </details>
       ) : null}
-      <ItemPhotoGallery
-        itemId={item.item_id}
-        context={context}
-        canEdit={canEdit}
-        onChanged={onChanged}
-      />
+
     </div>
   );
 }

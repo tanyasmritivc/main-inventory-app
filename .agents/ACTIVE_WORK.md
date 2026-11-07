@@ -1419,3 +1419,13 @@ Source7f11774b2cdd3cec87bf6577c46a8f45e217e61c is live at https://findez.ai in r
 
 
 Web source CI41759923020 completed: mobile/backend/SQL/connectors passed; Web453 passed/66 inherited failures, all failure headings within the local pre-change baseline. The16 new Founding Access cases passed. Full web gate remains red, with zero newly failing test identities. Production remains on the verified selective release; final receipt and CI comparison are in docs/founding-access-web.
+
+## November 6: web item details
+
+Branch `fix/item-details-photo-preview`, based on the deployed footer cleanup.
+Scoped to signed-in web item panels and photo presentation. A contained preview
+now precedes fields, selected photos open the full-image dialog, imported source
+fields expand on demand, and the Space drawer has a top close control. Existing
+field edits, photo permissions, confirmation and account isolation are preserved.
+Focused item/import/gallery tests pass. Production build and visual acceptance
+are tracked in `../findez-item-details-report/`; no backend or mobile changes.

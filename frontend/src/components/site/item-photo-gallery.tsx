@@ -1,8 +1,10 @@
 "use client";
+import Image from "next/image";
 import { privateImageSrc } from "@/lib/private-image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, RefreshCw } from "lucide-react";
+import "./item-details.css";
+import { ImagePlus, RefreshCw, Maximize2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,8 +57,11 @@ function ItemPhotoGalleryWorkspace({
     [error, setError] = useState(""),
     [viewing, setViewing] = useState<ItemPhoto | null>(null),
     [imageError, setImageError] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const preview = photos.find(photo => photo.photo_id === selectedId) || photos.find(photo => photo.is_primary) || photos[0];
   const [deleting, setDeleting] = useState<ItemPhoto | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const previewButton = useRef<HTMLButtonElement>(null);
   const load = useCallback(async () => {
     if (!accountId) return;
     const account = accountId,
@@ -131,7 +136,7 @@ function ItemPhotoGalleryWorkspace({
     }
   }
   return (
-    <section className="item-gallery" aria-label="Item photos">
+    <section className="item-gallery item-photo-preview" aria-label="Item photos">
       <div className="workspace-section-heading">
         <h2>Photos {photos.length ? `(${photos.length}/10)` : ""}</h2>
         <div className="workspace-actions">
@@ -178,32 +183,29 @@ function ItemPhotoGalleryWorkspace({
           {error}
         </div>
       )}
-      <div className="item-gallery-grid">
-        {photos.map((photo, i) => (
-          <div key={photo.photo_id}>
-            <button
+      {preview && (
+        <>
+          <button
+            className="item-photo-hero"
+            ref={previewButton}
+            type="button"
+            aria-label={`Open item photo ${photos.indexOf(preview) + 1}${preview.is_primary ? ", primary" : ""}`}
+            onClick={() => { setViewing(preview); setImageError(false); }}
+          >
+            <img key={preview.photo_id} src={privateImageSrc(preview.image_url, accountId)} alt={`Item photo ${photos.indexOf(preview) + 1}`} />
+            <span className="item-photo-expand" aria-hidden="true"><Maximize2 size={16} /></span>
+          </button>
+          {photos.length > 1 && <div className="item-photo-thumbnails" aria-label="Choose a photo">
+            {photos.map((photo, i) => <button
+              key={photo.photo_id}
               type="button"
-              aria-label={`Open item photo ${i + 1}${photo.is_primary ? ", primary" : ""}`}
-              onClick={() => {
-                setViewing(photo);
-                setImageError(false);
-              }}
-            >
-              <img src={privateImageSrc(photo.image_url, accountId)} alt={`Item photo ${i + 1}`} />
-            </button>
-            {canEdit && (
-              <button
-                className="photo-delete"
-                type="button"
-                disabled={busy}
-                onClick={() => setDeleting(photo)}
-              >
-                Delete photo
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+              aria-label={`Select item photo ${i + 1}`}
+              aria-pressed={preview.photo_id === photo.photo_id}
+              onClick={() => setSelectedId(photo.photo_id)}
+            ><Image unoptimized width={48} height={48} src={privateImageSrc(photo.image_url, accountId)} alt="" /></button>)}
+          </div>}
+        </>
+      )}
       {!loading && !error && !photos.length && (
         <p className="workspace-muted">No photos attached.</p>
       )}
@@ -213,11 +215,8 @@ function ItemPhotoGalleryWorkspace({
           if (!open) setViewing(null);
         }}
       >
-        <DialogContent className="workspace-dialog">
+        <DialogContent className="workspace-dialog item-photo-viewer" aria-describedby={undefined} onCloseAutoFocus={event => { event.preventDefault(); previewButton.current?.focus(); }}>
           <DialogTitle>Item photo</DialogTitle>
-          <DialogDescription>
-            {viewing?.is_primary ? "Primary photo" : "Additional photo"}
-          </DialogDescription>
           {imageError ? (
             <p role="alert">
               This photo could not be loaded. Close and refresh the gallery to
@@ -233,6 +232,12 @@ function ItemPhotoGalleryWorkspace({
               />
             )
           )}
+          {canEdit && viewing && <button
+            className="workspace-button photo-delete"
+            type="button"
+            disabled={busy}
+            onClick={() => setDeleting(viewing)}
+          >Delete photo</button>}
         </DialogContent>
       </Dialog>
       <Dialog

@@ -1,9 +1,9 @@
 /** @jest-environment jsdom */
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ItemDetails } from "@/components/site/item-details";
 import { type InventoryItem } from "@/lib/api";
 jest.mock("@/lib/use-api-session", () => ({useApiSession: () => ({accountId:"test"})}));
-jest.mock("@/components/site/item-photo-gallery", () => ({ ItemPhotoGallery: () => null }));
+jest.mock("@/components/site/item-photo-gallery", () => ({ ItemPhotoGallery: () => <section aria-label="Item photos" /> }));
 
 test("saved import details retain exact labels, duplicate fields and structured values separately from live stock", () => {
   const item: InventoryItem = {
@@ -18,7 +18,12 @@ test("saved import details retain exact labels, duplicate fields and structured 
     ] },
   };
   const { container } = render(<ItemDetails item={item} canEdit={false} />);
-  const imported = screen.getByRole("heading", { name: "Imported details" }).parentElement!;
+  const heading = screen.getByRole("heading", { name: "Imported details" });
+  const imported = heading.closest("details")!;
+  expect(imported.open).toBe(false);
+  fireEvent.click(heading);
+  expect(imported.open).toBe(true);
+  expect(screen.getByRole("region", { name: "Item photos" }).compareDocumentPosition(screen.getByText("Category")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(within(imported).getByText("Screw Length")).toBeTruthy();
   expect(within(imported).getByText("Vendor Part #")).toBeTruthy();
   expect(within(imported).getByText("0012")).toBeTruthy();
