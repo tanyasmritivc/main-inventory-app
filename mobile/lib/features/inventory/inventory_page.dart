@@ -604,7 +604,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ImportSheetPage(api: widget.api, location: _location),
+        builder: (_) => ImportSheetPage(
+          api: widget.api,
+          location: _location,
+          spaceId: widget.spaceId,
+        ),
       ),
     );
     if (imported != true) return;

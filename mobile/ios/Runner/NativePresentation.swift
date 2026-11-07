@@ -52,7 +52,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       navigation.overrideUserInterfaceStyle = list.overrideUserInterfaceStyle
       navigation.modalPresentationStyle = .pageSheet
       if data["opaque"] as? Bool == true {
-        navigation.view.backgroundColor = UIColor(white: data["dark"] as? Bool == true ? 0.08 : 0.95, alpha: 1)
+        navigation.view.backgroundColor = data["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
       }
       if let sheet = navigation.sheetPresentationController {
         sheet.detents = [.medium(), .large()]
@@ -184,7 +184,12 @@ private final class NativeListController: UITableViewController, UISearchResults
   override func viewDidLoad() {
     super.viewDidLoad()
     if page["opaque"] as? Bool == true {
-      tableView.backgroundColor = UIColor(white: page["dark"] as? Bool == true ? 0.08 : 0.95, alpha: 1)
+      tableView.backgroundColor = page["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
+    }
+    if page["opaque"] as? Bool != true {
+      tableView.backgroundColor = UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
+      }
     }
     tableView.rowHeight = UITableView.automaticDimension
     tableView.estimatedRowHeight = 58

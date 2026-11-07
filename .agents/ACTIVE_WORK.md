@@ -1,3 +1,12 @@
+## November 7 — mobile repair200 verified
+
+Flutter 1332 pass / 1 skip; analysis clean; 11 native checks passed. Fixed Space extraction, direct spreadsheet imports and light palette. Main chat/photo behavior protected. Build200 signing/upload pending. See docs/plans/capture-import200-mobile.md.
+
+## November 7 — capture/import repair200 (active)
+
+Owner: current Codex task. Mobile chat deletion, Space-bound capture/imports and light palette. Main chat/photo extraction are protected except spreadsheet routing.
+Implementation and verification are in progress; nothing from this lane is deployed yet.
+
 ## November 7 - Contextual chat build199 uploaded
 
 Runtime `0f63e89e`, PR344, branch `fix/scoped-chat199`.

@@ -165,6 +165,7 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
                               builder: (_) => ImportSheetPage(
                                 api: scoped!,
                                 location: space['name'].toString(),
+                                spaceId: space['id'].toString(),
                                 kind: widget.kind,
                               ),
                             ),

@@ -18,6 +18,7 @@ class ImportSheetPage extends StatefulWidget {
     required this.api,
     required this.location,
     this.shareId,
+    this.spaceId,
     this.kind = 'inventory',
     this.initialFilePath,
     this.initialFilename,
@@ -26,6 +27,7 @@ class ImportSheetPage extends StatefulWidget {
   final ApiClient api;
   final String location;
   final String? shareId;
+  final String? spaceId;
   final String kind;
   final String? initialFilePath;
   final String? initialFilename;
@@ -40,6 +42,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   _ImportState _state = _ImportState.ready;
   String? _filename;
   String? _errorMessage;
+  Map<String, dynamic>? _pendingImport;
 
   @override
   void initState() {
@@ -118,11 +121,9 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     final extension = (file.extension ?? file.name.split('.').last)
         .trim()
         .toLowerCase();
-    if (extension != 'xlsx' && extension != 'csv') {
+    if (!['xlsx', 'csv', 'json'].contains(extension)) {
       setState(() {
-        _errorMessage = extension == 'json'
-            ? 'JSON import is not supported yet. Choose an Excel (.xlsx) or CSV file.'
-            : 'Choose an Excel (.xlsx) or CSV file.';
+        _errorMessage = 'Choose an Excel (.xlsx), CSV, or JSON file.';
       });
       return;
     }
@@ -150,8 +151,15 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
         location: widget.location,
         shareId: widget.shareId,
         kind: widget.kind,
+        spaceId: widget.spaceId,
+        direct: widget.kind == 'inventory',
       );
       if (!mounted) return;
+      if (widget.kind == 'inventory') {
+        _pendingImport = source;
+        await _finishImport();
+        return;
+      }
       final result = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => ConnectorReviewPage(api: widget.api, source: source),
@@ -169,6 +177,47 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
         _errorMessage = describeError(error).$1;
         _state = _ImportState.ready;
       });
+    }
+  }
+
+  Future<void> _finishImport() async {
+    final source = _pendingImport;
+    if (source == null) return;
+    setState(() {
+      _state = _ImportState.uploading;
+      _errorMessage = null;
+    });
+    try {
+      Map<String, dynamic> receipt;
+      var batches = 0;
+      do {
+        receipt = await widget.api.connectorImport(
+          source['id'] as String,
+          action: 'import',
+          data: {},
+        );
+        if (++batches > 30) {
+          throw const FormatException(
+            'Import is still pending. Resume to check saved results.',
+          );
+        }
+      } while (receipt['status'] == 'importing');
+      final counts = receipt['counts'] as Map;
+      if (counts['failed'] != 0 ||
+          counts['pending'] != 0 ||
+          counts['skipped'] != 0) {
+        throw FormatException(
+          '${counts['imported']} items saved; ${counts['failed']} could not be saved. Resume to retry only unfinished rows.',
+        );
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = describeError(error).$1;
+          _state = _ImportState.ready;
+        });
+      }
     }
   }
 
@@ -195,7 +244,10 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
                 key: const ValueKey('ready'),
                 location: widget.location,
                 errorMessage: _errorMessage,
-                onChooseFile: _pickAndImport,
+                onChooseFile: _pendingImport == null
+                    ? _pickAndImport
+                    : _finishImport,
+                resuming: _pendingImport != null,
               ),
               _ImportState.uploading => _UploadingView(
                 key: const ValueKey('uploading'),
@@ -216,11 +268,13 @@ class _ReadyView extends StatelessWidget {
     required this.location,
     required this.errorMessage,
     required this.onChooseFile,
+    this.resuming = false,
   });
 
   final String location;
   final String? errorMessage;
   final VoidCallback onChooseFile;
+  final bool resuming;
 
   @override
   Widget build(BuildContext context) {
@@ -255,12 +309,12 @@ class _ReadyView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
-            child: const AppText('Choose file'),
+            child: AppText(resuming ? 'Resume import' : 'Choose file'),
           ),
         ),
         const SizedBox(height: 12),
         AppText(
-          'Excel (.xlsx) or CSV, up to 10 MB',
+          'Excel (.xlsx), CSV, or JSON, up to 10 MB',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textSecondary(context),

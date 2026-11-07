@@ -64,7 +64,7 @@ class AppTheme {
             onSurface: BrandColors.ink,
             onSurfaceVariant: BrandColors.inkSoft,
             surfaceContainer: lightSurface2,
-            surfaceContainerHigh: Color(0xFFE6E6E6),
+            surfaceContainerHigh: lightSurface,
             outline: BrandColors.inkSoft,
             outlineVariant: lightBorder,
             error: BrandColors.danger,
@@ -373,9 +373,9 @@ class AppTheme {
   }
 
   // Light mode colors
-  static const Color lightBg = BrandColors.paper;
-  static const Color lightSurface = Color(0xFFF3F3F5);
-  static const Color lightSurface2 = Color(0xFFE9E9ED);
+  static const Color lightBg = Color(0xFFF6F8F9);
+  static const Color lightSurface = Colors.white;
+  static const Color lightSurface2 = Colors.white;
   static const Color lightBorder = Color(0xFFB8B8BF);
   static const Color lightControlBorder = Color(0xFF85858A);
   static const Color lightBorderHover = Color(0x66000000);

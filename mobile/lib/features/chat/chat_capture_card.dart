@@ -23,6 +23,8 @@ class ChatCaptureCard extends StatefulWidget {
     this.embedded = false,
     this.photo,
     this.creationAction,
+    this.fixedInventoryId,
+    this.fixedSpaceId,
   });
   final ApiClient api;
   final String conversationId;
@@ -33,6 +35,7 @@ class ChatCaptureCard extends StatefulWidget {
   final bool disabled, embedded;
   final ImageProvider? photo;
   final Map<String, dynamic>? creationAction;
+  final String? fixedInventoryId, fixedSpaceId;
   @override
   State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
@@ -502,6 +505,13 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
   }
 
   Future<void> _saveItems() async {
+    if (widget.fixedSpaceId != null &&
+        (_draft['space_id'] != widget.fixedSpaceId ||
+            _draft['inventory_id'] != widget.fixedInventoryId)) {
+      throw const FormatException(
+        'The destination changed. Reopen extraction from its Space.',
+      );
+    }
     Future<Map<String, dynamic>> send(bool separate) =>
         widget.api.collaboration(
           '$_path/save',
@@ -581,7 +591,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
         children: [
           if (_draft['space_id'] != null)
             TextButton.icon(
-              onPressed: _editable ? _destination : null,
+              onPressed: _editable && widget.fixedSpaceId == null
+                  ? _destination
+                  : null,
               icon: const Icon(Icons.folder_outlined, size: 18),
               label: Text('${_draft['location']}'),
             ),
@@ -1223,7 +1235,9 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
         const SizedBox(height: 12),
         if (_creation != null || _draft['space_id'] != null)
           TextButton.icon(
-            onPressed: _editable ? _destination : null,
+            onPressed: _editable && widget.fixedSpaceId == null
+                ? _destination
+                : null,
             icon: const Icon(Icons.folder_outlined, size: 18),
             label: Text(
               _draft['space_id'] == null
