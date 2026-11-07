@@ -4,7 +4,7 @@ import { MessageActions, type ResponseRating } from "./message-actions";
 import { ChatProgress } from "./chat-progress";
 import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
 import { ChatContextPicker } from "./chat-context-picker";
-import { ChatCaptureCard } from "./chat-capture-card";
+import { ChatCaptureCard, CaptureScan } from "./chat-capture-card";
 import { BarcodeScanner } from "./zxing-scanner";
 import {
   addChatSource,
@@ -12,6 +12,9 @@ import {
   type ChatSource,
 } from "@/lib/chat-sources";
 import sourceStyles from "./chat-sources.module.css";
+import captureStyles from "./chat-capture.module.css";
+import Image from "next/image";
+import { FindEZMark } from "./findez-brand";
 import { WorldActionCard, WorldResourceLinks } from "./world-chat-cards";
 import { privateImageSrc } from "@/lib/private-image";
 
@@ -50,6 +53,11 @@ import { userFacingError } from "@/lib/user-facing-error";
 type Message = ConversationMessage & {
   context?: AskAnswerContext;
   localPhoto?: string;
+  scanPhoto?: string;
+  scanFile?: File;
+  scanSteps?: string[];
+  scanStopped?: boolean;
+  captureClosed?: boolean;
   failed?: boolean;
   live?: boolean;
   revision?: number;
@@ -120,6 +128,10 @@ function AssistClientWorkspace({
   const [ratings, setRatings] = useState<Record<string, ResponseRating>>({});
   const composer = useRef<HTMLTextAreaElement>(null);
   const sendLock = useRef(false);
+  const photoUrls = useRef<string[]>([]);
+  const dragDepth = useRef(0);
+  const [draggingPhoto, setDraggingPhoto] = useState(false);
+  useEffect(() => { const urls = photoUrls.current; return () => { urls.forEach(url => URL.revokeObjectURL(url)); }; }, []);
   const [input, setInput] = useState(initialQuery),
     [photo, setPhoto] = useState<File>(),
     [preview, setPreview] = useState<string>(),
@@ -453,7 +465,7 @@ function AssistClientWorkspace({
     }
   }
   function attach(file?: File, extract = false) {
-    if (!file) return;
+    if (!file || unavailable || sendLock.current) return;
     if (
       !file.type.startsWith("image/") ||
       !file.size ||
@@ -462,28 +474,35 @@ function AssistClientWorkspace({
       setError("Choose a photo smaller than 10 MB.");
       return;
     }
-    setAutoExtract(extract);
-    setPhoto(file);
     setError("");
+    if (worldId) {
+      void send(undefined, undefined, undefined, file);
+    } else {
+      setAutoExtract(extract);
+      setPhoto(file);
+    }
   }
-  async function send(e?: React.FormEvent, retryPrompt?: Message, retryAnswer?: Message) {
+  async function send(e?: React.FormEvent, retryPrompt?: Message, retryAnswer?: Message, scanFile?: File) {
     e?.preventDefault();
-    if (!accountId || unavailable || sendLock.current || (!(retryPrompt?.content || input).trim() && !photo)) return;
+    if (!accountId || unavailable || sendLock.current || (!(retryPrompt?.content || input).trim() && !photo && !scanFile)) return;
     sendLock.current = true;
     followReply.current = true;
+    const extracting = !!scanFile || autoExtract;
     const account = accountId,
       generation = epoch.current,
       text =
-        retryPrompt?.content || input.trim() ||
-        (autoExtract
+        (scanFile ? "" : retryPrompt?.content || input.trim()) ||
+        (extracting
           ? "Auto extract the items in this photo. Keep a draft for review before saving."
           : "What is in this photo?"),
       now = new Date().toISOString(),
       userId = crypto.randomUUID(),
       assistantId = crypto.randomUUID();
     const requestSources = retryPrompt?.retrySources || sources;
-    const requestPhoto = retryPrompt?.retryPhoto || (retryPrompt ? undefined : photo);
-    const signature = JSON.stringify({ sources: requestSources, autoExtract });
+    const requestPhoto = scanFile || retryPrompt?.retryPhoto || (retryPrompt ? undefined : photo);
+    const scanPhoto = scanFile ? URL.createObjectURL(scanFile) : undefined;
+    if (scanPhoto) photoUrls.current.push(scanPhoto);
+    const signature = JSON.stringify({ sources: requestSources, autoExtract: extracting });
     if (
       !retry.current ||
       retry.current.signature !== signature ||
@@ -505,15 +524,15 @@ function AssistClientWorkspace({
     setSending(true);
     setProgressStartedAt(Date.now());
     setLastActivityAt(null);
-    draft("");
+    if (!scanFile) draft("");
     setPendingMessageId(assistantId);
     setError("");
-    setStatus(photo ? "Reading your photo…" : "Checking your inventory…");
-    const placeholder: Message = { id: assistantId, role: "assistant", content: "", created_at: now, live: true };
+    setStatus(requestPhoto ? "Reading your photo..." : "Checking your inventory…");
+    const placeholder: Message = { id: assistantId, role: "assistant", content: "", created_at: now, live: true, scanPhoto, scanFile, scanSteps: scanFile ? ["Reading your photo..."] : undefined };
     setMessages(m => retryAnswer
       ? m.map(row => row.id === retryAnswer.id ? placeholder : row)
       : [...m, ...(!retryPrompt ? [{ id: userId, role: "user" as const, content: text, created_at: now,
-          requestId: retry.current!.id, retrySources: requestSources, retryPhoto: requestPhoto }] : []), placeholder]);
+          requestId: retry.current!.id, retrySources: requestSources, retryPhoto: requestPhoto, localPhoto: scanPhoto }] : []), placeholder]);
     let final:
       | {
           conversationId?: string;
@@ -532,7 +551,7 @@ function AssistClientWorkspace({
         worldId,
         requestId: retry.current.id,
         sources: requestSources,
-        autoExtract,
+        autoExtract: extracting,
         retryOf: retryAnswer?.persistedId || (retryAnswer && !retryAnswer.live ? retryAnswer.id : undefined),
         onCapture: (id, context) => {
           if (current() && !control.signal.aborted) {
@@ -562,7 +581,11 @@ function AssistClientWorkspace({
         },
         onActivity: () => { if (current() && !control.signal.aborted) setLastActivityAt(Date.now()); },
         onStatus: (value) => {
-          if (current() && !control.signal.aborted) setStatus(value);
+          if (current() && !control.signal.aborted) {
+            setStatus(value);
+            if (scanFile) setMessages(rows => rows.map(row => row.id === assistantId
+              ? { ...row, scanSteps: [...(row.scanSteps || []).filter(step => step !== value), value] } : row));
+          }
         },
         onDone: (value) => {
           if (!control.signal.aborted) final = value;
@@ -590,9 +613,9 @@ function AssistClientWorkspace({
       retry.current = undefined;
       setConversationId(final.conversationId);
       setPhoto(undefined);
-      setSources([]);
+      if (!scanFile) setSources([]);
       setAutoExtract(false);
-      draft("");
+      if (!scanFile) draft("");
       try {
         await loadHistory();
       } catch {
@@ -602,7 +625,7 @@ function AssistClientWorkspace({
       }
     } catch (reason) {
       if (current()) {
-        draft(text);
+        if (!scanFile) draft(text);
         if (receivedCapture) {
           setPhoto(undefined);
           setAutoExtract(false);
@@ -611,12 +634,14 @@ function AssistClientWorkspace({
         setMessages((m) =>
           m.map((msg) =>
             msg.id === assistantId
-              ? { ...msg, failed: true }
+              ? { ...msg, failed: true, scanStopped: !!scanFile && control.signal.aborted }
               : msg,
           ),
         );
         setError(
-          control.signal.aborted
+          scanFile && control.signal.aborted
+            ? "Scan stopped. Nothing was saved."
+            : control.signal.aborted
             ? "Your question stopped before confirmation. Your draft is available to retry. Check history for any saved answer."
             : userFacingError(
                 reason,
@@ -635,8 +660,22 @@ function AssistClientWorkspace({
       if (controller.current === control) controller.current = null;
     }
   }
+  const latestScan = messages.findLast(row => row.scanPhoto && !row.captureClosed);
+  const activeScanKey = latestScan ? `${latestScan.id}:${latestScan.context?.capture?.id || ""}:${latestScan.context?.capture?.status || ""}` : null;
+  useEffect(() => {
+    if (!followReply.current) return;
+    const frame = requestAnimationFrame(() => {
+      thread.current?.querySelector('[data-scan-active] section')?.scrollIntoView?.({block: "nearest"});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [activeScanKey]);
   return (
-    <section className="ask-workspace" data-contextual={contextual || undefined}>
+    <section className="ask-workspace" data-contextual={contextual || undefined}
+      onDragEnter={event => { if (worldId && event.dataTransfer.types.includes("Files")) { event.preventDefault(); dragDepth.current++; setDraggingPhoto(true); } }}
+      onDragOver={event => { if (worldId && event.dataTransfer.types.includes("Files")) { event.preventDefault(); event.dataTransfer.dropEffect = unavailable ? "none" : "copy"; } }}
+      onDragLeave={event => { if (worldId && event.dataTransfer.types.includes("Files")) { dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDraggingPhoto(false); } }}
+      onDrop={event => { if (!worldId) return; event.preventDefault(); dragDepth.current = 0; setDraggingPhoto(false); attach(Array.from(event.dataTransfer.files).find(file => file.type.startsWith("image/"))); }}>
+      {draggingPhoto && <div className={captureStyles.drop} role="status"><div><ImagePlus size={28} /><b>Drop a photo to scan</b><small>FindEZ will find the items for you to review.</small></div></div>}
       {contextKind && accountId && worldId && (
         <ChatContextPicker
           key={`${worldId}:${contextKind}`}
@@ -800,17 +839,19 @@ function AssistClientWorkspace({
               );
               return (
                 <article
-                  className={`ask-message${m.role === "user" ? " is-user" : ""}`}
+                  className={`ask-message${m.role === "user" ? " is-user" : ""}${m.scanPhoto ? ` ${captureStyles.reply}` : ""}`}
                   key={m.id}
+                  data-scan-active={m.id === latestScan?.id || undefined}
                 >
-                  <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>
+                  {m.scanPhoto ? <span className={captureStyles.mark}><FindEZMark width={28} height={28} /></span> : <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>}
+                  {m.localPhoto && <figure className={captureStyles.userPhoto}><Image unoptimized src={m.localPhoto} alt="Photo to extract" width={150} height={200} /><figcaption>{m.retryPhoto?.name}</figcaption></figure>}
                   {photoUrl && (
                     <img
                       src={privateImageSrc(photoUrl, accountId)}
                       alt="Photo used for this question"
                     />
                   )}
-                  {m.content ? (
+                  {!m.localPhoto && (m.content ? (
                     m.role === "assistant" ? (
                       <AskMarkdown
                         key={`${m.id}-${m.revision ?? 0}`}
@@ -822,14 +863,19 @@ function AssistClientWorkspace({
                       <div className="ask-body">{m.content}</div>
                     )
                   ) : (
-                    m.id === pendingMessageId ? (
+                    m.id === pendingMessageId && !m.scanPhoto ? (
                       <ChatProgress key={m.id} message={status} startedAt={progressStartedAt} lastActivityAt={lastActivityAt} />
-                    ) : <p className="ask-pending">The answer did not finish.</p>
-                  )}
+                    ) : !m.scanPhoto ? <p className="ask-pending">The answer did not finish.</p> : null
+                  ))}
+                  {m.scanPhoto && !m.context?.capture && !m.captureClosed && <CaptureScan
+                    photo={m.scanPhoto} steps={m.scanSteps || []} stopped={!!m.scanStopped} failed={!!m.failed}
+                    onClose={() => { if (m.id === pendingMessageId) controller.current?.abort(); setMessages(rows => rows.map(row => row.id === m.id ? {...row, captureClosed: true} : row)); }}
+                    onRetry={() => { if (!unavailable && m.scanFile) { setMessages(rows => rows.map(row => row.id === m.id ? {...row, captureClosed: true} : row)); void send(undefined, undefined, undefined, m.scanFile); } }}
+                  />}
                   {accountId &&
                     worldId &&
                     conversationId &&
-                    m.context?.capture &&
+                    m.context?.capture && !m.captureClosed &&
                     messages.findLastIndex(
                       (msg) =>
                         msg.context?.capture?.id === m.context?.capture?.id,
@@ -837,13 +883,15 @@ function AssistClientWorkspace({
                       <ChatCaptureCard
                         key={m.context.capture.id}
                         capture={m.context.capture}
+                        photo={m.scanPhoto}
+                        onClose={() => { if (m.id === pendingMessageId) controller.current?.abort(); setMessages(rows => rows.map(row => row.id === m.id ? {...row, captureClosed: true} : row)); }}
                         onChanged={(capture) => setMessages((rows) => rows.map((row) => row.context?.capture?.id === capture.id ? { ...row, context: { ...row.context, capture } } : row))}
                         accountId={accountId}
                         worldId={worldId}
                         conversationId={conversationId}
                       />
                     )}
-                  {m.failed && (
+                  {m.failed && !m.scanPhoto && (
                     <p className="workspace-muted">
                       This answer was interrupted. Check history before relying
                       on it.
@@ -1064,6 +1112,7 @@ function AssistClientWorkspace({
             )}
             <textarea
               ref={composer}
+              onPaste={event => { if (!worldId) return; const file = Array.from(event.clipboardData.items).find(item => item.type.startsWith("image/"))?.getAsFile(); if (file) { event.preventDefault(); attach(file); } }}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }}
               className="workspace-input"
               aria-label="Your question"
