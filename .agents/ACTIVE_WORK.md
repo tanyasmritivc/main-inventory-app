@@ -1767,3 +1767,25 @@ capture's private full frame as gallery photo two, primary crop unchanged; stabl
 photo receipts repair partial/lost saves. Prepare migration 056 for atomic Review
 resolution; production application requires separate reviewed approval. Preserve
 model-written Chat, authorization and customer Dashboard. No customer QA writes.
+
+## November 7: organization low-stock response latency
+
+Lane `fix/chat-stock-latency`, runtime `de22b556`. The reported question took
+178.84 seconds and eight read tools. Added `world_query.filters.stock_status`
+for saved enabled thresholds and zero stock, with database prefiltering,
+authorized inventory scopes, pagination and explicit completeness. The model
+can now answer the organization-wide question from one tool result instead of
+repeated arbitrary quantity searches. No model, auth, schema or UI change.
+
+Read-only candidate benchmark: one query (0.235 seconds), total 19.128 seconds.
+A separate lower-reasoning experiment did not improve total latency and was not
+shipped. 333 focused checks pass on the branch. Against the exact deployed app
+snapshot, all 26 stock/insights checks pass; broader historical suites have the
+same 250 grounding and 22 chat failures before and after, with no new failures.
+These fixtures predate deployed streaming/authorization changes.
+
+Two runtime files published through the configured `findez` systemd service;
+health passes, 140 unrelated Python files and the web process remain unchanged.
+Rollback originals and hashes: `/home/ubuntu/findez-chat-speed-20261107`.
+Local source snapshots, test logs and receipt: `../findez-chat-speed-report/`.
+Live browser acceptance is being completed. No inventory writes performed.
