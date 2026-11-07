@@ -1,5 +1,7 @@
 
 import mimetypes
+import re
+import unicodedata
 from dataclasses import dataclass
 from urllib.parse import unquote, urlsplit, urlunsplit
 from uuid import uuid4
@@ -56,7 +58,11 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
     settings = get_settings()
     supabase = get_supabase_admin()
 
-    safe_filename = filename.replace("/", "_").replace("\\", "_").replace("%", "_")
+    # Storage rejects Unicode/control characters in object keys (including the
+    # narrow no-break space in macOS screenshot names). Keep display names in
+    # metadata; keys need only a bounded ASCII suffix and their existing UUID.
+    ascii_name = unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore').decode('ascii')
+    safe_filename = re.sub(r'[^A-Za-z0-9._-]', '_', ascii_name)[-160:].strip('.') or 'image'
     path = f"{user_id}/{uuid4().hex}-{safe_filename}"
     scope = current_inventory.get()
     if scope:

@@ -1,3 +1,20 @@
+## November 7 — backend repair200 deployed
+
+Production deployed and healthy; five files changed, 141 unrelated Python files preserved. Database health 200; unauthenticated direct import returns 401. Full production-candidate tests: 64 passed. No schema changes. PR345.
+
+## November 7 — capture/import repair200 verified
+
+Optional direct inventory imports reuse the existing authorized, durable connector RPC. Every worksheet, repeated row and original column is retained; the selected Space ID is validated within inventory scope. Known fields use deterministic aliases. Invalid quantities, invalid cells and formulas without cached results fail before importing. No schema migration. BOM review is unchanged.
+
+Storage keys now use bounded ASCII filenames, fixing InvalidKey for macOS screenshots. Ownership and private-photo registration remain unchanged.
+
+Validation: full backend 1514 passed; 64 focused import/storage tests passed. Deployment is staged; receipt will follow. Main chat and main extraction logic are unchanged.
+
+## November 7 — capture/import repair200 (active)
+
+Owner: current Codex task. Storage-key validation, direct loss-preserving spreadsheet import through existing durable receipts, and chat deletion diagnostics. No database migration authorized.
+Implementation and verification are in progress; nothing from this lane is deployed yet.
+
 ## October 25 — Personalization implementation (activation pending)
 
 Lane `feat/personalization-engine` adds migration 081, opted-in activity/aliases,
