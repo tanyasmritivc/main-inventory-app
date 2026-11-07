@@ -9,3 +9,5 @@ Validation: TypeScript passed; changed-file lint has no errors; 13 focused tests
 ## Deployment
 
 Production release space-imports-20261107 is live, build GjlDASBKZhL3cIOsA9lOA. Eight route checks returned 200; 541 unrelated files, public assets and configuration preserved. PR347. Browser automation could not initialize because its installed runtime dependency is missing; UI behavior is covered by component tests, production build and route checks.
+
+Final runtime CI 42425038754: backend, mobile, connectors and PostgreSQL pass. Web: 525 pass / 71 pre-existing failures (previous CI 72); no new failure headings. Updated direct-import wrapper removes one old failure. Exact comparison retained in capture-import200-web-ci.json.
