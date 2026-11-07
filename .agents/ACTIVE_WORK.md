@@ -1,3 +1,16 @@
+## November 7 - Web item info and printable labels deployed
+
+Runtime `ceeb4baf`, PR340, branch `feat/web-item-info-labels`. Release
+`/home/ubuntu/findez-web-releases/item-info-20261107/frontend` is live through the
+existing guarded findez-web systemd switch. Ten web source files changed;
+535 other runtime/config/public files and the backend PID were preserved.
+Photos, mobile-style grouped details and sections, scoped PNG/QR labels and
+isolated Print / PDF are verified with fictional browser data and Safari preview.
+Letter/A4 PDFs rendered successfully. Public/auth routes load without runtime
+errors; headless signed-in routes correctly redirect to sign in. Eleven focused
+tests, TypeScript and changed-code lint passed. The full suite reproduces the
+untouched baseline's 76 failures / 507 passes. No mobile or backend changes.
+
 ## November 7 - Founders hero copy simplified
 
 Published runtime `f3fc4911`, PR338, branch `fix/founders-hero-copy`, release
