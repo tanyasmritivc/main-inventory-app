@@ -1480,3 +1480,12 @@ Tools, and closing/reopening the selected saved conversation without signing in.
 Anonymous guards and private/no-store headers pass. Existing expired or revoked
 sessions still require authentication; no multi-day elapsed test is claimed.
 Receipt and screenshots: `../findez-session-resume-report/`.
+
+
+## November 7: flatter Founders Access button
+
+Branch `style/founders-button-flat` changes only the sidebar button CSS. Replace
+the pronounced rose bevel with a flat charcoal surface in dark mode, pale surface
+in light mode, subtle edge sheen and a thin rose/violet border. Existing rounded
+shape, floating motion, reduced-motion handling and `/founders` destination remain.
+Production build and live visual evidence: `../findez-founders-flat-report/`.

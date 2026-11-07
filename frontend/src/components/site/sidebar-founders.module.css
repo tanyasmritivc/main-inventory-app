@@ -1,20 +1,29 @@
 :global(html[data-app-theme] .app-frame .app-sidebar-footer) > .link.link {
+  --founders-surface: #faf9fa;
+  --founders-sheen: #f1e9ed;
+  --founders-edge: #c9abb6;
+  --founders-edge-end: #b7afc8;
   position: relative;
   background:
-    radial-gradient(90% 70% at 20% 10%, #b46a70 0%, transparent 60%),
-    radial-gradient(80% 80% at 80% 100%, #2a1418 0%, transparent 70%),
-    linear-gradient(165deg, #9a545d 0%, #6a343c 45%, #2e171b 100%);
-  border-color: #b8798166;
-  color: #fff;
-  box-shadow: 0 6px 14px #210e1829, inset 0 1px 0 #ffffff1f;
+    linear-gradient(110deg, var(--founders-surface) 55%, var(--founders-sheen)) padding-box,
+    linear-gradient(115deg, var(--founders-edge), var(--founders-edge-end)) border-box;
+  border: 1px solid transparent;
+  color: var(--text);
+  box-shadow: 0 3px 10px #210e180d;
   text-decoration: none;
   animation: float 6s ease-in-out infinite;
-  transition: box-shadow 180ms ease, border-color 180ms ease;
+  transition: box-shadow 180ms ease;
+}
+
+:global(html[data-app-theme="dark"] .app-frame .app-sidebar-footer) > .link.link {
+  --founders-surface: #242424;
+  --founders-sheen: #30282d;
+  --founders-edge: #926572;
+  --founders-edge-end: #625773;
 }
 
 :global(html[data-app-theme] .app-frame .app-sidebar-footer) > .link.link:hover {
-  border-color: #dba1aa;
-  box-shadow: 0 8px 18px #210e183d, inset 0 1px 0 #ffffff30;
+  box-shadow: 0 3px 14px #a9687b26;
   animation-play-state: paused;
 }
 
