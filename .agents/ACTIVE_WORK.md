@@ -1,3 +1,17 @@
+## November 7 - Floating marketing header correction
+
+Published runtime `7f981b67`, PR337, branch `style/floating-marketing-header`,
+release `header-floating-20261107`, build `VmyNOT_u-VwtMi6di6OJw`.
+The compact header now floats directly over the page with no enclosing background,
+border, shadow or backdrop blur, including after scrolling. Smaller sizing,
+centered alignment, links and individual buttons are preserved. This supersedes
+the enclosed-bar presentation below.
+
+Production build passed. Eighteen staged and eighteen live viewport checks across
+three marketing pages passed: transparent surface, containment, scroll state and
+phone menu, with zero runtime exceptions. Only marketing CSS changed; all 541
+other runtime/configuration/public files and the backend PID were preserved.
+
 ## November 7 - Compact marketing header
 
 Branch `style/compact-marketing-header`. One runtime CSS file makes the marketing
