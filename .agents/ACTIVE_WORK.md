@@ -1,3 +1,24 @@
+## November 7 - Organization chooser build198 uploaded
+
+Runtime `b6674343`, PR343, branch `style/organization-pill198`.
+Organization chooser now has a flat charcoal/light surface, a subtle top sheen,
+rounded edge and soft shadow. Dimensions, text, avatar, chevron, accessibility
+and switching behavior are unchanged. The shared liquid-surface component and
+all inventory, capture, chat and backend behavior are unchanged.
+
+Flutter 1329 pass/1 skip, analysis clean; ten existing native iPhone layout checks
+pass across both themes, small screens, large text, keyboard and tablet sizing.
+Dark/light screenshots inspected. All five exact-commit CI gates passed in
+42418176807. Signed production archive/export and 33 device executables / 27 privacy
+manifests verified; Apple validation passed. Physical iPhone acceptance remains
+pending.
+
+Apple acknowledged TestFlight 1.1.2 (198), delivery `173144c6-1b81-48ce-912e-a5ee6de61914`.
+Processing and tester availability were not polled. Public App Store submission
+is unchanged. Receipt: `docs/plans/mobile198-release.json`. IPA/archive retained
+privately. The companion web presentation change (PR342) is deployed as
+`home-simplify-20261107`; its baseline web CI failures are unchanged.
+
 ## November 7 - Mobile197 deployed and uploaded
 
 Runtime `8c735f6b3718a99f6f858d67c7181cc217339df3` (PR341, `fix/mobile-space-capture197`)
