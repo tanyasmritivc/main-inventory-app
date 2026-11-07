@@ -28,6 +28,8 @@ class InventoryChatButton extends StatelessWidget {
           context: context,
           useNestedNavigation: true,
           showDragHandle: true,
+          // Keep compatibility with the release SDK, which lacks scrollableBuilder.
+          // ignore: deprecated_member_use
           builder: (context) => _InventoryChatSheet(api: api),
         );
         return;
