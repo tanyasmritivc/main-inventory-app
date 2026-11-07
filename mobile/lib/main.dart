@@ -23,7 +23,7 @@ import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_v5_page.dart';
 import 'features/onboarding/onboarding_v5_store.dart';
 import 'features/onboarding/chat_onboarding_gate.dart';
-import 'features/profile/plans_welcome.dart';
+import 'features/announcements/announcement_host.dart';
 import 'features/splash/splash_page.dart';
 import 'features/workspaces/inventory_context_host.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
@@ -234,6 +234,7 @@ class _MyAppState extends State<MyApp> {
         animation: _appearance,
         builder: (context, _) => MaterialApp(
           navigatorKey: _navigatorKey,
+          navigatorObservers: [announcementRoutes],
           scaffoldMessengerKey: _messengerKey,
           debugShowCheckedModeBanner: false,
           title: 'FindEZ',
@@ -541,9 +542,10 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: PlansWelcomeGate(
+            child: AnnouncementHost(
               key: ValueKey(session.user.id),
               user: session.user,
+              api: widget.api,
               child: ChatOnboardingGate(api: widget.api),
             ),
           );

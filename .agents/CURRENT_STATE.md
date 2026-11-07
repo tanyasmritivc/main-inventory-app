@@ -1,3 +1,19 @@
+## November 7 - Announcement system review lane
+
+Branch `feat/announcement-design`, based on mobile build195. The user selected
+full persistent campaigns with the supplied mobile designs and approved verified
+policy/allowances instead of unsupported future restrictions or absolute retention.
+Adds private draft campaigns, atomic account delivery caps, mobile idle-shell
+presentation, all dismissal receipts and the current-access row. Web and plan
+entitlement enforcement are unchanged. Migration, campaign publication and
+TestFlight are held for approval per the supplied packages. See
+`docs/plans/announcements-20261107.md` for scope, activation and validation.
+
+Validation: 1,321 mobile tests passed (one existing skip), 21 focused lifecycle
+cases passed, 14 iOS simulator previews passed, analysis clean, 840 backend/API
+doc tests passed, 24 SQL assertions passed and 24 concurrent claims yielded one
+delivery. Physical-device VoiceOver/live rollout acceptance remains manual.
+
 ## November 7 - Contextual Ask FindEZ Cupertino sheet delivered (195)
 
 TestFlight 1.1.2 (195), runtime `f3b5c293bde1fcb17feb0faa415cae8106270031`, PR335,

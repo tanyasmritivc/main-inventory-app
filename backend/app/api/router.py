@@ -82,3 +82,6 @@ for scoped_feature_router in (
 ):
     scoped_router.include_router(scoped_feature_router)
 api_router.include_router(scoped_router)
+
+from app.api.routes.announcements import router as announcements_router
+api_router.include_router(announcements_router)

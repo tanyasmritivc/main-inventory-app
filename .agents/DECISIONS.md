@@ -1,3 +1,15 @@
+## November 7 - Account-scoped announcement delivery
+
+Campaign eligibility and frequency live in the backend, with an atomic per-user
+claim and durable campaign receipt. Claim consumes the delivery window before
+returning so a lost response cannot replay on another device. Mobile local storage
+is only an account-bound receipt outbox. Show at most one announcement per session,
+after the shell is ready and idle. Access copy follows existing runtime allowances
+and the approved policy, "Saved items stay accessible when plans change."
+Draft campaigns are inactive until explicitly published. This feature remains on
+`feat/announcement-design`; no production migration or TestFlight upload is part
+of the supplied package's authorization. See `docs/plans/announcements-20261107.md`.
+
 ## November 7 - Contextual inventory chat uses a Cupertino route
 
 Use Flutter's Cupertino sheet route on iOS for the existing scoped chat, with

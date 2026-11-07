@@ -12,7 +12,7 @@ import '../../core/push_notifications.dart';
 import '../../core/ui/native_presentation.dart';
 import '../notifications/notifications_page.dart';
 import 'memory_page.dart';
-import 'plans_page.dart';
+import '../announcements/announcement_host.dart';
 import 'privacy_policy_page.dart';
 import 'profile_editor_page.dart';
 import 'terms_of_service_page.dart';
@@ -28,6 +28,7 @@ Future<void> showNativeAccountMenu(
   if (appearance != null) await appearance.load();
   if (!context.mounted) return;
   var confirm = prefs.getBool('confirm_before_save') ?? false;
+  final access = AnnouncementScope.of(context)?.access;
   Map<String, dynamic> row(
     String id,
     String title,
@@ -58,9 +59,21 @@ Future<void> showNativeAccountMenu(
                   'subtitle': 'Edit profile',
                 },
                 row('notifications', 'Notifications', 'bell'),
+              ],
+            },
+            {
+              'rows': [
                 {
-                  ...row('plans', 'Plans', 'square.stack.3d.up'),
-                  'subtitle': 'Compare Free, Plus and Team',
+                  ...row(
+                    'plans',
+                    access?['name'] as String? ?? 'Your plan',
+                    'square.stack.3d.up',
+                  ),
+                  'subtitle': access == null
+                      ? 'Tap to load access'
+                      : 'Your plan',
+                  'announcementPlan': access != null,
+                  'badge': access?['badge'],
                 },
               ],
             },
@@ -240,7 +253,8 @@ Future<void> showNativeAccountMenu(
       case 'memory':
         page = MemoryPage(api: api);
       case 'plans':
-        page = const PlansPage();
+        await openAnnouncementPlan(context, api);
+        continue;
       case 'privacy':
         page = const PrivacyPolicyPage();
       case 'terms':

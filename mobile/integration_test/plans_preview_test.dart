@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/profile/plans_page.dart';
-import 'package:mobile/features/profile/plans_welcome.dart';
+import 'package:mobile/features/announcements/announcement_widgets.dart';
+import '../test/support/announcement_fixture.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,13 @@ void main() {
                 child: child!,
               ),
               home: Scaffold(
-                body: PlansWelcomeDialog(onClose: () => closed = true),
+                body: AnnouncementSheet(
+                  title: "You're in early.",
+                  body: const AnnouncementPlanBody(access: announcementAccess),
+                  primaryLabel: 'Got it',
+                  onPrimary: () => closed = true,
+                  onClose: () => closed = true,
+                ),
               ),
             ),
           ),
@@ -49,17 +56,8 @@ void main() {
         await File(path).writeAsBytes(bytes);
         debugPrint('PLANS_AUDIT_IMAGE $path');
         image.dispose();
-        await tester.scrollUntilVisible(find.text('Yearly'), 120);
-        await tester.tap(find.text('Yearly'));
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(find.text('Team'), 100);
-        await tester.tap(find.text('Team'));
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(find.text('\$299/year'), 140);
-        expect(find.text('\$299/year'), findsOneWidget);
-        await tester.scrollUntilVisible(find.text('10 people included'), 140);
-        expect(tester.takeException(), isNull);
-        await tester.tap(find.text('Continue with Free'));
+        await tester.scrollUntilVisible(find.text('Got it'), 120);
+        await tester.tap(find.text('Got it'));
         await tester.pumpAndSettle();
         expect(closed, isTrue);
         await tester.pumpWidget(const SizedBox());

@@ -1,3 +1,4 @@
+import '../announcements/announcement_host.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
@@ -60,6 +61,8 @@ class _WorldShellState extends State<WorldShell> {
   String _world = '';
   int _tab = 0, _revision = 0;
   bool _chatFocused = false;
+  bool Function()? _chatIdle;
+  int _activeOperations = 0;
   bool _loadedNavigation = false;
   VoidCallback? _history, _scan;
   Map<String, dynamic>? _directory;
@@ -271,6 +274,7 @@ class _WorldShellState extends State<WorldShell> {
   }
 
   Future<void> _guard(Future<void> Function() operation) async {
+    _activeOperations++;
     try {
       await operation();
     } catch (error) {
@@ -279,6 +283,8 @@ class _WorldShellState extends State<WorldShell> {
           context,
         ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
       }
+    } finally {
+      _activeOperations--;
     }
   }
 
@@ -607,8 +613,26 @@ class _WorldShellState extends State<WorldShell> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      WorldStyle(child: Builder(builder: _buildWorld));
+  Widget build(BuildContext context) => WorldStyle(
+    child: AnnouncementGate(
+      isSafe: () =>
+          _loadedNavigation &&
+          !widget.session.loading &&
+          widget.session.error == null &&
+          _directory != null &&
+          _error == null &&
+          !_profile.loading &&
+          !_profile.failed &&
+          _profile.profile.isNotEmpty &&
+          !_chatFocused &&
+          !_creatingSpace &&
+          !_searchingSpaces &&
+          _activeOperations == 0 &&
+          _chatIdle?.call() == true,
+      onCapture: _openScan,
+      child: Builder(builder: _buildWorld),
+    ),
+  );
 
   Widget _tabHeader(BuildContext context, int index) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
@@ -752,6 +776,8 @@ class _WorldShellState extends State<WorldShell> {
                               if (mounted) setState(() => _chatFocused = value);
                             },
                             onRegisterScan: (callback) => _scan = callback,
+                            onRegisterAnnouncementIdle: (callback) =>
+                                _chatIdle = callback,
                             onRegisterOpenHistory: (callback) {
                               _history = callback;
                             },
