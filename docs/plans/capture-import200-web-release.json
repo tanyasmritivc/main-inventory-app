@@ -1,0 +1,18 @@
+{
+  "published": true,
+  "routes": {
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/solutions": 200,
+    "/founders": 200
+  },
+  "release": "/home/ubuntu/findez-web-releases/space-imports-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/home-simplify-20261107/frontend",
+  "build_id": "GjlDASBKZhL3cIOsA9lOA",
+  "backend_unchanged_by_web_activation": true,
+  "source_commit": "6b9f3b5d"
+}

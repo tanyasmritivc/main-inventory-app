@@ -1,3 +1,7 @@
+## November 7 — web repair200 deployed
+
+Production release space-imports-20261107 is live, build GjlDASBKZhL3cIOsA9lOA. Eight route checks returned 200; 541 unrelated files, public assets and configuration preserved. PR347. Browser automation could not initialize because its installed runtime dependency is missing; UI behavior is covered by component tests, production build and route checks.
+
 ## November 7 — capture/import repair200 verified
 
 History closes before Delete confirmation to release the modal focus/pointer trap. Space photo upload uses the existing main photo service and capture widgets, then verifies and locks the invoking inventory/Space before saving. Manual/barcode additions retain the originating Space.
