@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 
 class InventoryCache {
@@ -12,7 +13,12 @@ class InventoryCache {
     _collections[contextKey] = List<InventoryItem>.unmodifiable(items);
   }
 
-  static void clear() => _collections.clear();
+  static final changes = ValueNotifier<int>(0);
+  static void clear() {
+    _collections.clear();
+    changes.value++;
+  }
+
   static void removeSpace(String spaceId, {String contextKey = 'legacy'}) {
     setItems(
       forContext(contextKey).where((item) => item.spaceId != spaceId).toList(),

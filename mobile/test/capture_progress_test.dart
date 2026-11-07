@@ -101,6 +101,7 @@ class CaptureHarness {
 
   Future<void> start(WidgetTester tester) async {
     await tester.tap(find.text('Scan photo'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Preparing your photo...'), findsOneWidget);
   }
@@ -172,6 +173,7 @@ void main() {
         }
       });
       await tester.tap(find.text('Scan photo'));
+    await tester.pump();
       await tester.pumpAndSettle();
       expect(
         find.text('FindEZ could not complete this request. Please try again.'),

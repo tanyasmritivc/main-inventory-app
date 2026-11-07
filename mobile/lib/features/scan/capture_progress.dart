@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/ui/app_text.dart';
 import '../../core/api_error.dart';
-import '../../widgets/pip_extract_loader.dart';
+import '../chat/extraction_progress_panel.dart';
 import 'package:dio/dio.dart';
 
 class CaptureCancelled implements Exception {}
@@ -22,6 +22,7 @@ Future<T> runWithCaptureProgress<T>({
   required Future<T> Function(CaptureProgressToken cancelToken) extract,
   bool retryOnFailure = false,
   int Function(T result)? itemCount,
+  ImageProvider? photo,
 }) async {
   while (true) {
     try {
@@ -29,6 +30,7 @@ Future<T> runWithCaptureProgress<T>({
         context: context,
         extract: extract,
         itemCount: itemCount,
+        photo: photo,
       );
     } catch (error) {
       final canRetry =
@@ -69,22 +71,74 @@ Future<T> _runCapture<T>({
   required BuildContext context,
   required Future<T> Function(CaptureProgressToken cancelToken) extract,
   int Function(T result)? itemCount,
+  ImageProvider? photo,
 }) async {
   final token = CaptureProgressToken();
-  final loader = showPipExtractLoader(
-    context,
-    onStop: () => token.cancel('Stopped by user'),
+  final progress = ValueNotifier<String>('Preparing your photo...');
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final route = ModalBottomSheetRoute<void>(
+    isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheet) => PopScope(
+      canPop: false,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Material(
+          color: Theme.of(sheet).colorScheme.surface,
+          borderRadius: BorderRadius.circular(28),
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.center_focus_strong_outlined),
+                    title: const Text('Review extraction'),
+                    trailing: IconButton(
+                      tooltip: 'Stop extraction',
+                      onPressed: () => token.cancel('Stopped by user'),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ),
+                  if (photo != null)
+                    ScanPhotoFrame(
+                      image: photo,
+                      height: MediaQuery.sizeOf(sheet).height * .32,
+                      scanning: true,
+                    ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: progress,
+                    builder: (_, message, _) => ExtractionProgressPanel(
+                      message: message,
+                      regions: const [],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => token.cancel('Stopped by user'),
+                    child: const Text('Stop extraction'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
-  token.onProgress = loader.update;
+  unawaited(navigator.push(route));
+  token.onProgress = (message) => progress.value = message;
   try {
     final result = await Future.any<T>([
       Future<T>.sync(() => extract(token)),
       token.whenCancel.then<T>((_) => throw CaptureCancelled()),
     ]);
     if (token.isCancelled) throw CaptureCancelled();
-    if (context.mounted && itemCount != null) {
-      await loader.succeed(itemCount(result));
-    }
     if (token.isCancelled) throw CaptureCancelled();
     return result;
   } catch (error) {
@@ -92,6 +146,7 @@ Future<T> _runCapture<T>({
     rethrow;
   } finally {
     token.onProgress = null;
-    loader.dismiss();
+    if (route.isActive) navigator.removeRoute(route);
+    WidgetsBinding.instance.addPostFrameCallback((_) => progress.dispose());
   }
 }

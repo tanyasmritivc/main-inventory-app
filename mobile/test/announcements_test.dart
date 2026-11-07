@@ -53,6 +53,29 @@ void main() {
     );
     expect(verifiedAnnouncementAccess(announcementAccess), announcementAccess);
   });
+  testWidgets('downward swipe on announcement body dismisses at the top', (
+    tester,
+  ) async {
+    late BuildContext launcher;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            launcher = context;
+            return const Scaffold();
+          },
+        ),
+      ),
+    );
+    final closed = Navigator.of(
+      launcher,
+    ).push(announcementRoute(launcher, welcomeCampaign, announcementAccess));
+    await tester.pumpAndSettle();
+    await tester.drag(find.text("You're in early."), const Offset(0, 240));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnnouncementSheet), findsNothing);
+    expect(await closed, 'dismissed');
+  });
   test(
     'claim once, account-bound legacy receipt, and session identity',
     () async {
@@ -218,7 +241,7 @@ void main() {
         result,
         action == 'Got it'
             ? 'acknowledged'
-            : action == 'backdrop'
+            : action == 'backdrop' || action == 'swipe'
             ? isNull
             : 'dismissed',
       );

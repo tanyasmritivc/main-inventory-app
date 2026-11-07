@@ -26,6 +26,7 @@ class ConfirmScanSheet extends StatefulWidget {
     required this.items,
     required this.defaultLocation,
     this.existingItems,
+    this.lockLocation = false,
   });
 
   final List<ExtractedInventoryItem> items;
@@ -34,6 +35,7 @@ class ConfirmScanSheet extends StatefulWidget {
   /// initial value for each item's Location field so the user sees their
   /// chosen space rather than the AI-extracted default ("Unsorted").
   final String defaultLocation;
+  final bool lockLocation;
   final List<InventoryItem>? existingItems;
 
   @override
@@ -690,6 +692,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: _locCtrl[i],
+              readOnly: widget.lockLocation,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: AppTypography.bodyStyleOf(

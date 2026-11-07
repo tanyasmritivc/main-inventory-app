@@ -16,13 +16,16 @@ void main() {
   setUpAll(fixture.initialize);
   tearDownAll(() => Supabase.instance.dispose());
   late PlaceSession session;
-  var count = 1, canOpen = true;
+  var count = 1, canOpen = true, remainingItems = 60;
+  var deleteLastSpace = false;
   final opened = <String>[];
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     fixture.status = 200;
     fixture.requests.clear();
     count = 1;
+    remainingItems = 60;
+    deleteLastSpace = false;
     canOpen = true;
     opened.clear();
     fixture.respond = (r) {
@@ -91,7 +94,7 @@ void main() {
                 'can_open': canOpen,
                 'can_edit': false,
                 'role': 'viewer',
-                'item_count': canOpen ? 60 : null,
+                'item_count': canOpen ? remainingItems : null,
               },
           ],
           'next_offset': null,
@@ -122,6 +125,7 @@ void main() {
 
   Future<void> open(String id, String workspace, String? org) async {
     opened.add('$org/$workspace/$id');
+    if (deleteLastSpace) remainingItems = 0;
   }
 
   Future<void> settle(WidgetTester tester) async {
@@ -160,6 +164,22 @@ void main() {
   for (final mode in Brightness.values) {
     group(mode.name, () {
       testWidgets(
+        'returning after deleting the last Space keeps inventory and refreshes count',
+        (tester) async {
+          await tester.runAsync(
+            () => session.select(const LastPlace.workspace('ftc')),
+          );
+          await pump(tester, brightness: mode);
+          expect(find.text('60 items · Viewer'), findsOneWidget);
+          deleteLastSpace = true;
+          await tester.tap(find.text('Inventory 0'));
+          await settle(tester);
+          expect(find.text('Inventory 0'), findsOneWidget);
+          expect(find.text('0 items · Viewer'), findsOneWidget);
+          expect(find.text('60 items · Viewer'), findsNothing);
+        },
+      );
+      testWidgets(
         'workspace home has correct role, count and inventory destination',
         (tester) async {
           await tester.runAsync(
@@ -174,6 +194,7 @@ void main() {
           expect(find.byTooltip('Workspace settings'), findsOneWidget);
           expect(find.byTooltip('Refresh'), findsNothing);
           await tester.tap(find.text('Inventory 0'));
+          await settle(tester);
           expect(opened, ['org/ftc/inv-0']);
         },
       );

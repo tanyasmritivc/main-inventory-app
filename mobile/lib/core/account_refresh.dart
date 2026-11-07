@@ -1,3 +1,4 @@
+import 'inventory_cache.dart';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 
@@ -6,12 +7,13 @@ import 'package:flutter/widgets.dart';
 class AccountRefresh with WidgetsBindingObserver {
   AccountRefresh({required this.refresh, required this.isActive}) {
     WidgetsBinding.instance.addObserver(this);
+    InventoryCache.changes.addListener(_inventoryChanged);
     _timer = Timer.periodic(const Duration(seconds: 15), (_) => check());
   }
   final Future<void> Function() refresh;
   final bool Function() isActive;
   late final Timer _timer;
-  bool _disposed = false, _running = false;
+  bool _disposed = false, _running = false, _changedDuringRefresh = false;
 
   Future<void> check() async {
     final state = WidgetsBinding.instance.lifecycleState;
@@ -26,6 +28,18 @@ class AccountRefresh with WidgetsBindingObserver {
       await refresh(); // Loaders retain their normal user-facing error handling.
     } finally {
       _running = false;
+      if (_changedDuringRefresh) {
+        _changedDuringRefresh = false;
+        unawaited(check());
+      }
+    }
+  }
+
+  void _inventoryChanged() {
+    if (_running) {
+      _changedDuringRefresh = true;
+    } else {
+      unawaited(check());
     }
   }
 
@@ -36,6 +50,7 @@ class AccountRefresh with WidgetsBindingObserver {
 
   void dispose() {
     _disposed = true;
+    InventoryCache.changes.removeListener(_inventoryChanged);
     _timer.cancel();
     WidgetsBinding.instance.removeObserver(this);
   }

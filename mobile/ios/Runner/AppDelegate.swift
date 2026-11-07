@@ -4,6 +4,8 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private var assistantNetwork: AssistantNetwork?
+  private var assistantCompletion: (() -> Void)?
   private var nativeNotifications: NativeNotifications?
   private var nativeScanCamera: NativeScanCamera?
   private var nativePresentation: NativePresentation?
@@ -41,6 +43,9 @@ import UserNotifications
     registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
     registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     registrar.register(NativeControlFactory(messenger: registrar.messenger()), withId: "com.findez.app/toolbar-control")
+    assistantNetwork = AssistantNetwork(messenger: registrar.messenger())
+    assistantNetwork?.backgroundCompletion = assistantCompletion
+    assistantCompletion = nil
     nativePresentation = NativePresentation(messenger: registrar.messenger())
     nativeNotifications = NativeNotifications(messenger: registrar.messenger())
     nativeScanCamera = NativeScanCamera(messenger: registrar.messenger())
@@ -111,6 +116,15 @@ import UserNotifications
       }
     }
     pushChannel = channel
+  }
+
+  override func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+    if identifier == AssistantNetwork.identifier {
+      if let network = assistantNetwork { network.backgroundCompletion = completionHandler }
+      else { assistantCompletion = completionHandler }
+    } else {
+      super.application(application, handleEventsForBackgroundURLSession: identifier, completionHandler: completionHandler)
+    }
   }
 
   private func registerForPush(result: @escaping FlutterResult) {
