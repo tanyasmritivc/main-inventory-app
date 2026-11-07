@@ -9,8 +9,8 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark h1,.landing-dark h2,.landing-dark h3{font-weight:400;letter-spacing:-.04em;line-height:1.02}
 .landing-dark svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 /* nav */
-.landing-dark nav.top{position:fixed;top:12px;left:max(16px,calc((100% - 1080px)/2));right:max(16px,calc((100% - 1080px)/2));z-index:40;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(18,18,19,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 28px rgba(0,0,0,.16);transition:none}
-.landing-dark nav.top.sc{background:rgba(18,18,19,.97)}
+.landing-dark nav.top{position:fixed;top:12px;left:max(16px,calc((100% - 1080px)/2));right:max(16px,calc((100% - 1080px)/2));z-index:40;background:transparent;transition:none}
+.landing-dark nav.top.sc{background:transparent}
 .landing-dark nav.top .wrap{height:60px;max-width:none;padding:0 16px;display:flex;align-items:center;gap:20px}
 .landing-dark nav.top .logo{font-size:16px;gap:8px}
 .landing-dark nav.top .logo svg{width:22px;height:22px}
@@ -574,7 +574,7 @@ html:has(.landing-dark),body:has(.landing-dark) { scrollbar-width:none; }
 
 /* Keep the compact header within the viewport without shrinking touch targets. */
 @media (max-width:900px){
- .landing-dark nav.top{top:10px;left:12px;right:12px;border-radius:16px}
+ .landing-dark nav.top{top:10px;left:12px;right:12px}
  .landing-dark nav.top .wrap{height:56px;padding:0 10px;gap:8px}
  .landing-dark nav.top .logo{font-size:14px;gap:6px}
  .landing-dark nav.top .logo svg{width:20px;height:20px}
