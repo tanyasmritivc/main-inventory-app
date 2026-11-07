@@ -842,7 +842,7 @@ function AssistClientWorkspace({
       <div
         className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}
       >
-        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
+        <h1 className={messages.length || opening ? "sr-only" : `ask-title${worldId ? " ask-world-title" : ""}`}>
           {messages.length || opening ? title : <span className="shiny-text">{title}</span>}
         </h1>
         <div className="ask-thread" role="region" aria-label="Conversation" tabIndex={0} ref={thread} onScroll={() => {
@@ -1068,12 +1068,10 @@ function AssistClientWorkspace({
             })
           )}
         </div>
-        {!messages.length && !opening && (
+        {!worldId && !messages.length && !opening && (
           <div className="ask-empty">
             <p className="workspace-muted">
-              {worldId
-                ? "Find items, organize Spaces, and check stock across your organization."
-                : "Find an item, check stock, or attach a photo."}
+              Find an item, check stock, or attach a photo.
             </p>
           </div>
         )}

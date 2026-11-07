@@ -1,3 +1,13 @@
+## November 7 - Home presentation simplification
+
+Branch `style/simplify-home-headings`: smaller organization Ask title with no
+subtitle; smaller landing hero with no subtitle; remove homepage demo scene and
+solution rail progress line. Preserve routes, cards and all inventory behavior.
+TypeScript and changed-file lint passed (three existing warnings). Production
+build passed; desktop/phone and reduced-motion browser checks passed. Full Jest
+retains baseline 76 failures (23 suites), with 514 passing tests. Staged overlay
+preserves 540 other files and all configuration. Deployment pending final checks.
+
 ## November 7 - Web item info and printable labels deployed
 
 Runtime `ceeb4baf`, PR340, branch `feat/web-item-info-labels`. Release

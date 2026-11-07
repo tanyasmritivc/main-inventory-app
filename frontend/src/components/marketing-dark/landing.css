@@ -33,6 +33,7 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark .hero{position:relative;min-height:100vh;display:flex;align-items:center;text-align:center;padding:120px 0 80px;overflow:hidden;background:#000}
 .landing-dark .hero.short{min-height:88vh}
 .landing-dark .hero h1{font-size:92px;letter-spacing:-.05em}
+.landing-dark .home-hero h1{font-size:clamp(36px,5.4vw,68px);margin-bottom:36px}
 .landing-dark .hero .sub{font-size:19px;color:var(--tx2);max-width:600px;margin:22px auto 40px}
 .landing-dark .hero .eb{font-size:14px;color:var(--tx2);margin-bottom:20px}
 .landing-dark .hin{position:relative;z-index:2;width:100%}
@@ -151,7 +152,7 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);opacity:0;height:44px;padding:0 18px;border-radius:22px;background:#F5F5F6;color:#000;display:flex;align-items:center;font-size:14px;transition:opacity .35s var(--e),transform .35s var(--e);pointer-events:none;z-index:90}
 .landing-dark .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (max-width:900px){.landing-dark .nl,.landing-dark nav.top .btn.s{display:none}.landing-dark .ib{display:grid}.landing-dark nav.top .btn{height:38px;padding:0 14px;font-size:14px}
- .landing-dark .hero h1{font-size:42px}.landing-dark .hero .sub{font-size:17px}.landing-dark .zt h3{font-size:26px}.landing-dark .zcap{top:10vh}.landing-dark .win{top:28vh;height:62vh}.landing-dark .wbody{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.landing-dark .wchat{border-right:0;border-bottom:1px solid rgba(255,255,255,.07)}.landing-dark .ivcols,.landing-dark .ir{grid-template-columns:1fr 46px}.landing-dark .ivcols span:nth-child(2),.landing-dark .ir .lc{display:none}
+ .landing-dark .hero h1{font-size:42px}.landing-dark .home-hero h1{font-size:clamp(34px,7vw,42px)}.landing-dark .hero .sub{font-size:17px}.landing-dark .zt h3{font-size:26px}.landing-dark .zcap{top:10vh}.landing-dark .win{top:28vh;height:62vh}.landing-dark .wbody{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.landing-dark .wchat{border-right:0;border-bottom:1px solid rgba(255,255,255,.07)}.landing-dark .ivcols,.landing-dark .ir{grid-template-columns:1fr 46px}.landing-dark .ivcols span:nth-child(2),.landing-dark .ir .lc{display:none}
  .landing-dark .rs h2,.landing-dark .ws p.big,.landing-dark .h2{font-size:30px}.landing-dark .rs .hd .btn{display:none}.landing-dark .scard{width:84vw;padding:24px}.landing-dark .scard h3{font-size:28px}.landing-dark .scard .qa{left:20px;right:20px;width:auto;top:20px}.landing-dark .scard .go{display:none}
  .landing-dark .nr2{grid-template-columns:1fr;gap:12px;padding:32px 0}.landing-dark .nr2 .n{font-size:64px}.landing-dark .nr2 h3{font-size:26px}.landing-dark .sgrid{grid-template-columns:1fr}.landing-dark .sgrid .scard{height:360px}.landing-dark .plan{grid-template-columns:1fr;padding:32px 26px}.landing-dark .plan .pr{font-size:60px}.landing-dark footer .cols{grid-template-columns:1fr 1fr}.landing-dark .blk{padding:90px 0}}
 @media (prefers-reduced-motion:reduce){.landing-dark .rise,.landing-dark .rv{opacity:1;transform:none;animation:none;transition:none}}
@@ -465,9 +466,7 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 /* ===== rail v3: clean and smooth ===== */
 .landing-dark .rail{height:auto}
 .landing-dark .rs .hd{align-items:flex-end}
-.landing-dark .rprog{max-width:1200px;width:100%;margin:-14px auto 30px;padding:0 28px;display:flex;align-items:center;gap:18px}
-.landing-dark .rprog .bar{flex:1;height:2px;border-radius:1px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
-.landing-dark .rprog .bar i{position:absolute;inset:0;background:#F5F5F6;transform-origin:left;transform:scaleX(0);will-change:transform}
+.landing-dark .rprog{max-width:1200px;width:100%;margin:-14px auto 30px;padding:0 28px;display:flex;align-items:center;justify-content:flex-end;gap:18px}
 .landing-dark .rprog .nm{position:relative;width:220px;height:20px;font-size:13.5px;color:var(--tx2)}
 .landing-dark .rprog .nm span{position:absolute;right:0;top:0;white-space:nowrap;opacity:0;transform:translateY(8px);transition:opacity .35s ease,transform .5s var(--e)}
 .landing-dark .rprog .nm span.on{opacity:1;transform:none;transition-delay:.12s}

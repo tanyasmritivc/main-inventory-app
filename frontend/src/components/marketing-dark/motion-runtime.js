@@ -45,12 +45,12 @@ const prog=el=>cl((scrollY-el.offsetTop)/(el.offsetHeight-innerHeight));
 /* rail v3: cached geometry, transform tied 1:1 to scroll (no extra easing loop, no layout reads per frame) */
 function railSize(r){const tr=r.querySelector('.track');const cards=[...tr.children];const pad=parseFloat(getComputedStyle(tr).paddingLeft)||28;
  const last=cards[cards.length-1];const max=Math.max(0,last.offsetLeft+last.offsetWidth+pad-innerWidth);
- r._geo={max,cards,mid:cards.map(c=>c.offsetLeft+c.offsetWidth/2),bar:r.querySelector('.rprog .bar i'),names:[...r.querySelectorAll('.rprog .nm span')],tr};
+ r._geo={max,cards,mid:cards.map(c=>c.offsetLeft+c.offsetWidth/2),names:[...r.querySelectorAll('.rprog .nm span')],tr};
  const h=Math.round(innerHeight*1.25+max*1.1);if(r._h!==h){r._h=h;r.style.height=h+'px'}r._geo.top=r.offsetTop;r._geo.height=r.offsetHeight;r._geo.sticky=r.querySelector('.rs');}
 function railFrame(r){if(reduce){r.querySelector('.rs').classList.add('in');r.querySelectorAll('.scard').forEach(c=>c.classList.add('act'));return;}if(!r._geo)railSize(r);const g=r._geo;const rs=g.sticky;
  if(!r._in&&g.top-scrollY<innerHeight*.75){r._in=1;rs.classList.add('in')}
  const p=cl((scrollY-g.top-innerHeight*.1)/(g.height-innerHeight*1.25));const x=Math.round(-g.max*p*100)/100;
- if(r._x!==x){r._x=x;g.tr.style.transform=`translate3d(${x}px,0,0)`;g.bar.style.transform=`scaleX(${p.toFixed(4)})`}
+ if(r._x!==x){r._x=x;g.tr.style.transform=`translate3d(${x}px,0,0)`}
  let ai=0,bd=1e9;g.mid.forEach((m,i)=>{const d=Math.abs(m+x-innerWidth/2);if(d<bd){bd=d;ai=i}});
  const act=r._in&&bd<innerWidth*.34?ai:-1;if(r._a!==act){r._a=act;g.cards.forEach((c,i)=>c.classList.toggle('act',i===act))}
  if(r._n!==ai){r._n=ai;g.names.forEach((e,i)=>e.classList.toggle('on',i===ai))}}
