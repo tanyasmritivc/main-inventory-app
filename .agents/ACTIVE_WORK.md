@@ -1788,4 +1788,7 @@ Two runtime files published through the configured `findez` systemd service;
 health passes, 140 unrelated Python files and the web process remain unchanged.
 Rollback originals and hashes: `/home/ubuntu/findez-chat-speed-20261107`.
 Local source snapshots, test logs and receipt: `../findez-chat-speed-report/`.
-Live browser acceptance is being completed. No inventory writes performed.
+Live Safari acceptance passed: the same question completed in 17.82257 seconds
+with one world_query, versus 178.841448 seconds and eight reads before the fix.
+The response includes saved zero-stock records and item links. No inventory
+writes were performed; one verification chat was saved in the test account.
