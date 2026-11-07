@@ -1,0 +1,57 @@
+{
+  "version": "1.1.2",
+  "build": 197,
+  "source_commit": "8c735f6b3718a99f6f858d67c7181cc217339df3",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "1ec25bdf93c58bbcc5744700782b5af0669a0fa96154ab00c0fec439f4afac92",
+  "uploaded": true,
+  "apple_validation": true,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/341",
+  "mobile_tests": {
+    "passed": 1329,
+    "skipped": 1
+  },
+  "backend_tests": {
+    "passed": 805
+  },
+  "native_tests": {
+    "passed": 14
+  },
+  "physical_device_acceptance": "pending",
+  "prior_web_task": "deployed separately before mobile work",
+  "delivery_uuid": "23b32684-3568-4d5c-8899-d1f01cb7698b",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "backend": {
+    "health": 200,
+    "database_health": 200,
+    "unrelated_python_files_preserved": 143,
+    "changed_files": [
+      "app/core/assistant_stream.py",
+      "app/main.py"
+    ]
+  },
+  "welcome": {
+    "welcome_rollout_percent": 100,
+    "existing_receipts_preserved": true,
+    "other_campaigns": "draft"
+  },
+  "live_checks": {
+    "checks": {
+      "https_health_and_database": true,
+      "mirror_preserves_unauthorized_response": true,
+      "different_bearer_cannot_read_mirror": true,
+      "announcement_auth_still_required": true,
+      "public_web_still_available": true
+    },
+    "model_calls": 0,
+    "customer_writes": 0
+  },
+  "ci_run": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42416359263",
+  "branch": "fix/mobile-space-capture197"
+}

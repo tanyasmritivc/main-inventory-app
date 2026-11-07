@@ -1,14 +1,28 @@
-## November 7 - Mobile197 validated, delivery pending
+## November 7 - Mobile197 deployed and uploaded
 
-Branch `fix/mobile-space-capture197` preserves inventories while refreshing deleted
-Spaces/counts, fixes Space capture presentation/destination, adds iOS background
-assistant exchanges with a bounded foreground response mirror, makes welcome
-swipe-dismissable and promptly eligible after authentication, and removes the
-clipped native Settings plan border. Full Flutter 1329 pass/1 skip, analysis clean,
-backend805 pass, native14 pass. Physical-device acceptance remains pending.
-Server candidate is staged and tested; production deployment, welcome rollout
-expansion and Apple upload are not yet recorded. See
-`docs/plans/mobile-space-capture197.md`. Previous web task deployed separately.
+Runtime `8c735f6b3718a99f6f858d67c7181cc217339df3` (PR341, `fix/mobile-space-capture197`)
+preserves inventories while refreshing deleted Spaces/counts, reuses main capture
+progress inside a fixed Space, and adds native iOS background assistant delivery
+with foreground streaming. Welcome supports swipe dismissal and prompt safe
+presentation after authentication. The native Settings plan border is corrected.
+
+All five exact-commit CI gates passed in42416359263. Flutter1329 pass/1 skip,
+backend805 pass, native14 pass, analysis clean. Simulator app-switch and lock
+completion passed with early, nonduplicated streaming. Physical iPhone acceptance
+remains pending. Signed production archive/export verification passed for33 device
+executables and27 privacy manifests; Apple validation passed.
+
+The two-file backend overlay is live and healthy, preserving143 unrelated Python
+files. HTTPS auth/isolation checks passed without model calls or customer writes.
+Welcome is published at100 percent for eligible accounts, with prior dismissals
+preserved and the other two campaigns still drafts. No schema change was needed.
+
+Apple acknowledged TestFlight1.1.2(197), delivery
+`23b32684-3568-4d5c-8899-d1f01cb7698b`. Processing and tester availability were not polled;
+public App Store submission is unchanged. The preceding web item-info/label
+release was deployed first and remains live. Receipt:
+`docs/plans/mobile197-release.json`; implementation and device checklist:
+`docs/plans/mobile-space-capture197.md`. IPA/archive retained privately.
 
 ## November 7 - Announcements activated and build196 uploaded
 

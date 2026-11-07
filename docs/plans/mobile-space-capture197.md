@@ -27,8 +27,8 @@ No response bodies or credentials are logged or persisted by the mirror.
 
 Welcome uses a draggable bottom sheet and checks eligibility on the first safe
 authenticated frame, without the former two-second idle delay. Existing receipt
-and per-account suppression rules remain. The requested welcome rollout is to be
-raised from 10 to 100 percent after release validation, preserving other campaigns.
+and per-account suppression rules remain. The welcome rollout is now
+100 percent for eligible accounts, preserving prior dismissals and other campaigns.
 The native Settings plan row uses the table's single rounded mask with no clipped
 second border. No other Settings layout changes are included.
 
@@ -47,3 +47,7 @@ Stop, force-quit, and ensure Space capture saves to its initiating Space. iOS
 scheduling, connectivity and OS termination are not an unconditional completion
 guarantee; the simulator is not a physical-device substitute. Production IPA and
 TestFlight delivery are recorded separately after Apple acknowledgment.
+
+Delivery: backend live and healthy; TestFlight 1.1.2 (197) acknowledged by Apple,
+`23b32684-3568-4d5c-8899-d1f01cb7698b`. Processing/tester availability not polled.
+See `mobile197-release.json` for the exact source, CI and delivery receipts.
