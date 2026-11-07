@@ -1489,3 +1489,10 @@ the pronounced rose bevel with a flat charcoal surface in dark mode, pale surfac
 in light mode, subtle edge sheen and a thin rose/violet border. Existing rounded
 shape, floating motion, reduced-motion handling and `/founders` destination remain.
 Production build and live visual evidence: `../findez-founders-flat-report/`.
+
+Published `58586f28` in release `founders-flat-20261107`, build
+`qIx9CcpsTGSysUobQJlb4`. Production build/TypeScript and exact-source audit pass.
+One stylesheet changed; 541 unrelated files, configuration and backend process
+are preserved. Native Safari confirms the flat dark surface and rounded gradient
+edge live. Light text/surface contrast exceeds 16:1. Link behavior is unchanged.
+Screenshots and receipt: `../findez-founders-flat-report/`.
