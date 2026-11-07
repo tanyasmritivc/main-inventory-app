@@ -1,5 +1,5 @@
 "use client";
-import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, BriefcaseBusiness, Layers, Tag, SlidersHorizontal } from "lucide-react";
+import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { InventoryChatArchive } from "./inventory-chat-archive";
@@ -12,12 +12,10 @@ const tools = [
   ["Activity", "Recent inventory changes", "/activity"],
   ["Restock", "Plan what to replenish", "/restock"],
   ["Check-outs", "Track borrowed items", "/checkout"],
-  ["Project kits", "Parts for your next project", "/project-kits"],
-  ["Collections", "Organize saved items", "/collections"],
   ["Labels", "Print and identify items", "/labels"],
   ["Inventory settings", "Access and preferences", "/inventory-access"],
 ] as const;
-const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, BriefcaseBusiness, Layers, Tag, SlidersHorizontal];
+const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
 type Inventory = { inventory_id: string; name: string; workspace_name: string; can_edit: boolean };
 export function WorldTools({accountId, inventories}: {accountId: string; inventories: Inventory[]}) {
   const [selected, setSelected] = useState("");
