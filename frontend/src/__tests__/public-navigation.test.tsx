@@ -1,9 +1,10 @@
 /** @jest-environment jsdom */
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Header } from "@/components/landing-v5/Header";
 import ProductPage from "@/app/product/page";
-import SolutionsPage from "@/app/solutions/page";
+import SolutionsPage from "@/app/(marketing)/solutions/page";
+import { renderToStaticMarkup } from "react-dom/server";
 import sitemap from "@/app/sitemap";
 jest.mock("next/font/google", () => ({ Inter: () => ({variable:"inter"}), Plus_Jakarta_Sans: () => ({variable:"jakarta"}), Geist_Mono: () => ({variable:"mono"}) }));
 
@@ -49,10 +50,9 @@ test("public pages have reachable sections, examples and independent metadata ro
  for(const id of ["capture","ask","share"]) expect(document.getElementById(id)).toBeTruthy();
  expect(screen.getByText("Illustrative conversation")).toBeTruthy();
  product.unmount();
- render(<SolutionsPage/>);
+ document.body.innerHTML=renderToStaticMarkup(<SolutionsPage/>);
  for(const id of ["home","workshops","teams"]) expect(document.getElementById(id)).toBeTruthy();
- const footer=within(screen.getByRole("navigation",{name:"Footer navigation"}));
- expect(footer.getByRole("link",{name:"Research"}).getAttribute("href")).toBe("/#s6r");
+ expect(document.querySelector('footer a[href="/research"]')).not.toBeNull();
  const routes=sitemap().map(item=>item.url);
  expect(routes).toContain("https://findez.ai/product");
  expect(routes).toContain("https://findez.ai/solutions");

@@ -1,105 +1,77 @@
 /** @jest-environment jsdom */
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import LandingPage, { metadata } from "@/app/page";
-import { SiteNav } from "@/components/site/nav";
-const push = jest.fn();
-const mockRouter = { push, prefetch: jest.fn() };
-const unsubscribe = jest.fn();
-let authChanged: (event: string, session: object | null) => void;
-jest.mock("next/font/google", () => ({
-  Inter: () => ({ variable: "landing-inter" }),
-  Plus_Jakarta_Sans: () => ({ variable: "landing-jakarta" }),
-  Geist_Mono: () => ({ variable: "landing-mono" }),
-}));
-jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
-jest.mock("@/lib/supabase/browser", () => ({ createSupabaseBrowserClient: () => ({ auth: {
-  onAuthStateChange: (listener: typeof authChanged) => { authChanged = listener; return { data: { subscription: { unsubscribe } } }; },
-} }) }));
-jest.mock("next/navigation", () => ({ usePathname: () => "/pricing", useRouter: () => mockRouter }));
-beforeEach(() => {
-  jest.clearAllMocks(); sessionStorage.clear();
-  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }) });
+import { renderToStaticMarkup } from 'react-dom/server';
+import { LandingPage, pageMetadata } from '@/components/marketing-dark/page';
+import { FZChat } from '@/components/marketing-dark/chat-runtime';
+import { lifecycle } from '@/components/marketing-dark/lifecycle';
+import { ORDER, ROUTES, SOL, TITLES, type PageKey } from '@/components/marketing-dark/data';
+
+beforeEach(()=>{
+  jest.useFakeTimers();
+  Object.defineProperty(window,'matchMedia',{writable:true,value:()=>({matches:false})});
+});
+afterEach(()=>{jest.useRealTimers();document.body.innerHTML='';});
+
+test.each(Object.keys(TITLES) as PageKey[])('%s renders the source title and real destinations without inline scripts',page=>{
+  const html=renderToStaticMarkup(<LandingPage page={page}/>);
+  document.body.innerHTML=html;
+  expect(pageMetadata(page).title).toEqual({absolute:TITLES[page]});
+  expect(document.querySelectorAll('h1')).toHaveLength(1);
+  expect(document.querySelectorAll('a[href^="#/"]')).toHaveLength(0);
+  expect(document.querySelector('[onclick]')).toBeNull();
+  expect(document.querySelector('script')).toBeNull();
+  expect(document.querySelector('a[href="/signup"]')).not.toBeNull();
+  expect(document.querySelector('a[href="/pricing"]')).not.toBeNull();
+  expect(document.querySelector('a[href="https://apps.apple.com/us/app/findez-ai/id6760401697"]')).not.toBeNull();
+  expect(document.querySelector('img[src^="data:"]')).toBeNull();
+  expect(html).not.toMatch(/[\u2013\u2014]/);
 });
 
-test("homepage preserves the requested copy, sections, metadata and destinations", async () => {
-  render(await LandingPage());
-  expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
-  expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
-  for (const id of ["hero", "build", "s2", "s4", "s5", "s6r", "s6", "s7"]) expect(document.getElementById(id)).toBeTruthy();
-  expect(document.querySelectorAll("#prows .pr")).toHaveLength(12);
-  const header = within(screen.getByRole("banner"));
-  expect(header.getByRole("link", {name: "Get started"}).getAttribute("href")).toBe("/signup");
-  const footer = within(screen.getByRole("navigation", {name: "Footer navigation"}));
-  const destinations = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
-  for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", {name}).getAttribute("href")).toBe(href);
-  expect(screen.getByRole("link", {name: "Talk to us"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
-  expect(metadata.title).toEqual({absolute: "FindEZ | AI for the physical world"});
-  expect(metadata.alternates).toEqual({canonical: "/"});
-  expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
+test.each(ORDER)('%s renders stable inventory rows and the review draft',key=>{
+  document.body.innerHTML=renderToStaticMarkup(<LandingPage page={`sol:${key}`}/>);
+  expect(document.querySelectorAll('.ivl>.ir')).toHaveLength(SOL[key].items.slice(0,9).length);
+  expect(document.querySelector('.dr .nm')?.textContent).toContain(SOL[key].scene.add[0]);
+  expect(document.querySelector('.ivc')?.textContent).toBe('298 items');
+  expect(document.querySelector('.is-hit')?.textContent).toContain(SOL[key].scene.hit);
+  expect(document.querySelector(`.scard[href="${ROUTES['/'+key]}"]`)).toBeNull();
 });
 
-test.each([false, true])("composer goes directly to auth with reduced motion %s", async reduced => {
-  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }) });
-  render(await LandingPage());
-  const prompt = "Add 20 M3 screws & 2 cables";
-  fireEvent.change(screen.getByRole("textbox"), {target: {value: prompt}});
-  fireEvent.submit(document.getElementById("cform")!);
-  fireEvent.submit(document.getElementById("cform")!);
-  expect(screen.queryByRole("dialog")).toBeNull();
-  expect(push).toHaveBeenCalledTimes(1);
-  expect(push).toHaveBeenCalledWith(`/signup?prompt=${encodeURIComponent(prompt)}`);
-  expect(screen.getByRole("button", {name: "Send"})).toHaveProperty("disabled", true);
-  expect(JSON.parse(sessionStorage.getItem("findez_public_preview_draft")!).prompt).toBe(prompt);
+function demo(){
+  const host=document.createElement('div'),templates=document.createElement('div');
+  templates.innerHTML='<span data-template="mark"><svg></svg></span>'+['p0','p5','p6','wash'].map(k=>`<span data-template="${k}"><img src="/landing/${k}.jpg" alt=""/></span>`).join('');
+  document.body.append(host,templates);
+  return {host,chat:FZChat(host,{templates})};
+}
+test('local drafts save only on Save and discarded items stay out of search',()=>{
+  const {host,chat}=demo();
+  chat.ask('Add 24 copper spacers to Drawer 3');jest.advanceTimersByTime(750);
+  expect(host.querySelector('.fz-draft')?.textContent).toContain('Not saved yet');
+  (host.querySelector('.fz-draft .p') as HTMLButtonElement).click();
+  chat.ask('Where are the copper spacers?');jest.advanceTimersByTime(750);
+  expect(host.querySelector('.fz-a:last-child')?.textContent).toContain('Drawer 3');
+  chat.ask('Add 2 titanium brackets to Shelf 2');jest.advanceTimersByTime(750);
+  (host.querySelector('.fz-draft:last-child .s') as HTMLButtonElement).click();
+  chat.ask('Where are the titanium brackets?');jest.advanceTimersByTime(750);
+  expect(host.querySelector('.fz-a:last-child')?.textContent).toContain("I can't find that");
+  chat.destroy();expect(jest.getTimerCount()).toBe(0);
 });
-
-test("empty prompts focus the composer; attachment controls still open signup", async () => {
-  render(await LandingPage());
-  fireEvent.submit(document.getElementById("cform")!);
-  expect(document.activeElement).toBe(screen.getByRole("textbox"));
-  expect(push).not.toHaveBeenCalled();
-  expect(screen.queryByRole("dialog")).toBeNull();
-  for (const name of ["Add", "Scan", "Speak"]) {
-    expect(screen.getByRole("link", {name}).getAttribute("href")).toBe("/signup");
-  }
+test('demo input is escaped, sheet columns stay intact, capture confidence is ordered',()=>{
+  const {host,chat}=demo();chat.ask('<img src=x onerror=alert(1)>');jest.advanceTimersByTime(700);
+  expect(host.querySelector('[onerror]')).toBeNull();
+  (host.querySelector('[data-k=imp]') as HTMLButtonElement).click();jest.advanceTimersByTime(1800);
+  expect(host.querySelector('.fz-sheet .r')?.textContent).toBe('Part #DescriptionQtyLocation');
+  (host.querySelector('[data-k=scan]') as HTMLButtonElement).click();jest.advanceTimersByTime(2500);
+  expect(Array.from(host.querySelectorAll('.fz-cf')).map(e=>e.textContent)).toEqual(['Confident','Likely','Not sure']);
+  expect(host.querySelectorAll('.fz-scan .bx.on')).toHaveLength(3);
+  chat.destroy();expect(jest.getTimerCount()).toBe(0);
 });
-
-test("simple public navigation follows session changes and unsubscribes", () => {
-  const { unmount } = render(<SiteNav variant="marketing" />);
-  expect(screen.getByRole("link", { name: "Sign in" })).toBeTruthy();
-  act(() => authChanged("INITIAL_SESSION", { user: { id: "returning-user" } }));
-  expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
-  expect(screen.queryByRole("link", { name: "Start free" })).toBeNull();
-  expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  expect(screen.queryByRole("button", { name: "Toggle navigation" })).toBeNull();
-  act(() => authChanged("SIGNED_OUT", null));
-  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin");
-  unmount();
-  expect(unsubscribe).toHaveBeenCalledTimes(1);
+test('unmount cancels pending demo replies and global handlers',()=>{
+  const remove=jest.spyOn(document,'removeEventListener');const {host,chat}=demo();
+  chat.ask('Where are the M3 screws?');chat.destroy();jest.advanceTimersByTime(3000);
+  expect(host.children).toHaveLength(0);expect(remove).toHaveBeenCalledWith('click',expect.any(Function),undefined);
+  remove.mockRestore();
 });
-
-
-test("Enter submits directly while Shift Enter and IME composition do not", async () => {
-  render(await LandingPage());
-  const input = screen.getByRole("textbox");
-  fireEvent.change(input, { target: { value: "Add 10 screws" } });
-  fireEvent.keyDown(input, { key: "Enter", isComposing: true });
-  fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
-  expect(push).not.toHaveBeenCalled();
-  fireEvent.keyDown(input, { key: "Enter" });
-  expect(push).toHaveBeenCalledWith("/signup?prompt=Add%2010%20screws");
-  expect(screen.queryByRole("dialog")).toBeNull();
-});
-
-test("Back can recover the recent prompt without restoring expired or corrupt drafts", async () => {
-  sessionStorage.setItem("findez_public_preview_draft", JSON.stringify({ at: Date.now(), prompt: "Add 4 cables" }));
-  const first = render(await LandingPage());
-  expect(screen.getByRole("textbox")).toHaveProperty("value", "Add 4 cables");
-  first.unmount();
-  sessionStorage.setItem("findez_public_preview_draft", JSON.stringify({ at: Date.now() - 31 * 60 * 1000, prompt: "old request" }));
-  const second = render(await LandingPage());
-  expect(screen.getByRole("textbox")).toHaveProperty("value", "");
-  second.unmount();
-  sessionStorage.setItem("findez_public_preview_draft", "not json");
-  render(await LandingPage());
-  expect(screen.getByRole("textbox")).toHaveProperty("value", "");
+test('marketing resource lifetime cancels timers, frames, and event listeners',()=>{
+  const scope=lifecycle(),fn=jest.fn();scope.timeout(fn,100);scope.interval(fn,100);scope.raf(fn);scope.listen(window,'resize',fn);
+  scope.destroy();window.dispatchEvent(new Event('resize'));jest.advanceTimersByTime(500);
+  expect(fn).not.toHaveBeenCalled();expect(jest.getTimerCount()).toBe(0);
 });

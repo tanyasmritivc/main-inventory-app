@@ -1,0 +1,45 @@
+import {FZ_ITEMS,FZ_SHEET} from './data';
+import {lifecycle} from './lifecycle';
+import {layoutMotion} from './layout-motion';
+const FZ_IC={send:'<path d="M12 19V5M6 11l6-6 6 6"/>',plus:'<path d="M12 5v14M5 12h14"/>',sheet:'<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 10h16M10 4v16"/>',cam:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.2"/>',ck:'<path d="M20 6 9 17l-5-5"/>',box:'<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5Z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'};
+const fzic=n=>`<svg class="i" viewBox="0 0 24 24">${FZ_IC[n]}</svg>`;
+export function FZChat(root,opt={}){
+ const life=lifecycle(),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const moveLayout=layoutMotion(life,reduce);
+ const setTimeout=(fn,ms)=>life.timeout(fn,reduce?0:ms);
+ const image=(key,style='')=>{const img=opt.templates.querySelector('[data-template="'+key+'"] img').cloneNode();if(style)img.setAttribute('style',style);return img.outerHTML};
+ const FZ_MARK=size=>{const mark=opt.templates.querySelector('[data-template="mark"]').cloneNode(true);mark.removeAttribute('data-template');const svg=mark.querySelector('svg');svg.setAttribute('width',size);svg.setAttribute('height',size);return mark.outerHTML};
+ const items=JSON.parse(JSON.stringify(opt.items||FZ_ITEMS));const SHEET=opt.sheet||FZ_SHEET;const asks=opt.asks||['Where are the M3 screws?','What is running low?','Do we have any servo hubs?'];
+ root.classList.add('fz');if(opt.h)root.style.setProperty('--fzh',opt.h+'px');
+ root.innerHTML=`<div class="fz-thread"></div><div class="fz-box"><button class="fz-b" aria-label="Add">${fzic('plus')}</button><textarea rows="1" placeholder="${opt.ph||'Ask about your inventory...'}"></textarea><button class="fz-b go" disabled aria-label="Send">${fzic('send')}</button></div>
+ <div class="fz-pm"><button data-k="imp">${fzic('sheet')}Import a spreadsheet</button><button data-k="scan">${fzic('cam')}Capture with a photo</button></div>
+ <div class="fz-chips">${asks.map(a=>`<button class="fz-chip">${a}</button>`).join('')}</div>`;
+ const th=root.querySelector('.fz-thread'),ta=root.querySelector('textarea'),go=root.querySelector('.go');
+ const esc=s=>s.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+ const scroll=()=>{th.scrollTop=th.scrollHeight};
+ const add=h=>{if(!root.classList.contains('open'))moveLayout(root.closest('.hin')?.children||[root],()=>root.classList.add('open'),550);opt.onOpen?.();const d=document.createElement('div');d.innerHTML=h;const e=d.firstElementChild;th.appendChild(e);scroll();return e};
+ const bot=(f,ms=650)=>{const a=add(`<div class="fz-a"><span class="m">${FZ_MARK(15)}</span><div class="b"><span class="fz-dots"><i></i><i></i><i></i></span></div></div>`);setTimeout(()=>{a.querySelector('.b').innerHTML=f();scroll();a._after?.()},ms);return a};
+ const row=x=>`<div class="fz-it"><span class="t">${x.img?image(x.img):fzic('box')}</span><div class="tx"><b>${esc(x.n)}</b><small>${esc(x.loc)}</small></div><span class="q ${x.q<=x.low?'low':''}">${x.q}</span></div>`;
+ const STOP=new Set('where are is the do we i have any how many much what my our a an of in to for did put there some can you find show me running low on am need needs restocking restock left'.split(' '));
+ const words=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w&&!STOP.has(w)).map(w=>w.replace(/s$/,''));
+ function ask(t){add(`<div class="fz-u"><div>${esc(t)}</div></div>`);const l=t.toLowerCase();
+  if(/^(add|we have|i have|put)\b/.test(l)){bot(()=>draft(t));return}
+  if(/low|restock|running out/.test(l)){bot(()=>{const L=items.filter(x=>x.q<=x.low);return `<b>${L.length} items</b> are at or below the low level you set:<div class="fz-items">${L.map(row).join('')}</div>`});return}
+  const ws=words(t);const m=items.map(x=>({x,s:ws.filter(w=>x.n.toLowerCase().includes(w)).length})).filter(o=>o.s).sort((a,b)=>b.s-a.s).map(o=>o.x);
+  bot(()=>{if(!m.length)return "I can't find that in this inventory. FindEZ answers from what's recorded, so describe it or capture it with a photo to add it.";const x=m[0];
+   return (/how many|how much/.test(l)?`You have <b>${x.q}</b> ${esc(x.n)}, recorded in <b>${esc(x.loc)}</b>.`:`<b>${esc(x.n)}</b> ${x.q===1?'is':'are'} recorded in <b>${esc(x.loc)}</b>. You have ${x.q}.`)+`<div class="fz-items">${m.slice(0,3).map(row).join('')}</div>`})}
+ function draft(t){const m=t.match(/(\d+)/);const n=m?+m[1]:1;let r=t.replace(/^(add|we have|i have|put)\s+/i,'').replace(/^\d+\s*/,'').replace(/^(a|an)\s+/i,'');let loc='Not set';const lm=r.match(/\s(?:to|in|into|on)\s+(?:the\s+)?(.+)$/i);if(lm){loc=lm[1].replace(/^\w/,c=>c.toUpperCase());r=r.slice(0,lm.index)}const name=r.trim().replace(/^\w/,c=>c.toUpperCase())||'New item';const id='fd'+Math.random().toString(36).slice(2);
+  setTimeout(()=>{const d=document.getElementById(id);if(!d)return;d.querySelector('.p').onclick=()=>{items.unshift({n:name,q:n,loc,low:0});d.querySelector('.fz-acts').innerHTML=`<span style="font-size:13.5px;color:var(--tx2);display:flex;gap:6px;align-items:center">${fzic('ck')}Saved</span>`};d.querySelector('.s').onclick=()=>{d.querySelector('.fz-acts').innerHTML='<span style="font-size:13.5px;color:var(--tx3)">Discarded. Nothing was saved.</span>'}},50);
+  return `Here's what I'll add. Check it before saving:<div class="fz-draft" id="${id}"><div class="hd"><span>New item</span><span>Not saved yet</span></div><div class="fz-kv"><span>Name</span><b>${esc(name)}</b><span>Quantity</span><b>${n}</b><span>Location</span><b>${esc(loc)}</b></div><div class="fz-acts"><button class="p">Save</button><button class="s">Discard</button></div></div>`}
+ function imp(){root.classList.remove('pmon');add(`<div class="fz-u"><div>inventory.xlsx</div></div>`);const a=bot(()=>`Reading your spreadsheet. Your column names stay exactly as they are:<div class="fz-sheet">${SHEET.map((r,i)=>`<div class="r" style="animation-delay:${i*.15}s">${r.map(c=>`<span>${c}</span>`).join('')}</div>`).join('')}</div><div class="fz-note" data-n>Found ${SHEET.length-1} rows...</div>`);
+  a._after=()=>setTimeout(()=>{const n=a.querySelector('[data-n]');n.innerHTML=`${SHEET.length-1} items ready to review. Nothing is saved until you approve.`;SHEET.slice(1).forEach(r=>items.push({n:r[1],q:+r[2],loc:r[3],low:0}));scroll()},1100)}
+ function scan(){root.classList.remove('pmon');add(`<div class="fz-u"><div>Photo of a parts bin</div></div>`);const a=bot(()=>`Looking at your photo...<div class="fz-scan">${image('wash','position:absolute;inset:0;width:100%;height:100%;object-fit:cover')}<span class="sw"></span><span class="bx" style="left:40%;top:56%;width:22%;height:26%"><b>1</b></span><span class="bx" style="left:53%;top:26%;width:20%;height:24%"><b>2</b></span><span class="bx" style="left:24%;top:30%;width:16%;height:22%"><b>3</b></span></div><div data-r></div>`,500);
+  a._after=()=>{a.querySelectorAll('.bx').forEach((b,i)=>setTimeout(()=>b.classList.add('on'),300+i*400));setTimeout(()=>{const s=a.querySelector('.sw');s?.remove();a.querySelector('[data-r]').innerHTML=`<div style="margin-top:10px">Here's what I found, most confident first:</div><div class="fz-items"><div class="fz-it"><span class="t">${image('wash','width:100%;height:100%;object-fit:cover;object-position:52% 70%;transform:scale(4.2)')}</span><div class="tx"><b>Flat washers, steel</b><small>Round washers<span class="fz-cf"><i></i>Confident</span></small></div><span class="q">1 bin</span></div><div class="fz-it"><span class="t">${image('wash','width:100%;height:100%;object-fit:cover;object-position:66% 34%;transform:scale(4.2)')}</span><div class="tx"><b>Spring washers, M8</b><small>Split lock washers<span class="fz-cf l"><i></i>Likely</span></small></div><span class="q">1 bin</span></div><div class="fz-it" style="opacity:.7"><span class="t">${image('wash','width:100%;height:100%;object-fit:cover;object-position:28% 38%;transform:scale(4.2)')}</span><div class="tx"><b>Unknown item</b><small>Partly hidden<span class="fz-cf n"><i></i>Not sure</span></small></div><span class="q">?</span></div></div><div class="fz-note">You confirm names, sizes and counts before anything is saved.</div>`;scroll()},1800)}}
+ ta.oninput=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';go.disabled=!ta.value.trim()};
+ const send=()=>{const v=ta.value.trim();if(!v)return;ta.value='';ta.oninput();ask(v)};
+ ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};go.onclick=send;
+ root.querySelector('.fz-b').onclick=e=>{e.stopPropagation();root.classList.toggle('pmon')};
+ life.listen(document,'click',()=>root.classList.remove('pmon'));
+ root.querySelector('[data-k=imp]').onclick=imp;root.querySelector('[data-k=scan]').onclick=scan;
+ root.querySelectorAll('.fz-chip').forEach(c=>c.onclick=()=>ask(c.textContent));
+ return {ask,destroy(){life.destroy();root.replaceChildren();root.classList.remove('fz','open','pmon')}}}

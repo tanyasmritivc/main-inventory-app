@@ -44,7 +44,7 @@ export function CookieNotice() {
     window.dispatchEvent(new Event(eventName));
   }
   return <aside ref={notice} className={styles.notice} aria-label="Cookies and device storage">
-    <p>{COOKIE_NOTICE_TEXT} <Link href="/privacy#cookies">Details</Link></p>
+    <p>{COOKIE_NOTICE_TEXT} <Link href="/privacy#cookies" prefetch={false}>Details</Link></p>
     <button onClick={dismiss}>Got it</button>
   </aside>;
 }
