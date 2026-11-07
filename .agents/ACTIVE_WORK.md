@@ -1539,3 +1539,17 @@ One stylesheet changed; 541 unrelated files, configuration and backend process
 are preserved. Native Safari confirms the flat dark surface and rounded gradient
 edge live. Light text/surface contrast exceeds 16:1. Link behavior is unchanged.
 Screenshots and receipt: `../findez-founders-flat-report/`.
+
+## November 7 - Web item information and label printing
+
+Branch `feat/web-item-info-labels`, based on `fix/founders-hero-copy`.
+Web-only parity with the existing mobile item sheet: ordered grouped fields,
+contained top photo, expanded import fields, checkout, notes, documents, store
+links, QR card, server-backed quantity threshold and close action. Item labels
+save as PNG and print through an isolated SVG document, including Label Studio.
+Mobile and backend unchanged in this lane. Candidate `item-info-20261107` builds
+successfully; 535 unrelated files preserved. Focused tests 11 passed; TypeScript
+and changed-code ESLint pass. Full suite has identical baseline failures:
+76 failures in 23 suites, 507 passed. Desktop/narrow light/dark, edits, checkout,
+photo, PNG, Letter/A4 PDF and Safari native print-preview checks passed.
+Production activation pending final commit/push and read-only live check.

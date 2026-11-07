@@ -13,6 +13,8 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }))
 jest.mock('@/components/site/app-dialog-provider', () => ({ useAppDialog: () => ({ confirmAction: async () => true, promptValue: async () => null }) }));
 jest.mock('@/lib/api', () => ({ ...jest.requireActual('@/lib/api'), searchItems: jest.fn(), getSpaces: jest.fn(), getActiveCheckouts: jest.fn(), getReviewItems: jest.fn(), getMyShares: jest.fn(), getJoinedShares: jest.fn(), updateItem: jest.fn() }));
 jest.mock('@/lib/account-request', () => ({accountRequest:jest.fn()}));
+jest.mock('@/components/site/item-info-sections', () => ({ ItemCheckout: () => null, ItemDocuments: () => null, ItemThreshold: () => null }));
+jest.mock('@/components/site/item-qr-label', () => ({ ItemQrLabel: () => null }));
 jest.mock('@/components/site/item-photo-gallery',()=>({ItemPhotoGallery:()=>null}));
 const item = { item_id: 'qa-item', name: 'Washer', category: 'Hardware', quantity: 7, location: 'Shelf', space_id: 's', created_at: '2026-10-19' };
 beforeEach(() => {

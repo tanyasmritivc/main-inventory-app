@@ -540,7 +540,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         )}
       </div>
 
-<Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Shared item</DialogTitle>{detailItem && <ItemDetails item={detailItem} context={{ kind: "shared", shareId }} canEdit={permission === "edit"} onChanged={next => { setDetailItem(next); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
+<Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog refresh-item-panel item-info-panel" aria-describedby={undefined}><DialogTitle>Shared item</DialogTitle>{detailItem && <ItemDetails showClose item={detailItem} context={{ kind: "shared", shareId }} canEdit={permission === "edit"} onChanged={next => { setDetailItem(next); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
       <Dialog open={addItemOpen} onOpenChange={(open) => { setAddItemOpen(open); if (!open) setAddItemError(null); }}>
         <DialogContent style={{ background: 'var(--primary-ink)', border: '1px solid var(--line2)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader><DialogTitle style={{ color: 'var(--text-primary)' }}>Add to {spaceName}</DialogTitle></DialogHeader>

@@ -5,8 +5,11 @@ import { accountRequest } from "@/lib/account-request";
 import { photoPath } from "@/lib/item-photos";
 import { purchaseSource, purchaseLink } from "@/lib/purchase-source";
 import { userFacingError } from "@/lib/user-facing-error";
-import { type InventoryItem, itemDisplayName } from "@/lib/api";
+import { type InventoryItem } from "@/lib/api";
 import { type PhotoContext } from "@/lib/item-photos";
+import { ItemQrLabel } from "./item-qr-label";
+import { ItemCheckout, ItemDocuments, ItemThreshold } from "./item-info-sections";
+import { DialogClose } from "@/components/ui/dialog";
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
 import "./item-details.css";
 export function ItemDetails({
@@ -16,6 +19,7 @@ export function ItemDetails({
   onChanged,
   onEditingChange,
   showTitle = true,
+  showClose = false,
 }: {
   item: InventoryItem;
   context?: PhotoContext;
@@ -23,6 +27,7 @@ export function ItemDetails({
   onChanged?: (item: InventoryItem) => void;
   onEditingChange?: (editing: boolean) => void;
   showTitle?: boolean;
+  showClose?: boolean;
 }) {
   const { accountId } = useApiSession();
   const [editing, setEditing] = useState<string | null>(null);
@@ -58,82 +63,34 @@ export function ItemDetails({
   }
   const source = purchaseSource(item);
   const fields = [
-    ["Name", item.name],
-    ["Category", item.category],
-    ["Location", item.location || "Unsorted"],
-    ["Quantity", String(item.quantity)],
-    ["Brand", item.brand],
-    ["Barcode", item.barcode],
-    ["Part number", item.part_number],
-    ["Subcategory", item.subcategory],
-    ["Date added", new Date(item.created_at).toLocaleDateString()],
-    [
-      "AI confidence",
-      typeof item.confidence === "number"
-        ? `${Math.round(item.confidence * 100)}%`
-        : undefined,
-    ],
-    ["Notes", item.notes],
+    ["Name", item.name], ["Part number", item.part_number], ["Category", item.category],
+    ["Location", item.location || "Unsorted"], ["Quantity", String(item.quantity)],
+    ["Brand", item.brand], ["Barcode", item.barcode], ["Subcategory", item.subcategory],
+    ["Date added", new Date(item.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })],
     ["Tags", item.tags?.join(", ")],
-    ["Where to buy", source],
   ];
-  return (
-    <div className="item-details">
-      {showTitle && <h2>{itemDisplayName(item)}</h2>}
-      <ItemPhotoGallery
-        itemId={item.item_id}
-        context={context}
-        canEdit={canEdit}
-        onChanged={onChanged}
-      />
-      <dl className="item-details-fields">
-        {fields
-          .filter(([label, value]) => value || (canEdit && label && keys[label]))
-          .map(([label, value]) => (
-            <div key={label} className={label === "Notes" || label === "Tags" || label === "Where to buy" || label === "Name" ? "item-details-wide" : undefined}>
-              <dt className="workspace-muted" style={{ fontSize: 11 }}>
-                {label}
-              </dt>
-              <dd
-                style={{
-                  margin: "5px 0",
-                  fontSize: 13,
-                  overflowWrap: "anywhere",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {editing === label ? <form onSubmit={event => { event.preventDefault(); void save(keys[label!]); }}>
-                  <input autoFocus aria-label={label!} className="workspace-input" value={draft} disabled={busy} type={label === "Quantity" ? "number" : "text"} min={label === "Quantity" ? 0 : undefined} step={label === "Quantity" ? 1 : undefined} maxLength={label === "Notes" ? 2000 : label === "Tags" ? 1000 : label === "Name" || label === "Location" || label === "Where to buy" ? 200 : 100} onChange={event => setDraft(event.target.value)} />
-                  {error && <p role="alert">{error}</p>}
-                  <div className="workspace-actions"><button className="workspace-button" disabled={busy} type="submit">{busy ? "Saving..." : "Save"}</button><button className="workspace-button" disabled={busy} type="button" onClick={() => { setEditing(null); setError(""); }}>Cancel</button></div>
-                </form> : canEdit && label && keys[label] ? <button type="button" aria-label={`Edit ${label}`} disabled={editing !== null} style={{border: 0, padding: 0, background: "none", color: "inherit", textAlign: "left", font: "inherit", cursor: "text", whiteSpace: "pre-wrap"}} onClick={() => { setEditing(label); setDraft(value || ""); setError(""); }}>{value || "Not set"}</button> : label === "Where to buy" && value && purchaseLink(value) ? <a href={purchaseLink(value)!} target="_blank" rel="noopener noreferrer">{value}</a> : value}
-              </dd>
-            </div>
-          ))}
-      </dl>
-      {item.import_data?.fields?.length ? (
-        <details className="item-import-details">
-          <summary><h3>Imported details</h3></summary>
-          <p className="workspace-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-            {item.import_data.filename} / {item.import_data.sheet}
-          </p>
-          <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,180px),1fr))", gap: 18, marginTop: 18 }}>
-            {item.import_data.fields.map((field, index) => (
-              <div key={index}>
-                <dt className="workspace-muted" style={{ fontSize: 11, overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
-                  {field.name.trim() ? field.name : `Column ${index + 1}`}
-                </dt>
-                <dd style={{ margin: "5px 0", fontSize: 13, overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
-                  {field.value === null || field.value === undefined || field.value === ""
-                    ? "Empty"
-                    : typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </details>
-      ) : null}
-
-    </div>
-  );
+  function fieldValue(label: string, value: string | null | undefined, placeholder = "Not set", multiline = false) {
+    if (editing === label) return <form className="item-inline-form" onSubmit={event => { event.preventDefault(); void save(keys[label]); }}>
+      {multiline ? <textarea autoFocus aria-label={label} value={draft} disabled={busy} maxLength={2000} rows={4} onChange={event => setDraft(event.target.value)} /> : <input autoFocus aria-label={label} value={draft} disabled={busy} type={label === "Quantity" ? "number" : "text"} min={label === "Quantity" ? 0 : undefined} step={label === "Quantity" ? 1 : undefined} maxLength={label === "Tags" ? 1000 : ["Name", "Location", "Where to buy"].includes(label) ? 200 : 100} onChange={event => setDraft(event.target.value)} />}
+      {error && <p role="alert">{error}</p>}
+      <div className="item-info-actions"><button disabled={busy} type="submit">{busy ? "Saving..." : "Save"}</button><button disabled={busy} type="button" onClick={() => { setEditing(null); setError(""); }}>Cancel</button></div>
+    </form>;
+    if (canEdit && keys[label]) return <button className="item-field-value" type="button" aria-label={`Edit ${label}`} disabled={editing !== null} onClick={() => { setEditing(label); setDraft(value || ""); setError(""); }}>{value || <span className="item-field-placeholder">{placeholder}</span>}</button>;
+    return value || placeholder;
+  }
+  const personal = !context || context.kind === "personal";
+  return <div className="item-details">
+    {showTitle && <h2>{item.name}</h2>}
+    <p className="item-category">{item.category}</p>
+    <ItemPhotoGallery itemId={item.item_id} context={context} canEdit={canEdit} onChanged={onChanged} />
+    <dl className="item-details-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{fieldValue(label!, value)}</dd></div>)}</dl>
+    {item.import_data?.fields?.length ? <section className="item-import-details"><h3>Imported details</h3><p className="workspace-muted">{item.import_data.filename} / {item.import_data.sheet}</p><dl>{item.import_data.fields.map((field, index) => <div key={index}><dt>{field.name.trim() ? field.name : `Column ${index + 1}`}</dt><dd>{field.value === null || field.value === undefined || field.value === "" ? "Empty" : typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value)}</dd></div>)}</dl></section> : null}
+    {personal && <ItemCheckout key={`checkout-${item.item_id}`} itemId={item.item_id} canEdit={canEdit} />}
+    <section className="item-info-section"><h3>Notes</h3><div className="item-text-card item-notes">{fieldValue("Notes", item.notes, "Tap to add notes...", true)}</div></section>
+    {personal && <ItemDocuments key={`documents-${item.item_id}`} itemId={item.item_id} canEdit={canEdit} />}
+    <section className="item-info-section"><header><h3>Where to buy</h3><details className="item-store-menu"><summary>Find stores</summary><div>{[["Amazon", "https://www.amazon.com/s?k="], ["Google Shopping", "https://www.google.com/search?tbm=shop&q="], ["eBay", "https://www.ebay.com/sch/i.html?_nkw="], ["Walmart", "https://www.walmart.com/search?q="], ["Target", "https://www.target.com/s?searchTerm="]].map(([name, url]) => <a key={name} href={url + encodeURIComponent(item.name)} target="_blank" rel="noopener noreferrer">{name}</a>)}</div></details></header><div className="item-text-card">{fieldValue("Where to buy", source, "Where to buy this item...")}</div>{source && purchaseLink(source) && <a className="item-source-link" href={purchaseLink(source)!} target="_blank" rel="noopener noreferrer">Open store link</a>}</section>
+    <ItemQrLabel item={item} context={context} />
+    {personal && <ItemThreshold key={`threshold-${item.item_id}`} itemId={item.item_id} canEdit={canEdit} />}
+    {showClose && <DialogClose asChild><button className="item-close-button" type="button" disabled={editing !== null}>Close</button></DialogClose>}
+  </div>;
 }
