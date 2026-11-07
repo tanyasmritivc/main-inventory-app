@@ -1,3 +1,20 @@
+## November 7 - Compact marketing header
+
+Branch `style/compact-marketing-header`. One runtime CSS file makes the marketing
+header a centered 1080px bar, 60px inner height, with restrained type/controls,
+rounded corners and an inset mobile layout. Links and page content are unchanged.
+Staged production build passed using the current release cache after Google Fonts
+returned extensionless font URLs. Lint: zero errors, 53 existing warnings.
+Eighteen viewport checks across home/Solutions/Founders pass for header containment,
+links and phone-menu behavior, with no runtime exceptions or new page overflow.
+Existing Founders body overflow at 320px remains outside this header-only change.
+The source audit preserves 541 other runtime/config/public files. Deployment pending.
+
+Both public hostnames advertise the current four-petal 96px PNG favicon. All
+advertised icons and root ICO match the current assets, return correct MIME types,
+and are accessible with Googlebot-Image; robots allows crawling. No favicon URL
+change is needed. Google's old search-result icon is external cached state.
+
 ## Current brand favicons published (2026-10-18)
 
 Web runtime f087a84 (PR126) is live from

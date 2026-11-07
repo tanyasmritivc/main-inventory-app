@@ -1,3 +1,20 @@
+## November 7 - Compact marketing header
+
+Branch `style/compact-marketing-header`. One runtime CSS file makes the marketing
+header a centered 1080px bar, 60px inner height, with restrained type/controls,
+rounded corners and an inset mobile layout. Links and page content are unchanged.
+Staged production build passed using the current release cache after Google Fonts
+returned extensionless font URLs. Lint: zero errors, 53 existing warnings.
+Eighteen viewport checks across home/Solutions/Founders pass for header containment,
+links and phone-menu behavior, with no runtime exceptions or new page overflow.
+Existing Founders body overflow at 320px remains outside this header-only change.
+The source audit preserves 541 other runtime/config/public files. Deployment pending.
+
+Both public hostnames advertise the current four-petal 96px PNG favicon. All
+advertised icons and root ICO match the current assets, return correct MIME types,
+and are accessible with Googlebot-Image; robots allows crawling. No favicon URL
+change is needed. Google's old search-result icon is external cached state.
+
 ## November 4 - Web UI refresh, branch review only
 
 Implemented the supplied `CODEX_PROMPT_WEB-4.md` and ZIP reference on `feat/web-ui-refresh` from `a2309b3`. Scope is Next.js presentation only, plus the four explicitly approved UI additions. No API, backend, mobile, database, dependency or production changes. Light is the default; explicit dark/system preferences remain available. No merge or deployment is authorized for this task.
