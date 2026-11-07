@@ -2592,7 +2592,6 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<bool> _loadConversation(String id) async {
-    _resetChat();
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
@@ -2602,7 +2601,6 @@ class _ChatPageState extends State<ChatPage>
           owner != Supabase.instance.client.auth.currentUser?.id) {
         return false;
       }
-      _actionReplyIds.addAll(result.messages.map((message) => message.id));
       final msgs = result.messages
           .map(
             (m) => _ChatMessage(
@@ -2626,14 +2624,16 @@ class _ChatPageState extends State<ChatPage>
           msgs[i - 1] = msgs[i - 1].copyWith(photoUrl: photoUrl);
         }
       }
+      _resetChat();
+      _actionReplyIds.addAll(result.messages.map((message) => message.id));
       setState(() {
         _worldHome = false;
         _session.messages = msgs;
-        _session.hasStarted = msgs.isNotEmpty;
+        _session.hasStarted = true;
         _currentConversationId = id;
       });
       unawaited(_loadRatings(id));
-      widget.onChatStateChanged?.call(msgs.isNotEmpty);
+      widget.onChatStateChanged?.call(true);
       _scrollToBottom();
       return true;
     } catch (e) {
@@ -2652,13 +2652,13 @@ class _ChatPageState extends State<ChatPage>
           IconButton(
             tooltip: 'Chat history',
             onPressed: _sending ? null : _openHistory,
-            icon: const Icon(Icons.history_rounded, size: 22),
+            icon: const Icon(CupertinoIcons.clock, size: 20),
           ),
           const Spacer(),
           IconButton(
             tooltip: 'New chat',
             onPressed: _sending ? null : _resetChat,
-            icon: const Icon(Icons.edit_square, size: 22),
+            icon: const Icon(CupertinoIcons.square_pencil, size: 20),
           ),
         ],
       );
@@ -3512,7 +3512,7 @@ class _ChatPageState extends State<ChatPage>
         ),
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
-        refined: widget.worldHeading != null,
+        refined: widget.worldHeading != null || widget.contextual,
         answer: isTyping
             ? _renderableStreamingMarkdown(message.content)
             : message.content,
@@ -3833,22 +3833,42 @@ class _ChatPageState extends State<ChatPage>
         (!_sending || _canQueueFollowUp);
 
     if (widget.worldHeading != null &&
-        (_worldHome || _session.messages.isEmpty) &&
+        (_worldHome ||
+            (_session.messages.isEmpty && _currentConversationId == null)) &&
         _previewDraft == null &&
         !_scanningPreview) {
       return _worldLanding(canSend, keyboardVisible || compactComposer);
     }
-    if (widget.worldHeading != null) {
+    if (widget.worldHeading != null || widget.contextual) {
       return Scaffold(
         resizeToAvoidBottomInset: !widget.inPageView,
         backgroundColor: Colors.transparent,
         body: ChatViewport(
+          chromeBackgroundColor: widget.contextual
+              ? CupertinoColors.systemGroupedBackground.resolveFrom(context)
+              : null,
           header: _buildHeader(),
           controller: _scrollController,
           preview: _previewDraft != null || _scanningPreview
               ? _capturePreview()
               : null,
           messages: [
+            if (_session.messages.isEmpty &&
+                _currentConversationId != null &&
+                _previewDraft == null &&
+                !_scanningPreview)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Text(
+                  'No messages were saved in this chat. If a photo scan did not finish, attach the photo again to retry.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            if (widget.contextual &&
+                _currentConversationId == null &&
+                _session.messages.isEmpty &&
+                !keyboardVisible)
+              _buildEmptyState(),
             for (final message in _session.messages)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -3891,6 +3911,8 @@ class _ChatPageState extends State<ChatPage>
                 onChanged: (_) => setState(() {}),
                 onAttach: _sending || _pickingPhoto
                     ? null
+                    : widget.contextual
+                    ? _attachPhoto
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,
                 onVoiceStart: _sending ? null : () => unawaited(_startVoice()),

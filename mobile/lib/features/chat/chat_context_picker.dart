@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/account_refresh.dart';
 import '../../core/chat_source.dart';
 import '../../core/ui/app_text.dart';
 import '../../core/ui/utility_page.dart';
@@ -30,13 +31,76 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
   int? next;
   bool busy = true;
   Timer? debounce;
+  AccountRefresh? refresh;
+  List<ChatSource> spaces = [];
   @override
   void initState() {
     super.initState();
     unawaited(_directory());
+    if (widget.kind == 'space') {
+      refresh = AccountRefresh(
+        refresh: _loadSpaces,
+        isActive: () => mounted && (ModalRoute.of(context)?.isCurrent ?? false),
+      );
+    }
+  }
+
+  Future<void> _loadSpaces() async {
+    final id = ++generation;
+    try {
+      final data = await widget.api.collaboration(
+        '/worlds/${Uri.encodeComponent(widget.api.worldKey!)}/spaces',
+      );
+      widget.api.assertCurrentContext();
+      if (!mounted || id != generation) return;
+      final loaded = <ChatSource>[];
+      for (final group in data['inventories'] as List? ?? []) {
+        for (final space in group['spaces'] as List? ?? []) {
+          final identity = space['id'] ?? space['space_id'];
+          if (identity == null) continue;
+          loaded.add(
+            ChatSource(
+              kind: 'space',
+              name: space['name'] as String,
+              inventoryId: group['inventory_id'] as String,
+              resourceId: identity as String,
+              inventoryName: group['name'] as String?,
+            ),
+          );
+        }
+      }
+      setState(() {
+        spaces = loaded;
+        final available = {for (final row in loaded) row.key};
+        selected.removeWhere(
+          (row) => row.kind == 'space' && !available.contains(row.key),
+        );
+        _filterSpaces();
+        busy = false;
+        error = null;
+      });
+    } catch (_) {
+      if (!mounted || id != generation) return;
+      setState(() {
+        busy = false;
+        error = 'Could not refresh Spaces. Try again.';
+      });
+    }
+  }
+
+  void _filterSpaces() {
+    final search = query.trim().toLowerCase();
+    rows = spaces
+        .where(
+          (row) =>
+              row.name.toLowerCase().contains(search) ||
+              (row.inventoryName?.toLowerCase().contains(search) ?? false),
+        )
+        .toList();
   }
 
   Future<void> _directory() async {
+    if (widget.kind == 'space') return _loadSpaces();
     setState(() {
       busy = true;
       error = null;
@@ -108,6 +172,7 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
   void dispose() {
     generation++;
     debounce?.cancel();
+    refresh?.dispose();
     super.dispose();
   }
 
@@ -205,6 +270,10 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                   ),
                   onChanged: (value) {
                     query = value;
+                    if (widget.kind == 'space') {
+                      setState(_filterSpaces);
+                      return;
+                    }
                     generation++;
                     debounce?.cancel();
                     debounce = Timer(
@@ -233,7 +302,11 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                     title: query.isEmpty
                         ? 'No ${title.toLowerCase()} yet'
                         : 'No matches',
-                    message: query.isEmpty
+                    message: widget.kind == 'space'
+                        ? (query.isEmpty
+                              ? 'Create a Space to use it as chat context.'
+                              : 'Try a different keyword.')
+                        : query.isEmpty
                         ? 'Choose another inventory to find saved context.'
                         : 'Try a different keyword or inventory.',
                   ),

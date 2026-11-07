@@ -1,3 +1,11 @@
+## November 7 - Scoped chat and picker repair199
+
+Branch `fix/scoped-chat199`: contextual-only chat presentation/controls, Space
+actions, photo history reopening and stale Space context choices. Main chat UI
+must remain unchanged; inventories remain separate and must not be deleted.
+Implementation complete. Flutter 1331 pass/1 skip and analysis clean.
+Native sheet/layout verification and TestFlight 199 packaging are in progress.
+
 ## November 7 - Organization chooser build198 uploaded
 
 Runtime `b6674343`, PR343, branch `style/organization-pill198`.
