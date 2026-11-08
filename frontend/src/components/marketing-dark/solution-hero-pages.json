@@ -1,0 +1,384 @@
+{
+ "robotics": {
+  "title": "Robotics Inventory for FTC &amp; FRC Teams | FindEZ AI",
+  "h1": "Less time searching for parts. <span>More time building robots.</span>",
+  "chips": [
+   "Where are the M3 screws?",
+   "What is running low?",
+   "Do we have any servo hubs?"
+  ],
+  "cfg": {
+   "types": [
+    "gear",
+    "sprocket",
+    "pulley",
+    "screw",
+    "shaft",
+    "bearing",
+    "nut",
+    "wheel",
+    "servo",
+    "channel",
+    "screw",
+    "nut",
+    "pulley",
+    "gear",
+    "bearing",
+    "screw"
+   ],
+   "bins": [
+    {
+     "n": "Gears",
+     "t": [
+      "gear",
+      "sprocket"
+     ]
+    },
+    {
+     "n": "Pulleys",
+     "t": [
+      "pulley"
+     ]
+    },
+    {
+     "n": "Screws",
+     "t": [
+      "screw",
+      "nut"
+     ]
+    },
+    {
+     "n": "Shafts",
+     "t": [
+      "shaft",
+      "channel"
+     ]
+    },
+    {
+     "n": "Bearings",
+     "t": [
+      "bearing"
+     ]
+    },
+    {
+     "n": "Motion",
+     "t": [
+      "wheel",
+      "servo"
+     ]
+    }
+   ],
+   "names": {
+    "gear": "30T gear",
+    "sprocket": "Sprocket",
+    "pulley": "GT2 pulley",
+    "screw": "M3 screws",
+    "shaft": "8mm shaft",
+    "bearing": "Bearing",
+    "nut": "Nylock nut",
+    "wheel": "Mecanum wheel",
+    "servo": "Servo",
+    "channel": "U-channel"
+   },
+   "long": [
+    "shaft",
+    "channel"
+   ],
+   "small": [
+    "screw",
+    "nut"
+   ],
+   "upright": [
+    "screw"
+   ],
+   "flat": [
+    "servo"
+   ],
+   "hot": 2,
+   "q": "Where are the M3 screws?",
+   "ans": "In the Screws bin"
+  }
+ },
+ "workshops": {
+  "title": "Workshop Inventory for Tools, Parts &amp; Equipment | FindEZ AI",
+  "h1": "Your inventory shouldn't depend on <span>someone's memory.</span>",
+  "chips": [
+   "Where are the ER32 collets?",
+   "What needs restocking?",
+   "How much PLA do we have?"
+  ],
+  "cfg": {
+   "types": [
+    "collet",
+    "endmill",
+    "drill",
+    "spool",
+    "nozzle",
+    "hexkey",
+    "bolt",
+    "collet",
+    "drill",
+    "endmill",
+    "nozzle",
+    "bolt",
+    "collet",
+    "drill",
+    "spool"
+   ],
+   "bins": [
+    {
+     "n": "Collets",
+     "t": [
+      "collet"
+     ]
+    },
+    {
+     "n": "End mills",
+     "t": [
+      "endmill"
+     ]
+    },
+    {
+     "n": "Drill bits",
+     "t": [
+      "drill"
+     ]
+    },
+    {
+     "n": "Filament",
+     "t": [
+      "spool"
+     ]
+    },
+    {
+     "n": "Nozzles",
+     "t": [
+      "nozzle"
+     ]
+    },
+    {
+     "n": "Hardware",
+     "t": [
+      "hexkey",
+      "bolt"
+     ]
+    }
+   ],
+   "names": {
+    "collet": "ER32 collet",
+    "endmill": "1/4 in end mill",
+    "drill": "Drill bit",
+    "spool": "PLA filament",
+    "nozzle": "0.4 mm nozzle",
+    "hexkey": "Hex key",
+    "bolt": "M8 bolt"
+   },
+   "long": [
+    "drill",
+    "endmill"
+   ],
+   "small": [
+    "nozzle",
+    "bolt"
+   ],
+   "size": {
+    "spool": 0.9,
+    "collet": 1.1
+   },
+   "hot": 0,
+   "q": "Where are the ER32 collets?",
+   "ans": "In the Collets bin"
+  }
+ },
+ "makers": {
+  "title": "Makerspace Inventory for Components &amp; Shared Tools | FindEZ AI",
+  "h1": "Shared tools. <span>One place to find them.</span>",
+  "chips": [
+   "Where are the multimeters?",
+   "What is running low?",
+   "How many Arduino boards are there?"
+  ],
+  "cfg": {
+   "types": [
+    "multimeter",
+    "arduino",
+    "breadboard",
+    "iron",
+    "led",
+    "wires",
+    "screwdriver",
+    "led",
+    "arduino",
+    "multimeter",
+    "led",
+    "breadboard",
+    "screwdriver",
+    "wires",
+    "led"
+   ],
+   "bins": [
+    {
+     "n": "Meters",
+     "t": [
+      "multimeter"
+     ]
+    },
+    {
+     "n": "Boards",
+     "t": [
+      "arduino"
+     ]
+    },
+    {
+     "n": "Breadboards",
+     "t": [
+      "breadboard"
+     ]
+    },
+    {
+     "n": "Tools",
+     "t": [
+      "iron",
+      "screwdriver"
+     ]
+    },
+    {
+     "n": "LEDs",
+     "t": [
+      "led"
+     ]
+    },
+    {
+     "n": "Wires",
+     "t": [
+      "wires"
+     ]
+    }
+   ],
+   "names": {
+    "multimeter": "Multimeter",
+    "arduino": "Arduino Uno",
+    "breadboard": "Breadboard",
+    "iron": "Soldering iron",
+    "led": "5 mm LED",
+    "wires": "Jumper wires",
+    "screwdriver": "Screwdriver"
+   },
+   "long": [
+    "iron",
+    "screwdriver"
+   ],
+   "small": [
+    "led"
+   ],
+   "flat": [
+    "arduino",
+    "breadboard"
+   ],
+   "size": {
+    "multimeter": 0.85,
+    "breadboard": 0.85,
+    "arduino": 0.9
+   },
+   "hot": 0,
+   "q": "Where are the multimeters?",
+   "ans": "In the Meters bin"
+  }
+ },
+ "labs": {
+  "title": "Engineering Lab Inventory | FindEZ AI",
+  "h1": "Make shared inventory <span>easier to record and search.</span>",
+  "chips": [
+   "Where are the strain gauges?",
+   "What is running low?",
+   "How many oscilloscope probes are there?"
+  ],
+  "cfg": {
+   "types": [
+    "gauge",
+    "probe",
+    "sensor",
+    "bnc",
+    "caliper",
+    "banana",
+    "beaker",
+    "gauge",
+    "bnc",
+    "probe",
+    "sensor",
+    "gauge",
+    "banana",
+    "beaker",
+    "bnc"
+   ],
+   "bins": [
+    {
+     "n": "Gauges",
+     "t": [
+      "gauge"
+     ]
+    },
+    {
+     "n": "Probes",
+     "t": [
+      "probe"
+     ]
+    },
+    {
+     "n": "Sensors",
+     "t": [
+      "sensor"
+     ]
+    },
+    {
+     "n": "Connectors",
+     "t": [
+      "bnc",
+      "banana"
+     ]
+    },
+    {
+     "n": "Measuring",
+     "t": [
+      "caliper"
+     ]
+    },
+    {
+     "n": "Glassware",
+     "t": [
+      "beaker"
+     ]
+    }
+   ],
+   "names": {
+    "gauge": "Strain gauge",
+    "probe": "Scope probe",
+    "sensor": "IMU sensor",
+    "bnc": "BNC connector",
+    "caliper": "Calipers",
+    "banana": "Test lead",
+    "beaker": "Beaker"
+   },
+   "long": [
+    "caliper"
+   ],
+   "small": [
+    "bnc",
+    "banana"
+   ],
+   "flat": [
+    "gauge",
+    "sensor",
+    "caliper",
+    "beaker"
+   ],
+   "size": {
+    "beaker": 0.9,
+    "caliper": 0.85
+   },
+   "hot": 0,
+   "q": "Where are the strain gauges?",
+   "ans": "In the Gauges bin"
+  }
+ }
+}
