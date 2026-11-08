@@ -8,11 +8,14 @@ import '../../core/ui/native_presentation.dart';
 
 Future<void> showExtractionDetails(
   BuildContext context,
-  List<Map<String, dynamic>> rows,
-) async {
+  List<Map<String, dynamic>> rows, {
+  bool itemsConfirmed = false,
+}) async {
   final items = rows.where((row) => row['selected'] == true).map((row) {
     final item = row['item'] as Map;
-    final review = (item['scan_evidence'] as Map?)?['needs_review'] == true;
+    final review =
+        !itemsConfirmed &&
+        (item['scan_evidence'] as Map?)?['needs_review'] == true;
     return <String, dynamic>{
       'title': item['name'] as String,
       'subtitle':

@@ -1,3 +1,7 @@
+## November 7 — extraction202 (mobile, uploaded)
+
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-mobile.md. Build 1.1.2 (202) uploaded and acknowledged by Apple, PR350. All five CI checks passed; 1,338 Flutter tests / 1 skip, clean analysis, 14 capture plus 2 native photo checks. Processing/tester availability not polled.
+
 ## November 7 - welcome201 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (201), delivery a6dba605-93b6-495a-b0da-db76b7cc1fe0. Runtime 6a4002d1, PR348. All five exact-commit CI jobs passed (42430591240). Processing and tester availability were not polled; physical iPhone OAuth/permission acceptance remains pending. Public App Store unchanged.

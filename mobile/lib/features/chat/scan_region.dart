@@ -32,10 +32,10 @@ List<ScanRegion> applyScanRegions(List<ScanRegion> current, Object? event) {
     regions.clear();
     final seen = <int>{};
     final duplicates = <int>{};
-    for (final row in (event['regions'] as List).take(8)) {
+    for (final row in (event['regions'] as List)) {
       if (row is! Map) continue;
       final id = row['id'];
-      if (id is! int || id < 0 || id >= 8) continue;
+      if (id is! int || id < 0) continue;
       if (!seen.add(id)) duplicates.add(id);
       final box = row['box'];
       final state = phase(row['state']);
@@ -57,7 +57,7 @@ List<ScanRegion> applyScanRegions(List<ScanRegion> current, Object? event) {
     }
   }
   if (event['states'] is List) {
-    for (final row in (event['states'] as List).take(8)) {
+    for (final row in (event['states'] as List)) {
       if (row is! Map) continue;
       final region = regions[row['id']];
       final state = phase(row['state']);

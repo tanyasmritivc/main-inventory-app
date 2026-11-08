@@ -1721,10 +1721,9 @@ class _ScanPageState extends State<ScanPage> {
             reviewToken: it.reviewToken,
           ),
         );
-        // The backend failure index is relative to the confident-only bulk
-        // payload. Uncertain objects stay in Review and never occupy an index
-        // in that request.
-        if (!it.needsReview) indexMap.add(s.id);
+        // Explicit Save accepts every selected candidate, including unknowns.
+        // Keep receipt indices aligned with all submitted items.
+        indexMap.add(s.id);
       }
 
       if (normalized.isEmpty) {
@@ -1739,6 +1738,7 @@ class _ScanPageState extends State<ScanPage> {
       final plan = await prepareCaptureForSave(
         api: widget.api,
         items: normalized,
+        saveAsIs: true,
         isCurrent: () => mounted,
       );
       if (!mounted) return;
@@ -1772,15 +1772,13 @@ class _ScanPageState extends State<ScanPage> {
       final res = await widget.api.bulkCreateInventory(
         items: inventoryItems,
         requestIds: indexMap,
+        saveAsIs: true,
       );
       if (!mounted) return;
       final accepted = res.confirmedIndices(inventoryItems.length);
       final savedIds = accepted.map((index) => indexMap[index]).toSet();
       final totalExpected = _scannedItems.length;
-      final savedReviewIds = _scannedItems
-          .where((row) => row.item.needsReview && !failures.containsKey(row.id))
-          .map((row) => row.id)
-          .toSet();
+      final savedReviewIds = <String>{};
 
       debugPrint(
         'FINDEZ bulkCreate: response - inserted=${res.inserted.length} '
