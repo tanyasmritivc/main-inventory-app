@@ -1,0 +1,33 @@
+{
+  "version": "1.1.2",
+  "build": 201,
+  "source_commit": "6a4002d1ececf545897a5c78e55d4728ea45e7db",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "cd7aec25624fc3abf0ce34852b9c53f8bed7898c77eb1ea25aa6603f0caff1b7",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "a6dba605-93b6-495a-b0da-db76b7cc1fe0",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/348",
+  "ci": {
+    "run": 42430591240,
+    "all_five_jobs_passed": true
+  },
+  "tests": {
+    "flutter_passed": 1336,
+    "skipped": 1,
+    "analysis": "clean",
+    "native_checks": 16,
+    "screenshots_inspected": [
+      "dark empty Space",
+      "light populated Space"
+    ]
+  },
+  "physical_device_acceptance": "pending"
+}

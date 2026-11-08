@@ -22,8 +22,10 @@ changes. The web provider-signup companion is a separate branch/PR.
 
 Validation: provider-name fixtures; delayed Allow/Deny and inactive/resumed permission
 sequencing; plan close navigation; dark/light Space controls. Analysis clean; full Flutter suite 1,336 pass / 1 skip; 16 native simulator checks pass.
-Four screenshots retained and dark/light inspected. CI and signing/upload pending.
+Four screenshots retained and dark/light inspected. All five exact-commit CI jobs passed (42430591240). Signed production package
+and Apple validation passed. Apple acknowledged TestFlight 1.1.2 (201), delivery
+a6dba605-93b6-495a-b0da-db76b7cc1fe0. Processing/tester availability were not polled.
 
 Device acceptance remains required for real Google/Apple authorization, fresh-install
 iOS permission choices, welcome dismissal and VoiceOver. Synthetic tests do not certify
-provider configuration or APNs delivery. Release receipt is added after upload.
+provider configuration or APNs delivery. Release receipt: mobile201-release.json.
