@@ -1,3 +1,7 @@
+## Developer docs and policies (November 7, 2026)
+
+Lane `fix/developers-policies-20261107`, based on ce6d35df. Updated API-key verification and November 7 Privacy/Terms disclosures; 31 live checks and 38 focused tests pass. Production build and 14 staged routes pass. Full suite has 52 pre-existing failures (parent: 65), no new failing names. Four runtime files only; publication pending. See docs/plans/developers-policies-20261107.md.
+
 ## November 7 — extraction202 (web, deployed)
 
 ## Founders walkthrough removal (November 7, 2026)

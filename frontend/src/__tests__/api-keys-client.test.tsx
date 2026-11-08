@@ -8,7 +8,7 @@ import { useApiSession } from '@/lib/use-api-session';
 
 jest.mock('@/lib/integration-api', () => ({
   ...jest.requireActual('@/lib/integration-api'),
-  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(),
+  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(), listKeyOrganizations: jest.fn(),
   createIntegrationKey: jest.fn(), revokeIntegrationKey: jest.fn(), testIntegrationKey: jest.fn(),
 }));
 jest.mock('@/lib/use-api-session');
@@ -25,9 +25,10 @@ const getSession = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session' } } });
-  jest.mocked(useApiSession).mockReturnValue({ token: 'web-session', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
+  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session', user: { id: 'account-1' } } } });
+  jest.mocked(useApiSession).mockReturnValue({ accountId: 'account-1', token: 'web-session', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
   jest.mocked(api.listIntegrationKeys).mockResolvedValue({ keys: [] });
+  jest.mocked(api.listKeyOrganizations).mockResolvedValue({ organizations: [] });
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [{ team_id: 'team-1', name: 'Robotics team' }] });
   jest.mocked(api.createIntegrationKey).mockResolvedValue({ ...metadata, key: rawKey });
   confirmAction.mockResolvedValue(true);
@@ -104,8 +105,8 @@ test('successful revocation updates the key status', async () => {
 test('owners with no teams receive an actionable setup path', async () => {
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [] });
   render(<ApiKeysClient />);
-  expect(await screen.findByText('Create a team to use integrations')).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'Open Teams →' }).getAttribute('href')).toBe('/teams');
+  expect(await screen.findByText('Create a workspace or organization to use integrations')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Open your workspaces →' }).getAttribute('href')).toBe('/home');
   expect(screen.queryByRole('button', { name: 'Create key' })).toBeNull();
 });
 
@@ -116,4 +117,16 @@ test('failed loading shows retry and never presents an empty success state', asy
   await user.click(await screen.findByRole('button', { name: 'Retry' }));
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   expect(await screen.findByLabelText('Key name')).toBeTruthy();
+});
+
+
+test('organization-bound keys carry the selected organization and explicit read scopes', async () => {
+  const user = userEvent.setup();
+  jest.mocked(api.listKeyOrganizations).mockResolvedValue({ organizations: [{ organization_id: 'org-1', name: 'Test organization', role: 'owner' }] });
+  render(<ApiKeysClient />);
+  await user.selectOptions(await screen.findByLabelText('Access'), 'org:org-1');
+  await createKey(user);
+  expect(api.createIntegrationKey).toHaveBeenCalledWith('fresh-web-session', expect.objectContaining({
+    workspace_id: null, organization_id: 'org-1', scopes: ['org:read', 'structure:read'],
+  }));
 });

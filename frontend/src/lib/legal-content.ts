@@ -1,8 +1,8 @@
 import type { LegalSection } from "@/components/site/legal-document";
 
-export const LEGAL_VERSION = "2026-11-01";
-export const LEGAL_EFFECTIVE_DATE = "November 1, 2026";
-export const PRIVACY_EFFECTIVE_DATE = "November 1, 2026";
+export const LEGAL_VERSION = "2026-11-07";
+export const LEGAL_EFFECTIVE_DATE = "November 7, 2026";
+export const PRIVACY_EFFECTIVE_DATE = "November 7, 2026";
 export const COOKIE_NOTICE_TEXT = "FindEZ uses cookies for sign-in and saves preferences and drafts on this device. No analytics or advertising cookies are enabled.";
 
 export const privacySections: LegalSection[] = [
@@ -27,7 +27,8 @@ export const privacySections: LegalSection[] = [
       "Workspace content: inventory names, quantities, physical locations you enter, barcodes, part numbers, Spaces, notes, documents, project kits, team tasks, and sharing permissions.",
       "Submitted content: the photos, spreadsheets, prompts, corrections, and other files you choose to upload. Files can include metadata, including location information embedded by the device that created them.",
       "Service information: IP addresses, request and error logs, timestamps, account activity, and device tokens used for phone notifications.",
-      "Integration records: API-key names, prefixes, permission scopes, expiry and use timestamps, and a hash used to verify the secret. The full key is shown once when issued. Organization actions and deletion requests can store request identifiers, affected resource details, review previews, status and receipts so access can be checked and retries handled.",
+      "Notification and announcement records: notification preferences, quiet hours, timezone, selected stock thresholds, device delivery tokens, and delivery, read or dismissal status. In-app announcements can record when a notice is shown, dismissed, acknowledged, or its link is selected, linked to your account, to manage delivery and avoid repeated notices.",
+      "Integration records: API-key names, prefixes, permission scopes, expiry and use timestamps, and a hash used to verify the secret. The full key is shown once when issued and cannot be retrieved later. Revoking a key prevents future authorized requests; it does not erase key metadata, completed actions, or copies already received by an integration. Organization actions and deletion requests can store request identifiers, affected resource details, review previews, status and receipts so access can be checked and retries handled.",
       "Response feedback: ratings, optional reasons and comments are linked to the assistant response and available execution diagnostics. We use them to investigate failures and evaluate quality. A rating does not directly change inventory facts or automatically train model weights.",
       "Purchase information: plan and entitlement records. Payment providers handle payment details under their own notices; FindEZ does not need your full card number to provide inventory features."
     ]
@@ -75,7 +76,7 @@ export const privacySections: LegalSection[] = [
     "id": "permissions",
     "heading": "7. Permissions and choices",
     "body": [
-      "Camera and photo access support the captures and uploads you choose. Microphone access supports optional voice input; earlier iOS builds also request Apple speech-recognition permission. Phone notification permission allows alerts; the in-app team feed remains available without it. FindEZ does not need your device's precise location: inventory locations are names you enter.",
+      "Camera and photo access support the captures and uploads you choose. Microphone access supports optional voice input; earlier iOS builds also request Apple speech-recognition permission. Phone notification permission allows alerts. Where supported, Settings lets you control push and in-app notifications, quiet hours and timezone, pauses, inventory alerts, capture reminders, and whether notification previews include details. Device notification permission and these account settings work together; turning off push does not itself turn off the in-app feed. Notification previews may be visible on a locked device according to your device settings. FindEZ does not need your device's precise location: inventory locations are names you enter.",
       "You can refuse a permission, revoke it in device settings, use typed input instead of voice, revoke API keys, leave a Team or shared Space, or stop sharing a Space. Refusing one optional permission does not prevent unrelated features."
     ]
   },
@@ -83,7 +84,7 @@ export const privacySections: LegalSection[] = [
     "id": "retention",
     "heading": "8. Retention and account deletion",
     "body": [
-      "Account content is kept while needed to provide your account and requested features. The bell feed displays team notifications from the last 14 days; this is a display window, not a promise that underlying team activity is deleted after 14 days.",
+      "Account content is kept while needed to provide your account and requested features. Notification visibility depends on the current feed, your preferences, dismissal state, and whether an invitation is still pending. Older app versions may show a 14-day activity window; this is a display window, not a promise that underlying activity or delivery records are deleted after 14 days. Dismissing a notification or announcement does not delete its underlying activity, invitation, or delivery receipt.",
       "Delete account in Settings starts permanent deletion of your account and associated records and stored files controlled by FindEZ. If you own a shared workspace or organization, the app can require you to transfer ownership or delete that resource first to protect collaborators. Account removal and stored-file cleanup can finish at different times; a failed deletion request displays an error, and you can retry or contact us for help. Content owned by another account or organization, exported copies, and records that must be retained for legal or security purposes can remain.",
       "A deletion review link has a limited confirmation window. Expiry prevents confirmation; it is not a promise that the request record or receipt is erased at that time.",
       "Logs, operational backups, and transaction or dispute records may remain when needed for security, recovery, or legal obligations. We do not promise immediate removal from every backup. Contact us about a specific retention or deletion request."
@@ -136,7 +137,7 @@ export const termsSections: LegalSection[] = [
   {
     "heading": "2. What FindEZ provides",
     "body": [
-      "FindEZ helps record, identify, find, organize, and share inventory. It also provides organization and workspace collaboration, documents, project and reminder tools, optional account memory, voice input, and scoped API integrations. Features can change or be experimental. The service is an aid to record keeping and human decisions; it does not guarantee that an item is present, available, compatible, or safe."
+      "FindEZ helps record, identify, find, organize, and share inventory. It also provides organization and workspace collaboration, documents, project and reminder tools, optional account memory, voice input, and scoped API integrations. Notifications and reminders depend on your settings, permissions, connectivity, and device or delivery services; delivery and timing are not guaranteed. Features can change or be experimental. The service is an aid to record keeping and human decisions; it does not guarantee that an item is present, available, compatible, or safe."
     ]
   },
   {
@@ -164,13 +165,13 @@ export const termsSections: LegalSection[] = [
     "heading": "6. Privacy and connected services",
     "body": [
       "The Privacy Policy explains data handling, storage, permission choices, and privacy requests. It is a notice, not consent to unrelated processing.",
-      "Sign-in, payments, notifications, and assistants you connect can be subject to separate provider terms. You are responsible for choosing permissions for external assistants and keeping API keys secure. An integration key can allow software to read or modify inventory. An organization-bound key with additional permissions can also create or organize resources, read membership information, invite people, and change access within that organization. The issuing account's current permissions still apply. New access invitations require the recipient to accept. Use the minimum required permissions, review automated changes, and revoke unused or compromised keys in Settings. Expiry, revocation, ownership changes, and inventory restrictions can stop an integration. Integration deletion requests prepare a preview; they do not delete the resource. The signed-in key owner must review and confirm in FindEZ. Confirmed deletion can permanently remove dependent content shown in the preview. Review the named resource and impact before confirming. Cancelling a request or disconnecting a client does not undo an operation that already completed. API access does not include every feature of the FindEZ apps; the API documentation describes supported operations and limits. This does not remove obligations that the law places on FindEZ."
+      "Sign-in, payments, notifications, and assistants you connect can be subject to separate provider terms. You are responsible for choosing permissions for external assistants and keeping API keys secure. An integration key can allow software to read or modify inventory. An organization-bound key with additional permissions can also create or organize resources, read membership information, invite people, and change access within that organization. The issuing account's current permissions still apply. New access invitations require the recipient to accept. Use a separate key for each integration, grant the minimum required permissions, and keep credentials out of public code, browser applications, shared files, and logs. You are responsible for integrations you authorize and for reviewing their automated changes. Revoke unused or compromised keys in Settings; signing out or uninstalling an integration does not revoke its key. Revocation stops future authorized requests but does not undo completed actions or retrieve exported data. Expiry, revocation, ownership changes, and inventory restrictions can stop an integration. Integration deletion requests prepare a preview; they do not delete the resource. The signed-in key owner must review and confirm in FindEZ. Confirmed deletion can permanently remove dependent content shown in the preview. Review the named resource and impact before confirming. Cancelling a request or disconnecting a client does not undo an operation that already completed. API access does not include every feature of the FindEZ apps; the API documentation describes supported operations and limits. This does not remove obligations that the law places on FindEZ."
     ]
   },
   {
     "heading": "7. Plans and payments",
     "body": [
-      "Prices, renewal periods, trial conditions, and cancellation information will be shown before a purchase. A free pilot ending does not authorize a charge. You must affirmatively authorize a purchase.",
+      "Prices, renewal periods, trial conditions, and cancellation information will be shown before a purchase. Founders Access and other free access offers do not by themselves create a paid subscription or guarantee free access forever. We will explain any future paid offer before you choose it. Ending free access does not authorize a charge. You must affirmatively authorize a purchase.",
       "Apple manages App Store purchases and its cancellation and refund processes. Other purchases follow the terms shown at checkout. Mandatory cancellation, refund, and consumer rights still apply. Disabling an app or deleting an account does not necessarily cancel a store subscription; manage it with the purchase provider."
     ]
   },
