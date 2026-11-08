@@ -1,3 +1,4 @@
+import '../../core/ui/photo_scan_hint.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -240,8 +241,8 @@ Future<void> runUploadPhotoFlow({
           ),
           child: Material(
             type: MaterialType.transparency,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: ListView(
+              shrinkWrap: true,
               children: [
                 ListTile(
                   leading: Icon(
@@ -268,6 +269,10 @@ Future<void> runUploadPhotoFlow({
                     ),
                   ),
                   onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+                ),
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
                 ),
               ],
             ),

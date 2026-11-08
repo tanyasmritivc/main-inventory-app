@@ -3055,7 +3055,12 @@ class _ChatPageState extends State<ChatPage>
     if (_sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
-    final camera = source ?? await showPhotoSourceSheet(context);
+    final camera =
+        source ??
+        await showPhotoSourceSheet(
+          context,
+          scanning: autoExtract && !widget.contextual,
+        );
     if (camera == null || !mounted || generation != _requestGeneration) return;
     if (camera && !await _consumeCameraHint()) return;
     if (!mounted || generation != _requestGeneration) return;

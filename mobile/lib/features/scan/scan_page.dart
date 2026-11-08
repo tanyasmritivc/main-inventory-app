@@ -317,7 +317,7 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<ImageSource?> _pickPhotoSource() async {
     if (!mounted) return null;
-    final camera = await showPhotoSourceSheet(context);
+    final camera = await showPhotoSourceSheet(context, scanning: true);
     return camera == null
         ? null
         : camera

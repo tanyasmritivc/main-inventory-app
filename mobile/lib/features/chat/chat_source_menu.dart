@@ -1,3 +1,4 @@
+import '../../core/ui/photo_scan_hint.dart';
 import 'native_chat_menu_button.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
@@ -109,7 +110,15 @@ class _SourceMenuState extends State<_SourceMenu> {
           )
           .toList();
       final rowHeight = 48.0 * media.textScaler.scale(1).clamp(1.0, 2.0);
-      final desiredHeight = 48 + math.max(1, filtered.length) * rowHeight + 9;
+      final showScanHint =
+          !widget.questionsOnly &&
+          (page == 'root' || page == 'attach') &&
+          query.trim().isEmpty;
+      final desiredHeight =
+          48 +
+          math.max(1, filtered.length) * rowHeight +
+          9 +
+          (showScanHint ? 120 * media.textScaler.scale(1) : 0);
       final top = math.max(media.padding.top + 12, bottom - desiredHeight);
       final height = math.max(48.0, bottom - top);
       final left = widget.anchor.dx.clamp(
@@ -238,6 +247,11 @@ class _SourceMenuState extends State<_SourceMenu> {
                                   ),
                               ],
                             ),
+                          ),
+                        if (showScanHint)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: PhotoScanHint(),
                           ),
                       ],
                     ),

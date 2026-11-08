@@ -1,10 +1,12 @@
+import 'photo_scan_hint.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'liquid_surface.dart';
 
 Future<bool?> showPhotoSourceSheet(
-  BuildContext context,
-) => showModalBottomSheet<bool>(
+  BuildContext context, {
+  bool scanning = false,
+}) => showModalBottomSheet<bool>(
   context: context,
   backgroundColor: Colors.transparent,
   showDragHandle: false,
@@ -16,8 +18,8 @@ Future<bool?> showPhotoSourceSheet(
         radius: 28,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: ListView(
+            shrinkWrap: true,
             children: [
               ListTile(
                 leading: const Icon(CupertinoIcons.camera),
@@ -38,6 +40,11 @@ Future<bool?> showPhotoSourceSheet(
                 ),
                 onTap: () => Navigator.pop(context, false),
               ),
+              if (scanning)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),

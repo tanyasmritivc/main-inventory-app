@@ -1,0 +1,23 @@
+{
+  "version": "1.1.2",
+  "build": 206,
+  "source_commit": "921bbfb9ca51ddddb92679e69c5db47347637360",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "71d276fbef3a1d868fffc6af9575f10a1bd1cf4a8b1e86a2ee6c3ce1d4b78267",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "a781679e-d074-4bcf-8fa3-79bf67e0e751",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42515744454,
+  "flutter_tests_passed": 1347,
+  "flutter_tests_skipped": 1,
+  "analysis": "clean",
+  "native_simulator_tests_passed": 4,
+  "physical_device_acceptance": "pending"
+}
