@@ -1,5 +1,9 @@
 ## November 7 — extraction202 (web, deployed)
 
+## Founders walkthrough removal (November 7, 2026)
+
+Published `fd9a163c` on `fix/founders-remove-demo` (PR #356). Removed the inventory import/capture/Ask walkthrough from /founders; benefits now lead to the audience section. Shared Solutions walkthrough retained. ESLint, production build, 9 routes and live browser verification pass. Release `founders-demo-20261107`, build `PPUkGBpMIFt2PY-s1UDOu`; 518 other runtime files and backend preserved. Receipt: `docs/plans/founders-demo-removal-release.json`.
+
 ## Plans hero label (November 7, 2026)
 
 Published `bd667868` on `fix/plans-hero-label` (PR #355). Removed the small grey Plans label above the /pricing hero. One runtime file changed; 518 others and backend preserved. ESLint, production build, 9 routes and live browser verification pass. Release `plans-label-20261107`, build `rSbPdy6fndelFDyqNmLBU`. Receipt: `docs/plans/plans-label-release.json`.
