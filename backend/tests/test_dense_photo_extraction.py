@@ -60,6 +60,24 @@ def test_distinct_overlapping_objects_are_not_merged_by_shared_name_alone():
     assert len(result) == 2
 
 
+def test_cross_view_synonyms_and_thin_edge_fragments_do_not_duplicate_an_object():
+    mounting_plate = box('silver cast metal mount', [800, 100, 958, 222])
+    same_plate = box('silver aluminum hub', [806, 113, 945, 208])
+    wheel = box('black plastic sprocket', [303, 123, 480, 255])
+    edge = box('black rubber textured wheel', [444, 141, 472, 249], occluded=True)
+    result, _ = g._merge_views(g.Grounding(items=[mounting_plate, wheel], partial=False),
+                              [[(same_plate, False), (edge, True)]])
+    assert len(result) == 2
+    assert {tuple(b.box) for b in result} == {tuple(mounting_plate.box), tuple(wheel.box)}
+
+
+def test_same_view_distinguishable_overlapping_objects_use_stricter_dedup():
+    a = box('washer', [100, 100, 300, 300])
+    b = box('washer', [130, 100, 330, 300])
+    result, _ = g._merge_views(g.Grounding(items=[a, b], partial=False), [])
+    assert result == [a, b]
+
+
 def test_resolved_pile_is_not_counted_again_alongside_its_contents():
     pile = box('pile of parts', [0, 0, 800, 800], kind='group', occluded=True)
     gear = box('gear', [100, 100, 300, 300])

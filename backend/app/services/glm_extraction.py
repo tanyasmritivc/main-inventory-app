@@ -379,39 +379,41 @@ def _overlap(a, b):
 def _merge_views(overview, views):
     # Prefer whole objects over a crop cut by a tile edge. Do not add quantities
     # across views: these are repeated observations, not additional stock.
-    candidates = [(box, False) for box in overview.items]
-    candidates.extend(pair for view in views for pair in view)
+    candidates = [(box, False, -1) for box in overview.items]
+    candidates.extend((box, clipped, view_id) for view_id, view in enumerate(views)
+                      for box, clipped in view)
     candidates.sort(key=lambda pair: (pair[1], -(pair[0].detection_confidence or 0)))
     accepted = []
-    for candidate, clipped in candidates:
+    for candidate, clipped, view_id in candidates:
         duplicate = False
         label = re.sub(r"[^a-z0-9]", "", candidate.label.casefold())
-        for previous_index, (previous, previous_clipped) in enumerate(accepted):
+        for previous_index, (previous, previous_clipped, origins) in enumerate(accepted):
             intersection, area, other_area = _overlap(candidate.box, previous.box)
             union = area + other_area - intersection
             same_label = label == re.sub(r"[^a-z0-9]", "", previous.label.casefold())
+            cross_view = view_id not in origins
             # Never use a shared name alone: adjacent identical bolts remain
             # separate. Groups and their individual contents are handled below.
             if _is_group(candidate) != _is_group(previous):
                 continue
-            if (intersection / union >= .85
-                    or (same_label and intersection / union >= .55)
-                    or (clipped and intersection / area >= .9 and area <= other_area
-                        and (same_label or area >= other_area * .45))):
+            if (intersection / union >= (.65 if cross_view else .85)
+                    or (cross_view and same_label and intersection / union >= .55)
+                    or (clipped and intersection / area >= .9 and area <= other_area)):
                 duplicate = True
                 if candidate.occluded and not clipped:
-                    accepted[previous_index] = (previous.model_copy(update={"occluded": True}), previous_clipped)
+                    previous = previous.model_copy(update={"occluded": True})
+                accepted[previous_index] = (previous, previous_clipped, origins | {view_id})
                 break
         if not duplicate:
-            accepted.append((candidate, clipped))
+            accepted.append((candidate, clipped, {view_id}))
     # When close-ups resolve a pile into multiple distinct objects, retain those
     # objects rather than counting both them and the encompassing pile. Coverage
     # is explicitly partial; this does not claim the hidden remainder was read.
     replaced_group = False
     result = []
-    for candidate, _ in accepted:
+    for candidate, _, _ in accepted:
         if _is_group(candidate):
-            children = [other for other, clipped in accepted
+            children = [other for other, clipped, _ in accepted
                         if not _is_group(other) and not clipped
                         and _overlap(candidate.box, other.box)[0]
                         >= _overlap(candidate.box, other.box)[2] * .9]
