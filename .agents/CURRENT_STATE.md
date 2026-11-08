@@ -2919,3 +2919,16 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   existing settings behavior remain unchanged; no server deployment/migration
   was required. The public App Store stays `1.0.6 (17)` and existing broader
   FIND transport/native acceptance limitations remain separate work.
+
+### November 8: reusable full scan acceptance audit
+
+`test/scan-complete-regression` adds an opt-in real HTTP runner using two marked,
+disposable QA accounts, plus `docs/plans/scan-test-plan.md`. Backend full suite:
+1568 passed. Mobile deployed lane:1347 passed/one existing skip and clean analysis.
+Live checks passed authentication, invalid images, draft reload, private crops,
+foreign-account denial, save-as-is, and replay without duplicate rows. Regular
+scans took24.08/18.15 seconds; old-web extra reply30.80 seconds. Crowded scan:
+241.44 seconds,77 regions/29 unknowns. Cleanup confirmed both accounts removed and
+94 QA images removed. No backend/mobile runtime or schema changes in this audit.
+Web scan timeout/completion repair is a separate lane `fix/scan-completion-audit`.
+Physical-device/browser interactive acceptance remains explicitly unclaimed.

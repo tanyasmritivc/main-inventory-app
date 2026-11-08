@@ -1,3 +1,7 @@
+## Full scan and regression audit
+
+See [the repeatable scan test plan](docs/plans/scan-test-plan.md) for full-suite commands, the opt-in real-HTTP acceptance runner, failure cases, and the web/iPhone manual matrix.
+
 ## Reviewed connector imports (October 22)
 
 Run full Python, Flutter, and Jest suites plus Flutter analysis, TypeScript and
