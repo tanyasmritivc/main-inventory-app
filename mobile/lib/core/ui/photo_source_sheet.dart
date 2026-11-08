@@ -1,10 +1,12 @@
+import 'photo_scan_hint.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'liquid_surface.dart';
 
 Future<bool?> showPhotoSourceSheet(
-  BuildContext context,
-) => showModalBottomSheet<bool>(
+  BuildContext context, {
+  bool scanning = false,
+}) => showModalBottomSheet<bool>(
   context: context,
   backgroundColor: Colors.transparent,
   showDragHandle: false,
@@ -19,6 +21,11 @@ Future<bool?> showPhotoSourceSheet(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (scanning)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
+                ),
               ListTile(
                 leading: const Icon(CupertinoIcons.camera),
                 title: const Text('Take photo'),

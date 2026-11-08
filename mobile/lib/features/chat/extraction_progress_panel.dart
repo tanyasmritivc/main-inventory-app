@@ -1,3 +1,4 @@
+import '../../core/ui/photo_scan_hint.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -426,6 +427,8 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
             backgroundColor: secondary.withValues(alpha: .15),
             borderRadius: BorderRadius.circular(2),
           ),
+          const SizedBox(height: 12),
+          const PhotoScanHint(tips: false),
           const SizedBox(height: 16),
           const Align(
             alignment: Alignment.centerLeft,

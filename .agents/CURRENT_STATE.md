@@ -1,3 +1,10 @@
+## November 8 - Photo scan timing notice (in progress)
+
+Copy-only mobile lane `copy/photo-scan-timing-mobile`. Shared photo source choices,
+attachment menu and extraction progress explain that crowded photos can take
+around4 minutes and smaller groups are quicker. No barcode/question-only notice,
+request or extraction behavior changes. Preparing TestFlight205.
+
 ## November 7 — Space chat204 uploaded (PR360)
 
 Apple acknowledged TestFlight 1.1.2 (204), delivery `0214c63e-ec28-4cf7-89ec-6fd538a1d815`. Runtime `54d706fd20bd030ff316bec932d83c54ea3d9f7c`; all five CI gates passed in run 42448114591. 1,347 Flutter tests passed / 1 existing skip, analysis clean, nine native iOS simulator checks passed. Signed archive/export verified device-only arm64, production configuration, 33 binaries each and 27 privacy manifests. Physical iPhone acceptance remains pending; processing and tester availability were not polled. No public App Store submission.

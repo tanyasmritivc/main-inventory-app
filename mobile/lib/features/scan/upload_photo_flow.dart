@@ -1,3 +1,4 @@
+import '../../core/ui/photo_scan_hint.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -243,6 +244,10 @@ Future<void> runUploadPhotoFlow({
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
+                ),
                 ListTile(
                   leading: Icon(
                     Icons.photo_camera_outlined,
