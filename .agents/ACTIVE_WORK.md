@@ -1,6 +1,8 @@
-## November 7 - light-theme203 (mobile, active)
+## November 7 - light-theme203 uploaded
 
-Owner: current Codex task, branch fix/light-theme203. Light-only contrast and surface consistency across shared Flutter roles, directories, chat, announcements and native list separators. Preserve #F6F8F9 canvas/white cards, dark appearance and all behavior. Validation and TestFlight delivery pending.
+Apple acknowledged TestFlight 1.1.2 (203), delivery d36695e4-04b5-4da8-9ae7-b24a994cc977. Runtime 1bda45645f51b0a97fe9d981234f0bca6e242d94, PR354. All five exact-commit CI jobs passed (42436247397), including 1,340 Flutter tests / 1 skip; analysis clean. Nineteen native simulator checks passed and light/dark screenshots were reviewed. Physical iPhone acceptance remains pending; processing/tester availability not polled.
+
+Light theme uses #F6F8F9 canvas, white cards, softer neutral charcoal text and opaque readable separators/control outlines across Flutter and native Settings/Notifications. Dark styling and app behavior preserved. No web/backend/database or public App Store submission changes. Receipt: docs/plans/mobile203-release.json.
 
 ## November 7 — extraction202 (mobile, uploaded)
 
