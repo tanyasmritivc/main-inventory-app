@@ -1,3 +1,7 @@
+## November 7 - provider signup201 deployed
+
+Production provider-signup-20261107 is live, build KIzqxNmh7_spE9BT7B9YM, runtime 9b51d0e0, PR349. Eight routes and public HTTPS signup return 200. Two runtime files changed; 546 unrelated files/configuration preserved. Receipt: docs/plans/provider-signup201-release.json. Physical OAuth acceptance pending.
+
 ## November 7 - provider signup201 verified
 
 Owner: Codex, branch fix/provider-signup201. Google/Apple signup uses provider names without requiring typed names, preserving eligibility and email validation. Two runtime files only; other web behavior preserved. TypeScript/lint pass, 14 focused tests pass; broader pair 26 pass / 3 known navigation failures. Isolated production build passed; deployment pending.

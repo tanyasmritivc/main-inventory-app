@@ -18,4 +18,9 @@ configuration and public assets are preserved. No backend or schema changes.
 
 Real Google/Apple authorization on physical devices/browser sessions remains an
 acceptance check. The provider fixtures do not certify provider configuration.
-Deployment receipt will be added after switching the isolated release.
+Production release provider-signup-20261107 is live; eight routes and public HTTPS
+signup returned 200. Receipt: provider-signup201-release.json. PR349.
+
+Exact runtime CI web job: 538 pass / 61 pre-existing failures; no new failure
+headings versus the prior deployed release. Ten stale test cases now pass after
+updating auth/navigation mocks and destinations. All other four CI jobs passed.
