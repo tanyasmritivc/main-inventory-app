@@ -1,3 +1,7 @@
+## November 7 - provider signup201 verified
+
+Owner: Codex, branch fix/provider-signup201. Google/Apple signup uses provider names without requiring typed names, preserving eligibility and email validation. Two runtime files only; other web behavior preserved. TypeScript/lint pass, 14 focused tests pass; broader pair 26 pass / 3 known navigation failures. Isolated production build passed; deployment pending.
+
 ## November 7 — web repair200 deployed
 
 Production release space-imports-20261107 is live, build GjlDASBKZhL3cIOsA9lOA. Eight route checks returned 200; 541 unrelated files, public assets and configuration preserved. PR347. Browser automation could not initialize because its installed runtime dependency is missing; UI behavior is covered by component tests, production build and route checks.

@@ -1,3 +1,7 @@
+## November 7 - provider signup201 verified
+
+Owner: Codex, branch fix/provider-signup201. Google/Apple signup uses provider names without requiring typed names, preserving eligibility and email validation. Two runtime files only; other web behavior preserved. TypeScript/lint pass, 14 focused tests pass; broader pair 26 pass / 3 known navigation failures. Isolated production build passed; deployment pending.
+
 ## November 7 - Home presentation deployed
 
 Runtime `9ff5803f`, PR342, branch `style/simplify-home-headings`. Release

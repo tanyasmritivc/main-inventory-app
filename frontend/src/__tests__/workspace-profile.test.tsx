@@ -36,6 +36,7 @@ jest.mock("@/lib/use-api-session", () => ({
 }));
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
+  useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({
     push: mockNavigate,
     replace: jest.fn(),
@@ -267,4 +268,18 @@ test("settings categories use distinct page routes and keep their labels visible
  expect(within(screen.getByLabelText("Primary navigation")).getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/settings/account");
  expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(true);
  expect(screen.queryByRole("button", { name: "Unpin navigation" })).toBeNull();
+});
+
+test("provider signup persists the provider name instead of pending typed names", async () => {
+  const upsert = jest.fn(async () => ({error: null}));
+  Object.assign(client, {from: jest.fn(() => ({upsert}))});
+  const currentUser = {...session.user, user_metadata: {full_name: "Sam Chen", given_name: "Sam", family_name: "Chen"}};
+  client.auth.getSession.mockResolvedValue({data: {session: {...session, user: currentUser}}});
+  client.auth.updateUser.mockImplementationOnce(async () => ({error: null}));
+  localStorage.setItem("findez_pending_signup_profile", JSON.stringify({useProviderName: true, displayName: "Ignore typed name", termsVersion: "2026-11-01", termsAcceptedAt: "2026-11-07T12:00:00Z", eligibilityAttested: true}));
+  render(<AppShell><p>Workspace</p></AppShell>);
+  await waitFor(() => expect(upsert).toHaveBeenCalledWith(expect.objectContaining({display_name: "Sam Chen", first_name: "Sam", last_name: "Chen"})));
+  expect(client.auth.updateUser).toHaveBeenCalledWith(expect.objectContaining({data: expect.objectContaining({full_name: "Sam Chen", eligibility_attested: true})}));
+  expect(localStorage.getItem("findez_pending_signup_profile")).toBeNull();
+  client.auth.getSession.mockResolvedValue({data: {session}});
 });

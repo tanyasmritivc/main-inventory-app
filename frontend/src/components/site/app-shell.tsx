@@ -120,7 +120,7 @@ export function AppShell({
         setUnread(null);
       }
       const name = String(
-        user?.user_metadata?.display_name ?? user?.email ?? "",
+        user?.user_metadata?.display_name ?? user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "",
       );
       setUserInitial(name.slice(0, 1).toUpperCase());
       setUserEmail(user?.email || "");
@@ -172,18 +172,21 @@ export function AppShell({
         signupAttempts.add(user.id);
         try {
           const pending = JSON.parse(pendingValue) as Record<string, unknown>;
-          const displayName = String(pending.displayName ?? "").trim();
-          const firstName = String(pending.cleanFirstName ?? "").trim();
-          const lastName = String(pending.cleanLastName ?? "").trim();
+          const providerName = pending.useProviderName === true;
+          const metadata = user.user_metadata ?? {};
+          const displayName = String(providerName
+            ? metadata.full_name ?? metadata.name ?? metadata.display_name ?? ""
+            : pending.displayName ?? "").trim();
+          const firstName = String(providerName ? metadata.given_name ?? "" : pending.cleanFirstName ?? "").trim();
+          const lastName = String(providerName ? metadata.family_name ?? "" : pending.cleanLastName ?? "").trim();
           const profileRole = String(pending.cleanProfileRole ?? "").trim();
           const organization = String(pending.cleanOrganization ?? "").trim();
-          if (displayName) {
+          if (displayName || providerName) {
             const { error: metadataError } = await supabase.auth.updateUser({
               data: {
-                display_name: displayName,
-                full_name: displayName,
-                given_name: firstName,
-                family_name: lastName,
+                ...(displayName ? {display_name: displayName, full_name: displayName} : {}),
+                ...(firstName ? {given_name: firstName} : {}),
+                ...(lastName ? {family_name: lastName} : {}),
                 profile_role: profileRole,
                 organization,
                 ...(typeof pending.termsVersion === "string" &&
@@ -197,16 +200,18 @@ export function AppShell({
                   : {}),
               },
             });
-            const { error: profileError } = await supabase
+            const {data: activeSession} = await supabase.auth.getSession();
+            if (activeSession.session?.user.id !== user.id) return;
+            const { error: profileError } = displayName ? await supabase
               .from("profiles")
               .upsert({
                 id: user.id,
                 display_name: displayName,
-                first_name: firstName,
-                last_name: lastName,
+                ...(firstName ? {first_name: firstName} : {}),
+                ...(lastName ? {last_name: lastName} : {}),
                 profile_role: profileRole,
                 organization,
-              });
+              }) : {error: null};
             if (!metadataError && !profileError)
               window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
           }
