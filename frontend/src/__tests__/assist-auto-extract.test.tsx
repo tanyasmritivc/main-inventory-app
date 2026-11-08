@@ -45,3 +45,24 @@ test('closing an active extraction aborts it and leaves the regular composer ava
  await waitFor(()=>expect(askQuestion).toHaveBeenCalledTimes(1));fireEvent.click(screen.getByRole('button',{name:'Close extraction'}));
  await waitFor(()=>expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).disabled).toBe(false));expect(pending.signal.aborted).toBe(true);expect(screen.queryByRole('region',{name:'Review extraction'})).toBeNull();
 });
+
+for (const worldId of ['personal', undefined]) {
+ test(`deadline ownership preserves ${worldId ? 'world scan completion' : 'legacy inventory timeout'}`, async () => {
+  jest.useFakeTimers();
+  const view=render(<AssistClient worldId={worldId}/>);
+  try {
+   await act(async()=>{await Promise.resolve();});
+   if(worldId) fireEvent.change(view.container.querySelectorAll('input[type=file][accept="image/*"]')[2],{target:{files:[photo()]}});
+   else {
+    const composer=screen.getByRole('textbox',{name:'Your question'});
+    fireEvent.change(composer,{target:{value:'Where is the cable?'}});
+    fireEvent.submit(composer.closest('form')!);
+   }
+   await act(async()=>{await Promise.resolve();});
+   expect(askQuestion).toHaveBeenCalledTimes(1);
+   await act(async()=>{jest.advanceTimersByTime(180_001);await Promise.resolve();});
+   expect(pending.signal.aborted).toBe(!worldId);
+   if(worldId) await finish();
+  } finally {view.unmount();jest.useRealTimers();}
+ });
+}

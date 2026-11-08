@@ -567,7 +567,7 @@ function AssistClientWorkspace({
     let receivedCapture = false;
     let provisional = "";
     // Auto Extract owns its longer inference deadline in askQuestion.
-    const timer = extracting ? undefined : window.setTimeout(() => control.abort(), 180_000);
+    const timer = extracting && worldId ? undefined : window.setTimeout(() => control.abort(), 180_000);
     try {
       await askQuestion({
         accountId: account,
