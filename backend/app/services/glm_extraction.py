@@ -431,17 +431,30 @@ def _merge_views(overview, views):
 
 
 def _ground_photo(image, report):
-    overview = _json(GROUNDING_PROMPT, [_jpeg(image)], Grounding)
+    overview_error = None
+    try:
+        overview = _json(GROUNDING_PROMPT, [_jpeg(image)], Grounding)
+    except (httpx.HTTPError, ValueError, TimeoutError) as error:
+        # A busy overview must not discard an otherwise readable large photo.
+        # Different, smaller views can recover evidence within the SAME budget;
+        # never repeat the timed-out full-frame request or invent detections.
+        if max(image.size) <= 1400:
+            raise
+        overview_error = error
+        overview = Grounding(items=[], partial=True, dense=True)
     crowded = (overview.dense or overview.partial or len(overview.items) >= 8
                or any(_is_group(box) for box in overview.items))
     if not crowded or max(image.size) <= 1400:
         return overview
-    report("Looking closer at crowded areas...")
+    report("Trying smaller photo sections..." if overview_error else
+           "Looking closer at crowded areas...")
     windows = _detail_windows(*image.size)
     total_deadline = _deadline.get() or (time.monotonic() + EXTRACTION_BUDGET_SECONDS)
     # Extra coverage must not consume all time reserved for identities/crops.
     closeup_deadline = min(time.monotonic() + 90, total_deadline - DETAIL_RESERVE_SECONDS)
     if closeup_deadline - time.monotonic() < 2:
+        if overview_error:
+            raise overview_error
         return overview.model_copy(update={"partial": True})
 
     def locate(window):
@@ -471,6 +484,9 @@ def _ground_photo(image, report):
                 views[futures[future]] = []
             report(f"Checked {sum(view is not None for view in views)} of {len(windows)} photo sections...")
     items, replaced = _merge_views(overview, views)
+    if overview_error and not items:
+        # An unavailable provider is an error, not a successful empty scan.
+        raise overview_error
     return Grounding(items=items, partial=partial or replaced, dense=True)
 
 

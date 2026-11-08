@@ -1,3 +1,7 @@
+## November 8 - Crowded scan recovery (active)
+
+Owner: current Codex, branch fix/crowded-scan-recovery. Recover large-photo failed overview grounding through bounded existing close-ups; preserve budgets, crops, unknown evidence, save/scope and main chat. Full suite1574 passed; candidate HTTP crowded/regular completed. Native source menu is a separate mobile lane.
+
 ## November 8 - Regular scan scheduling deployed (PR365)
 
 Runtime `35129bf5` reads up to four detected crops individually within one four-worker wave; larger scans keep their original batches. This is not an object cap. All five CI gates, 1,568 local tests and 62 production-candidate tests passed. The exact-source HTTP preview completed in 32.0s with a durable draft/done event and disposable-data cleanup. One-file guarded deployment is healthy and preserves 147 other Python files. Main chat, web/mobile UI, saving and schema are unchanged. Timing remains variable and the user's loading report was not reproduced. See docs/plans/regular-scan-responsiveness.md; production HTTPS acceptance also completed in 46.6s, with draft/photos/done, anonymous denial and QA cleanup verified.

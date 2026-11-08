@@ -143,6 +143,70 @@ def test_failed_closeups_preserve_overview_with_explicit_partial_status():
     assert result.items == overview.items and result.partial
 
 
+@pytest.mark.parametrize('error', [httpx.ReadTimeout('slow overview'),
+                                  ValueError('invalid overview'),
+                                  httpx.ConnectError('unavailable overview')])
+def test_failed_overview_recovers_from_sections_without_repeating_full_frame(error):
+    calls = []
+    reports = []
+    total = time.monotonic() + 130  # 110 seconds already used by the overview.
+    token = g._deadline.set(total)
+    def model(prompt, *args):
+        calls.append(prompt)
+        if 'close-up section' not in prompt:
+            raise error
+        assert g._deadline.get() <= total - g.DETAIL_RESERVE_SECONDS
+        return g.Grounding(items=[box('part', [250, 250, 500, 500])], partial=False)
+    try:
+        with patch.object(g, '_json', side_effect=model):
+            result = g._ground_photo(Image.new('RGB', (2400, 2400)), reports.append)
+        assert g._deadline.get() == total
+    finally:
+        g._deadline.reset(token)
+    assert len(result.items) == 4 and result.partial
+    assert len([p for p in calls if 'close-up section' not in p]) == 1
+    assert 'Trying smaller photo sections...' in reports
+
+
+def test_overview_and_sections_unavailable_remains_an_error_not_an_empty_success():
+    error = httpx.ReadTimeout('provider unavailable')
+    with patch.object(g, '_json', side_effect=error) as call:
+        with pytest.raises(httpx.ReadTimeout):
+            g._ground_photo(Image.new('RGB', (2400, 2400)), lambda _: None)
+    assert call.call_count == 5
+
+
+def test_recovery_does_not_extend_deadline_or_retry_small_photos():
+    error = httpx.ReadTimeout('provider unavailable')
+    for size, remaining in [((1000, 800), 240), ((2400, 2400), 90)]:
+        token = g._deadline.set(time.monotonic() + remaining)
+        try:
+            with patch.object(g, '_json', side_effect=error) as call:
+                with pytest.raises(httpx.ReadTimeout):
+                    g._ground_photo(Image.new('RGB', size), lambda _: None)
+            assert call.call_count == 1
+        finally:
+            g._deadline.reset(token)
+
+
+def test_recovery_keeps_successful_sections_when_a_sibling_times_out():
+    lock = threading.Lock()
+    n = 0
+    def model(prompt, *args):
+        nonlocal n
+        if 'close-up section' not in prompt:
+            raise httpx.ReadTimeout('overview')
+        with lock:
+            n += 1
+            first = n == 1
+        if first:
+            return g.Grounding(items=[box('part', [250, 250, 500, 500])], partial=False)
+        raise httpx.ReadTimeout('section')
+    with patch.object(g, '_json', side_effect=model):
+        result = g._ground_photo(Image.new('RGB', (2400, 2400)), lambda _: None)
+    assert len(result.items) == 1 and result.partial
+
+
 def test_detail_time_is_reserved_and_closeup_deadline_is_shared_not_renewed():
     overview = g.Grounding(items=[], partial=False, dense=True)
     token = g._deadline.set(time.monotonic() + 80)
