@@ -1610,3 +1610,10 @@ and changed-code ESLint pass. Full suite has identical baseline failures:
 76 failures in 23 suites, 507 passed. Desktop/narrow light/dark, edits, checkout,
 photo, PNG, Letter/A4 PDF and Safari native print-preview checks passed.
 Production activation pending final commit/push and read-only live check.
+
+## November 8 - Photo scan timing notice
+
+Owner: current Codex, `copy/photo-scan-timing-web`. Copy-only shared hint at photo
+scan choices, Space upload, quick start, onboarding and active extraction progress.
+Uses around4 minutes, not a maximum; smaller groups tip before scanning. Web614
+tests pass, types clean, lint zero errors. Deployment pending guarded overlay.

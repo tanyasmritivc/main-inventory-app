@@ -1,4 +1,5 @@
 "use client";
+import { PHOTO_SCAN_TIMING, PHOTO_SCAN_TIP } from "./photo-scan-hint";
 
 import { useEffect, useState } from "react";
 import { ScanLine, Table2, Search, ChartNoAxesColumnIncreasing } from "lucide-react";
@@ -37,7 +38,7 @@ export function QuickStart({ disabled, onPhoto, onImport, onFind, onLow }: {
   disabled: boolean; onPhoto: () => void; onImport: () => void; onFind: () => void; onLow: () => void;
 }) {
   const cards = [
-    { title: "Scan a photo", hint: "Add a whole shelf", palette: "dusk", Icon: ScanLine, action: onPhoto },
+    { title: "Scan a photo", hint: PHOTO_SCAN_TIMING, palette: "dusk", Icon: ScanLine, action: onPhoto },
     { title: "Import a sheet", hint: "CSV or Excel", palette: "slate", Icon: Table2, action: onImport },
     { title: "Find an item", hint: "Where and how many", palette: "moss", Icon: Search, action: onFind },
     { title: "Running low", hint: "What to restock", palette: "plum", Icon: ChartNoAxesColumnIncreasing, action: onLow },
@@ -46,7 +47,7 @@ export function QuickStart({ disabled, onPhoto, onImport, onFind, onLow }: {
     <p>Quick start</p><div>{cards.map(({ title, hint, palette, Icon, action }) =>
       <button key={title} type="button" className="theme-card" disabled={disabled} onClick={action}>
         <span className={`resource-art resource-tile g-${palette}`}><Icon size={18} aria-hidden="true" /></span>
-        <strong>{title}</strong><small>{hint}</small>
+        <strong>{title}</strong><small>{hint}</small>{title === "Scan a photo" && <small>{PHOTO_SCAN_TIP}</small>}
       </button>)}
     </div>
   </section>;

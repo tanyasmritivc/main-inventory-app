@@ -1,4 +1,5 @@
 "use client";
+import { PhotoScanHint } from "./photo-scan-hint";
 import Link from "next/link";
 import {
   Plus,
@@ -66,6 +67,7 @@ export function ChatPlusMenu({
           <Sparkles />
           Auto Extract
         </DropdownMenuItem>
+        <div style={{ padding: "0 10px" }}><PhotoScanHint /></div>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Paperclip />

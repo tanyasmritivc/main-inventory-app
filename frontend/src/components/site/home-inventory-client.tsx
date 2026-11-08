@@ -1,4 +1,5 @@
 "use client";
+import { PhotoScanHint } from "./photo-scan-hint";
 import { SpaceExtraction } from "./space-extraction";
 import { SpaceInfoLine } from "./web-refresh-ui";
 import { ResourceArt } from "./app-theme-ui";
@@ -1129,6 +1130,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             )}
           </div>
 
+          {viewingSharedSpace.permission === "edit" && <PhotoScanHint />}
           {/* Search bar */}
           <input
             placeholder="Search items…"
@@ -1285,6 +1287,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
+          {canEdit && <PhotoScanHint />}
           {/* Space search + category pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
             <input
