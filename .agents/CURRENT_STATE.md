@@ -1,3 +1,16 @@
+## November 8 — Overly crowded wording uploaded (PR369)
+
+Apple acknowledged TestFlight 1.1.2 (206), delivery `a781679e-d074-4bcf-8fa3-79bf67e0e751`.
+The shared notice now says “Overly crowded photos can take around 4 minutes.”
+User-requested wording correction only; scan behavior unchanged.
+
+Runtime `921bbfb9ca51ddddb92679e69c5db47347637360`. All five exact-commit CI jobs (42515744454),
+1,347 Flutter tests / 1 existing skip, clean analysis and four native simulator
+checks passed. Light/dark notice screenshots inspected. Signed archive/export
+verified production settings, 33 device binaries each and 27 privacy manifests.
+Processing and tester availability were not polled. Physical iPhone acceptance
+pending. No public App Store submission. Receipt: `docs/plans/mobile206-release.json`.
+
 ## November 8 — Photo scan timing notice uploaded (PR369)
 
 Apple acknowledged TestFlight 1.1.2 (205), delivery `9dc4936b-bf94-42bf-a41f-9fa37d6e0dd3`.
