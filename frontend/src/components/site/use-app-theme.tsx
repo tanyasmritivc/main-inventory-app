@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore } from "react";
-import { APP_THEME_STORAGE_KEY, isInteriorPath } from "@/lib/app-theme-constants";
+import { APP_THEME_STORAGE_KEY, isThemedPath } from "@/lib/app-theme-constants";
 
 import { usePathname } from "next/navigation";
 
@@ -79,18 +79,18 @@ function useThemeState() {
   return { value, ready: storedChoice !== null };
 }
 
-/** Remains mounted when an authenticated page or its loading boundary changes. */
+/** Remains mounted across product/docs navigation and loading boundaries. */
 export function AppThemeDocument() {
   const pathname = usePathname();
   const { value, ready } = useThemeState();
   useLayoutEffect(() => {
     // Keep the prepaint script's class until browser preference is known.
-    // Public routes must clear it even during hydration/sign-out.
-    const interior = isInteriorPath(pathname ?? "");
-    if (interior && !ready) return;
-    const dark = interior && value.resolvedTheme === "dark";
+    // Fixed-theme marketing/auth routes clear it even during hydration/sign-out.
+    const themed = isThemedPath(pathname ?? "");
+    if (themed && !ready) return;
+    const dark = themed && value.resolvedTheme === "dark";
     document.documentElement.classList.toggle("dark", dark);
-    if (interior) document.documentElement.dataset.appTheme = value.resolvedTheme;
+    if (themed) document.documentElement.dataset.appTheme = value.resolvedTheme;
     else delete document.documentElement.dataset.appTheme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0d0d0f" : "#ffffff");
   }, [pathname, ready, value.resolvedTheme]);

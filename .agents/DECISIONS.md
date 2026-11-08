@@ -1233,3 +1233,8 @@ permanent deletions but cannot confirm them: the signed-in key owner must review
 the saved impact and type the exact resource name in FindEZ. Expired or changed
 previews require a new request. Chat Space creation requires an explicit named
 request and the selected editable inventory. No submitted mobile app changes.
+
+
+## Public API docs appearance (November 7, 2026)
+
+`/docs/api` follows the existing saved Light/Dark/System preference. Keep theme-enabled routes separate from authenticated product route eligibility (`isThemedPath` versus `isInteriorPath`), so docs remain public and do not activate product-only features. The prepaint script and persistent document theme share the same route list. Documentation colors are local CSS variables; marketing/auth routes retain their presentation.

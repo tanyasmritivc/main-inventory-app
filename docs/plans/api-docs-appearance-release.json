@@ -1,0 +1,48 @@
+{
+  "staged": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/docs/api/openapi.json": 200,
+    "/docs/api/chatgpt-actions.json": 200
+  },
+  "unchanged_files": 512,
+  "build_id": "ZNmwRj0U9qPSwjWfExL35",
+  "published": true,
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/docs-appearance-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/developers-policies-20261107/frontend",
+  "source_commit": "74fca129",
+  "preserved_deployed_docs_commit": "943df84c",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/357",
+  "validation": {
+    "typescript": "passed",
+    "changed_file_eslint": "passed",
+    "production_build": "passed",
+    "theme_tests_passed": 19,
+    "full_suite": {
+      "passed": 546,
+      "failed": 65,
+      "failures_identical_to_baseline": true
+    },
+    "minimum_text_contrast": {
+      "light": 6.79,
+      "dark": 7.88
+    },
+    "browser": [
+      "Desktop light and dark",
+      "390px mobile light and dark",
+      "Live System selection persists after reload"
+    ]
+  }
+}
