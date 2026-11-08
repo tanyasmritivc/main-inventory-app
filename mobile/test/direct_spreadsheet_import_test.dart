@@ -121,7 +121,7 @@ void main() {
         1,
       );
       expect(find.text('Import'), findsOneWidget);
-      expect(AppTheme.lightBg, const Color(0xFFF6F8F9));
+      expect(AppTheme.lightBg, const Color(0xFFF6F7F9));
       expect(AppTheme.lightSurface, Colors.white);
     },
   );

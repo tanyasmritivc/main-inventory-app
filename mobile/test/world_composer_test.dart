@@ -6,83 +6,83 @@ import 'package:mobile/features/world/smooth_typing_hint.dart';
 
 void main() {
   for (final brightness in Brightness.values) {
-    testWidgets('composer actions and surface are monochrome $brightness', (
-      tester,
-    ) async {
-      final controller = TextEditingController(text: 'Ready to send');
-      final focus = FocusNode();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.create(brightness),
-          home: Scaffold(
-            body: WorldComposer(
-              controller: controller,
-              focusNode: focus,
-              onChanged: (_) {},
-              onAttach: () {},
-              onVoice: () {},
-              onSend: () {},
-              onFirstCamera: () {},
-              busy: false,
-              listening: false,
-              compact: false,
+    testWidgets(
+      'composer actions and surface follow the selected palette $brightness',
+      (tester) async {
+        final controller = TextEditingController(text: 'Ready to send');
+        final focus = FocusNode();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.create(brightness),
+            home: Scaffold(
+              body: WorldComposer(
+                controller: controller,
+                focusNode: focus,
+                onChanged: (_) {},
+                onAttach: () {},
+                onVoice: () {},
+                onSend: () {},
+                onFirstCamera: () {},
+                busy: false,
+                listening: false,
+                compact: false,
+              ),
             ),
           ),
-        ),
-      );
-      void neutral(Color c) {
-        final channels = [c.r, c.g, c.b]..sort();
-        expect(channels.last - channels.first, lessThan(.01));
-      }
-
-      for (final tooltip in ['Send message', 'Snap a shelf']) {
-        final button = tester.widget<IconButton>(
-          find.byWidgetPredicate(
-            (widget) => widget is IconButton && widget.tooltip == tooltip,
-          ),
         );
-        final background = button.style!.backgroundColor!.resolve({})!;
-        final foreground = button.style!.foregroundColor!.resolve({})!;
-        neutral(background);
-        neutral(foreground);
-        final luminance = [
-          background.computeLuminance(),
-          foreground.computeLuminance(),
-        ]..sort();
-        expect(
-          (luminance.last + .05) / (luminance.first + .05),
-          greaterThan(4.5),
-        );
-      }
-      for (final box in tester.widgetList<DecoratedBox>(
-        find.descendant(
-          of: find.byType(WorldComposer),
-          matching: find.byType(DecoratedBox),
-        ),
-      )) {
-        final decoration = box.decoration;
-        if (decoration is BoxDecoration && decoration.color != null) {
-          neutral(decoration.color!);
-          if (brightness == Brightness.light && decoration.border is Border) {
-            final edge = (decoration.border! as Border).top;
-            final fill = Color.alphaBlend(decoration.color!, Colors.white);
-            final line = Color.alphaBlend(edge.color, fill);
-            final luminance = [fill.computeLuminance(), line.computeLuminance()]
-              ..sort();
+        void neutral(Color c) {
+          if (brightness == Brightness.light) {
             expect(
-              (luminance.last + .05) / (luminance.first + .05),
-              greaterThanOrEqualTo(3),
-              reason:
-                  'The idle composer must have a visible boundary against its fill.',
+              c.toARGB32() & 0xFFFFFF,
+              isIn([0x202226, 0xFFFFFF]),
+              reason: 'Use the reference charcoal and white composer colors.',
             );
-            expect(edge.width, greaterThanOrEqualTo(1));
+          } else {
+            final channels = [c.r, c.g, c.b]..sort();
+            expect(channels.last - channels.first, lessThan(.01));
           }
         }
-      }
-      await tester.pumpWidget(const SizedBox());
-      controller.dispose();
-      focus.dispose();
-    });
+
+        for (final tooltip in ['Send message', 'Snap a shelf']) {
+          final button = tester.widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) => widget is IconButton && widget.tooltip == tooltip,
+            ),
+          );
+          final background = button.style!.backgroundColor!.resolve({})!;
+          final foreground = button.style!.foregroundColor!.resolve({})!;
+          neutral(background);
+          neutral(foreground);
+          final luminance = [
+            background.computeLuminance(),
+            foreground.computeLuminance(),
+          ]..sort();
+          expect(
+            (luminance.last + .05) / (luminance.first + .05),
+            greaterThan(4.5),
+          );
+        }
+        for (final box in tester.widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byType(WorldComposer),
+            matching: find.byType(DecoratedBox),
+          ),
+        )) {
+          final decoration = box.decoration;
+          if (decoration is BoxDecoration && decoration.color != null) {
+            neutral(decoration.color!);
+            if (brightness == Brightness.light && decoration.border is Border) {
+              final edge = (decoration.border! as Border).top;
+              expect(edge.color, const Color(0xFFE6E8EC));
+              expect(edge.width, greaterThanOrEqualTo(1));
+            }
+          }
+        }
+        await tester.pumpWidget(const SizedBox());
+        controller.dispose();
+        focus.dispose();
+      },
+    );
   }
   for (final reduced in [false, true]) {
     testWidgets(

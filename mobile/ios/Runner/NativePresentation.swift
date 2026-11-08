@@ -3,10 +3,10 @@ import UIKit
 
 // Opaque light roles match Flutter; UIKit retains its existing dark roles.
 enum NativeAppearanceColors {
-  static let canvas = UIColor { $0.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1) }
-  static let separator = UIColor { $0.userInterfaceStyle == .dark ? .separator : UIColor(red: 173/255, green: 173/255, blue: 178/255, alpha: 1) }
-  static let secondary = UIColor { $0.userInterfaceStyle == .dark ? .secondaryLabel : UIColor(red: 89/255, green: 89/255, blue: 93/255, alpha: 1) }
-  static let primary = UIColor { $0.userInterfaceStyle == .dark ? .label : UIColor(red: 41/255, green: 41/255, blue: 43/255, alpha: 1) }
+  static let canvas = UIColor { $0.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 247/255, blue: 249/255, alpha: 1) }
+  static let separator = UIColor { $0.userInterfaceStyle == .dark ? .separator : UIColor(red: 230/255, green: 232/255, blue: 236/255, alpha: 1) }
+  static let secondary = UIColor { $0.userInterfaceStyle == .dark ? .secondaryLabel : UIColor(red: 112/255, green: 117/255, blue: 125/255, alpha: 1) }
+  static let primary = UIColor { $0.userInterfaceStyle == .dark ? .label : UIColor(red: 32/255, green: 34/255, blue: 38/255, alpha: 1) }
 }
 import CoreText
 
@@ -60,7 +60,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       navigation.overrideUserInterfaceStyle = list.overrideUserInterfaceStyle
       navigation.modalPresentationStyle = .pageSheet
       if data["opaque"] as? Bool == true {
-        navigation.view.backgroundColor = data["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
+        navigation.view.backgroundColor = data["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 247/255, blue: 249/255, alpha: 1)
       }
       if let sheet = navigation.sheetPresentationController {
         sheet.detents = [.medium(), .large()]
@@ -72,7 +72,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     }
     guard let controller = controller else { finish(nil); return }
     controller.overrideUserInterfaceStyle = data["dark"] as? Bool == true ? .dark : .light
-    controller.view.tintColor = .label
+    controller.view.tintColor = NativeAppearanceColors.primary
     // UIAlertController owns its presentation delegate and asserts if replaced.
     // Only our sheet navigation controller needs interactive-dismiss callbacks.
     if controller is UINavigationController { controller.presentationController?.delegate = self }
@@ -192,11 +192,11 @@ private final class NativeListController: UITableViewController, UISearchResults
   override func viewDidLoad() {
     super.viewDidLoad()
     if page["opaque"] as? Bool == true {
-      tableView.backgroundColor = page["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
+      tableView.backgroundColor = page["dark"] as? Bool == true ? UIColor(white: 0.08, alpha: 1) : UIColor(red: 246/255, green: 247/255, blue: 249/255, alpha: 1)
     }
     if page["opaque"] as? Bool != true {
       tableView.backgroundColor = UIColor { traits in
-        traits.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
+        traits.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 247/255, blue: 249/255, alpha: 1)
       }
     }
     tableView.separatorColor = NativeAppearanceColors.separator
@@ -241,6 +241,14 @@ private final class NativeListController: UITableViewController, UISearchResults
       ]
       search?.searchBar.searchTextField.font = appFont(15, style: .body)
       search?.searchBar.searchTextField.adjustsFontForContentSizeCategory = true
+    }
+    if traitCollection.userInterfaceStyle != .dark {
+      var titleStyle = navigationController?.navigationBar.titleTextAttributes ?? [:]
+      titleStyle[.foregroundColor] = NativeAppearanceColors.primary
+      navigationController?.navigationBar.titleTextAttributes = titleStyle
+      var largeStyle = navigationController?.navigationBar.largeTitleTextAttributes ?? [:]
+      largeStyle[.foregroundColor] = NativeAppearanceColors.primary
+      navigationController?.navigationBar.largeTitleTextAttributes = largeStyle
     }
     tableView.reloadData()
   }

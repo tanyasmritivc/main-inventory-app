@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
 import '../sharing/review_invitation_page.dart';
@@ -264,13 +265,13 @@ class _OrganizationPillState extends State<OrganizationPill> {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        color: dark ? const Color(0xFF202020) : const Color(0xFFF5F5F5),
+        color: dark ? const Color(0xFF202020) : AppTheme.lightSurface,
         border: Border.all(
           color: highContrast
               ? Theme.of(context).colorScheme.onSurface.withValues(alpha: .5)
               : dark
               ? const Color(0xFF383838)
-              : const Color(0xFFD8D8D8),
+              : AppTheme.lightBorder,
           width: 1,
         ),
         boxShadow: highContrast

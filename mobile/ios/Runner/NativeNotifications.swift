@@ -98,6 +98,10 @@ private final class NotificationListController: UITableViewController {
     model = data
     guard isViewLoaded else { return }
     navigationController?.navigationBar.titleTextAttributes = [.font: font(17, .headline)]
+    if traitCollection.userInterfaceStyle != .dark {
+      navigationController?.navigationBar.titleTextAttributes?[.foregroundColor] = NativeAppearanceColors.primary
+      view.tintColor = NativeAppearanceColors.primary
+    }
     let options = (data["options"] as? [[String: Any]] ?? []).map { option -> UIAction in
       let action = UIAction(title: option["title"] as? String ?? "", image: UIImage(systemName: option["symbol"] as? String ?? "bell")) { [weak self] _ in
         if let id = option["id"] as? String { self?.onAction?(id) }

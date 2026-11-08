@@ -1,3 +1,10 @@
+## November 8 — Screenshot light palette supersedes earlier light values
+
+Use the exact colors sampled from IMG_3227–3229: #F6F7F9 background, white cards,
+#202226 text, #70757D secondary text and #E6E8EC borders. Keep stronger outlines
+for Increase Contrast. This user-requested palette replaces the heavy light
+borders from build 203; layout, typography, behavior and dark values stay intact.
+
 ## November 7 - Readable mobile light surfaces
 
 Light pages use #F6F8F9 and white content cards. Separators and control outlines have distinct opaque roles; custom palettes must not fade structural lines with dark-theme opacity values. Preserve original image/QR artwork and dark appearance. Secondary labels remain readable at normal text sizes.

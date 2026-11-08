@@ -47,10 +47,8 @@ void main() {
       if (brightness == Brightness.light) {
         final input = theme.inputDecorationTheme;
         final edge = input.enabledBorder!.borderSide;
-        expect(
-          _contrast(edge.color, input.fillColor!),
-          greaterThanOrEqualTo(3),
-        );
+        expect(edge.color, const Color(0xFFE6E8EC));
+        expect(input.fillColor, Colors.white);
         expect(
           _contrast(input.hintStyle!.color!, input.fillColor!),
           greaterThanOrEqualTo(4.5),

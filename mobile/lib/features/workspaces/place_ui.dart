@@ -68,10 +68,10 @@ class PlacePalette {
             PlaceTokens.background: AppTheme.lightBg,
             PlaceTokens.card: AppTheme.lightSurface,
             PlaceTokens.border: highContrast
-                ? AppTheme.lightControlBorder
+                ? AppTheme.lightStrongBorder
                 : AppTheme.lightBorder,
             PlaceTokens.separator: highContrast
-                ? AppTheme.lightControlBorder
+                ? AppTheme.lightStrongBorder
                 : AppTheme.lightBorder,
             PlaceTokens.primary: AppTheme.lightTextPrimary,
             PlaceTokens.secondary: AppTheme.lightTextSecondary,
@@ -79,7 +79,9 @@ class PlacePalette {
             PlaceTokens.dim: AppTheme.lightTextMuted,
             PlaceTokens.icon: AppTheme.lightTextSecondary,
             PlaceTokens.chevron: AppTheme.lightTextMuted,
-            PlaceTokens.outline: AppTheme.lightControlBorder,
+            PlaceTokens.outline: highContrast
+                ? AppTheme.lightStrongText
+                : AppTheme.lightControlBorder,
           }[light] ??
           light;
     }
