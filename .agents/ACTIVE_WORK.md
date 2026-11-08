@@ -2,7 +2,7 @@
 
 ## API docs appearance (November 7, 2026)
 
-Prepared on `fix/api-docs-appearance`, isolated `findez-community-nav` checkout. /docs/api now has Light/Dark/System controls, local contrast-checked palettes, shared saved Appearance and prepaint handling. Documentation remains public and separate from product-only eligibility. Newer deployed API content preserved via `943df84c`. Typecheck, changed-file lint, 19 theme tests and 14 production route checks pass; full suite 546 pass / same 65 baseline failures. Desktop light/dark and 390px mobile preview checked. Staged release `docs-appearance-20261107`; publication pending.
+Published `74fca129` on `fix/api-docs-appearance` (PR #357), isolated `findez-community-nav` checkout. /docs/api now has Light/Dark/System controls, local contrast-checked palettes, shared saved Appearance and prepaint handling. Documentation remains public and separate from product-only eligibility. Newer deployed API content preserved via `943df84c`. Typecheck, changed-file lint, 19 theme tests and 14 production route checks pass; full suite 546 pass / same 65 baseline failures. Desktop light/dark and 390px mobile preview checked; live System selection survives reload. Release `docs-appearance-20261107`, build `ZNmwRj0U9qPSwjWfExL35`; 512 other source/public files and backend preserved. Receipt: `docs/plans/api-docs-appearance-release.json`.
 
 ## Founders walkthrough removal (November 7, 2026)
 
