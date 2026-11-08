@@ -1,3 +1,9 @@
+## November 8 - Regular scan scheduling deployed (PR365)
+
+Runtime `35129bf5` is live after all five CI gates passed in `42506078089`. Up to four detected crops are read individually within one four-worker wave, preserving whole-crop resolution and isolating per-item failures. Larger scans and every accepted region are retained. Main chat, clients, saving and database schema are unchanged.
+
+Validation: 1,568 backend tests, 62 production-candidate tests, full candidate HTTP preview and live HTTPS preview. The live check returned a completed draft and item photos in 46.6 seconds, with no inventory writes and all disposable QA data removed. One changed Python file preserves 147 other files. Latency remains variable; the reported indefinite-loading behavior was not reproduced and no general speed guarantee is claimed. See docs/plans/regular-scan-responsiveness.md and regular-scan-release.json.
+
 ## November 7 — Space questions204 deployed (PR359)
 
 Runtime `1320b7cb004c2a9aa79daff24d07e86e4f359e1e` is live after all five CI gates passed. Contextual Ask reads fresh items in the actual Space, supports photo/file questions without Auto Extract, and allows complete answers beyond the legacy 500-token limit. Private history is actor/inventory/Space-bound. Main chat, extraction, existing legacy Space service and schema are unchanged.

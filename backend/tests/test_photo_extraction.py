@@ -226,6 +226,7 @@ def test_exif_orientation_and_metadata_are_normalized_before_model_and_crop():
     assert observed == [(40, 80), (40, 80)]
 
 
+@patch.object(g, "SINGLE_CROP_SCAN_MAX_ITEMS", 0)  # Exercise the retained multi-crop path.
 def test_partial_upload_failure_removes_only_new_crop():
     boxes = [
         g.Box(label="a", box=[0, 0, 400, 1000]),
@@ -403,6 +404,7 @@ def test_real_work_stages_are_reported_in_order_without_provider_content():
     assert 'private label' not in str(statuses)
 
 
+@patch.object(g, "SINGLE_CROP_SCAN_MAX_ITEMS", 0)  # Exercise the retained multi-crop path.
 def test_two_crop_sheet_is_single_image_and_maps_reversed_indices_safely():
     boxes = [g.Box(label='red', box=[0, 0, 400, 1000]), g.Box(label='blue', box=[600, 0, 1000, 1000])]
     calls = []
@@ -420,6 +422,7 @@ def test_two_crop_sheet_is_single_image_and_maps_reversed_indices_safely():
     assert len(calls) == 2
 
 
+@patch.object(g, "SINGLE_CROP_SCAN_MAX_ITEMS", 0)  # Exercise the retained multi-crop path.
 def test_duplicate_batch_indices_cannot_assign_an_identity_to_the_wrong_crop():
     boxes = [g.Box(label='a', box=[0, 0, 400, 1000]), g.Box(label='b', box=[600, 0, 1000, 1000])]
     with patch.object(g, '_json', side_effect=[g.Grounding(items=boxes, partial=False),
@@ -466,6 +469,7 @@ def test_same_marked_bars_group_without_losing_crop_or_count_and_piles_do_not():
     assert len(g._group_identical(image, overlapping, prepared())) == 2
 
 
+@patch.object(g, "SINGLE_CROP_SCAN_MAX_ITEMS", 0)  # Exercise the retained multi-crop path.
 def test_malformed_sibling_keeps_valid_identity_and_unknown_count():
     good = identity(quantity=None).model_dump()
     result = g._parse_result(json.dumps({"items": [good, {"index": 1, "name": "bad"}]}), g.Identities)

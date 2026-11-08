@@ -1,3 +1,7 @@
+## November 8 - Regular scan scheduling deployed (PR365)
+
+Runtime `35129bf5` reads up to four detected crops individually within one four-worker wave; larger scans keep their original batches. This is not an object cap. All five CI gates, 1,568 local tests and 62 production-candidate tests passed. The exact-source HTTP preview completed in 32.0s with a durable draft/done event and disposable-data cleanup. One-file guarded deployment is healthy and preserves 147 other Python files. Main chat, web/mobile UI, saving and schema are unchanged. Timing remains variable and the user's loading report was not reproduced. See docs/plans/regular-scan-responsiveness.md; production HTTPS acceptance also completed in 46.6s, with draft/photos/done, anonymous denial and QA cleanup verified.
+
 ## November 7 - Crowded photo latency investigation (not deployed)
 
 Owner: current Codex task, branch fix/dense-photo-latency. Real no-save candidate benchmarks took 223–240 seconds versus the prior 218.88-second coverage-release sample. Larger batches, combined grounding/identity, lightweight classification and parallel overview/close-ups did not demonstrate a reliable improvement. Experiments were rejected; runtime and tests restored exactly to 2c0e34c5. Live extraction remains the verified coverage release (SHA256 b23f1ff84ab4a81208efc1b9e907984a163210e025cfe7f48e62dda0134fec3b). No deployment or client changes. Latency remains unresolved. See docs/plans/dense-photo-latency.md for measurements and the available-provider limitation.
