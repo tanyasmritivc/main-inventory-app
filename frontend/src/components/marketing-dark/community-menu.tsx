@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { ChevronDown, ArrowUpRight, Instagram, MessagesSquare } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 export function CommunityMenu() {
   const [open, setOpen] = useState(false);
@@ -44,15 +44,11 @@ export function CommunityMenu() {
     <div id={panelId} className="community-panel" hidden={!open}>
       <div className="community-links">
         <a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener noreferrer">
-          <MessagesSquare size={20} aria-hidden="true" />
           <span><strong>Discord</strong><small>Join the community</small></span>
-          <ArrowUpRight size={16} aria-hidden="true" />
           <span className="community-sr"> (opens in a new tab)</span>
         </a>
         <a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener noreferrer">
-          <Instagram size={20} aria-hidden="true" />
-          <span><strong>Instagram</strong><small>Follow @findezai</small></span>
-          <ArrowUpRight size={16} aria-hidden="true" />
+          <span><strong>Instagram</strong></span>
           <span className="community-sr"> (opens in a new tab)</span>
         </a>
       </div>
