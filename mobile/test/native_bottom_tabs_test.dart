@@ -94,6 +94,7 @@ void main() {
       Future<void> nativeEvent(
         Object? value, {
         String method = 'selected',
+        bool settle = true,
       }) async {
         final done = Completer<void>();
         await messenger.handlePlatformMessage(
@@ -104,13 +105,29 @@ void main() {
           (_) => done.complete(),
         );
         await done.future;
-        await tester.pumpAndSettle();
+        await tester.pump();
+        if (settle) {
+          await tester.pump(NativeBottomTabs.selectionLead);
+          await tester.pumpAndSettle();
+        }
       }
 
       await nativeEvent(null, method: 'scan');
       expect(scans, 1);
       expect(selected, 0);
-      await nativeEvent(1);
+      await nativeEvent(1, settle: false);
+      expect(selected, 0, reason: 'UIKit selection must lead the page');
+      update(() => dark = true);
+      await tester.pump();
+      expect(
+        configurations.last['selected'],
+        1,
+        reason: 'Unrelated rebuild must not reset the moving selection',
+      );
+      await tester.pump(const Duration(milliseconds: 219));
+      expect(selected, 0);
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
       expect(selected, 1);
       expect(changes, 1);
       expect(configurations.last['selected'], 1);
@@ -130,6 +147,17 @@ void main() {
         'dark': true,
         'reduceMotion': false,
       });
+      await nativeEvent(1, settle: false);
+      await tester.pump(const Duration(milliseconds: 100));
+      await nativeEvent(0, settle: false);
+      await tester.pump(NativeBottomTabs.selectionLead);
+      expect(selected, 0, reason: 'Rapid return must cancel the pending page');
+      expect(changes, 1);
+      await nativeEvent(1, settle: false);
+      await nativeEvent(null, method: 'scan');
+      expect(selected, 0, reason: 'Add cannot leave a delayed tab switch');
+      expect(scans, 2);
+      await nativeEvent(1, settle: false);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
       await nativeEvent(0);

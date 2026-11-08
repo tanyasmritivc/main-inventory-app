@@ -7,6 +7,39 @@ import 'activity_label.dart';
 
 const scanMotion = Cubic(.32, .72, 0, 1);
 
+double scanProgressValue(String message, List<ScanRegion> regions) {
+  final match = RegExp(
+    r'checked\s+(\d+)\s+of\s+(\d+)',
+    caseSensitive: false,
+  ).firstMatch(message);
+  final checked = match == null ? null : int.tryParse(match[1]!);
+  final total = match == null ? null : int.tryParse(match[2]!);
+  final status = message.toLowerCase();
+  final done = regions
+      .where(
+        (r) =>
+            r.phase == ScanRegionPhase.checked ||
+            r.phase == ScanRegionPhase.unreadable,
+      )
+      .length;
+  var progress =
+      status.contains('finding objects') || status.contains('extracting')
+      ? .25
+      : 0.0;
+  if (regions.isNotEmpty) {
+    progress = .5 + .25 * done / regions.length;
+  }
+  if (total != null && total > 0 && checked != null) {
+    progress = .5 + .25 * (checked / total).clamp(0.0, 1.0);
+  }
+  if (status.contains('reading details')) progress = math.max(progress, .5);
+  if (status.contains('confidence') ||
+      status.contains('preparing your review')) {
+    progress = .875;
+  }
+  return progress;
+}
+
 /// The image's actual rectangle, excluding the letterbox margins.
 Rect containedScanRect(Size image, Size frame) {
   if (image.isEmpty || frame.isEmpty) return Rect.zero;
@@ -313,35 +346,7 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final secondary = dark ? const Color(0xff98989f) : const Color(0xff6c6c70);
-    final match = RegExp(
-      r'checked\s+(\d+)\s+of\s+(\d+)',
-      caseSensitive: false,
-    ).firstMatch(widget.message);
-    final checked = match == null ? null : int.tryParse(match[1]!);
-    final total = match == null ? null : int.tryParse(match[2]!);
-    final status = widget.message.toLowerCase();
-    final done = widget.regions
-        .where(
-          (r) =>
-              r.phase == ScanRegionPhase.checked ||
-              r.phase == ScanRegionPhase.unreadable,
-        )
-        .length;
-    var progress =
-        status.contains('finding objects') || status.contains('extracting')
-        ? .25
-        : 0.0;
-    if (widget.regions.isNotEmpty) {
-      progress = .5 + .25 * done / widget.regions.length;
-    }
-    if (total != null && total > 0 && checked != null) {
-      progress = .5 + .25 * (checked / total).clamp(0.0, 1.0);
-    }
-    if (status.contains('reading details')) progress = math.max(progress, .5);
-    if (status.contains('confidence') ||
-        status.contains('preparing your review')) {
-      progress = .875;
-    }
+    final progress = scanProgressValue(widget.message, widget.regions);
     _completedProgress = math.max(_completedProgress, progress);
     final stage = _completedProgress >= .75
         ? 4

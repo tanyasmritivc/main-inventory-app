@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ask_answer.dart';
+import '../chat/native_scan_progress.dart';
 import '../chat/chat_capture_card.dart';
 import '../chat/extraction_progress_panel.dart';
 import '../chat/scan_region.dart';
@@ -153,6 +154,16 @@ class _SpaceExtractionPageState extends State<SpaceExtractionPage> {
                 onSaved: () {
                   saved = true;
                 },
+              )
+            else if (busy && usesNativeScanProgress)
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * .72,
+                child: NativeScanProgress(
+                  image: MemoryImage(widget.bytes),
+                  message: progress,
+                  regions: regions,
+                  onStop: () => Navigator.of(context).pop(saved),
+                ),
               )
             else ...[
               ScanPhotoFrame(

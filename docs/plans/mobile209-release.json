@@ -1,0 +1,46 @@
+{
+  "version": "1.1.2",
+  "build": 209,
+  "source_commit": "bfa12c13774fb7035b4dc0d56282d9fa9b0bf0b2",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "9c5c6a4894f5b649b60afcffdd0a975b4733b33e08d69cb53216815f121b968d",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "9282a1de-61c3-4219-ba0e-d9f5b71e820c",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42535411676,
+  "flutter_tests_passed": 1363,
+  "flutter_tests_skipped": 1,
+  "analysis": "clean",
+  "native_simulator_tests_passed": 6,
+  "physical_device_acceptance": "pending",
+  "native_audit": {
+    "checks": {
+      "dark_native_controls_observed": true,
+      "light_native_controls_observed": true,
+      "photo_and_region_overlay_observed": true,
+      "steps_expansion_observed": true,
+      "stop_once_observed": true,
+      "completion_disposes_native_view": true,
+      "tab_lead_and_cancellation_host_tests": true,
+      "six_uikit_layout_and_disposal_tests": true,
+      "footer_inside_scroll_content_all_six_layouts": true
+    },
+    "limitations": [
+      "Physical TestFlight swipe/VoiceOver/keyboard and real scan acceptance pending",
+      "Desktop gesture automation did not conclusively demonstrate reaching footer"
+    ],
+    "scope": "Display-only UIKit progress, existing request and draft controllers unchanged",
+    "simulator": "iPhone 16e, iOS 26.2",
+    "host_tests": {
+      "passed": 1363,
+      "existing_skips": 1
+    }
+  }
+}

@@ -1,3 +1,25 @@
+## November 8 — Native scan progress and tab timing uploaded (PR373)
+
+Apple acknowledged TestFlight 1.1.2 (209), delivery `9282a1de-61c3-4219-ba0e-d9f5b71e820c`.
+Ask/Spaces selection now leads the page by 220 ms, with rapid taps, Add, world
+changes and disposal cancelling obsolete navigation. Reduced motion bypasses
+the lead. Active Auto Extract progress in chat and Spaces uses UIKit scroll,
+progress, photo/region overlays, Steps and Stop. Requests, cancellation ownership,
+Space destination and completed draft review/edit/save remain unchanged.
+
+Runtime `bfa12c13774fb7035b4dc0d56282d9fa9b0bf0b2`. All five exact-commit CI jobs passed
+(run42535411676); 1,363 Flutter tests / one existing skip and clean analysis.
+Six native iOS tests passed across light/dark, normal/2.6x text/compact viewport,
+including complete scroll-content geometry and disposal. Manual fixture checks
+covered theme, photo/regions, Steps and Stop. Physical scrolling, VoiceOver,
+keyboard, real scan and review/edit/save acceptance remain pending; desktop
+scroll automation was inconclusive. No new provider speed claim is made.
+
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing/tester availability were not polled. No web,
+backend, database or public App Store submission changed.
+Receipt: docs/plans/mobile209-release.json; scope: docs/plans/native-scan209.md.
+
 ## November 8 — Native chat source menu uploaded (PR372)
 
 Apple acknowledged TestFlight 1.1.2 (208), delivery `f113e230-48c2-4a0b-a1cd-4050cee6082e`.
