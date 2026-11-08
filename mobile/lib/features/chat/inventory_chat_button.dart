@@ -126,7 +126,11 @@ class InventoryChatButton extends StatelessWidget {
               ? const Color(0xFF1B1B1B)
               : Colors.white,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: colors.onSurface.withValues(alpha: .06)),
+          border: Border.all(
+            color: AppTheme.isDark(context)
+                ? colors.onSurface.withValues(alpha: .06)
+                : AppTheme.controlBorder(context),
+          ),
         ),
         child: Material(
           color: Colors.transparent,

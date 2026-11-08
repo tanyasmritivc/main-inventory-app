@@ -10,8 +10,8 @@ class WorldStyle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final ink = dark ? const Color(0xFFF4F4F4) : const Color(0xFF111112);
-    final muted = dark ? const Color(0xFFA8A8A8) : const Color(0xFF55565B);
+    final ink = dark ? const Color(0xFFF4F4F4) : AppTheme.lightTextPrimary;
+    final muted = dark ? const Color(0xFFA8A8A8) : AppTheme.lightTextSecondary;
     TextStyle text(
       double size, {
       FontWeight weight = FontWeight.w400,

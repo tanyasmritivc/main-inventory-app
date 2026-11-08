@@ -1,3 +1,7 @@
+## November 7 - light-theme203 (mobile, active)
+
+Owner: current Codex task, branch fix/light-theme203. Light-only contrast and surface consistency across shared Flutter roles, directories, chat, announcements and native list separators. Preserve #F6F8F9 canvas/white cards, dark appearance and all behavior. Validation and TestFlight delivery pending.
+
 ## November 7 — extraction202 (mobile, uploaded)
 
 Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-mobile.md. Build 1.1.2 (202) uploaded and acknowledged by Apple, PR350. All five CI checks passed; 1,338 Flutter tests / 1 skip, clean analysis, 14 capture plus 2 native photo checks. Processing/tester availability not polled.
