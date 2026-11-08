@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const photoScanTiming = 'Crowded photos can take around 4 minutes.';
+const photoScanTiming = 'Overly crowded photos can take around 4 minutes.';
 const photoScanTip = 'For quicker results, photograph smaller groups of items.';
 
 class PhotoScanHint extends StatelessWidget {

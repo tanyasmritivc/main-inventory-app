@@ -1,3 +1,8 @@
+## November 8 — Scan notice wording correction (active)
+
+User correction: “Overly crowded photos can take around 4 minutes.” Shared notice
+only; preparing website update and mobile build 206.
+
 ## November 8 — Photo scan timing notice uploaded (PR369)
 
 Apple acknowledged TestFlight 1.1.2 (205), delivery `9dc4936b-bf94-42bf-a41f-9fa37d6e0dd3`.
