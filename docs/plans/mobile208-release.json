@@ -1,0 +1,55 @@
+{
+  "version": "1.1.2",
+  "build": 208,
+  "source_commit": "1384e14b3bc1ae234e6fee5ff64a92818fc3e87e",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "1ab92166ed518ca6a6df5bac1104b196ddef792a93e91c177184419adf14d0a1",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "f113e230-48c2-4a0b-a1cd-4050cee6082e",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42529791593,
+  "flutter_tests_passed": 1362,
+  "flutter_tests_skipped": 1,
+  "analysis": "clean",
+  "native_simulator_tests_passed": 8,
+  "physical_device_acceptance": "pending",
+  "native_audit": {
+    "checks": {
+      "eight_native_light_dark_presentations_passed": true,
+      "eight_native_screenshots_reviewed": true,
+      "all_eleven_native_action_ids_verified": true,
+      "native_search_and_submenu_back_verified": true,
+      "native_close_and_route_disposal_verified": true,
+      "space_attachment_restrictions_verified": true,
+      "native_sheet_expansion_verified": true
+    },
+    "native_simulator_tests_passed": 8,
+    "manual_actions": [
+      "auto_extract",
+      "library",
+      "camera",
+      "file",
+      "spreadsheet",
+      "barcode",
+      "space",
+      "item",
+      "project",
+      "document",
+      "connections"
+    ],
+    "manual_notes": "Actual UIKit selection results were observed in the synthetic harness after dismissal. Search filtered context and Back returned to filtered root. Space menu exposed only library/camera/files. Light and dark screenshots retained. Sheet grabber expanded the sheet. Drag dismissal was not conclusively exercised with desktop automation.",
+    "physical_device_acceptance": "pending: camera, photo/file providers, barcode hardware and swipe dismissal",
+    "test_logs": [
+      "native-chat_attachment_menu_test.dart.log",
+      "focused.log",
+      "mobile-tests.log"
+    ]
+  }
+}

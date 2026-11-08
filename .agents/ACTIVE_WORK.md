@@ -1,6 +1,22 @@
-## November 8 - Native source menu208 (active)
+## November 8 — Native chat source menu uploaded (PR372)
 
-Owner: current Codex, branch fix/native-source-menu208. Replace only iOS chat source popup with the existing native searchable sheet, preserve actions and Space question-only restrictions. Verify dismissal, all callbacks, picker dispatch and light/dark UI; deliver TestFlight208. Crowded scan recovery is a separate backend lane.
+Apple acknowledged TestFlight 1.1.2 (208), delivery `f113e230-48c2-4a0b-a1cd-4050cee6082e`.
+iPhone source options now use the existing UIKit grouped sheet, native search,
+SF Symbols and navigation for Attach, Inventory tools and Add context. All eleven
+existing action IDs and dismissal-before-dispatch behavior are preserved. Space
+questions retain attachment-only restrictions. Non-iOS popup and main chat
+behavior are unchanged. The separate crowded-scan backend recovery is PR371.
+
+Runtime `1384e14b3bc1ae234e6fee5ff64a92818fc3e87e`. All five exact-commit CI jobs passed
+(run42529791593); 1,362 Flutter tests / one existing skip and clean analysis.
+Eight native simulator presentation/disposal tests passed. All eight screenshots
+were inspected in light/dark. Manual native selections exercised all eleven IDs,
+search, submenu Back, close, sheet expansion and restricted Space attachments.
+Drag dismissal was not conclusively verified by desktop automation; physical
+camera, photo/file-provider, barcode and swipe acceptance remain pending.
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing/tester availability were not polled and no
+public App Store submission was changed. Receipt: docs/plans/mobile208-release.json.
 
 ## November 8 — Reference light palette uploaded (PR370)
 
