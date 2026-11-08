@@ -1,9 +1,21 @@
-## November 8 — Reference light palette (active)
+## November 8 — Reference light palette uploaded (PR370)
 
-Owner: current Codex, branch `style/light-reference207`. Apply screenshot-sampled
-light colors only: #F6F7F9 canvas, #FFFFFF surfaces, #202226 primary, #70757D
-secondary, #E6E8EC borders, #EEF0F3 soft selections. Preserve layout, behavior,
-dark mode and backend/web. Preparing TestFlight 207.
+Apple acknowledged TestFlight 1.1.2 (207), delivery `aa8f2f11-860e-4d81-b2b4-6ae34eb6c393`.
+Light colors match the supplied screenshots: #F6F7F9 canvas, white surfaces,
+#202226 primary text, #70757D secondary text, #E6E8EC borders and #EEF0F3 soft
+selections. Shared Flutter controls and native Settings/Notifications use the
+palette. Layout, typography, behavior, dark mode, backend and web are unchanged.
+
+Runtime `1c18ad4d49f0fcafe36c7a48f7604850e359ddda`. All five exact-commit CI jobs passed
+(run 42526622012); 1,347 Flutter tests / 1 existing skip and clean analysis.
+Nineteen native simulator checks passed; light/dark screenshots inspected,
+including unobstructed native Settings and Founders Access on a clean simulator.
+The Space search test submits the existing native Search action before checking
+lazy rows, avoiding a keyboard-obscured assertion without changing app behavior.
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing and tester availability were not polled;
+physical iPhone acceptance remains pending. No public App Store submission.
+Receipt: `docs/plans/mobile207-release.json`.
 
 ## November 8 — Overly crowded wording uploaded (PR369)
 
