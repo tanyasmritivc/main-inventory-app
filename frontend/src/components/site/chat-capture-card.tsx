@@ -84,7 +84,7 @@ export function CaptureScan({photo, steps, stopped, failed, onClose, onRetry}: {
       <div className={scan.side}>
         <div className={scan.live}><span className={!failed ? scan.spinner : undefined}/><span role="status">{status}</span><details className={scan.steps}><summary>Steps <ChevronDown size={14}/></summary><ol>{steps.map((step, i) => <li key={i}>{i < steps.length - 1 ? <Check size={13}/> : <span>···</span>}{step.replaceAll("…", "...")}</li>)}</ol></details></div>
         {!failed && <div className={scan.track} role="progressbar" aria-label="Extraction progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(captureProgress(steps) * 100)} aria-valuetext={status}><i style={{transform: `scaleX(${captureProgress(steps)})`}}/></div>}
-        <p className={scan.safe}>Nothing is saved until you review and approve.</p>
+        <p className={scan.safe}>Nothing is saved until you choose Save.</p>
         {failed ? <button className={scan.button} onClick={onRetry}><RefreshCw size={15}/> Scan again</button> : <div className={scan.placeholders} aria-hidden="true">{[0,1,2].map(n => <div key={n}><span/><div><i/><i/></div></div>)}</div>}
       </div>
     </div>
@@ -176,6 +176,7 @@ export function ChatCaptureCard({
                     ? {
                         revision: draft.revision,
                         allow_duplicates: allowDuplicates,
+                        confirm_items: true,
                       }
                     : { revision: draft.revision, changes },
               }
@@ -260,10 +261,10 @@ export function ChatCaptureCard({
         </div>
       </div>
       <div className={scan.footer}>
-        <div><p>{draft.items.length} candidates. Review identities and quantities before saving.</p>{!!missing.length && <p role="status">Add a quantity for {missing.map(r => r.item.name).join(", ")}, or uncheck those items to save the rest.</p>}{!inventories.length && <p>Create an inventory and Space in chat, or ask an owner for edit access, then reopen this draft.</p>}</div>
+        <div><p>{draft.items.length} candidates. Save as-is or edit identities and quantities.</p>{!!missing.length && <p role="status">Uncounted items keep 1 as a placeholder. You can edit them after saving.</p>}{!inventories.length && <p>Create an inventory and Space in chat, or ask an owner for edit access, then reopen this draft.</p>}</div>
         <div className={scan.footerActions}>
           <DropdownMenu><DropdownMenuTrigger asChild><button className={draft.space_id ? scan.chip : scan.button} disabled={frozen || !!fixedDestination} aria-label="Choose a Space">{draft.space_id ? draft.location || inventories.flatMap(i => i.spaces).find(space => space.id === draft.space_id)?.name || "Choose a Space" : "Choose a Space"}<ChevronDown size={14}/></button></DropdownMenuTrigger><DropdownMenuContent side="top" align="end" sideOffset={8} className={scan.spaceMenu}>{inventories.map(i => <div key={i.inventory_id}><DropdownMenuLabel>{i.name}</DropdownMenuLabel>{i.spaces.map(space => <DropdownMenuItem key={space.id} onSelect={() => void act("PATCH", {inventory_id: i.inventory_id, space_id: space.id})}>{space.name}{draft.space_id === space.id && <Check size={14}/>}</DropdownMenuItem>)}</div>)}{!inventories.length && <DropdownMenuLabel>No editable Spaces</DropdownMenuLabel>}</DropdownMenuContent></DropdownMenu>
-          {draft.space_id && <button className={scan.button} disabled={busy || refreshRequired || missing.length > 0 || !draft.items.some(i => i.selected) || (duplicates && !allowDuplicates)} onClick={() => void act("POST")}>{busy ? "Working..." : draft.status === "saving" ? "Continue saving this draft" : "Confirm and save"}</button>}
+          {draft.space_id && <button className={scan.button} disabled={busy || refreshRequired || !draft.items.some(i => i.selected) || (duplicates && !allowDuplicates)} onClick={() => void act("POST")}>{busy ? "Working..." : draft.status === "saving" ? "Continue saving this draft" : "Confirm and save"}</button>}
         </div>
       </div>
       {duplicates && <label className={scan.notice}><input type="checkbox" checked={allowDuplicates} onChange={e => setAllowDuplicates(e.target.checked)}/> Save these as separate items despite possible matches</label>}
