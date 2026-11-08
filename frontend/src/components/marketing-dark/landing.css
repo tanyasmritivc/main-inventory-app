@@ -29,6 +29,25 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark .mnav.on{display:flex}
 .landing-dark .mnav #mnsol{display:flex;flex-direction:column}.landing-dark .mnav a{display:block;font-size:24px;letter-spacing:-.02em;padding:14px 0;border-bottom:1px solid var(--line)}
 .landing-dark .mnav small{color:var(--tx3);font-size:13px;margin-top:22px}
+/* Community navigation */
+.landing-dark .community{position:relative;flex:none}
+.landing-dark .community-trigger{height:36px;padding:0 10px;border-radius:18px;display:flex;align-items:center;gap:5px;color:var(--tx2);white-space:nowrap}
+.landing-dark .community-trigger:hover,.landing-dark .community-trigger[aria-expanded="true"]{color:var(--tx);background:rgba(255,255,255,.06)}
+.landing-dark .community-trigger[aria-expanded="true"]>svg{transform:rotate(180deg)}
+.landing-dark .community-panel{position:absolute;top:100%;right:0;width:256px;padding-top:8px}
+.landing-dark .community-panel[hidden]{display:none}
+.landing-dark .community-links{padding:6px;border:1px solid var(--line2);border-radius:16px;background:var(--card);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.landing-dark .community-links a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;font-size:14px;letter-spacing:normal;border:0}
+.landing-dark .community-links a:hover{background:var(--soft)}
+.landing-dark .community-links a>span:not(.community-sr){flex:1}
+.landing-dark .community-links strong{display:block;font-weight:500;color:var(--tx)}
+.landing-dark .community-links small{display:block;font-size:12px;color:var(--tx2);margin:2px 0 0}
+.landing-dark .community-links svg{flex:none;color:var(--tx2)}
+.landing-dark .community-trigger:focus-visible,.landing-dark .community-links a:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+.landing-dark .community-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.landing-dark .mnav .community-trigger{width:100%;height:auto;padding:14px 0;border-radius:0;border-bottom:1px solid var(--line);font-size:24px;letter-spacing:-.02em;justify-content:space-between;color:var(--tx)}
+.landing-dark .mnav .community-panel{position:static;width:100%;padding:8px 0}
+@media (max-width:1100px){.landing-dark nav.top .nl,.landing-dark nav.top .btn.s{display:none}.landing-dark nav.top .ib{display:grid}}
 /* hero + bins */
 .landing-dark .hero{position:relative;min-height:100vh;display:flex;align-items:center;text-align:center;padding:120px 0 80px;overflow:hidden;background:#000}
 .landing-dark .hero.short{min-height:88vh}
