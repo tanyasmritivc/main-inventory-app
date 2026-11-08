@@ -1,3 +1,7 @@
+## Landing heading sizes (November 7, 2026)
+
+Active on `style/landing-smaller-headings`, isolated `findez-community-nav` checkout. Reduce only the home hero and home audience heading sizes, including mobile. User withdrew the requested fade-in; preserve existing motion. One runtime stylesheet; deploy through a guarded overlay of the current release.
+
 ## November 7 — extraction202 (web, deployed)
 
 ## API docs appearance (November 7, 2026)
