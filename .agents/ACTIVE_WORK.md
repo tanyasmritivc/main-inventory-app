@@ -1,3 +1,9 @@
+## November 7 — Space questions204 deployed (PR359)
+
+Runtime `1320b7cb004c2a9aa79daff24d07e86e4f359e1e` is live after all five CI gates passed. Contextual Ask reads fresh items in the actual Space, supports photo/file questions without Auto Extract, and allows complete answers beyond the legacy 500-token limit. Private history is actor/inventory/Space-bound. Main chat, extraction, existing legacy Space service and schema are unchanged.
+
+Verification: 1,563 local backend tests; 18 production-candidate tests; real text and photo questions completed; temporary QA history was removed. Four runtime files changed and 144 existing Python files were preserved. Public/API/database health and anonymous denial passed. Mobile PR360/build204 provides the client binding; physical acceptance remains pending. See docs/plans/space-chat204-release.json.
+
 ## November 7 - dense photo extraction (deployed)
 
 Owner: current Codex task, branch fix/dense-photo-extraction. Shared backend adaptive overlapping photo passes, conservative duplicate merging and original-source crops. Preserve all save/destination/account contracts, main chat and client UI. No database change. Runtime 7df17223 deployed healthy after all five CI gates; 1,545 local tests and 57 candidate tests passed. One-file overlay preserved 145 other Python files. Real photo checked without saving inventory; see docs/plans/dense-photo-extraction.md and dense-photo-release.json. PR358.

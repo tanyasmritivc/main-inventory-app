@@ -1,0 +1,84 @@
+{
+  "source_commit": "1320b7cb004c2a9aa79daff24d07e86e4f359e1e",
+  "deployed_at_utc": "2026-11-08T04:56:09Z",
+  "runtime_files": {
+    "app/api/router.py": "29567a51e9ea5c0a813f00fbe91944fb8db630ea803529051465c61e4297aa08",
+    "app/api/routes/inventory_workspaces.py": "ffe5cda7e9c8d63bea65558e1c8db96fbfa22209af79505bc97f72328489655f",
+    "app/api/routes/space_chat.py": "51b5f05c53f48cd8ae7ae3be64fc3e7b2c002a33aad5277d994744f50a07036c",
+    "app/services/space_questions.py": "0db24c9b5697f4bb29b24c98431c024dfb0ca54dd976c2333ab21feb6a07b75a"
+  },
+  "existing_python_files_preserved": 144,
+  "checks": {
+    "health": 200,
+    "database_health": 200,
+    "unauth_chat": 401,
+    "unauth_history": 401
+  },
+  "database_schema_changed": false,
+  "main_chat_and_extraction_files_unchanged": true,
+  "ci": {
+    "conclusion": "success",
+    "headSha": "1320b7cb004c2a9aa79daff24d07e86e4f359e1e",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "name": "Backend (Python)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "Web (Jest)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "API permissions (PostgreSQL)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "AI connectors (MCP and Actions)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "Mobile (Flutter)",
+        "status": "completed"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42448533394"
+  },
+  "live_text_check": {
+    "schema_read_ok": true,
+    "spaces_checked": [
+      {
+        "space_id_hash": "be4786951bbd",
+        "count": 0,
+        "partial": false
+      },
+      {
+        "space_id_hash": "5b140208fd9e",
+        "count": 164,
+        "partial": false
+      }
+    ],
+    "answer_completed": true,
+    "answer_chars": 1641,
+    "seconds": 8.49,
+    "inventory_writes": false,
+    "conversation_writes": false
+  },
+  "live_photo_history_check": {
+    "history_create_list_read_save": true,
+    "cross_space_history_excluded": true,
+    "photo_answer_completed": true,
+    "empty_space_count": 0,
+    "photo_answer_chars": 1341,
+    "photo_seconds": 20.88,
+    "inventory_writes": false,
+    "qa_conversation_removed": true
+  },
+  "public_health": "https://findez.openstack.ftctools.com/health returned 200",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/359"
+}
