@@ -1,3 +1,7 @@
+## Landing rose headline (November 7, 2026)
+
+Active on `style/landing-rose-gradient`. User chose muted rose/plum from the Workshops card for the main home headline. Keep the new smaller sizing and existing word entrance. One runtime stylesheet; readable fallback and forced-colors support.
+
 ## Landing heading sizes (November 7, 2026)
 
 Published `db2a5c1f` on `style/landing-smaller-headings` (PR #362). Home hero maximum 68px → 54px; audience heading 48px → 36px; phone sizes 30px / 26px. User withdrew the requested fade-in; existing motion preserved. One runtime stylesheet changed; 518 other source/public files and backend preserved. Production build/TypeScript and 14 staged/live routes pass. Desktop and 390px mobile visually checked. Full Jest 546 pass / same 65 baseline failures. Release `headings-20261107`, build `56nRJF2kHt9gzLuOisbW7`. Receipt: `docs/plans/landing-headings-release.json`.
