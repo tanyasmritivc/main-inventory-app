@@ -17,6 +17,7 @@ class NativeBottomTabs extends StatefulWidget {
     required this.onSelected,
     this.onScan,
   });
+  static const selectionLead = Duration(milliseconds: 220);
   final int selected;
   final ValueChanged<int> onSelected;
   final VoidCallback? onScan;
@@ -26,8 +27,39 @@ class NativeBottomTabs extends StatefulWidget {
 
 class _NativeBottomTabsState extends State<NativeBottomTabs> {
   MethodChannel? _channel;
+  Timer? _selectionTimer;
+  int? _pendingSelection;
+
+  void _cancelPending() {
+    _selectionTimer?.cancel();
+    _selectionTimer = null;
+    _pendingSelection = null;
+  }
+
+  void _select(int index) {
+    _cancelPending();
+    if (index == widget.selected) {
+      unawaited(_configure());
+      return;
+    }
+    // UIKit has already moved its selected item. Keep that optimistic selection
+    // during unrelated rebuilds, then let the retained page follow it.
+    _pendingSelection = index;
+    final reduced =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    _selectionTimer = Timer(
+      reduced ? Duration.zero : NativeBottomTabs.selectionLead,
+      () {
+        if (!mounted || _pendingSelection != index) return;
+        _cancelPending();
+        widget.onSelected(index);
+      },
+    );
+  }
+
   Map<String, Object> get _configuration => {
-    'selected': widget.selected,
+    'selected': _pendingSelection ?? widget.selected,
     'scanEnabled': widget.onScan != null,
     'dark': Theme.of(context).brightness == Brightness.dark,
     'reduceMotion':
@@ -41,6 +73,7 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
   @override
   void didUpdateWidget(NativeBottomTabs oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.selected != widget.selected) _cancelPending();
     unawaited(_configure());
   }
 
@@ -52,6 +85,7 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
 
   @override
   void dispose() {
+    _cancelPending();
     _channel?.setMethodCallHandler(null);
     super.dispose();
   }
@@ -70,16 +104,15 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
         _channel!.setMethodCallHandler((call) async {
           if (!mounted) return;
           if (call.method == 'scan') {
+            _cancelPending();
+            unawaited(_configure());
             widget.onScan?.call();
             return;
           }
           if (call.method != 'selected') return;
           final index = call.arguments;
-          if (index is int &&
-              index >= 0 &&
-              index < 2 &&
-              index != widget.selected) {
-            widget.onSelected(index);
+          if (index is int && index >= 0 && index < 2) {
+            _select(index);
           }
         });
         unawaited(_configure());

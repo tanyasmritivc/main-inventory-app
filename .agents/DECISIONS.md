@@ -1,3 +1,14 @@
+## November 8 — Native selection leads page changes; scan display is UIKit
+
+The user now wants the navigation selection to move before the page changes,
+superseding the October24 immediate-callback rule. Keep UITabBar system-rendered
+and allow its selection a 220ms lead before switching retained pages. Rapid
+retarget, Add and disposal cancel pending switches; Reduce Motion has no wait.
+Active Auto Extract display uses UIKit only on iOS. Flutter still owns all request,
+region, cancellation, draft/review/edit/save and fixed-Space destination state.
+The bridge never receives credentials or performs networking. Completed drafts
+continue through the existing review UI; no inference or save behavior changes.
+
 ## November 8 — Screenshot light palette supersedes earlier light values
 
 Use the exact colors sampled from IMG_3227–3229: #F6F7F9 background, white cards,

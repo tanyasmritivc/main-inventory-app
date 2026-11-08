@@ -842,6 +842,7 @@ class _WorldShellState extends State<WorldShell> {
                     constraints: const BoxConstraints(maxWidth: 400),
                     child: usesNativeBottomTabs
                         ? NativeBottomTabs(
+                            key: ValueKey('world-tabs-$_world'),
                             selected: _tab,
                             onScan: _openScan,
                             onSelected: (index) => setState(() => _tab = index),

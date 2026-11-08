@@ -1,3 +1,7 @@
+## November 8 - Native scan progress209 (active)
+
+Owner: current Codex, branch feat/native-scan209. Let native tab selection lead page changes, and render active Auto Extract progress in UIKit while retaining existing requests, region evidence, cancellation, draft/review/edit/save and Space destination behavior. Mobile only; no backend/web or extraction-model changes.
+
 ## November 8 — Native chat source menu uploaded (PR372)
 
 Apple acknowledged TestFlight 1.1.2 (208), delivery `f113e230-48c2-4a0b-a1cd-4050cee6082e`.

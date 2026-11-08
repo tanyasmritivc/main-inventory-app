@@ -1,3 +1,18 @@
+## Native scan progress and tab timing (209)
+
+Run `flutter test test/native_bottom_tabs_test.dart test/native_scan_progress_test.dart
+test/space_capture_entry_test.dart test/chat_capture_card_test.dart`, full Flutter tests
+and analysis. Tab checks cover the 220 ms selection lead, unrelated rebuilds,
+rapid return, Add and disposal. Scan channel checks preserve region evidence,
+monotonic progress, bounded history, appearance and single cancellation.
+Run `flutter test integration_test/native_scan_progress_test.dart -d <ios-device>`
+for actual UIKit creation/update/disposal in light/dark, 2.6x text and a compact
+320x260 viewport. Use `tool/native_scan_visual.dart` for manual native Steps,
+scrolling, Stop and tab selection. This fixture makes no API or inventory writes.
+Physical TestFlight acceptance must check a real scan, Stop, draft/edit/save,
+Space destination, VoiceOver and keyboard; simulator presentation is not proof
+of physical device acceptance or scan latency.
+
 ## Post-auth welcome sequencing (201)
 
 Run provider_signup_test, launch_notification_permission_test, native_account_menu_test,

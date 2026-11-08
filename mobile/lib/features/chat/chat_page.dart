@@ -1,3 +1,4 @@
+import 'native_scan_progress.dart';
 import '../scan/native_scan_camera.dart';
 import '../../core/ui/native_presentation.dart';
 import '../../core/chat_question.dart';
@@ -3288,96 +3289,115 @@ class _ChatPageState extends State<ChatPage>
           (_previewPhoto == null ? .64 : .78),
     ),
     child: LayoutBuilder(
-      builder: (context, bounds) => _capturePreviewSurface(
-        bounds,
-        Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding:
-                    bounds.maxHeight < 160 ||
-                        MediaQuery.viewInsetsOf(context).bottom > 0
-                    ? const EdgeInsets.fromLTRB(18, 0, 10, 0)
-                    : const EdgeInsets.fromLTRB(18, 10, 10, 8),
-                child: Row(
+      builder: (context, bounds) =>
+          _scanningPreview && _previewPhoto != null && usesNativeScanProgress
+          ? SizedBox(
+              height: bounds.maxHeight,
+              child: NativeScanProgress(
+                image: _previewPhoto!,
+                message: _progress ?? 'Reading your photo...',
+                regions: _scanRegions,
+                onStop: _closeCapturePreview,
+              ),
+            )
+          : _capturePreviewSurface(
+              bounds,
+              Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      CupertinoIcons.viewfinder,
-                      size: 21,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Padding(
+                      padding:
+                          bounds.maxHeight < 160 ||
+                              MediaQuery.viewInsetsOf(context).bottom > 0
+                          ? const EdgeInsets.fromLTRB(18, 0, 10, 0)
+                          : const EdgeInsets.fromLTRB(18, 10, 10, 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.viewfinder,
+                            size: 21,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Review extraction',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: _scanningPreview
+                                ? 'Stop scanning'
+                                : _previewDraft == null
+                                ? 'Cancel extraction'
+                                : 'Keep draft in chat',
+                            icon: const Icon(CupertinoIcons.xmark, size: 18),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: .05),
+                              minimumSize: const Size(44, 44),
+                            ),
+                            onPressed: _closeCapturePreview,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Review extraction',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w400,
+                    if (_previewPhoto != null && bounds.maxHeight > 200)
+                      ScanPhotoFrame(
+                        image: _previewPhoto!,
+                        scanning: _scanningPreview,
+                        regions: _scanningPreview ? _scanRegions : const [],
+                        height: _scanningPreview
+                            ? math.min(
+                                300,
+                                math.max(64, bounds.maxHeight - 200),
+                              )
+                            : math.min(
+                                128,
+                                math.max(48, bounds.maxHeight - 330),
+                              ),
+                      ),
+                    if (_scanningPreview)
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: ExtractionProgressPanel(
+                            message: _progress ?? 'Reading your photo...',
+                            regions: _scanRegions,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: _scanningPreview
-                          ? 'Stop scanning'
-                          : _previewDraft == null
-                          ? 'Cancel extraction'
-                          : 'Keep draft in chat',
-                      icon: const Icon(CupertinoIcons.xmark, size: 18),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: .05),
-                        minimumSize: const Size(44, 44),
+                    if (_previewDraft != null && _currentConversationId != null)
+                      Flexible(
+                        child: ChatCaptureCard(
+                          key: _previewKey,
+                          api: widget.api,
+                          conversationId: _currentConversationId!,
+                          draft: _previewDraft!,
+                          embedded: true,
+                          photo: _previewPhoto,
+                          disabled: _scanningPreview,
+                          onChanged: _onCaptureChanged,
+                          onSaved: () {
+                            _controller.clear();
+                            _publishPreview();
+                            widget.onInventoryMutated?.call();
+                          },
+                        ),
                       ),
-                      onPressed: _closeCapturePreview,
-                    ),
                   ],
                 ),
               ),
-              if (_previewPhoto != null && bounds.maxHeight > 200)
-                ScanPhotoFrame(
-                  image: _previewPhoto!,
-                  scanning: _scanningPreview,
-                  regions: _scanningPreview ? _scanRegions : const [],
-                  height: _scanningPreview
-                      ? math.min(300, math.max(64, bounds.maxHeight - 200))
-                      : math.min(128, math.max(48, bounds.maxHeight - 330)),
-                ),
-              if (_scanningPreview)
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: ExtractionProgressPanel(
-                      message: _progress ?? 'Reading your photo...',
-                      regions: _scanRegions,
-                    ),
-                  ),
-                ),
-              if (_previewDraft != null && _currentConversationId != null)
-                Flexible(
-                  child: ChatCaptureCard(
-                    key: _previewKey,
-                    api: widget.api,
-                    conversationId: _currentConversationId!,
-                    draft: _previewDraft!,
-                    embedded: true,
-                    photo: _previewPhoto,
-                    disabled: _scanningPreview,
-                    onChanged: _onCaptureChanged,
-                    onSaved: () {
-                      _controller.clear();
-                      _publishPreview();
-                      widget.onInventoryMutated?.call();
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+            ),
     ),
   );
 

@@ -41,6 +41,7 @@ import UserNotifications
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.applicationRegistrar
     registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
+    registrar.register(NativeScanProgressFactory(messenger: registrar.messenger()), withId: "com.findez.app/scan-progress")
     registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     registrar.register(NativeControlFactory(messenger: registrar.messenger()), withId: "com.findez.app/toolbar-control")
     assistantNetwork = AssistantNetwork(messenger: registrar.messenger())
