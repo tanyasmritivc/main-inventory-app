@@ -1,5 +1,9 @@
 ## November 7 — extraction202 (web, deployed)
 
+## Plans hero label (November 7, 2026)
+
+Published `bd667868` on `fix/plans-hero-label` (PR #355). Removed the small grey Plans label above the /pricing hero. One runtime file changed; 518 others and backend preserved. ESLint, production build, 9 routes and live browser verification pass. Release `plans-label-20261107`, build `rSbPdy6fndelFDyqNmLBU`. Receipt: `docs/plans/plans-label-release.json`.
+
 ## Landing Community navigation (November 7, 2026)
 
 Published on `feat/landing-community-menu` in the isolated `findez-community-nav` worktree. Shared marketing header now has a dark Community dropdown for Discord and @findezai Instagram. Desktop hover, keyboard/Escape and touch tests pass (3); desktop and 390px mobile preview verified. Typecheck, changed-file lint, production webpack build and 9 staged routes pass. Full Jest: 539 pass / 65 fail; unchanged parent: 536 pass / the same 65 failures. Follow-up `ed113572` balances the dropdown: 176px width, matching single-line rows, no subtitles or social icons, and 44px mobile targets. Release `community-compact-20261107` is live; build `1_bo0AWPmobXVGTGRnkT9`. Focused tests, lint, production build and 9 live route checks pass; 517 other runtime files and the backend preserved. Receipt: `docs/plans/community-navigation-release.json`.
