@@ -28,4 +28,6 @@ No backend, web, chat response or extraction-model changes are included.
 - This UI-only release did not rerun provider latency benchmarks. Previous live
   response/scan timings are not a promise of constant provider speed.
 
-Release/CI receipts will be recorded after signing and Apple upload acknowledgment.
+Apple acknowledged TestFlight 1.1.2 (209), delivery `9282a1de-61c3-4219-ba0e-d9f5b71e820c`.
+All five CI jobs passed for runtime `bfa12c13774fb7035b4dc0d56282d9fa9b0bf0b2` (run42535411676).
+Processing/tester availability was not polled. See `mobile209-release.json`.
