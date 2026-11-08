@@ -9,7 +9,7 @@ import sitemap from '@/app/sitemap';
 test('renders public documentation, every endpoint, and working section anchors without authentication', () => {
   const { container } = render(<ApiDocs />);
   expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Build with your inventory.');
-  expect(endpoints).toHaveLength(12);
+  expect(endpoints).toHaveLength(20);
   for (const endpoint of endpoints) {
     const section = container.querySelector(`#${endpoint.operationId}`);
     expect(section).not.toBeNull();

@@ -26,8 +26,8 @@ function fixture() {
   });
   return { request: request as unknown as SetupRequest, calls: request, orgs, workspaces, inventories, writes, fail: (path: string, afterCommit = false) => { failPath = path; failAfterCommit = afterCommit; } };
 }
-test("signup routes to onboarding while preserving consent/recovery", () => {
-  expect(signupDestination("/home")).toBe("/onboarding"); expect(signupDestination("/inventory")).toBe("/onboarding");
+test("signup routes to the world chooser while preserving consent/recovery", () => {
+  expect(signupDestination("/home")).toBe("/worlds"); expect(signupDestination("/inventory")).toBe("/worlds");
   expect(signupDestination("/join/access/ABC123?download=1")).toBe("/join/access/ABC123?download=1"); expect(signupDestination("/reset-password")).toBe("/reset-password");
 });
 test("draft resumes exact step, answers and account-bound receipts", () => {
