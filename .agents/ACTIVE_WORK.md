@@ -1,6 +1,8 @@
-## November 7 — Space chat204 mobile (active)
+## November 7 — Space chat204 uploaded (PR360)
 
-Bind contextual Ask to actual Space ID/name; preserve main chat. Attach images/documents/spreadsheets as question evidence without Auto Extract. Validation/build pending; companion API lane fix/space-chat204-api.
+Apple acknowledged TestFlight 1.1.2 (204), delivery `0214c63e-ec28-4cf7-89ec-6fd538a1d815`. Runtime `54d706fd20bd030ff316bec932d83c54ea3d9f7c`; all five CI gates passed in run 42448114591. 1,347 Flutter tests passed / 1 existing skip, analysis clean, nine native iOS simulator checks passed. Signed archive/export verified device-only arm64, production configuration, 33 binaries each and 27 privacy manifests. Physical iPhone acceptance remains pending; processing and tester availability were not polled. No public App Store submission.
+
+Contextual Ask uses the persistent Space ID/name and fresh Space-only records, with photo/file questions and no Auto Extract. Main chat and extraction remain unchanged. Companion backend runtime 1320b7cb is deployed healthy (PR359). Receipt: docs/plans/mobile204-release.json.
 
 ## November 7 - light-theme203 uploaded
 
