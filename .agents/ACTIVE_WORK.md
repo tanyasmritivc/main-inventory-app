@@ -1,3 +1,18 @@
+## November 7 — repair200 uploaded
+
+Apple acknowledged TestFlight 1.1.2 (200), delivery `97d95078-21f8-46f3-8c8a-65095b5faea6`. Runtime `57cc953d`, PR346. All five exact-commit CI jobs passed (42424952291). Processing and tester availability were not polled; physical iPhone acceptance remains pending. Public App Store unchanged.
+
+Space photo extraction reuses main capture components with fixed destination. Inventory spreadsheets save directly without Review and retain original columns. Light backgrounds #F6F8F9 and raised surfaces white. Main chat/photo behavior protected. Companion backend PR345 and web PR347 are deployed; server disk has about 17 GB free. Receipt: docs/plans/mobile200-release.json.
+
+## November 7 — mobile repair200 verified
+
+Flutter 1332 pass / 1 skip; analysis clean; 11 native checks passed. Fixed Space extraction, direct spreadsheet imports and light palette. Main chat/photo behavior protected. Build200 signing/upload pending. See docs/plans/capture-import200-mobile.md.
+
+## November 7 — capture/import repair200 (active)
+
+Owner: current Codex task. Mobile chat deletion, Space-bound capture/imports and light palette. Main chat/photo extraction are protected except spreadsheet routing.
+Implementation and verification are in progress; nothing from this lane is deployed yet.
+
 ## November 7 - Contextual chat build199 uploaded
 
 Runtime `0f63e89e`, PR344, branch `fix/scoped-chat199`.

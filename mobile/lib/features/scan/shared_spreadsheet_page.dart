@@ -24,7 +24,7 @@ class SharedSpreadsheetPage extends StatefulWidget {
 }
 
 class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
-  late Future<List<String>> _spacesFuture;
+  late Future<List<Map<String, dynamic>>> _spacesFuture;
   final _newSpaceController = TextEditingController();
   bool _creatingSpace = false;
 
@@ -42,24 +42,19 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
     super.dispose();
   }
 
-  Future<List<String>> _loadSpaces() async {
+  Future<List<Map<String, dynamic>>> _loadSpaces() async {
     final rows = await widget.api.listSpaces();
-    final names =
-        rows
-            .map((row) => (row['name'] ?? '').toString().trim())
-            .where((name) => name.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    return names;
+    return rows.where((row) => (row['id'] ?? '').toString().isNotEmpty).toList()
+      ..sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
   }
 
-  Future<void> _importInto(String location) async {
+  Future<void> _importInto(Map<String, dynamic> space) async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ImportSheetPage(
           api: widget.api,
-          location: location,
+          location: space['name'].toString(),
+          spaceId: space['id'].toString(),
           initialFilePath: widget.filePath,
           initialFilename: _filename,
         ),
@@ -75,10 +70,9 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
     setState(() => _creatingSpace = true);
     try {
       final created = await widget.api.createSpace(name: name);
-      final location = (created['name'] ?? name).toString().trim();
       if (!mounted) return;
       Navigator.of(context).pop();
-      await _importInto(location);
+      await _importInto(created);
     } catch (error) {
       if (!mounted) return;
       final message = describeError(error).$1;
@@ -137,7 +131,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(title: const AppText('Import to FindEZ')),
       body: SafeArea(
-        child: FutureBuilder<List<String>>(
+        child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _spacesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
@@ -152,7 +146,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
               );
             }
 
-            final spaces = snapshot.data ?? const <String>[];
+            final spaces = snapshot.data ?? const <Map<String, dynamic>>[];
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
@@ -216,7 +210,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                         leading: const Icon(Icons.inventory_2_outlined),
-                        title: AppText(space),
+                        title: AppText(space['name'].toString()),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => _importInto(space),
                       ),

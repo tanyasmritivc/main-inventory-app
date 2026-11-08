@@ -3021,35 +3021,7 @@ class _ChatPageState extends State<ChatPage>
         _sources.addAll(result);
       });
     } else if (selected == 'spreadsheet') {
-      final proceed = await showModalBottomSheet<bool>(
-        context: context,
-        showDragHandle: true,
-        builder: (context) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Import inventory', style: TextStyle(fontSize: 22)),
-                const SizedBox(height: 12),
-                const Text(
-                  'Choose a CSV or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(CupertinoIcons.folder),
-                  label: const Text('Choose spreadsheet'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      if (mounted && generation == _requestGeneration && proceed == true) {
-        await _captureSource(selected);
-      }
+      await _captureSource(selected);
     } else {
       await _captureSource(selected);
     }

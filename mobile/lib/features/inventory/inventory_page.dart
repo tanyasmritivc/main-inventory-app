@@ -604,7 +604,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ImportSheetPage(api: widget.api, location: _location),
+        builder: (_) => ImportSheetPage(
+          api: widget.api,
+          location: _location,
+          spaceId: widget.spaceId,
+        ),
       ),
     );
     if (imported != true) return;
@@ -1306,7 +1310,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     required String subtitle,
     required VoidCallback onTap,
   }) => Material(
-    color: const Color(0xFFF5F5F5),
+    color: Theme.of(context).brightness == Brightness.light
+        ? Colors.white
+        : const Color(0xFFF5F5F5),
     borderRadius: BorderRadius.circular(32),
     clipBehavior: Clip.antiAlias,
     child: InkWell(

@@ -439,6 +439,8 @@ class ApiClient {
     required String location,
     String kind = 'inventory',
     String? shareId,
+    String? spaceId,
+    bool direct = false,
   }) async {
     assertCurrentContext();
     final response = await _dio.post<Map<String, dynamic>>(
@@ -447,6 +449,8 @@ class ApiClient {
         'file': file,
         'location': location,
         'kind': kind,
+        if (direct) 'direct': true,
+        if (spaceId != null) 'space_id': spaceId,
         if (shareId != null) 'share_id': shareId,
       }),
       options: _longRunningOptions(),
@@ -470,7 +474,7 @@ class ApiClient {
     );
     assertCurrentContext();
     final result = response.data ?? {};
-    if (action == 'commit') {
+    if (action == 'commit' || action == 'import') {
       final counts = result['counts'];
       if (result['id'] != id ||
           !['complete', 'importing'].contains(result['status']) ||

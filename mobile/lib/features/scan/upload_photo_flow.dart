@@ -13,6 +13,7 @@ import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
 import 'capture_progress.dart';
 import 'review_capture.dart';
+import 'space_extraction_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 String _normalizeCategory(String rawCategory) {
@@ -290,6 +291,23 @@ Future<void> runUploadPhotoFlow({
   final rawBytes = await x.readAsBytes();
   if (!context.mounted) return;
   final bytes = rawBytes;
+
+  if (api.inventoryContext != null &&
+      preselectedSpaceId != null &&
+      barcodeToAssociate == null) {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => SpaceExtractionPage(
+          api: api,
+          bytes: bytes,
+          spaceId: preselectedSpaceId,
+          spaceName: preselectedSpace,
+        ),
+      ),
+    );
+    if (saved == true && context.mounted) await onItemsSaved();
+    return;
+  }
 
   final sourceRoute = ModalRoute.of(context);
   bool isCurrent() => sourceRoute?.isCurrent ?? true;
