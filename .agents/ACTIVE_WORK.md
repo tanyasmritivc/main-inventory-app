@@ -1,9 +1,18 @@
-## November 8 - Photo scan timing notice (in progress)
+## November 8 — Photo scan timing notice uploaded (PR369)
 
-Copy-only mobile lane `copy/photo-scan-timing-mobile`. Shared photo source choices,
-attachment menu and extraction progress explain that crowded photos can take
-around4 minutes and smaller groups are quicker. No barcode/question-only notice,
-request or extraction behavior changes. Preparing TestFlight205.
+Apple acknowledged TestFlight 1.1.2 (205), delivery `9dc4936b-bf94-42bf-a41f-9fa37d6e0dd3`.
+Runtime `be99348c32b1f2f2c21f663f94d8ebffcaa4b1dd`; all five exact-commit CI jobs passed in run
+42513270916. Flutter: 1,347 passed / 1 existing skip; analysis clean. Four native
+simulator checks and eight small-screen/large-text checks passed. Light/dark
+progress screenshots inspected. Signed archive and export verified: production
+configuration, 33 device binaries each and 27 privacy manifests. Processing and
+tester availability were not polled. Physical iPhone acceptance remains pending.
+
+Photo-scan choices and shared main/Space progress now say “Crowded photos can take
+around 4 minutes.” Choices also suggest smaller groups for quicker results. Photo
+source sheets scroll at large text sizes, keeping choices before explanatory copy.
+No AI requests, saving, barcode or ordinary chat behavior changes. No public App
+Store submission. Receipt: `docs/plans/mobile205-release.json`.
 
 ## November 7 — Space chat204 uploaded (PR360)
 
