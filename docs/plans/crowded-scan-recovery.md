@@ -1,0 +1,14 @@
+# Crowded scan recovery
+
+Production diagnostics confirmed first-pass model ReadTimeout failures. Previously a failed full-photo grounding request aborted extraction before close-ups could run. Large photos now recover from a timed-out, unavailable or invalid overview by trying the existing overlapping source sections. The failed full-frame request is not repeated. Successful sections become editable candidates with explicit partial-coverage evidence, source-coordinate crops and existing unknown-count rules.
+
+The existing 240-second inference budget, 90-second identity reserve and four grounding workers remain unchanged. Small/simple successful scans keep their existing path. When every recovery section fails or no time remains, the original error is retained rather than presenting an empty successful scan. No schema, provider, main-chat, save/destination or client-contract changes.
+
+Deployed November 8, runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f`, PR371. All five CI gates and 63 isolated candidate tests passed. Focused tests cover overview timeout/invalid responses, section failures, shared deadlines, source geometry and counts. Local full backend suite: 1,574 passed. Isolated candidate HTTP checks: crowded reference photo returned 60 candidate regions in 241.2 seconds (34 unknown identities); regular photo returned six in 41.4 seconds (two unknown). Both delivered a durable draft and terminal done event; keepalive gaps were at most ten seconds. No inventory was saved; disposable account and 68 images were removed. These are individual measurements, not guarantees of speed, completeness or identification accuracy. A separate injected-overview-failure probe checks recovery with real smaller-section inference.
+
+
+A separate injected overview timeout, with 130 seconds left after simulating the first 110 seconds, recovered eight partial candidate regions through real section inference in 53.2 seconds (five identified, three unknown). The probe made no inventory/storage writes.
+
+Live public HTTPS acceptance: crowded photo completed in 241.1 seconds with 70 candidate regions (50 unknown); regular charger photo completed in 40.1 seconds with four identified regions. Both produced crops, scan evidence, a durable draft and terminal done event. Maximum keepalive gap was 10.1 seconds. Invalid authentication was denied. No inventory was saved; disposable account and 76 images were removed. The 240-second inference deadline excludes upload/persistence overhead and is not an end-to-end four-minute guarantee.
+
+Guarded one-file deployment checked the full live Python snapshot before installation, retained rollback, restarted healthy and preserved all 147 unrelated Python sources. Rollback source remains on the server under `/home/ubuntu/findez-crowded-recovery/rollback-glm_extraction.py`. No database changes. Detailed sanitized receipt: `crowded-scan-recovery-release.json`.

@@ -1,3 +1,9 @@
+## November 8 - Crowded scan recovery deployed (PR371)
+
+Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.
+
+Validation: 1,574 local tests and 63 production-candidate tests. Forced overview failure followed by real section inference recovered eight partial candidates in 53.2 seconds of remaining work. Live HTTPS crowded/regular scans completed with durable drafts/done in 241.1/40.1 seconds; crowded output had 70 candidate regions, 50 unidentified, and regular output four identified regions. No inventory writes; disposable account and 76 test images removed. Identification completeness and latency remain variable. See docs/plans/crowded-scan-recovery.md and crowded-scan-recovery-release.json.
+
 ## November 8 - Regular scan scheduling deployed (PR365)
 
 Runtime `35129bf5` reads up to four detected crops individually within one four-worker wave; larger scans keep their original batches. This is not an object cap. All five CI gates, 1,568 local tests and 62 production-candidate tests passed. The exact-source HTTP preview completed in 32.0s with a durable draft/done event and disposable-data cleanup. One-file guarded deployment is healthy and preserves 147 other Python files. Main chat, web/mobile UI, saving and schema are unchanged. Timing remains variable and the user's loading report was not reproduced. See docs/plans/regular-scan-responsiveness.md; production HTTPS acceptance also completed in 46.6s, with draft/photos/done, anonymous denial and QA cleanup verified.
