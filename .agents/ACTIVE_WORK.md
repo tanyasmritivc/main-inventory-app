@@ -1,3 +1,7 @@
+## Landing ambient grid (November 7, 2026)
+
+Active on `style/landing-ambient-grid`. Restore white home headline; transfer rose/plum to individually timed highlighted bins. Add a continuously upward-moving dot grid to the home Founders invitation, concentrated at bottom-right with a fixed fading mask. Reduced motion stays static.
+
 ## Landing rose headline (November 7, 2026)
 
 Published `4d174d43` on `style/landing-rose-gradient` (PR #363). Main home headline uses muted rose/plum inspired by the Workshops card. Smaller sizing and existing word entrance preserved. One runtime stylesheet; solid fallback and forced-colors support. Safari/Chrome visual review, production build/TypeScript and 14 staged/live routes pass; Jest 546 pass / same 65 baseline failures. 518 unrelated source/public files and backend preserved. Release `rose-headline-20261107`, build `w-_ZfVBX2CRchdGh9VSYg`. Receipt: `docs/plans/landing-rose-gradient-release.json`.
