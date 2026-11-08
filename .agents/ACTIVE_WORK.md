@@ -1,6 +1,6 @@
-## November 7 — extraction202 (web, active)
+## November 7 — extraction202 (web, deployed)
 
-Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Verification/release in progress.
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Published extraction-20261107, PR351; eight route checks pass, 546 unrelated files preserved.
 
 ## November 7 - provider signup201 deployed
 
