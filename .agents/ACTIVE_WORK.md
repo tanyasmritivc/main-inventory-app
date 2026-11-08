@@ -1,3 +1,15 @@
+## Solution detail section cleanup (November 8, 2026)
+
+Deployed on `fix/solution-page-trim` through the existing self-hosted web release
+method. Removed the numbered help section and audience carousel from Robotics,
+Workshops, Makerspaces and Engineering Labs detail pages. Preserved the main
+Solutions grid, landing carousel and Everyday page. Removed the founder quote
+and attribution from the marketing data and renderer. Public source/assets and
+built browser bundles have no founder-name matches. Production webpack build and
+13 live route checks passed; 524 other source/public files and backend unchanged.
+Release: `solution-trim-20261108`, build `m_dwDM1_d29I8SobxXlUp`.
+Receipt: `docs/plans/solution-page-trim-release.json`. No unfinished work.
+
 # Active work
 
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not

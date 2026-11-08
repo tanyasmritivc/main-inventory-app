@@ -1,0 +1,24 @@
+{
+  "built": true,
+  "unchanged_files": 524,
+  "build_id": "m_dwDM1_d29I8SobxXlUp",
+  "published": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/solutions/workshops": 200,
+    "/solutions/robotics": 200,
+    "/solutions/engineering-labs": 200,
+    "/solutions/makerspaces": 200,
+    "/solutions/everyday": 200,
+    "/founders": 200,
+    "/research": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/docs/api": 200
+  },
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/solution-trim-20261108/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/research-find-20261108-final/frontend"
+}
