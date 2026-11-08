@@ -9,10 +9,47 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 import json
+import atexit
+from contextlib import contextmanager
+from threading import Lock
 
 import httpx
 
 from app.core.config import get_settings
+
+
+# Connections are shared, never credentials/conversations/cookies. Reuse removes
+# a DNS/TCP/TLS setup from each model/tool turn and each parallel crop batch.
+_transport_lock = Lock()
+_transport_client = None
+
+
+def _without_cookies(request):
+    request.headers.pop('cookie', None)
+
+
+@contextmanager
+def _connection():
+    global _transport_client
+    with _transport_lock:
+        if _transport_client is None or _transport_client.is_closed:
+            _transport_client = httpx.Client(
+                limits=httpx.Limits(max_connections=64, max_keepalive_connections=16, keepalive_expiry=30),
+                event_hooks={'request': [_without_cookies]},
+            )
+        client = _transport_client
+    yield client
+
+
+def _close_transport():
+    global _transport_client
+    with _transport_lock:
+        if _transport_client is not None:
+            _transport_client.close()
+            _transport_client = None
+
+
+atexit.register(_close_transport)
 
 
 def _as_namespace(value: Any) -> Any:
@@ -41,20 +78,24 @@ class _Completions:
         payload = dict(kwargs)
         payload["stream"] = bool(payload.get("stream"))
         if payload["stream"]:
+            # Omitted tools selects the gateway's managed-agent mode, which
+            # buffers its final action. An explicit empty list requests a raw
+            # streamed completion with no tools; supplied tool schemas stay intact.
+            payload.setdefault("tools", [])
             return self._stream(payload, extra_headers)
-        with httpx.Client(timeout=self._owner.timeout) as client:
+        with _connection() as client:
             response = client.post(
                 self._owner.url,
                 headers={**self._owner.headers, **extra_headers},
-                json=payload,
+                json=payload, timeout=self._owner.timeout,
             )
         response.raise_for_status()
         return _as_namespace(response.json())
 
     def _stream(self, payload: dict, extra_headers: dict):
-        with httpx.Client(timeout=self._owner.timeout) as client:
+        with _connection() as client:
             with client.stream("POST", self._owner.url,
-                    headers={**self._owner.headers, **extra_headers}, json=payload) as response:
+                    headers={**self._owner.headers, **extra_headers}, json=payload, timeout=self._owner.timeout) as response:
                 response.raise_for_status()
                 if 'text/event-stream' not in response.headers.get('content-type', ''):
                     raise RuntimeError('The model gateway did not return an event stream')

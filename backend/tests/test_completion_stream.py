@@ -53,7 +53,7 @@ def test_http_stream_parses_multiline_utf8_and_closes_without_buffering():
     http = MagicMock()
     http.__enter__.return_value = http
     http.stream.return_value = response
-    with patch('app.services.agent_gateway_client.get_settings', return_value=settings), patch('app.services.agent_gateway_client.httpx.Client', return_value=http):
+    with patch('app.services.agent_gateway_client.get_settings', return_value=settings), patch('app.services.agent_gateway_client._connection', return_value=http):
         events = AgentGatewayClient().chat.completions.create(stream=True, messages=[])
         assert next(events).choices[0].delta.content == '🔧'
         response.__exit__.assert_not_called()
@@ -68,7 +68,7 @@ def test_http_stream_requires_final_receipt_not_silent_eof():
     response.headers = {'content-type': 'text/event-stream'}
     response.iter_lines.return_value = iter([])
     http = MagicMock(); http.__enter__.return_value = http; http.stream.return_value = response
-    with patch('app.services.agent_gateway_client.get_settings', return_value=NS(findez_agent_base_url='https://fixture.test', findez_agent_key='fixture')), patch('app.services.agent_gateway_client.httpx.Client', return_value=http):
+    with patch('app.services.agent_gateway_client.get_settings', return_value=NS(findez_agent_base_url='https://fixture.test', findez_agent_key='fixture')), patch('app.services.agent_gateway_client._connection', return_value=http):
         with pytest.raises(RuntimeError, match='without completion'):
             list(AgentGatewayClient().chat.completions.create(stream=True))
 

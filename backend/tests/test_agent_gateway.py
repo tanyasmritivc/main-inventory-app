@@ -17,7 +17,7 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     http.__enter__.return_value = http
     http.__exit__.return_value = False
     http.post.return_value = response
-    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), patch('app.services.agent_gateway_client.httpx.Client', return_value=http):
+    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), patch('app.services.agent_gateway_client._connection', return_value=http):
         client = AgentGatewayClient()
         result = client.chat.completions.create(model='deepseek-v4-flash-agent', messages=[{'role': 'user', 'content': 'Hello'}], stream=False, extra_headers={'X-Agent-Conversation-ID': 'conversation-123'})
     response.raise_for_status.assert_called_once_with()
@@ -35,10 +35,10 @@ def test_bounded_photo_timeout_is_local_and_does_not_change_normal_gateway_timeo
     http = MagicMock()
     http.__enter__.return_value = http
     http.post.return_value = response
-    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), patch('app.services.agent_gateway_client.httpx.Client', return_value=http) as client:
+    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), patch('app.services.agent_gateway_client._connection', return_value=http) as client:
         gateway_completion(messages=[{'role': 'user', 'content': 'labels'}], conversation_id='photo', request_timeout_seconds=12)
         assert AgentGatewayClient().timeout.read == 180
-    timeout = client.call_args.kwargs['timeout']
+    timeout = http.post.call_args.kwargs['timeout']
     assert timeout.read == timeout.connect == timeout.write == timeout.pool == 12
     assert 'request_timeout_seconds' not in http.post.call_args.kwargs['json']
 
@@ -80,3 +80,25 @@ def test_legacy_memory_extraction_does_not_promote_answers_or_call_gateway():
         asyncio.run(extract_and_save_memory('user-1', 'Where are the M4 screws?', 'Invented fact'))
     gateway.assert_not_called()
     database.assert_not_called()
+
+
+def test_connection_pool_reuses_connections_without_sharing_request_identity():
+    import httpx
+    from app.services import agent_gateway_client as gateway
+    gateway._close_transport()
+    seen=[]
+    def respond(request):
+        seen.append(request)
+        return httpx.Response(200,json={'choices':[{'message':{'content':'ok'}}]},headers={'set-cookie':'session=other-user'})
+    real=httpx.Client(transport=httpx.MockTransport(respond),event_hooks={'request':[gateway._without_cookies]})
+    try:
+        with patch.object(gateway.httpx,'Client',return_value=real) as create, patch.object(gateway,'get_settings',return_value=_settings()):
+            for thread in ['first','second']:
+                gateway.gateway_completion(messages=[],conversation_id=thread)
+        assert create.call_count==1 and not real.is_closed
+        assert [r.headers['X-Agent-Conversation-ID'] for r in seen]==['first','second']
+        assert all('cookie' not in r.headers for r in seen)
+        assert all(r.extensions['timeout']['read']==180 for r in seen)
+    finally:
+        gateway._close_transport()
+    assert real.is_closed

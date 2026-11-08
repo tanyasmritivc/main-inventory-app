@@ -235,3 +235,13 @@ def test_route_does_not_treat_a_failed_quota_read_as_zero(store):
          patch.object(routes, 'get_supabase_admin', side_effect=ConnectionError), pytest.raises(HTTPException) as error:
         routes.inventory_bulk_create_route(payload, AuthenticatedUser('owner'))
     assert error.value.status_code == 503 and store.rows == []
+
+
+def test_save_as_is_retains_uncounted_note_and_receipt_on_retry(store):
+    item=draft(scan_evidence={'quantity_basis':'unknown','needs_review':True}, notes='Original detail.')
+    first=capture_save.save_capture_items(user_id='owner',items=[item])
+    assert not first[1]
+    assert 'uncounted' in first[0][0]['notes'] and 'Original detail.' in first[0][0]['notes']
+    assert first[0][0]['quantity']==1
+    assert capture_save.save_capture_items(user_id='owner',items=[item])==first
+    assert store.insert_calls==1

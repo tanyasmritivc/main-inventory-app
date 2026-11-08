@@ -54,8 +54,24 @@ def automatic_rows(tables, *, filename, destination):
             item['name'] = item.get('name') or item.get('part_number') or f"{table['name']} — row {number}"
             item['category'] = item.get('category') or 'Supplies'
             item['location'] = destination['name']
+            raw_quantity = item.get('quantity', '')
+            # Real supplier sheets use missing-value markers. Retain the cell in
+            # import_data and an explicit note; do not reject every other row or
+            # pretend that an unknown count has been measured.
+            missing_quantity = raw_quantity.casefold().strip().strip('()').strip() in {
+                '', 'missing', 'n/a', 'na', 'null', 'none', 'unknown', '-', '—', '?',
+            }
+            if missing_quantity:
+                item['notes'] = ('Quantity is uncounted; 1 is a placeholder. Edit it when known. '
+                                 + item.get('notes', '')).strip()
+            # A trailing + is a lower bound, not an exact count. Keep that
+            # distinction in notes as well as the original imported cell.
+            lower_bound = re.fullmatch(r'([0-9]+)\s*\+', raw_quantity)
+            if lower_bound:
+                item['notes'] = (f'Imported quantity is at least {lower_bound[1]} ({raw_quantity}); exact count is unknown. '
+                                 + item.get('notes', '')).strip()
             try:
-                qty = Decimal(item.get('quantity') or '1')
+                qty = Decimal('1' if missing_quantity else lower_bound[1] if lower_bound else raw_quantity)
                 if not qty.is_finite() or qty != qty.to_integral_value() or not 0 <= qty <= 100000:
                     raise ValueError()
                 item['quantity'] = int(qty)
