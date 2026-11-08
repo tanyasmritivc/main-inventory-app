@@ -1,4 +1,4 @@
-export const PHOTO_SCAN_TIMING = "Crowded photos can take around 4 minutes.";
+export const PHOTO_SCAN_TIMING = "Overly crowded photos can take around 4 minutes.";
 export const PHOTO_SCAN_TIP = "For quicker results, photograph smaller groups of items.";
 
 export function PhotoScanHint({ tips = true }: { tips?: boolean }) {

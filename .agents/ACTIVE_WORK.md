@@ -1,3 +1,8 @@
+## November 8 — Scan notice wording correction (active)
+
+User correction: “Overly crowded photos can take around 4 minutes.” Shared notice
+only; preparing website update and mobile build 206.
+
 ## November 7 — extraction202 (web, deployed)
 
 Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Published extraction-20261107, PR351; eight route checks pass, 546 unrelated files preserved.
