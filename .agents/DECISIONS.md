@@ -1,3 +1,7 @@
+## November 7 - Crowded photos use source-coordinate close-ups
+
+Extra grounding views are adaptive and bounded within the existing scan deadline. Map each view into the oriented uploaded source before deduplication or crops. Multiple observations never imply additional quantity; occluded/group counts remain unknown. Preserve overview detections on partial close-up failure and disclose incomplete coverage. Simple photos keep one grounding pass.
+
 ## November 7 — explicit Save accepts photo candidates as-is
 
 User requests no mandatory quantity entry or Review. An explicit save may accept unknown identity/count while retaining original evidence and an uncounted placeholder note. This does not confirm a measured quantity. Spreadsheet missing markers and lower bounds retain original cells and visible explanatory notes. No low fixed object count may truncate photo grounding.

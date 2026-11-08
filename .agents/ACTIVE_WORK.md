@@ -1,3 +1,7 @@
+## November 7 - dense photo extraction (active)
+
+Owner: current Codex task, branch fix/dense-photo-extraction. Shared backend adaptive overlapping photo passes, conservative duplicate merging and original-source crops. Preserve all save/destination/account contracts, main chat and client UI. No database change. Validation and deployment pending.
+
 ## November 7 — extraction202 (backend, deployed)
 
 Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-backend.md. Full suite 1,529 passed; live candidate 125 passed, real scan completed with 22 objects. Six-file deployment healthy; 140 unrelated Python files preserved; PR352.
