@@ -1,6 +1,6 @@
 ## Landing ambient grid (November 7, 2026)
 
-Active on `style/landing-ambient-grid`. Restore white home headline; transfer rose/plum to individually timed highlighted bins. Add a continuously upward-moving dot grid to the home Founders invitation, concentrated at bottom-right with a fixed fading mask. Reduced motion stays static.
+Published `a9bb3545` on `style/landing-ambient-grid` (PR #364). Restored white home headline; transferred rose/plum to individually timed highlighted bins. Home Founders invitation has a continuously upward-moving dot grid, concentrated at bottom-right with a fixed fading mask; reduced motion stays static. Safari hero and Chrome dot-grid visual checks, changed-file ESLint, production build/TypeScript and 14 staged/live routes pass. Jest 546 pass / same 65 baseline failure identities. Two runtime files changed; 517 other source/public files and backend preserved. Release `ambient-grid-20261107`, build `w4Sm-fXc2Fe2EHOGd-m4K`. Receipt: `docs/plans/landing-ambient-grid-release.json`.
 
 ## Landing rose headline (November 7, 2026)
 
