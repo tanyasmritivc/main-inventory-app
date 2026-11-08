@@ -11,14 +11,15 @@
     "/worlds/personal": 200,
     "/settings/plans": 200
   },
-  "unchanged_files": 518,
-  "build_id": "WqGMBNnQEJrI3yorjipn0",
+  "unchanged_files": 517,
+  "build_id": "1_bo0AWPmobXVGTGRnkT9",
   "published": true,
   "backend_unchanged": true,
-  "release": "/home/ubuntu/findez-web-releases/community-simple-20261107/frontend",
-  "previous_release": "/home/ubuntu/findez-web-releases/community-20261107/frontend",
-  "source_commit": "62b8d52c",
+  "release": "/home/ubuntu/findez-web-releases/community-compact-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/community-simple-20261107/frontend",
+  "source_commit": "ed113572",
   "focused_tests": 3,
   "changed_file_lint": true,
-  "change": "Remove social icons and external-link arrows; remove Instagram subtitle"
+  "desktop_preview_verified": true,
+  "change": "Compact 176px dropdown with equal single-line rows; mobile links retain 44px minimum height"
 }
