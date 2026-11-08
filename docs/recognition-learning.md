@@ -90,3 +90,20 @@ Never run that fixture on production. Unit tests stub network I/O. Five legacy
 regression tests fail unchanged against the production snapshot because their
 fixtures predate small-scan batching and capture revision changes; they are recorded
 separately and excluded from the passing compatibility run.
+
+## Deployment receipt, 2026-11-08
+
+Implementation commit `2f1c18b3` is pushed to `feat/recognition-learning` and deployed
+to the configured self-hosted backend using the allowlisted overlay above. Migration
+085 applied before activation; the `findez` systemd service restarted successfully.
+The release and backups are at `/home/ubuntu/findez-recognition-learning-20261108`.
+All seven deployed hashes match the tested payload. Local and public `/health` and
+`/health/db` checks pass. The existing personalization cleanup timer is active and
+its last service execution succeeded. Both new tables have RLS enabled, authenticated
+clients cannot read them or execute the dataset function, and an unauthorized
+context request returns no data. Initial observations and examples both count zero.
+
+Validation: 99 relevant unit/compatibility checks passed, with five pre-existing
+failures reproduced against the unchanged live snapshot and excluded. The isolated
+PostgreSQL fixture passed, including privacy, correction receipts, Forget, revoked
+access, retention, and holdout separation. No accuracy improvement is yet measured.

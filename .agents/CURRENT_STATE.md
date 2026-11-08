@@ -2,6 +2,18 @@
 
 Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 release.
 
+## Recognition update verified 2026-11-08
+
+This scoped update supersedes the older recognition and review-queue statements
+below. Production now uses GLM extraction and has a durable Review resolution path.
+Commit `2f1c18b3` adds private correction-example retrieval to that deployed path,
+plus migration 085, retention/forget handling, and a held-out evaluation command.
+Confirmed identity corrections from new scoped scans can inform later recognition
+for the same actor and inventory when memory is enabled. This is not model-weight
+training. The initial learning dataset is empty and no accuracy gain is established.
+The seven-file overlay, both health endpoints, database access controls, and cleanup
+timer were verified after deployment. See `docs/recognition-learning.md`.
+
 ## Working and deployed
 
 - The self-hosted backend, web app, Supabase database, Auth, and Storage are the

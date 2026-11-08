@@ -23,4 +23,4 @@ No task-specific handoff is registered in `.agents/HANDOFFS/` as of 2026-09-22.
 
 ## Recognition correction learning, 2026-11-08
 
-Backend implementation on `feat/recognition-learning`. Retain server-side predictions, collect confirmed identity corrections, retrieve private examples within the same actor/inventory, and evaluate fixed held-out cases. Production snapshot is the compatibility baseline; older architecture notes predate the deployed GLM extraction route. No client redesign or model-weight training is included in the first deployment.
+Deployed and verified on `feat/recognition-learning`, implementation commit `2f1c18b3`. Migration 085 and the seven-file backend overlay are live. Both health endpoints, deployed checksums, RLS, service-only access, and the existing cleanup timer passed verification. New observations/examples are initially empty. The production snapshot remains the compatibility baseline; do not replace the live checkout wholesale. No client redesign or model-weight training is included. See `docs/recognition-learning.md` for evaluation and rollback instructions.

@@ -2,6 +2,17 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-11-08: Use private reviewed examples before model-weight training
+
+Confirmed identity corrections may supply at most two reference photos in the
+existing GLM identification request. They remain actor/inventory scoped, honor
+memory and Forget, and expire after 90 days. Reference labels never override
+current quantity or location. Reserve source-image groups for evaluation and
+exclude duplicate crops from reference/holdout overlap. Require at least 30
+held-out corrections before evaluation; never automatically promote a model or
+claim measured improvement from collection counts. Actual fine-tuning requires
+separate training infrastructure and evidence. See `docs/recognition-learning.md`.
+
 ## 2026-08-22: Production is self hosted
 
 **Decision:** Run the backend, web app, database, Auth, and Storage on the OpenStack
