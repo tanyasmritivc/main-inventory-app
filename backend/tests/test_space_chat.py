@@ -8,7 +8,7 @@ from zipfile import ZipFile
 import pytest
 from fastapi import HTTPException
 from PIL import Image
-from app.services import space_chat as service
+from app.services import space_questions as service
 from app.services.inventory_scope import InventoryScope, current_inventory
 from app.services.chat_sources import FileSource
 from app.api.routes import space_chat as route

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.limiter import limiter
 from app.api.routes.ai import _authorized_stream
-from app.services import space_chat as service
+from app.services import space_questions as service
 from app.services.chat_sources import FileSource, MAX_BYTES, MAX_TOTAL_TEXT
 from app.services.completion_stream import async_iterate
 from app.services.item_photos import _jpeg_bytes
