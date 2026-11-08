@@ -20,6 +20,7 @@ async def extract_inventory_items(
     user_id=None,
     source_frame_url=None,
     on_progress=None,
+    on_regions=None,
 ):
     settings = get_settings()
     if settings.findez_extraction_provider == "find":
@@ -39,6 +40,7 @@ async def extract_inventory_items(
             user_id,
             source_frame_url,
             **({"on_progress": on_progress} if on_progress else {}),
+            **({"on_regions": on_regions} if on_regions else {}),
         )
     except Exception as error:
         logging.getLogger(__name__).warning("Photo extraction failed: %s", type(error).__name__)

@@ -50,6 +50,12 @@ def save_capture_items(*, user_id: str, items: list[dict], max_new_items: int | 
             continue
         seen.add(item_id)
         payload = {key: item.get(key) for key in _FIELDS}
+        # Evidence remains in the draft; keep the unknown count visible on the
+        # saved item too. Saving is acceptance of the draft, not a counted stock.
+        evidence = item.get('scan_evidence') or {}
+        if evidence.get('quantity_basis') == 'unknown':
+            note = 'Quantity is uncounted; 1 is a placeholder. Edit it when known.'
+            payload['notes'] = (note + ' ' + (payload.get('notes') or '')).strip()[:2000]
         for key in ('name', 'category', 'location'):
             payload[key] = str(payload.get(key) or '').strip()
         if not all(payload[key] for key in ('name', 'category', 'location')):

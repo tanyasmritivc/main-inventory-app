@@ -1,3 +1,7 @@
+## November 7 — extraction202 (backend, active)
+
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-backend.md. Full suite 1,529 passed; live candidate 125 passed, real scan completed with 22 objects. Six-file deployment pending.
+
 ## November 7 — backend repair200 deployed
 
 Production deployed and healthy; five files changed, 141 unrelated Python files preserved. Database health 200; unauthenticated direct import returns 401. Full production-candidate tests: 64 passed. No schema changes. PR345.

@@ -85,3 +85,20 @@ def test_uploaded_screenshot_key_is_safe_ascii_and_bounded(filename, monkeypatch
     assert re.fullmatch(r'actor/[A-Za-z0-9._-]+', image.path)
     assert len(image.path) <= 200
     assert client.storage.from_.return_value.upload.call_args.args[1] == b'image'
+
+
+@pytest.mark.parametrize('value', ['', '(missing)', '(N/A)', 'unknown', ' ', '—'])
+def test_supplier_missing_quantity_retains_row_original_cell_and_explicit_note(value):
+    result=rows(f'Name,Qty\nScrew,2\nNut,{value}\nBolt,3'.encode())
+    assert len(result)==3
+    item=result[1]['item']
+    assert item['quantity']==1 and 'uncounted' in item['notes']
+    assert item['import_data']['fields'][1]['value'] == value
+    assert item['space_id']=='space-fixed'
+
+
+def test_supplier_lower_bound_is_retained_in_details_and_notes():
+    item=rows(b'Name,Qty\nWashers,50+')[0]['item']
+    assert item['quantity']==50
+    assert 'at least 50' in item['notes']
+    assert item['import_data']['fields'][1]['value']=='50+'

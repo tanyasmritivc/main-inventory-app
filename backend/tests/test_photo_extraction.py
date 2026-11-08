@@ -268,7 +268,7 @@ def test_partial_part_number_is_not_accepted_from_a_longer_label():
     assert item["part_number"] is None
 
 
-def test_network_timeout_does_not_retry_an_inflight_paid_request():
+def test_read_timeout_does_not_duplicate_a_still_running_inference():
     import httpx
 
     with patch.object(
@@ -530,3 +530,62 @@ def test_unknown_contents_never_become_a_package_size_or_dosage_count():
     assert result["quantity"] == 1
     assert result["scan_evidence"]["quantity_basis"] == "unknown"
     assert result["scan_evidence"]["quantity_unit"] is None
+
+
+def test_all_24_regions_are_read_without_an_eight_item_ceiling():
+    import threading
+    import time
+    boxes = [dict(label=f'Object {i}', box=[(i % 6)*160, (i//6)*240, (i%6)*160+140, (i//6)*240+220]) for i in range(24)]
+    grounding = g._parse_result(json.dumps({'items': boxes, 'partial': False}), g.Grounding)
+    assert len(grounding.items) == 24
+    lock = threading.Lock()
+    active = peak = 0
+    def model(prompt, images, schema):
+        nonlocal active, peak
+        if schema is g.Grounding: return grounding
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        try:
+            time.sleep(.01)
+            pairs = re.findall(r'"index": (\d+), "candidate": "Object (\d+)"', prompt)
+            return g.Identities(items=[g.Identity(index=int(i), name=f'Object {n}', category='Tools', uncertainty='Verify.') for i,n in pairs])
+        finally:
+            with lock: active -= 1
+    updates=[]
+    with patch.object(g, '_json', side_effect=model):
+        result=g.extract(image_bytes(), None, None, on_regions=updates.append)
+    assert [i['name'] for i in result['items']] == [f'Object {i}' for i in range(24)]
+    assert result['summary']['total_detected'] == 24
+    assert result['summary']['partial'] is False
+    assert peak == g.DETAIL_WORKERS
+    assert len(updates[0]['regions']) == 24
+    assert {r['id'] for event in updates[1:] for r in event['states'] if r['state']=='checked'} == set(range(24))
+
+
+def test_grounding_recovers_once_from_transient_first_attempt_failure():
+    import httpx
+    response=NS(choices=[NS(message=NS(content='{"items": [], "partial": false}'))])
+    with patch.object(g, 'gateway_completion', side_effect=[httpx.ConnectError('first'), response]) as call:
+        assert g._json('test', [image_bytes()], g.Grounding).items == []
+    assert call.call_count == 2
+    assert call.call_args.kwargs['tools'] == []
+
+
+def test_permanent_model_error_is_not_retried():
+    import httpx
+    error=httpx.HTTPStatusError('denied', request=httpx.Request('POST','https://test.invalid'), response=httpx.Response(401))
+    with patch.object(g, 'gateway_completion', side_effect=error) as call:
+        with pytest.raises(httpx.HTTPStatusError): g._json('test', [], g.Grounding)
+    assert call.call_count == 1
+
+
+def test_valid_slow_model_call_has_bounded_time_without_early_40_second_cutoff():
+    reply=NS(choices=[NS(message=NS(content='{"items": [], "partial": false}'))])
+    token=g._deadline.set(g.time.monotonic()+240)
+    try:
+        with patch.object(g,'gateway_completion',return_value=reply) as call:
+            g._json('test',[],g.Grounding)
+        assert call.call_args.kwargs['request_timeout_seconds']==110
+        assert call.call_args.kwargs['max_tokens']==20000
+    finally:g._deadline.reset(token)

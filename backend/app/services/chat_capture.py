@@ -230,7 +230,7 @@ def duplicate_links(owner, inventory_id, selected):
     return world.resource_links({'items': list(found.values())})
 
 
-def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
+def save(actor, key, cid, capture_id, revision, allow_duplicates=False, *, confirm_items=False):
     from app.services import world_chat as world
     from app.services.spaces_repo import list_spaces
     from app.services.review_queue import enqueue_uncertain_items
@@ -249,7 +249,7 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
         raise HTTPException(422, 'Choose an inventory and a Space before saving.')
     selected = [r for r in draft['items'] if r['selected']]
     unknown = unknown_quantity_indices(draft)
-    if any(row['index'] in unknown for row in selected):
+    if not (confirm_items or draft.get('items_confirmed')) and any(row['index'] in unknown for row in selected):
         raise HTTPException(422, 'Confirm the missing quantities in your draft before saving.')
     if not selected:
         raise HTTPException(422, 'Select at least one extracted item.')
@@ -264,6 +264,10 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
             if duplicates and not allow_duplicates:
                 raise HTTPException(409, {'code': 'capture_duplicates', 'message': 'Possible matches already exist. Open them, or explicitly save these as separate items.', 'resource_links': duplicates})
             draft['status'] = 'saving'
+            # Freeze explicit preview acceptance with the destination and IDs.
+            # Retries cannot move the same item between Review and inventory.
+            # Original model evidence remains unchanged in the saved draft.
+            draft['items_confirmed'] = bool(confirm_items)
             replace(cid, row, draft)
             row = {**row, 'answer_context': {**row['answer_context'], 'chat_capture': deepcopy(draft)}}
         # Frozen details + stable IDs: a partial/lost response can only finish the
@@ -274,7 +278,9 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
         for entry in batch:
             item = {**entry['item'], 'location': draft['location'],
                     'client_request_id': f"chat_{draft['id']}_{entry['index']}"}
-            if (item.get('scan_evidence') or {}).get('needs_review'):
+            if entry['index'] in unknown and draft.get('items_confirmed'):
+                item['scan_evidence'] = {**(item.get('scan_evidence') or {}), 'quantity_basis': 'unknown'}
+            if (item.get('scan_evidence') or {}).get('needs_review') and not draft.get('items_confirmed', False):
                 queued = enqueue_uncertain_items(user_id=inv['owner_user_id'],
                     source_digest=f"chat-{draft['id']}-{entry['index']}", items=[item])[0]
                 reviews.append({'index': entry['index'], 'review_id': queued['review_id']})
@@ -351,13 +357,18 @@ def attach_created_destination(actor, key, action):
         return None
     row = load(actor, key, binding['conversation_id'], binding['capture_id'])
     draft = row['answer_context']['chat_capture']
-    if (draft['status'] != 'draft' or draft.get('space_id') or
-            draft.get('summary', {}).get('described_place') != binding.get('place')):
-        return None
     links = [link for link in action.get('receipt', {}).get('resource_links', [])
              if link.get('kind') == 'space' and
              str(link.get('label', '')).strip().casefold() == binding['place'].strip().casefold()]
     if len(links) != 1:
+        return None
+    if binding.get('revision') is not None and draft.get('space_id') == links[0]['id'] and draft.get('inventory_id') == links[0]['inventory_id']:
+        # A lost response can retry the same creation receipt without creating a
+        # second destination or changing the frozen capture's idempotency key.
+        return draft
+    if (draft['status'] != 'draft' or draft.get('space_id') or
+            (binding.get('revision') is not None and draft['revision'] != binding['revision']) or
+            (binding.get('revision') is None and draft.get('summary', {}).get('described_place') != binding.get('place'))):
         return None
     return edit(actor, key, binding['conversation_id'], draft['id'], draft['revision'],
                 {'inventory_id': links[0]['inventory_id'], 'space_id': links[0]['id']})

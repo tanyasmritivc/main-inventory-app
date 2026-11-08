@@ -1,3 +1,7 @@
+## November 7 — explicit Save accepts photo candidates as-is
+
+User requests no mandatory quantity entry or Review. An explicit save may accept unknown identity/count while retaining original evidence and an uncounted placeholder note. This does not confirm a measured quantity. Spreadsheet missing markers and lower bounds retain original cells and visible explanatory notes. No low fixed object count may truncate photo grounding.
+
 ## October 25 — Evidence-based personalization without new UI
 
 Keep behavioral learning opt-in under the existing Memory master control. Use

@@ -388,3 +388,17 @@ def test_photo_unknown_counts_block_save_until_confirmed_even_for_legacy_drafts(
     assert c.facts(updated)['items'][0]['quantity'] == 8
     assert updated['items'][0]['item']['scan_evidence']['quantity_basis'] == 'user_confirmed'
     assert not store.bulk.called
+
+
+def test_explicit_save_as_is_keeps_unknown_count_without_review_or_quantity_edit(store):
+    draft=destination(c.create(ACTOR,WORLD,CID,[{'name':'Resistors','category':'Electronics','quantity':1,
+        'scan_evidence':{'quantity_basis':'unknown','needs_review':True}}], 'photo'))
+    saved=c.save(ACTOR,WORLD,CID,draft['id'],draft['revision'],confirm_items=True)
+    assert saved['status']=='saved' and saved['receipt']['review_count']==0
+    assert saved['items_confirmed'] is True
+    assert saved['items'][0]['item']['scan_evidence']['quantity_basis']=='unknown'
+    store.review.assert_not_called()
+    submitted=store.bulk.call_args.args[0].items[0]
+    assert submitted.quantity==1 and submitted.scan_evidence.quantity_basis=='unknown'
+    c.save(ACTOR,WORLD,CID,draft['id'],draft['revision'],confirm_items=True)
+    assert store.bulk.call_count==1
