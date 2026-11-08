@@ -105,6 +105,9 @@ void main() {
           expect(find.byType(TextField), findsOneWidget);
           if (!empty) {
             await tester.enterText(find.byType(TextField), 'Washer');
+            // Submit the native keyboard's Search action before checking the
+            // lazy list; a software keyboard can otherwise cover its rows.
+            await tester.testTextInput.receiveAction(TextInputAction.search);
             await tester.pumpAndSettle();
             expect(find.text('Screws'), findsNothing);
             expect(find.text('Washers'), findsOneWidget);
