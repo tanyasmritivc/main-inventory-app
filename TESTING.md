@@ -1,3 +1,14 @@
+## Post-auth welcome sequencing (201)
+
+Run provider_signup_test, launch_notification_permission_test, native_account_menu_test,
+announcements_test and space_chat_layout_test, then the full Flutter suite and analyzer.
+Provider HTTP/channel fixtures verify Google and first-authorization Apple names without
+requiring typed names. Permission fixtures hold the OS callback open through inactivity
+and verify both Allow and Deny before the welcome campaign can claim/present. Native
+welcome_sequence_test and space_chat_layout_test exercise iOS rendering and navigation.
+Physical Google/Apple authorization and fresh-install OS permission choice require device
+acceptance; mocks do not certify provider configuration or APNs delivery.
+
 ## Plans and extraction details (194)
 
 Run the full Flutter suite and analyzer. Existing Plans and plan-introduction tests

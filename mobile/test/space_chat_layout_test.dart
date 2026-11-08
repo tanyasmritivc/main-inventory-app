@@ -61,6 +61,22 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(find.byType(TextField), findsNothing);
+          for (final label in ['Review', 'Low quantity']) {
+            final pill = find
+                .ancestor(of: find.text(label), matching: find.byType(Material))
+                .first;
+            expect(
+              tester.widget<Material>(pill).color,
+              const Color(0xFFF6F8F9),
+            );
+            expect(tester.getSize(pill).height, greaterThanOrEqualTo(44));
+            expect(tester.getSize(pill).height, lessThan(60));
+            expect(
+              find.descendant(of: pill, matching: find.byType(Icon)),
+              findsNothing,
+            );
+          }
+          expect(find.text('Items to finish'), findsNothing);
           final ask = find.text('Ask FindEZ');
           expect(ask.hitTestable(), findsOneWidget);
           expect(

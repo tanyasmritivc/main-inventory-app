@@ -254,7 +254,7 @@ Future<void> showNativeAccountMenu(
         page = MemoryPage(api: api);
       case 'plans':
         await openAnnouncementPlan(context, api);
-        continue;
+        return;
       case 'privacy':
         page = const PrivacyPolicyPage();
       case 'terms':

@@ -1,3 +1,13 @@
+## November 7 - welcome201 uploaded
+
+Apple acknowledged TestFlight 1.1.2 (201), delivery a6dba605-93b6-495a-b0da-db76b7cc1fe0. Runtime 6a4002d1, PR348. All five exact-commit CI jobs passed (42430591240). Processing and tester availability were not polled; physical iPhone OAuth/permission acceptance remains pending. Public App Store unchanged.
+
+Google/Apple signup uses provider profile names; iOS permission choice precedes eligible welcome announcements; plan dismissal does not reopen Settings; compact #F6F8F9 text-only Space action pills. Main chat/extraction unchanged. Companion web provider signup is deployed in PR349. Receipt: docs/plans/mobile201-release.json.
+
+## November 7 — signup and welcome201 verified
+
+Owner: Codex, branch fix/signup-welcome201. Provider signup uses provider names; post-auth iOS notification consent precedes announcements; plan dismissal no longer reopens Settings; compact text-only Space action pills. Main chat/extraction unchanged. Flutter 1,336 pass / 1 skip, analysis clean, 16 native iOS simulator checks pass; four Space screenshots retained and dark/light inspected. Signing/upload pending.
+
 ## November 7 — repair200 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (200), delivery `97d95078-21f8-46f3-8c8a-65095b5faea6`. Runtime `57cc953d`, PR346. All five exact-commit CI jobs passed (42424952291). Processing and tester availability were not polled; physical iPhone acceptance remains pending. Public App Store unchanged.

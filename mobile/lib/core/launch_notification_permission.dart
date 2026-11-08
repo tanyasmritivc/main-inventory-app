@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'push_notifications.dart';
 
-/// Reconnects already-authorized alerts without requesting launch-time consent.
+/// Requests iOS consent after authentication, before welcome announcements.
 class LaunchNotificationPermission extends StatefulWidget {
   const LaunchNotificationPermission({
     super.key,
@@ -23,6 +23,7 @@ class _LaunchNotificationPermissionState
     extends State<LaunchNotificationPermission>
     with WidgetsBindingObserver {
   bool _started = false;
+  bool _settled = false;
 
   @override
   void initState() {
@@ -45,14 +46,27 @@ class _LaunchNotificationPermissionState
   }
 
   Future<void> _request() async {
+    final owner = widget.api.accountId;
     try {
-      if (mounted && widget.api.accountId != null) {
+      if (owner != null) await PushNotifications.requestPermissionIfNeeded();
+    } catch (_) {
+      // A native permission error must not block authenticated use.
+      debugPrint('Phone alerts could not connect. Retry in Notifications.');
+    } finally {
+      if (mounted && widget.api.accountId == owner) {
+        setState(() => _settled = true);
+        if (owner != null) unawaited(_register(owner));
+      }
+    }
+  }
+
+  Future<void> _register(String owner) async {
+    try {
+      if (mounted && widget.api.accountId == owner) {
         await PushNotifications.registerIfAuthorized(widget.api);
       }
     } catch (_) {
-      // The existing Notifications screen exposes Enable/Settings and retry.
-      // Permission or APNs failure must not prevent the app from opening.
-      debugPrint('Phone alerts could not connect. Retry in Notifications.');
+      // Registration can retry on resume without delaying the welcome sheet.
     }
   }
 
@@ -68,5 +82,23 @@ class _LaunchNotificationPermissionState
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) =>
+      NotificationPermissionReady(ready: _settled, child: widget.child);
+}
+
+class NotificationPermissionReady extends InheritedWidget {
+  const NotificationPermissionReady({
+    super.key,
+    required this.ready,
+    required super.child,
+  });
+  final bool ready;
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<NotificationPermissionReady>()
+          ?.ready ??
+      true;
+  @override
+  bool updateShouldNotify(NotificationPermissionReady oldWidget) =>
+      ready != oldWidget.ready;
 }

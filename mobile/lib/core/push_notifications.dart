@@ -29,7 +29,7 @@ class PushNotifications {
         'notDetermined';
   }
 
-  /// Ask only following an explicit contextual action, never at launch.
+  /// Ask after authentication or an explicit notification action.
   /// iOS owns the durable decision, so upgrades and relaunches do not re-prompt.
   static Future<bool> requestPermissionIfNeeded() async {
     if (!supported) return false;

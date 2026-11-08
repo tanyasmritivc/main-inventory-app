@@ -257,14 +257,11 @@ class _MyAppState extends State<MyApp> {
                         ? () => FocusManager.instance.primaryFocus?.unfocus()
                         : null,
                     behavior: HitTestBehavior.translucent,
-                    child: LaunchNotificationPermission(
+                    child: InvitationHost(
                       api: _api,
-                      child: InvitationHost(
-                        api: _api,
-                        navigatorKey: _navigatorKey,
-                        ready: _invitationReady,
-                        child: child ?? const SizedBox.shrink(),
-                      ),
+                      navigatorKey: _navigatorKey,
+                      ready: _invitationReady,
+                      child: child ?? const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -542,11 +539,14 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: AnnouncementHost(
+            child: LaunchNotificationPermission(
               key: ValueKey(session.user.id),
-              user: session.user,
               api: widget.api,
-              child: ChatOnboardingGate(api: widget.api),
+              child: AnnouncementHost(
+                user: session.user,
+                api: widget.api,
+                child: ChatOnboardingGate(api: widget.api),
+              ),
             ),
           );
         }

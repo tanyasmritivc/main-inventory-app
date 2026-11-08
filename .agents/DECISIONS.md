@@ -1,3 +1,12 @@
+## November 7 — post-auth notification choice
+
+User explicitly requests iOS notification permission immediately after authentication,
+followed by the eligible Founders Access announcement after the system decision closes.
+This supersedes the previous contextual-only prompting policy. Signed-out launch never
+prompts. Existing iOS decisions remain authoritative and do not reprompt. Registration
+failure must not block use or the welcome announcement. Campaign eligibility remains
+server-controlled. Closing the plan sheet must not reopen native Settings.
+
 ## November 7 - Preserve inventories and native background exchanges
 
 Deleting a Space must not delete its parent inventory. Confirmed mutations refresh
