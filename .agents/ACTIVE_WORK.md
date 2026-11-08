@@ -1,5 +1,9 @@
 ## November 7 — extraction202 (web, deployed)
 
+## API docs appearance (November 7, 2026)
+
+Prepared on `fix/api-docs-appearance`, isolated `findez-community-nav` checkout. /docs/api now has Light/Dark/System controls, local contrast-checked palettes, shared saved Appearance and prepaint handling. Documentation remains public and separate from product-only eligibility. Newer deployed API content preserved via `943df84c`. Typecheck, changed-file lint, 19 theme tests and 14 production route checks pass; full suite 546 pass / same 65 baseline failures. Desktop light/dark and 390px mobile preview checked. Staged release `docs-appearance-20261107`; publication pending.
+
 ## Founders walkthrough removal (November 7, 2026)
 
 Published `fd9a163c` on `fix/founders-remove-demo` (PR #356). Removed the inventory import/capture/Ask walkthrough from /founders; benefits now lead to the audience section. Shared Solutions walkthrough retained. ESLint, production build, 9 routes and live browser verification pass. Release `founders-demo-20261107`, build `PPUkGBpMIFt2PY-s1UDOu`; 518 other runtime files and backend preserved. Receipt: `docs/plans/founders-demo-removal-release.json`.

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono, Inter, Inter_Tight } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import { CookieNotice } from "@/components/site/cookie-notice";
-import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
+import { APP_THEME_INIT_SCRIPT } from "@/lib/app-theme-constants";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
 import "./globals.css";
 import "./app-theme.css";
@@ -12,15 +12,9 @@ import "./workspace.css";
 import "./interior-tokens.css";
 import "./web-ui-refresh.css";
 
-// Runs before first paint, on every route, because layout.tsx wraps the
-// whole app. It must stay a no-op outside the interior: it checks the
-// path against INTERIOR_PATH_PREFIXES first and returns immediately for
-// marketing, pricing, robotics, auth and every other non-interior route,
-// so the landing page never sees a dark class regardless of the visitor's
-// system preference or a stored choice from a previous interior visit.
-// The persistent AppThemeDocument maintains this across client navigation.
-// This script covers the first paint of a full document load.
-const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.appTheme=dark?"dark":"light";if(dark)document.documentElement.classList.add("dark");var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#0d0d0f":"#ffffff");}catch(e){}})();`;
+// Apply saved Appearance before paint on product routes and public API docs.
+// Marketing and authentication routes keep their own presentation.
+// AppThemeDocument maintains the same route boundary during client navigation.
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-app-inter", display: "swap" });
 const tight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-app-tight", display: "swap" });
@@ -78,7 +72,7 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#ffffff" />
         <style>{`html { background: #ffffff; } html.dark { background: #0d0d0f; }`}</style>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: APP_THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${jakarta.className} antialiased`}>
         <Suspense fallback={null}><AppThemeDocument /></Suspense>

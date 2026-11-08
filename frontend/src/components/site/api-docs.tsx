@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiOrigin, apiReference, endpoints, requestExamples, resolveSchema, schemaConstraints, schemaType, type Schema, type Endpoint } from "@/lib/api-reference";
-import { CodeExample, DocsNavigation } from "./api-docs-controls";
+import { CodeExample, DocsNavigation, DocsAppearance } from "./api-docs-controls";
+import { AppThemeProvider } from "./use-app-theme";
 import { AiAssistantSetup } from "./ai-assistant-setup";
 import styles from "./api-docs.module.css";
 
@@ -51,9 +52,9 @@ const permissionRows = [
 export function ApiDocs() {
   const limits = apiReference["x-limits"];
   const queryEndpoint = endpoints.find((entry) => entry.path === "/api/v1/query")!;
-  return <div className={styles.page}>
+  return <AppThemeProvider><div className={styles.page}>
     <a href="#api-docs-content" className={styles.skipLink}>Skip to documentation</a>
-    <header className={styles.header}><Link href="/" className={styles.brand}>FindEZ <span>/ Developers</span></Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link></div></header>
+    <header className={styles.header}><Link href="/" className={styles.brand}>FindEZ <span>/ Developers</span></Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
     <div className={styles.layout}>
       <aside className={styles.sidebar}><DocsNavigation /></aside>
       <main id="api-docs-content" className={styles.content}>
@@ -158,5 +159,5 @@ export function ApiDocs() {
         <div className={styles.footerLinks}><Link href="/settings/api-keys">Manage API keys ↗</Link><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms of Service</Link><Link href="/docs/api/openapi.json" download="findez-openapi.json">Download OpenAPI JSON ↓</Link><a href="#quickstart">Back to start ↑</a></div></section>
       </main>
     </div>
-  </div>;
+  </div></AppThemeProvider>;
 }

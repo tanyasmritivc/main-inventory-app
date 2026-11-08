@@ -3,6 +3,19 @@
 import { useState } from "react";
 import { endpoints } from "@/lib/api-reference";
 import styles from "./api-docs.module.css";
+import { useAppTheme, type AppThemeChoice } from "./use-app-theme";
+
+export function DocsAppearance() {
+  const { theme, setTheme } = useAppTheme();
+  return <label className={styles.appearance}>
+    <span>Appearance</span>
+    <select value={theme} onChange={event => setTheme(event.target.value as AppThemeChoice)}>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="system">System</option>
+    </select>
+  </label>;
+}
 
 export const guideSections = [
   ["quickstart", "Start here"], ["verify-key", "Verify an API key"], ["organization-management", "Organization management"], ["ai-assistants", "Connect Claude or ChatGPT"], ["authentication", "Authentication & permissions"],

@@ -6,3 +6,8 @@
 @media(max-width:480px) { .notice {inset:auto 12px 12px; padding:14px; gap:12px; align-items:flex-start;} }
 
 :global(html[data-app-theme]) .notice p a { color:#222; }
+
+:global(html[data-app-theme="dark"]) .notice { background:#17171b; color:#e4e4e7; box-shadow:0 0 0 1px #33333a,0 3px 22px #0006; }
+:global(html[data-app-theme="dark"]) .notice p a { color:#e4e4e7; }
+:global(html[data-app-theme="dark"]) .notice button { background:#f4f4f5; color:#18181b; }
+:global(html[data-app-theme="dark"]) .notice :is(a,button):focus-visible { outline-color:#d4d4d8; }
