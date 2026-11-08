@@ -1,3 +1,7 @@
+## November 8 - Native scan polish210 (active)
+
+Owner: current Codex, branch fix/native-scan-polish210. User explicitly paused the complete launch audit and cancelled the requested scan revert before any revert was made. Keep build209 native scanning and tab timing. Only add diagonal placeholder shine and round the actual aspect-fit photo corners. Scan behavior, layout outside this surface, requests and saving are unchanged. Audit logs are retained privately; the broad audit is paused, not passed.
+
 ## November 8 — Native scan progress and tab timing uploaded (PR373)
 
 Apple acknowledged TestFlight 1.1.2 (209), delivery `9282a1de-61c3-4219-ba0e-d9f5b71e820c`.

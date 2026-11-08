@@ -1,3 +1,11 @@
+## November 8 - Keep native scanning; limit follow-up to visual polish
+
+The user cancelled the scan UI revert and paused the complete launch audit.
+Keep build209 native progress and the tab selection lead. Only add a subtle
+diagonal shine to loading placeholders and round the visible aspect-fit photo.
+Respect Reduce Motion and stop decorative animation when inactive or detached.
+No scan request, progress, cancellation, draft or save behavior changes.
+
 ## November 8 — Native selection leads page changes; scan display is UIKit
 
 The user now wants the navigation selection to move before the page changes,
