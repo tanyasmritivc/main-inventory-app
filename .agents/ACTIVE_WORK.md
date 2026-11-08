@@ -1,3 +1,13 @@
+## November 8 — Overly crowded wording deployed (PR368)
+
+The shared photo-scan notice now reads “Overly crowded photos can take around 4
+minutes.” User-requested wording correction only. Runtime `94efd7c6`, release
+`scan-wording-20261108`, is live. All five CI jobs (42515745135), 614 web tests,
+TypeScript and changed-file lint passed. Nineteen routes and 41 static assets
+verified through public HTTPS; compiled client notice verified. One runtime file
+changed; 549 unrelated files preserved; backend untouched. Receipt:
+`docs/plans/photo-scan-wording-web-release.json`.
+
 ## November 7 — extraction202 (web, deployed)
 
 Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Published extraction-20261107, PR351; eight route checks pass, 546 unrelated files preserved.
@@ -1610,3 +1620,18 @@ and changed-code ESLint pass. Full suite has identical baseline failures:
 76 failures in 23 suites, 507 passed. Desktop/narrow light/dark, edits, checkout,
 photo, PNG, Letter/A4 PDF and Safari native print-preview checks passed.
 Production activation pending final commit/push and read-only live check.
+
+## November 8 — Photo scan timing notice deployed (PR368)
+
+Photo-scan choices, quick start, Space uploads, onboarding and extraction progress
+now say “Crowded photos can take around 4 minutes.” Photo choices also suggest
+smaller groups for quicker results. No request, extraction, saving or barcode
+behavior changes.
+
+Production release `scan-timing-20261108`, runtime `1ebc4eca`, is live. All five CI
+gates passed (42512950589); 614 web tests passed, TypeScript clean, changed-file
+lint has no errors. Nineteen routes and 41 static assets passed staging and public
+HTTPS checks. Desktop/narrow browser notices inspected. Six runtime files changed;
+544 unrelated files preserved, backend untouched. Receipt:
+`docs/plans/photo-scan-timing-web-release.json`.
+

@@ -1,4 +1,5 @@
 "use client";
+import { PhotoScanHint } from "./photo-scan-hint";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -451,6 +452,7 @@ export function UsageOnboardingClient() {
                   <PrimaryBtn disabled={scanning || !scanSpace.trim()} onClick={() => fileInputRef.current?.click()}>
                     {scanning ? "Scanning…" : "Upload a photo"}
                   </PrimaryBtn>
+                  <PhotoScanHint />
                   <button
                     type="button"
                     disabled={scanning}

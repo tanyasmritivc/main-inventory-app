@@ -1,4 +1,5 @@
 "use client";
+import { PhotoScanHint } from "./photo-scan-hint";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -84,6 +85,7 @@ export function CaptureScan({photo, steps, stopped, failed, onClose, onRetry}: {
       <div className={scan.side}>
         <div className={scan.live}><span className={!failed ? scan.spinner : undefined}/><span role="status">{status}</span><details className={scan.steps}><summary>Steps <ChevronDown size={14}/></summary><ol>{steps.map((step, i) => <li key={i}>{i < steps.length - 1 ? <Check size={13}/> : <span>···</span>}{step.replaceAll("…", "...")}</li>)}</ol></details></div>
         {!failed && <div className={scan.track} role="progressbar" aria-label="Extraction progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(captureProgress(steps) * 100)} aria-valuetext={status}><i style={{transform: `scaleX(${captureProgress(steps)})`}}/></div>}
+        {!failed && !stopped && <PhotoScanHint tips={false} />}
         <p className={scan.safe}>Nothing is saved until you choose Save.</p>
         {failed ? <button className={scan.button} onClick={onRetry}><RefreshCw size={15}/> Scan again</button> : <div className={scan.placeholders} aria-hidden="true">{[0,1,2].map(n => <div key={n}><span/><div><i/><i/></div></div>)}</div>}
       </div>
