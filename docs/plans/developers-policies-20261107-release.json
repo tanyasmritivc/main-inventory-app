@@ -1,0 +1,46 @@
+{
+  "staged": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/docs/api/openapi.json": 200,
+    "/docs/api/chatgpt-actions.json": 200
+  },
+  "unchanged_files": 515,
+  "build_id": "Dh99CH-iHKRCoOOYPMHUm",
+  "published": true,
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/developers-policies-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/founders-demo-20261107/frontend",
+  "source_commit": "ba7e731fe0f4acd7d8cd91c51d03bd1de1bc8c90",
+  "public_hosts_verified": [
+    "findez.ai",
+    "www.findez.ai"
+  ],
+  "public_pages_verified": [
+    "/docs/api",
+    "/privacy",
+    "/terms"
+  ],
+  "live_api_checks": 31,
+  "focused_web_tests": 38,
+  "backend_snapshot_tests": 72,
+  "full_web_tests": {
+    "passed": 553,
+    "failed": 52,
+    "parent_passed": 539,
+    "parent_failed": 65,
+    "new_failure_names": []
+  },
+  "browser_review": "Chrome: all three staged pages and API verification anchor"
+}

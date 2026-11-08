@@ -14,3 +14,5 @@ Validation:
 Production writes and actual expiry after waiting were not exercised by the live smoke. A successful read against an empty audit organization proves authenticated routing, not populated inventory or third-party assistant installation. Full-suite failures remain outside this documentation update.
 
 Publication is a guarded four-file overlay on founders-demo-20261107. The previous release, configuration, 515 unrelated web files, API process, schemas and connector package are preserved. The separate publication receipt records activation.
+
+Published source ba7e731f in release developers-policies-20261107, build Dh99CH-iHKRCoOOYPMHUm. All 14 live route checks pass, and updated content/effective dates are verified over public HTTPS on findez.ai and www.findez.ai. Source is pushed to fix/developers-policies-20261107. See developers-policies-20261107-release.json.
