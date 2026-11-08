@@ -2530,3 +2530,18 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   existing settings behavior remain unchanged; no server deployment/migration
   was required. The public App Store stays `1.0.6 (17)` and existing broader
   FIND transport/native acceptance limitations remain separate work.
+
+### November 8: full scan audit (web candidate)
+
+Branch `fix/scan-completion-audit` preserves ordinary chat. Photo extraction now
+requests `preview_only`, has a 120-second byte-idle watchdog and 300-second total
+deadline, and is no longer cut off by the ordinary 180-second chat timer. Nine
+stream/lifecycle regressions plus updated current-contract fixtures bring the web
+suite to 612 passing tests across 78 suites. TypeScript passes; full lint has zero
+errors/52 warnings. Candidate production build preserves all live files except
+`ask-stream.ts` and the extraction-specific timer in `assist-client.tsx`.
+Backend lane contains the repeatable runner and `docs/plans/scan-test-plan.md`.
+Live regular scans took 18.15/24.08 seconds; crowded scan 241.44 seconds for 77
+regions (29 unknown), so crowded speed/accuracy is not claimed solved. Physical
+iPhone acceptance was not rerun; browser plugin startup failed. Publication is
+pending exact-source CI and guarded activation.

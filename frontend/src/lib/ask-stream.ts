@@ -27,6 +27,7 @@ export async function readAskEvents(
   body: ReadableStream<Uint8Array>,
   onEvent: (event: AskStreamEvent) => void,
   signal?: AbortSignal,
+  idleTimeoutMs?: number,
 ) {
   const reader = body.getReader(),
     decoder = new TextDecoder();
@@ -62,7 +63,17 @@ export async function readAskEvents(
   try {
     while (true) {
       signal?.throwIfAborted();
-      const { value, done } = await reader.read();
+      let idle: ReturnType<typeof setTimeout> | undefined;
+      const { value, done } = await (idleTimeoutMs
+        ? Promise.race([
+            reader.read(),
+            new Promise<never>((_, reject) => {
+              idle = setTimeout(() => reject(new Error(
+                "The scan connection stopped responding. Please try again.",
+              )), idleTimeoutMs);
+            }),
+          ]).finally(() => clearTimeout(idle))
+        : reader.read());
       signal?.throwIfAborted();
       buffer += decoder.decode(value, { stream: !done });
       const blocks = buffer.split(/\r?\n\r?\n/);
@@ -80,7 +91,30 @@ export async function readAskEvents(
   }
 }
 
-export async function askQuestion({
+export const SCAN_TIMEOUT_MS = 300_000;
+export const SCAN_IDLE_TIMEOUT_MS = 120_000;
+
+// Scans have a 240s inference budget plus upload/draft persistence. Ordinary
+// chat keeps its existing lifecycle. Never retry a photo POST automatically.
+export async function askQuestion(options: Parameters<typeof performAskQuestion>[0]) {
+  if (!options.photo || !options.autoExtract || !options.worldId)
+    return performAskQuestion(options);
+  const scan = new AbortController();
+  const abort = () => scan.abort(options.signal.reason);
+  options.signal.addEventListener("abort", abort, { once: true });
+  if (options.signal.aborted) abort();
+  const timer = setTimeout(() => scan.abort(new Error(
+    "Photo analysis took too long. Check your chat history for a completed draft before retrying.",
+  )), SCAN_TIMEOUT_MS);
+  try {
+    return await performAskQuestion({ ...options, signal: scan.signal });
+  } finally {
+    clearTimeout(timer);
+    options.signal.removeEventListener("abort", abort);
+  }
+}
+
+async function performAskQuestion({
   accountId,
   message,
   photo,
@@ -148,7 +182,11 @@ export async function askQuestion({
     form.append("file", photo);
     if (worldId) {
       form.append("sources", JSON.stringify(sources.map(sourcePayload)));
-      if (autoExtract) form.append("auto_extract", "true");
+      if (autoExtract) {
+        form.append("auto_extract", "true");
+        // Return the durable extraction draft immediately, as mobile does.
+        form.append("preview_only", "true");
+      }
     }
     form.append("message", message);
     form.append("supports_item_actions", "true");
@@ -208,7 +246,7 @@ export async function askQuestion({
         content: event.assistant_message,
         context: parseAskContext(event.answer_context),
       });
-  }, signal);
+  }, signal, photo && autoExtract ? SCAN_IDLE_TIMEOUT_MS : undefined);
   signal.throwIfAborted();
   await accountToken(accountId);
   assertInventory(selected);

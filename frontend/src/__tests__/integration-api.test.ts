@@ -22,7 +22,7 @@ test('connection test exercises inventory access for read keys', async () => {
 
 test('write-only connection test never writes data', async () => {
   fetchMock.mockResolvedValue(response({ scopes: ['items:write'] }));
-  expect(await testIntegrationKey('api-key')).toContain('Write permissions were not exercised');
+  expect(await testIntegrationKey('api-key')).toContain('Write and deletion permissions were not exercised');
   expect(fetchMock).toHaveBeenCalledTimes(1);
   expect(fetchMock.mock.calls[0][1].method).toBe('GET');
 });

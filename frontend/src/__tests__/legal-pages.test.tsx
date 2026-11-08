@@ -24,6 +24,7 @@ test("the privacy page describes actual storage and photo limitations without cl
   expect(screen.getByText(/not agreement to Terms/)).toBeTruthy();
 });
 test("the storage notice can be dismissed without enabling tracking or accepting Terms", () => {
+  global.ResizeObserver = class {observe() {} unobserve() {} disconnect() {}};
   localStorage.removeItem("findez-cookie-notice");
   render(<CookieNotice />);
   expect(screen.getByRole("link", { name: "Details" }).getAttribute("href")).toBe("/privacy#cookies");
