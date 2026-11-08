@@ -1,3 +1,7 @@
+## November 7 — Contextual questions bind to a persistent Space
+
+The Space Ask sheet must pass its Space ID and verify it server-side on every turn. Parent inventory context alone is insufficient. Image/file questions do not imply extraction or imports. Scoped history cannot be reused for another Space, and empty/deleted Spaces must never fall back to broader data. Main Chat remains separate.
+
 ## November 7 - Crowded photos use source-coordinate close-ups
 
 Extra grounding views are adaptive and bounded within the existing scan deadline. Map each view into the oriented uploaded source before deduplication or crops. Multiple observations never imply additional quantity; occluded/group counts remain unknown. Preserve overview detections on partial close-up failure and disclose incomplete coverage. Simple photos keep one grounding pass.

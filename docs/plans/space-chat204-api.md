@@ -1,0 +1,13 @@
+# Space questions204
+
+New routes under `/inventories/{inventory_id}/space-chat/{space_id}` serve contextual questions only. Existing world/main chat, legacy inventory chat, extraction, model configuration and database schema are unchanged. Mobile passes the actual persistent Space ID, not only its parent inventory.
+
+Every request uses the existing inventory authorization dependency, verifies the Space still belongs to that inventory, and reads current items with a mandatory space_id filter. Reads paginate in 500-row pages up to 5,000 records and a bounded model context; incomplete coverage is disclosed. Empty/deleted Spaces cannot fall back to another Space. Generic parent inventory memory and model thread state are excluded. The provider thread is unique per turn; explicitly supplied private history is informational, and current records are authoritative.
+
+The legacy final-answer allowance was 500 tokens and production traces recorded output-limit failures. This lane uses an 8,192-token allowance with concise answer instructions and requires a real provider stop before success. Stream errors retain the existing truthful retry envelope. Replies receive `done` only after private history saves successfully. Text is processed by the existing completion decoder; no changes to that shared decoder are included.
+
+Photos use direct vision for a question. Files support text PDF, TXT, Markdown, DOCX, CSV, JSON and XLSX, up to 10 MB, four files and 48,000 total extracted characters. Truncation is explicit. These inputs are evidence, never imports or item-save operations. No extraction draft or inventory mutation is available in this chat. Item actions remain on the Space page. Images are not retained as new inventory photos; subsequent conversation history retains the textual answer.
+
+Private history is explicitly marked with an assistant-only scope receipt (the existing schema forbids answer_context on user messages). Reads, deletes and continuations verify both actor/inventory ownership and that Space marker. History list joins explicitly constrain both inventory and actor; hidden receipts are excluded from visible history. Existing unscoped conversations are not relabeled as Space-specific.
+
+Validation: 1,563 backend tests, including 18 new focused cases. The isolated production-source candidate also passed all 18 cases. A no-save real-provider check read live Space records and completed in 8.49 seconds, with no conversation or inventory writes. Production overlay and exact-runtime CI are pending. Deployment must preserve existing server changes to router registration and inventory authorization; only the two new modules plus two narrow registration/permission patches belong to this lane.

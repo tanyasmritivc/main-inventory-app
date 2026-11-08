@@ -81,6 +81,8 @@ for scoped_feature_router in (
     conversations_router, project_kits_router, review_router, sharing_router,
 ):
     scoped_router.include_router(scoped_feature_router)
+from app.api.routes.space_chat import router as space_chat_router
+scoped_router.include_router(space_chat_router)
 api_router.include_router(scoped_router)
 
 from app.api.routes.private_images import router as private_images_router
