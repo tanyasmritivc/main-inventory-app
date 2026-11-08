@@ -1,6 +1,6 @@
-## November 7 — extraction202 (mobile, active)
+## November 7 — extraction202 (mobile, uploaded)
 
-Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-mobile.md. Verification/release in progress.
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-mobile.md. Build 1.1.2 (202) uploaded and acknowledged by Apple, PR350. All five CI checks passed; 1,338 Flutter tests / 1 skip, clean analysis, 14 capture plus 2 native photo checks. Processing/tester availability not polled.
 
 ## November 7 - welcome201 uploaded
 
