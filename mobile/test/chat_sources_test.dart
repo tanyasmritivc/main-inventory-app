@@ -19,7 +19,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> Function(String)? sourceAuditCapture;
 
 class _Api extends ApiClient {
-  _Api() : super(worldKey: 'personal', baseUrl: 'https://api.test');
+  _Api({bool scoped = false})
+    : super(
+        worldKey: scoped ? null : 'personal',
+        chatSpaceId: scoped ? 'hardware' : null,
+        baseUrl: 'https://api.test',
+      );
   final sent = <List<ChatSource>>[];
   final reads = <String>[];
   bool fail = false;
@@ -142,7 +147,8 @@ Widget _chat(_Api api, {ValueChanged<VoidCallback>? reset}) => Scaffold(
   body: ChatPage(
     api: api,
     inPageView: true,
-    worldHeading: 'Find your things.',
+    worldHeading: api.chatSpaceId == null ? 'Find your things.' : null,
+    contextual: api.chatSpaceId != null,
     onRegisterReset: reset,
   ),
 );
@@ -172,6 +178,35 @@ void main() {
       publishableKey: 'test-anon-key',
       httpClient: MockClient((_) async => http.Response('{}', 200)),
     );
+  });
+  testWidgets('Space file picker attaches spreadsheet as question evidence', (
+    tester,
+  ) async {
+    final picker = _Picker()
+      ..result = FilePickerResult([
+        PlatformFile(
+          name: 'parts.csv',
+          size: 3,
+          bytes: Uint8List.fromList([65, 66, 67]),
+        ),
+      ]);
+    FilePicker.platform = picker;
+    final api = _Api(scoped: true);
+    await tester.pumpWidget(frame(_chat(api)));
+    await tester.pumpAndSettle();
+    await menu(tester, 'Choose files');
+    expect(find.byTooltip('Remove parts.csv'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextField).first,
+      'Do I have these parts?',
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    expect(api.sent.single.single.name, 'parts.csv');
+    expect(api.reads, ['parts.csv']);
+    expect(find.text('Retry response'), findsNothing);
+    expect(find.textContaining('interrupted'), findsNothing);
   });
   testWidgets(
     'selected reference sends IDs, can be removed, and resets with chat',

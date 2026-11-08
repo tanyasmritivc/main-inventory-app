@@ -1,3 +1,7 @@
+## November 7 — Space chat204 mobile (active)
+
+Bind contextual Ask to actual Space ID/name; preserve main chat. Attach images/documents/spreadsheets as question evidence without Auto Extract. Validation/build pending; companion API lane fix/space-chat204-api.
+
 ## November 7 - light-theme203 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (203), delivery d36695e4-04b5-4da8-9ae7-b24a994cc977. Runtime 1bda45645f51b0a97fe9d981234f0bca6e242d94, PR354. All five exact-commit CI jobs passed (42436247397), including 1,340 Flutter tests / 1 skip; analysis clean. Nineteen native simulator checks passed and light/dark screenshots were reviewed. Physical iPhone acceptance remains pending; processing/tester availability not polled.

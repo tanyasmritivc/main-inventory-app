@@ -56,6 +56,8 @@ class ApiClient {
     dio.Dio? httpClient,
     this.inventoryContext,
     this.worldKey,
+    this.chatSpaceId,
+    this.chatSpaceName,
     String? boundAccount,
     bool Function()? isCurrent,
   }) : _dio =
@@ -155,6 +157,8 @@ class ApiClient {
        _teamSpaceId = spaceId,
        inventoryContext = source.inventoryContext,
        worldKey = source.worldKey,
+       chatSpaceId = source.chatSpaceId,
+       chatSpaceName = source.chatSpaceName,
        _boundAccount = source._boundAccount,
        _isCurrent = source._isCurrent;
 
@@ -191,6 +195,29 @@ class ApiClient {
     isCurrent: isCurrent,
   );
 
+  factory ApiClient.forSpaceChat(
+    ApiClient source,
+    String spaceId,
+    String name,
+  ) {
+    if (source.inventoryContext == null || spaceId.isEmpty) {
+      throw const AskRequestException('Choose an available Space.');
+    }
+    return ApiClient(
+      baseUrl: source.baseUrl,
+      httpClient: dio.Dio(source._dio.options.copyWith())
+        ..httpClientAdapter = source._dio.httpClientAdapter,
+      inventoryContext: source.inventoryContext,
+      chatSpaceId: spaceId,
+      chatSpaceName: name,
+      isCurrent: () {
+        source.assertCurrentContext();
+        return true;
+      },
+    );
+  }
+
+  final String? chatSpaceId, chatSpaceName;
   final String? worldKey;
   final InventoryContext? inventoryContext;
   final String? _boundAccount;
@@ -203,7 +230,7 @@ class ApiClient {
       ? (worldKey == null ? 'legacy' : '$accountId:world:$worldKey')
       : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
   static final _inventoryRoutes = RegExp(
-    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)',
+    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|chat-files|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)',
   );
   static bool _readOperation(String method, String path) =>
       ['GET', 'HEAD', 'OPTIONS'].contains(method) ||
@@ -214,6 +241,7 @@ class ApiClient {
         '/ai_command',
         '/ai_photo_question',
         '/ai_upload',
+        '/chat-files',
         '/process_barcode',
         '/barcode_lookup',
         '/inventory/bom/analyze',
@@ -261,6 +289,12 @@ class ApiClient {
 
   String inventoryPath(String path) {
     assertCurrentContext();
+    if (chatSpaceId != null &&
+        RegExp(
+          r'^/(?:ai_command|ai_photo_question|conversations|chat-files)(?:[/?]|$)',
+        ).hasMatch(path)) {
+      return '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}/space-chat/${Uri.encodeComponent(chatSpaceId!)}$path';
+    }
     if (worldKey != null &&
         RegExp(
           r'^/(?:ai_command|ai_photo_question|conversations)(?:[/?]|$)',
@@ -275,7 +309,9 @@ class ApiClient {
   Future<ChatSource> readChatFile(List<int> bytes, String filename) async {
     assertCurrentContext();
     final response = await _dio.post<Map<String, dynamic>>(
-      '/worlds/${Uri.encodeComponent(worldKey!)}/chat-files',
+      chatSpaceId != null
+          ? inventoryPath('/chat-files')
+          : '/worlds/${Uri.encodeComponent(worldKey!)}/chat-files',
       data: dio.FormData.fromMap({
         'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
       }),
@@ -1444,7 +1480,7 @@ class ApiClient {
       'supports_task_actions': true,
       'supports_photo_attachment': true,
       if (worldKey != null) 'supports_capture': true,
-      if (worldKey != null && sources.isNotEmpty)
+      if ((worldKey != null || chatSpaceId != null) && sources.isNotEmpty)
         'sources': sources.map((s) => s.toJson()).toList(),
     });
 
@@ -1503,6 +1539,11 @@ class ApiClient {
           sources.map((s) => s.toJson()).toList(),
         );
       }
+    }
+    if (chatSpaceId != null && sources.isNotEmpty) {
+      request.fields['sources'] = json.encode(
+        sources.map((s) => s.toJson()).toList(),
+      );
     }
     if (conversationId != null) {
       request.fields['conversation_id'] = conversationId;
