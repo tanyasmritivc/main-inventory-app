@@ -1,3 +1,7 @@
+## November 7 - Crowded photo latency (active)
+
+Owner: current Codex task, branch fix/dense-photo-latency. Reduce repeated detail calls with four-crop grids at unchanged per-crop resolution and bounded six-worker stages. Preserve coverage, evidence, save/destination rules, main chat and client UI. Benchmark against the supplied crowded photo before deployment.
+
 ## November 7 — Space questions204 deployed (PR359)
 
 Runtime `1320b7cb004c2a9aa79daff24d07e86e4f359e1e` is live after all five CI gates passed. Contextual Ask reads fresh items in the actual Space, supports photo/file questions without Auto Extract, and allows complete answers beyond the legacy 500-token limit. Private history is actor/inventory/Space-bound. Main chat, extraction, existing legacy Space service and schema are unchanged.

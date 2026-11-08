@@ -118,7 +118,7 @@ def test_dense_scene_uses_original_sections_with_bounded_parallelism():
             with lock: active -= 1
     with patch.object(g, '_json', side_effect=model) as call:
         result = g._ground_photo(image, updates.append)
-    assert call.call_count == 5 and peak == g.GROUNDING_WORKERS
+    assert call.call_count == 5 and peak == min(4, g.GROUNDING_WORKERS)
     assert len(result.items) == 4
     assert len({tuple(candidate.box) for candidate in result.items}) == 4
     assert result.partial is False
@@ -176,3 +176,46 @@ def test_hidden_or_inseparable_counts_stay_unknown_even_after_confident_guess(kw
     assert item['scan_evidence']['quantity_basis'] == 'unknown'
     assert item['scan_evidence']['quantity_confidence'] is None
     assert 'unknown' in item['scan_evidence']['quantity_note']
+
+
+def test_four_crop_grid_preserves_each_tile_resolution_and_order():
+    colours = ['red', 'green', 'blue', 'yellow']
+    inputs = []
+    for colour in colours:
+        data = io.BytesIO()
+        Image.new('RGB', (620, 620), colour).save(data, format='PNG')
+        inputs.append(data.getvalue())
+    with Image.open(io.BytesIO(g._contact_sheet(inputs))) as sheet:
+        assert sheet.size == (1280, 1360)
+        for i, colour in enumerate(colours):
+            expected = Image.new('RGB', (1, 1), colour).getpixel((0, 0))
+            observed = sheet.getpixel((640 * (i % 2) + 320, 680 * (i // 2) + 360))
+            assert all(abs(a - b) < 5 for a, b in zip(expected, observed))
+
+
+def test_four_crop_batch_recovers_all_indices_including_second_row():
+    payload = {'items': [g.Identity(index=i, name=f'Part {i}', category='Hardware',
+                                    uncertainty='Check.').model_dump() for i in [3, 1, 0, 2]]}
+    result = g._parse_result(__import__('json').dumps(payload), g.Identities)
+    assert {item.index: item.name for item in result.items} == {i: f'Part {i}' for i in range(4)}
+
+
+def test_portrait_closeups_run_in_one_bounded_wave():
+    active = peak = 0
+    lock = threading.Lock()
+    barrier = threading.Barrier(6, timeout=2)
+    def model(prompt, *args):
+        nonlocal active, peak
+        if 'close-up section' not in prompt:
+            return g.Grounding(items=[], partial=False, dense=True)
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        try:
+            barrier.wait()
+            return g.Grounding(items=[], partial=False)
+        finally:
+            with lock: active -= 1
+    with patch.object(g, '_json', side_effect=model):
+        g._ground_photo(Image.new('RGB', (3024, 4032)), lambda _: None)
+    assert peak == 6

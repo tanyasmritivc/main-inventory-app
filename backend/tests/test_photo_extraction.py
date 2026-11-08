@@ -539,6 +539,7 @@ def test_all_24_regions_are_read_without_an_eight_item_ceiling():
     grounding = g._parse_result(json.dumps({'items': boxes, 'partial': False}), g.Grounding)
     assert len(grounding.items) == 24
     lock = threading.Lock()
+    barrier = threading.Barrier(g.DETAIL_WORKERS, timeout=5)
     active = peak = 0
     def model(prompt, images, schema):
         nonlocal active, peak
@@ -547,7 +548,7 @@ def test_all_24_regions_are_read_without_an_eight_item_ceiling():
             active += 1
             peak = max(peak, active)
         try:
-            time.sleep(.01)
+            barrier.wait()
             pairs = re.findall(r'"index": (\d+), "candidate": "Object (\d+)"', prompt)
             return g.Identities(items=[g.Identity(index=int(i), name=f'Object {n}', category='Tools', uncertainty='Verify.') for i,n in pairs])
         finally:
