@@ -1,0 +1,17 @@
+# Adaptive crowded-photo extraction
+
+Backend-only update on `fix/dense-photo-extraction`, based on the deployed extraction202 service. Mobile/web consume the same existing extraction contract; no client UI, main-chat logic, save/destination behavior, database schema or model/provider changes.
+
+The overview remains a 1,280-pixel view. For uploaded images larger than 1,400 pixels, dense/partial scenes, eight or more detections, or loose-part groups trigger four to six overlapping views from the original oriented source. Four workers share a bounded close-up deadline, reserving 90 seconds of the existing 240-second extraction budget for identification. Small/simple photos retain one grounding call. Close-up failure preserves overview results and marks the draft partial.
+
+Local close-up coordinates map back to normalized source coordinates before crop generation. Duplicate observations are merged geometrically without adding their counts. Adjacent objects with the same name remain separate; whole views take precedence over cut tile edges. When close-ups resolve an inseparable group into multiple objects, the parent group is removed to avoid counting both, and coverage remains explicitly partial. Final result order and region IDs are independent of concurrent completion order.
+
+Grounding can mark loose-part groups and occluded regions. Those retain unknown quantity evidence even if the detail model guesses a high-confidence count. Saving as-is and optional Review continue through the existing contracts. Labels and dimensions still require visible supporting text; no hidden quantities or dimensions are invented.
+
+Validation: 1,545 local backend tests passed; 57 focused tests passed against an isolated overlay of current production sources. Tests cover overlap coverage, oriented coordinate mapping, cross-view deduplication, adjacent identical and nested small objects, group replacement, bounded concurrency, deadlines, failed sections and unknown counts.
+
+A no-save real-provider scan of a 3,024 x 4,032 JPEG preview of the user's DNG completed in 218.88 seconds, with 58 candidate regions (47 identified, 11 unknown), and explicitly partial coverage. Visual inspection found a nested duplicate bearing; the final geometric merge was replayed against those recorded detections and retained 57 regions. This is a region count, not verified physical stock. No model calls were repeated for that final deterministic correction and no inventory data was written. The original DNG remains untouched.
+
+Limits: direct RAW/DNG decoding is not added. Views use the uploaded source resolution (mobile's existing upload resize remains unchanged). Dense scenes need more model calls and can take several minutes within the existing budget. Occluded parts, uncertain identities, missed detections and residual duplicate observations remain possible. Crops are rectangular, not segmented cutouts. Unknown counts and partial coverage remain visible through existing contracts.
+
+Deployed runtime `7df17223830afc06fee36ff441abb14b88cb8efe` after all five CI gates passed in run `42444183953`. The guarded overlay changed only `app/services/glm_extraction.py`, verified its hash, and preserved 145 unrelated Python files. API/database health passed and anonymous extraction returned 401. Rollback is retained at `/home/ubuntu/findez-dense-photo/rollback-glm_extraction.py`. See `dense-photo-release.json`. No mobile binary or schema change is needed.

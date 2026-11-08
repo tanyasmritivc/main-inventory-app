@@ -1,3 +1,9 @@
+## November 7 — Dense photo extraction deployed (PR358)
+
+Runtime `7df17223830afc06fee36ff441abb14b88cb8efe` is live after all five CI jobs in `42444183953` passed. Crowded large uploads get overlapping source views with geometric deduplication and conservative unknown counts. Simple photos keep one overview. Main chat, clients, save/destination contracts and schema are unchanged.
+
+Validation: 1,545 local backend tests and 57 isolated production-candidate tests. Real-provider no-save photo check completed in 218.88 seconds; final geometric replay retained 57 candidate regions, not verified stock quantities. API/database health and anonymous denial passed. One runtime file changed; 145 unrelated Python files preserved. See `docs/plans/dense-photo-extraction.md` and `docs/plans/dense-photo-release.json` for limits and rollback.
+
 ## October 25 — Personalization implementation (activation pending)
 
 Lane `feat/personalization-engine` adds migration 081, opted-in activity/aliases,

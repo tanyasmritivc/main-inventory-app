@@ -35,6 +35,8 @@ from app.services.chat_vision import image_part
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 2
 DETAIL_WORKERS = 4
+GROUNDING_WORKERS = 4
+DETAIL_RESERVE_SECONDS = 90
 MODEL_TIMEOUT_SECONDS = 110
 EXTRACTION_BUDGET_SECONDS = 240
 # The provider counts reasoning against this allowance. A short cap can return
@@ -127,11 +129,14 @@ class Box(StrictModel):
     label: str = Field(min_length=1, max_length=200)
     box: list[StrictInt] = Field(min_length=4, max_length=4)
     detection_confidence: Score | None = None
+    kind: Literal["object", "group"] = "object"
+    occluded: bool = False
 
 
 class Grounding(StrictModel):
     items: list[Box]
     partial: bool
+    dense: bool = False
 
 
 class Identities(StrictModel):
@@ -158,7 +163,8 @@ def _parse_result(content, schema):
                 continue
         if data["items"] and not valid:
             raise ValueError("No valid object regions")
-        return Grounding(items=valid, partial=data.get("partial") is not False
+        return Grounding(items=valid, dense=data.get("dense") is True,
+                         partial=data.get("partial") is not False
                          or len(valid) != len(data["items"]))
     valid = {}
     duplicates = set()
@@ -198,9 +204,12 @@ def _json(prompt, images, schema):
                     "label": "object name",
                     "box": [0, 0, 1000, 1000],
                     "detection_confidence": 0.9,
+                    "kind": "object",
+                    "occluded": False,
                 }
             ],
             "partial": False,
+            "dense": False,
         }
         if schema is Grounding
         else {
@@ -308,6 +317,161 @@ def _jpeg(image):
     return out.getvalue()
 
 
+GROUNDING_PROMPT = (
+    "Locate every separately visible inventory object in the entire photo, including small objects. "
+    "Do not stop at an example count or only the largest objects. Sweep the whole scene; "
+    "do not detect background storage drawers or their labels. One tight box per whole physical "
+    "object, normalized integer xyxy 0..1000. Include handles/edges, exclude neighboring objects "
+    "and empty background. Never detect a label separately from its object. "
+    "Use kind object for a distinct object or an intact package, blister strip or multipack. "
+    "Use kind group for a pile of loose parts that cannot be separated, not for a container. "
+    "Mark occluded true when overlapping or cut-off contents prevent a reliable count. "
+    "A pile is a detection region, NOT one inventory unit. Never infer hidden contents. "
+    "Return a detection confidence for each box. Mark dense true for many small objects, "
+    "crowded compartments or loose-part piles needing close-up inspection. "
+    "Mark partial true if visible objects were omitted or cannot be separated."
+)
+
+
+def _is_group(candidate):
+    return candidate.kind == "group" or bool(
+        re.search(r"\b(pile|heap|assortment)\b", candidate.label, re.I)
+    )
+
+
+def _detail_windows(width, height):
+    """Cover the source with four to six overlapping views, never upscale."""
+    columns, rows = (3, 2) if width > height * 1.25 else (
+        (2, 3) if height > width * 1.25 else (2, 2)
+    )
+    def spans(size, count):
+        length = math.ceil(size / (count - .2 * (count - 1)))
+        return [(round(i * (size - length) / (count - 1)),
+                 round(i * (size - length) / (count - 1)) + length)
+                for i in range(count)]
+    return [(left, top, right, bottom)
+            for top, bottom in spans(height, rows)
+            for left, right in spans(width, columns)]
+
+
+def _map_window(candidate, window, size):
+    """Map local boxes to the oriented source, recording cut interior edges."""
+    left, top, right, bottom = window
+    width, height = size
+    x1, y1, x2, y2 = candidate.box
+    clipped = ((left > 0 and x1 <= 15) or (top > 0 and y1 <= 15)
+               or (right < width and x2 >= 985) or (bottom < height and y2 >= 985))
+    box = [math.floor((left + x1 / 1000 * (right - left)) / width * 1000),
+           math.floor((top + y1 / 1000 * (bottom - top)) / height * 1000),
+           math.ceil((left + x2 / 1000 * (right - left)) / width * 1000),
+           math.ceil((top + y2 / 1000 * (bottom - top)) / height * 1000)]
+    box = [max(0, min(1000, value)) for value in box]
+    _valid_box(box)
+    return candidate.model_copy(update={"box": box, "occluded": candidate.occluded or clipped}), clipped
+
+
+def _overlap(a, b):
+    intersection = max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(
+        0, min(a[3], b[3]) - max(a[1], b[1]))
+    return intersection, (a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1])
+
+
+def _merge_views(overview, views):
+    # Prefer whole objects over a crop cut by a tile edge. Do not add quantities
+    # across views: these are repeated observations, not additional stock.
+    candidates = [(box, False, -1) for box in overview.items]
+    candidates.extend((box, clipped, view_id) for view_id, view in enumerate(views)
+                      for box, clipped in view)
+    candidates.sort(key=lambda pair: (pair[1], -(pair[0].detection_confidence or 0)))
+    accepted = []
+    for candidate, clipped, view_id in candidates:
+        duplicate = False
+        label = re.sub(r"[^a-z0-9]", "", candidate.label.casefold())
+        for previous_index, (previous, previous_clipped, origins) in enumerate(accepted):
+            intersection, area, other_area = _overlap(candidate.box, previous.box)
+            union = area + other_area - intersection
+            same_label = label == re.sub(r"[^a-z0-9]", "", previous.label.casefold())
+            cross_view = view_id not in origins
+            # Never use a shared name alone: adjacent identical bolts remain
+            # separate. Groups and their individual contents are handled below.
+            if _is_group(candidate) != _is_group(previous):
+                continue
+            if (intersection / union >= (.65 if cross_view else .85)
+                    or (cross_view and same_label and intersection / union >= .55)
+                    or (cross_view and intersection / min(area, other_area) >= .9
+                        and min(area, other_area) / max(area, other_area) >= .5)
+                    or (clipped and intersection / area >= .9 and area <= other_area)):
+                duplicate = True
+                if candidate.occluded and not clipped:
+                    previous = previous.model_copy(update={"occluded": True})
+                accepted[previous_index] = (previous, previous_clipped, origins | {view_id})
+                break
+        if not duplicate:
+            accepted.append((candidate, clipped, {view_id}))
+    # When close-ups resolve a pile into multiple distinct objects, retain those
+    # objects rather than counting both them and the encompassing pile. Coverage
+    # is explicitly partial; this does not claim the hidden remainder was read.
+    replaced_group = False
+    result = []
+    for candidate, _, _ in accepted:
+        if _is_group(candidate):
+            children = [other for other, clipped, _ in accepted
+                        if not _is_group(other) and not clipped
+                        and _overlap(candidate.box, other.box)[0]
+                        >= _overlap(candidate.box, other.box)[2] * .9]
+            if len(children) >= 2:
+                replaced_group = True
+                continue
+        result.append(candidate)
+    # Stable spatial order is independent of concurrent request completion.
+    result.sort(key=lambda box: (box.box[1], box.box[0], box.box[3], box.box[2], box.label))
+    return result, replaced_group
+
+
+def _ground_photo(image, report):
+    overview = _json(GROUNDING_PROMPT, [_jpeg(image)], Grounding)
+    crowded = (overview.dense or overview.partial or len(overview.items) >= 8
+               or any(_is_group(box) for box in overview.items))
+    if not crowded or max(image.size) <= 1400:
+        return overview
+    report("Looking closer at crowded areas...")
+    windows = _detail_windows(*image.size)
+    total_deadline = _deadline.get() or (time.monotonic() + EXTRACTION_BUDGET_SECONDS)
+    # Extra coverage must not consume all time reserved for identities/crops.
+    closeup_deadline = min(time.monotonic() + 90, total_deadline - DETAIL_RESERVE_SECONDS)
+    if closeup_deadline - time.monotonic() < 2:
+        return overview.model_copy(update={"partial": True})
+
+    def locate(window):
+        token = _deadline.set(closeup_deadline)
+        try:
+            result = _json(
+                GROUNDING_PROMPT + " This is a close-up section. Coordinates refer ONLY to this section. "
+                "Prefer whole distinguishable objects; mark any cut-off object occluded. "
+                "Do not invent hidden shapes or read a nearby package label as belonging to a loose part.",
+                [_jpeg(image.crop(window))], Grounding,
+            )
+            return [_map_window(box, window, image.size) for box in result.items], result.partial
+        finally:
+            _deadline.reset(token)
+
+    views = [None] * len(windows)
+    partial = overview.partial
+    with ThreadPoolExecutor(max_workers=GROUNDING_WORKERS) as pool:
+        futures = {pool.submit(copy_context().run, locate, window): i
+                   for i, window in enumerate(windows)}
+        for future in as_completed(futures):
+            try:
+                views[futures[future]], omitted = future.result()
+                partial |= omitted
+            except (httpx.HTTPError, ValueError, TimeoutError):
+                partial = True
+                views[futures[future]] = []
+            report(f"Checked {sum(view is not None for view in views)} of {len(windows)} photo sections...")
+    items, replaced = _merge_views(overview, views)
+    return Grounding(items=items, partial=partial or replaced, dense=True)
+
+
 def crops(image_bytes, candidates):
     """Tight EXIF-corrected crops; duplicate detections never imply quantity."""
     with Image.open(io.BytesIO(image_bytes)) as original:
@@ -375,6 +539,8 @@ def _item(candidate, identity, source_url):
     count_verified = (
         identity.quantity_basis in ("visible_individuals", "visible_packages")
         and (identity.quantity_confidence or 0) >= 0.5
+        and not candidate.occluded
+        and candidate.kind != "group"
         and not (identity.quantity == 1 and re.search(r"\b(pile|heap|assortment)\b", identity.name + " " + candidate.label, re.I))
     )
     quantity = identity.quantity if count_verified else 1
@@ -391,6 +557,8 @@ def _item(candidate, identity, source_url):
         reasons.append(
             "Quantity is a candidate placeholder; confirm the visible count."
         )
+        if candidate.occluded or _is_group(candidate):
+            quantity_note = "Overlapping or cut-off parts could not all be counted. Quantity is unknown."
     text = identity.visible_text.strip() or None
     # A photographed measurement label is evidence; product familiarity is not.
     measured = (
@@ -588,12 +756,11 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, o
     # Normalize orientation and MIME before inference, while retaining original
     # resolution for final crops. Never send EXIF metadata to the provider.
     with Image.open(io.BytesIO(image_bytes)) as original:
-        scene = _jpeg(ImageOps.exif_transpose(original).convert("RGB"))
-    grounding = _json(
-        "Locate every separately visible inventory object in the entire photo, including small objects. Do not stop at an example count or only the largest objects. Sweep the whole scene; do not detect background storage drawers or their labels. One tight box per whole physical object, normalized integer xyxy 0..1000. Include handles/edges, exclude neighboring objects and empty background. Never detect a label separately from its object. A pile is a detection region, NOT one inventory unit. Detect a pile together when its individual objects cannot be separated. Keep a blister strip or multipack in one whole region so all its visible units can be counted in the detail pass. Do not split each tablet into a separate product. Never infer hidden contents. Return a detection confidence for each box. Mark partial true if any visible objects were omitted or cannot be separated.",
-        [scene],
-        Grounding,
-    )
+        image = ImageOps.exif_transpose(original).convert("RGB")
+    try:
+        grounding = _ground_photo(image, report)
+    finally:
+        image.close()
     selected = crops(image_bytes, grounding.items)
     # Stable IDs refer to accepted, deduplicated crops. Coordinates use the
     # EXIF-oriented source photo (integer xyxy 0..1000), not a contact sheet.

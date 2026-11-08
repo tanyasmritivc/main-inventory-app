@@ -1,0 +1,20 @@
+{
+  "healthy": true,
+  "commit": "7df17223830afc06fee36ff441abb14b88cb8efe",
+  "changed_files": [
+    "app/services/glm_extraction.py"
+  ],
+  "unrelated_python_files_preserved": 145,
+  "schema_changes": false,
+  "source_sha256": "b23f1ff84ab4a81208efc1b9e907984a163210e025cfe7f48e62dda0134fec3b",
+  "ci_run": 42444183953,
+  "no_inventory_writes_in_live_check": true,
+  "backend_tests_passed": 1545,
+  "production_candidate_tests_passed": 57,
+  "pr": 358,
+  "live_inference_seconds": 218.88,
+  "live_inference_regions": 58,
+  "final_merge_replay_regions": 57,
+  "live_inference_partial": true,
+  "rollback": "/home/ubuntu/findez-dense-photo/rollback-glm_extraction.py"
+}
