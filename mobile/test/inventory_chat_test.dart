@@ -28,9 +28,11 @@ InventoryContext scope(String id) => InventoryContext(
 );
 
 class ChatApi extends ApiClient {
-  ChatApi(String? id)
+  ChatApi(String? id, {String? spaceId})
     : super(
         baseUrl: 'https://fixture.invalid',
+        chatSpaceId: spaceId,
+        chatSpaceName: spaceId == null ? null : 'Hardware',
         inventoryContext: id == null ? null : scope(id),
       );
   final stream = StreamController<AiStreamEvent>.broadcast();
@@ -92,6 +94,51 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       floatingActionButton: InventoryChatButton(api: api),
     ),
   );
+  testWidgets('Space attachment menu excludes extraction and supports files', (
+    tester,
+  ) async {
+    final api = ChatApi('Inventory', spaceId: 'hardware');
+    await tester.pumpWidget(host(api));
+    await tester.tap(find.text('Ask FindEZ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Only in Hardware'), findsOneWidget);
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Auto Extract'), findsNothing);
+    expect(find.text('Import inventory'), findsNothing);
+    expect(find.text('Choose files'), findsOneWidget);
+    expect(find.text('Photo library'), findsOneWidget);
+    await capture?.call(tester, 'space-question-attachments');
+    await tester.pumpWidget(const SizedBox());
+    await api.stream.close();
+  });
+  testWidgets('Completed Space response has no retry warning', (tester) async {
+    final api = ChatApi('Inventory', spaceId: 'hardware');
+    await tester.pumpWidget(host(api));
+    await tester.tap(find.text('Ask FindEZ'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'What items are here?');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pump();
+    api.stream.add(
+      AiStreamEvent(type: 'delta', delta: 'Hardware contains two bolts.'),
+    );
+    api.stream.add(
+      AiStreamEvent(
+        type: 'done',
+        assistantMessage: 'Hardware contains two bolts.',
+        conversationId: 'chat',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Hardware contains two bolts.'), findsOneWidget);
+    expect(find.text('Retry response'), findsNothing);
+    expect(find.textContaining('interrupted'), findsNothing);
+    await capture?.call(tester, 'space-question-complete');
+    await tester.pumpWidget(const SizedBox());
+    await api.stream.close();
+  });
   testWidgets('no contextual chat can open without an inventory boundary', (
     tester,
   ) async {

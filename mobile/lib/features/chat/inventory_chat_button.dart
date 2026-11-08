@@ -15,15 +15,39 @@ class InventoryChatButton extends StatelessWidget {
     required this.api,
     this.primary,
     this.prominent = false,
+    this.spaceId,
+    this.spaceName,
   });
   final ApiClient api;
   final Widget? primary;
   final bool prominent;
+  final String? spaceId, spaceName;
 
   Future<void> _open(BuildContext context) async {
     if (api.inventoryContext == null) return;
     try {
       api.assertCurrentContext();
+      var chatApi = api;
+      if (spaceName != null) {
+        var id = spaceId;
+        if (id == null) {
+          final matches = (await api.listSpaces())
+              .where((s) => s['name'] == spaceName)
+              .toList();
+          if (matches.length != 1) {
+            throw const AskRequestException(
+              'This Space is no longer available. Refresh your Spaces.',
+            );
+          }
+          id = (matches.single['id'] ?? matches.single['space_id'])?.toString();
+        }
+        if (id == null || id.isEmpty) {
+          throw const AskRequestException('Choose an available Space.');
+        }
+        api.assertCurrentContext();
+        chatApi = ApiClient.forSpaceChat(api, id, spaceName!);
+      }
+      if (!context.mounted) return;
       if (Theme.of(context).platform == TargetPlatform.iOS) {
         await showCupertinoSheet<void>(
           context: context,
@@ -31,7 +55,7 @@ class InventoryChatButton extends StatelessWidget {
           showDragHandle: true,
           // Keep compatibility with the release SDK, which lacks scrollableBuilder.
           // ignore: deprecated_member_use
-          builder: (context) => _InventoryChatSheet(api: api),
+          builder: (context) => _InventoryChatSheet(api: chatApi),
         );
         return;
       }
@@ -72,7 +96,7 @@ class InventoryChatButton extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Only in ${api.inventoryContext!.name}',
+                                    'Only in ${chatApi.chatSpaceName ?? api.inventoryContext!.name}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: Theme.of(
@@ -91,7 +115,7 @@ class InventoryChatButton extends StatelessWidget {
                           const Divider(height: 1),
                           Expanded(
                             child: ChatPage(
-                              api: api,
+                              api: chatApi,
                               contextual: true,
                               inPageView: true,
                             ),
@@ -215,7 +239,7 @@ class _InventoryChatSheet extends StatelessWidget {
         border: null,
         automaticallyImplyLeading: false,
         middle: Text(
-          'Only in ${api.inventoryContext!.name}',
+          'Only in ${api.chatSpaceName ?? api.inventoryContext!.name}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

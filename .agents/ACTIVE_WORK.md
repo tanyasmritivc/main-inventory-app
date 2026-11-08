@@ -1,3 +1,9 @@
+## November 7 — Space chat204 uploaded (PR360)
+
+Apple acknowledged TestFlight 1.1.2 (204), delivery `0214c63e-ec28-4cf7-89ec-6fd538a1d815`. Runtime `54d706fd20bd030ff316bec932d83c54ea3d9f7c`; all five CI gates passed in run 42448114591. 1,347 Flutter tests passed / 1 existing skip, analysis clean, nine native iOS simulator checks passed. Signed archive/export verified device-only arm64, production configuration, 33 binaries each and 27 privacy manifests. Physical iPhone acceptance remains pending; processing and tester availability were not polled. No public App Store submission.
+
+Contextual Ask uses the persistent Space ID/name and fresh Space-only records, with photo/file questions and no Auto Extract. Main chat and extraction remain unchanged. Companion backend runtime 1320b7cb is deployed healthy (PR359). Receipt: docs/plans/mobile204-release.json.
+
 ## November 7 - light-theme203 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (203), delivery d36695e4-04b5-4da8-9ae7-b24a994cc977. Runtime 1bda45645f51b0a97fe9d981234f0bca6e242d94, PR354. All five exact-commit CI jobs passed (42436247397), including 1,340 Flutter tests / 1 skip; analysis clean. Nineteen native simulator checks passed and light/dark screenshots were reviewed. Physical iPhone acceptance remains pending; processing/tester availability not polled.

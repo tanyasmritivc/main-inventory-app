@@ -2028,7 +2028,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _prefetchInventorySnapshot() async {
-    if (widget.api.worldKey != null) return;
+    if (widget.api.worldKey != null || widget.api.chatSpaceId != null) return;
     try {
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
@@ -2915,7 +2915,21 @@ class _ChatPageState extends State<ChatPage>
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt', 'md', 'jpg', 'jpeg', 'png', 'webp'],
+        allowedExtensions: [
+          'pdf',
+          'txt',
+          'md',
+          'jpg',
+          'jpeg',
+          'png',
+          'webp',
+          if (widget.api.chatSpaceId != null) ...[
+            'csv',
+            'json',
+            'xlsx',
+            'docx',
+          ],
+        ],
         withData: true,
       );
       if (!current() || result == null) return;
@@ -2978,6 +2992,8 @@ class _ChatPageState extends State<ChatPage>
       context,
       _attachmentAnchor,
       nativeAttach: usesNativeChatMenu,
+      questionsOnly: widget.api.chatSpaceId != null,
+      initialPage: widget.api.chatSpaceId != null ? 'attach' : 'root',
     );
     if (!mounted) return;
     setState(() => _sourceMenuOpen = false);
@@ -2988,6 +3004,10 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _selectChatSource(String selected) async {
     if (!mounted || _sending || _pickingPhoto) return;
     final generation = _requestGeneration;
+    if (widget.api.chatSpaceId != null &&
+        !['open', 'camera', 'library', 'file'].contains(selected)) {
+      return;
+    }
     if (selected == 'open') {
       await _worldAttachmentMenu();
     } else if (selected == 'auto_extract') {
@@ -3883,7 +3903,7 @@ class _ChatPageState extends State<ChatPage>
                 onChanged: (_) => setState(() {}),
                 onAttach: _sending || _pickingPhoto
                     ? null
-                    : widget.contextual
+                    : widget.contextual && widget.api.chatSpaceId == null
                     ? _attachPhoto
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,

@@ -882,6 +882,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                           child: InventoryChatButton(
                             api: widget.api,
                             prominent: true,
+                            spaceId: widget.spaceId,
+                            spaceName: _location,
                           ),
                         ),
                         if (_items.isNotEmpty) ...[

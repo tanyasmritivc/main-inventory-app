@@ -8,6 +8,7 @@ Future<String?> showChatSourceMenu(
   GlobalKey anchorKey, {
   bool nativeAttach = false,
   String initialPage = 'root',
+  bool questionsOnly = false,
 }) {
   final anchor = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (anchor == null) return Future.value();
@@ -22,6 +23,7 @@ Future<String?> showChatSourceMenu(
       anchor: origin,
       nativeAttach: nativeAttach,
       initialPage: initialPage,
+      questionsOnly: questionsOnly,
     ),
   );
 }
@@ -31,8 +33,10 @@ class _SourceMenu extends StatefulWidget {
     required this.anchor,
     required this.nativeAttach,
     required this.initialPage,
+    required this.questionsOnly,
   });
   final String initialPage;
+  final bool questionsOnly;
   final Offset anchor;
   final bool nativeAttach;
   @override
@@ -94,6 +98,11 @@ class _SourceMenuState extends State<_SourceMenu> {
             12,
       );
       final filtered = choices[page]!
+          .where(
+            (choice) =>
+                !widget.questionsOnly ||
+                ['attach', 'camera', 'library', 'file'].contains(choice.$1),
+          )
           .where(
             (choice) =>
                 choice.$3.toLowerCase().contains(query.trim().toLowerCase()),

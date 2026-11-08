@@ -1,0 +1,59 @@
+{
+  "version": "1.1.2",
+  "build": 204,
+  "source_commit": "54d706fd20bd030ff316bec932d83c54ea3d9f7c",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "4df88318ff3f4db63fd828d760a8e549eb84f56d3f0b04710b5129cdbbd38958",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "0214c63e-ec28-4cf7-89ec-6fd538a1d815",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci": {
+    "conclusion": "success",
+    "headSha": "54d706fd20bd030ff316bec932d83c54ea3d9f7c",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "name": "AI connectors (MCP and Actions)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "Mobile (Flutter)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "Web (Jest)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "Backend (Python)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "API permissions (PostgreSQL)",
+        "status": "completed"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/tanyasmritivc/main-inventory-app/actions/runs/42448114591"
+  },
+  "native_tests": 9,
+  "flutter_tests": {
+    "passed": 1347,
+    "skipped": 1
+  },
+  "analysis": "clean",
+  "physical_device_acceptance": "pending",
+  "backend_commit": "1320b7cb004c2a9aa79daff24d07e86e4f359e1e",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/360"
+}
