@@ -1,3 +1,13 @@
+## November 8 — Overly crowded wording deployed (PR368)
+
+The shared photo-scan notice now reads “Overly crowded photos can take around 4
+minutes.” User-requested wording correction only. Runtime `94efd7c6`, release
+`scan-wording-20261108`, is live. All five CI jobs (42515745135), 614 web tests,
+TypeScript and changed-file lint passed. Nineteen routes and 41 static assets
+verified through public HTTPS; compiled client notice verified. One runtime file
+changed; 549 unrelated files preserved; backend untouched. Receipt:
+`docs/plans/photo-scan-wording-web-release.json`.
+
 ## November 8 — Photo scan timing notice deployed (PR368)
 
 Photo-scan choices, quick start, Space uploads, onboarding and extraction progress

@@ -1,0 +1,42 @@
+{
+  "published": true,
+  "release": "/home/ubuntu/findez-web-releases/scan-wording-20261108/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/scan-timing-20261108/frontend",
+  "build_id": "fzXA3PJJNkF5Np-3J-zEq",
+  "runtime_commit": "94efd7c6dfa1789f76dac6a70a208d099d23aa3c",
+  "changed": [
+    "src/components/site/photo-scan-hint.tsx"
+  ],
+  "preserved_files": 549,
+  "backend_untouched": true,
+  "verification": {
+    "routes": {
+      "/": 200,
+      "/signin": 200,
+      "/signup": 200,
+      "/pricing": 200,
+      "/product": 200,
+      "/solutions": 200,
+      "/research": 200,
+      "/docs/api": 200,
+      "/privacy": 200,
+      "/terms": 200,
+      "/robots.txt": 200,
+      "/sitemap.xml": 200,
+      "/worlds/personal": "guarded",
+      "/settings/appearance": "guarded",
+      "/inventory": "guarded",
+      "/review": "guarded",
+      "/documents": "guarded",
+      "/workspaces": "guarded",
+      "/notifications": "guarded"
+    },
+    "static_assets_checked": 41,
+    "production_css_served": true
+  },
+  "ci_run": 42515745135,
+  "tests_passed": 614,
+  "typescript": "passed",
+  "changed_file_lint": "passed",
+  "compiled_notice_verified": true
+}
