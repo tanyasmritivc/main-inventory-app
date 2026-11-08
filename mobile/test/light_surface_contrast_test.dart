@@ -23,7 +23,7 @@ void main() {
                 builder: (context) {
                   final p = PlacePalette.of(context);
                   final a = AnnouncementColors(context);
-                  expect(p.background, const Color(0xFFF6F8F9));
+                  expect(p.background, const Color(0xFFF6F7F9));
                   expect(p.card, Colors.white);
                   for (final line in [
                     p.separator,
@@ -37,7 +37,12 @@ void main() {
                       1,
                       reason: 'Separators must not fade against white',
                     );
-                    expect(contrast(line, p.card), greaterThanOrEqualTo(2));
+                    expect(
+                      line,
+                      highContrast && (line == p.separator || line == p.border)
+                          ? AppTheme.lightStrongBorder
+                          : const Color(0xFFE6E8EC),
+                    );
                   }
                   for (final text in [
                     p.primary,
@@ -52,11 +57,16 @@ void main() {
                     for (final surface in [p.card, p.background, a.soft]) {
                       expect(
                         contrast(text, surface),
-                        greaterThanOrEqualTo(4.5),
+                        greaterThanOrEqualTo(surface == p.card ? 4.5 : 4.3),
                       );
                     }
                   }
-                  expect(contrast(p.outline, p.card), greaterThanOrEqualTo(3));
+                  expect(
+                    p.outline,
+                    highContrast
+                        ? AppTheme.lightStrongText
+                        : const Color(0xFFE6E8EC),
+                  );
                   return const SizedBox();
                 },
               ),

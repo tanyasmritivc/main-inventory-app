@@ -1,3 +1,10 @@
+## November 8 — Reference light palette (active)
+
+Owner: current Codex, branch `style/light-reference207`. Apply screenshot-sampled
+light colors only: #F6F7F9 canvas, #FFFFFF surfaces, #202226 primary, #70757D
+secondary, #E6E8EC borders, #EEF0F3 soft selections. Preserve layout, behavior,
+dark mode and backend/web. Preparing TestFlight 207.
+
 ## November 8 — Overly crowded wording uploaded (PR369)
 
 Apple acknowledged TestFlight 1.1.2 (206), delivery `a781679e-d074-4bcf-8fa3-79bf67e0e751`.

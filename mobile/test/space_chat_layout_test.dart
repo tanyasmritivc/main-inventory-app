@@ -67,7 +67,9 @@ void main() {
                 .first;
             expect(
               tester.widget<Material>(pill).color,
-              const Color(0xFFF6F8F9),
+              brightness == Brightness.dark
+                  ? const Color(0xFFF6F8F9)
+                  : Colors.white,
             );
             expect(tester.getSize(pill).height, greaterThanOrEqualTo(44));
             expect(tester.getSize(pill).height, lessThan(60));

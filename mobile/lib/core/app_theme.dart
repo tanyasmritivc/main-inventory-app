@@ -50,15 +50,15 @@ class AppTheme {
         : const ColorScheme.light(
             primary: lightTextPrimary,
             onPrimary: BrandColors.paper,
-            primaryContainer: BrandColors.surface,
+            primaryContainer: lightSurface,
             onPrimaryContainer: lightTextPrimary,
             secondary: lightTextSecondary,
             onSecondary: BrandColors.paper,
-            secondaryContainer: BrandColors.surface,
+            secondaryContainer: lightSurface,
             onSecondaryContainer: lightTextPrimary,
             tertiary: lightTextSecondary,
             onTertiary: BrandColors.paper,
-            tertiaryContainer: BrandColors.surface,
+            tertiaryContainer: lightSurface,
             onTertiaryContainer: lightTextPrimary,
             surface: lightSurface,
             onSurface: lightTextPrimary,
@@ -88,44 +88,51 @@ class AppTheme {
       scaffoldBackgroundColor: bg,
       dividerColor: brightness == Brightness.light ? lightBorder : null,
       splashFactory: InkRipple.splashFactory,
-      textTheme: const TextTheme(
-        headlineSmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0,
-        ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-        bodyLarge: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0,
-        ),
-      ).apply(fontFamily: 'CupertinoSystemText'),
+      textTheme:
+          const TextTheme(
+            headlineSmall: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+            ),
+            titleLarge: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+            ),
+            titleMedium: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+            ),
+            titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+            bodyLarge: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              height: 1.35,
+            ),
+            bodyMedium: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              height: 1.35,
+            ),
+            bodySmall: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              height: 1.35,
+            ),
+            labelLarge: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+            ),
+          ).apply(
+            fontFamily: 'CupertinoSystemText',
+            bodyColor: brightness == Brightness.light ? lightTextPrimary : null,
+            displayColor: brightness == Brightness.light
+                ? lightTextPrimary
+                : null,
+          ),
       appBarTheme: AppBarTheme(
         systemOverlayStyle: brightness == Brightness.light
             ? SystemUiOverlayStyle.dark
@@ -373,19 +380,21 @@ class AppTheme {
     );
   }
 
-  // Light mode colors
-  static const Color lightBg = Color(0xFFF6F8F9);
+  // Light palette sampled from the user-supplied November 8 screenshots.
+  static const Color lightBg = Color(0xFFF6F7F9);
   static const Color lightSurface = Colors.white;
   static const Color lightSurface2 = Colors.white;
-  static const Color lightBorder = Color(0xFFADADB2);
-  static const Color lightControlBorder = Color(0xFF85858A);
-  static const Color lightBorderHover = Color(0x66000000);
-  static const Color lightTextPrimary = Color(0xFF29292B);
-  static const Color lightTextSecondary = Color(0xFF59595D);
-  // The guide's muted gray is used for non-text details. These accessible
-  // derivatives keep small labels readable on both Paper and Surface.
-  static const Color lightTextMuted = Color(0xFF626269);
-  static const Color lightHint = Color(0xFF64646B);
+  static const Color lightBorder = Color(0xFFE6E8EC);
+  static const Color lightControlBorder = Color(0xFFE6E8EC);
+  static const Color lightBorderHover = Color(0xFF70757D);
+  static const Color lightStrongBorder = Color(0xFF85858A);
+  static const Color lightStrongText = Color(0xFF59595D);
+  static const Color lightSoft = Color(0xFFEEF0F3);
+  static const Color lightTextPrimary = Color(0xFF202226);
+  static const Color lightTextSecondary = Color(0xFF70757D);
+  // Keep muted labels and hints consistent with the reference secondary text.
+  static const Color lightTextMuted = Color(0xFF70757D);
+  static const Color lightHint = Color(0xFF70757D);
 
   // Dark neutral counterparts of the same monochrome brand.
   static const Color darkBg = BrandColors.night;
@@ -412,16 +421,14 @@ class AppTheme {
   static Color accentForeground(BuildContext context) =>
       accentForegroundFor(Theme.of(context).brightness);
   static Color accentTintFor(Brightness brightness) =>
-      brightness == Brightness.dark
-      ? const Color(0xFF333335)
-      : const Color(0xFFF0F0F2);
+      brightness == Brightness.dark ? const Color(0xFF333335) : lightSoft;
   static Color accentTint(BuildContext context) =>
       accentTintFor(Theme.of(context).brightness);
 
   static Color navigationForegroundFor(Brightness brightness) =>
       brightness == Brightness.dark
       ? const Color(0xFFFFFFFF)
-      : const Color(0xFF111112);
+      : lightTextPrimary;
   static Color navigationTintFor(Brightness brightness) => Color.alphaBlend(
     BrandColors.signal.withValues(alpha: 0.08),
     brightness == Brightness.dark ? darkSurface : lightSurface,
@@ -455,13 +462,13 @@ class AppTheme {
       isDark(context)
       ? adaptive(context, darkColor)
       : MediaQuery.highContrastOf(context)
-      ? lightControlBorder
+      ? lightStrongBorder
       : lightBorder;
 
   static Color controlBorder(BuildContext context) => isDark(context)
       ? darkBorder
       : MediaQuery.highContrastOf(context)
-      ? lightTextSecondary
+      ? lightStrongText
       : lightControlBorder;
 
   static Color borderHover(BuildContext context) =>

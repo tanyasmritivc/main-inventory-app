@@ -3,6 +3,7 @@ import 'dart:async';
 import 'activity_label.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/app_theme.dart';
 
 /// Public work stages only; never private model reasoning.
 class ChatProgress extends StatefulWidget {
@@ -188,11 +189,13 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final base = widget.heading
-        ? (dark ? const Color(0xFFBDBDBD) : const Color(0xFF242424))
-        : (dark ? const Color(0xFFB5B5B5) : const Color(0xFF626269));
+        ? (dark ? const Color(0xFFBDBDBD) : AppTheme.lightTextPrimary)
+        : (dark ? const Color(0xFFB5B5B5) : AppTheme.lightTextSecondary);
     final shine = dark
         ? Colors.white
-        : (widget.heading ? const Color(0xFF767676) : const Color(0xFF19191D));
+        : (widget.heading
+              ? AppTheme.lightTextSecondary
+              : AppTheme.lightTextPrimary);
     final text = AppText(
       widget.text,
       textAlign: widget.textAlign,
