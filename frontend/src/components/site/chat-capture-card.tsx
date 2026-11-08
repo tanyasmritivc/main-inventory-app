@@ -104,6 +104,7 @@ export function ChatCaptureCard({
   onChanged,
   photo,
   onClose,
+  fixedDestination,
 }: {
   capture: ChatCapture;
   accountId: string;
@@ -112,6 +113,7 @@ export function ChatCaptureCard({
   onChanged?: (capture: ChatCapture) => void;
   photo?: string;
   onClose?: () => void;
+  fixedDestination?: {inventoryId: string; spaceId: string};
 }) {
   const [draft, setDraft] = useState(capture),
     [inventories, setInventories] = useState<Inventory[]>([]),
@@ -159,6 +161,9 @@ export function ChatCaptureCard({
     setBusy(true);
     setError("");
     try {
+      if (method === "POST" && fixedDestination &&
+          (draft.inventory_id !== fixedDestination.inventoryId || draft.space_id !== fixedDestination.spaceId))
+        throw new Error("The destination changed. Reopen this extraction from its Space.");
       const r = await accountRequest<{ capture: unknown }>(
         accountId,
         url + (method === "POST" ? "/save" : ""),
@@ -257,7 +262,7 @@ export function ChatCaptureCard({
       <div className={scan.footer}>
         <div><p>{draft.items.length} candidates. Review identities and quantities before saving.</p>{!!missing.length && <p role="status">Add a quantity for {missing.map(r => r.item.name).join(", ")}, or uncheck those items to save the rest.</p>}{!inventories.length && <p>Create an inventory and Space in chat, or ask an owner for edit access, then reopen this draft.</p>}</div>
         <div className={scan.footerActions}>
-          <DropdownMenu><DropdownMenuTrigger asChild><button className={draft.space_id ? scan.chip : scan.button} disabled={frozen} aria-label="Choose a Space">{draft.space_id ? draft.location || inventories.flatMap(i => i.spaces).find(space => space.id === draft.space_id)?.name || "Choose a Space" : "Choose a Space"}<ChevronDown size={14}/></button></DropdownMenuTrigger><DropdownMenuContent side="top" align="end" sideOffset={8} className={scan.spaceMenu}>{inventories.map(i => <div key={i.inventory_id}><DropdownMenuLabel>{i.name}</DropdownMenuLabel>{i.spaces.map(space => <DropdownMenuItem key={space.id} onSelect={() => void act("PATCH", {inventory_id: i.inventory_id, space_id: space.id})}>{space.name}{draft.space_id === space.id && <Check size={14}/>}</DropdownMenuItem>)}</div>)}{!inventories.length && <DropdownMenuLabel>No editable Spaces</DropdownMenuLabel>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><button className={draft.space_id ? scan.chip : scan.button} disabled={frozen || !!fixedDestination} aria-label="Choose a Space">{draft.space_id ? draft.location || inventories.flatMap(i => i.spaces).find(space => space.id === draft.space_id)?.name || "Choose a Space" : "Choose a Space"}<ChevronDown size={14}/></button></DropdownMenuTrigger><DropdownMenuContent side="top" align="end" sideOffset={8} className={scan.spaceMenu}>{inventories.map(i => <div key={i.inventory_id}><DropdownMenuLabel>{i.name}</DropdownMenuLabel>{i.spaces.map(space => <DropdownMenuItem key={space.id} onSelect={() => void act("PATCH", {inventory_id: i.inventory_id, space_id: space.id})}>{space.name}{draft.space_id === space.id && <Check size={14}/>}</DropdownMenuItem>)}</div>)}{!inventories.length && <DropdownMenuLabel>No editable Spaces</DropdownMenuLabel>}</DropdownMenuContent></DropdownMenu>
           {draft.space_id && <button className={scan.button} disabled={busy || refreshRequired || missing.length > 0 || !draft.items.some(i => i.selected) || (duplicates && !allowDuplicates)} onClick={() => void act("POST")}>{busy ? "Working..." : draft.status === "saving" ? "Continue saving this draft" : "Confirm and save"}</button>}
         </div>
       </div>
