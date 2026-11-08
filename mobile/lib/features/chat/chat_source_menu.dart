@@ -1,4 +1,6 @@
 import '../../core/ui/photo_scan_hint.dart';
+import '../../core/ui/native_presentation.dart';
+import '../../core/appearance_controller.dart';
 import 'native_chat_menu_button.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
@@ -11,6 +13,9 @@ Future<String?> showChatSourceMenu(
   String initialPage = 'root',
   bool questionsOnly = false,
 }) {
+  if (usesNativePresentation) {
+    return _showNativeSourceMenu(context, initialPage, questionsOnly);
+  }
   final anchor = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (anchor == null) return Future.value();
   final origin = anchor.localToGlobal(Offset.zero);
@@ -27,6 +32,85 @@ Future<String?> showChatSourceMenu(
       questionsOnly: questionsOnly,
     ),
   );
+}
+
+Future<String?> _showNativeSourceMenu(
+  BuildContext context,
+  String initialPage,
+  bool questionsOnly,
+) async {
+  final allowed = <String>{};
+  final size =
+      (AppearanceScope.maybeOf(context)?.textSize ?? AppTextSize.standard)
+          .factor;
+  const titles = {
+    'root': 'Add to chat',
+    'attach': 'Attach',
+    'inventory': 'Inventory tools',
+    'context': 'Add context',
+  };
+  const symbols = {
+    'auto_extract': 'sparkles',
+    'attach': 'paperclip',
+    'inventory': 'shippingbox',
+    'context': 'text.bubble',
+    'spreadsheet': 'tablecells',
+    'barcode': 'barcode.viewfinder',
+    'library': 'photo.on.rectangle',
+    'camera': 'camera',
+    'file': 'folder',
+    'space': 'square.grid.2x2',
+    'item': 'shippingbox',
+    'project': 'folder',
+    'document': 'doc.text',
+    'connections': 'link',
+  };
+  Map<String, dynamic> page(String key) {
+    final rows = <Map<String, dynamic>>[];
+    for (final choice in _SourceMenuState.choices[key]!) {
+      if (questionsOnly &&
+          !['attach', 'library', 'camera', 'file'].contains(choice.$1)) {
+        continue;
+      }
+      if (!choice.$4) allowed.add(choice.$1);
+      rows.add({
+        'id': choice.$1,
+        'title': choice.$3,
+        'symbol': symbols[choice.$1],
+        if (choice.$4) 'children': page(choice.$1),
+      });
+    }
+    return {
+      'pageID': key,
+      'title': titles[key],
+      'search': true,
+      'searchPlaceholder': key == 'context'
+          ? 'Search context'
+          : 'Search options',
+      'empty': 'No matching options',
+      'textSizeFactor': size,
+      'sections': [
+        {
+          'rows': rows,
+          if (!questionsOnly && (key == 'root' || key == 'attach'))
+            'footer': '$photoScanTiming $photoScanTip',
+        },
+      ],
+    };
+  }
+
+  final result = await NativePresentation.show(
+    context,
+    model: page(questionsOnly ? 'attach' : initialPage),
+  );
+  if (!context.mounted) return null;
+  if (result?['error'] is String) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result!['error'] as String)));
+  }
+  final action = result?['action'];
+  return action is String && allowed.contains(action) ? action : null;
 }
 
 class _SourceMenu extends StatefulWidget {

@@ -1,3 +1,7 @@
+## November 8 - Native source menu208 (active)
+
+Owner: current Codex, branch fix/native-source-menu208. Replace only iOS chat source popup with the existing native searchable sheet, preserve actions and Space question-only restrictions. Verify dismissal, all callbacks, picker dispatch and light/dark UI; deliver TestFlight208. Crowded scan recovery is a separate backend lane.
+
 ## November 8 — Reference light palette uploaded (PR370)
 
 Apple acknowledged TestFlight 1.1.2 (207), delivery `aa8f2f11-860e-4d81-b2b4-6ae34eb6c393`.
