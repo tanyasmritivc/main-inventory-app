@@ -113,21 +113,21 @@ export function AuthForm({
   const [notice, setNotice] = useState<string | null>(null);
   const [continueHref, setContinueHref] = useState<string | null>(null);
 
-  function signupProfileValues() {
+  function signupProfileValues(useProviderName = false) {
     if (!legalAccepted) {
       setError(
         "Confirm your eligibility and accept the Terms of Service to create an account.",
       );
       return null;
     }
-    const cleanFirstName = firstName.trim();
-    const cleanLastName = lastName.trim();
+    const cleanFirstName = useProviderName ? "" : firstName.trim();
+    const cleanLastName = useProviderName ? "" : lastName.trim();
     const displayName = [cleanFirstName, cleanLastName]
       .filter(Boolean)
       .join(" ");
     const cleanProfileRole = profileRole.trim();
     const cleanOrganization = organization.trim();
-    if (!cleanFirstName || !cleanLastName) {
+    if (!useProviderName && (!cleanFirstName || !cleanLastName)) {
       setError("Enter your first and last name to create an account.");
       return null;
     }
@@ -144,6 +144,7 @@ export function AuthForm({
       return null;
     }
     return {
+      useProviderName,
       cleanFirstName,
       cleanLastName,
       displayName,
@@ -157,7 +158,7 @@ export function AuthForm({
 
   function rememberOAuthSignupProfile() {
     if (mode !== "signup") return true;
-    const profile = signupProfileValues();
+    const profile = signupProfileValues(true);
     if (!profile) return false;
     window.localStorage.setItem(
       PENDING_SIGNUP_PROFILE_KEY,

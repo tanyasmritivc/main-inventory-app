@@ -1,0 +1,37 @@
+{
+  "published": true,
+  "routes": {
+    "/": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/solutions": 200,
+    "/founders": 200
+  },
+  "release": "/home/ubuntu/findez-web-releases/provider-signup-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/space-imports-20261107/frontend",
+  "build_id": "KIzqxNmh7_spE9BT7B9YM",
+  "backend_unchanged_by_web_activation": true,
+  "source_commit": "9b51d0e0",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/349",
+  "typecheck": true,
+  "changed_file_lint": true,
+  "focused_tests": 14,
+  "broader_test_pair": {
+    "passed": 26,
+    "known_navigation_failures": 3
+  },
+  "public_signup_https": 200,
+  "unchanged_runtime_files": 546,
+  "physical_provider_acceptance": "pending",
+  "ci": {
+    "run": 42430722809,
+    "source_commit": "9b51d0e07b43081f4558ad4516c1d7c2b3163eb1",
+    "web_pass": 538,
+    "web_fail": 61,
+    "new_failure_cases": [],
+    "other_jobs": "API, backend, connectors and mobile passed"
+  }
+}

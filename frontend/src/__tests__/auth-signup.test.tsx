@@ -5,8 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/site/auth-form";
 
 const push = jest.fn();
+jest.mock("@/lib/auth-callback", () => ({...jest.requireActual("@/lib/auth-callback"), navigateAfterAuth: (destination: string) => push(destination)}));
 const refresh = jest.fn();
 const signUp = jest.fn();
+const signInWithOAuth = jest.fn();
 const resend = jest.fn();
 const resetPasswordForEmail = jest.fn();
 const signInWithPassword = jest.fn();
@@ -19,7 +21,7 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams({ redirect: mockRedirect }),
 }));
 jest.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithPassword, resend, resetPasswordForEmail }, from }),
+  createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithOAuth, signInWithPassword, resend, resetPasswordForEmail }, from }),
 }));
 jest.mock("@/components/site/app-dialog-provider", () => ({ useAppDialog: () => ({ showNotice: jest.fn() }) }));
 
@@ -51,7 +53,7 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   const redirect = new URL(args.options.emailRedirectTo);
   expect(redirect.origin).toBe(window.location.origin);
   expect(redirect.pathname).toBe("/auth/callback");
-  expect(redirect.searchParams.get("next")).toBe("/onboarding");
+  expect(redirect.searchParams.get("next")).toBe("/worlds");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
   expect(args.options.data.terms_version).toBe("2026-11-01");
   expect(args.options.data.eligibility_attested).toBe(true);
@@ -82,7 +84,7 @@ test("when signup returns a session the profile is saved and the user continues"
   upsert.mockResolvedValue({ error: null });
   await submitSignup();
 
-  await waitFor(() => expect(push).toHaveBeenCalledWith("/onboarding"));
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/worlds"));
   expect(from).toHaveBeenCalledWith("profiles");
   expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ id: "u1", first_name: "Ada", last_name: "Lovelace" }));
   expect(screen.queryByRole("alert")).toBeNull();
@@ -94,7 +96,7 @@ test("a profile save failure is shown instead of being swallowed", async () => {
   await submitSignup();
 
   expect((await screen.findByRole("alert")).textContent).toMatch(/profile details could not be saved/i);
-  expect(screen.getByRole("link", { name: "Continue to FindEZ" }).getAttribute("href")).toBe("/onboarding");
+  expect(screen.getByRole("link", { name: "Continue to FindEZ" }).getAttribute("href")).toBe("/worlds");
   expect(push).not.toHaveBeenCalled();
 });
 
@@ -158,3 +160,18 @@ test("resend rejects empty email and reports throttling without claiming deliver
  expect((await screen.findByRole("alert")).textContent).toContain("Too many attempts");
  expect(screen.queryByRole("status")).toBeNull();
 });
+
+for (const provider of ["Google", "Apple"]) {
+  test(`${provider} signup uses provider identity without typed names`, async () => {
+    signInWithOAuth.mockResolvedValue({error: null});
+    render(<AuthForm mode="signup" />);
+    await userEvent.click(screen.getByRole("checkbox", {name: /at least 13/}));
+    await userEvent.click(screen.getByRole("button", {name: `Continue with ${provider}`}));
+    await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({provider: provider.toLowerCase()})));
+    const pending = JSON.parse(localStorage.getItem(PENDING_KEY)!);
+    expect(pending.useProviderName).toBe(true);
+    expect(pending.displayName).toBe("");
+    expect(pending.eligibilityAttested).toBe(true);
+    expect(screen.queryByText("Enter your first and last name to create an account.")).toBeNull();
+  });
+}
