@@ -12,7 +12,7 @@ jest.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 jest.mock("@/lib/use-api-session");
 jest.mock("@/lib/api", () => ({
   getSpaces: jest.fn(), bulkCreate: jest.fn(), extractFromImageMulti: jest.fn(),
-  createSpace: jest.fn(), processBarcode: jest.fn(), updateReviewItem: jest.fn(),
+  createSpace: jest.fn(), processBarcode: jest.fn(), updateReviewItem: jest.fn(), resolveReviewItem: jest.fn(),
 }));
 jest.mock("@/components/site/app-dialog-provider", () => ({ useAppDialog: () => ({ promptValue: jest.fn() }) }));
 jest.mock("@/components/site/zxing-scanner", () => ({ BarcodeScanner: () => null }));
@@ -90,4 +90,15 @@ test("Viewer can inspect photo results without a destination or write controls",
   expect(screen.queryByRole("button",{name:/Save to/})).toBeNull();
   expect(screen.queryByRole("button",{name:"Manual add"})).toBeNull();
   expect(api.bulkCreate).not.toHaveBeenCalled();
+});
+
+
+test("unknown quantity can save as-is without review or editing", async()=>{
+ jest.mocked(api.extractFromImageMulti).mockResolvedValue({items:[{...items[0],scan_evidence:{quantity_basis:'unknown',needs_review:true},review_status:'preview',review_id:'preview',review_token:'signed'}],summary:{total_detected:1,categories:{}}});
+ jest.mocked(api.bulkCreate).mockResolvedValue({inserted:[{} as api.InventoryItem],accepted_indices:[0],failures:[]});
+ const {container}=render(<ScanCenterClient/>);await upload(container);await screen.findByLabelText('Item 1 name');
+ await userEvent.click(screen.getByRole('button',{name:'Save to Workbench'}));
+ await waitFor(()=>expect(api.bulkCreate).toHaveBeenCalled());
+ expect(jest.mocked(api.bulkCreate).mock.calls[0][0].items[0].scan_evidence?.quantity_basis).toBe('unknown');
+ expect(api.updateReviewItem).not.toHaveBeenCalled();
 });

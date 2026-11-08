@@ -10,7 +10,7 @@ import Link, { useInventoryRouter } from "@/components/site/inventory-link";
 import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
-import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode, updateReviewItem } from "@/lib/api";
+import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode, resolveReviewItem } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
@@ -143,18 +143,20 @@ export function ScanCenterClient() {
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     const inventory = activeInventory();
     setWorking(true); setError(null);
-    if (items.some((item) => hasUnknownQuantity(item.scan_evidence))) { setWorking(false); setError("Enter the missing quantities before saving."); return; }
     try {
       const located = items.map((item) => ({ ...item, location: space }));
-      const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
-      const ready = located.filter((item) => !item.scan_evidence?.needs_review);
-      for (const item of uncertain) {
+      const pending = located.filter((item) => item.review_status === "pending");
+      const ready = located.filter((item) => item.review_status !== "pending");
+      const resolved = new Set<string>();
+      for (const item of pending) {
         if (owner.current !== account) return;
         if (!item.review_id) {
           throw new Error("An uncertain item was not safely stored. Please scan the photo again.");
         }
         if (item.review_status !== "pending" && item.review_status !== "preview") throw new Error("This photo was already reviewed. Take a new photo to capture it again.");
-        await updateReviewItem({ token, reviewId: item.review_id, item });
+        await resolveReviewItem({ token, reviewId: item.review_id, item });
+        resolved.add(item.review_id);
+        if (owner.current === account) setItems(current => current.filter(row => !row.review_id || !resolved.has(row.review_id)));
       }
       if (owner.current !== account) return;
       const result = ready.length > 0
@@ -165,7 +167,7 @@ export function ScanCenterClient() {
       const remaining = ready.filter((_, index) => !accepted.has(index));
       const messages = [];
       if (accepted.size) messages.push(`${accepted.size} saved to ${space}`);
-      if (uncertain.length) messages.push(`${uncertain.length} kept in Review`);
+      if (resolved.size) messages.push(`${resolved.size} saved to ${space}`);
       setSaved(messages.length ? `${messages.join(" · ")}.` : null);
       setItems(remaining);
       if (remaining.length) {
@@ -238,7 +240,7 @@ export function ScanCenterClient() {
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">
                 <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
-                {canWrite && <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space || items.some((item) => hasUnknownQuantity(item.scan_evidence))}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>}
+                {canWrite && <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{`Save to ${space || "a Space"}`}</button>}
               </div>
               <fieldset disabled={working || !canWrite} className="find-review-list" style={{ border: 0, padding: 0, minWidth: 0 }}>
                 {items.map((item, index) => {

@@ -1,0 +1,3 @@
+Main and Space capture cards send explicit acceptance and allow Save without quantity edits. The Capture page saves preview items as-is, resolves existing pending reviews through their stable identity, and removes confirmed items immediately to keep retry receipts safe. Unknown quantities remain marked rather than being presented as counted.
+
+Two runtime components only. Production baseline provider-signup-20261107 is preserved. TypeScript and changed-file lint pass; 17 focused capture/Space/spreadsheet tests pass. Full suite comparison and isolated production smoke are pending. Shared backend removes the grounding cap and repairs supplier quantity imports. No landing page or unrelated main-chat UI edits.

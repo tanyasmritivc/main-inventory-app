@@ -1,3 +1,7 @@
+## November 7 — extraction202 (web, active)
+
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Verification/release in progress.
+
 ## November 7 - provider signup201 deployed
 
 Production provider-signup-20261107 is live, build KIzqxNmh7_spE9BT7B9YM, runtime 9b51d0e0, PR349. Eight routes and public HTTPS signup return 200. Two runtime files changed; 546 unrelated files/configuration preserved. Receipt: docs/plans/provider-signup201-release.json. Physical OAuth acceptance pending.
