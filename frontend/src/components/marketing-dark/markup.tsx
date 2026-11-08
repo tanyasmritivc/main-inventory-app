@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { FindEZMark } from '@/components/site/findez-brand';
 import { BENCH, EXT, FZ_IMG, ROUTES, SOL, type Audience, type DemoItem } from './data';
 import { ChatDemo } from './chat-demo';
+import { CommunityMenu } from './community-menu';
 
 // This parser only accepts the checked-in marketing templates, never user input.
 // It renders ordinary React nodes on the server, including Next images and islands.
@@ -48,6 +49,7 @@ export function Markup({html, audience='robotics'}: {html: string; audience?: Au
     const a=node.attrs; const props:Record<string,unknown>={key};
     if('data-brand' in a)return <Brand key={key} size={+a['data-brand']}/>;
     if('data-chat' in a)return <ChatDemo key={key} audience={audience}/>;
+    if('data-community' in a)return <CommunityMenu key={key}/>;
     for(const [k,v] of Object.entries(a)) {
       if(k==='onclick') {
         const ext=v.match(/ext\('([^']+)'\)/)?.[1] as keyof typeof EXT|undefined;
