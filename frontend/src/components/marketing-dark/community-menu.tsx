@@ -44,7 +44,7 @@ export function CommunityMenu() {
     <div id={panelId} className="community-panel" hidden={!open}>
       <div className="community-links">
         <a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener noreferrer">
-          <span><strong>Discord</strong><small>Join the community</small></span>
+          <span><strong>Discord</strong></span>
           <span className="community-sr"> (opens in a new tab)</span>
         </a>
         <a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener noreferrer">
