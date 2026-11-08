@@ -128,7 +128,7 @@ class _AuthPageState extends State<AuthPage> {
       );
   }
 
-  bool _validateSignupIdentity() {
+  bool _validateSignupIdentity({bool providerName = false}) {
     if (_isLogin) return true;
     if (!_legalAccepted) {
       setState(
@@ -137,6 +137,7 @@ class _AuthPageState extends State<AuthPage> {
       );
       return false;
     }
+    if (providerName) return true;
     final firstName = _firstName.text.trim();
     final lastName = _lastName.text.trim();
     final displayName = [firstName, lastName].join(' ').trim();
@@ -158,7 +159,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _oauthSignIn(OAuthProvider provider) async {
     if (_loading) return;
     if (!mounted) return;
-    if (!_validateSignupIdentity()) return;
+    if (!_validateSignupIdentity(providerName: true)) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = provider;
@@ -262,7 +263,10 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  Future<void> _ensureProfile({required String userId}) async {
+  Future<void> _ensureProfile({
+    required String userId,
+    String? providerName,
+  }) async {
     try {
       final md =
           Supabase.instance.client.auth.currentUser?.userMetadata ??
@@ -281,8 +285,8 @@ class _AuthPageState extends State<AuthPage> {
       final metadataRole = md['profile_role']?.toString().trim() ?? '';
       final metadataOrganization = md['organization']?.toString().trim() ?? '';
 
-      final first = _firstName.text.trim();
-      final last = _lastName.text.trim();
+      final first = providerName == null ? _firstName.text.trim() : '';
+      final last = providerName == null ? _lastName.text.trim() : '';
       final role = _profileRole.text.trim();
       final organization = _organization.text.trim();
 
@@ -293,7 +297,11 @@ class _AuthPageState extends State<AuthPage> {
         lastName,
       ].where((part) => part.isNotEmpty).join(' ').trim();
 
-      if (displayName.isEmpty && metadataDisplayName.isEmpty) return;
+      if (displayName.isEmpty &&
+          metadataDisplayName.isEmpty &&
+          (providerName?.trim().isEmpty ?? true)) {
+        return;
+      }
 
       if (!_isLogin && _legalAccepted) {
         await Supabase.instance.client.auth.updateUser(
@@ -302,7 +310,9 @@ class _AuthPageState extends State<AuthPage> {
       }
       await Supabase.instance.client.from('profiles').upsert({
         'id': userId,
-        'display_name': displayName.isNotEmpty
+        'display_name': providerName?.trim().isNotEmpty == true
+            ? providerName!.trim()
+            : displayName.isNotEmpty
             ? displayName
             : metadataDisplayName,
         if (firstName.isNotEmpty) 'first_name': firstName,
@@ -324,7 +334,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _signInWithApple() async {
     if (_loading) return;
     if (!mounted) return;
-    if (!_validateSignupIdentity()) return;
+    if (!_validateSignupIdentity(providerName: true)) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = OAuthProvider.apple;
@@ -394,7 +404,13 @@ class _AuthPageState extends State<AuthPage> {
         }
       }
 
-      await _ensureProfile(userId: userId);
+      await _ensureProfile(
+        userId: userId,
+        providerName: [
+          givenName,
+          familyName,
+        ].whereType<String>().where((part) => part.isNotEmpty).join(' '),
+      );
       await OnboardingPrefs.setCoachmarkPending(userId, true);
     } on SignInWithAppleAuthorizationException catch (e) {
       OnboardingPrefs.justSignedUp = false;
@@ -427,7 +443,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _signInWithGoogle() async {
     if (_loading) return;
     if (!mounted) return;
-    if (!_validateSignupIdentity()) return;
+    if (!_validateSignupIdentity(providerName: true)) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = OAuthProvider.google;
@@ -471,7 +487,10 @@ class _AuthPageState extends State<AuthPage> {
         );
       }
 
-      await _ensureProfile(userId: userId);
+      await _ensureProfile(
+        userId: userId,
+        providerName: googleUser.displayName ?? '',
+      );
       await OnboardingPrefs.setCoachmarkPending(userId, true);
     } on AuthException catch (e) {
       OnboardingPrefs.justSignedUp = false;
@@ -1195,7 +1214,7 @@ class _AuthPageState extends State<AuthPage> {
           closeEmail: () {
             if (!_loading) setState(() => _showEmail = false);
           },
-          emailForm: _emailForm(providers: false),
+          emailForm: _emailForm(),
           showEmail: _showEmail,
           busy: _loading,
           method: _loading ? (_oauthProviderLoading?.name ?? 'email') : null,

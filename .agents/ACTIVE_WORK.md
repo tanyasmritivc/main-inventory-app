@@ -1,3 +1,7 @@
+## November 7 — signup and welcome201 verified
+
+Owner: Codex, branch fix/signup-welcome201. Provider signup uses provider names; post-auth iOS notification consent precedes announcements; plan dismissal no longer reopens Settings; compact text-only Space action pills. Main chat/extraction unchanged. Flutter 1,336 pass / 1 skip, analysis clean, 16 native iOS simulator checks pass; four Space screenshots retained and dark/light inspected. Signing/upload pending.
+
 ## November 7 — repair200 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (200), delivery `97d95078-21f8-46f3-8c8a-65095b5faea6`. Runtime `57cc953d`, PR346. All five exact-commit CI jobs passed (42424952291). Processing and tester availability were not polled; physical iPhone acceptance remains pending. Public App Store unchanged.

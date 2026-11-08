@@ -102,9 +102,8 @@ void main() {
       await tester.ensureVisible(find.text('Got it'));
       await tester.tap(find.text('Got it'));
       await tester.pumpAndSettle();
-      expect(presentations, 2);
+      expect(presentations, 1);
       expect(find.byType(AnnouncementSheet), findsNothing);
-      completion.complete(null);
       await tester.pumpAndSettle();
       await pending;
       expect(find.text('Open account'), findsOneWidget);

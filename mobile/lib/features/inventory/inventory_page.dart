@@ -225,19 +225,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     );
   }
 
-  int _lowCount() {
-    var n = 0;
-    for (final it in _items) {
-      final thr = it.reorderEnabled
-          ? it.reorderThreshold
-          : _thresholds[it.itemId];
-      if ((thr != null && thr >= 0 && it.quantity <= thr) || it.quantity <= 0) {
-        n++;
-      }
-    }
-    return n;
-  }
-
   Future<void> _editItem(InventoryItem item) async {
     _showProductInfo(context, item);
   }
@@ -1276,9 +1263,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     children: [
       Expanded(
         child: _reviewAction(
-          icon: CupertinoIcons.photo_on_rectangle,
           title: 'Review',
-          subtitle: 'Items to finish',
           onTap: () => Navigator.of(context).push<void>(
             MaterialPageRoute(
               builder: (_) => ReviewQueuePage(
@@ -1293,11 +1278,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       const SizedBox(width: 10),
       Expanded(
         child: _reviewAction(
-          icon: CupertinoIcons.archivebox,
           title: 'Low quantity',
-          subtitle: _onlyLowQuantity
-              ? 'Showing low · Tap to reset'
-              : '${_lowCount()} items',
+          selected: _onlyLowQuantity,
           onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
         ),
       ),
@@ -1305,51 +1287,32 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   );
 
   Widget _reviewAction({
-    required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
-  }) => Material(
-    color: Theme.of(context).brightness == Brightness.light
-        ? Colors.white
-        : const Color(0xFFF5F5F5),
-    borderRadius: BorderRadius.circular(32),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 60),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(icon, size: 21, color: const Color(0xFF202020)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF202020),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    AppText(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: const Color(0xFF606060),
-                      ),
-                    ),
-                  ],
+    bool selected = false,
+  }) => Semantics(
+    button: true,
+    selected: selected,
+    child: Material(
+      color: const Color(0xFFF6F8F9),
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Center(
+              child: AppText(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF202020),
+                  fontWeight: FontWeight.w400,
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

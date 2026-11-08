@@ -5,11 +5,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/launch_notification_permission.dart';
 import 'package:mobile/core/push_notifications.dart';
+import 'package:mobile/features/announcements/announcement_controller.dart';
+import 'package:mobile/features/announcements/announcement_host.dart';
+import 'package:mobile/features/announcements/announcement_widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'support/announcement_fixture.dart';
 
 class _Api extends ApiClient {
   _Api() : super(baseUrl: 'https://api.test');
   String? user;
   int writes = 0;
+  int claims = 0;
+  @override
+  Future<Map<String, dynamic>> collaboration(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? query,
+  }) async {
+    if (path.endsWith('/claim')) {
+      claims++;
+      return {'campaign': welcomeCampaign, 'access': announcementAccess};
+    }
+    return {'saved': true};
+  }
+
   @override
   String? get accountId => user;
   @override
@@ -44,6 +64,7 @@ void main() {
   }
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     failPermission = false;
     api = _Api();
     calls = [];
@@ -127,6 +148,68 @@ void main() {
     permission.complete(false);
     await tester.pumpAndSettle();
   });
+
+  for (final allowed in [true, false]) {
+    iosTestWidgets(
+      'welcome waits for completed notification choice: $allowed',
+      (tester) async {
+        api.user = 'signed-in-account';
+        final controller = AnnouncementController(
+          api: api,
+          accountId: api.user!,
+          isCurrent: () => api.user != null,
+          platform: 'ios',
+        );
+        addTearDown(controller.dispose);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorObservers: [announcementRoutes],
+            home: LaunchNotificationPermission(
+              api: api,
+              child: AnnouncementScope(
+                controller: controller,
+                child: AnnouncementGate(
+                  isSafe: () => true,
+                  onCapture: () {},
+                  child: const Scaffold(body: Text('Home')),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 3));
+        expect(
+          calls.where((call) => call == 'requestPermission'),
+          hasLength(1),
+        );
+        expect(api.claims, 0);
+        expect(find.byType(AnnouncementSheet), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        permission.complete(allowed);
+        await tester.pump();
+        expect(find.byType(AnnouncementSheet), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(AnnouncementSheet), findsOneWidget);
+        expect(api.claims, 1);
+        expect(api.writes, allowed ? 1 : 0);
+        await tester.ensureVisible(find.text('Got it'));
+        await tester.tap(find.text('Got it'));
+        await tester.pumpAndSettle();
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.byType(AnnouncementSheet), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 
   iosTestWidgets('allow connects an already signed-in account', (tester) async {
     api.user = 'test-account';

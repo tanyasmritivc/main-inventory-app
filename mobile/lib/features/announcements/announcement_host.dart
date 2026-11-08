@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
+import '../../core/launch_notification_permission.dart';
 import 'announcement_controller.dart';
 import 'announcement_widgets.dart';
 
@@ -128,6 +129,7 @@ class _AnnouncementGateState extends State<AnnouncementGate>
   bool get _safe =>
       mounted &&
       _controller?.current == true &&
+      NotificationPermissionReady.of(context) &&
       widget.isSafe() &&
       announcementRoutes.homeVisible &&
       (ModalRoute.of(context)?.isCurrent ?? false) &&
