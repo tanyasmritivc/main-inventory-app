@@ -78,6 +78,15 @@ def test_same_view_distinguishable_overlapping_objects_use_stricter_dedup():
     assert result == [a, b]
 
 
+def test_balanced_contained_synonyms_merge_but_small_nested_parts_remain():
+    bearing = box('brass flanged ball bearing', [802, 242, 885, 301])
+    tighter = box('brass thrust bearing', [817, 245, 877, 291])
+    small_part = box('bolt', [820, 250, 830, 260])
+    result, _ = g._merge_views(g.Grounding(items=[bearing], partial=False),
+                              [[(tighter, False), (small_part, False)]])
+    assert result == [bearing, small_part]
+
+
 def test_resolved_pile_is_not_counted_again_alongside_its_contents():
     pile = box('pile of parts', [0, 0, 800, 800], kind='group', occluded=True)
     gear = box('gear', [100, 100, 300, 300])

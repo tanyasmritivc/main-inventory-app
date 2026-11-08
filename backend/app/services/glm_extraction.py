@@ -398,6 +398,8 @@ def _merge_views(overview, views):
                 continue
             if (intersection / union >= (.65 if cross_view else .85)
                     or (cross_view and same_label and intersection / union >= .55)
+                    or (cross_view and intersection / min(area, other_area) >= .9
+                        and min(area, other_area) / max(area, other_area) >= .5)
                     or (clipped and intersection / area >= .9 and area <= other_area)):
                 duplicate = True
                 if candidate.occluded and not clipped:
