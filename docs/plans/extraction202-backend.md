@@ -10,4 +10,4 @@ Validation: full local suite 1,529 passed. Live-overlay candidate 125 passed; th
 
 Live inference diagnosed two independent failures: the old 40-second call timeout and an 8,000-token allowance consumed entirely by model reasoning, leaving no JSON. The final candidate provides 20,000 tokens (an output allowance, not an object limit), asks for brief reasoning, keeps direct completions and bounded four-worker details/crop uploads. The exact final candidate completed the existing crowded photo fixture in 99.52 seconds with 22 items; an earlier diagnostic completed in 82.74 seconds with 24. Both appropriately marked partial/uncertain results. This removes the artificial cap, not model uncertainty or all upstream failures. No provider/model change or hidden automatic inventory retry.
 
-Release activation pending; a verified six-file overlay preserves unrelated production Python sources. No database changes.
+Deployed November 7: runtime d7093e3f (PR352), verified six-file overlay with 140 unrelated Python files preserved. /health and /health/db return 200. No database changes. Rollback copies and exact source-hash receipts are retained privately.
