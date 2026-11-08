@@ -274,6 +274,7 @@ void main() {
       expect(fixture.requests.last.data, {
         'revision': 7,
         'allow_duplicates': false,
+        'confirm_items': true,
       });
       expect(fixture.requests.last.path, endsWith('/captures/capture/save'));
       expect(t.takeException(), isNull);

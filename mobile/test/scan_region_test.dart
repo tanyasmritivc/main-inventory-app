@@ -6,6 +6,24 @@ import 'package:mobile/features/chat/scan_region.dart';
 import 'package:mobile/features/chat/extraction_progress_panel.dart';
 
 void main() {
+  test('all detected regions beyond eight receive progress updates', () {
+    final regions = applyScanRegions([], {
+      'regions': List.generate(
+        24,
+        (i) => {
+          'id': i,
+          'box': [0, 0, 100, 100],
+          'state': 'pending',
+        },
+      ),
+    });
+    expect(regions, hasLength(24));
+    final done = applyScanRegions(regions, {
+      'states': List.generate(24, (i) => {'id': i, 'state': 'checked'}),
+    });
+    expect(done.every((r) => r.phase == ScanRegionPhase.checked), isTrue);
+    expect(done.last.id, 23);
+  });
   test('accepts only unambiguous bounded crop coordinates', () {
     final result = applyScanRegions([], {
       'regions': [

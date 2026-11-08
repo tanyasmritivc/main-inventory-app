@@ -1,3 +1,7 @@
+## November 7 — extraction202 (mobile, active)
+
+Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-mobile.md. Verification/release in progress.
+
 ## November 7 - welcome201 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (201), delivery a6dba605-93b6-495a-b0da-db76b7cc1fe0. Runtime 6a4002d1, PR348. All five exact-commit CI jobs passed (42430591240). Processing and tester availability were not polled; physical iPhone OAuth/permission acceptance remains pending. Public App Store unchanged.

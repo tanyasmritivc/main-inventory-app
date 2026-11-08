@@ -87,7 +87,7 @@ void main() {
   );
 
   testWidgets(
-    'unknown count saves in the chosen Space review without needing a count',
+    'unknown count saves as-is without opening Review or confirming quantity',
     (tester) async {
       List<ExtractedInventoryItem>? result;
       await open(tester, item(unknown: true), (value) => result = value);
@@ -99,10 +99,14 @@ void main() {
       expect(result!.single.needsReview, isTrue);
       expect(result!.single.location, 'Pantry');
       final api = _ReviewApi();
-      final plan = await prepareCaptureForSave(api: api, items: result!);
-      expect(plan.inventoryItems, isEmpty);
-      expect(plan.reviewCount, 1);
-      expect(api.saved!.location, 'Pantry');
+      final plan = await prepareCaptureForSave(
+        api: api,
+        items: result!,
+        saveAsIs: true,
+      );
+      expect(plan.inventoryItems, hasLength(1));
+      expect(plan.reviewCount, 0);
+      expect(api.saved, isNull);
     },
   );
 

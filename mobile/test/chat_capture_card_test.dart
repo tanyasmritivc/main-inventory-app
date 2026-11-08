@@ -438,7 +438,7 @@ void main() {
       await mount(t);
       expect(find.textContaining('Quantity needed'), findsOneWidget);
       await captureAuditCapture?.call('unknown-quantity');
-      await t.tap(find.widgetWithText(FilledButton, 'Add missing quantity'));
+      await t.tap(find.text('Add quantity'));
       await t.pumpAndSettle();
       expect(
         t.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
@@ -456,6 +456,26 @@ void main() {
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
     },
   );
+  testWidgets('Save accepts unknown quantities without opening an editor', (
+    t,
+  ) async {
+    value.addAll({
+      'inventory_id': inv,
+      'space_id': space,
+      'location': 'Pantry',
+      'summary': {
+        'unknown_quantity_indices': [0],
+      },
+    });
+    await mount(t);
+    await t.tap(find.widgetWithText(FilledButton, 'Save items'));
+    await t.pumpAndSettle();
+    final saves = f.requests.where((r) => r.path.endsWith('/save')).toList();
+    expect(saves, hasLength(1));
+    expect(saves.single.data['confirm_items'], isTrue);
+    expect(find.byType(TextFormField), findsNothing);
+    expect(value['items'][0]['item']['quantity'], 1);
+  });
   testWidgets('explicitly entering one clears the unknown quantity', (t) async {
     value.addAll({
       'inventory_id': inv,

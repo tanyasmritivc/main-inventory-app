@@ -932,12 +932,14 @@ class ApiClient {
   Future<BulkCreateResult> bulkCreateInventory({
     required List<ExtractedInventoryItem> items,
     List<String>? requestIds,
+    bool saveAsIs = false,
   }) async {
     if (requestIds != null && requestIds.length != items.length) {
       throw ArgumentError('Every capture needs its own request ID.');
     }
     if (items.any(
-      (item) => !item.needsReview && item.reviewStatus == 'pending',
+      (item) =>
+          (saveAsIs || !item.needsReview) && item.reviewStatus == 'pending',
     )) {
       final inserted = <InventoryItem>[];
       final accepted = <int>[];
@@ -945,7 +947,8 @@ class ApiClient {
       for (var i = 0; i < items.length; i++) {
         final item = items[i];
         try {
-          if (!item.needsReview && item.reviewStatus == 'pending') {
+          if ((saveAsIs || !item.needsReview) &&
+              item.reviewStatus == 'pending') {
             final id = item.reviewId;
             if (id == null || id.isEmpty) {
               throw StateError('Missing review identity');
@@ -955,6 +958,7 @@ class ApiClient {
           } else {
             final result = await bulkCreateInventory(
               items: [item],
+              saveAsIs: saveAsIs,
               requestIds: requestIds == null ? null : [requestIds[i]],
             );
             if (result.confirmedIndices(1).contains(0)) {

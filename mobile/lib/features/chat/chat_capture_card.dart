@@ -433,10 +433,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
 
   Future<void> saveFromChat() async {
     if (!_editable) return;
-    if (_missingRows.isNotEmpty) {
-      await _quantity(_missingRows.first);
-      if (!mounted || !_editable || _missingRows.isNotEmpty) return;
-    }
     if (_draft['space_id'] == null) {
       await _destination();
       if (!mounted || !_editable || _draft['space_id'] == null) return;
@@ -493,9 +489,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
   });
 
   Future<void> _save() async {
-    if (_missingRows.isNotEmpty) {
-      await _quantity(_missingRows.first);
-    } else if (_creation != null) {
+    if (_creation != null) {
       await _createAndSave();
     } else if (_draft['space_id'] == null) {
       await _destination();
@@ -516,7 +510,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
         widget.api.collaboration(
           '$_path/save',
           method: 'POST',
-          data: {'revision': _draft['revision'], 'allow_duplicates': separate},
+          data: {
+            'revision': _draft['revision'],
+            'allow_duplicates': separate,
+            'confirm_items': true,
+          },
         );
     Map<String, dynamic> response;
     try {
@@ -543,7 +541,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
   }
 
   void _showSavedItems() {
-    showExtractionDetails(context, _rows);
+    showExtractionDetails(
+      context,
+      _rows,
+      itemsConfirmed: _draft['items_confirmed'] == true,
+    );
   }
 
   Widget _photoReview(BuildContext context) {
@@ -599,7 +601,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
             ),
           Text(
             _missingRows.isNotEmpty
-                ? 'Add the missing quantities, or uncheck those items to save the rest.'
+                ? 'Save as-is or edit quantities. Uncounted items keep 1 as a placeholder.'
                 : _draft['space_id'] == null
                 ? _destinationHint
                 : 'Ready to save to ${_draft['location']}.',
@@ -626,8 +628,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
             child: Text(
               saving
                   ? 'Retry save safely'
-                  : _missingRows.isNotEmpty
-                  ? 'Add missing quantity'
                   : _draft['space_id'] == null
                   ? (_creation != null
                         ? 'Create Space & save items'
@@ -1249,7 +1249,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
           ),
         Text(
           _missingRows.isNotEmpty
-              ? 'Add the missing quantities, or uncheck those items to save the rest.'
+              ? 'Save as-is or edit quantities. Uncounted items keep 1 as a placeholder.'
               : _draft['space_id'] == null
               ? _destinationHint
               : 'Ready to save to ${_draft['location']}.',
@@ -1264,8 +1264,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
           child: Text(
             saving
                 ? 'Retry save safely'
-                : _missingRows.isNotEmpty
-                ? 'Add missing quantity'
                 : _draft['space_id'] == null
                 ? (_creation != null
                       ? 'Create Space & save items'

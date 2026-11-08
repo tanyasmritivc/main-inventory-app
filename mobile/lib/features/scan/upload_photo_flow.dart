@@ -478,6 +478,7 @@ Future<void> runUploadPhotoFlow({
     plan = await prepareCaptureForSave(
       api: api,
       items: normalized,
+      saveAsIs: true,
       isCurrent: () => context.mounted && isCurrent(),
     );
   } catch (error) {
@@ -507,7 +508,7 @@ Future<void> runUploadPhotoFlow({
   // Step 6: save
   BulkCreateResult res;
   try {
-    res = await api.bulkCreateInventory(items: inventoryItems);
+    res = await api.bulkCreateInventory(items: inventoryItems, saveAsIs: true);
   } on dio.DioException catch (e) {
     if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(

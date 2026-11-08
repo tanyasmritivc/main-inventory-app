@@ -16,6 +16,7 @@ Future<ReviewCapturePlan> prepareCaptureForSave({
   required ApiClient api,
   required List<ExtractedInventoryItem> items,
   bool Function()? isCurrent,
+  bool saveAsIs = false,
 }) async {
   final inventoryItems = <ExtractedInventoryItem>[];
   var reviewCount = 0;
@@ -25,7 +26,7 @@ Future<ReviewCapturePlan> prepareCaptureForSave({
         'The capture session changed. No further items were saved.',
       );
     }
-    if (!item.needsReview) {
+    if (saveAsIs || !item.needsReview) {
       inventoryItems.add(item);
       continue;
     }

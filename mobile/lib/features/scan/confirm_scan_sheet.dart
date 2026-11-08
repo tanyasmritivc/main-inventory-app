@@ -636,7 +636,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             decoration: InputDecoration(
               helperMaxLines: 3,
               helperText: widget.items[i].scanEvidence?.quantityMissing == true
-                  ? "Not counted from the photo. Leave blank to save in this Space's Review section."
+                  ? "Not counted from the photo. Leave blank to save as-is with a quantity placeholder."
                   : widget.items[i].scanEvidence?.quantityNote ??
                         'You can edit this quantity now or later.',
               errorText:
@@ -815,7 +815,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
                       List.generate(n, _needsReview).any((review) => review)
-                          ? 'Unknown items will be saved in ${widget.defaultLocation} / Review. Edit them there later.'
+                          ? 'Save as-is or edit now. Uncounted items keep 1 as a placeholder.'
                           : 'You can edit these items after saving.',
                     ),
                   ),
