@@ -118,7 +118,7 @@ def test_dense_scene_uses_original_sections_with_bounded_parallelism():
             with lock: active -= 1
     with patch.object(g, '_json', side_effect=model) as call:
         result = g._ground_photo(image, updates.append)
-    assert call.call_count == 5 and peak == min(4, g.GROUNDING_WORKERS)
+    assert call.call_count == 5 and peak == g.GROUNDING_WORKERS
     assert len(result.items) == 4
     assert len({tuple(candidate.box) for candidate in result.items}) == 4
     assert result.partial is False
@@ -176,88 +176,3 @@ def test_hidden_or_inseparable_counts_stay_unknown_even_after_confident_guess(kw
     assert item['scan_evidence']['quantity_basis'] == 'unknown'
     assert item['scan_evidence']['quantity_confidence'] is None
     assert 'unknown' in item['scan_evidence']['quantity_note']
-
-
-def test_portrait_closeups_run_in_one_bounded_wave():
-    active = peak = 0
-    lock = threading.Lock()
-    barrier = threading.Barrier(6, timeout=2)
-    def model(prompt, *args):
-        nonlocal active, peak
-        if 'close-up section' not in prompt:
-            return g.Grounding(items=[], partial=False, dense=True)
-        with lock:
-            active += 1
-            peak = max(peak, active)
-        try:
-            barrier.wait()
-            return g.Grounding(items=[], partial=False)
-        finally:
-            with lock: active -= 1
-    with patch.object(g, '_json', side_effect=model):
-        g._ground_photo(Image.new('RGB', (3024, 4032)), lambda _: None)
-    assert peak == 6
-
-
-def test_closeup_identity_parse_retains_box_when_details_are_invalid():
-    import json
-    candidate = box('bolt', [100, 100, 200, 200]).model_dump()
-    candidate['identity'] = {'name': 'Bolt', 'category': 'Hardware', 'uncertainty': 'Check.'}
-    parsed = g._parse_result(json.dumps({'items': [candidate], 'partial': False}), g.DetailedGrounding)
-    assert parsed.items[0].identity.name == 'Bolt'
-    assert parsed.items[0].identity.index == 0
-    candidate['identity']['quantity'] = -1
-    parsed = g._parse_result(json.dumps({'items': [candidate], 'partial': False}), g.DetailedGrounding)
-    assert parsed.items[0].identity is None and parsed.partial
-    assert parsed.items[0].box == [100, 100, 200, 200]
-
-
-def test_complete_closeup_observation_keeps_its_own_identity_after_merge():
-    overview = box('fastener', [100, 100, 300, 300], detection_confidence=.99)
-    detail = box('bolt', [100, 100, 300, 300], detection_confidence=.8,
-                 identity=g.Identity(index=0, name='Steel bolt', category='Hardware', uncertainty='Check.'))
-    result, _ = g._merge_views(g.Grounding(items=[overview], partial=False), [[(detail, False)]])
-    assert result == [detail]
-
-
-def test_preidentified_regions_only_read_missing_crops_and_keep_correct_indices():
-    boxes = [box(f'part {i}', [i*240, 0, i*240+200, 1000]) for i in range(4)]
-    for i in [0, 2]:
-        boxes[i].identity = g.Identity(index=0, name=f'Read {i}', category='Hardware', uncertainty='Check.')
-    image = io.BytesIO();Image.new('RGB', (1000, 1000), 'red').save(image, format='JPEG')
-    reads=[]
-    def model(prompt, images, schema):
-        if schema is g.Grounding:
-            return g.Grounding(items=boxes, partial=False)
-        reads.append(prompt)
-        assert 'part 1' in prompt and 'part 3' in prompt
-        assert 'part 0' not in prompt and 'part 2' not in prompt
-        return g.Identities(items=[g.Identity(index=1, name='Read 3', category='Hardware', uncertainty='Check.'),
-                                   g.Identity(index=0, name='Read 1', category='Hardware', uncertainty='Check.')])
-    with patch.object(g, '_json', side_effect=model):
-        result=g.extract(image.getvalue(),None,None)
-    assert len(reads)==1
-    assert [item['name'] for item in result['items']]==[f'Read {i}' for i in range(4)]
-
-
-def test_all_preidentified_regions_do_not_repeat_detail_inference():
-    identified = box('part', [0, 0, 1000, 1000],
-                     identity=g.Identity(index=99, name='Bolt', category='Hardware', uncertainty='Check.'))
-    image=io.BytesIO();Image.new('RGB',(500,500),'red').save(image,format='JPEG')
-    with patch.object(g,'_json',return_value=g.Grounding(items=[identified],partial=False)) as model:
-        result=g.extract(image.getvalue(),None,None)
-    assert model.call_count==1
-    assert result['items'][0]['name']=='Bolt'
-    assert result['summary']['identified_count']==1
-
-
-def test_failed_missing_crop_does_not_discard_preidentified_neighbors():
-    boxes=[box('known',[0,0,400,1000],identity=g.Identity(index=0,name='Bolt',category='Hardware',uncertainty='Check.')),
-           box('unread',[600,0,1000,1000])]
-    image=io.BytesIO();Image.new('RGB',(500,500),'red').save(image,format='JPEG')
-    def model(prompt,images,schema):
-        if schema is g.Grounding:return g.Grounding(items=boxes,partial=False)
-        raise httpx.ReadTimeout('timeout')
-    with patch.object(g,'_json',side_effect=model):result=g.extract(image.getvalue(),None,None)
-    assert [item['name'] for item in result['items']]==['Bolt','Unknown item']
-    assert result['summary']['partial']

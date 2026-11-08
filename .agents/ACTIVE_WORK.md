@@ -1,6 +1,6 @@
-## November 7 - Crowded photo latency (active)
+## November 7 - Crowded photo latency investigation (not deployed)
 
-Owner: current Codex task, branch fix/dense-photo-latency. Combine detection and identity reading in six concurrent close-up views; only unread crops use the existing detail fallback. Preserve coverage, evidence, save/destination rules, main chat and client UI. Benchmark against the supplied crowded photo before deployment.
+Owner: current Codex task, branch fix/dense-photo-latency. Real no-save candidate benchmarks took 223–240 seconds versus the prior 218.88-second coverage-release sample. Larger batches, combined grounding/identity, lightweight classification and parallel overview/close-ups did not demonstrate a reliable improvement. Experiments were rejected; runtime and tests restored exactly to 2c0e34c5. Live extraction remains the verified coverage release (SHA256 b23f1ff84ab4a81208efc1b9e907984a163210e025cfe7f48e62dda0134fec3b). No deployment or client changes. Latency remains unresolved. See docs/plans/dense-photo-latency.md for measurements and the available-provider limitation.
 
 ## November 7 — Space questions204 deployed (PR359)
 

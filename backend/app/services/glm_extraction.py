@@ -35,7 +35,7 @@ from app.services.chat_vision import image_part
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 2
 DETAIL_WORKERS = 4
-GROUNDING_WORKERS = 6
+GROUNDING_WORKERS = 4
 DETAIL_RESERVE_SECONDS = 90
 MODEL_TIMEOUT_SECONDS = 110
 EXTRACTION_BUDGET_SECONDS = 240
@@ -131,17 +131,12 @@ class Box(StrictModel):
     detection_confidence: Score | None = None
     kind: Literal["object", "group"] = "object"
     occluded: bool = False
-    identity: Identity | None = None
 
 
 class Grounding(StrictModel):
     items: list[Box]
     partial: bool
     dense: bool = False
-
-
-class DetailedGrounding(Grounding):
-    """Close-up detections include details read from that same visible object."""
 
 
 class Identities(StrictModel):
@@ -157,19 +152,10 @@ def _parse_result(content, schema):
     data = json.loads(content)
     if not isinstance(data, dict) or not isinstance(data.get("items"), list):
         return schema.model_validate(data)
-    if issubclass(schema, Grounding):
+    if schema is Grounding:
         valid = []
-        incomplete = False
         for raw in data["items"]:
             try:
-                if isinstance(raw, dict) and raw.get("identity") is not None:
-                    raw = dict(raw)
-                    try:
-                        raw["identity"] = Identity.model_validate({**raw["identity"], "index": 0})
-                    except (ValueError, TypeError):
-                        # Preserve the location and use crop identification later.
-                        raw["identity"] = None
-                        incomplete = True
                 item = Box.model_validate(raw)
                 _valid_box(item.box)
                 valid.append(item)
@@ -179,7 +165,7 @@ def _parse_result(content, schema):
             raise ValueError("No valid object regions")
         return Grounding(items=valid, dense=data.get("dense") is True,
                          partial=data.get("partial") is not False
-                         or incomplete or len(valid) != len(data["items"]))
+                         or len(valid) != len(data["items"]))
     valid = {}
     duplicates = set()
     seen = set()
@@ -225,7 +211,7 @@ def _json(prompt, images, schema):
             "partial": False,
             "dense": False,
         }
-        if issubclass(schema, Grounding)
+        if schema is Grounding
         else {
             "items": [
                 Identity(
@@ -237,12 +223,6 @@ def _json(prompt, images, schema):
             ]
         }
     )
-    if schema is DetailedGrounding:
-        example["items"][0]["identity"] = {
-            "name": "short object name", "category": "category",
-            "identity_confidence": 0.8, "quantity": 1,
-            "quantity_basis": "unknown", "uncertainty": "What is unclear.",
-        }
     messages = [
         {
             "role": "system",
@@ -352,19 +332,6 @@ GROUNDING_PROMPT = (
     "Mark partial true if visible objects were omitted or cannot be separated."
 )
 
-SURVEY_PROMPT = (
-    "Quickly survey this photo before high-resolution close-up scans. "
-    "For a simple scene, locate every separately visible inventory object. "
-    "For a crowded scene, locate the distinct large objects, packages and loose-part groups; "
-    "do not spend this overview enumerating tiny repeated parts. The close-ups will do that. "
-    "Set dense true and partial true for crowded compartments, many small objects or piles. "
-    "Give one tight whole-object box with normalized integer xyxy coordinates 0..1000, "
-    "a short label and detection_confidence. Never box a label separately or treat storage "
-    "containers as inventory. Use kind group only for inseparable loose-part piles; intact "
-    "packages and distinct objects use kind object. Mark occluded true for hidden/cut-off "
-    "contents. Do not infer hidden contents or read identities at this overview stage."
-)
-
 
 def _is_group(candidate):
     return candidate.kind == "group" or bool(
@@ -415,8 +382,7 @@ def _merge_views(overview, views):
     candidates = [(box, False, -1) for box in overview.items]
     candidates.extend((box, clipped, view_id) for view_id, view in enumerate(views)
                       for box, clipped in view)
-    candidates.sort(key=lambda pair: (pair[1], pair[0].identity is None,
-                                      -(pair[0].detection_confidence or 0)))
+    candidates.sort(key=lambda pair: (pair[1], -(pair[0].detection_confidence or 0)))
     accepted = []
     for candidate, clipped, view_id in candidates:
         duplicate = False
@@ -463,8 +429,7 @@ def _merge_views(overview, views):
 
 
 def _ground_photo(image, report):
-    overview = _json(SURVEY_PROMPT if max(image.size) > 1400 else GROUNDING_PROMPT,
-                     [_jpeg(image)], Grounding)
+    overview = _json(GROUNDING_PROMPT, [_jpeg(image)], Grounding)
     crowded = (overview.dense or overview.partial or len(overview.items) >= 8
                or any(_is_group(box) for box in overview.items))
     if not crowded or max(image.size) <= 1400:
@@ -483,22 +448,8 @@ def _ground_photo(image, report):
             result = _json(
                 GROUNDING_PROMPT + " This is a close-up section. Coordinates refer ONLY to this section. "
                 "Prefer whole distinguishable objects; mark any cut-off object occluded. "
-                "Do not invent hidden shapes or read a nearby package label as belonging to a loose part. "
-                "During this same pass, include identity inside EVERY box for that exact object. "
-                "Give a short name, category, identity_confidence and brief uncertainty. "
-                "Include brand, part_number, visible_text, ocr_confidence, barcode, barcode_symbology "
-                "and barcode_confidence ONLY when actually legible on this object; omit unknown keys. "
-                "Do not copy nearby labels. Count individually distinguishable units, excluding empty "
-                "pockets. Never use printed original pack sizes or dosage as remaining quantity. "
-                "Use quantity_basis visible_individuals or visible_packages only for visible counts, "
-                "with quantity, quantity_confidence, quantity_unit and a short quantity_note. "
-                "Name packages as packages; piles/hidden contents must use quantity 1, quantity_basis "
-                "unknown, quantity_confidence null. A region is NOT automatically one unit. "
-                "Dimensions length_mm/width_mm require explicit printed dimensions on THIS object, "
-                "measurement_basis printed_label and the exact measurement_quote in visible_text; "
-                "otherwise omit dimensions. Optional subcategory, tags and short notes may be supplied. "
-                "Omit index and refined_box. Keep JSON concise; do not write empty optional keys.",
-                [_jpeg(image.crop(window))], DetailedGrounding,
+                "Do not invent hidden shapes or read a nearby package label as belonging to a loose part.",
+                [_jpeg(image.crop(window))], Grounding,
             )
             return [_map_window(box, window, image.size) for box in result.items], result.partial
         finally:
@@ -817,18 +768,10 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, o
                          for i, (box, _) in enumerate(selected)]})
     report(f"Reading details for {len(selected)} objects…")
 
-    by_index = {i: box.identity.model_copy(update={"index": i, "refined_box": None})
-                for i, (box, _) in enumerate(selected) if box.identity is not None}
-    pending = [i for i in range(len(selected)) if i not in by_index]
-    if by_index:
-        regions({"states": [{"id": i, "state": "checked"} for i in by_index]})
-        report(f"Checked {len(by_index)} of {len(selected)} objects…")
-
     def identify(offset):
-        indices = pending[offset : offset + BATCH_SIZE]
-        batch = [selected[i] for i in indices]
+        batch = selected[offset : offset + BATCH_SIZE]
         regions({"states": [{"id": i, "state": "checking"}
-                            for i in indices]})
+                            for i in range(offset, offset + len(batch))]})
         order = [
             {"index": i, "candidate": box.label} for i, (box, _) in enumerate(batch)
         ]
@@ -844,26 +787,27 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, o
                       if i.index < len(batch) and counts[i.index] == 1}
         if not identities:
             raise ValueError("Crop identification did not cover its supplied regions")
-        missing = {indices[i] for i in range(len(batch)) if i not in identities}
+        missing = {offset + i for i in range(len(batch)) if i not in identities}
         return ([identities.get(i, _unknown(i)).model_copy(
-                    update={"index": indices[i], "refined_box": None})
+                    update={"index": offset + i, "refined_box": None})
                  for i in range(len(batch))], missing)
 
+    by_index = {}
     failed = set()
     with ThreadPoolExecutor(max_workers=DETAIL_WORKERS) as pool:
         futures = {
             pool.submit(copy_context().run, identify, offset): offset
-            for offset in range(0, len(pending), BATCH_SIZE)
+            for offset in range(0, len(selected), BATCH_SIZE)
         }
         for future in as_completed(futures):
             index = futures[future]
-            batch_indices = pending[index : index + BATCH_SIZE]
+            batch_indices = range(index, min(index + BATCH_SIZE, len(selected)))
             try:
                 identities, missing = future.result()
                 by_index.update({i.index: i for i in identities})
                 failed.update(missing)
             except (httpx.HTTPError, ValueError, TimeoutError):
-                for index in batch_indices:
+                for index in range(index, min(index + BATCH_SIZE, len(selected))):
                     failed.add(index)
                     by_index[index] = _unknown(index)
             regions({"states": [{"id": i, "state": "unreadable" if i in failed else "checked"}
