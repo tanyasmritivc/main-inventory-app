@@ -11,23 +11,14 @@
     "/worlds/personal": 200,
     "/settings/plans": 200
   },
-  "unchanged_files": 515,
-  "build_id": "bNr5fVR2o7FZ7w4_oBnv9",
+  "unchanged_files": 518,
+  "build_id": "WqGMBNnQEJrI3yorjipn0",
   "published": true,
   "backend_unchanged": true,
-  "release": "/home/ubuntu/findez-web-releases/community-20261107/frontend",
-  "previous_release": "/home/ubuntu/findez-web-releases/extraction-20261107/frontend",
-  "source_commit": "9a7b8b5a",
-  "public_https": true,
-  "desktop_and_mobile_390px_verified": true,
+  "release": "/home/ubuntu/findez-web-releases/community-simple-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/community-20261107/frontend",
+  "source_commit": "62b8d52c",
   "focused_tests": 3,
-  "typecheck": true,
   "changed_file_lint": true,
-  "full_tests": {
-    "passed": 539,
-    "failed": 65,
-    "baseline_passed": 536,
-    "baseline_failed": 65,
-    "additional_failures": []
-  }
+  "change": "Remove social icons and external-link arrows; remove Instagram subtitle"
 }
