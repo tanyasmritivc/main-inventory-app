@@ -1,0 +1,115 @@
+{
+  "healthy": true,
+  "commit": "8a6851a4e0c84985167deafbbbb7ce1556956c2f",
+  "changed_files": [
+    "app/services/glm_extraction.py"
+  ],
+  "unrelated_python_files_preserved": 147,
+  "schema_changes": false,
+  "source_sha256": "d3dc92afcb8c108ba2047db3930421d8915c576f7abff0f4e3f151244840026b",
+  "ci_run": 42529356203,
+  "no_inventory_writes_in_live_check": true,
+  "live_http_acceptance": {
+    "source_sha256": "d3dc92afcb8c108ba2047db3930421d8915c576f7abff0f4e3f151244840026b",
+    "invalid_auth_denied": true,
+    "scans": [
+      {
+        "scenario": "overly-crowded",
+        "seconds": 241.1,
+        "items": 70,
+        "unknowns": 50,
+        "keepalives": 15,
+        "max_line_gap_seconds": 10.1,
+        "draft_received": true,
+        "automatic_retries": 0
+      },
+      {
+        "scenario": "regular-charger",
+        "seconds": 40.1,
+        "items": 4,
+        "unknowns": 0,
+        "keepalives": 2,
+        "max_line_gap_seconds": 10.1,
+        "draft_received": true,
+        "automatic_retries": 0
+      }
+    ],
+    "no_inventory_writes": true,
+    "disposable_account_removed": true,
+    "test_images_removed": 76
+  },
+  "forced_overview_failure_probe": {
+    "source_sha256": "d3dc92afcb8c108ba2047db3930421d8915c576f7abff0f4e3f151244840026b",
+    "injected_overview_timeout": true,
+    "simulated_overview_seconds": 110,
+    "real_remaining_seconds": 53.2,
+    "summary": {
+      "total_detected": 8,
+      "categories": {
+        "storage container": 1,
+        "packaged part": 1,
+        "hardware": 2,
+        "Uncategorized": 3,
+        "mechanical part": 1
+      },
+      "identified_count": 5,
+      "unknown_count": 3,
+      "measured_count": 0,
+      "ocr_text_count": 3,
+      "partial": true
+    },
+    "calls": [
+      {
+        "stage": "Grounding",
+        "ok": true,
+        "seconds": 24.1
+      },
+      {
+        "stage": "Grounding",
+        "ok": true,
+        "seconds": 35.1
+      },
+      {
+        "stage": "Grounding",
+        "error": "ReadTimeout",
+        "seconds": 4.8
+      },
+      {
+        "stage": "Grounding",
+        "error": "ReadTimeout",
+        "seconds": 15.9
+      },
+      {
+        "stage": "Grounding",
+        "error": "ReadTimeout",
+        "seconds": 40.1
+      },
+      {
+        "stage": "Grounding",
+        "error": "ReadTimeout",
+        "seconds": 40.1
+      },
+      {
+        "stage": "Identities",
+        "ok": true,
+        "seconds": 11.9
+      },
+      {
+        "stage": "Identities",
+        "ok": true,
+        "seconds": 11.9
+      },
+      {
+        "stage": "Identities",
+        "ok": true,
+        "seconds": 11.9
+      },
+      {
+        "stage": "Identities",
+        "ok": true,
+        "seconds": 12.5
+      }
+    ],
+    "no_inventory_or_storage_writes": true
+  }
+}

@@ -1,6 +1,8 @@
-## November 8 - Crowded scan recovery (active)
+## November 8 - Crowded scan recovery deployed (PR371)
 
-Owner: current Codex, branch fix/crowded-scan-recovery. Recover large-photo failed overview grounding through bounded existing close-ups; preserve budgets, crops, unknown evidence, save/scope and main chat. Full suite1574 passed; candidate HTTP crowded/regular completed. Native source menu is a separate mobile lane.
+Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.
+
+Validation: 1,574 local tests and 63 production-candidate tests. Forced overview failure followed by real section inference recovered eight partial candidates in 53.2 seconds of remaining work. Live HTTPS crowded/regular scans completed with durable drafts/done in 241.1/40.1 seconds; crowded output had 70 candidate regions, 50 unidentified, and regular output four identified regions. No inventory writes; disposable account and 76 test images removed. Identification completeness and latency remain variable. See docs/plans/crowded-scan-recovery.md and crowded-scan-recovery-release.json.
 
 ## November 8 - Regular scan scheduling deployed (PR365)
 
