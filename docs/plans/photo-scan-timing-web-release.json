@@ -1,0 +1,53 @@
+{
+  "published": true,
+  "release": "/home/ubuntu/findez-web-releases/scan-timing-20261108/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/scan-audit-20261108/frontend",
+  "build_id": "Rcm96SCc9DbIzNdbqXTom",
+  "runtime_commit": "1ebc4eca624e7b6132bfcbee84368650250e063f",
+  "changed": [
+    "src/components/site/chat-capture-card.tsx",
+    "src/components/site/chat-plus-menu.tsx",
+    "src/components/site/home-inventory-client.tsx",
+    "src/components/site/photo-scan-hint.tsx",
+    "src/components/site/usage-onboarding-client.tsx",
+    "src/components/site/web-refresh-ui.tsx"
+  ],
+  "preserved_files": 544,
+  "backend_untouched": true,
+  "verification": {
+    "routes": {
+      "/": 200,
+      "/signin": 200,
+      "/signup": 200,
+      "/pricing": 200,
+      "/product": 200,
+      "/solutions": 200,
+      "/research": 200,
+      "/docs/api": 200,
+      "/privacy": 200,
+      "/terms": 200,
+      "/robots.txt": 200,
+      "/sitemap.xml": 200,
+      "/worlds/personal": "guarded",
+      "/settings/appearance": "guarded",
+      "/inventory": "guarded",
+      "/review": "guarded",
+      "/documents": "guarded",
+      "/workspaces": "guarded",
+      "/notifications": "guarded"
+    },
+    "static_assets_checked": 41,
+    "production_css_served": true
+  },
+  "ci_run": 42512950589,
+  "web_tests": 614,
+  "typescript": "passed",
+  "lint": "0 errors; 18 existing warnings",
+  "browser_checks": {
+    "quickStartTiming": true,
+    "scanMenuTiming": true,
+    "smallerGroupsTip": true,
+    "narrowMenuWithinViewport": true,
+    "documentOverflow": false
+  }
+}

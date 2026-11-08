@@ -1,3 +1,17 @@
+## November 8 — Photo scan timing notice deployed (PR368)
+
+Photo-scan choices, quick start, Space uploads, onboarding and extraction progress
+now say “Crowded photos can take around 4 minutes.” Photo choices also suggest
+smaller groups for quicker results. No request, extraction, saving or barcode
+behavior changes.
+
+Production release `scan-timing-20261108`, runtime `1ebc4eca`, is live. All five CI
+gates passed (42512950589); 614 web tests passed, TypeScript clean, changed-file
+lint has no errors. Nineteen routes and 41 static assets passed staging and public
+HTTPS checks. Desktop/narrow browser notices inspected. Six runtime files changed;
+544 unrelated files preserved, backend untouched. Receipt:
+`docs/plans/photo-scan-timing-web-release.json`.
+
 ## November 7 - provider signup201 deployed
 
 Production provider-signup-20261107 is live, build KIzqxNmh7_spE9BT7B9YM, runtime 9b51d0e0, PR349. Eight routes and public HTTPS signup return 200. Two runtime files changed; 546 unrelated files/configuration preserved. Receipt: docs/plans/provider-signup201-release.json. Physical OAuth acceptance pending.
