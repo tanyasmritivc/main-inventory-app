@@ -5,7 +5,7 @@ import { endpoints } from "@/lib/api-reference";
 import styles from "./api-docs.module.css";
 
 export const guideSections = [
-  ["quickstart", "Start here"], ["organization-management", "Organization management"], ["ai-assistants", "Connect Claude or ChatGPT"], ["authentication", "Authentication & permissions"],
+  ["quickstart", "Start here"], ["verify-key", "Verify an API key"], ["organization-management", "Organization management"], ["ai-assistants", "Connect Claude or ChatGPT"], ["authentication", "Authentication & permissions"],
   ["workspaces", "Teams, Spaces & visibility"], ["requests", "Requests & responses"],
   ["recipes", "Integration recipes"], ["sync", "Reliable writes & sync"],
   ["limits", "Limits & retries"], ["errors", "Errors & troubleshooting"],
