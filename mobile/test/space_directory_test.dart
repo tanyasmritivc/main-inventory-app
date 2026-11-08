@@ -314,6 +314,16 @@ void main() {
       expect(find.byType(MainShell), findsNothing);
       expect(find.text('personal / Tools'), findsOneWidget);
       expect(f.requests.any((r) => r.path.endsWith('/search_items')), false);
+      // Native storage/network fixture futures can complete after animations
+      // settle. Wait for the data before capturing or tapping the Space.
+      for (
+        var attempt = 0;
+        attempt < 50 && find.text('Workbench').evaluate().isEmpty;
+        attempt++
+      ) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Workbench'), findsOneWidget);
       await spaceAuditCapture?.call('directory-${brightness.name}');
       await tester.tap(find.text('Workbench'));
       await tester.pumpAndSettle();

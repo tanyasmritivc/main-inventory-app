@@ -86,6 +86,8 @@ private final class NotificationListController: UITableViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Notifications"
+    tableView.backgroundColor = NativeAppearanceColors.canvas
+    tableView.separatorColor = NativeAppearanceColors.separator
     tableView.rowHeight = UITableView.automaticDimension; tableView.estimatedRowHeight = 78
     refreshControl = UIRefreshControl()
     refreshControl?.addAction(UIAction { [weak self] _ in self?.onAction?("refresh") }, for: .valueChanged)
@@ -126,9 +128,11 @@ private final class NotificationListController: UITableViewController {
   override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? { sections[section]["footer"] as? String }
   override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
     (view as? UITableViewHeaderFooterView)?.textLabel?.font = font(13, .footnote)
+    if traitCollection.userInterfaceStyle != .dark { (view as? UITableViewHeaderFooterView)?.textLabel?.textColor = NativeAppearanceColors.secondary }
   }
   override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
     (view as? UITableViewHeaderFooterView)?.textLabel?.font = font(12, .footnote)
+    if traitCollection.userInterfaceStyle != .dark { (view as? UITableViewHeaderFooterView)?.textLabel?.textColor = NativeAppearanceColors.secondary }
   }
   override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     let data = row(indexPath), cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
@@ -138,7 +142,11 @@ private final class NotificationListController: UITableViewController {
     content.textProperties.numberOfLines = 0; content.secondaryTextProperties.numberOfLines = 0
     content.image = UIImage(systemName: data["symbol"] as? String ?? "bell")
     content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
-    content.imageProperties.tintColor = .secondaryLabel
+    content.imageProperties.tintColor = NativeAppearanceColors.secondary
+    if traitCollection.userInterfaceStyle != .dark {
+      content.textProperties.color = NativeAppearanceColors.primary
+      content.secondaryTextProperties.color = NativeAppearanceColors.secondary
+    }
     cell.contentConfiguration = content
     cell.accessibilityIdentifier = data["id"] as? String
     cell.accessibilityLabel = [data["unread"] as? Bool == true ? "Unread" : nil, content.text, content.secondaryText].compactMap { $0 }.joined(separator: ", ")

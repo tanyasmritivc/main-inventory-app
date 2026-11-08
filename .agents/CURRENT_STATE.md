@@ -1,3 +1,9 @@
+## November 7 - light-theme203 uploaded
+
+Apple acknowledged TestFlight 1.1.2 (203), delivery d36695e4-04b5-4da8-9ae7-b24a994cc977. Runtime 1bda45645f51b0a97fe9d981234f0bca6e242d94, PR354. All five exact-commit CI jobs passed (42436247397), including 1,340 Flutter tests / 1 skip; analysis clean. Nineteen native simulator checks passed and light/dark screenshots were reviewed. Physical iPhone acceptance remains pending; processing/tester availability not polled.
+
+Light theme uses #F6F8F9 canvas, white cards, softer neutral charcoal text and opaque readable separators/control outlines across Flutter and native Settings/Notifications. Dark styling and app behavior preserved. No web/backend/database or public App Store submission changes. Receipt: docs/plans/mobile203-release.json.
+
 ## November 7 - welcome201 uploaded
 
 Apple acknowledged TestFlight 1.1.2 (201), delivery a6dba605-93b6-495a-b0da-db76b7cc1fe0. Runtime 6a4002d1, PR348. All five exact-commit CI jobs passed (42430591240). Processing and tester availability were not polled; physical iPhone OAuth/permission acceptance remains pending. Public App Store unchanged.

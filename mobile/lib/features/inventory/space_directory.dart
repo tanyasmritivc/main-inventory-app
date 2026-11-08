@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
@@ -433,7 +434,7 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
           floatingActionButton: InventoryChatButton(api: widget.api),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
               ? AppColors.background
-              : const Color(0xFFFFFFFF),
+              : AppTheme.lightBg,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             flexibleSpace: const ScrollGlass(child: SizedBox.expand()),

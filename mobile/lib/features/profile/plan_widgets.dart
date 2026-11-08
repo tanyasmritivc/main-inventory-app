@@ -14,13 +14,20 @@ class BluePlanSurface extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(20),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFF8F8F8), Color(0xFFDBDBDB), Color(0xFFEBEBEB)],
-        stops: [0, .48, 1],
+      gradient: AppTheme.isDark(context)
+          ? const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF8F8F8), Color(0xFFDBDBDB), Color(0xFFEBEBEB)],
+              stops: [0, .48, 1],
+            )
+          : null,
+      color: AppTheme.isDark(context) ? null : AppTheme.lightSurface,
+      border: Border.all(
+        color: AppTheme.isDark(context)
+            ? const Color(0xFFF3F3F3)
+            : AppTheme.border(context),
       ),
-      border: Border.all(color: const Color(0xFFF3F3F3)),
       boxShadow: const [
         BoxShadow(
           color: Color(0x22BBBBBB),

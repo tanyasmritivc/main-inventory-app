@@ -1,5 +1,13 @@
 import Flutter
 import UIKit
+
+// Opaque light roles match Flutter; UIKit retains its existing dark roles.
+enum NativeAppearanceColors {
+  static let canvas = UIColor { $0.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1) }
+  static let separator = UIColor { $0.userInterfaceStyle == .dark ? .separator : UIColor(red: 173/255, green: 173/255, blue: 178/255, alpha: 1) }
+  static let secondary = UIColor { $0.userInterfaceStyle == .dark ? .secondaryLabel : UIColor(red: 89/255, green: 89/255, blue: 93/255, alpha: 1) }
+  static let primary = UIColor { $0.userInterfaceStyle == .dark ? .label : UIColor(red: 41/255, green: 41/255, blue: 43/255, alpha: 1) }
+}
 import CoreText
 
 /// System presentations only. Dart remains responsible for data and permissions.
@@ -191,6 +199,7 @@ private final class NativeListController: UITableViewController, UISearchResults
         traits.userInterfaceStyle == .dark ? .systemGroupedBackground : UIColor(red: 246/255, green: 248/255, blue: 249/255, alpha: 1)
       }
     }
+    tableView.separatorColor = NativeAppearanceColors.separator
     tableView.rowHeight = UITableView.automaticDimension
     tableView.estimatedRowHeight = 58
     tableView.keyboardDismissMode = .onDrag
@@ -218,7 +227,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     }
     let label = UILabel()
     label.text = (search?.searchBar.text ?? "").isEmpty ? (data["empty"] as? String ?? "No items") : "No matching results"
-    label.textColor = .secondaryLabel; label.textAlignment = .center
+    label.textColor = NativeAppearanceColors.secondary; label.textAlignment = .center
     label.font = appFont(15, style: .body)
     label.adjustsFontForContentSizeCategory = true
     label.numberOfLines = 0
@@ -256,11 +265,13 @@ private final class NativeListController: UITableViewController, UISearchResults
     }
   }
   override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    if traitCollection.userInterfaceStyle != .dark { (view as? UITableViewHeaderFooterView)?.textLabel?.textColor = NativeAppearanceColors.secondary }
     guard page["textSizeFactor"] != nil, let header = view as? UITableViewHeaderFooterView else { return }
     header.textLabel?.font = appFont(13, style: .footnote, weight: .regular)
     header.textLabel?.adjustsFontForContentSizeCategory = true
   }
   override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
+    if traitCollection.userInterfaceStyle != .dark { (view as? UITableViewHeaderFooterView)?.textLabel?.textColor = NativeAppearanceColors.secondary }
     guard page["textSizeFactor"] != nil, let footer = view as? UITableViewHeaderFooterView else { return }
     footer.textLabel?.font = appFont(12, style: .footnote)
     footer.textLabel?.adjustsFontForContentSizeCategory = true
@@ -297,8 +308,9 @@ private final class NativeListController: UITableViewController, UISearchResults
     }
     content.textProperties.numberOfLines = 0
     content.secondaryTextProperties.numberOfLines = 0
-    content.textProperties.color = data["destructive"] as? Bool == true ? .systemRed : .label
-    if let symbol = data["symbol"] as? String { content.image = UIImage(systemName: symbol); content.imageProperties.tintColor = .secondaryLabel }
+    content.textProperties.color = data["destructive"] as? Bool == true ? .systemRed : NativeAppearanceColors.primary
+    if traitCollection.userInterfaceStyle != .dark { content.secondaryTextProperties.color = NativeAppearanceColors.secondary }
+    if let symbol = data["symbol"] as? String { content.image = UIImage(systemName: symbol); content.imageProperties.tintColor = NativeAppearanceColors.secondary }
     if data["announcementPlan"] as? Bool == true {
       content.textProperties.font = appFont(16, style: .body, weight: .medium)
       content.secondaryTextProperties.font = appFont(13, style: .subheadline)
@@ -316,10 +328,10 @@ private final class NativeListController: UITableViewController, UISearchResults
         let label = UILabel()
         label.text = "  \(badge)  "
         label.font = appFont(12.5, style: .caption1, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = NativeAppearanceColors.secondary
         label.layer.cornerRadius = 13
         label.layer.borderWidth = 1
-        label.layer.borderColor = UIColor.label.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
+        label.layer.borderColor = (traitCollection.userInterfaceStyle == .dark ? UIColor.label.withAlphaComponent(0.12) : NativeAppearanceColors.separator).resolvedColor(with: traitCollection).cgColor
         label.sizeToFit()
         label.frame.size.height = max(26, label.frame.height + 8)
         cell.accessoryView = label
@@ -339,7 +351,15 @@ private final class NativeListController: UITableViewController, UISearchResults
       toggle.addAction(UIAction { [weak self, weak toggle] _ in self?.owner?.perform(data, value: toggle?.isOn) }, for: .valueChanged)
       cell.accessoryView = toggle; cell.selectionStyle = .none
       cell.accessibilityElements = [toggle]
-    } else if data["children"] != nil || data["disclosure"] as? Bool == true { cell.accessoryType = .disclosureIndicator }
+    } else if data["children"] != nil || data["disclosure"] as? Bool == true {
+      cell.accessoryType = .disclosureIndicator
+      if traitCollection.userInterfaceStyle != .dark && cell.accessoryView == nil {
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .medium)))
+        chevron.tintColor = NativeAppearanceColors.secondary
+        chevron.isAccessibilityElement = false
+        cell.accessoryView = chevron
+      }
+    }
     else if data["checked"] as? Bool == true { cell.accessoryType = .checkmark }
     return cell
   }

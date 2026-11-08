@@ -48,29 +48,29 @@ class AppTheme {
             onErrorContainer: AppColors.danger,
           )
         : const ColorScheme.light(
-            primary: BrandColors.ink,
+            primary: lightTextPrimary,
             onPrimary: BrandColors.paper,
             primaryContainer: BrandColors.surface,
-            onPrimaryContainer: BrandColors.ink,
+            onPrimaryContainer: lightTextPrimary,
             secondary: lightTextSecondary,
             onSecondary: BrandColors.paper,
             secondaryContainer: BrandColors.surface,
-            onSecondaryContainer: BrandColors.ink,
+            onSecondaryContainer: lightTextPrimary,
             tertiary: lightTextSecondary,
             onTertiary: BrandColors.paper,
             tertiaryContainer: BrandColors.surface,
-            onTertiaryContainer: BrandColors.ink,
+            onTertiaryContainer: lightTextPrimary,
             surface: lightSurface,
-            onSurface: BrandColors.ink,
-            onSurfaceVariant: BrandColors.inkSoft,
+            onSurface: lightTextPrimary,
+            onSurfaceVariant: lightTextSecondary,
             surfaceContainer: lightSurface2,
             surfaceContainerHigh: lightSurface,
-            outline: BrandColors.inkSoft,
+            outline: lightTextSecondary,
             outlineVariant: lightBorder,
             error: BrandColors.danger,
             onError: BrandColors.paper,
             errorContainer: Color(0xFFF2F2F2),
-            onErrorContainer: BrandColors.ink,
+            onErrorContainer: lightTextPrimary,
           );
 
     return ThemeData(
@@ -86,6 +86,7 @@ class AppTheme {
       useMaterial3: true,
       fontFamily: 'CupertinoSystemText',
       scaffoldBackgroundColor: bg,
+      dividerColor: brightness == Brightness.light ? lightBorder : null,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
@@ -376,15 +377,15 @@ class AppTheme {
   static const Color lightBg = Color(0xFFF6F8F9);
   static const Color lightSurface = Colors.white;
   static const Color lightSurface2 = Colors.white;
-  static const Color lightBorder = Color(0xFFB8B8BF);
+  static const Color lightBorder = Color(0xFFADADB2);
   static const Color lightControlBorder = Color(0xFF85858A);
   static const Color lightBorderHover = Color(0x66000000);
-  static const Color lightTextPrimary = BrandColors.ink;
-  static const Color lightTextSecondary = BrandColors.inkSoft;
+  static const Color lightTextPrimary = Color(0xFF29292B);
+  static const Color lightTextSecondary = Color(0xFF59595D);
   // The guide's muted gray is used for non-text details. These accessible
   // derivatives keep small labels readable on both Paper and Surface.
-  static const Color lightTextMuted = Color(0xFF636368);
-  static const Color lightHint = Color(0xFF69696E);
+  static const Color lightTextMuted = Color(0xFF626269);
+  static const Color lightHint = Color(0xFF64646B);
 
   // Dark neutral counterparts of the same monochrome brand.
   static const Color darkBg = BrandColors.night;

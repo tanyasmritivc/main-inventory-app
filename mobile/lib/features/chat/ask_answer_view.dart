@@ -333,7 +333,9 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                         ? const Color(0xFF434343).withValues(alpha: .8)
                         : const Color(0xFFEAEAEA).withValues(alpha: .9),
                     side: BorderSide(
-                      color: const Color(0xFFCFCFCF).withValues(alpha: .6),
+                      color: AppTheme.isDark(context)
+                          ? const Color(0xFFCFCFCF).withValues(alpha: .6)
+                          : AppTheme.border(context),
                     ),
                     shape: const StadiumBorder(),
                     labelStyle: TextStyle(

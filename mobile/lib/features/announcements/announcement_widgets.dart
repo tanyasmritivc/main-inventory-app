@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../core/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -12,16 +13,19 @@ class AnnouncementColors {
   AnnouncementColors(BuildContext context)
     : dark = Theme.of(context).brightness == Brightness.dark;
   final bool dark;
-  Color get text => Color(dark ? 0xFFF4F4F5 : 0xFF0B0B0C);
-  Color get secondary => Color(dark ? 0xFFA1A1A6 : 0xFF5C5C62);
-  Color get tertiary => Color(dark ? 0xFF6B6B70 : 0xFF9A9AA0);
-  Color get soft => Color(dark ? 0xFF1B1B1E : 0xFFF2F2F5);
-  Color get ring => (dark ? Colors.white : Colors.black).withValues(alpha: .12);
+  Color get text => dark ? const Color(0xFFF4F4F5) : AppTheme.lightTextPrimary;
+  Color get secondary =>
+      dark ? const Color(0xFFA1A1A6) : AppTheme.lightTextSecondary;
+  Color get tertiary =>
+      dark ? const Color(0xFF6B6B70) : AppTheme.lightTextMuted;
+  Color get soft => dark ? const Color(0xFF1B1B1E) : AppTheme.lightBg;
+  Color get ring =>
+      dark ? Colors.white.withValues(alpha: .12) : AppTheme.lightBorder;
   Color get hairline =>
-      (dark ? Colors.white : Colors.black).withValues(alpha: .07);
+      dark ? Colors.white.withValues(alpha: .07) : AppTheme.lightBorder;
   List<Color> get surface => dark
       ? [const Color(0xFF161618), const Color(0xFF121214)]
-      : [Colors.white, const Color(0xFFF7F7F9)];
+      : [AppTheme.lightSurface, AppTheme.lightSurface];
 }
 
 class AnnouncementTile extends StatelessWidget {

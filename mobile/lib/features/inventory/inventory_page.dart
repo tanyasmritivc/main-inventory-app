@@ -1295,7 +1295,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     selected: selected,
     child: Material(
       color: const Color(0xFFF6F8F9),
-      borderRadius: BorderRadius.circular(24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: AppTheme.isDark(context)
+            ? BorderSide.none
+            : BorderSide(
+                color: selected
+                    ? AppTheme.lightTextPrimary
+                    : AppTheme.controlBorder(context),
+                width: selected ? 1.5 : 1,
+              ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

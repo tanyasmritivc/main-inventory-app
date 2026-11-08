@@ -35,7 +35,9 @@ void main() {
       final theme = AppTheme.create(brightness);
       expect(
         theme.colorScheme.primary,
-        brightness == Brightness.dark ? BrandColors.paper : BrandColors.ink,
+        brightness == Brightness.dark
+            ? BrandColors.paper
+            : AppTheme.lightTextPrimary,
       );
       expect(
         theme.colorScheme.onPrimary,
@@ -103,7 +105,7 @@ void main() {
           AppTheme.resolve(brightness, Color(retired)),
           brightness == Brightness.dark
               ? AppTheme.darkTextSecondary
-              : BrandColors.inkSoft,
+              : AppTheme.lightTextSecondary,
         );
       }
       for (final status in [

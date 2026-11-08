@@ -1,5 +1,5 @@
+import '../../core/app_theme.dart';
 import '../announcements/announcement_host.dart';
-import '../../core/ui/app_colors.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
 import '../../core/ui/content_loading.dart';
@@ -732,19 +732,11 @@ class _WorldShellState extends State<WorldShell> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final focused = _tab == 0 && _chatFocused;
     return Scaffold(
-      backgroundColor: dark ? AppColors.background : Colors.white,
+      backgroundColor: AppTheme.bg(context),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: !dark && !_chatFocused && _tab == 0
-              ? RadialGradient(
-                  center: const Alignment(.3, 1.2),
-                  radius: 1.15,
-                  colors: [
-                    Colors.black.withValues(alpha: .035),
-                    Colors.transparent,
-                  ],
-                )
-              : null,
+          // A flat, quiet page canvas keeps white controls distinct.
+          color: AppTheme.bg(context),
         ),
         child: SafeArea(
           top: !focused,

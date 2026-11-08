@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/ui/app_typography.dart';
+import '../../core/app_theme.dart';
 
 abstract final class PlaceTokens {
   static const background = Color(0xFFF5F5F5),
@@ -58,13 +59,29 @@ abstract final class PlaceTokens {
 /// Theme-bound roles; never mutate global tokens when the account/theme changes.
 class PlacePalette {
   PlacePalette.of(BuildContext context)
-    : dark = Theme.of(context).brightness == Brightness.dark;
-  final bool dark;
+    : dark = Theme.of(context).brightness == Brightness.dark,
+      highContrast = MediaQuery.highContrastOf(context);
+  final bool dark, highContrast;
   Color resolve(Color light) {
     if (!dark) {
-      return [PlaceTokens.secondary, PlaceTokens.label].contains(light)
-          ? PlaceTokens.dim
-          : light;
+      return <Color, Color>{
+            PlaceTokens.background: AppTheme.lightBg,
+            PlaceTokens.card: AppTheme.lightSurface,
+            PlaceTokens.border: highContrast
+                ? AppTheme.lightControlBorder
+                : AppTheme.lightBorder,
+            PlaceTokens.separator: highContrast
+                ? AppTheme.lightControlBorder
+                : AppTheme.lightBorder,
+            PlaceTokens.primary: AppTheme.lightTextPrimary,
+            PlaceTokens.secondary: AppTheme.lightTextSecondary,
+            PlaceTokens.label: AppTheme.lightTextSecondary,
+            PlaceTokens.dim: AppTheme.lightTextMuted,
+            PlaceTokens.icon: AppTheme.lightTextSecondary,
+            PlaceTokens.chevron: AppTheme.lightTextMuted,
+            PlaceTokens.outline: AppTheme.lightControlBorder,
+          }[light] ??
+          light;
     }
     return <Color, Color>{
           PlaceTokens.background: const Color(0xFF111112),

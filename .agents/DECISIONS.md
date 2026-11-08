@@ -1,3 +1,7 @@
+## November 7 - Readable mobile light surfaces
+
+Light pages use #F6F8F9 and white content cards. Separators and control outlines have distinct opaque roles; custom palettes must not fade structural lines with dark-theme opacity values. Preserve original image/QR artwork and dark appearance. Secondary labels remain readable at normal text sizes.
+
 ## November 7 — post-auth notification choice
 
 User explicitly requests iOS notification permission immediately after authentication,
