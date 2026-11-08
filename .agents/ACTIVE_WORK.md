@@ -1,6 +1,6 @@
 ## November 7 - Crowded photo latency (active)
 
-Owner: current Codex task, branch fix/dense-photo-latency. Reduce repeated detail calls with four-crop grids at unchanged per-crop resolution and bounded six-worker stages. Preserve coverage, evidence, save/destination rules, main chat and client UI. Benchmark against the supplied crowded photo before deployment.
+Owner: current Codex task, branch fix/dense-photo-latency. Combine detection and identity reading in six concurrent close-up views; only unread crops use the existing detail fallback. Preserve coverage, evidence, save/destination rules, main chat and client UI. Benchmark against the supplied crowded photo before deployment.
 
 ## November 7 — Space questions204 deployed (PR359)
 
