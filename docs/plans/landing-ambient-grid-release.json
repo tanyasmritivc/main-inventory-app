@@ -1,0 +1,39 @@
+{
+  "staged": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/docs/api/openapi.json": 200,
+    "/docs/api/chatgpt-actions.json": 200
+  },
+  "unchanged_files": 517,
+  "build_id": "w4Sm-fXc2Fe2EHOGd-m4K",
+  "published": true,
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/ambient-grid-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/rose-headline-20261107/frontend",
+  "source_commit": "a9bb3545",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/364",
+  "validation": {
+    "production_build_and_typescript": "passed",
+    "changed_file_eslint": "passed",
+    "safari_hero_and_chrome_dot_grid_visual_review": "passed",
+    "full_suite": {
+      "passed": 546,
+      "failed": 65,
+      "failure_identities_match_baseline": true
+    },
+    "runtime_files_changed": 2,
+    "reduced_motion": "CSS disables dot animation; existing bin scheduler disables itself"
+  }
+}
