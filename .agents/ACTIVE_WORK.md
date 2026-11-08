@@ -1,3 +1,7 @@
+## November 8 - Regular scan responsiveness (active)
+
+Owner: current Codex task, branch fix/regular-scan-responsiveness. Investigate regular scans staying on loading, measure actual results, and reduce unnecessary inference latency without changing main chat, destinations or save semantics. Candidate small scans read individual original crops with the existing bounded worker pool. Production unchanged until representative checks and exact-source CI pass.
+
 ## November 7 - Crowded photo latency investigation (not deployed)
 
 Owner: current Codex task, branch fix/dense-photo-latency. Real no-save candidate benchmarks took 223–240 seconds versus the prior 218.88-second coverage-release sample. Larger batches, combined grounding/identity, lightweight classification and parallel overview/close-ups did not demonstrate a reliable improvement. Experiments were rejected; runtime and tests restored exactly to 2c0e34c5. Live extraction remains the verified coverage release (SHA256 b23f1ff84ab4a81208efc1b9e907984a163210e025cfe7f48e62dda0134fec3b). No deployment or client changes. Latency remains unresolved. See docs/plans/dense-photo-latency.md for measurements and the available-provider limitation.

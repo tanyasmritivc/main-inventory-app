@@ -34,6 +34,8 @@ from app.services.chat_vision import image_part
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 2
+# Scheduling threshold only, never a limit on detected or returned objects.
+SINGLE_CROP_SCAN_MAX_ITEMS = 8
 DETAIL_WORKERS = 4
 GROUNDING_WORKERS = 4
 DETAIL_RESERVE_SECONDS = 90
@@ -768,8 +770,12 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, o
                          for i, (box, _) in enumerate(selected)]})
     report(f"Reading details for {len(selected)} objects…")
 
+    # Small scans have enough worker capacity for individual full-resolution
+    # crops. Keep batching for larger scenes; this threshold never drops items.
+    batch_size = 1 if len(selected) <= SINGLE_CROP_SCAN_MAX_ITEMS else BATCH_SIZE
+
     def identify(offset):
-        batch = selected[offset : offset + BATCH_SIZE]
+        batch = selected[offset : offset + batch_size]
         regions({"states": [{"id": i, "state": "checking"}
                             for i in range(offset, offset + len(batch))]})
         order = [
@@ -797,17 +803,17 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, o
     with ThreadPoolExecutor(max_workers=DETAIL_WORKERS) as pool:
         futures = {
             pool.submit(copy_context().run, identify, offset): offset
-            for offset in range(0, len(selected), BATCH_SIZE)
+            for offset in range(0, len(selected), batch_size)
         }
         for future in as_completed(futures):
             index = futures[future]
-            batch_indices = range(index, min(index + BATCH_SIZE, len(selected)))
+            batch_indices = range(index, min(index + batch_size, len(selected)))
             try:
                 identities, missing = future.result()
                 by_index.update({i.index: i for i in identities})
                 failed.update(missing)
             except (httpx.HTTPError, ValueError, TimeoutError):
-                for index in range(index, min(index + BATCH_SIZE, len(selected))):
+                for index in range(index, min(index + batch_size, len(selected))):
                     failed.add(index)
                     by_index[index] = _unknown(index)
             regions({"states": [{"id": i, "state": "unreadable" if i in failed else "checked"}
