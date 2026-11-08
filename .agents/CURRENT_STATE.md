@@ -2545,3 +2545,14 @@ Live regular scans took 18.15/24.08 seconds; crowded scan 241.44 seconds for 77
 regions (29 unknown), so crowded speed/accuracy is not claimed solved. Physical
 iPhone acceptance was not rerun; browser plugin startup failed. Publication is
 pending exact-source CI and guarded activation.
+
+November 8 publication receipt: runtime `adf387c5` passed all five CI jobs in
+run42509142171; full local web suite614 passed/78 suites, types clean, changed-file
+lint zero errors/three existing warnings. Release `/home/ubuntu/findez-web-releases/scan-audit-20261108/frontend`,
+build `WLY1-Lx7Ljhu-Fk9oq8LU`, is active. Guarded activation verified exactly the
+two intended runtime files changed,547 other files preserved,backend PID untouched.
+Nineteen route/access checks and41 assets passed. Standalone isolated Chrome
+fallback passed desktop/phone public checks and a real signed-in photo scan:
+25.663s to visible draft,one preview-only POST. Its marked QA account and13
+images were removed. No mobile binary or schema changes. Physical iPhone
+lifecycle testing remains not rerun. PR366 (web); PR367 (runner/test matrix).
