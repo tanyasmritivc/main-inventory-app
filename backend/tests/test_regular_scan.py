@@ -28,7 +28,7 @@ def test_whole_crops_bounded_workers_and_stable_items(count):
         hints = json.loads(prompt.split('candidate hints: ', 1)[1].split('. Return', 1)[0])
         with Image.open(io.BytesIO(images[0])) as crop:
             # One crop keeps 1280px detail; pairs retain the old contact sheet.
-            assert crop.height == (1280 if count <= 8 or len(hints) == 1 else 680)
+            assert crop.height == (1280 if len(hints) == 1 else 680)
         with lock:
             active += 1
             entered += 1
@@ -54,7 +54,7 @@ def test_whole_crops_bounded_workers_and_stable_items(count):
     assert [item['name'] for item in result['items']] == [f'tool {i}' for i in range(count)]
     assert len(result['items']) == count and not result['summary']['partial']
     assert peak == min(4, count)
-    assert sorted(seen) == ([1] * count if count <= 8 else [1, 2, 2, 2, 2])
+    assert sorted(seen) == ([1] * count if count <= 4 else ([1] if count % 2 else []) + [2] * (count // 2))
     assert len(events[0]['regions']) == count
 
 

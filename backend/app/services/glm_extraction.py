@@ -34,9 +34,9 @@ from app.services.chat_vision import image_part
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 2
-# Scheduling threshold only, never a limit on detected or returned objects.
-SINGLE_CROP_SCAN_MAX_ITEMS = 8
 DETAIL_WORKERS = 4
+# One worker wave only. This is not a detected/returned-object limit.
+SINGLE_CROP_SCAN_MAX_ITEMS = DETAIL_WORKERS
 GROUNDING_WORKERS = 4
 DETAIL_RESERVE_SECONDS = 90
 MODEL_TIMEOUT_SECONDS = 110
