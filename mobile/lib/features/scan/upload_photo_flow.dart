@@ -241,13 +241,9 @@ Future<void> runUploadPhotoFlow({
           ),
           child: Material(
             type: MaterialType.transparency,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: ListView(
+              shrinkWrap: true,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: PhotoScanHint(),
-                ),
                 ListTile(
                   leading: Icon(
                     Icons.photo_camera_outlined,
@@ -273,6 +269,10 @@ Future<void> runUploadPhotoFlow({
                     ),
                   ),
                   onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+                ),
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
                 ),
               ],
             ),

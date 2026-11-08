@@ -18,14 +18,9 @@ Future<bool?> showPhotoSourceSheet(
         radius: 28,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: ListView(
+            shrinkWrap: true,
             children: [
-              if (scanning)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: PhotoScanHint(),
-                ),
               ListTile(
                 leading: const Icon(CupertinoIcons.camera),
                 title: const Text('Take photo'),
@@ -45,6 +40,11 @@ Future<bool?> showPhotoSourceSheet(
                 ),
                 onTap: () => Navigator.pop(context, false),
               ),
+              if (scanning)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: PhotoScanHint(),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
