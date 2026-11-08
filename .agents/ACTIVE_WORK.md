@@ -2,7 +2,7 @@
 
 ## Landing Community navigation (November 7, 2026)
 
-Prepared on `feat/landing-community-menu` in the isolated `findez-community-nav` worktree. Shared marketing header now has a dark Community dropdown for Discord and @findezai Instagram. Desktop hover, keyboard/Escape and touch tests pass (3); desktop and 390px mobile preview verified. Typecheck, changed-file lint, production webpack build and 9 staged routes pass. Full Jest: 539 pass / 65 fail; unchanged parent: 536 pass / the same 65 failures. Guarded web-only release prepared at `community-20261107`; publication pending.
+Published on `feat/landing-community-menu` in the isolated `findez-community-nav` worktree. Shared marketing header now has a dark Community dropdown for Discord and @findezai Instagram. Desktop hover, keyboard/Escape and touch tests pass (3); desktop and 390px mobile preview verified. Typecheck, changed-file lint, production webpack build and 9 staged routes pass. Full Jest: 539 pass / 65 fail; unchanged parent: 536 pass / the same 65 failures. Guarded web-only release `community-20261107` is live; build `bNr5fVR2o7FZ7w4_oBnv9`. Public HTTPS and live browser verified both links; 515 other runtime files and the backend preserved. Receipt: `docs/plans/community-navigation-release.json`.
 
 Owner: current Codex task. User-requested scan completeness, save-as-is, spreadsheet quantities and response latency. See docs/plans/extraction202-web.md. Published extraction-20261107, PR351; eight route checks pass, 546 unrelated files preserved.
 

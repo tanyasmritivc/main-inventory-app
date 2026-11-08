@@ -1,0 +1,33 @@
+{
+  "staged": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200
+  },
+  "unchanged_files": 515,
+  "build_id": "bNr5fVR2o7FZ7w4_oBnv9",
+  "published": true,
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/community-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/extraction-20261107/frontend",
+  "source_commit": "9a7b8b5a",
+  "public_https": true,
+  "desktop_and_mobile_390px_verified": true,
+  "focused_tests": 3,
+  "typecheck": true,
+  "changed_file_lint": true,
+  "full_tests": {
+    "passed": 539,
+    "failed": 65,
+    "baseline_passed": 536,
+    "baseline_failed": 65,
+    "additional_failures": []
+  }
+}
