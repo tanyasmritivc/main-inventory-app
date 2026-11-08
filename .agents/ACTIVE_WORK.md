@@ -1,6 +1,8 @@
-## November 7 — Space chat204 API (active)
+## November 7 — Space questions204 deployed (PR359)
 
-Fixed-Space question lane; main chat and extraction unchanged. Fresh scoped item reads, direct image/file questions, private Space history and adequate reply allowance. No schema change. Validation/deployment pending.
+Runtime `1320b7cb004c2a9aa79daff24d07e86e4f359e1e` is live after all five CI gates passed. Contextual Ask reads fresh items in the actual Space, supports photo/file questions without Auto Extract, and allows complete answers beyond the legacy 500-token limit. Private history is actor/inventory/Space-bound. Main chat, extraction, existing legacy Space service and schema are unchanged.
+
+Verification: 1,563 local backend tests; 18 production-candidate tests; real text and photo questions completed; temporary QA history was removed. Four runtime files changed and 144 existing Python files were preserved. Public/API/database health and anonymous denial passed. Mobile PR360/build204 provides the client binding; physical acceptance remains pending. See docs/plans/space-chat204-release.json.
 
 ## November 7 - dense photo extraction (deployed)
 
