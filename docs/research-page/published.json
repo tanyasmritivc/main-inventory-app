@@ -1,0 +1,21 @@
+{
+  "built": true,
+  "unchanged_files": 517,
+  "build_id": "4uDWT_KEAqGwcjB2apclW",
+  "published": true,
+  "routes": {
+    "/research": 200,
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/docs/api": 200
+  },
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/research-find-20261108-final/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/scan-wording-20261108/frontend"
+}
