@@ -1,0 +1,41 @@
+{
+  "deployment": {
+    "healthy": true,
+    "commit": "35129bf570f90ca56e65e0eb0f5a727402c76417",
+    "changed_files": [
+      "app/services/glm_extraction.py"
+    ],
+    "unrelated_python_files_preserved": 147,
+    "schema_changes": false,
+    "source_sha256": "1a38515e098b36d125910babdd4cf0805541b72428790388743e910420226a7d",
+    "ci_run": 42506078089,
+    "no_inventory_writes_in_live_check": true
+  },
+  "production_http_acceptance": {
+    "source_sha256": "1a38515e098b36d125910babdd4cf0805541b72428790388743e910420226a7d",
+    "invalid_auth_denied": true,
+    "scans": [
+      {
+        "scenario": "regular-charger",
+        "seconds": 46.6,
+        "items": 6,
+        "unknowns": 2,
+        "keepalives": 2,
+        "max_line_gap_seconds": 10.0,
+        "draft_received": true,
+        "automatic_retries": 0
+      }
+    ],
+    "no_inventory_writes": true,
+    "disposable_account_removed": true,
+    "test_images_removed": 7
+  },
+  "backend_tests": 1568,
+  "production_candidate_tests": 62,
+  "native_binary_required": false,
+  "limitations": [
+    "Model latency varies; no general end-to-end speed guarantee.",
+    "Reported indefinite-loading behavior was not reproduced.",
+    "Production acceptance returned six regions and therefore exercised the unchanged paired path; the one-wave small path is covered by focused tests and controlled real-provider crop benchmarks."
+  ]
+}

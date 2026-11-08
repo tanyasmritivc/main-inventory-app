@@ -1,6 +1,6 @@
-## November 8 - Regular scan responsiveness (active)
+## November 8 - Regular scan scheduling deployed (PR365)
 
-Owner: current Codex task, branch fix/regular-scan-responsiveness. Investigate regular scans staying on loading, measure actual results, and reduce unnecessary inference latency without changing main chat, destinations or save semantics. Candidate small scans read individual original crops with the existing bounded worker pool. Production unchanged until representative checks and exact-source CI pass.
+Runtime `35129bf5` reads up to four detected crops individually within one four-worker wave; larger scans keep their original batches. This is not an object cap. All five CI gates, 1,568 local tests and 62 production-candidate tests passed. The exact-source HTTP preview completed in 32.0s with a durable draft/done event and disposable-data cleanup. One-file guarded deployment is healthy and preserves 147 other Python files. Main chat, web/mobile UI, saving and schema are unchanged. Timing remains variable and the user's loading report was not reproduced. See docs/plans/regular-scan-responsiveness.md; production HTTPS acceptance also completed in 46.6s, with draft/photos/done, anonymous denial and QA cleanup verified.
 
 ## November 7 - Crowded photo latency investigation (not deployed)
 
