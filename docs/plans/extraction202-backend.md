@@ -1,0 +1,13 @@
+Photo grounding no longer asks for or truncates at eight objects. All validated regions retain stable crop indices; detail batches run with four workers and crop uploads are bounded in parallel. Transient inference transport/429/502/503/504 failures retry once within a 240-second total deadline, with 110 seconds per model call. Explicit empty model tools bypass an unnecessary managed-agent pass. Chat and photo inference reuse HTTP connections, with per-request authorization, conversation headers and timeouts; gateway cookies are not forwarded.
+
+Explicit capture Save can accept unknown quantities and uncertain identities without Review. Frozen destination, revisions, duplicate checks and idempotent receipts remain. Unknown counts keep their current placeholder and an explicit saved note; original evidence stays in the draft.
+
+Supplier missing quantity markers and lower bounds such as 50+ no longer reject entire imports. Original cells and all source columns remain in imported details; notes distinguish placeholders/lower bounds from exact counts. All four supplied Fastener workbooks parse 294/295 rows without omitted parsed rows.
+
+Live-source deltas (scan-region progress, confirm_items, capture destination retry and raw streaming) were preserved in the local lane. Production rollout overlays the five changed services and a narrowly patched copy of the current live photo route (SSE keepalive every ten quiet seconds). No database changes.
+
+Validation: full local suite 1,529 passed. Live-overlay candidate 125 passed; three older fixtures for independent live destination/tool-loop changes were deselected. The keepalive test verifies one extraction and one draft across quiet progress. All four local Fastener and Mechanical Parts Database workbooks preserve all parsed 294/295 rows and their source cells; no customer inventory was written.
+
+Live inference diagnosed two independent failures: the old 40-second call timeout and an 8,000-token allowance consumed entirely by model reasoning, leaving no JSON. The final candidate provides 20,000 tokens (an output allowance, not an object limit), asks for brief reasoning, keeps direct completions and bounded four-worker details/crop uploads. The exact final candidate completed the existing crowded photo fixture in 99.52 seconds with 22 items; an earlier diagnostic completed in 82.74 seconds with 24. Both appropriately marked partial/uncertain results. This removes the artificial cap, not model uncertainty or all upstream failures. No provider/model change or hidden automatic inventory retry.
+
+Release activation pending; a verified six-file overlay preserves unrelated production Python sources. No database changes.
