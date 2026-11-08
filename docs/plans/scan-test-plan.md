@@ -115,15 +115,26 @@ Do not mark these complete merely because a unit or API test passed.
 
 - Backend: 1,568 tests passed on the deployed backend lane.
 - Mobile: 1,347 passed, one existing skipped test; analysis clean. No mobile runtime changes in this audit.
-- Web: 612 passed across 78 suites after repairing stale route/API fixtures;
+- Web: 614 passed across 78 suites after repairing stale route/API fixtures;
   TypeScript passed; full lint zero errors and 52 warnings.
 - Live regular scans: 24.08 and 18.15 seconds; legacy extra-reply scan 30.80 seconds.
 - Live crowded scan: 241.44 seconds, 77 regions, 29 unknown identities; longest
   received-line gap 10.05 seconds. This is still slow and is not an accuracy guarantee.
 - Live capture reload, protected pixels, account isolation, unchanged save and
   replay without duplicates passed. See private JSON report for cleanup receipts.
-- Interactive browser plugin failed at startup (missing browser-service module).
-  Physical-device checks above were not rerun in this audit; do not claim otherwise.
+- Browser plugin failed at startup; isolated standalone Chrome provided the fallback.
+  Landing/sign-in/sign-up passed at desktop and phone widths, without horizontal
+  overflow or page errors. A real signed-in browser scan reached the extraction
+  draft in 25.663 seconds with exactly one preview-only request. Its additional
+  disposable account and 13 images were cleaned up. No real customer was used.
+- Physical iPhone/backgrounding acceptance above was not rerun; do not claim otherwise.
+- Both PRs passed all five CI jobs, including PostgreSQL concurrency and connector
+  checks. Web runtime commit `adf387c5` was published as release
+  `scan-audit-20261108`, build `WLY1-Lx7Ljhu-Fk9oq8LU`; only two runtime files
+  changed and 547 other files were preserved. The backend process was untouched.
+  Production checks covered 19 routes/access guards and 41 static assets.
+- Review requests: https://github.com/tanyasmritivc/main-inventory-app/pull/366
+  (web) and https://github.com/tanyasmritivc/main-inventory-app/pull/367 (runner).
 
 The web repair requests preview-only extraction and uses scan-specific idle and
 absolute deadlines; ordinary text-chat behavior remains unchanged. No model,

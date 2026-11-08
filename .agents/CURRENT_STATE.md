@@ -2932,3 +2932,10 @@ scans took24.08/18.15 seconds; old-web extra reply30.80 seconds. Crowded scan:
 94 QA images removed. No backend/mobile runtime or schema changes in this audit.
 Web scan timeout/completion repair is a separate lane `fix/scan-completion-audit`.
 Physical-device/browser interactive acceptance remains explicitly unclaimed.
+
+November 8 audit completion: final web suite614 passed, all5 CI jobs green for
+runtime adf387c5 (run42509142171) and runner f5042977 (run42508795940).
+Guarded web publication preserved547 files; buildWLY1-Lx7Ljhu-Fk9oq8LU.
+Standalone Chrome fallback completed a real signed-in scan in25.663s, one
+preview-only POST, draft visible; additional QA account and13 images removed.
+Full test plan updated with runnable commands, evidence and unrun device cases.
