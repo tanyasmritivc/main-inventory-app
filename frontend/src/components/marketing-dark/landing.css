@@ -52,6 +52,10 @@ html:has(.landing-dark){background:#000;scroll-behavior:auto}
 .landing-dark .hero.short{min-height:88vh}
 .landing-dark .hero h1{font-size:92px;letter-spacing:-.05em}
 .landing-dark .home-hero h1{font-size:clamp(32px,4.4vw,54px);margin-bottom:36px}
+@supports ((background-clip:text) or (-webkit-background-clip:text)){
+ .landing-dark .home-hero h1{background:linear-gradient(110deg,#E2BBBC 12%,#C48E93 48%,#9F778E 88%);background-clip:text;-webkit-background-clip:text;color:transparent}
+}
+@media(forced-colors:active){.landing-dark .home-hero h1{background:none;color:CanvasText}}
 .landing-dark .hero .sub{font-size:19px;color:var(--tx2);max-width:600px;margin:22px auto 40px}
 .landing-dark .hero .eb{font-size:14px;color:var(--tx2);margin-bottom:20px}
 .landing-dark .hin{position:relative;z-index:2;width:100%}

@@ -1,0 +1,42 @@
+{
+  "staged": true,
+  "routes": {
+    "/": 200,
+    "/solutions": 200,
+    "/founders": 200,
+    "/pricing": 200,
+    "/signin": 200,
+    "/signup": 200,
+    "/inventory": 200,
+    "/worlds/personal": 200,
+    "/settings/plans": 200,
+    "/docs/api": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/docs/api/openapi.json": 200,
+    "/docs/api/chatgpt-actions.json": 200
+  },
+  "unchanged_files": 518,
+  "build_id": "w-_ZfVBX2CRchdGh9VSYg",
+  "published": true,
+  "backend_unchanged": true,
+  "release": "/home/ubuntu/findez-web-releases/rose-headline-20261107/frontend",
+  "previous_release": "/home/ubuntu/findez-web-releases/headings-20261107/frontend",
+  "source_commit": "4d174d43",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/363",
+  "validation": {
+    "production_build_and_typescript": "passed",
+    "safari_chrome_visual_review": "passed",
+    "full_suite": {
+      "passed": 546,
+      "failed": 65,
+      "failure_identities_match_baseline": true
+    },
+    "gradient_stop_contrast_on_black": [
+      12.07,
+      7.64,
+      5.5
+    ],
+    "runtime_files_changed": 1
+  }
+}
