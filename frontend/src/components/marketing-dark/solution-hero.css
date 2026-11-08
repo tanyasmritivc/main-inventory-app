@@ -13,16 +13,17 @@
 .sh-answer{position:absolute;left:0;top:0;opacity:0;transition:opacity .5s var(--e),transform .6s var(--e);height:34px;padding:0 13px;border-radius:17px;background:#F5F5F6;color:#000;font-size:13.5px;font-weight:600;display:flex;align-items:center;white-space:nowrap;pointer-events:none}
 .sh-answer.on{opacity:1}
 .sh-bottom{position:relative;z-index:2;min-width:0;padding:40px 0 72px}
-.sh-wrap{max-width:1240px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:center}
-.landing-dark .solution-hero h1{font-size:clamp(38px,3.35vw,48px);font-weight:400;letter-spacing:-.045em;line-height:1.08;margin:0;text-align:left;max-width:none}
+.sh-wrap{max-width:1240px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
+.landing-dark .solution-hero h1{font-size:clamp(36px,3vw,44px);font-weight:400;letter-spacing:-.04em;line-height:1.12;margin:0;text-align:left;max-width:none;text-wrap:balance}
 .solution-hero h1 span{color:#A3A3A8}
 .sh-controls{min-width:0;width:100%}
 .landing-dark .solution-hero .fz{max-width:none;margin:0}
 .landing-dark .solution-hero .fz-box{padding:6px 7px;gap:6px;background:#111112;min-height:50px}
 .landing-dark .solution-hero .fz textarea{font-size:15.5px;min-height:36px;height:36px;padding:8px 0;line-height:20px}
 .landing-dark .solution-hero .fz-b{width:36px;height:36px;flex:none}
-.landing-dark .solution-hero .fz-chips{flex-wrap:wrap;justify-content:flex-start;overflow:visible;padding-top:10px;gap:8px}
-.landing-dark .solution-hero .fz-chip{flex:0 1 auto;max-width:100%;min-height:32px;height:auto;padding:6px 12px;font-size:13.5px;line-height:1.35;white-space:normal;text-align:left}
+.landing-dark .solution-hero .fz-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;padding-top:10px;gap:8px}
+.landing-dark .solution-hero .fz-chip{min-width:0;max-width:100%;min-height:44px;height:auto;padding:7px 10px;font-size:12px;line-height:1.35;white-space:normal;text-align:center;text-wrap:balance}
+.landing-dark .solution-hero .fz.open .fz-chips{display:none}
 .landing-dark .solution-hero .sh-note{font-size:13.5px;color:#6C6C71;margin:12px 0 0;line-height:1.5;text-align:left}
 .sh-note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:900px){
@@ -30,6 +31,8 @@
  .landing-dark .sh-scene{flex:none;height:52svh;min-height:340px}
  .sh-wrap{grid-template-columns:minmax(0,1fr);gap:18px}
  .landing-dark .solution-hero h1{font-size:36px}
+ .landing-dark .solution-hero .fz-chips{display:flex;flex-wrap:wrap;justify-content:flex-start}
+ .landing-dark .solution-hero .fz-chip{min-height:32px;flex:0 1 auto;font-size:13px;text-align:left}
  .sh-question{font-size:13px;height:40px}
  .sh-bin,.sh-name{display:none}
 }
