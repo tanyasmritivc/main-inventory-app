@@ -1,11 +1,26 @@
-## November 8 - Complete mobile audit resumed (active)
+## November 8 - Mobile launch audit fixes uploaded (PR375)
 
-Owner: current Codex, branch audit/mobile-launch211, based on released build210.
-User resumed broad launch audit. Full Flutter coverage, native workflows and
-visual/large-text checks use synthetic data. Preserve native scan shine, rounded
-photo and navigation lead. Investigate native Documents large-text overflow from
-the interrupted run; distinguish fixture issues from app defects. No claim of
-launch readiness until results and physical-device limitations are recorded.
+Apple acknowledged TestFlight 1.1.2 (211), delivery `cdcf906e-6c89-4750-b322-a936ae817bc7`.
+Runtime `0ece44664f66bc9c456180c7d873fe48e061593f`; all five exact-commit CI jobs passed
+(run42542851869). The resumed audit fixed Documents rename overflow with large
+text/keyboard and an off-screen restock error. Rename content/actions scroll
+together; that error now uses fixed bottom placement. Scan/chat behavior, native
+scan shine and photo corners, palette and navigation timing match build210.
+
+1,365 host tests passed, one existing skip, 65.90% line coverage; analysis clean.
+Extended171 and primary177 native cases passed across initial runs and focused
+replays. Initial failures were retained and all covered by passing replays.
+Eight UIKit scan, four Space layout and fifteen contrast/layout cases passed;
+light/dark visuals reviewed. Repeatable functional and physical-device cases:
+docs/plans/mobile-launch-audit-20261108.md.
+
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing and tester availability were not polled.
+Physical OAuth, APNs, camera/microphone, background lifecycle and VoiceOver remain
+unverified; this does not certify the app as bug-free or fully launch-ready.
+No backend/web/database or public App Store changes. Receipt:
+docs/plans/mobile211-release.json. Disposable audit simulator removed; user's
+original simulator and saved releases retained.
 
 ## November 8 - Native scan polish uploaded (PR374); broad audit paused
 

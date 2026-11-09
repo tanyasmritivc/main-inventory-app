@@ -54,7 +54,7 @@ keyboard open where relevant. Record build, device, expected/actual and evidence
 ## Evidence and status
 
 Active private evidence directory: `projects/findez-mobile-launch211-private`.
-Results will be recorded after each suite completes. An interrupted run is not a
+Completed results and the original failing runs are retained in the evidence logs. An interrupted run is not a
 pass. Provider/OAuth, physical camera, microphone, APNs, background execution and
 VoiceOver require physical-device acceptance; synthetic or simulator checks do
 not certify those services. No public App Store submission is part of this audit.
@@ -95,4 +95,6 @@ app runtime. Eight UIKit scan cases, four Space layout cases, fifteen contrast/l
 and two Documents visual replays passed. Visual review includes light/dark scan
 photo corners and shine, Space empty/populated states, Ask, attachment fallbacks,
 item details, photo chooser and the extreme keyboard rename Save position.
-Signed delivery and exact-commit CI are in progress.
+All five exact-runtime CI jobs passed (42542851869). Apple acknowledged build211
+with delivery `cdcf906e-6c89-4750-b322-a936ae817bc7`. Processing/tester availability were not
+polled. See `mobile211-release.json` for the verified package receipt.

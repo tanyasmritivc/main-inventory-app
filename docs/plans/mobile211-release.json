@@ -1,0 +1,50 @@
+{
+  "version": "1.1.2",
+  "build": 211,
+  "source_commit": "0ece44664f66bc9c456180c7d873fe48e061593f",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "a61bcde3b3178b41423487774d03f7c334f8258497ae2e75b97e6b40261f03eb",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "cdcf906e-6c89-4750-b322-a936ae817bc7",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42542851869,
+  "host_tests_passed": 1365,
+  "host_existing_skips": 1,
+  "host_line_coverage_percent": 65.9,
+  "analysis": "clean",
+  "native_extended_cases_passed_across_replays": 171,
+  "native_primary_cases_passed_across_replays": 177,
+  "native_scan_cases_passed": 8,
+  "native_space_layout_cases_passed": 4,
+  "native_contrast_layout_cases_passed": 15,
+  "physical_device_acceptance": "pending",
+  "broader_launch_audit": "Automated and simulator audit completed; physical-device acceptance remains pending",
+  "native_audit": {
+    "checks": {
+      "native-keyboard-final": true,
+      "native-release-final": true,
+      "native-scan": true,
+      "native-scan-visual": true,
+      "native-space": true,
+      "native-contrast": true,
+      "native-documents-visual": true,
+      "visual_review_completed": true,
+      "scan_chat_palette_navigation_runtime_unchanged": true
+    },
+    "extended_cases": 171,
+    "primary_cases": 177,
+    "replays": "Initial native failures retained; all original failures covered by passing focused replays.",
+    "physical_acceptance": "Pending: OAuth, APNs, camera/microphone, background lifecycle and VoiceOver.",
+    "new_runtime_fixes": [
+      "Documents rename scrolls all content above keyboard",
+      "Restock synchronization error uses fixed SnackBar"
+    ]
+  }
+}
