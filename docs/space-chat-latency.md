@@ -53,3 +53,12 @@ environment change, web deployment, or mobile build is required.
 Release backup: `/home/ubuntu/findez-space-chat-20261108/backup`.
 Rollback restores the original `world_chat.py`, removes only the newly introduced
 `chat_space_creation.py`, restarts `findez`, and rechecks both health endpoints.
+
+## Deployed result
+
+Commit `7b263a31` deployed on 2026-11-08. The two source checksums matched, every
+other backend Python source remained unchanged, and the web process was not
+restarted. Both local and public health endpoints returned 200. Synthetic checks
+on the deployed runtime exercised old and modern confirmation contracts with
+database/model calls blocked. No customer Space was created during verification.
+An authenticated physical-phone round trip has not been measured.

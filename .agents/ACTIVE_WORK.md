@@ -7,7 +7,9 @@ recorded in `e4b1174a`; older repository chat descriptions are not the current
 runtime. A narrow shortcut prepares existing reviewed creation proposals for
 clear standalone new-conversation Space requests using authorized destination
 metadata, without item retrieval or model calls. Contextual turns, captures,
-ambiguous destinations, and retries retain the existing flow. Deployment pending.
+ambiguous destinations, and retries retain the existing flow. Commit `7b263a31`
+is deployed through the two-file overlay. Local/public health checks and synthetic
+old/modern-client checks passed. No database or client changes were deployed.
 
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not
 list ideas as active work.
