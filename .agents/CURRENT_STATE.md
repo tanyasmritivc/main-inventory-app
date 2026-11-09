@@ -1,3 +1,26 @@
+## November 8: App Store 1.1.2 build213 submitted with automatic release
+
+The user explicitly authorized public App Review submission, supplied replacement
+iPhone and iPad screenshots, requested dot bullets with no em or en dashes in forms,
+and then authorized automatic release after approval. This supersedes the earlier
+manual-release and preparation-only limits for this version.
+
+Apple accepted submission `c31eb784-d23a-43a3-8419-5cf4e088b140` at
+2026-11-09T03:57:28.356Z. Version1.1.2 and review submission are WAITING_FOR_REVIEW;
+build213 is VALID and selected. Release type is AFTER_APPROVAL. Seven iPhone
+1320x2868 images and seven iPad2064x2752 images from the supplied device ZIPs were
+uploaded in numbered order; all14 processed COMPLETE with matching checksums.
+The light ZIP's iPhone images have identical pixels to the device-specific ZIP.
+Description, release notes and review guide were saved and verified without em or
+en dashes or hyphen bullets. Review credentials and existing app declarations
+were retained. No new binary or runtime change was needed.
+
+This records submission, not approval or a live public release. Previous audit
+limitations remain historical facts; no new physical-device acceptance is claimed.
+Receipt: `docs/plans/mobile213-app-store-submission.json`. Private originals,
+metadata backups, screenshots and detailed Apple receipts remain outside git in
+`projects/findez-submission213-private/submission`.
+
 ## November 8 - Mobile audit and scan colors uploaded (PR377)
 
 Apple acknowledged TestFlight 1.1.2 (213), delivery

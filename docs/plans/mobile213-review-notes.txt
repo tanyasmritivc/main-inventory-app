@@ -1,4 +1,4 @@
-FindEZ AI 1.1.2 (213) - App Review guide
+FindEZ AI 1.1.2 (213): App Review guide
 
 ACCESS
 Use the dedicated email/password account in Sign-In Information. No purchase or third-party sign-in is required. On first launch choose "Already have an account? Sign in". Choose More options and Continue with Email if email fields are not visible. New users can choose Get started, answer or skip introductory questions, then create an account with Apple, Google or email. The notification permission choice precedes the informational Founders Access welcome sheet; either permission choice is supported.

@@ -16,7 +16,9 @@ muted rose gradient in both themes and changes only the light native scan panel
 from white to soft #EEF0F3. Its dark panel, white photo sweep, actual progress,
 Stop, tips, reduced-motion and lifecycle behavior remain unchanged.
 
-No public review submission or release is authorized by this preparation task.
+The initial preparation task did not authorize public review submission. The
+subsequent explicit user request authorized submission and automatic release.
+See the final submission receipt below.
 Use synthetic fixtures for mutation tests and read-only customer navigation.
 
 ## Repeatable checks
@@ -96,6 +98,10 @@ passing automation does not guarantee approval.
 
 ## Final submission gate
 
-Before public submission, select the final processed candidate, confirm final
-TestFlight acceptance on the designated device, review the current listing and
-privacy answers, and obtain explicit authorization to submit. Keep manual release.
+The user subsequently authorized submission and automatic release. Build213 was
+selected after Apple processing reported VALID. User-supplied screenshots replaced
+the old navigation images. All14 assets completed processing with matching checksums.
+Existing review credentials and app declarations were retained; form text uses dot
+bullets and contains no em or en dashes. Apple accepted the submission at
+2026-11-09T03:57:28.356Z and reports WAITING_FOR_REVIEW with AFTER_APPROVAL release.
+No new physical acceptance is claimed. Receipt: `mobile213-app-store-submission.json`.
