@@ -1,0 +1,38 @@
+{
+  "version": "1.1.2",
+  "build": 210,
+  "source_commit": "f4d888969ae977e726ac99c50f37cd50a46b75a9",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "8fb8aacc06efb5a7fcd190e91ff0221b77d9a9d74325606721c3675753e4cddc",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "a8998e95-9a99-4ad4-85d8-a752954342ee",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42537573630,
+  "focused_flutter_tests_passed": 9,
+  "analysis": "clean",
+  "native_simulator_tests_passed": 6,
+  "physical_device_acceptance": "pending",
+  "broader_launch_audit": "paused by user; incomplete",
+  "native_audit": {
+    "checks": {
+      "dark_diagonal_shine_observed": true,
+      "light_shine_observed": true,
+      "actual_photo_corners_rounded": true,
+      "region_overlay_preserved": true,
+      "steps_expands": true,
+      "stop_once": true,
+      "six_native_layout_lifecycle_checks": true
+    },
+    "focused_flutter_tests": 9,
+    "broader_launch_audit": "paused at user request, incomplete",
+    "physical_device_acceptance": "pending",
+    "scope": "Native scan appearance only; no revert or scan behavior changes"
+  }
+}
