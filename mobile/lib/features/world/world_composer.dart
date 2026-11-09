@@ -51,10 +51,11 @@ class WorldComposer extends StatefulWidget {
 }
 
 class _WorldComposerState extends State<WorldComposer>
-    with WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   Timer? _timer;
-  String? _hint;
-  int _idea = 0, _length = 0;
+  late final AnimationController _typing;
+  bool _showHint = false;
+  int _idea = 0;
   bool _erasing = false, _active = true, _enabled = false;
   static const _ideas = [
     'Where did I put my drill?',
@@ -66,6 +67,8 @@ class _WorldComposerState extends State<WorldComposer>
   @override
   void initState() {
     super.initState();
+    _typing = AnimationController(vsync: this)
+      ..addStatusListener(_typingStatus);
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_reset);
     widget.focusNode.addListener(_reset);
@@ -110,28 +113,35 @@ class _WorldComposerState extends State<WorldComposer>
 
   void _reset() {
     _timer?.cancel();
-    _hint = null;
-    _length = 0;
     _erasing = false;
+    _typing.stop();
+    _typing.value = 0;
+    _showHint = false;
     if (mounted) setState(() {});
     if (_canAnimate) _timer = Timer(const Duration(seconds: 3), _type);
   }
 
   void _type() {
     if (!mounted || !_canAnimate) return;
-    final idea = _ideas[_idea];
-    _length += _erasing ? -1 : 1;
-    setState(() => _hint = idea.substring(0, _length));
-    var delay = Duration(milliseconds: _erasing ? 25 : 65);
-    if (_length == idea.length) {
-      _erasing = true;
-      delay = const Duration(seconds: 3);
-    } else if (_length == 0) {
+    setState(() => _showHint = true);
+    _typing.duration = Duration(milliseconds: _ideas[_idea].length * 60);
+    _typing.reverseDuration = Duration(milliseconds: _ideas[_idea].length * 28);
+    _typing.forward(from: 0);
+  }
+
+  void _typingStatus(AnimationStatus status) {
+    if (!mounted || !_canAnimate) return;
+    if (status == AnimationStatus.completed) {
+      _timer = Timer(const Duration(seconds: 3), () {
+        if (!mounted || !_canAnimate) return;
+        _erasing = true;
+        _typing.reverse();
+      });
+    } else if (status == AnimationStatus.dismissed && _erasing) {
       _erasing = false;
-      _idea = (_idea + 1) % _ideas.length;
-      delay = const Duration(milliseconds: 350);
+      setState(() => _idea = (_idea + 1) % _ideas.length);
+      _timer = Timer(const Duration(milliseconds: 350), _type);
     }
-    _timer = Timer(delay, _type);
   }
 
   @override
@@ -144,6 +154,7 @@ class _WorldComposerState extends State<WorldComposer>
   @override
   void dispose() {
     _timer?.cancel();
+    _typing.dispose();
     widget.controller.removeListener(_reset);
     widget.focusNode.removeListener(_reset);
     WidgetsBinding.instance.removeObserver(this);
@@ -256,22 +267,25 @@ class _WorldComposerState extends State<WorldComposer>
                 height: 1.4,
               ),
               decoration: InputDecoration(
-                hintText: _hint == null
+                hintText: !_showHint
                     ? (widget.compact
                           ? 'Ask FindEZ…'
                           : 'Describe your inventory…')
                     : null,
-                hint: _hint == null
+                hint: !_showHint
                     ? null
                     : Semantics(
                         label: widget.compact
                             ? 'Ask FindEZ'
                             : 'Describe your inventory',
                         child: ExcludeSemantics(
-                          child: SmoothTypingHint(
-                            key: ValueKey(_idea),
-                            text: _ideas[_idea],
-                            visibleCharacters: _length,
+                          child: AnimatedBuilder(
+                            animation: _typing,
+                            builder: (context, _) => SmoothTypingHint(
+                              text: _ideas[_idea],
+                              visibleCharacters:
+                                  _typing.value * _ideas[_idea].length,
+                            ),
                           ),
                         ),
                       ),

@@ -10,7 +10,7 @@ class SmoothTypingHint extends StatelessWidget {
     required this.visibleCharacters,
   });
   final String text;
-  final int visibleCharacters;
+  final double visibleCharacters;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, bounds) {
@@ -34,20 +34,20 @@ class SmoothTypingHint extends StatelessWidget {
         alignment: AlignmentDirectional.centerStart,
         child: SizedBox(
           width: width,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: visibleCharacters.toDouble()),
-            duration: const Duration(milliseconds: 85),
-            curve: Curves.easeOut,
-            child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
-            builder: (context, value, child) {
-              if (value >= text.length) return child!;
+          child: Builder(
+            builder: (context) {
+              final value = visibleCharacters;
+              final child = Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              );
+              if (value >= text.length) return child;
               final index = value.floor().clamp(0, text.length);
               final next = math.min(index + 1, text.length);
               final edge =
-                  visibleCharacters == text.length && value >= text.length
-                  ? width
-                  : offsets[index] +
-                        (offsets[next] - offsets[index]) * (value - index);
+                  offsets[index] +
+                  (offsets[next] - offsets[index]) * (value - index);
               final end = width == 0 ? 0.0 : (edge / width).clamp(0.0, 1.0);
               final start = width == 0
                   ? 0.0

@@ -15,13 +15,61 @@ private final class ScanPhotoView: UIImageView {
   var regions: [[String: Any]] = [] { didSet { setNeedsLayout() } }
   private var overlays: [UIView] = []
   private let photoMask = CAShapeLayer()
+  private let sweep = CAGradientLayer()
+  private var photoRect = CGRect.zero
+  private var reduced = false
+  var sweepIsActive: Bool { sweep.animation(forKey: "photo-sweep") != nil }
+
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    sweep.colors = [UIColor.white.withAlphaComponent(0).cgColor,
+                    UIColor.white.withAlphaComponent(0.12).cgColor,
+                    UIColor.white.withAlphaComponent(0.95).cgColor,
+                    UIColor.white.withAlphaComponent(0).cgColor]
+    sweep.locations = [0, 0.82, 0.90, 1]
+    sweep.startPoint = CGPoint(x: 0.5, y: 0); sweep.endPoint = CGPoint(x: 0.5, y: 1)
+    layer.addSublayer(sweep)
+    for name in [UIApplication.didBecomeActiveNotification,
+                 UIApplication.willResignActiveNotification,
+                 UIAccessibility.reduceMotionStatusDidChangeNotification] {
+      NotificationCenter.default.addObserver(self, selector: #selector(updateSweep), name: name, object: nil)
+    }
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  func configure(reduced: Bool) { self.reduced = reduced; updateSweep() }
+  override func didMoveToWindow() { super.didMoveToWindow(); updateSweep() }
+  @objc private func updateSweep(_ notification: Notification? = nil) {
+    let active = notification?.name != UIApplication.willResignActiveNotification &&
+      UIApplication.shared.applicationState == .active
+    let animate = window != nil && !photoRect.isEmpty && image != nil && active &&
+      !reduced && !UIAccessibility.isReduceMotionEnabled
+    sweep.isHidden = !animate
+    guard animate else { sweep.removeAnimation(forKey: "photo-sweep"); return }
+    guard !sweepIsActive else { return }
+    let motion = CABasicAnimation(keyPath: "transform.translation.y")
+    motion.fromValue = -28; motion.toValue = photoRect.height
+    motion.duration = 3.2; motion.autoreverses = true; motion.repeatCount = .infinity
+    motion.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+    sweep.add(motion, forKey: "photo-sweep")
+  }
+  deinit { NotificationCenter.default.removeObserver(self) }
   override func layoutSubviews() {
     super.layoutSubviews()
     overlays.forEach { $0.removeFromSuperview() }; overlays.removeAll()
-    guard let image = image, image.size.width > 0, image.size.height > 0 else { return }
+    guard let image = image, image.size.width > 0, image.size.height > 0 else {
+      photoRect = .zero; updateSweep(); return
+    }
     let scale = min(bounds.width / image.size.width, bounds.height / image.size.height)
     let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
     let photo = CGRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
+    if photoRect != photo {
+      photoRect = photo
+      CATransaction.begin(); CATransaction.setDisableActions(true)
+      sweep.frame = CGRect(x: photo.minX, y: photo.minY, width: photo.width, height: 28)
+      CATransaction.commit()
+      sweep.removeAnimation(forKey: "photo-sweep")
+    }
+    updateSweep()
     // Round the visible photo, not its surrounding aspect-fit letterbox.
     CATransaction.begin(); CATransaction.setDisableActions(true)
     photoMask.frame = bounds
@@ -119,6 +167,8 @@ private final class ScanPlaceholderView: UIView {
 
 private final class ScanSurface: UIView {
   var onLayout: (() -> Void)?
+  var onWindowChanged: (() -> Void)?
+  override func didMoveToWindow() { super.didMoveToWindow(); onWindowChanged?() }
   override func layoutSubviews() { super.layoutSubviews(); onLayout?() }
 }
 
@@ -129,7 +179,7 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
   private let close = UIButton(type: .close)
   private let scroll = UIScrollView()
   private let stack = UIStackView()
-  private let photo = ScanPhotoView()
+  private let photo = ScanPhotoView(frame: .zero)
   private let status = UILabel()
   private let spinner = UIActivityIndicatorView(style: .medium)
   private let stepsButton = UIButton(type: .system)
@@ -144,6 +194,10 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
   private var expanded = false
   private var stopped = false
   private var scale: CGFloat = 1
+  private var tips: [String] = []
+  private var tipIndex = 0
+  private var tipTimer: Timer?
+  private var timingHeight: NSLayoutConstraint!
 
   init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
     channel = FlutterMethodChannel(name: "com.findez.app/scan-progress/\(id)", binaryMessenger: messenger)
@@ -189,6 +243,9 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     progress.accessibilityIdentifier = "findez.scan.progress"
     stack.addArrangedSubview(progress)
     timing.numberOfLines = 0; footer.numberOfLines = 0
+    timing.accessibilityIdentifier = "findez.scan.tip"
+    timingHeight = timing.heightAnchor.constraint(equalToConstant: 40)
+    timingHeight.isActive = true
     stack.addArrangedSubview(timing)
     placeholders.axis = .horizontal; placeholders.spacing = 10; placeholders.distribution = .fillEqually
     placeholders.heightAnchor.constraint(equalToConstant: 54).isActive = true
@@ -214,6 +271,13 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     root.onLayout = { [weak self] in
       guard let self = self else { return }
       self.photoHeight.constant = min(300, max(96, self.root.bounds.height * 0.46))
+      self.sizeTip()
+    }
+    root.onWindowChanged = { [weak self] in self?.updateTips() }
+    for name in [UIApplication.didBecomeActiveNotification,
+                 UIApplication.willResignActiveNotification,
+                 UIAccessibility.voiceOverStatusDidChangeNotification] {
+      NotificationCenter.default.addObserver(self, selector: #selector(updateTips), name: name, object: nil)
     }
     configure(args)
     channel.setMethodCallHandler { [weak self] call, reply in
@@ -225,7 +289,10 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
         reply(["viewportHeight": self.scroll.bounds.height,
                "contentHeight": self.scroll.contentSize.height,
                "offset": self.scroll.contentOffset.y,
-               "footerBottom": self.footer.frame.maxY + 24])
+               "footerBottom": self.footer.frame.maxY + 24,
+               "sweepActive": self.photo.sweepIsActive ? 1 : 0,
+               "tipIndex": self.tipIndex,
+               "tipTimerActive": self.tipTimer == nil ? 0 : 1])
       #endif
       case "configure": self.configure(call.arguments); reply(nil)
       case "photo":
@@ -247,6 +314,7 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
       tile.configure(dark: next["dark"] as? Bool == true,
                      reduced: next["reduceMotion"] as? Bool == true)
     }
+    photo.configure(reduced: next["reduceMotion"] as? Bool == true)
     scale = max(0.5, min(4, next["textScale"] as? Double ?? 1))
     title.font = .systemFont(ofSize: 17 * scale, weight: .semibold)
     status.font = .systemFont(ofSize: 15 * scale)
@@ -257,7 +325,13 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     timing.textColor = NativeAppearanceColors.secondary; footer.textColor = NativeAppearanceColors.secondary
     stepsButton.tintColor = NativeAppearanceColors.secondary
     status.text = next["message"] as? String
-    timing.text = next["timing"] as? String; footer.text = next["footer"] as? String
+    let receivedTips = (next["tips"] as? [String] ?? []).filter { !$0.isEmpty }
+    let nextTips = receivedTips.isEmpty ? [next["timing"] as? String ?? ""] : receivedTips
+    if nextTips != tips {
+      tips = nextTips; tipIndex = 0; timing.text = tips.first
+    }
+    footer.text = next["footer"] as? String
+    sizeTip(); updateTips()
     let value = Float(next["progress"] as? Double ?? 0)
     progress.setProgress(value, animated: next["reduceMotion"] as? Bool != true)
     let stage = value >= 0.75 ? 4 : value >= 0.5 ? 3 : value >= 0.25 ? 2 : 1
@@ -268,6 +342,35 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     photo.isAccessibilityElement = photo.regions.isEmpty
     let received = next["steps"] as? [String] ?? []
     if received != steps || expanded { steps = received; renderSteps() }
+  }
+
+  private func sizeTip() {
+    let width = max(1, root.bounds.width - 32)
+    let height = tips.map {
+      ($0 as NSString).boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude),
+        options: [.usesLineFragmentOrigin, .usesFontLeading],
+        attributes: [.font: timing.font as Any], context: nil).height
+    }.max() ?? 0
+    timingHeight.constant = ceil(height) + 2
+  }
+  @objc private func updateTips(_ notification: Notification? = nil) {
+    let active = notification?.name != UIApplication.willResignActiveNotification &&
+      UIApplication.shared.applicationState == .active
+    guard root.window != nil && active && !stopped && !UIAccessibility.isVoiceOverRunning && tips.count > 1 else {
+      tipTimer?.invalidate(); tipTimer = nil; return
+    }
+    guard tipTimer == nil else { return }
+    tipTimer = Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { [weak self] _ in
+      guard let self = self else { return }
+      self.tipIndex = (self.tipIndex + 1) % self.tips.count
+      let change = { self.timing.text = self.tips[self.tipIndex] }
+      if self.model["reduceMotion"] as? Bool == true || UIAccessibility.isReduceMotionEnabled {
+        change()
+      } else {
+        UIView.transition(with: self.timing, duration: 0.25,
+          options: [.transitionCrossDissolve, .allowUserInteraction], animations: change)
+      }
+    }
   }
 
   private func renderSteps() {
@@ -289,8 +392,10 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
   @objc private func stop() {
     guard !stopped else { return }
     stopped = true; close.isEnabled = false
+    tipTimer?.invalidate(); tipTimer = nil
+    photo.configure(reduced: true)
     channel.invokeMethod("stop", arguments: nil)
   }
   func view() -> UIView { root }
-  deinit { channel.setMethodCallHandler(nil) }
+  deinit { tipTimer?.invalidate(); NotificationCenter.default.removeObserver(self); channel.setMethodCallHandler(nil) }
 }
