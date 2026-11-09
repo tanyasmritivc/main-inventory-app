@@ -9,7 +9,12 @@ for the existing confirmation card. The literal name, Space ID, fresh complete
 selection and snapshot are rechecked. Unclear singular requests keep their guard.
 165 targeted tests pass (one previously documented legacy fixture deselected).
 Read-only production verification resolved the eight-ID preview to all nine exact
-matches, without persisting a proposal or deleting stock. Deployment pending.
+matches, without persisting a proposal or deleting stock. Commit `cc227aa5` is
+deployed through the existing self-hosted backend overlay. Both source hashes,
+synthetic runtime checks, post-deployment read-only selection checks, and local
+and public health endpoints passed. All 27 customer records remain unchanged;
+the web process was not restarted. The user should repeat the original group
+request and review the nine-item confirmation card. No mobile build is needed.
 
 ## Capture save timeout recovery, 2026-11-08
 
