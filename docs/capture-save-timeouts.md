@@ -42,3 +42,10 @@ backs up both files, checks the runtime, restarts `findez`, and verifies health.
 Release directory: `/home/ubuntu/findez-capture-save-batches-20261108`.
 Rollback restores both files from its `backup` directory and restarts `findez`.
 No customer save is issued during deployment verification.
+
+Deployed on 2026-11-08 as commit `0cfaadda`. Only the two expected Python files
+changed. Their checksums matched, the web process remained unchanged, and local
+and public health endpoints returned 200. Synthetic checks in the deployed
+runtime verified recovery of a 27-item timeout, duplicate-free retry, and error
+grouping without database writes. Real future timeout latency remains dependent
+on database availability; this change does not guarantee every save succeeds.

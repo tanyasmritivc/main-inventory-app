@@ -8,7 +8,9 @@ later receipt confirmed 27 saved items and zero failures; do not resave their
 stock manually. Save statements now contain at most eight records and can retry
 one known timeout only after reading stable-ID receipts. An unresolved batch
 stops further inserts. Draft receipt messages group identical reasons while
-preserving every failed index. 130 targeted tests pass; deployment pending.
+preserving every failed index. 130 targeted tests pass. Commit `0cfaadda` is
+deployed; both source checksums, synthetic recovery/retry checks, and local/public
+health endpoints passed. No customer save was issued during verification.
 
 ## Capture destination handoff, 2026-11-08
 
