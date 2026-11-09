@@ -11,7 +11,10 @@ of Search options from the Add to chat popup. Its native menu and short submenus
 now omit search; all eleven action IDs, dismissal-before-dispatch and restricted
 Space attachments remain. Chat history search and actual content pickers retain
 their search. Scan requests, main chat, the white photo sweep, rotating tips,
-diagonal shine and current palette are preserved.
+current scan functions are preserved. The follow-up gives native loading blocks a
+muted rose gradient in both themes and changes only the light native scan panel
+from white to soft #EEF0F3. Its dark panel, white photo sweep, actual progress,
+Stop, tips, reduced-motion and lifecycle behavior remain unchanged.
 
 No public review submission or release is authorized by this preparation task.
 Use synthetic fixtures for mutation tests and read-only customer navigation.

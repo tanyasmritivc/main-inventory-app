@@ -115,7 +115,7 @@ private final class ScanPlaceholderView: UIView {
     isUserInteractionEnabled = false; isAccessibilityElement = false
     shine.startPoint = CGPoint(x: 0, y: 1)
     shine.endPoint = CGPoint(x: 1, y: 0)
-    shine.locations = [0.40, 0.50, 0.60]
+    shine.locations = [0.32, 0.43, 0.50, 0.57, 0.68]
     layer.addSublayer(shine)
     for name in [UIApplication.didBecomeActiveNotification,
                  UIApplication.willResignActiveNotification,
@@ -127,9 +127,16 @@ private final class ScanPlaceholderView: UIView {
   func configure(dark: Bool, reduced: Bool) {
     reduceMotion = reduced
     CATransaction.begin(); CATransaction.setDisableActions(true)
-    shine.colors = [UIColor.white.withAlphaComponent(0).cgColor,
-      UIColor.white.withAlphaComponent(dark ? 0.18 : 0.85).cgColor,
-      UIColor.white.withAlphaComponent(0).cgColor]
+    backgroundColor = dark
+      ? UIColor(red: 52/255, green: 43/255, blue: 49/255, alpha: 1)
+      : UIColor(red: 227/255, green: 217/255, blue: 222/255, alpha: 1)
+    let rose = UIColor(red: 184/255, green: 116/255, blue: 141/255, alpha: 1)
+    let softRose = UIColor(red: 221/255, green: 172/255, blue: 187/255, alpha: 1)
+    shine.colors = [rose.withAlphaComponent(0).cgColor,
+      rose.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
+      softRose.withAlphaComponent(dark ? 0.60 : 0.52).cgColor,
+      rose.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
+      rose.withAlphaComponent(0).cgColor]
     CATransaction.commit()
     updateMotion()
   }
@@ -308,8 +315,11 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
   private func configure(_ args: Any?) {
     guard let next = args as? [String: Any] else { return }
     model = next
-    root.overrideUserInterfaceStyle = next["dark"] as? Bool == true ? .dark : .light
-    root.backgroundColor = .secondarySystemGroupedBackground
+    let dark = next["dark"] as? Bool == true
+    root.overrideUserInterfaceStyle = dark ? .dark : .light
+    root.backgroundColor = dark ? .secondarySystemGroupedBackground
+      : UIColor(red: 238/255, green: 240/255, blue: 243/255, alpha: 1)
+    photo.backgroundColor = root.backgroundColor
     for case let tile as ScanPlaceholderView in placeholders.arrangedSubviews {
       tile.configure(dark: next["dark"] as? Bool == true,
                      reduced: next["reduceMotion"] as? Bool == true)
