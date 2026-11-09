@@ -1,7 +1,6 @@
 /* The composer owns the focus ring; the editable field is not a second box. */
 .landing-dark [data-chat].fz .fz-box{align-items:center}
-.landing-dark [data-chat].fz .fz-box textarea,
-.landing-dark [data-chat].fz .fz-box textarea:is(:focus,:focus-visible){
+.landing-dark [data-chat].fz .fz-box textarea{
   appearance:none;
   -webkit-appearance:none;
   display:block;
