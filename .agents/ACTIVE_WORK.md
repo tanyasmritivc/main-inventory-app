@@ -19,9 +19,11 @@ list ideas as active work.
 
 ## Handoffs
 
-Marketing Ask submission, 2026-11-08: in progress on production web main. Allow
-typing/paste without navigation; open existing signup only on nonempty Enter/Send.
-Keep Shift+Enter, composition input, and suggestion-chip demos working.
+Marketing Ask submission, 2026-11-08: deployed from main commit `bfe9a707` in
+`ask-submit-20261108`. Typing/paste stays on-page; nonempty Enter/Send opens signup.
+Production build and 13 route checks passed. Live Safari checks confirmed typing,
+paste, empty Enter, Shift+Enter, suggestion demos, Enter redirect, and Send redirect.
+One shared public component changed; 531 other source/public files were preserved.
 
 Solutions hero entrance, 2026-11-08: deployed from production web main, commit
 `70ed1745`. The four detail heroes fade in their first rendered scene and stagger
