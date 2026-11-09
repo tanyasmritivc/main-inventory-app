@@ -154,6 +154,8 @@ Future<void> _open(
 }
 
 Future<void> _save(WidgetTester tester) async {
+  // Native keyboard/caret scrolling can otherwise undo ensureVisible below.
+  await tester.pumpAndSettle();
   await tester.ensureVisible(find.text('Save changes'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Save changes'));
@@ -472,6 +474,7 @@ void main() {
       addTearDown(store.dispose);
       await _open(tester, api, store);
       await tester.enterText(find.byType(TextFormField).first, 'Updated name');
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save changes'));

@@ -1,4 +1,6 @@
 // Synthetic APIs and identities; actual Flutter widgets on iOS.
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
@@ -20,6 +22,14 @@ import '../test/session_restoration_test.dart' as audit13;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  if (const bool.fromEnvironment('FINDEZ_NATIVE_SCREENSHOTS')) {
+    audit0.documentsAuditCapture = (name, bytes) async {
+      final path = '${Directory.systemTemp.path}/findez-documents-$name.png';
+      await File(path).writeAsBytes(bytes, flush: true);
+      // Copy before the next test installation replaces the app container.
+      debugPrint('DOCUMENTS_FRAME $path');
+    };
+  }
   group('documents_page', audit0.main);
   group('onboarding_page', audit1.main);
   group('onboarding_launch', audit2.main);

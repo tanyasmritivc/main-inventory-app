@@ -89,6 +89,12 @@ class _ProfileApi extends ApiClient {
 
 class _InventoryAppearanceApi extends _ProfileApi {
   @override
+  Future<Map<String, dynamic>?> syncNotificationStockRules(
+    Map<String, int?> rules, {
+    bool importOnly = false,
+  }) async => throw StateError('Synthetic stock-rule refresh failure');
+
+  @override
   Future<SearchItemsResult> searchItems({required String query}) async =>
       SearchItemsResult(
         items: [
@@ -356,6 +362,23 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(find.text('1 to buy | 0 on order'), findsOneWidget);
+          if (Platform.isIOS) {
+            expect(
+              find.textContaining('Could not refresh restock notifications'),
+              findsOneWidget,
+            );
+            expect(tester.takeException(), isNull);
+            final banner = find.byType(SnackBar);
+            expect(
+              tester.widget<SnackBar>(banner).behavior,
+              SnackBarBehavior.fixed,
+            );
+            // Inspect the error first, then finish the underlying list audit.
+            ScaffoldMessenger.of(tester.element(banner))
+              ..clearSnackBars()
+              ..removeCurrentSnackBar();
+            await tester.pumpAndSettle();
+          }
           expect(tester.takeException(), isNull);
           final scrollable = find
               .descendant(
@@ -614,6 +637,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pageBack();
       await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
         0,
@@ -754,6 +779,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Tanya Charles');
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Save changes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save changes'));
@@ -774,6 +800,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Keep this name');
+    await tester.pumpAndSettle();
     api.fail = true;
     await tester.ensureVisible(find.text('Save changes'));
     await tester.pumpAndSettle();

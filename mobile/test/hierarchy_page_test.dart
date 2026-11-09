@@ -837,7 +837,13 @@ void main() {
         tester,
         InventoryPage(api: api, initialQuery: 'Bolt', refreshToken: 0),
       );
-      final swipes = tester.widgetList<Dismissible>(find.byType(Dismissible));
+      // Check the inventory row rather than a dismissible system/error surface.
+      final swipes = tester.widgetList<Dismissible>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Dismissible && widget.key == const ValueKey('bolt-a'),
+        ),
+      );
       expect(swipes, isNotEmpty);
       expect(
         swipes.every((row) => row.direction == DismissDirection.none),
@@ -917,9 +923,17 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Approve viewer access'));
       await tester.pumpAndSettle();
-      expect(fixture.requests.where((r) => r.method == 'POST').single.data, {
-        'action': 'approve',
-      });
+      expect(
+        fixture.requests
+            .where(
+              (r) =>
+                  r.method == 'POST' &&
+                  r.path == '/inventory-access-requests/request-a/decision',
+            )
+            .single
+            .data,
+        {'action': 'approve'},
+      );
       expect(approved, true);
     },
   );

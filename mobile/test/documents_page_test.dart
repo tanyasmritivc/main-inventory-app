@@ -17,6 +17,8 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/documents/documents_page.dart';
 import 'package:mobile/features/documents/notes_editor_page.dart';
 
+Future<void> Function(String, Uint8List)? documentsAuditCapture;
+
 DocumentEntry _doc(String name, String mime, {String? label, String? url}) =>
     DocumentEntry(
       documentId: 'owner/$name',
@@ -159,6 +161,7 @@ Widget _page(
   _Api api, {
   String? Function()? owner,
   TextScaler? scaler,
+  double? keyboardHeight,
   Brightness brightness = Brightness.dark,
 }) => RepaintBoundary(
   key: const ValueKey('documents-qa'),
@@ -171,7 +174,12 @@ Widget _page(
       ),
     ),
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: scaler),
+      data: MediaQuery.of(context).copyWith(
+        textScaler: scaler,
+        viewInsets: keyboardHeight == null
+            ? null
+            : EdgeInsets.only(bottom: keyboardHeight),
+      ),
       child: child!,
     ),
     home: DocumentsPage(
@@ -565,4 +573,52 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'rename keeps Save reachable above keyboard in ${brightness.name}',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final api = _Api();
+        await tester.pumpWidget(
+          _page(
+            api,
+            brightness: brightness,
+            scaler: const TextScaler.linear(2.6),
+            keyboardHeight: 320,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byTooltip('Actions for manual.pdf'),
+          150,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await _action(tester, 'manual.pdf', 'Rename');
+        expect(tester.takeException(), isNull);
+        await tester.enterText(find.byType(TextField).last, 'Updated manual');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Save'));
+        await tester.pumpAndSettle();
+        if (documentsAuditCapture != null) {
+          final boundary = tester.renderObject<RenderRepaintBoundary>(
+            find.byKey(const ValueKey('documents-qa')),
+          );
+          final frame = await boundary.toImage(pixelRatio: 2);
+          final data = await frame.toByteData(format: ui.ImageByteFormat.png);
+          await documentsAuditCapture!(
+            'rename-keyboard-${brightness.name}',
+            data!.buffer.asUint8List(),
+          );
+          frame.dispose();
+        }
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        expect(api.renamed?['name'], 'Updated manual');
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

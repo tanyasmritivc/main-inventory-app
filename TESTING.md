@@ -1,3 +1,10 @@
+## Broad mobile launch audit (211)
+
+Use [the repeatable mobile audit plan](docs/plans/mobile-launch-audit-20261108.md)
+for the host/native commands, functional acceptance matrix, recorded findings and
+physical-device gates. Native suites must run sequentially on a disposable
+simulator. They use synthetic data and do not certify live providers or APNs.
+
 ## Native scan progress and tab timing (209)
 
 Run `flutter test test/native_bottom_tabs_test.dart test/native_scan_progress_test.dart

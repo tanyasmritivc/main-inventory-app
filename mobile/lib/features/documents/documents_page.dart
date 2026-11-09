@@ -1170,27 +1170,54 @@ class _RenameDocumentDialogState extends State<_RenameDocumentDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const AppText('Rename document'),
-    content: TextField(
-      controller: _name,
-      autofocus: true,
-      maxLength: 200,
-      textInputAction: TextInputAction.done,
-      onSubmitted: (_) => FocusScope.of(context).unfocus(),
-      decoration: const InputDecoration(hintText: 'Document name'),
-      style: AppTypography.bodyStyleOf(context),
+  Widget build(BuildContext context) => Dialog(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            namesRoute: true,
+            child: AppText(
+              'Rename document',
+              style:
+                  Theme.of(context).dialogTheme.titleTextStyle ??
+                  Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _name,
+            autofocus: true,
+            maxLength: 200,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            decoration: const InputDecoration(hintText: 'Document name'),
+            style: AppTypography.bodyStyleOf(context),
+          ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const AppText('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, _name.text.trim()),
+                  child: const AppText('Save'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const AppText('Cancel'),
-      ),
-      TextButton(
-        onPressed: () => Navigator.pop(context, _name.text.trim()),
-        child: const AppText('Save'),
-      ),
-    ],
   );
 }
 
