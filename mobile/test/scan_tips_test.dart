@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/photo_scan_hint.dart';
@@ -44,7 +45,13 @@ void main() {
         expect(current(), scanTips[1]);
         expect(tester.getTopLeft(find.text('Save position')), top);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-        await tester.pump(const Duration(seconds: 20));
+        // A live iOS binding cannot pump a frame while paused. Wait on the
+        // clock instead; the host binding advances its fake timer normally.
+        if (Platform.isIOS) {
+          await Future<void>.delayed(const Duration(seconds: 9));
+        } else {
+          await tester.pump(const Duration(seconds: 20));
+        }
         expect(current(), scanTips[1]);
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
