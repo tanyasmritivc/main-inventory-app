@@ -1,3 +1,10 @@
+## Scan tips and composer motion (212)
+
+See [scan presentation212](docs/plans/scan-presentation212.md) for focused and
+native checks. Confirm continuous placeholder reveal, eight-second tip changes
+without layout movement, white sweep inside the photo, and static reduced-motion
+behavior. Requests and real progress must remain unchanged.
+
 ## Broad mobile launch audit (211)
 
 Use [the repeatable mobile audit plan](docs/plans/mobile-launch-audit-20261108.md)

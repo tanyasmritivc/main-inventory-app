@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/chat/native_scan_progress.dart';
 import 'package:mobile/features/chat/scan_region.dart';
+import 'package:mobile/core/ui/photo_scan_hint.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +85,7 @@ void main() {
     expect(channel, isNotNull);
     expect(models.last['progress'], .25);
     expect(models.last['textScale'], 2);
+    expect(models.last['tips'], scanTips);
     update(() {
       message = 'Checked 30 of 30';
       regions = List.generate(

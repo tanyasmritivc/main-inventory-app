@@ -125,7 +125,20 @@ void main() {
             tester
                 .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))
                 .visibleCharacters,
-            2,
+            greaterThan(0),
+          );
+          final before = tester
+              .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))
+              .visibleCharacters;
+          await tester.pump(const Duration(milliseconds: 16));
+          final after = tester
+              .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))
+              .visibleCharacters;
+          expect(after, greaterThan(before));
+          expect(
+            after - before,
+            lessThan(1),
+            reason: 'Reveal advances every frame, not in whole-character jumps',
           );
           expect(find.byType(ShaderMask), findsOneWidget);
         }

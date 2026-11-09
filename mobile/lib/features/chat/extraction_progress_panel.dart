@@ -433,7 +433,7 @@ class _ExtractionProgressPanelState extends State<ExtractionProgressPanel> {
             borderRadius: BorderRadius.circular(2),
           ),
           const SizedBox(height: 12),
-          const PhotoScanHint(tips: false),
+          const RotatingScanHint(),
           const SizedBox(height: 16),
           const Align(
             alignment: Alignment.centerLeft,

@@ -1,3 +1,11 @@
+## November 8 - Scan presentation candidate212
+
+Branch feat/scan-tips212: continuous placeholder reveal, rotating useful scan
+tips and white photo sweep. Mobile presentation only; processing and save
+behavior unchanged. Focused15 and native scan8 checks passed; full regression,
+native composer checks, CI and signed delivery pending. Scope and commands:
+docs/plans/scan-presentation212.md.
+
 ## November 8 - Mobile launch audit fixes uploaded (PR375)
 
 Apple acknowledged TestFlight 1.1.2 (211), delivery `cdcf906e-6c89-4750-b322-a936ae817bc7`.

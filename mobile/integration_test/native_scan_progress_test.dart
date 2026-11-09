@@ -14,6 +14,7 @@ void main() {
         // This isolated fixture creates exactly one platform view.
         final nativeId = platformViewsRegistry.getNextPlatformViewId() + 1;
         var status = 'Finding objects...';
+        var reduced = false;
         late StateSetter update;
         await tester.pumpWidget(
           MaterialApp(
@@ -23,6 +24,7 @@ void main() {
                 update = setState;
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(
+                    disableAnimations: reduced,
                     textScaler: TextScaler.linear(
                       layout.contains('large') ? 2.6 : 1,
                     ),
@@ -68,6 +70,26 @@ void main() {
           geometry['contentHeight']! + 1,
           greaterThanOrEqualTo(geometry['footerBottom']!),
         );
+        expect(geometry['sweepActive'], 1);
+        expect(geometry['tipTimerActive'], 1);
+        if (layout == 'normal') {
+          await Future<void>.delayed(const Duration(seconds: 8));
+          final rotated = (await channel.invokeMapMethod<String, num>(
+            'auditLayout',
+          ))!;
+          expect(rotated['tipIndex'], greaterThan(0));
+          expect(
+            rotated['contentHeight'],
+            geometry['contentHeight'],
+            reason: 'Tips must not shift the scan layout',
+          );
+          update(() => reduced = true);
+          await tester.pumpAndSettle();
+          final quiet = (await channel.invokeMapMethod<String, num>(
+            'auditLayout',
+          ))!;
+          expect(quiet['sweepActive'], 0);
+        }
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const MaterialApp(home: Text('Draft review')));
         await tester.pumpAndSettle();

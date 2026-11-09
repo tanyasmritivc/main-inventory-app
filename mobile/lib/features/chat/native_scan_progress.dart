@@ -61,6 +61,7 @@ class _NativeScanProgressState extends State<NativeScanProgress> {
     'steps': List<String>.of(_steps),
     'progress': _progress,
     'timing': photoScanTiming,
+    'tips': scanTips,
     'footer': 'Nothing is saved until you review and approve.',
     'dark': Theme.of(context).brightness == Brightness.dark,
     'textScale': MediaQuery.textScalerOf(context).scale(16) / 16,

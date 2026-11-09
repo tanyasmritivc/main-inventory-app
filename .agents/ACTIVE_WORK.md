@@ -1,3 +1,10 @@
+## November 8 - Scan tips and smoother composer (active)
+
+Branch feat/scan-tips212. User requested smoother placeholder typing, rotating
+useful scan tips and a white photo scan sweep, then a build. Mobile presentation
+only; preserve requests, regions, drafts, save and scan processing. Respect
+Reduce Motion/lifecycle and verify native layout, tip rotation and disposal.
+
 ## November 8 - Mobile launch audit fixes uploaded (PR375)
 
 Apple acknowledged TestFlight 1.1.2 (211), delivery `cdcf906e-6c89-4750-b322-a936ae817bc7`.
