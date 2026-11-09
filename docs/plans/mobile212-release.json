@@ -1,0 +1,38 @@
+{
+  "version": "1.1.2",
+  "build": 212,
+  "source_commit": "27679f3991d01adc39c1c783dbc637f21e12505a",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "ad3e0778637668f024d941cf3bf9e375a464138de019e9151e754871579b6cf9",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "40d56690-6d26-4566-96ba-83c765119437",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "ci_run": 42545353412,
+  "host_tests_passed": 1368,
+  "host_existing_skips": 1,
+  "analysis": "clean",
+  "focused_flutter_tests_passed": 15,
+  "native_scan_cases_passed": 8,
+  "native_composer_tip_cases_passed": 7,
+  "physical_device_acceptance": "pending",
+  "native_audit": {
+    "checks": {
+      "mobile-tests.log": true,
+      "native-composer-final.log": true,
+      "native-scan.log": true,
+      "focused-final.log": true,
+      "light_dark_scan_visuals_reviewed": true,
+      "processing_and_save_runtime_unchanged": true
+    },
+    "native_scan_cases": 8,
+    "native_composer_tip_cases": 7,
+    "physical_device_acceptance": "pending"
+  }
+}

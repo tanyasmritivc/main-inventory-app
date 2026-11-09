@@ -37,8 +37,11 @@ Reduce Motion and platform-view disposal. The composer checks fractional frame
 progress, unchanged draft/actions, focus and accessibility. Tip checks cover
 stable layout, pause/resume, screen-reader behavior and disposal.
 
-Private evidence: projects/findez-scan212-private. Eight native scan cases and
-15 focused Flutter checks passed. Full regression, native composer checks, CI and
-signed delivery are in progress. Physical-device visual acceptance remains
+Private evidence: projects/findez-scan212-private. All 1,368 host tests passed
+(one existing skip), clean analysis, 15 focused checks, eight native scan and
+seven native composer/tip checks passed. Light/dark native scan visuals inspected.
+All five CI jobs passed on the delivered commit (42545353412). Apple acknowledged
+TestFlight212 with delivery `40d56690-6d26-4566-96ba-83c765119437`. Processing and tester
+availability were not polled. Physical-device visual acceptance remains
 unverified. This presentation change does not add new background guarantees or
-change provider latency.
+change provider latency. Receipt: mobile212-release.json.

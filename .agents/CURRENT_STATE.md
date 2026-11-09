@@ -1,10 +1,26 @@
-## November 8 - Scan presentation candidate212
+## November 8 - Scan tips and smoother composer uploaded (PR376)
 
-Branch feat/scan-tips212: continuous placeholder reveal, rotating useful scan
-tips and white photo sweep. Mobile presentation only; processing and save
-behavior unchanged. Focused15 and native scan8 checks passed; full regression,
-native composer checks, CI and signed delivery pending. Scope and commands:
-docs/plans/scan-presentation212.md.
+Apple acknowledged TestFlight 1.1.2 (212), delivery `40d56690-6d26-4566-96ba-83c765119437`.
+Runtime `27679f3991d01adc39c1c783dbc637f21e12505a`; all five exact-commit CI jobs passed
+(run42545353412). Placeholder text reveals/erases continuously on display frames.
+Active scans rotate ten useful product tips every eight seconds, reserving space
+to prevent layout movement; screen readers retain stable tip text. The native
+photo has a soft white sweep clipped to its rounded aspect-fit image. Motion
+respects Reduce Motion and lifecycle. Processing, regions, real progress,
+Steps/Stop, draft/edit/save and navigation are unchanged.
+
+1,368 host tests passed with one existing skip; analysis clean. Fifteen focused
+Flutter checks, eight UIKit scan cases and seven native composer/tip cases passed.
+Native rotation, stable layout, sweep, reduced motion and disposal verified;
+light/dark photo sweep screenshots inspected. First full run exposed an extra
+reduced-motion frame in the Flutter tip switcher; fixed and full suite rerun.
+Native background test fixture now waits without asking for a paused frame.
+
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing/tester availability were not polled;
+physical-device acceptance remains pending. No backend/web/API/database/public
+App Store changes. Scope: docs/plans/scan-presentation212.md. Receipt:
+docs/plans/mobile212-release.json.
 
 ## November 8 - Mobile launch audit fixes uploaded (PR375)
 
