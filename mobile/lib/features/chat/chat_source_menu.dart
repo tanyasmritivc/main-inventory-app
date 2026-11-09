@@ -83,11 +83,8 @@ Future<String?> _showNativeSourceMenu(
     return {
       'pageID': key,
       'title': titles[key],
-      'search': true,
-      'searchPlaceholder': key == 'context'
-          ? 'Search context'
-          : 'Search options',
-      'empty': 'No matching options',
+      'search': false,
+      'empty': 'No options',
       'textSizeFactor': size,
       'sections': [
         {

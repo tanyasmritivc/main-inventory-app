@@ -1,3 +1,14 @@
+## November 8 - Mobile submission preparation (active)
+
+Lane `audit/mobile-submission213`, based on delivered build212. Audit current
+mobile workflows, responsive/native UI and release readiness; preserve current
+scan presentation and main chat. User additionally removed Search options from
+the Add to chat popup. Native source-menu search is disabled while all eleven
+actions and Space-only restrictions remain. Use synthetic fixtures for mutation
+tests and read-only physical navigation. Private evidence is in
+`projects/findez-submission213-private`. No public App Store submission authorized
+by this preparation request; prepare the next draft and report remaining gates.
+
 ## November 8 - Scan tips and smoother composer uploaded (PR376)
 
 Apple acknowledged TestFlight 1.1.2 (212), delivery `40d56690-6d26-4566-96ba-83c765119437`.
