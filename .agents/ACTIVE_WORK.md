@@ -1,5 +1,15 @@
 # Active work
 
+## Capture destination handoff, 2026-11-08
+
+Backend-only fix on `fix/capture-space-handoff`. Production evidence confirmed a
+creation binding at revision 2 with a still-unplaced draft at revision 3 and the
+same requested destination. Attaching now validates current destination intent
+rather than rejecting all item-edit revisions. Current draft compare-and-swap,
+permissions, confirmation, and idempotent save checkpoints remain intact.
+100 targeted checks pass; deployment pending. No customer stock is modified by
+the deployment. Retry the existing creation/save card after release.
+
 ## Space creation latency, 2026-11-08
 
 Backend-only work on `fix/space-chat-latency`. The deployed world-chat baseline is

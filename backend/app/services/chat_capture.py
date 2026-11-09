@@ -366,9 +366,20 @@ def attach_created_destination(actor, key, action):
         # A lost response can retry the same creation receipt without creating a
         # second destination or changing the frozen capture's idempotency key.
         return draft
+    requested_place = draft.get('summary', {}).get('described_place')
+    same_place = (isinstance(requested_place, str) and
+                  requested_place.strip().casefold() == binding['place'].strip().casefold())
+    bound_revision = binding.get('revision')
     if (draft['status'] != 'draft' or draft.get('space_id') or
-            (binding.get('revision') is not None and draft['revision'] != binding['revision']) or
-            (binding.get('revision') is None and draft.get('summary', {}).get('described_place') != binding.get('place'))):
+            draft.get('inventory_id') not in (None, links[0]['inventory_id']) or
+            (requested_place is not None and not same_place) or
+            (bound_revision is None and not same_place) or
+            (bound_revision is not None and
+             (not isinstance(bound_revision, int) or bound_revision > draft['revision']))):
         return None
+    # Item corrections and selection changes advance the draft revision without
+    # changing its destination intent. Attach to the latest draft, preserving
+    # those edits. edit() still checks access and uses compare-and-swap so a
+    # concurrent edit or explicit destination change cannot be overwritten.
     return edit(actor, key, binding['conversation_id'], draft['id'], draft['revision'],
                 {'inventory_id': links[0]['inventory_id'], 'space_id': links[0]['id']})
