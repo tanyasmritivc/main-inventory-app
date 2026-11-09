@@ -1,5 +1,16 @@
 # Active work
 
+## Chat group deletion, 2026-11-09
+
+Backend-only work on `fix/chat-group-deletion`. Reproduced a personalization
+ambiguity guard rejecting all nine same-named records, while provider serialization
+truncated the visible preview. Preparing exact groups within the authorized Space
+for the existing confirmation card. The literal name, Space ID, fresh complete
+selection and snapshot are rechecked. Unclear singular requests keep their guard.
+165 targeted tests pass (one previously documented legacy fixture deselected).
+Read-only production verification resolved the eight-ID preview to all nine exact
+matches, without persisting a proposal or deleting stock. Deployment pending.
+
 ## Capture save timeout recovery, 2026-11-08
 
 Backend-only work on `fix/capture-save-batches`. PostgREST reported SQLSTATE 57014

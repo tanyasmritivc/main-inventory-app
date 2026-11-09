@@ -633,7 +633,11 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                             raise ValueError('Choose from the existing photo card first.')
                         if call.function.name in ('world_structure', 'world_add_items', 'world_delete_items', 'world_edit_item', 'world_move_item', 'world_reorder_decision') and len(actions) + len(item_actions) >= 8:
                             raise ValueError('Review existing proposals before adding more.')
-                        if call.function.name in ('world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_delete_items'):
+                        group_deletion = None
+                        if call.function.name == 'world_delete_items':
+                            from app.services.chat_group_deletion import prepare as prepare_group_deletion
+                            group_deletion = prepare_group_deletion(actor, world, message, args, trace)
+                        if group_deletion is None and call.function.name in ('world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_delete_items'):
                             from app.services.personalization.scoring import require_clear_mutation_target
                             targets = args.get('item_ids', [args.get('item_id')])
                             for target in targets:
@@ -644,7 +648,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                             from app.services.personalization.chat import execute as personalize
                             result = personalize(actor, world, args, message=message, turn_id=turn_id)
                         else:
-                            result = execute(actor, world, call.function.name, args)
+                            result = group_deletion if group_deletion is not None else execute(actor, world, call.function.name, args)
                         image_parts = result.pop('_image_parts', [])
                         if result.get('capture_draft') and capture and capture['draft']:
                             yield {'type': 'capture', 'conversation_id': conversation_id,
@@ -680,7 +684,10 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     if isinstance(error, HTTPException) and error.status_code >= 500:
                         raise RuntimeError('The action result needs receipt recovery') from None
                     from pydantic import ValidationError
-                    if isinstance(error, ValidationError):
+                    from app.services.chat_group_deletion import GroupSelectionError
+                    if isinstance(error, GroupSelectionError):
+                        detail = str(error) + ' No items were deleted.'
+                    elif isinstance(error, ValidationError):
                         fields = [str(e['loc'][0]) for e in error.errors(include_input=False) if e['loc']]
                         detail = 'Use the tool schema field names and types. Invalid fields: ' + ', '.join(sorted(set(fields))) + '. No change was saved.'
                     else:
@@ -780,6 +787,14 @@ def model_data(value):
             else:
                 result['inventory_id' if restore and key == marker else key] = route(child, restore)
         return result
+    if isinstance(value, dict):
+        # Keep counts and completeness before large previews exhaust the budget.
+        # The unabridged server result remains available for reviewed selections.
+        priority = ('record_count', 'known_units', 'unknown_quantity_records', 'complete',
+                    'rows_truncated', 'selected_count', 'selection_complete',
+                    'selection_name', 'selection_space', 'inventory_changed', 'next_step')
+        value = {**{key: value[key] for key in priority if key in value},
+                 **{key: child for key, child in value.items() if key not in priority}}
     return route(provider_data(route(value)), True)
 
 
@@ -854,7 +869,7 @@ TOOLS.extend([
                 'location': {'type': 'string', 'minLength': 1, 'maxLength': 100},
                 'notes': {'type': 'string', 'maxLength': 2000}, 'observation_index': {'type': 'integer', 'minimum': 0, 'maximum': 19}},
             'required': ['name', 'quantity', 'location']}}}, ['inventory_id', 'items']),
-    tool('world_delete_items', 'Propose deletion of exact saved item IDs, after a fresh search. Follow the client action policy for immediate execution or review.', {
+    tool('world_delete_items', 'Prepare a deletion REVIEW CARD after a fresh search. For remove all exact-named items from one named Space, use matching saved IDs from that Space; the server resolves the complete group even if the preview is truncated. Never claim a preview is the full count. The user must press Confirm in the card; a verbal yes does not delete items.', {
         'inventory_id': {'type': 'string', 'format': 'uuid'},
         'item_ids': {'type': 'array', 'minItems': 1, 'maxItems': 100, 'uniqueItems': True, 'items': {'type': 'string', 'format': 'uuid'}}}, ['inventory_id', 'item_ids']),
 ])
