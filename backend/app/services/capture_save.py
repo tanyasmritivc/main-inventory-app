@@ -17,6 +17,8 @@ _FIELDS = (
     'confidence', 'import_data',
 )
 logger = logging.getLogger(__name__)
+# Keep guarded database statements small without weakening their checks/timeouts.
+_INSERT_BATCH_SIZE = 8
 
 
 def _same_record(row: dict, payload: dict) -> bool:
@@ -68,9 +70,10 @@ def save_capture_items(*, user_id: str, items: list[dict], max_new_items: int | 
 
     ids = [payload['item_id'] for _, payload in prepared]
 
-    def read_receipts():
-        rows = client.table('items').select('*').eq('user_id', user_id).in_('item_id', ids).execute().data or []
-        return {row['item_id']: row for row in rows if row.get('user_id') == user_id and row.get('item_id') in ids}
+    def read_receipts(target_ids=None):
+        target_ids = ids if target_ids is None else target_ids
+        rows = client.table('items').select('*').eq('user_id', user_id).in_('item_id', target_ids).execute().data or []
+        return {row['item_id']: row for row in rows if row.get('user_id') == user_id and row.get('item_id') in target_ids}
 
     # A failed read aborts before any inserts. Unknown state is never a zero count.
     existing = read_receipts()
@@ -102,23 +105,45 @@ def save_capture_items(*, user_id: str, items: list[dict], max_new_items: int | 
         pending.append((index, payload))
 
     if pending:
-        try:
-            # Do not blindly repeat an insert after a lost response. Read the
-            # stable IDs below to establish which rows actually persisted.
-            client.table('items').insert([payload for _, payload in pending]).execute()
-        except Exception:
-            logger.warning('Capture insert response unavailable; checking saved receipts')
-        try:
-            saved = read_receipts()
-        except Exception:
-            logger.warning('Capture receipts unavailable; reporting unconfirmed saves')
-            saved = {}
-        for index, payload in pending:
-            row = saved.get(payload['item_id'])
-            if row and _same_record(row, payload):
-                accepted[index] = row
-            else:
-                failures.append({'index': index, 'reason': 'Saving could not be confirmed. Your draft is safe to retry.'})
+        def insert_and_read(batch):
+            timed_out = False
+            try:
+                client.table('items').insert([payload for _, payload in batch]).execute()
+            except Exception as error:
+                timed_out = getattr(error, 'code', None) == '57014'
+                logger.warning('Capture insert unavailable; checking receipts (statement_timeout=%s)', timed_out)
+            try:
+                return read_receipts([payload['item_id'] for _, payload in batch]), timed_out
+            except Exception:
+                logger.warning('Capture receipts unavailable; reporting unconfirmed saves')
+                return None, timed_out
+
+        retry_available = True
+        for offset in range(0, len(pending), _INSERT_BATCH_SIZE):
+            batch = pending[offset:offset + _INSERT_BATCH_SIZE]
+            saved, timed_out = insert_and_read(batch)
+            if timed_out and saved is not None and retry_available:
+                missing = [(index, payload) for index, payload in batch if payload['item_id'] not in saved]
+                if missing:
+                    # Retry once per request, only after a known statement timeout
+                    # and a successful read of stable IDs. Never upsert/overwrite.
+                    retry_available = False
+                    recovered, _ = insert_and_read(missing)
+                    saved.update(recovered or {})
+            unconfirmed = []
+            for index, payload in batch:
+                row = (saved or {}).get(payload['item_id'])
+                if row and _same_record(row, payload):
+                    accepted[index] = row
+                else:
+                    unconfirmed.append({'index': index, 'reason': 'Saving could not be confirmed. Your draft is safe to retry.'})
+            if unconfirmed:
+                failures.extend(unconfirmed)
+                # Bound work during an outage. Successful batches remain
+                # recoverable through their unchanged item identities.
+                failures.extend({'index': index, 'reason': 'These remaining items have not been saved. Retry this draft to finish.'}
+                                for index, _ in pending[offset + len(batch):])
+                break
         invalidate_inventory_cache(user_id)
     # Saving the crop alone is not a completed capture. Keep the stable item ID
     # on a gallery failure, report the draft unconfirmed, and repair on retry.

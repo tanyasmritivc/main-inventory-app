@@ -1,5 +1,15 @@
 # Active work
 
+## Capture save timeout recovery, 2026-11-08
+
+Backend-only work on `fix/capture-save-batches`. PostgREST reported SQLSTATE 57014
+for an item insert under the existing eight-second statement timeout. The user's
+later receipt confirmed 27 saved items and zero failures; do not resave their
+stock manually. Save statements now contain at most eight records and can retry
+one known timeout only after reading stable-ID receipts. An unresolved batch
+stops further inserts. Draft receipt messages group identical reasons while
+preserving every failed index. 130 targeted tests pass; deployment pending.
+
 ## Capture destination handoff, 2026-11-08
 
 Backend-only fix on `fix/capture-space-handoff`. Production evidence confirmed a

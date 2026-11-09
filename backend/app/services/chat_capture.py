@@ -182,7 +182,8 @@ def facts(draft):
     receipt = draft.get('receipt')
     if receipt:
         value['receipt'] = {k: receipt.get(k, 0) for k in ('saved_count', 'review_count')}
-        value['receipt']['failure_count'] = len(receipt.get('failures', []))
+        value['receipt']['failure_count'] = sum(len(f.get('indices', [f.get('index')]))
+                                                 for f in receipt.get('failures', []))
         value['receipt']['resource_links'] = [link for link in receipt.get('resource_links', []) if link.get('kind') == 'space'][:1]
     if draft.get('status') != 'saved':
         unknown = unknown_quantity_indices(draft)
@@ -228,6 +229,24 @@ def duplicate_links(owner, inventory_id, selected):
                 found[row['item_id']] = {**row, 'inventory_id': inventory_id}
     # Links are bounded independently from the duplicate decision.
     return world.resource_links({'items': list(found.values())})
+
+
+def _group_save_failures(failures):
+    """Keep failed indices while older clients render each shared reason once."""
+    groups = {}
+    for failure in failures:
+        reason = failure['reason']
+        if reason not in groups:
+            groups[reason] = {**failure, 'indices': []}
+        groups[reason]['indices'].append(failure['index'])
+    result = []
+    for reason, group in groups.items():
+        if len(group['indices']) == 1:
+            group.pop('indices')
+        else:
+            group['reason'] = f"{reason} ({len(group['indices'])} items.)"
+        result.append(group)
+    return result
 
 
 def save(actor, key, cid, capture_id, revision, allow_duplicates=False, *, confirm_items=False):
@@ -294,7 +313,7 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False, *, confi
             'spaces': [{**space, 'inventory_id': inv['inventory_id']}]})
         prior = draft.get('completed_receipt') or {}
         draft['receipt'] = {'saved_count': prior.get('saved_count', 0) + len(inserted), 'review_count': prior.get('review_count', 0) + len(reviews),
-                            'reviews': prior.get('reviews', []) + reviews, 'failures': failures,
+                            'reviews': prior.get('reviews', []) + reviews, 'failures': _group_save_failures(failures),
                             'resource_links': (prior.get('resource_links', []) + links)[-200:]}
         if not failures:
             draft['processed_count'] = processed + len(batch)
