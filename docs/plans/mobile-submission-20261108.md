@@ -85,8 +85,12 @@ passing automation does not guarantee approval.
 - Six focused new-note native layout cases passed after the fixture correction;
   phone light and iPad dark captures now show the editor and Save control and were
   visually inspected. System keyboard pixels are excluded from render-tree PNGs.
-- Signed release packaging is in progress. Initial failures and replay logs are
-  retained privately; failed runs are not counted as passes.
+- Build213 was uploaded and acknowledged by Apple, delivery
+  `002b26d4-0960-4db9-9a8c-14b89e68818b`. Runtime `bfd5e112`, five CI jobs passed
+  (42554623319). Production configuration, strict signatures, 33 device binaries
+  each in archive/export and 27 privacy manifests verified; Apple validation passed.
+  Processing and tester availability were not polled. Initial failures and replay
+  logs are retained privately; failed runs are not counted as passes.
 - Physical camera, microphone, Google/Apple authorization, APNs, VoiceOver and
   lock-screen scan/chat continuation must be distinguished from synthetic tests.
 

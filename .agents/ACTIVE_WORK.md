@@ -1,13 +1,32 @@
-## November 8 - Mobile submission preparation (active)
+## November 8 - Mobile audit and scan colors uploaded (PR377)
 
-Lane `audit/mobile-submission213`, based on delivered build212. Audit current
-mobile workflows, responsive/native UI and release readiness; preserve current
-scan presentation and main chat. User additionally removed Search options from
-the Add to chat popup. Native source-menu search is disabled while all eleven
-actions and Space-only restrictions remain. Use synthetic fixtures for mutation
-tests and read-only physical navigation. Private evidence is in
-`projects/findez-submission213-private`. No public App Store submission authorized
-by this preparation request; prepare the next draft and report remaining gates.
+Apple acknowledged TestFlight 1.1.2 (213), delivery
+`002b26d4-0960-4db9-9a8c-14b89e68818b`. Runtime `bfd5e112e49ff09beddc129e554c98531ca72b17`;
+all five exact-commit CI jobs passed (42554623319). Native Add to chat and short
+submenus omit Search options while retaining all actions. Native scan loading
+blocks have a muted rose shimmer in both themes; only the light panel becomes
+soft #EEF0F3. Dark panel, white photo sweep, progress, Steps/Stop, scan/chat requests
+and draft/save behavior are unchanged.
+
+1,368 host tests passed (one existing skip), analysis clean. Primary177,
+extended171, responsive matrix210, source-menu8, welcome12, scan8 and Space-chat4
+native cases passed. All nine onboarding and six note-layout cases passed after
+correcting synthetic keyboard scaling in their fixtures; initial failures retained.
+Light/dark native visuals inspected. Dedicated review access, inventory directory,
+backend/database health and legal/support URLs passed read-only checks.
+
+Signed archive/export verified production configuration, 33 device binaries each,
+27 privacy manifests and strict signatures. Apple validation passed. Processing
+and tester availability were not polled. Physical build212 smoke covered navigation,
+Space contents and item details; final213 physical acceptance remains pending.
+
+App Store 1.1.2 draft is PREPARE_FOR_SUBMISSION with MANUAL release, corrected review
+notes, existing dedicated review credentials and staged release notes. Public
+submission was not performed. Older listing navigation screenshots need updating;
+final device OAuth/APNs/media/VoiceOver/background checks and privacy review remain
+submission gates. No backend/web/database changes. Audit and repeatable commands:
+`docs/plans/mobile-submission-20261108.md`; receipt `docs/plans/mobile213-release.json`.
+Disposable audit simulator removed; original simulator and saved releases retained.
 
 ## November 8 - Scan tips and smoother composer uploaded (PR376)
 
