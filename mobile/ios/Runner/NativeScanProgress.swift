@@ -14,6 +14,7 @@ final class NativeScanProgressFactory: NSObject, FlutterPlatformViewFactory {
 private final class ScanPhotoView: UIImageView {
   var regions: [[String: Any]] = [] { didSet { setNeedsLayout() } }
   private var overlays: [UIView] = []
+  private let photoMask = CAShapeLayer()
   override func layoutSubviews() {
     super.layoutSubviews()
     overlays.forEach { $0.removeFromSuperview() }; overlays.removeAll()
@@ -21,6 +22,13 @@ private final class ScanPhotoView: UIImageView {
     let scale = min(bounds.width / image.size.width, bounds.height / image.size.height)
     let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
     let photo = CGRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
+    // Round the visible photo, not its surrounding aspect-fit letterbox.
+    CATransaction.begin(); CATransaction.setDisableActions(true)
+    photoMask.frame = bounds
+    photoMask.path = UIBezierPath(roundedRect: photo,
+      cornerRadius: min(18, min(photo.width, photo.height) / 2)).cgPath
+    layer.mask = photoMask
+    CATransaction.commit()
     for region in regions {
       guard let box = region["box"] as? [Double], box.count == 4,
             box.allSatisfy({ $0.isFinite && $0 >= 0 && $0 <= 1 }),
@@ -44,6 +52,69 @@ private final class ScanPhotoView: UIImageView {
       outline.addSubview(badge); addSubview(outline); overlays.append(outline)
     }
   }
+}
+
+private final class ScanPlaceholderView: UIView {
+  private let shine = CAGradientLayer()
+  private var reduceMotion = false
+  private let phase: Double
+
+  init(phase: Double) {
+    self.phase = phase
+    super.init(frame: .zero)
+    layer.cornerRadius = 14; layer.cornerCurve = .continuous
+    clipsToBounds = true; backgroundColor = .tertiarySystemFill
+    isUserInteractionEnabled = false; isAccessibilityElement = false
+    shine.startPoint = CGPoint(x: 0, y: 1)
+    shine.endPoint = CGPoint(x: 1, y: 0)
+    shine.locations = [0.40, 0.50, 0.60]
+    layer.addSublayer(shine)
+    for name in [UIApplication.didBecomeActiveNotification,
+                 UIApplication.willResignActiveNotification,
+                 UIAccessibility.reduceMotionStatusDidChangeNotification] {
+      NotificationCenter.default.addObserver(self, selector: #selector(updateMotion), name: name, object: nil)
+    }
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  func configure(dark: Bool, reduced: Bool) {
+    reduceMotion = reduced
+    CATransaction.begin(); CATransaction.setDisableActions(true)
+    shine.colors = [UIColor.white.withAlphaComponent(0).cgColor,
+      UIColor.white.withAlphaComponent(dark ? 0.18 : 0.85).cgColor,
+      UIColor.white.withAlphaComponent(0).cgColor]
+    CATransaction.commit()
+    updateMotion()
+  }
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    // Extend vertically too, so the moving layer's edges stay transparent
+    // throughout the diagonal sweep instead of producing a rectangular seam.
+    let frame = bounds.insetBy(dx: -bounds.width, dy: -bounds.height)
+    if shine.frame != frame {
+      CATransaction.begin(); CATransaction.setDisableActions(true)
+      shine.frame = frame
+      CATransaction.commit()
+      shine.removeAnimation(forKey: "scan-shine")
+    }
+    updateMotion()
+  }
+  override func didMoveToWindow() { super.didMoveToWindow(); updateMotion() }
+  @objc private func updateMotion(_ notification: Notification? = nil) {
+    let active = notification?.name != UIApplication.willResignActiveNotification &&
+      UIApplication.shared.applicationState == .active
+    let animate = window != nil && !bounds.isEmpty && active &&
+      !reduceMotion && !UIAccessibility.isReduceMotionEnabled
+    shine.isHidden = !animate
+    guard animate else { shine.removeAnimation(forKey: "scan-shine"); return }
+    guard shine.animation(forKey: "scan-shine") == nil else { return }
+    let sweep = CABasicAnimation(keyPath: "transform.translation.x")
+    sweep.fromValue = -bounds.width * 2; sweep.toValue = bounds.width * 2
+    sweep.duration = 2.4; sweep.repeatCount = .infinity
+    sweep.beginTime = shine.convertTime(CACurrentMediaTime(), from: nil) + phase
+    sweep.fillMode = .backwards
+    shine.add(sweep, forKey: "scan-shine")
+  }
+  deinit { NotificationCenter.default.removeObserver(self) }
 }
 
 private final class ScanSurface: UIView {
@@ -122,9 +193,8 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     placeholders.axis = .horizontal; placeholders.spacing = 10; placeholders.distribution = .fillEqually
     placeholders.heightAnchor.constraint(equalToConstant: 54).isActive = true
     placeholders.isAccessibilityElement = false; placeholders.accessibilityElementsHidden = true
-    for _ in 0..<3 {
-      let tile = UIView(); tile.layer.cornerRadius = 14; tile.backgroundColor = .tertiarySystemFill
-      placeholders.addArrangedSubview(tile)
+    for index in 0..<3 {
+      placeholders.addArrangedSubview(ScanPlaceholderView(phase: Double(index) * 0.12))
     }
     stack.addArrangedSubview(placeholders); stack.addArrangedSubview(footer)
     NSLayoutConstraint.activate([
@@ -173,6 +243,10 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     model = next
     root.overrideUserInterfaceStyle = next["dark"] as? Bool == true ? .dark : .light
     root.backgroundColor = .secondarySystemGroupedBackground
+    for case let tile as ScanPlaceholderView in placeholders.arrangedSubviews {
+      tile.configure(dark: next["dark"] as? Bool == true,
+                     reduced: next["reduceMotion"] as? Bool == true)
+    }
     scale = max(0.5, min(4, next["textScale"] as? Double ?? 1))
     title.font = .systemFont(ofSize: 17 * scale, weight: .semibold)
     status.font = .systemFont(ofSize: 15 * scale)

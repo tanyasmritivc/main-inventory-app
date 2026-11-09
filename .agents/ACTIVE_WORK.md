@@ -1,3 +1,23 @@
+## November 8 - Native scan polish uploaded (PR374); broad audit paused
+
+User explicitly paused the complete mobile launch audit and cancelled the scan
+revert before it was applied. Keep build209 native scan and navigation timing.
+Build210 only adds a subtle diagonal shine to the three loading placeholders
+and rounds the visible aspect-fit photo corners. Decorative animation respects
+Reduce Motion and stops when inactive/detached. Scan behavior remains unchanged.
+
+Apple acknowledged TestFlight 1.1.2 (210), delivery `a8998e95-9a99-4ad4-85d8-a752954342ee`.
+Runtime `f4d888969ae977e726ac99c50f37cd50a46b75a9`; all five exact-commit CI jobs passed
+(run42537573630), nine focused Flutter checks, six UIKit layout/lifecycle cases,
+clean analysis and final native dark/light visual inspection. Manual checks
+confirmed rounded photo, diagonal shine, overlays, Steps and Stop.
+
+Signed archive/export verified production configuration, 33 device binaries each
+and 27 privacy manifests. Processing/tester availability were not polled and
+physical-device acceptance remains pending. The interrupted broad launch audit
+is not a pass and must remain paused until the user resumes it. No backend, web,
+request, save or public App Store changes. Receipt: docs/plans/mobile210-release.json.
+
 ## November 8 — Native scan progress and tab timing uploaded (PR373)
 
 Apple acknowledged TestFlight 1.1.2 (209), delivery `9282a1de-61c3-4219-ba0e-d9f5b71e820c`.
