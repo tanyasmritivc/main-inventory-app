@@ -7,8 +7,10 @@ creation binding at revision 2 with a still-unplaced draft at revision 3 and the
 same requested destination. Attaching now validates current destination intent
 rather than rejecting all item-edit revisions. Current draft compare-and-swap,
 permissions, confirmation, and idempotent save checkpoints remain intact.
-100 targeted checks pass; deployment pending. No customer stock is modified by
-the deployment. Retry the existing creation/save card after release.
+100 targeted checks pass. Commit `d951ac25` is deployed as a one-file overlay;
+checksums, synthetic runtime checks, and local/public health endpoints passed.
+The web process remained unchanged. No customer stock was modified by the
+deployment. Retry the existing creation/save card.
 
 ## Space creation latency, 2026-11-08
 

@@ -41,3 +41,9 @@ and `/health/db`. The production checkout is not reset or replaced.
 
 The user's existing confirmed card can be retried without recreating the Space.
 Verification never creates or saves customer inventory on the user's behalf.
+
+Deployed on 2026-11-08 as commit `d951ac25`. The deployed file hash matched,
+all other backend Python sources were unchanged, the web process stayed running,
+and both local and public health endpoints returned 200. Synthetic checks on
+the deployed runtime verified the revised-draft handoff and changed-destination
+guard without database writes. The user's physical-phone retry remains unverified.
