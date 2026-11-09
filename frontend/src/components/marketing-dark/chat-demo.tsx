@@ -15,21 +15,30 @@ export function ChatDemo({audience, asks}: {audience: Audience; asks?: string[]}
   };
   useEffect(()=>{
     if(!host.current||!templates.current)return;
+    const resetRedirect = () => { redirecting.current = false; };
+    resetRedirect();
+    window.addEventListener('pageshow', resetRedirect);
     const s=SOL[audience];
     const chat=FZChat(host.current,{h:300,items:s.items,sheet:s.sheet,asks:asks??s.asks,templates:templates.current,onOpen:()=>host.current?.dispatchEvent(new CustomEvent('landing-chat-open',{bubbles:true}))});
-    return ()=>chat.destroy();
+    return ()=>{window.removeEventListener('pageshow', resetRedirect);chat.destroy();};
   },[audience,asks]);
   return <><div data-chat ref={host}
-    onInputCapture={event => {
-      if (!(event.target instanceof HTMLTextAreaElement)) return;
-      event.stopPropagation();
-      openAuth();
-    }}
     onKeyDownCapture={event => {
       if (!(event.target instanceof HTMLTextAreaElement) || event.key !== 'Enter') return;
+      if (event.nativeEvent.isComposing || event.keyCode === 229) {
+        event.stopPropagation();
+        return;
+      }
+      if (event.shiftKey) return;
       event.preventDefault();
       event.stopPropagation();
-      openAuth();
+      if (event.target.value.trim()) openAuth();
+    }}
+    onClickCapture={event => {
+      if (!(event.target instanceof Element) || !event.target.closest('button.go')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (host.current?.querySelector('textarea')?.value.trim()) openAuth();
     }}
   /><div className="asset-templates" ref={templates} aria-hidden="true">
     <span data-template="mark" className="dark"><FindEZMark width={15} height={15}/></span>

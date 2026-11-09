@@ -19,6 +19,10 @@ list ideas as active work.
 
 ## Handoffs
 
+Marketing Ask submission, 2026-11-08: in progress on production web main. Allow
+typing/paste without navigation; open existing signup only on nonempty Enter/Send.
+Keep Shift+Enter, composition input, and suggestion-chip demos working.
+
 Solutions hero entrance, 2026-11-08: deployed from production web main, commit
 `70ed1745`. The four detail heroes fade in their first rendered scene and stagger
 the heading/control entrance, reserve dynamic-load space, and honor reduced motion.
