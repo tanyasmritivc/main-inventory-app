@@ -1,5 +1,14 @@
 # Active work
 
+## Space creation latency, 2026-11-08
+
+Backend-only work on `fix/space-chat-latency`. The deployed world-chat baseline is
+recorded in `e4b1174a`; older repository chat descriptions are not the current
+runtime. A narrow shortcut prepares existing reviewed creation proposals for
+clear standalone new-conversation Space requests using authorized destination
+metadata, without item retrieval or model calls. Contextual turns, captures,
+ambiguous destinations, and retries retain the existing flow. Deployment pending.
+
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not
 list ideas as active work.
 

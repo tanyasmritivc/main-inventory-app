@@ -395,6 +395,20 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     from app.services.completion_stream import completion_events
     from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
     authorize(actor, world)
+    # A new, explicit creation-only request needs destination metadata and a
+    # reviewed proposal, not model planning or stock retrieval. Contextual turns
+    # and retries keep the existing receipt-aware conversational path.
+    from app.services.chat_space_creation import space_name, prepare as prepare_space
+    name = space_name(message) if not (
+        history or photo_evidence or source_evidence or image_content or read_only_retry
+        or capture and capture.get('draft')
+    ) else None
+    if name:
+        yield {'type': 'status', 'message': 'Checking the Space destination...'}
+        prepared = prepare_space(actor, world, name, supports_task_actions=supports_task_actions)
+        if prepared is not None:
+            yield {'type': 'done', **prepared, 'conversation_id': conversation_id}
+            return
     yield {'type': 'status', 'message': 'Thinking...'}
     messages = [{'role': 'system', 'content': 'You are FindEZ, AI memory for the physical world. '
         'Answer the user in your own words. Search saved records before making inventory claims. '
