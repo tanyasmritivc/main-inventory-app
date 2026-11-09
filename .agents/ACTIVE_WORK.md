@@ -1,3 +1,12 @@
+## November 8 - Complete mobile audit resumed (active)
+
+Owner: current Codex, branch audit/mobile-launch211, based on released build210.
+User resumed broad launch audit. Full Flutter coverage, native workflows and
+visual/large-text checks use synthetic data. Preserve native scan shine, rounded
+photo and navigation lead. Investigate native Documents large-text overflow from
+the interrupted run; distinguish fixture issues from app defects. No claim of
+launch readiness until results and physical-device limitations are recorded.
+
 ## November 8 - Native scan polish uploaded (PR374); broad audit paused
 
 User explicitly paused the complete mobile launch audit and cancelled the scan

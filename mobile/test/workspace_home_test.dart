@@ -142,6 +142,7 @@ void main() {
     double scale = 1,
     Brightness brightness = Brightness.light,
   }) async {
+    final nativePixelRatio = tester.view.devicePixelRatio;
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -150,9 +151,12 @@ void main() {
       MaterialApp(
         theme: AppTheme.create(brightness),
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(scale)),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(scale),
+            // Keep the software keyboard in logical units when the fixture
+            // changes a native 3x screen to a 1x logical viewport.
+            viewInsets: MediaQuery.of(context).viewInsets / nativePixelRatio,
+          ),
           child: child!,
         ),
         home: WorkspaceHome(session: session, onOpenInventory: open),
@@ -207,7 +211,9 @@ void main() {
           await tester.tap(find.text('New inventory'));
           await settle(tester);
           await tester.enterText(find.byType(TextField), 'Materials');
-          await tester.pump();
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.widgetWithText(TextButton, 'Create'));
+          await tester.pumpAndSettle();
           await tester.tap(find.widgetWithText(TextButton, 'Create'));
           await settle(tester);
           expect(
@@ -349,7 +355,7 @@ void main() {
           await settle(tester);
           await tester.tap(find.byType(CheckboxListTile).last);
           await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
-          await tester.pump();
+          await tester.pumpAndSettle();
           final confirm = find.widgetWithText(TextButton, 'Delete workspace');
           await tester.ensureVisible(confirm);
           await tester.pumpAndSettle();

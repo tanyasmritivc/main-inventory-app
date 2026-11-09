@@ -142,15 +142,20 @@ Widget _page(
   _Api api, {
   Brightness brightness = Brightness.dark,
   double scale = 1,
+  double? keyboardHeight,
   bool shared = false,
   bool viewOnly = false,
 }) => MaterialApp(
   debugShowCheckedModeBanner: false,
   theme: _theme(brightness),
   builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(
-      context,
-    ).copyWith(boldText: true, textScaler: TextScaler.linear(scale)),
+    data: MediaQuery.of(context).copyWith(
+      boldText: true,
+      textScaler: TextScaler.linear(scale),
+      viewInsets: keyboardHeight == null
+          ? null
+          : EdgeInsets.only(bottom: keyboardHeight),
+    ),
     child: AppTypography(child: child!),
   ),
   home: ShoppingListPage(
@@ -169,6 +174,8 @@ Future<void> _count(WidgetTester tester, String button, int count) async {
     find.byKey(const ValueKey('restock-count')),
     count.toString(),
   );
+  // Let the native keyboard and caret scroll finish before locating actions.
+  await tester.pumpAndSettle();
 }
 
 Future<void> _login(String id) => Supabase.instance.client.auth
@@ -738,7 +745,14 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         await _seed(ordered: true);
         await tester.pumpWidget(
-          _page(_Api(), brightness: brightness, scale: 2.6),
+          // The fixture forces devicePixelRatio=1. Native keyboard physical
+          // pixels must not be interpreted as logical pixels on a 3x simulator.
+          _page(
+            _Api(),
+            brightness: brightness,
+            scale: 2.6,
+            keyboardHeight: 280,
+          ),
         );
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(

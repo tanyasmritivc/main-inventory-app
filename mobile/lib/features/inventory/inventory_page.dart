@@ -1733,6 +1733,9 @@ class _InventoryPageState extends State<InventoryPage>
           if (!mounted || account != RestockPrefs.accountKey) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
+              // A long error at accessibility text sizes must not be pushed
+              // above the inventory action button and off the screen.
+              behavior: SnackBarBehavior.fixed,
               content: AppText(
                 'Could not refresh restock notifications. Your purchase plan is saved.',
               ),

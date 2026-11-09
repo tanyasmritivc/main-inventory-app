@@ -9,7 +9,7 @@ import 'package:mobile/features/chat/native_scan_progress.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   for (final brightness in Brightness.values) {
-    for (final layout in ['normal', 'large', 'keyboard']) {
+    for (final layout in ['normal', 'large', 'keyboard', 'keyboard-large']) {
       testWidgets('UIKit scan ${brightness.name} $layout', (tester) async {
         // This isolated fixture creates exactly one platform view.
         final nativeId = platformViewsRegistry.getNextPlatformViewId() + 1;
@@ -23,15 +23,19 @@ void main() {
                 update = setState;
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(
-                    textScaler: TextScaler.linear(layout == 'large' ? 2.6 : 1),
+                    textScaler: TextScaler.linear(
+                      layout.contains('large') ? 2.6 : 1,
+                    ),
                   ),
                   child: Scaffold(
                     body: SafeArea(
                       child: Align(
                         alignment: Alignment.topCenter,
                         child: SizedBox(
-                          width: layout == 'keyboard' ? 320 : double.infinity,
-                          height: layout == 'keyboard' ? 260 : 600,
+                          width: layout.startsWith('keyboard')
+                              ? 320
+                              : double.infinity,
+                          height: layout.startsWith('keyboard') ? 260 : 600,
                           child: NativeScanProgress(
                             image: const AssetImage(
                               'assets/onboarding/sample_workbench.jpg',

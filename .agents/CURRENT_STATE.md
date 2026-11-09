@@ -1,3 +1,14 @@
+## November 8 - Mobile launch audit resumed; candidate211
+
+Broad audit resumed at user request on released210. Confirmed Documents rename
+keyboard/large-text overflow and restock-notification error overflow are fixed.
+1,365 host checks passed (one existing skip), analysis clean. Extended171 and
+primary177 native workflow cases passed across initial runs and focused replays;
+synthetic keyboard/selector fixtures corrected. Visual checks and signed delivery
+remain in progress. No scan/chat/request/palette/tab behavior changes. Physical
+OAuth/APNs/camera/background/VoiceOver acceptance remains separate.
+See docs/plans/mobile-launch-audit-20261108.md for repeatable cases and evidence.
+
 ## November 8 - Native scan polish uploaded (PR374); broad audit paused
 
 User explicitly paused the complete mobile launch audit and cancelled the scan
