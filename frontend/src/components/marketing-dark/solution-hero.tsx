@@ -7,11 +7,14 @@ import pages from './solution-hero-pages.json';
 import './solution-hero.css';
 
 export type SolutionAudience = keyof typeof pages;
-const Scene = dynamic(() => import('./solution-hero-scene'), { ssr: false });
+const Scene = dynamic(() => import('./solution-hero-scene'), {
+  ssr: false,
+  loading: () => <div className="sh-scene" aria-hidden="true"/>,
+});
 
 export function SolutionHero({ audience }: { audience: SolutionAudience }) {
   const page = pages[audience];
-  return <header className="solution-hero" data-hero>
+  return <header key={audience} className="solution-hero" data-hero>
     <Scene config={page.cfg}/>
     <div className="sh-bottom"><div className="sh-wrap">
       <h1 data-sp="1" dangerouslySetInnerHTML={{ __html: page.h1 }}/>

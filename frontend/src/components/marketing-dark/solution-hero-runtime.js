@@ -4,7 +4,7 @@ import { extraParts } from './solution-hero-parts';
 
 export function mountSolutionScene(host,cv,config) {
 const context=cv.getContext('webgl2',{alpha:true,antialias:true})||cv.getContext('webgl',{alpha:true,antialias:true});
-if(!context)return ()=>{};
+if(!context){host.dataset.ready='true';return ()=>{delete host.dataset.ready}};
 const media=matchMedia('(prefers-reduced-motion: reduce)');
 let reduce=media.matches;
 const materials=new Set();
@@ -126,11 +126,12 @@ function frame(t){
  if(!reduce){cam.position.x+=((mx*1.2)-cam.position.x)*.05;cam.lookAt(0,LY-my*.3,0)}
  R.render(S,cam)}
 
-let visible=false,disposed=false,raf=0,last=0,elapsed=0;
+let visible=false,disposed=false,presented=false,raf=0,last=0,elapsed=0;
 function tick(now){
  raf=0;if(disposed||!visible||document.hidden)return;
  if(last)elapsed+=Math.min(now-last,100);last=now;
  frame(reduce?9.6:(elapsed/1000)%12);
+ if(!presented){presented=true;host.dataset.ready='true'}
  if(!reduce)raf=requestAnimationFrame(tick);
 }
 function resume(){cancelAnimationFrame(raf);raf=0;last=0;if(!disposed&&visible&&!document.hidden)raf=requestAnimationFrame(tick)}
@@ -145,6 +146,7 @@ document.addEventListener('visibilitychange',resume);
 media.addEventListener('change',motion);
 return ()=>{
  disposed=true;cancelAnimationFrame(raf);observer.disconnect();resizeObserver.disconnect();
+ delete host.dataset.ready;
  window.removeEventListener('pointermove',pointer);window.removeEventListener('resize',resize);
  document.removeEventListener('visibilitychange',resume);media.removeEventListener('change',motion);
  const geometries=new Set(),textures=new Set();Object.values(M).forEach(m=>materials.add(m));materials.add(edgeMat);materials.add(binMat);

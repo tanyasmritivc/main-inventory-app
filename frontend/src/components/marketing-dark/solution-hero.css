@@ -26,6 +26,19 @@
 .landing-dark .solution-hero .fz.open .fz-chips{display:none}
 .landing-dark .solution-hero .sh-note{font-size:13.5px;color:#6C6C71;margin:12px 0 0;line-height:1.5;text-align:left}
 .sh-note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+/* Reserve the scene while its bundle loads, then reveal its first rendered frame. */
+.landing-dark .solution-hero .sh-scene{opacity:0}
+.landing-dark .solution-hero .sh-scene[data-ready="true"]{opacity:1;animation:sh-scene-enter .85s cubic-bezier(.22,1,.36,1) backwards}
+.landing-dark .solution-hero h1{animation:sh-content-enter .75s cubic-bezier(.22,1,.36,1) .08s backwards}
+.landing-dark .solution-hero .sh-controls{animation:sh-content-enter .75s cubic-bezier(.22,1,.36,1) .18s backwards}
+@keyframes sh-scene-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sh-content-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+ .landing-dark .solution-hero .sh-scene,
+ .landing-dark .solution-hero .sh-scene[data-ready="true"],
+ .landing-dark .solution-hero h1,
+ .landing-dark .solution-hero .sh-controls{animation:none;opacity:1;transform:none}
+}
 @media(max-width:900px){
  .landing-dark .solution-hero{min-height:100svh;grid-template-rows:auto auto;align-content:start}
  .landing-dark .sh-scene{flex:none;height:52svh;min-height:340px}

@@ -19,4 +19,9 @@ list ideas as active work.
 
 ## Handoffs
 
+Solutions hero entrance, 2026-11-08: in progress on production web main. Add a
+first-frame scene fade and staggered heading/control entrance to the four shared
+Solutions detail heroes. Reserve scene layout during dynamic loading and honor
+reduced motion. Deploy through the existing self-hosted web release workflow.
+
 No task-specific handoff is registered in `.agents/HANDOFFS/` as of 2026-09-22.
