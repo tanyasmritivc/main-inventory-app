@@ -19,9 +19,11 @@ list ideas as active work.
 
 ## Handoffs
 
-Public Ask alignment, 2026-11-08: in progress on production main. Remove inherited
-textarea focus chrome inside marketing Ask bars and balance text/button alignment.
-Preserve existing Enter/Send authentication and suggestion-demo behavior.
+Public Ask alignment, 2026-11-08: deployed from main through `d3a7fc79` in
+`ask-align-20261108`. Scoped composer CSS removes inherited textarea focus chrome
+and balances text/button alignment across public Ask bars. Production build and
+13 route checks passed; focused typed input visually verified in live Safari.
+Enter/Send authentication and suggestion-demo handlers are unchanged.
 
 Marketing Ask submission, 2026-11-08: deployed from main commit `bfe9a707` in
 `ask-submit-20261108`. Typing/paste stays on-page; nonempty Enter/Send opens signup.
