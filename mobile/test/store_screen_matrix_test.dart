@@ -160,9 +160,12 @@ void main({Future<void> Function(String name, List<int> bytes)? capture}) {
       (const Size(1024, 768), 1.0, 'ipad'),
     ]) {
       for (final entry in pages.entries) {
+        const screenFilter = String.fromEnvironment('STORE_SCREEN_FILTER');
+        if (screenFilter.isNotEmpty && entry.key != screenFilter) continue;
         testWidgets('${entry.key} ${brightness.name} ${profile.$3}', (
           tester,
         ) async {
+          final nativePixelRatio = tester.view.devicePixelRatio;
           tester.view.physicalSize = profile.$1;
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
@@ -176,6 +179,11 @@ void main({Future<void> Function(String name, List<int> bytes)? capture}) {
                   textScaler: TextScaler.linear(profile.$2),
                   disableAnimations: true,
                   padding: const EdgeInsets.only(top: 24, bottom: 20),
+                  viewInsets: EdgeInsets.only(
+                    bottom:
+                        MediaQuery.of(context).viewInsets.bottom /
+                        nativePixelRatio,
+                  ),
                 ),
                 child: child!,
               ),

@@ -1,0 +1,21 @@
+FindEZ AI 1.1.2 (213): App Review guide
+
+ACCESS
+Use the dedicated email/password account in Sign-In Information. No purchase or third-party sign-in is required. On first launch choose "Already have an account? Sign in". Choose More options and Continue with Email if email fields are not visible. New users can choose Get started, answer or skip introductory questions, then create an account with Apple, Google or email. The notification permission choice precedes the informational Founders Access welcome sheet; either permission choice is supported.
+
+NAVIGATION
+The bottom control has Ask, an Add (+) action and Spaces. The organization selector is at the top left of Ask. The profile at the top right opens Settings. Spaces contains the locations list and a More section with Documents and notes, Workspaces and Account settings. Browse inventories selects an inventory within the chosen organization.
+
+CAPTURE AND IMPORT
+In Ask, the composer plus opens Add to chat: Auto Extract, Attach, Inventory tools and Add context. Auto Extract analyzes a selected photo and shows a draft with source photo and item crops. The scanning surface has real progress, Steps, Stop, rotating guidance and a decorative white photo sweep. Overly crowded photos may take several minutes. Results can be edited or saved as-is; unknown quantities do not require a made-up number. Saving is explicit. Starting capture inside a Space keeps that Space as the destination.
+Ordinary Attach stages a photo or file for a question. The Ask FindEZ sheet within a Space is scoped to that Space and supports photo/file questions; it does not offer Auto Extract. Spreadsheet imports support Excel, CSV and JSON. They select a destination outside a Space, or use the current Space, and import directly without the photo-review step. Original imported columns remain available in item details.
+
+CHAT AND ACCOUNT
+Ask answers questions about saved inventory; history opens previous text/photo conversations. Proposed inventory changes require the existing confirmation flow. Media permissions are optional; typed chat and manual inventory remain available. Optional voice records through the microphone and sends audio to FindEZ's transcription service; recognized text appears in the voice composer with editing and cancellation controls. It does not use Apple's Speech recognition service.
+Account deletion is available in Settings, in the Account section. Organization owners must delete or transfer owned resources first. Apple-linked account deletion requests fresh Apple authorization for token revocation. A failed deletion is reported and does not falsely sign the user out as a success.
+
+AI AND PRIVACY
+Language and inventory-vision inference run on infrastructure operated for FindEZ by AI Robots Inc.; inference weights are not embedded in the app. Authenticated requests use authorized inventory context. Optional external-assistant connections are separately configured by the user and are not needed for review. Settings > Personalization and memory provides personalization controls, export and forgetting. Inventory facts remain authoritative. Privacy and Terms are available in Settings and at https://findez.ai/privacy and https://findez.ai/terms.
+
+ACCESS AND SAFETY
+Founders Access is currently free; no paid entitlement or external purchase is required for review. AI identifications, quantities, measurements and answers can be uncertain. Users should check important details before acting. Collaboration is private to authorized members, not a public content feed. Accounts require age 13+ or the higher applicable minimum.

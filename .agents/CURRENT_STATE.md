@@ -1,3 +1,56 @@
+## November 8: App Store 1.1.2 build213 submitted with automatic release
+
+The user explicitly authorized public App Review submission, supplied replacement
+iPhone and iPad screenshots, requested dot bullets with no em or en dashes in forms,
+and then authorized automatic release after approval. This supersedes the earlier
+manual-release and preparation-only limits for this version.
+
+Apple accepted submission `c31eb784-d23a-43a3-8419-5cf4e088b140` at
+2026-11-09T03:57:28.356Z. Version1.1.2 and review submission are WAITING_FOR_REVIEW;
+build213 is VALID and selected. Release type is AFTER_APPROVAL. Seven iPhone
+1320x2868 images and seven iPad2064x2752 images from the supplied device ZIPs were
+uploaded in numbered order; all14 processed COMPLETE with matching checksums.
+The light ZIP's iPhone images have identical pixels to the device-specific ZIP.
+Description, release notes and review guide were saved and verified without em or
+en dashes or hyphen bullets. Review credentials and existing app declarations
+were retained. No new binary or runtime change was needed.
+
+This records submission, not approval or a live public release. Previous audit
+limitations remain historical facts; no new physical-device acceptance is claimed.
+Receipt: `docs/plans/mobile213-app-store-submission.json`. Private originals,
+metadata backups, screenshots and detailed Apple receipts remain outside git in
+`projects/findez-submission213-private/submission`.
+
+## November 8 - Mobile audit and scan colors uploaded (PR377)
+
+Apple acknowledged TestFlight 1.1.2 (213), delivery
+`002b26d4-0960-4db9-9a8c-14b89e68818b`. Runtime `bfd5e112e49ff09beddc129e554c98531ca72b17`;
+all five exact-commit CI jobs passed (42554623319). Native Add to chat and short
+submenus omit Search options while retaining all actions. Native scan loading
+blocks have a muted rose shimmer in both themes; only the light panel becomes
+soft #EEF0F3. Dark panel, white photo sweep, progress, Steps/Stop, scan/chat requests
+and draft/save behavior are unchanged.
+
+1,368 host tests passed (one existing skip), analysis clean. Primary177,
+extended171, responsive matrix210, source-menu8, welcome12, scan8 and Space-chat4
+native cases passed. All nine onboarding and six note-layout cases passed after
+correcting synthetic keyboard scaling in their fixtures; initial failures retained.
+Light/dark native visuals inspected. Dedicated review access, inventory directory,
+backend/database health and legal/support URLs passed read-only checks.
+
+Signed archive/export verified production configuration, 33 device binaries each,
+27 privacy manifests and strict signatures. Apple validation passed. Processing
+and tester availability were not polled. Physical build212 smoke covered navigation,
+Space contents and item details; final213 physical acceptance remains pending.
+
+App Store 1.1.2 draft is PREPARE_FOR_SUBMISSION with MANUAL release, corrected review
+notes, existing dedicated review credentials and staged release notes. Public
+submission was not performed. Older listing navigation screenshots need updating;
+final device OAuth/APNs/media/VoiceOver/background checks and privacy review remain
+submission gates. No backend/web/database changes. Audit and repeatable commands:
+`docs/plans/mobile-submission-20261108.md`; receipt `docs/plans/mobile213-release.json`.
+Disposable audit simulator removed; original simulator and saved releases retained.
+
 ## November 8 - Scan tips and smoother composer uploaded (PR376)
 
 Apple acknowledged TestFlight 1.1.2 (212), delivery `40d56690-6d26-4566-96ba-83c765119437`.

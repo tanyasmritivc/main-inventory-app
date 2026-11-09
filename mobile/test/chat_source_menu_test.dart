@@ -170,7 +170,17 @@ void main() {
           GlobalKey(),
         ).then((v) => selected = v);
         await tester.pumpAndSettle();
-        expect(model['search'], isTrue);
+        void expectNoSearch(Map page) {
+          expect(page['search'], isFalse);
+          expect(page['searchPlaceholder'], isNull);
+          for (final section in page['sections'] as List) {
+            for (final row in section['rows'] as List) {
+              if (row['children'] is Map) expectNoSearch(row['children']);
+            }
+          }
+        }
+
+        expectNoSearch(model);
         expect(leaves(model), unorderedEquals(actions));
         expect(model['sections'][0]['footer'], contains('Overly crowded'));
         expect(find.text('Auto Extract'), findsNothing); // UIKit owns the menu.
@@ -198,6 +208,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(model['title'], 'Attach');
+        expect(model['search'], isFalse);
         expect(leaves(model), ['library', 'camera', 'file']);
         expect(model['sections'][0]['footer'], isNull);
         completion.complete(result);

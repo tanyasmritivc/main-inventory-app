@@ -1,0 +1,19 @@
+{
+  "app_id": "6760401697",
+  "version": "1.1.2",
+  "build": "213",
+  "version_id": "feaec585-618b-406c-89e9-4b93587e67e2",
+  "submission_id": "c31eb784-d23a-43a3-8419-5cf4e088b140",
+  "submission_state": "WAITING_FOR_REVIEW",
+  "submitted_date": "2026-11-09T03:57:28.356Z",
+  "version_state": "WAITING_FOR_REVIEW",
+  "release_type": "AFTER_APPROVAL",
+  "iphone_screenshots": 7,
+  "ipad_screenshots": 7,
+  "all_assets_complete": true,
+  "dot_bullets": true,
+  "em_dashes": false,
+  "en_dashes": false,
+  "review_credentials_preserved": true,
+  "public_release": "automatic after Apple approval"
+}

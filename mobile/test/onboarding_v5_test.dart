@@ -119,6 +119,7 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
     double scale = 1,
     VoidCallback? finished,
   }) async {
+    final nativePixelRatio = t.view.devicePixelRatio;
     t.view.physicalSize = size;
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.resetPhysicalSize);
@@ -131,6 +132,12 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
             disableAnimations: reduced,
             padding: const EdgeInsets.only(top: 59, bottom: 34),
             viewPadding: const EdgeInsets.only(top: 59, bottom: 34),
+            // The synthetic DPR is one; iOS still reports keyboard pixels in
+            // the device's real scale. Keep the keyboard in logical points.
+            viewInsets: EdgeInsets.only(
+              bottom:
+                  MediaQuery.of(context).viewInsets.bottom / nativePixelRatio,
+            ),
             textScaler: TextScaler.linear(scale),
           ),
           child: child!,
@@ -177,9 +184,11 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       );
       await t.ensureVisible(f);
       await t.enterText(f, e.value);
+      await t.pumpAndSettle();
     }
     final legal = find.byType(CheckboxListTile);
     await t.ensureVisible(legal);
+    await t.pumpAndSettle();
     await t.tap(legal);
     await t.pump();
     await tap(t, 'Create account', 2000);

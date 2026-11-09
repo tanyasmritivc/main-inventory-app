@@ -1,0 +1,8 @@
+Improvements to capturing, organizing and finding your things.
+• Clearer photo scanning with a rounded preview, moving scan line and useful rotating tips.
+• Softer light-mode scan colors and a rose-gradient loading shimmer.
+• Simpler native Add to chat controls and smoother placeholder text.
+• Better Space-specific chat and capture, with imports going directly to their selected Space.
+• Improved large-text layouts, error handling and account navigation.
+
+Check important AI suggestions before acting.
