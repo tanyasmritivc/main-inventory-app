@@ -1,0 +1,28 @@
+/* The composer owns the focus ring; the editable field is not a second box. */
+.landing-dark [data-chat].fz .fz-box{align-items:center}
+.landing-dark [data-chat].fz .fz-box textarea,
+.landing-dark [data-chat].fz .fz-box textarea:is(:focus,:focus-visible){
+  appearance:none;
+  -webkit-appearance:none;
+  display:block;
+  min-width:0;
+  width:auto;
+  min-height:44px;
+  margin:0;
+  padding:11px 6px;
+  line-height:22px;
+  border:0;
+  border-radius:0;
+  outline:none;
+  box-shadow:none;
+  background:transparent;
+}
+.landing-dark [data-hero] [data-chat].fz .fz-box textarea{
+  min-height:48px;
+  padding-block:13px;
+}
+.landing-dark .solution-hero [data-chat].fz .fz-box textarea{
+  min-height:36px;
+  padding:8px 0;
+  line-height:20px;
+}

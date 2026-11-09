@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { FindEZMark } from '@/components/site/findez-brand';
 import { EXT, FZ_IMG, FZ_WASH, SOL, type Audience } from './data';
 import { FZChat } from './chat-runtime';
+import './chat-demo.css';
 export function ChatDemo({audience, asks}: {audience: Audience; asks?: string[]}) {
   const host = useRef<HTMLDivElement>(null);
   const templates = useRef<HTMLDivElement>(null);
