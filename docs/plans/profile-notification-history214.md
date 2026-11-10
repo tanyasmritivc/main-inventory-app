@@ -10,11 +10,19 @@ the existing 30-second foreground poll, and after Settings closes. Opening
 Settings alone does not mark anything read. VoiceOver exposes the unread count.
 The history action dismisses Settings before opening the existing scoped history.
 
-Validation before release:
+Validation and delivery:
 
 . 34 focused notification, native Settings callback, and world-shell checks pass.
 . All 1,370 mobile tests pass with one existing skip. Static analysis is clean.
-. Native simulator visual checks and signed build214 delivery are pending.
+. Native simulator checks passed in both themes, including Settings to history,
+  conversation selection, inbox access and mark-all-read clearing the avatar dot.
+. All five exact-source CI jobs passed in run42763110311.
+. Apple accepted signed TestFlight 1.1.3 (214), delivery
+  `d6913e2c-9087-4b4d-b0c0-fc90c642fb86`. Processing is pending and tester
+  availability is unverified. Physical device acceptance remains pending.
+. Apple validation reported 1.1.2 already approved and closed, so this update
+  uses 1.1.3. Public availability was not checked.
+. Release receipt: `docs/plans/mobile214-release.json`.
 . No backend, web, database, push-policy or existing App Review submission change.
 
 Separate bulk scan investigation:

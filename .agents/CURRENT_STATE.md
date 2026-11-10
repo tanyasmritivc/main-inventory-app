@@ -1,3 +1,29 @@
+## November 9: profile notification dot and Settings history uploaded
+
+Apple acknowledged TestFlight 1.1.3 (214), delivery
+`d6913e2c-9087-4b4d-b0c0-fc90c642fb86`. Runtime
+`a095ad7efece3f42713c9d70027c98a2cef4bc35`; all five exact-commit CI jobs
+passed (42763110311). PR379, branch `fix/profile-notification-history-214`.
+The main Ask home bell and history shortcut are removed. Settings retains
+Notifications and now includes Chat history. An unread dot appears on the profile
+avatar and refreshes through existing notification polling, push and lifecycle
+handling. Opening Settings does not mark notifications read.
+
+All 1,370 mobile tests passed with one existing skip, 34 focused checks passed,
+and analysis was clean. Native iPhone simulator checks covered light/dark headers
+and Settings, history opening and conversation selection, notification inbox and
+mark-all-read clearing the avatar dot. Physical build214 acceptance and actual
+push delivery remain unverified. Disposable simulator removed.
+
+Signed production archive/export passed strict signatures, 33 device executable
+checks each, 27 privacy manifests and configuration verification. Apple validation
+and upload passed. Apple rejected the original 1.1.2 package because that version
+was already approved and its train closed; this update therefore uses 1.1.3.
+Public availability of 1.1.2 was not checked. No public App Store submission was
+changed for build214. Processing and tester availability are pending, not polled.
+Receipt: `docs/plans/mobile214-release.json`; task and separate unresolved bulk
+scan investigation: `docs/plans/profile-notification-history214.md`.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement
