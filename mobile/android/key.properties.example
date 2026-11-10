@@ -1,0 +1,5 @@
+# Copy to key.properties (ignored). Paths are relative to mobile/android.
+storeFile=/absolute/path/to/findez-upload.jks
+storePassword=REPLACE_LOCALLY
+keyAlias=findez-upload
+keyPassword=REPLACE_LOCALLY

@@ -1,4 +1,9 @@
 class AppConfig {
+  // Web OAuth client ID used to request Android Google identity tokens.
+  // The matching Android OAuth client must register com.findez.app + signing SHA.
+  static const googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+  );
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const apiBaseUrl = String.fromEnvironment(

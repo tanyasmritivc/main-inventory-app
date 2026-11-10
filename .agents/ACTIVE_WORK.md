@@ -1,3 +1,19 @@
+## November 9 - Android foundation started
+
+The user requested the customer-facing FindEZ Android app. Isolated lane
+`feat/android-foundation` starts from build213 source `3ddf927f`. Android now has
+`com.findez.app` identity, SDK36/API24 configuration, Java17/desugaring, release
+keystore configuration, camera/microphone permissions, app_links ownership,
+access invitations and spreadsheet share filters. Google Android OAuth accepts
+an explicit web client ID and retains email access when unconfigured.
+
+Analysis passed locally. Local Flutter tests were blocked before execution by
+sandbox loopback-socket permissions. The Android SDK manager could not fetch
+package manifests locally. Added a clean Linux Android CI build with placeholder
+services; results are pending. No APK/device pass or Play release is claimed.
+See `mobile/ANDROID.md` for build commands, service setup and acceptance gaps.
+No backend/web/database or iOS release changes.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement
