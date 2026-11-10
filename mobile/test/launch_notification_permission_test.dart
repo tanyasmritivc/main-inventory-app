@@ -201,8 +201,8 @@ void main() {
         expect(find.byType(AnnouncementSheet), findsOneWidget);
         expect(api.claims, 1);
         expect(api.writes, allowed ? 1 : 0);
-        await tester.ensureVisible(find.text('Got it'));
-        await tester.tap(find.text('Got it'));
+        expect(find.text('Got it'), findsNothing);
+        await tester.tapAt(const Offset(5, 5));
         await tester.pumpAndSettle();
         expect(find.text('Home'), findsOneWidget);
         expect(find.byType(AnnouncementSheet), findsNothing);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/api_client.dart';
+import '../../core/ui/native_presentation.dart';
 import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
@@ -52,46 +53,104 @@ class _OrganizationPillState extends State<OrganizationPill> {
           Navigator.of(context).overlay!.context.findRenderObject()!
               as RenderBox;
       final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
-      final value = await showMenu<String>(
-        context: context,
-        position: RelativeRect.fromRect(
-          Rect.fromLTWH(
-            origin.dx,
-            origin.dy + box.size.height,
-            box.size.width,
-            0,
-          ),
-          Offset.zero & overlay.size,
-        ),
-        constraints: BoxConstraints(maxWidth: overlay.size.width - 32),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
-        ),
-        items: [
-          for (final org in organizations)
-            PopupMenuItem(
-              value: 'org:${org['organization_id']}',
-              child: _row(
-                org['name'].toString(),
-                org['organization_id'] == widget.id,
-              ),
+      String? value;
+      if (usesNativePresentation) {
+        final global = box.localToGlobal(Offset.zero);
+        final result = await NativePresentation.show(
+          context,
+          model: {
+            'kind': 'organization',
+            'title': 'Switch organization',
+            'anchor': {
+              'x': global.dx,
+              'y': global.dy,
+              'width': box.size.width,
+              'height': box.size.height,
+            },
+            'sections': [
+              if (organizations.isNotEmpty)
+                {
+                  'rows': [
+                    for (final org in organizations)
+                      {
+                        'id': 'org:${org['organization_id']}',
+                        'title': org['name'].toString(),
+                        'initial':
+                            org['name'].toString().characters.firstOrNull ??
+                            '?',
+                        'checked': org['organization_id'] == widget.id,
+                      },
+                  ],
+                },
+              {
+                'rows': [
+                  {
+                    'id': 'personal',
+                    'title': 'Personal',
+                    'initial': 'P',
+                    'checked': widget.id == null,
+                  },
+                ],
+              },
+              {
+                'rows': [
+                  {'id': 'new', 'title': 'New organization', 'symbol': 'plus'},
+                  {
+                    'id': 'invite',
+                    'title': 'Review invitation',
+                    'symbol': 'envelope',
+                  },
+                ],
+              },
+            ],
+          },
+        );
+        if (result?['error'] is String) {
+          throw FormatException(result!['error'] as String);
+        }
+        value = result?['action'] as String?;
+      } else {
+        value = await showMenu<String>(
+          context: context,
+          position: RelativeRect.fromRect(
+            Rect.fromLTWH(
+              origin.dx,
+              origin.dy + box.size.height,
+              box.size.width,
+              0,
             ),
-          if (organizations.isNotEmpty) const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'personal',
-            child: _row('Personal', widget.id == null),
+            Offset.zero & overlay.size,
           ),
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'new',
-            child: _menuLabel('New organization', CupertinoIcons.plus),
+          constraints: BoxConstraints(maxWidth: overlay.size.width - 32),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
           ),
-          PopupMenuItem(
-            value: 'invite',
-            child: _menuLabel('Review invitation', CupertinoIcons.envelope),
-          ),
-        ],
-      );
+          items: [
+            for (final org in organizations)
+              PopupMenuItem(
+                value: 'org:${org['organization_id']}',
+                child: _row(
+                  org['name'].toString(),
+                  org['organization_id'] == widget.id,
+                ),
+              ),
+            if (organizations.isNotEmpty) const PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'personal',
+              child: _row('Personal', widget.id == null),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'new',
+              child: _menuLabel('New organization', CupertinoIcons.plus),
+            ),
+            PopupMenuItem(
+              value: 'invite',
+              child: _menuLabel('Review invitation', CupertinoIcons.envelope),
+            ),
+          ],
+        );
+      }
       if (!mounted || value == null || widget.api.accountId != account) return;
       if (value == 'invite') {
         final result = await Navigator.of(context).push<Map<String, dynamic>>(

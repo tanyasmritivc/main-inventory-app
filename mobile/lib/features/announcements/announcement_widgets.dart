@@ -385,8 +385,10 @@ class AnnouncementSheet extends StatelessWidget {
     required this.primaryLabel,
     required this.onPrimary,
     required this.onClose,
+    this.gestureDismissOnly = false,
   });
   final String title, primaryLabel;
+  final bool gestureDismissOnly;
   final String? line, fine;
   final Widget body;
   final VoidCallback onPrimary, onClose;
@@ -484,29 +486,30 @@ class AnnouncementSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 44,
-                              height: 44,
-                              child: IconButton(
-                                tooltip: 'Close announcement',
-                                onPressed: onClose,
-                                padding: const EdgeInsets.all(2),
-                                icon: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: c.ring),
-                                  ),
-                                  child: Icon(
-                                    CupertinoIcons.xmark,
-                                    size: 16,
-                                    color: c.text,
+                            if (!gestureDismissOnly) const SizedBox(width: 8),
+                            if (!gestureDismissOnly)
+                              SizedBox(
+                                width: 44,
+                                height: 44,
+                                child: IconButton(
+                                  tooltip: 'Close announcement',
+                                  onPressed: onClose,
+                                  padding: const EdgeInsets.all(2),
+                                  icon: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: c.ring),
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.xmark,
+                                      size: 16,
+                                      color: c.text,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                         if (line != null)
@@ -536,7 +539,16 @@ class AnnouncementSheet extends StatelessWidget {
                             ),
                           ),
                         const SizedBox(height: 22),
-                        _Primary(label: primaryLabel, onTap: onPrimary),
+                        if (!gestureDismissOnly)
+                          _Primary(label: primaryLabel, onTap: onPrimary)
+                        else
+                          Text(
+                            'Swipe down or tap outside to continue.',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: c.secondary,
+                            ),
+                          ),
                       ],
                     ),
                   ),

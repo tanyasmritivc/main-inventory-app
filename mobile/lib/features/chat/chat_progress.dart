@@ -189,7 +189,7 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final base = widget.heading
-        ? (dark ? const Color(0xFFBDBDBD) : AppTheme.lightTextPrimary)
+        ? (dark ? const Color(0xFFE4E4E7) : AppTheme.lightTextPrimary)
         : (dark ? const Color(0xFFB5B5B5) : AppTheme.lightTextSecondary);
     final shine = dark
         ? Colors.white

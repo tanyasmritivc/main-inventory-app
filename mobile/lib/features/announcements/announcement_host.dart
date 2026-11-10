@@ -38,10 +38,12 @@ class AnnouncementHost extends StatefulWidget {
     super.key,
     required this.api,
     required this.user,
+    this.welcomeAfterSignIn = false,
     required this.child,
   });
   final ApiClient api;
   final User user;
+  final bool welcomeAfterSignIn;
   final Widget child;
   @override
   State<AnnouncementHost> createState() => _AnnouncementHostState();
@@ -57,6 +59,7 @@ class _AnnouncementHostState extends State<AnnouncementHost> {
           Supabase.instance.client.auth.currentUser?.id == widget.user.id,
     ),
     accountId: widget.user.id,
+    welcomeAfterSignIn: widget.welcomeAfterSignIn,
     platform: Platform.isIOS ? 'ios' : 'android',
     isCurrent: () =>
         mounted &&
@@ -87,11 +90,13 @@ class AnnouncementGate extends StatefulWidget {
   const AnnouncementGate({
     super.key,
     required this.isSafe,
+    this.isWelcomeSafe,
     this.clock,
     required this.onCapture,
     required this.child,
   });
   final bool Function() isSafe;
+  final bool Function()? isWelcomeSafe;
   final DateTime Function()? clock;
   final VoidCallback onCapture;
   final Widget child;
@@ -130,7 +135,9 @@ class _AnnouncementGateState extends State<AnnouncementGate>
       mounted &&
       _controller?.current == true &&
       NotificationPermissionReady.of(context) &&
-      widget.isSafe() &&
+      ((_controller?.welcomeAfterSignIn == true
+          ? widget.isWelcomeSafe ?? widget.isSafe
+          : widget.isSafe)()) &&
       announcementRoutes.homeVisible &&
       (ModalRoute.of(context)?.isCurrent ?? false) &&
       (WidgetsBinding.instance.lifecycleState == null ||
@@ -153,14 +160,23 @@ class _AnnouncementGateState extends State<AnnouncementGate>
         return;
       }
       c.presented = true;
-      final route = announcementRoute(context, campaign, c.access!);
+      final route = announcementRoute(
+        context,
+        campaign,
+        c.access!,
+        gestureDismissOnly: campaign['design'] == 'access',
+      );
       _route = route;
       final future = Navigator.of(context, rootNavigator: true).push(route);
-      unawaited(_record(c, campaign['id'] as String, 'shown'));
+      if (campaign['session_welcome'] != true) {
+        unawaited(_record(c, campaign['id'] as String, 'shown'));
+      }
       final result = await future;
       _route = null;
       if (!mounted || !c.current) return;
-      unawaited(_record(c, campaign['id'] as String, result ?? 'dismissed'));
+      if (campaign['session_welcome'] != true) {
+        unawaited(_record(c, campaign['id'] as String, result ?? 'dismissed'));
+      }
       if (mounted &&
           c.current &&
           result == 'clicked' &&
@@ -220,8 +236,9 @@ class _AnnouncementGateState extends State<AnnouncementGate>
 Route<String> announcementRoute(
   BuildContext context,
   Map<String, dynamic> campaign,
-  Map<String, dynamic> access,
-) {
+  Map<String, dynamic> access, {
+  bool gestureDismissOnly = false,
+}) {
   final c = AnnouncementColors(context);
   final reduced =
       MediaQuery.of(context).disableAnimations ||
@@ -244,6 +261,7 @@ Route<String> announcementRoute(
       return Padding(
         padding: const EdgeInsets.all(8),
         child: AnnouncementSheet(
+          gestureDismissOnly: gestureDismissOnly,
           title: campaign['title'] as String,
           line: design == 'message' ? null : campaign['body'] as String?,
           body: design == 'access' || design == 'pricing'

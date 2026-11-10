@@ -124,8 +124,8 @@ class _WorldComposerState extends State<WorldComposer>
   void _type() {
     if (!mounted || !_canAnimate) return;
     setState(() => _showHint = true);
-    _typing.duration = Duration(milliseconds: _ideas[_idea].length * 60);
-    _typing.reverseDuration = Duration(milliseconds: _ideas[_idea].length * 28);
+    _typing.duration = Duration(milliseconds: _ideas[_idea].length * 32);
+    _typing.reverseDuration = Duration(milliseconds: _ideas[_idea].length * 18);
     _typing.forward(from: 0);
   }
 
@@ -140,7 +140,7 @@ class _WorldComposerState extends State<WorldComposer>
     } else if (status == AnimationStatus.dismissed && _erasing) {
       _erasing = false;
       setState(() => _idea = (_idea + 1) % _ideas.length);
-      _timer = Timer(const Duration(milliseconds: 350), _type);
+      _timer = Timer(const Duration(milliseconds: 180), _type);
     }
   }
 
@@ -215,6 +215,15 @@ class _WorldComposerState extends State<WorldComposer>
   }
 
   Widget _idleComposer(BuildContext context) {
+    final hintStyle = TextStyle(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF9B9BA1)
+          : const Color(0xFF737780),
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      height: 1.4,
+    );
     final keyboardVisible =
         View.of(context).viewInsets.bottom > 0 ||
         MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -281,21 +290,19 @@ class _WorldComposerState extends State<WorldComposer>
                         child: ExcludeSemantics(
                           child: AnimatedBuilder(
                             animation: _typing,
-                            builder: (context, _) => SmoothTypingHint(
-                              text: _ideas[_idea],
-                              visibleCharacters:
-                                  _typing.value * _ideas[_idea].length,
+                            builder: (context, _) => DefaultTextStyle(
+                              style: hintStyle,
+                              child: SmoothTypingHint(
+                                text: _ideas[_idea],
+                                visibleCharacters:
+                                    _typing.value * _ideas[_idea].length,
+                              ),
                             ),
                           ),
                         ),
                       ),
                 hintMaxLines: 1,
-                hintStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0,
-                  height: 1.4,
-                ),
+                hintStyle: hintStyle,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

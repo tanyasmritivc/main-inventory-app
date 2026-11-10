@@ -433,13 +433,19 @@ class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   bool _retryingSession = false;
   bool _onboardingActive = false;
+  bool _welcomeAfterSignIn = false;
   final _onboardingStore = OnboardingV5Store();
   String? _retriedAnswersFor;
 
   Widget _onboarding() => OnboardingV5Page(
     store: _onboardingStore,
     onFinished: () {
-      if (mounted) setState(() => _onboardingActive = false);
+      if (mounted) {
+        setState(() {
+          _onboardingActive = false;
+          _welcomeAfterSignIn = true;
+        });
+      }
     },
   );
 
@@ -543,6 +549,9 @@ class _AuthGateState extends State<LaunchAuthGate> {
               key: ValueKey(session.user.id),
               api: widget.api,
               child: AnnouncementHost(
+                welcomeAfterSignIn:
+                    _welcomeAfterSignIn ||
+                    snapshot.data?.event == AuthChangeEvent.signedIn,
                 user: session.user,
                 api: widget.api,
                 child: ChatOnboardingGate(api: widget.api),

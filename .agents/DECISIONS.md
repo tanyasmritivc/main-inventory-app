@@ -1722,3 +1722,13 @@ Black, white and neutral gray are the mobile interface palette. Retired accent c
 ## October 28 — readable Default and extraction glass
 
 Increase only the app Default size from .90 to .96 through the existing root text scaler; preserve Small/Large/Larger choices and compose with system accessibility. Keep extraction within its existing chat lifecycle. Presentation may pin existing save controls on roomy layouts, but must fall back to scrolling when the keyboard, accessibility text or an error needs the room. Use actual pipeline status, never simulated progress.
+
+
+## November 9: sign-in Founders Access welcome
+
+The user requests a welcome immediately after explicit sign-in. Fetch verified
+account access independently of server campaign frequency, retain the OS
+notification permission ordering, and present once per authenticated host. Do not
+wait for inventory/profile loads. Automatic access sheets dismiss only by gesture,
+backdrop or accessibility escape. Manual plan views retain their controls. Never
+claim Founders Access for unverified, non-pilot or changed accounts.

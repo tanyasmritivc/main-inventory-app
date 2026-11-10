@@ -1,3 +1,10 @@
+## November 9: native home and invitation polish in progress
+
+Active lane `fix/native-home-invitations-215`, based on uploaded build214.
+Scope: native organization popover, brighter home shine, smaller gray and faster
+smooth placeholders, Founders Access on explicit sign-in with gesture dismissal,
+and readable invitation details. Preserve backend permissions and scan/chat logic.
+
 ## November 9: profile notification dot and Settings history uploaded
 
 Apple acknowledged TestFlight 1.1.3 (214), delivery
