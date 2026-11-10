@@ -25,10 +25,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
-          log-accepted-android-sdk-licenses: false
+      - name: Install Android build packages
+        # GitHub's Ubuntu image already provides the SDK command-line tools.
+        # Keep sdkmanager's exit status when yes exits after its pipe closes.
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.0'
