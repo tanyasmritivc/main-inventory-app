@@ -17,7 +17,7 @@ class NativeBottomTabs extends StatefulWidget {
     required this.onSelected,
     this.onScan,
   });
-  static const selectionLead = Duration(milliseconds: 220);
+  static const selectionLead = Duration(milliseconds: 300);
   final int selected;
   final ValueChanged<int> onSelected;
   final VoidCallback? onScan;

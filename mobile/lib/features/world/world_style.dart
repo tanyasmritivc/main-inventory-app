@@ -5,8 +5,9 @@ import '../../core/ui/app_canvas.dart';
 
 /// A local visual theme; scoped inventory routes and API contracts are unchanged.
 class WorldStyle extends StatelessWidget {
-  const WorldStyle({super.key, required this.child});
+  const WorldStyle({super.key, required this.child, this.ambient = true});
   final Widget child;
+  final bool ambient;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -107,7 +108,7 @@ class WorldStyle extends StatelessWidget {
             space: 24,
           ),
         ),
-        child: AppCanvas(child: child),
+        child: AppCanvas(ambient: ambient, child: child),
       ),
     );
   }

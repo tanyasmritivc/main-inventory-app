@@ -1,3 +1,12 @@
+## November 10: surface corrections and camera controls, build 219
+
+Active lane `fix/mobile-surfaces-camera-219`. Replace the unreliable organization
+popover with a contained Flutter menu, restore selection-before-page timing,
+restore native sheet backgrounds, use a plain Spaces canvas, add subtle light
+surface separation, and simplify scan camera controls. Camera request is appearance
+and oversized controls only. Keep the chat ambient canvas and capture/barcode behavior.
+Full suite 1,383 passed with one existing skip; final focused regressions 13 passed; analyzer clean. Native simulator visual checks passed. Physical-device acceptance pending. Build 219 signed, verified and acknowledged by Apple. All five CI jobs passed. Processing and tester availability pending, not polled. PR #385. Receipt: docs/plans/mobile219-release.json.
+
 ## November 10: contained organization menu and ambient background, build 218
 
 Active lane `fix/contained-menu-ambient-background-218`. Mobile presentation only.

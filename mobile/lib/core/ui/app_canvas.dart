@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 /// Stationary, opaque page canvas. Soft color stays behind content and never
 /// animates with chat tokens, scrolling, or scan progress.
 class AppCanvas extends StatelessWidget {
-  const AppCanvas({super.key, required this.child});
+  const AppCanvas({super.key, required this.child, this.ambient = true});
   final Widget child;
+  final bool ambient;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
     painter: _CanvasPainter(
       Theme.of(context).brightness == Brightness.dark,
-      MediaQuery.highContrastOf(context),
+      !ambient || MediaQuery.highContrastOf(context),
     ),
     child: child,
   );

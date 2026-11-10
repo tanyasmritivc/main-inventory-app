@@ -10,46 +10,6 @@ enum NativeAppearanceColors {
 }
 import CoreText
 
-/// Matches the stationary Flutter page canvas behind native Settings lists.
-private final class NativeCanvasView: UIView {
-  override init(frame: CGRect) {
-    super.init(frame: frame)
-    isOpaque = true
-    isUserInteractionEnabled = false
-    contentMode = .redraw
-  }
-  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-    super.traitCollectionDidChange(previousTraitCollection)
-    setNeedsDisplay()
-  }
-  override func draw(_ rect: CGRect) {
-    guard let context = UIGraphicsGetCurrentContext(), bounds.width > 0 else { return }
-    let dark = traitCollection.userInterfaceStyle == .dark
-    (dark ? UIColor.black : UIColor.white).setFill()
-    context.fill(bounds)
-    guard traitCollection.accessibilityContrast != .high else { return }
-    let span = min(bounds.height, bounds.width * 1.8)
-    func glow(_ x: CGFloat, _ y: CGFloat, _ radius: CGFloat, _ color: UIColor) {
-      guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-        colors: [color.cgColor, color.withAlphaComponent(0).cgColor] as CFArray,
-        locations: [0, 1]) else { return }
-      let center = CGPoint(x: bounds.width * x, y: span * y)
-      context.drawRadialGradient(gradient, startCenter: center, startRadius: 0,
-        endCenter: center, endRadius: bounds.width * radius, options: [])
-    }
-    glow(0.95, 0.02, 0.95, dark
-      ? UIColor(red: 105/255, green: 70/255, blue: 56/255, alpha: 82/255)
-      : UIColor(red: 234/255, green: 219/255, blue: 211/255, alpha: 112/255))
-    glow(0.40, 0.42, 0.80, dark
-      ? UIColor(red: 57/255, green: 71/255, blue: 87/255, alpha: 77/255)
-      : UIColor(red: 218/255, green: 229/255, blue: 238/255, alpha: 122/255))
-    glow(-0.10, 0.24, 0.65, dark
-      ? UIColor(red: 37/255, green: 65/255, blue: 58/255, alpha: 46/255)
-      : UIColor(red: 228/255, green: 239/255, blue: 232/255, alpha: 71/255))
-  }
-}
-
 /// System presentations only. Dart remains responsible for data and permissions.
 final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate, UIPopoverPresentationControllerDelegate {
   private let channel: FlutterMethodChannel
@@ -366,19 +326,7 @@ private final class NativeListController: UITableViewController, UISearchResults
     } else {
       statusView = visibleSections.allSatisfy { ($0["rows"] as? [[String: Any]] ?? []).isEmpty } ? label : nil
     }
-    if page["kind"] as? String != "organization" && page["opaque"] as? Bool != true {
-      let canvas = NativeCanvasView()
-      if let status = statusView {
-        status.translatesAutoresizingMaskIntoConstraints = false
-        canvas.addSubview(status)
-        NSLayoutConstraint.activate([
-          status.centerXAnchor.constraint(equalTo: canvas.centerXAnchor),
-          status.centerYAnchor.constraint(equalTo: canvas.centerYAnchor),
-          status.widthAnchor.constraint(lessThanOrEqualTo: canvas.widthAnchor, constant: -40)
-        ])
-      }
-      tableView.backgroundView = canvas
-    } else { tableView.backgroundView = statusView }
+    tableView.backgroundView = statusView
     if page["textSizeFactor"] != nil {
       navigationController?.navigationBar.titleTextAttributes = [
         .font: appFont(17, style: .headline, weight: .regular)

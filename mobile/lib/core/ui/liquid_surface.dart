@@ -30,8 +30,8 @@ class LiquidSurface extends StatelessWidget {
         boxShadow: [
           if (shadow && !solid)
             BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? .16 : .045),
-              blurRadius: 16,
+              color: Colors.black.withValues(alpha: dark ? .16 : .075),
+              blurRadius: 18,
               offset: const Offset(0, 5),
             ),
         ],

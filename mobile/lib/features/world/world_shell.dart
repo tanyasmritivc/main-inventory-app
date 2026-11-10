@@ -621,6 +621,7 @@ class _WorldShellState extends State<WorldShell> {
 
   @override
   Widget build(BuildContext context) => WorldStyle(
+    ambient: _tab == 0,
     child: AnnouncementGate(
       isWelcomeSafe: () =>
           !_chatFocused &&
@@ -736,6 +737,7 @@ class _WorldShellState extends State<WorldShell> {
               Expanded(
                 key: const ValueKey('world-content'),
                 child: RetainedTabTransition(
+                  animate: false,
                   index: _tab,
                   children: [
                     Column(

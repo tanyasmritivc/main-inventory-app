@@ -93,7 +93,7 @@ void main() {
     },
   );
   testWidgets(
-    'native organization picker preserves choices and selected account scope',
+    'contained organization picker preserves choices and selected account scope',
     (tester) async {
       fixture.respond = (_) => {
         'organizations': [
@@ -117,19 +117,22 @@ void main() {
       );
       await tester.tap(find.text('Beta'));
       await tester.pumpAndSettle();
-      expect(model['kind'], 'organization');
-      final rows = (model['sections'] as List)
-          .expand((section) => section['rows'] as List)
+      final rows = tester
+          .widgetList<PopupMenuItem<String>>(find.byType(PopupMenuItem<String>))
           .toList();
-      expect(rows.map((row) => row['title']), [
-        'Alpha',
-        'Beta',
-        'Personal',
-        'New organization',
-        'Review invitation',
+      expect(rows.map((row) => row.value), [
+        'org:a',
+        'org:b',
+        'personal',
+        'new',
+        'invite',
       ]);
-      expect(rows[1]['checked'], true);
-      completion.complete({'action': 'personal'});
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(PopupMenuItem<String>).first).width,
+        lessThanOrEqualTo(300),
+      );
+      await tester.tap(find.text('Personal'));
       await tester.pumpAndSettle();
       expect(selected, isNull);
       expect(fixture.requests.every((r) => r.method == 'GET'), true);

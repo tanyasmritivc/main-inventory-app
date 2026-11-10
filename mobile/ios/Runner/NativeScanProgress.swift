@@ -328,7 +328,7 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
       : UIColor(red: 238/255, green: 240/255, blue: 243/255, alpha: 1)
     glass.isHidden = UIAccessibility.isReduceTransparencyEnabled
     glass.alpha = 0.25
-    root.layer.borderColor = UIColor.white.withAlphaComponent(dark ? 0.10 : 0.35).cgColor
+    root.layer.borderColor = (dark ? UIColor.white.withAlphaComponent(0.10) : UIColor.black.withAlphaComponent(0.12)).cgColor
     photo.backgroundColor = .clear
     for case let tile as ScanPlaceholderView in placeholders.arrangedSubviews {
       tile.configure(dark: next["dark"] as? Bool == true,
