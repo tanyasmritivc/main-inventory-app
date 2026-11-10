@@ -1383,6 +1383,28 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
 
+            _sectionLabel('Community'),
+            _glassCard(
+              ListTile(
+                leading: const Icon(Icons.people_outline),
+                title: const AppText('Join our Discord'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  final opened = await tryOpenExternalUrl(
+                    Uri.parse('https://discord.gg/vN2qfhMzs'),
+                  );
+                  if (!opened && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Could not open Discord. Please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
             _sectionLabel('Support'),
             _glassCard(
               Column(

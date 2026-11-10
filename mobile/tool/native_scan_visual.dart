@@ -1,5 +1,6 @@
 // Account-free UI harness. Release target remains lib/main.dart.
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/photo_source_sheet.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/chat/native_scan_progress.dart';
 import 'package:mobile/features/chat/scan_region.dart';
@@ -29,6 +30,20 @@ class _ScanAuditState extends State<ScanAudit> {
             children: [
               Wrap(
                 children: [
+                  TextButton(
+                    onPressed: () async {
+                      final source = await showPhotoSourceSheet(
+                        context,
+                        scanning: true,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Source: $source')),
+                        );
+                      }
+                    },
+                    child: const Text('Photo source'),
+                  ),
                   TextButton(
                     onPressed: () => setState(() => dark = !dark),
                     child: const Text('Theme'),

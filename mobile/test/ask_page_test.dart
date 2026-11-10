@@ -69,6 +69,7 @@ class _AskApi extends ApiClient {
   _AskApi({
     this.fail = false,
     this.pending,
+    this.pendingText,
     this.captureThenFail = false,
     this.previewRows = 1,
     bool world = false,
@@ -77,6 +78,7 @@ class _AskApi extends ApiClient {
   final bool captureThenFail;
   final int previewRows;
   StreamController<AiStreamEvent>? pending;
+  StreamController<AiStreamEvent>? pendingText;
   final List<String?> conversationIds = [];
   final List<String> commands = [];
   final List<String?> requestIds = [];
@@ -198,8 +200,8 @@ class _AskApi extends ApiClient {
     commands.add(message);
     conversationIds.add(conversationId);
     requestIds.add(requestId);
-    if (pending != null) {
-      yield* pending!.stream;
+    if (pendingText != null || pending != null) {
+      yield* (pendingText ?? pending)!.stream;
       return;
     }
     if (fail) throw StateError('SECRET internal failure');
@@ -1161,7 +1163,7 @@ void main() {
             await tester.tap(find.text('Choose photo'));
             await tester.pumpAndSettle();
             expect(focused.last, isTrue);
-            expect(find.text('Review extraction'), findsOneWidget);
+            expect(find.byTooltip('Keep draft in chat'), findsOneWidget);
             expect(find.text('Auto Extract'), findsNothing);
             expect(find.byType(LinearProgressIndicator), findsNothing);
             if (width == 390 && scale == 1) {
@@ -1259,6 +1261,57 @@ void main() {
       }
     }
   }
+
+  testWidgets('chat and scanning have independent progress and cancellation', (
+    tester,
+  ) async {
+    final scan = StreamController<AiStreamEvent>();
+    final chat = StreamController<AiStreamEvent>();
+    addTearDown(scan.close);
+    addTearDown(chat.close);
+    final api = _AskApi(world: true, pending: scan, pendingText: chat);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Auto Extract'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose photo'));
+    await tester.pump(const Duration(milliseconds: 300));
+    scan.add(
+      AiStreamEvent(
+        type: 'status',
+        conversationId: 'same-chat',
+        message: 'Checking photo sections',
+      ),
+    );
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).first, 'Where is my drill?');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pump();
+    expect(api.commands, ['Where is my drill?']);
+    expect(api.conversationIds, ['same-chat']);
+    chat.add(
+      AiStreamEvent(type: 'delta', delta: 'Your drill is in the garage.'),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Checking photo sections'), findsOneWidget);
+    await tester.tap(find.byTooltip('Stop response'));
+    await tester.pump();
+    scan.add(AiStreamEvent(type: 'status', message: 'Checked 2 objects'));
+    await tester.pump();
+    expect(find.text('Checked 2 objects'), findsOneWidget);
+    expect(scan.hasListener, true);
+    expect(find.byTooltip('Stop scanning'), findsOneWidget);
+    await tester.tap(find.byTooltip('Stop scanning'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Stop scanning'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets(
     'scanning preview has one status and stops without losing typed text',
@@ -1475,7 +1528,7 @@ void main() {
       expect(api.photos, hasLength(1));
       expect(api.photos.single.autoExtract, isTrue);
       expect(api.photoQuestions.single, isEmpty);
-      expect(find.text('Review extraction'), findsOneWidget);
+      expect(find.byTooltip('Keep draft in chat'), findsOneWidget);
       expect(find.byType(AskQuestionCard), findsNothing);
       expect(find.byType(TextField), findsOneWidget);
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
@@ -1586,9 +1639,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.byTooltip('Stop scanning'), findsNothing);
-    expect(find.text('Review extraction'), findsOneWidget);
+    expect(find.byTooltip('Keep draft in chat'), findsOneWidget);
     expect(find.byType(AskQuestionCard), findsNothing);
-    expect(find.text('Review extraction'), findsOneWidget);
+    expect(find.byTooltip('Keep draft in chat'), findsOneWidget);
     expect(find.text('1 of 1 selected · Not saved yet'), findsOneWidget);
   });
 }

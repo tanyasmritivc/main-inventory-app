@@ -128,15 +128,15 @@ private final class ScanPlaceholderView: UIView {
     reduceMotion = reduced
     CATransaction.begin(); CATransaction.setDisableActions(true)
     backgroundColor = dark
-      ? UIColor(red: 52/255, green: 43/255, blue: 49/255, alpha: 1)
-      : UIColor(red: 227/255, green: 217/255, blue: 222/255, alpha: 1)
-    let rose = UIColor(red: 184/255, green: 116/255, blue: 141/255, alpha: 1)
-    let softRose = UIColor(red: 221/255, green: 172/255, blue: 187/255, alpha: 1)
-    shine.colors = [rose.withAlphaComponent(0).cgColor,
-      rose.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
-      softRose.withAlphaComponent(dark ? 0.60 : 0.52).cgColor,
-      rose.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
-      rose.withAlphaComponent(0).cgColor]
+      ? UIColor(white: 0.19, alpha: 1)
+      : UIColor(white: 0.88, alpha: 1)
+    let neutral = UIColor(white: dark ? 0.65 : 0.95, alpha: 1)
+    let highlight = UIColor.white
+    shine.colors = [neutral.withAlphaComponent(0).cgColor,
+      neutral.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
+      highlight.withAlphaComponent(dark ? 0.60 : 0.52).cgColor,
+      neutral.withAlphaComponent(dark ? 0.34 : 0.20).cgColor,
+      neutral.withAlphaComponent(0).cgColor]
     CATransaction.commit()
     updateMotion()
   }
@@ -181,6 +181,7 @@ private final class ScanSurface: UIView {
 
 private final class NativeScanProgressView: NSObject, FlutterPlatformView {
   private let root = ScanSurface()
+  private let glass = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
   private let channel: FlutterMethodChannel
   private let title = UILabel()
   private let close = UIButton(type: .close)
@@ -211,11 +212,17 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     super.init()
     root.frame = frame
     root.layer.cornerRadius = 26; root.clipsToBounds = true
-    title.text = "Review extraction"; title.numberOfLines = 0
+    root.layer.cornerCurve = .continuous
+    root.layer.borderWidth = 0.5
+    glass.frame = root.bounds
+    glass.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    glass.isUserInteractionEnabled = false
+    root.addSubview(glass)
+    title.text = nil; title.isHidden = true
     title.accessibilityTraits = .header
     close.accessibilityLabel = "Stop scanning"; close.accessibilityIdentifier = "findez.scan.stop"
     close.addTarget(self, action: #selector(stop), for: .touchUpInside)
-    let header = UIStackView(arrangedSubviews: [title, close])
+    let header = UIStackView(arrangedSubviews: [UIView(), close])
     header.axis = .horizontal; header.alignment = .center; header.spacing = 12
     header.translatesAutoresizingMaskIntoConstraints = false
     close.widthAnchor.constraint(equalToConstant: 44).isActive = true
@@ -319,7 +326,10 @@ private final class NativeScanProgressView: NSObject, FlutterPlatformView {
     root.overrideUserInterfaceStyle = dark ? .dark : .light
     root.backgroundColor = dark ? .secondarySystemGroupedBackground
       : UIColor(red: 238/255, green: 240/255, blue: 243/255, alpha: 1)
-    photo.backgroundColor = root.backgroundColor
+    glass.isHidden = UIAccessibility.isReduceTransparencyEnabled
+    glass.alpha = 0.25
+    root.layer.borderColor = UIColor.white.withAlphaComponent(dark ? 0.10 : 0.35).cgColor
+    photo.backgroundColor = .clear
     for case let tile as ScanPlaceholderView in placeholders.arrangedSubviews {
       tile.configure(dark: next["dark"] as? Bool == true,
                      reduced: next["reduceMotion"] as? Bool == true)

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
+import 'package:mobile/core/ui/photo_source_sheet.dart';
 import 'package:mobile/features/chat/chat_history_sheet.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/appearance_controller.dart';
@@ -99,6 +100,20 @@ void main() {
     return context;
   }
 
+  for (final choice in ['camera', 'photos', 'cancel']) {
+    testWidgets('native photo source $choice returns exactly one result', (
+      tester,
+    ) async {
+      final context = await mount(tester);
+      final result = showPhotoSourceSheet(context, scanning: true);
+      await tester.pump();
+      expect(presented['kind'], 'photoSource');
+      expect(presented['message'], contains('Overly crowded'));
+      completion.complete(choice == 'cancel' ? null : {'action': choice});
+      await tester.pumpAndSettle();
+      expect(await result, choice == 'cancel' ? null : choice == 'camera');
+    });
+  }
   testWidgets(
     'extraction details preserves selected facts and native dismissal',
     (tester) async {

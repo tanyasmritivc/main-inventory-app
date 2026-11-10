@@ -22,6 +22,7 @@ class ChatCaptureCard extends StatefulWidget {
     this.disabled = false,
     this.embedded = false,
     this.photo,
+    this.reviewHeader,
     this.creationAction,
     this.fixedInventoryId,
     this.fixedSpaceId,
@@ -34,6 +35,7 @@ class ChatCaptureCard extends StatefulWidget {
   final ValueChanged<AskResourceLink>? onOpenResource;
   final bool disabled, embedded;
   final ImageProvider? photo;
+  final Widget? reviewHeader;
   final Map<String, dynamic>? creationAction;
   final String? fixedInventoryId, fixedSpaceId;
   @override
@@ -668,6 +670,41 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
             child: Text('Auto Extract', style: TextStyle(fontSize: 17)),
           ),
         status,
+        Wrap(
+          spacing: 8,
+          children: [
+            TextButton(
+              onPressed: _editable
+                  ? () => _patch({
+                      'items': [
+                        for (final row in rows)
+                          {
+                            'index': row['index'],
+                            'selected': selected != rows.length,
+                          },
+                      ],
+                    })
+                  : null,
+              child: Text(
+                selected == rows.length ? 'Uncheck all' : 'Select all',
+              ),
+            ),
+            if (unknown > 0)
+              TextButton(
+                onPressed:
+                    _editable &&
+                        rows.any((r) => scanUnknown(r) && r['selected'] == true)
+                    ? () => _patch({
+                        'items': [
+                          for (final row in rows.where(scanUnknown))
+                            {'index': row['index'], 'selected': false},
+                        ],
+                      })
+                    : null,
+                child: const Text('Uncheck unknown items'),
+              ),
+          ],
+        ),
       ],
     );
     Widget rowAt(int index) {
@@ -935,30 +972,42 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
       physics: bounded ? null : const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: rows.isEmpty ? 1 : rows.length,
-      itemBuilder: (_, i) => rows.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(8),
-              child: Text(
-                'No items were detected. Try a closer, well-lit photo.',
-              ),
-            )
-          : i >= 4 || MediaQuery.disableAnimationsOf(context)
-          ? rowAt(i)
-          : FadeTransition(
-              // Stagger the initially visible rows only. Offscreen rows and all
-              // controls remain immediately usable, even with a long scan.
-              opacity: _arrival.drive(
-                CurveTween(
-                  curve: Interval(
-                    i * 250 / 1200,
-                    (i * 250 + 450) / 1200,
-                    curve: scanMotion,
+      itemCount: (rows.isEmpty ? 1 : rows.length) + 1,
+      itemBuilder: (_, offset) {
+        if (offset == 0) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.reviewHeader != null) widget.reviewHeader!,
+              reviewStatus(),
+            ],
+          );
+        }
+        final i = offset - 1;
+        return rows.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(8),
+                child: Text(
+                  'No items were detected. Try a closer, well-lit photo.',
+                ),
+              )
+            : i >= 4 || MediaQuery.disableAnimationsOf(context)
+            ? rowAt(i)
+            : FadeTransition(
+                // Stagger the initially visible rows only. Offscreen rows and all
+                // controls remain immediately usable, even with a long scan.
+                opacity: _arrival.drive(
+                  CurveTween(
+                    curve: Interval(
+                      i * 250 / 1200,
+                      (i * 250 + 450) / 1200,
+                      curve: scanMotion,
+                    ),
                   ),
                 ),
-              ),
-              child: rowAt(i),
-            ),
+                child: rowAt(i),
+              );
+      },
     );
     return LayoutBuilder(
       builder: (context, bounds) {
@@ -970,10 +1019,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
         if (pin) {
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: reviewStatus(),
-              ),
               Expanded(
                 child: ShaderMask(
                   blendMode: BlendMode.dstIn,
@@ -1004,6 +1049,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (widget.reviewHeader != null) widget.reviewHeader!,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: reviewStatus(),

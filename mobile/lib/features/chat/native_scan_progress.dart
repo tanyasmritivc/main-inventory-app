@@ -56,7 +56,6 @@ class _NativeScanProgressState extends State<NativeScanProgress> {
   }
 
   Map<String, Object> get _model => {
-    'title': 'Review extraction',
     'message': widget.message,
     'steps': List<String>.of(_steps),
     'progress': _progress,

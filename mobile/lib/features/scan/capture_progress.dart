@@ -97,8 +97,6 @@ Future<T> _runCapture<T>({
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.center_focus_strong_outlined),
-                    title: const Text('Review extraction'),
                     trailing: IconButton(
                       tooltip: 'Stop extraction',
                       onPressed: () => token.cancel('Stopped by user'),
