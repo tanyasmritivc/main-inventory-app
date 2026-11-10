@@ -21,7 +21,7 @@ Future<void> main() async {
     if (r.path == '/organizations') {
       return {
         'organizations': [
-          {'organization_id': 'studio', 'name': 'Design Studio'},
+          {'organization_id': 'studio', 'name': 'Design Studio Collective'},
           {'organization_id': 'workshop', 'name': 'Workshop'},
         ],
       };
@@ -34,7 +34,7 @@ Future<void> main() async {
           'scope': 'organization',
           'resource_id': 'studio',
           'organization_id': 'studio',
-          'name': 'Design Studio',
+          'name': 'Design Studio Collective',
           'role': 'admin',
           'status': accepted ? 'accepted' : 'pending',
           'invited_by_name': 'Alex Example',

@@ -55,8 +55,8 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       list.modalPresentationStyle = .popover
       let sections = data["sections"] as? [[String: Any]] ?? []
       let rows = sections.reduce(0) { $0 + (($1["rows"] as? [[String: Any]])?.count ?? 0) }
-      list.preferredContentSize = CGSize(width: min(360, parent.view.bounds.width - 32),
-        height: min(CGFloat(rows) * 58 + CGFloat(sections.count) * 16 + 16, parent.view.bounds.height * 0.7))
+      list.preferredContentSize = CGSize(width: min(340, parent.view.bounds.width - 32),
+        height: min(CGFloat(rows) * 56, parent.view.bounds.height * 0.7))
       if let popover = list.popoverPresentationController {
         let anchor = data["anchor"] as? [String: Double] ?? [:]
         popover.sourceView = parent.view
@@ -210,7 +210,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   var pageID: String { page["pageID"] as? String ?? "root" }
   init(page: [String: Any], owner: NativePresentation) {
     self.page = page; self.owner = owner
-    super.init(style: page["kind"] as? String == "organization" ? .grouped : .insetGrouped)
+    super.init(style: page["kind"] as? String == "organization" ? .plain : .insetGrouped)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   override func viewDidLoad() {
@@ -227,6 +227,19 @@ private final class NativeListController: UITableViewController, UISearchResults
     tableView.rowHeight = UITableView.automaticDimension
     tableView.estimatedRowHeight = 58
     tableView.keyboardDismissMode = .onDrag
+    if page["kind"] as? String == "organization" {
+      // A popover is a compact menu, not a grouped Settings page. Grouped
+      // section padding is especially large on iOS 26.
+      tableView.backgroundColor = .secondarySystemGroupedBackground
+      tableView.contentInsetAdjustmentBehavior = .never
+      tableView.contentInset = .zero
+      tableView.sectionHeaderTopPadding = 0
+      tableView.estimatedSectionHeaderHeight = 0
+      tableView.estimatedSectionFooterHeight = 0
+      tableView.tableHeaderView = UIView(frame: .zero)
+      tableView.tableFooterView = UIView(frame: .zero)
+      tableView.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 16)
+    }
     if page["search"] as? Bool == true {
       let search = UISearchController(searchResultsController: nil)
       search.obscuresBackgroundDuringPresentation = false
@@ -249,10 +262,10 @@ private final class NativeListController: UITableViewController, UISearchResults
     }
   }
   override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-    page["kind"] as? String == "organization" ? 8 : UITableView.automaticDimension
+    page["kind"] as? String == "organization" ? .leastNormalMagnitude : UITableView.automaticDimension
   }
   override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-    page["kind"] as? String == "organization" ? 1 : UITableView.automaticDimension
+    page["kind"] as? String == "organization" ? .leastNormalMagnitude : UITableView.automaticDimension
   }
   func update(_ data: [String: Any]) {
     page = data; title = data["title"] as? String
@@ -324,6 +337,11 @@ private final class NativeListController: UITableViewController, UISearchResults
     footer.textLabel?.adjustsFontForContentSizeCategory = true
   }
   private var visibleSections: [[String: Any]] {
+    if page["kind"] as? String == "organization" {
+      // Preserve all row IDs/actions while omitting empty section furniture.
+      let sections = page["sections"] as? [[String: Any]] ?? []
+      return [["rows": sections.flatMap { $0["rows"] as? [[String: Any]] ?? [] }]]
+    }
     let query = search?.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     return (page["sections"] as? [[String: Any]] ?? []).map { section in
       var filtered = section
@@ -393,6 +411,15 @@ private final class NativeListController: UITableViewController, UISearchResults
         let size = text.size(withAttributes: attributes)
         text.draw(at: CGPoint(x: (32-size.width)/2, y: (32-size.height)/2), withAttributes: attributes)
       }
+    }
+    if page["kind"] as? String == "organization" {
+      content.textProperties.font = appFont(16, style: .body)
+      content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
+      content.imageToTextPadding = 12
+      content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 21, weight: .regular)
+      content.imageProperties.reservedLayoutSize = CGSize(width: 32, height: 32)
+      cell.backgroundColor = .secondarySystemGroupedBackground
+      cell.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 16)
     }
     cell.contentConfiguration = content
     cell.accessibilityIdentifier = data["id"] as? String

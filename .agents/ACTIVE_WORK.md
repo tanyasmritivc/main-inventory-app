@@ -1,3 +1,9 @@
+## November 9: compact organization menu correction in progress
+
+Lane `fix/compact-organization-menu-216`, based on build215. Correct the oversized
+grouped-table padding in the native organization popover only. Keep every row
+action, account guard, and all other native sheets unchanged.
+
 ## November 9: native home and invitation polish uploaded
 
 Apple acknowledged TestFlight 1.1.3 (215), delivery
