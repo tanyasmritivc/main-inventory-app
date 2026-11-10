@@ -10,4 +10,4 @@ Camera appearance only: remove the oversized panel, use a 70pt shutter, 48pt Pho
 
 Validation: full mobile suite 1,383 passed with one existing skip. Final focused menu, tab, retained-page and native scan regressions: 13 passed. Analyzer clean. Native simulator visual checks passed for both menu themes, long names, selection, dismissal, navigation ordering, plain Spaces, native sheets, camera controls and light scan card separation. Camera capture and physical-device acceptance remain pending; no live scan or customer data writes were performed.
 
-Production 1.1.3+219 packaging and TestFlight delivery pending. Public App Store submission unchanged.
+Production 1.1.3+219 uploaded and acknowledged by Apple, delivery 87269e47-87b7-4563-903e-1700d6d40fd1. All five CI jobs passed on runtime 97b7e207dc98c4ef97643cbbade05d082c3f1699. Processing and tester availability remain pending and were not polled. Public App Store submission unchanged. Receipt: mobile219-release.json. PR #385.
