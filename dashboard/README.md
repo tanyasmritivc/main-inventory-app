@@ -208,7 +208,7 @@ or public submission.
 The existing app receives the new Infrastructure cards through its snapshot API,
 so this update does not require a replacement iOS build. Infrastructure shows
 available upload space, total capacity, automatic cleanup status, latest cache
-removal and capacity advice. Overview includes an Upload storage health check.
+removal and capacity advice. Overview surfaces storage warnings through its open issues.
 Issues warns at 80% unavailable capacity or 5 GiB free, and escalates to critical
 at 90% or 2 GiB free. Warnings resolve after recovery and reopen if pressure returns.
 These are dashboard alerts, not iOS push notifications.
@@ -231,3 +231,10 @@ Rollback: disable `findez-storage-cleanup.timer`, remove only the
 `storage-release.conf` dashboard systemd override, reload systemd and restart only
 `findez-dashboard`. The previous dashboard runtime remains intact. Removed
 compiler caches regenerate during builds.
+
+Storage release validation: 23 service tests and 20 mobile tests passed; Flutter
+analysis is clean. The two storage interaction cases also passed after the final
+presentation adjustment. Public founder API verification returned the new cards
+and a successful cleanup receipt; anonymous and forged tokens returned 401.
+Hourly timer is active and its first run succeeded. The temporary verification
+session was revoked. Customer services were not restarted. No email was sent.

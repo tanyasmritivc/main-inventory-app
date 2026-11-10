@@ -42,8 +42,6 @@ def create_app(sources=None, store=None, owner=None, monitor=True):
                 health = await data.health()
                 db.sample({"at": now(), "checks": health["checks"], "storage": health.get("storage")})
                 for check in health["checks"]:
-                    if check["id"] == "upload_storage":
-                        continue  # Storage has capacity-specific warning/critical incidents.
                     db.incident("health:"+check["id"], check["label"]+" unavailable",
                                 "A direct service health probe failed. Open Infrastructure for the latest status.",
                                 "critical", not check["healthy"])

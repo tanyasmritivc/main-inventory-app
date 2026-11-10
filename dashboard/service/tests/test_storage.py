@@ -120,5 +120,6 @@ def test_health_snapshot_contains_app_compatible_storage_metrics(tmp_path):
             assert metrics['storage_cleanup']['unit']=='count' # Existing app renders text without a unit suffix.
             assert metrics['disk_free']['value']==40
             assert metrics['storage_cleanup_removed']['value']==0
-            assert next(c for c in result['checks'] if c['id']=='upload_storage')['healthy'] is True
+            assert result['storage']['level']=='healthy'
+            assert all(c['id']!='upload_storage' for c in result['checks'])
     asyncio.run(run())

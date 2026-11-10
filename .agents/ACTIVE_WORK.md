@@ -1211,3 +1211,8 @@ storage cards and 80%/90% warnings to the existing private dashboard app. A sepa
 hourly worker removes only old inactive webpack compiler caches. Dashboard API
 permissions and customer services stay unchanged. No customer storage deletion or
 automatic volume resize. No new native runtime source or binary required.
+Deployed to the isolated dashboard runtime with hourly cleanup enabled. First
+cleanup succeeded, preserving six active release paths. Public API reports 15.9
+GiB free and cleanup On; anonymous/forged access denied. 23 service tests, 20 mobile
+tests and Flutter analysis passed. Capacity is shown in resource cards and Issues,
+not mislabeled as service latency or downtime. Changes committed and pushed.

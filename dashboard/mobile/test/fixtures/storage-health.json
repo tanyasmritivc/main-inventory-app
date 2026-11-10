@@ -21,13 +21,6 @@
         "healthy": true,
         "latency_ms": 0,
         "at": "2026-11-10T03:48:39.165454+00:00"
-      },
-      {
-        "id": "upload_storage",
-        "label": "Upload storage",
-        "healthy": true,
-        "latency_ms": null,
-        "at": "2026-11-10T03:48:39.165506+00:00"
       }
     ],
     "metrics": [

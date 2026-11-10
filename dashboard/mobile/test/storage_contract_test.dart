@@ -30,9 +30,9 @@ void main() {
           ),
         ),
       );
-      await tester.scrollUntilVisible(find.text('Upload storage'), 300);
+      await tester.scrollUntilVisible(find.text('Space available for uploads'), 300);
       await tester.pumpAndSettle();
-      expect(find.text('Upload storage'), findsOneWidget);
+      expect(find.text('Space available for uploads'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Automatic cache cleanup'),
         300,

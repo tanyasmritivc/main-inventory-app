@@ -234,7 +234,6 @@ class Sources:
         disk = shutil.disk_usage("/")
         storage = storage_status(disk)
         cleanup = storage['cleanup']
-        checks.append(dict(id="upload_storage", label="Upload storage", healthy=storage['level'] == 'healthy', latency_ms=None, at=now()))
         ms = [metric("disk", "Server disk used", storage['used_percent'], unit="percent", source="Current server filesystem",
                      definition="Capacity unavailable to uploads, including filesystem reserves. Warning at 80% used or 5 GiB free. Critical at 90% used or 2 GiB free."),
               metric("disk_free", "Space available for uploads", round(disk.free/GIB, 1), unit="GiB", source="Current server filesystem",
