@@ -166,29 +166,43 @@ class _NativeScanProgressState extends State<NativeScanProgress> {
   }
 
   @override
-  Widget build(BuildContext context) => UiKitView(
-    key: const Key('native-scan-progress'),
-    viewType: 'com.findez.app/scan-progress',
-    gestureRecognizers: {
-      Factory<VerticalDragGestureRecognizer>(
-        () => VerticalDragGestureRecognizer(),
-      ),
-    },
-    creationParamsCodec: const StandardMessageCodec(),
-    creationParams: _model,
-    onPlatformViewCreated: (id) {
-      if (!mounted) return;
-      _channel = MethodChannel('com.findez.app/scan-progress/$id');
-      _channel!.setMethodCallHandler((call) async {
-        if (mounted && call.method == 'stop' && !_stopped) {
-          _stopped = true;
-          widget.onStop();
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(26),
+      boxShadow: Theme.of(context).brightness == Brightness.light
+          ? const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 18,
+                offset: Offset(0, 5),
+              ),
+            ]
+          : null,
+    ),
+    child: UiKitView(
+      key: const Key('native-scan-progress'),
+      viewType: 'com.findez.app/scan-progress',
+      gestureRecognizers: {
+        Factory<VerticalDragGestureRecognizer>(
+          () => VerticalDragGestureRecognizer(),
+        ),
+      },
+      creationParamsCodec: const StandardMessageCodec(),
+      creationParams: _model,
+      onPlatformViewCreated: (id) {
+        if (!mounted) return;
+        _channel = MethodChannel('com.findez.app/scan-progress/$id');
+        _channel!.setMethodCallHandler((call) async {
+          if (mounted && call.method == 'stop' && !_stopped) {
+            _stopped = true;
+            widget.onStop();
+          }
+        });
+        unawaited(_configure());
+        if (_photo != null) {
+          unawaited(_channel!.invokeMethod<void>('photo', _photo));
         }
-      });
-      unawaited(_configure());
-      if (_photo != null) {
-        unawaited(_channel!.invokeMethod<void>('photo', _photo));
-      }
-    },
+      },
+    ),
   );
 }

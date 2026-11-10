@@ -124,7 +124,7 @@ void main() {
         1,
         reason: 'Unrelated rebuild must not reset the moving selection',
       );
-      await tester.pump(const Duration(milliseconds: 219));
+      await tester.pump(const Duration(milliseconds: 299));
       expect(selected, 0);
       await tester.pump(const Duration(milliseconds: 1));
       await tester.pumpAndSettle();

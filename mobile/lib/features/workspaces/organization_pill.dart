@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/api_client.dart';
-import '../../core/ui/native_presentation.dart';
 import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
@@ -54,105 +53,60 @@ class _OrganizationPillState extends State<OrganizationPill> {
               as RenderBox;
       final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
       String? value;
-      if (usesNativePresentation) {
-        final global = box.localToGlobal(Offset.zero);
-        final result = await NativePresentation.show(
-          context,
-          model: {
-            'kind': 'organization',
-            'title': 'Switch organization',
-            'anchor': {
-              'x': global.dx,
-              'y': global.dy,
-              'width': box.size.width,
-              'height': box.size.height,
-            },
-            'sections': [
-              if (organizations.isNotEmpty)
-                {
-                  'rows': [
-                    for (final org in organizations)
-                      {
-                        'id': 'org:${org['organization_id']}',
-                        'title': org['name'].toString(),
-                        'initial':
-                            org['name'].toString().characters.firstOrNull ??
-                            '?',
-                        'checked': org['organization_id'] == widget.id,
-                      },
-                  ],
-                },
-              {
-                'rows': [
-                  {
-                    'id': 'personal',
-                    'title': 'Personal',
-                    'initial': 'P',
-                    'checked': widget.id == null,
-                  },
-                ],
-              },
-              {
-                'rows': [
-                  {'id': 'new', 'title': 'New organization', 'symbol': 'plus'},
-                  {
-                    'id': 'invite',
-                    'title': 'Review invitation',
-                    'symbol': 'envelope',
-                  },
-                ],
-              },
-            ],
-          },
-        );
-        if (result?['error'] is String) {
-          throw FormatException(result!['error'] as String);
-        }
-        value = result?['action'] as String?;
-      } else {
-        value = await showMenu<String>(
-          context: context,
-          position: RelativeRect.fromRect(
-            Rect.fromLTWH(
-              origin.dx,
-              origin.dy + box.size.height,
-              box.size.width,
-              0,
-            ),
-            Offset.zero & overlay.size,
+      value = await showMenu<String>(
+        context: context,
+        position: RelativeRect.fromRect(
+          Rect.fromLTWH(
+            origin.dx,
+            origin.dy + box.size.height + 6,
+            box.size.width,
+            0,
           ),
-          constraints: BoxConstraints(
-            maxWidth: (overlay.size.width - 48).clamp(0, 280),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
-          ),
-          items: [
-            for (final org in organizations)
-              PopupMenuItem(
-                value: 'org:${org['organization_id']}',
-                child: _row(
-                  org['name'].toString(),
-                  org['organization_id'] == widget.id,
-                ),
+          Offset.zero & overlay.size,
+        ),
+        constraints: BoxConstraints(
+          minWidth: (overlay.size.width - 48).clamp(0, 300),
+          maxWidth: (overlay.size.width - 48).clamp(0, 300),
+          maxHeight: overlay.size.height * .55,
+        ),
+        menuPadding: const EdgeInsets.symmetric(vertical: 8),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
+        ),
+        items: [
+          for (final org in organizations)
+            PopupMenuItem(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              value: 'org:${org['organization_id']}',
+              child: _row(
+                org['name'].toString(),
+                org['organization_id'] == widget.id,
               ),
-            if (organizations.isNotEmpty) const PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'personal',
-              child: _row('Personal', widget.id == null),
             ),
-            const PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'new',
-              child: _menuLabel('New organization', CupertinoIcons.plus),
-            ),
-            PopupMenuItem(
-              value: 'invite',
-              child: _menuLabel('Review invitation', CupertinoIcons.envelope),
-            ),
-          ],
-        );
-      }
+          if (organizations.isNotEmpty) const PopupMenuDivider(height: 8),
+          PopupMenuItem(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            value: 'personal',
+            child: _row('Personal', widget.id == null),
+          ),
+          const PopupMenuDivider(height: 8),
+          PopupMenuItem(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            value: 'new',
+            child: _menuLabel('New organization', CupertinoIcons.plus),
+          ),
+          PopupMenuItem(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            value: 'invite',
+            child: _menuLabel('Review invitation', CupertinoIcons.envelope),
+          ),
+        ],
+      );
       if (!mounted || value == null || widget.api.accountId != account) return;
       if (value == 'invite') {
         final result = await Navigator.of(context).push<Map<String, dynamic>>(
@@ -194,7 +148,7 @@ class _OrganizationPillState extends State<OrganizationPill> {
           children: [
             Icon(icon, size: 20),
             const SizedBox(width: 14),
-            Expanded(child: Text(name)),
+            Expanded(child: Text(name, style: const TextStyle(fontSize: 15))),
           ],
         )
       : Text(name);
@@ -222,7 +176,8 @@ class _OrganizationPillState extends State<OrganizationPill> {
         child: Text(
           name,
           style: TextStyle(
-            fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
+            fontSize: 15,
+            fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
       ),

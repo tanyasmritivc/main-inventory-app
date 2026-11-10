@@ -11,6 +11,9 @@ final class NativeScanCamera: NSObject, UIImagePickerControllerDelegate, UINavig
   private var controller: UIViewController?
   private var dark = true
   private var barcodes = false
+  #if targetEnvironment(simulator)
+  private var previewImage: UIImage?
+  #endif
   init(messenger: FlutterBinaryMessenger) {
     channel = FlutterMethodChannel(name: "com.findez.app/scan-camera", binaryMessenger: messenger)
     super.init()
@@ -18,6 +21,13 @@ final class NativeScanCamera: NSObject, UIImagePickerControllerDelegate, UINavig
       guard let self = self else { reply(nil); return }
       let data = call.arguments as? [String: Any] ?? [:]
       switch call.method {
+      #if targetEnvironment(simulator)
+      case "preview":
+        guard self.result == nil else { reply(nil); return }
+        self.result = reply; self.token = "preview"; self.barcodes = true
+        if let bytes = data["image"] as? FlutterStandardTypedData { self.previewImage = UIImage(data: bytes.data) }
+        self.showCamera()
+      #endif
       case "present":
         guard self.result == nil else { reply(FlutterError(code: "busy", message: "Camera is already open.", details: nil)); return }
         self.result = reply; self.token = data["token"] as? String; self.dark = data["dark"] as? Bool == true
@@ -56,6 +66,10 @@ final class NativeScanCamera: NSObject, UIImagePickerControllerDelegate, UINavig
     guard result != nil else { return }
     if barcodes {
       let camera = PhotoBarcodeCameraController()
+      #if targetEnvironment(simulator)
+      camera.previewImage = previewImage
+      previewImage = nil
+      #endif
       let active = token
       camera.onPhoto = { [weak self] image in
         guard let self = self, self.token == active else { return }; self.encode(image)
@@ -209,12 +223,16 @@ private final class PhotoBarcodeCameraController: UIViewController, AVCaptureMet
   var onLibrary: (() -> Void)?
   var onCancel: (() -> Void)?
   var onFailure: (() -> Void)?
+  #if targetEnvironment(simulator)
+  var previewImage: UIImage?
+  #endif
   private let session = AVCaptureSession()
   private let queue = DispatchQueue(label: "com.findez.camera.session")
   private let photoOutput = AVCapturePhotoOutput()
   private var preview: AVCaptureVideoPreviewLayer!
   private let shutter = UIButton(type: .system)
   private let codeButton = UIButton(type: .system)
+  private let controlShade = CAGradientLayer()
   private var code: String?
   private var finished = false
   private var ready = false
@@ -228,59 +246,90 @@ private final class PhotoBarcodeCameraController: UIViewController, AVCaptureMet
     preview = AVCaptureVideoPreviewLayer(session: session)
     preview.videoGravity = .resizeAspectFill
     view.layer.addSublayer(preview)
+    // Compact camera chrome leaves the live preview unobstructed.
+    controlShade.colors = [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.72).cgColor]
+    controlShade.locations = [0, 1]
+    view.layer.addSublayer(controlShade)
     let cancel = UIButton(type: .system)
-    cancel.setTitle("Cancel", for: .normal)
+    cancel.setImage(UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)), for: .normal)
+    cancel.accessibilityLabel = "Cancel camera"
+    cancel.backgroundColor = UIColor.black.withAlphaComponent(0.35)
+    cancel.layer.cornerRadius = 22
     cancel.addAction(UIAction { [weak self] _ in self?.finish { self?.onCancel?() } }, for: .touchUpInside)
     let photos = UIButton(type: .system)
-    photos.setTitle("Photos", for: .normal)
-    photos.setImage(UIImage(systemName: "photo.on.rectangle"), for: .normal)
+    photos.setImage(UIImage(systemName: "photo.on.rectangle", withConfiguration: UIImage.SymbolConfiguration(pointSize: 25)), for: .normal)
+    photos.accessibilityLabel = "Choose from Photos"
+    photos.accessibilityIdentifier = "scan.camera.photos"
+    photos.backgroundColor = UIColor.black.withAlphaComponent(0.25)
+    photos.layer.cornerRadius = 24
     photos.addAction(UIAction { [weak self] _ in self?.finish { self?.onLibrary?() } }, for: .touchUpInside)
-    shutter.setImage(UIImage(systemName: "circle.inset.filled", withConfiguration: UIImage.SymbolConfiguration(pointSize: 64)), for: .normal)
+    shutter.setImage(UIImage(systemName: "circle.inset.filled", withConfiguration: UIImage.SymbolConfiguration(pointSize: 62)), for: .normal)
     shutter.accessibilityLabel = "Take photo"
     shutter.accessibilityIdentifier = "scan.camera.shutter"
     shutter.isEnabled = false
     shutter.addAction(UIAction { [weak self] _ in self?.takePhoto() }, for: .touchUpInside)
     let hint = UILabel()
-    hint.text = "Photograph items or point at a barcode"
-    hint.font = .preferredFont(forTextStyle: .subheadline)
+    hint.text = "Photo or barcode"
+    hint.font = .preferredFont(forTextStyle: .caption1)
     hint.adjustsFontForContentSizeCategory = true
     hint.textColor = .white; hint.numberOfLines = 0; hint.textAlignment = .center
-    let controls = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterialDark))
-    controls.layer.cornerRadius = 24; controls.clipsToBounds = true
-    let row = UIStackView(arrangedSubviews: [cancel, shutter, photos])
-    row.axis = .horizontal; row.distribution = .equalSpacing; row.alignment = .center; row.spacing = 12
-    let stack = UIStackView(arrangedSubviews: [hint, codeButton, row])
-    stack.axis = .vertical; stack.spacing = 12
     codeButton.isHidden = true
-    codeButton.titleLabel?.font = .preferredFont(forTextStyle: .body)
+    codeButton.titleLabel?.font = .preferredFont(forTextStyle: .subheadline)
     codeButton.titleLabel?.numberOfLines = 2
+    codeButton.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+    codeButton.layer.cornerRadius = 18
+    codeButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
     codeButton.accessibilityIdentifier = "scan.camera.barcode"
     codeButton.addAction(UIAction { [weak self] _ in
       guard let self = self, let code = self.code, Date().timeIntervalSince(self.lastCodeAt) < 2 else { return }
       self.finish { self.onBarcode?(code) }
     }, for: .touchUpInside)
+    let hintStack = UIStackView(arrangedSubviews: [codeButton, hint])
+    hintStack.axis = .vertical; hintStack.spacing = 10; hintStack.alignment = .center
     for button in [cancel, shutter, photos, codeButton] {
       button.tintColor = .white
       button.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
     }
-    view.addSubview(controls); controls.contentView.addSubview(stack)
-    controls.translatesAutoresizingMaskIntoConstraints = false; stack.translatesAutoresizingMaskIntoConstraints = false
+    for element in [cancel, photos, shutter, hintStack] {
+      element.translatesAutoresizingMaskIntoConstraints = false
+      view.addSubview(element)
+    }
     NSLayoutConstraint.activate([
-      controls.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-      controls.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-      controls.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-      stack.leadingAnchor.constraint(equalTo: controls.contentView.leadingAnchor, constant: 16),
-      stack.trailingAnchor.constraint(equalTo: controls.contentView.trailingAnchor, constant: -16),
-      stack.topAnchor.constraint(equalTo: controls.contentView.topAnchor, constant: 16),
-      stack.bottomAnchor.constraint(equalTo: controls.contentView.bottomAnchor, constant: -16),
-      shutter.widthAnchor.constraint(equalToConstant: 72), shutter.heightAnchor.constraint(equalToConstant: 72),
+      cancel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+      cancel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+      cancel.widthAnchor.constraint(equalToConstant: 44), cancel.heightAnchor.constraint(equalToConstant: 44),
+      shutter.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+      shutter.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+      shutter.widthAnchor.constraint(equalToConstant: 70), shutter.heightAnchor.constraint(equalToConstant: 70),
+      photos.centerYAnchor.constraint(equalTo: shutter.centerYAnchor),
+      photos.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 30),
+      photos.widthAnchor.constraint(equalToConstant: 48), photos.heightAnchor.constraint(equalToConstant: 48),
+      hintStack.bottomAnchor.constraint(equalTo: shutter.topAnchor, constant: -18),
+      hintStack.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+      hintStack.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+      hintStack.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
     ])
     NotificationCenter.default.addObserver(self, selector: #selector(background), name: UIApplication.willResignActiveNotification, object: nil)
     NotificationCenter.default.addObserver(self, selector: #selector(foreground), name: UIApplication.didBecomeActiveNotification, object: nil)
+    #if targetEnvironment(simulator)
+    if let image = previewImage {
+      shutter.isEnabled = true
+      let sample = UIImageView(image: image)
+      sample.contentMode = .scaleAspectFill; sample.clipsToBounds = true
+      sample.frame = view.bounds; sample.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      view.insertSubview(sample, at: 0)
+      // Put the same control gradient above the static preview.
+      sample.layer.addSublayer(controlShade)
+      return
+    }
+    #endif
     queue.async { [weak self] in self?.configure() }
   }
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews(); preview.frame = view.bounds
+    CATransaction.begin(); CATransaction.setDisableActions(true)
+    controlShade.frame = CGRect(x: 0, y: max(0, view.bounds.height - 220), width: view.bounds.width, height: 220)
+    CATransaction.commit()
     updateOrientation()
   }
   private func updateOrientation() {

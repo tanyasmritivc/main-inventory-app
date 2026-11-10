@@ -349,10 +349,9 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
       bar.selectedItem = item
     }
   }
-  // Pace UIKit's own Liquid Glass animations through the public layer clock.
-  // Do not inspect private subviews or delay the Flutter selection callback.
+  // Keep UIKit's own timing. Dart lets the highlight lead the page change.
   @objc private func updateMotion() {
-    let speed: Float = (reduceMotion || UIAccessibility.isReduceMotionEnabled) ? 1 : 1.35
+    let speed: Float = 1
     let layer = bar.layer
     guard layer.speed != speed else { return }
     let now = CACurrentMediaTime()

@@ -7,10 +7,12 @@ class RetainedTabTransition extends StatefulWidget {
     super.key,
     required this.index,
     required this.children,
+    this.animate = true,
   });
   static const duration = Duration(milliseconds: 100);
   static const curve = Curves.easeOutCubic;
   final int index;
+  final bool animate;
   final List<Widget> children;
   @override
   State<RetainedTabTransition> createState() => _RetainedTabTransitionState();
@@ -71,10 +73,11 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
           ? (returning ? 1 - _controller.value : _controller.value)
           : 0;
       _outgoing = previous == widget.index ? oldWidget.index : previous;
-      if (NavigationMotion.enabled(
-        context,
-        NativeMotionPreferences.instance.value,
-      )) {
+      if (widget.animate &&
+          NavigationMotion.enabled(
+            context,
+            NativeMotionPreferences.instance.value,
+          )) {
         _controller.forward(from: _start);
       } else {
         _controller.value = 1;
@@ -96,7 +99,8 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   ) => ValueListenableBuilder<MotionPreferences>(
     valueListenable: NativeMotionPreferences.instance,
     builder: (context, preferences, _) {
-      final animate = NavigationMotion.enabled(context, preferences);
+      final animate =
+          widget.animate && NavigationMotion.enabled(context, preferences);
       return AnimatedBuilder(
         animation: _controller,
         builder: (context, _) => Stack(
