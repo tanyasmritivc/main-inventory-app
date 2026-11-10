@@ -11,7 +11,6 @@ DELETE /teams/{team_id}/members/{user_id}  — remove member (owner/mentor only)
 DELETE /teams/{team_id}/leave              — leave a joined team (non-owner)
 """
 
-import html
 import logging
 from datetime import datetime, timezone
 from typing import Literal
@@ -21,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
+from app.services.invitation_email import render_invitation_email
 from app.services import teams_repo
 from app.services.team_categories import TeamCategory
 from app.services.email_delivery import send_transactional_email
@@ -235,9 +235,6 @@ def email_team_invite_route(
         raise HTTPException(400, "Enter a valid email address.")
     details = _invite_details(team_id, user.user_id)
     try:
-        team_name = html.escape(details["team_name"])
-        invite_url = html.escape(details["invite_url"], quote=True)
-        join_code = html.escape(details["join_code"])
         send_transactional_email(
             to=email,
             subject=f"Join {details['team_name']} on FindEZ",
@@ -245,18 +242,14 @@ def email_team_invite_route(
                 f"You are invited to join {details['team_name']} on FindEZ. "
                 f"Open {details['invite_url']} or enter join code {details['join_code']}."
             ),
-            html=f"""
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#090a0d;color:#f5f5f7;padding:40px 24px;">
-              <div style="max-width:520px;margin:auto;background:#171719;border:1px solid #303034;border-radius:22px;padding:32px;">
-                <p style="margin:0 0 10px;color:#a1a1aa;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">FindEZ team invitation</p>
-                <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Join {team_name}</h1>
-                <p style="margin:0 0 26px;color:#b6b6bd;font-size:16px;line-height:1.55;">Open FindEZ to join the team. If you do not have the app yet, the link will take you to the download page.</p>
-                <a href="{invite_url}" style="display:block;padding:14px 20px;border-radius:999px;background:#f5f5f7;color:#111113;text-align:center;text-decoration:none;font-weight:700;">Open invitation</a>
-                <p style="margin:24px 0 6px;color:#8e8e93;font-size:12px;text-align:center;">JOIN CODE</p>
-                <p style="margin:0;color:#f5f5f7;font-size:25px;letter-spacing:.22em;text-align:center;font-weight:700;">{join_code}</p>
-              </div>
-            </div>
-            """,
+            html=render_invitation_email(
+                title=f"Join {details['team_name']}",
+                introduction="You've been invited to join a team on FindEZ.",
+                action_label="Open invitation", action_url=details["invite_url"],
+                code=details["join_code"],
+                instructions="Open FindEZ to join the team. If you do not have the app yet, "
+                "the link will take you to the download page.",
+            ),
         )
     except HTTPException:
         raise

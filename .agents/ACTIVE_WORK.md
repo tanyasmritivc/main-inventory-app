@@ -1837,3 +1837,13 @@ Live Safari acceptance passed: the same question completed in 17.82257 seconds
 with one world_query, versus 178.841448 seconds and eight reads before the fix.
 The response includes saved zero-stock records and item links. No inventory
 writes were performed; one verification chat was saved in the test account.
+
+### Invitation email presentation, 2026-11-09
+
+Implemented on `fix/invitation-email-ui`. Shared responsive invitation renderer for
+organization/workspace access, Space sharing, and Team emails. Neutral cards,
+separate code panel, light/dark colors and Gmail CTA contrast protection. Delivery,
+plain text, links, access decisions and expiry behavior remain unchanged.
+Validation: 1,576 backend tests passed; light/dark mobile browser previews at 390px
+have no horizontal overflow. No real invitations sent during QA. Backend-only
+selective deployment preserves unrelated live modifications.
