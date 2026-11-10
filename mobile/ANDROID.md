@@ -54,7 +54,7 @@ complete. The existing `test/release_config_test.dart` supports
 
 ## Continuous integration
 
-`.github/workflows/android.yml` runs analysis, the Flutter suite and an Android
+`.github/workflows/android.yml` runs analysis, focused authentication tests and an Android
 debug compilation. Its APK uses `.invalid` placeholder endpoints, has no real
 credentials and is a compilation artifact, not a functioning signed-in beta.
 No release keystore or deployment credentials are required by this workflow.
