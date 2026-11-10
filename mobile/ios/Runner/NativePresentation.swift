@@ -10,6 +10,46 @@ enum NativeAppearanceColors {
 }
 import CoreText
 
+/// Matches the stationary Flutter page canvas behind native Settings lists.
+private final class NativeCanvasView: UIView {
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    isOpaque = true
+    isUserInteractionEnabled = false
+    contentMode = .redraw
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+    super.traitCollectionDidChange(previousTraitCollection)
+    setNeedsDisplay()
+  }
+  override func draw(_ rect: CGRect) {
+    guard let context = UIGraphicsGetCurrentContext(), bounds.width > 0 else { return }
+    let dark = traitCollection.userInterfaceStyle == .dark
+    (dark ? UIColor.black : UIColor.white).setFill()
+    context.fill(bounds)
+    guard traitCollection.accessibilityContrast != .high else { return }
+    let span = min(bounds.height, bounds.width * 1.8)
+    func glow(_ x: CGFloat, _ y: CGFloat, _ radius: CGFloat, _ color: UIColor) {
+      guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+        colors: [color.cgColor, color.withAlphaComponent(0).cgColor] as CFArray,
+        locations: [0, 1]) else { return }
+      let center = CGPoint(x: bounds.width * x, y: span * y)
+      context.drawRadialGradient(gradient, startCenter: center, startRadius: 0,
+        endCenter: center, endRadius: bounds.width * radius, options: [])
+    }
+    glow(0.95, 0.02, 0.95, dark
+      ? UIColor(red: 105/255, green: 70/255, blue: 56/255, alpha: 82/255)
+      : UIColor(red: 234/255, green: 219/255, blue: 211/255, alpha: 112/255))
+    glow(0.40, 0.42, 0.80, dark
+      ? UIColor(red: 57/255, green: 71/255, blue: 87/255, alpha: 77/255)
+      : UIColor(red: 218/255, green: 229/255, blue: 238/255, alpha: 122/255))
+    glow(-0.10, 0.24, 0.65, dark
+      ? UIColor(red: 37/255, green: 65/255, blue: 58/255, alpha: 46/255)
+      : UIColor(red: 228/255, green: 239/255, blue: 232/255, alpha: 71/255))
+  }
+}
+
 /// System presentations only. Dart remains responsible for data and permissions.
 final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate, UIPopoverPresentationControllerDelegate {
   private let channel: FlutterMethodChannel
@@ -55,8 +95,8 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       list.modalPresentationStyle = .popover
       let sections = data["sections"] as? [[String: Any]] ?? []
       let rows = sections.reduce(0) { $0 + (($1["rows"] as? [[String: Any]])?.count ?? 0) }
-      list.preferredContentSize = CGSize(width: min(340, parent.view.bounds.width - 32),
-        height: min(CGFloat(rows) * 56, parent.view.bounds.height * 0.7))
+      list.preferredContentSize = CGSize(width: min(280, parent.view.bounds.width - 48),
+        height: min(CGFloat(rows) * 48, min(360, parent.view.bounds.height * 0.5)))
       if let popover = list.popoverPresentationController {
         let anchor = data["anchor"] as? [String: Double] ?? [:]
         popover.sourceView = parent.view
@@ -64,6 +104,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
           width: anchor["width"] ?? 160, height: anchor["height"] ?? 44)
         popover.sourceRect = parent.view.convert(rect, from: parent.view.window)
         popover.permittedArrowDirections = [.up, .down]
+        popover.popoverLayoutMargins = UIEdgeInsets(top: 16, left: 24, bottom: 24, right: 24)
         popover.delegate = self
       }
       controller = list
@@ -255,7 +296,8 @@ private final class NativeListController: UITableViewController, UISearchResults
       tableView.estimatedSectionFooterHeight = 0
       tableView.tableHeaderView = UIView(frame: .zero)
       tableView.tableFooterView = UIView(frame: .zero)
-      tableView.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 16)
+      tableView.estimatedRowHeight = 48
+      tableView.separatorInset = UIEdgeInsets(top: 0, left: 50, bottom: 0, right: 12)
     }
     if page["search"] as? Bool == true {
       let search = UISearchController(searchResultsController: nil)
@@ -272,7 +314,9 @@ private final class NativeListController: UITableViewController, UISearchResults
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     guard page["kind"] as? String == "organization" else { return }
-    let maximum = (presentingViewController?.view.bounds.height ?? 800) * 0.7
+    let available = (presentingViewController?.view.bounds.height ?? 800)
+    let maximum = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+      ? available * 0.6 : min(360, available * 0.5)
     let height = min(tableView.contentSize.height, maximum)
     if abs(preferredContentSize.height - height) > 1 {
       preferredContentSize.height = height
@@ -283,6 +327,21 @@ private final class NativeListController: UITableViewController, UISearchResults
   }
   override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
     page["kind"] as? String == "organization" ? .leastNormalMagnitude : UITableView.automaticDimension
+  }
+  override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+    guard page["kind"] as? String == "organization" else { return UITableView.automaticDimension }
+    let font = appFont(15, style: .body)
+    let title = row(indexPath)["title"] as? String ?? ""
+    // UIKit's automatic list minimum is roomier than a compact menu. Keep a
+    // full 44pt hit target, growing only when text actually needs more space.
+    let width = max(80, tableView.bounds.width - 96)
+    let height = (title as NSString).boundingRect(
+      with: CGSize(width: width, height: .greatestFiniteMagnitude),
+      options: [.usesLineFragmentOrigin, .usesFontLeading],
+      attributes: [.font: font], context: nil).height
+    let lines = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+      ? height : min(height, font.lineHeight * 2)
+    return max(44, ceil(lines) + 16)
   }
   func update(_ data: [String: Any]) {
     page = data; title = data["title"] as? String
@@ -300,10 +359,26 @@ private final class NativeListController: UITableViewController, UISearchResults
     label.font = appFont(15, style: .body)
     label.adjustsFontForContentSizeCategory = true
     label.numberOfLines = 0
+    let statusView: UIView?
     if data["loading"] as? Bool == true {
       let spinner = UIActivityIndicatorView(style: .medium); spinner.startAnimating()
-      tableView.backgroundView = spinner
-    } else { tableView.backgroundView = visibleSections.allSatisfy { ($0["rows"] as? [[String: Any]] ?? []).isEmpty } ? label : nil }
+      statusView = spinner
+    } else {
+      statusView = visibleSections.allSatisfy { ($0["rows"] as? [[String: Any]] ?? []).isEmpty } ? label : nil
+    }
+    if page["kind"] as? String != "organization" && page["opaque"] as? Bool != true {
+      let canvas = NativeCanvasView()
+      if let status = statusView {
+        status.translatesAutoresizingMaskIntoConstraints = false
+        canvas.addSubview(status)
+        NSLayoutConstraint.activate([
+          status.centerXAnchor.constraint(equalTo: canvas.centerXAnchor),
+          status.centerYAnchor.constraint(equalTo: canvas.centerYAnchor),
+          status.widthAnchor.constraint(lessThanOrEqualTo: canvas.widthAnchor, constant: -40)
+        ])
+      }
+      tableView.backgroundView = canvas
+    } else { tableView.backgroundView = statusView }
     if page["textSizeFactor"] != nil {
       navigationController?.navigationBar.titleTextAttributes = [
         .font: appFont(17, style: .headline, weight: .regular)
@@ -430,13 +505,15 @@ private final class NativeListController: UITableViewController, UISearchResults
       }
     }
     if page["kind"] as? String == "organization" {
-      content.textProperties.font = appFont(16, style: .body)
-      content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
-      content.imageToTextPadding = 12
-      content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 21, weight: .regular)
-      content.imageProperties.reservedLayoutSize = CGSize(width: 32, height: 32)
+      content.textProperties.font = appFont(15, style: .body)
+      content.textProperties.numberOfLines = traitCollection.preferredContentSizeCategory.isAccessibilityCategory ? 0 : 2
+      content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+      content.imageToTextPadding = 10
+      content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 19, weight: .regular)
+      content.imageProperties.maximumSize = CGSize(width: 26, height: 26)
+      content.imageProperties.reservedLayoutSize = CGSize(width: 26, height: 26)
       cell.backgroundColor = .secondarySystemGroupedBackground
-      cell.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 16)
+      cell.separatorInset = UIEdgeInsets(top: 0, left: 50, bottom: 0, right: 12)
     }
     cell.contentConfiguration = content
     cell.accessibilityIdentifier = data["id"] as? String

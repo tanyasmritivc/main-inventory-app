@@ -1,5 +1,3 @@
-import '../../core/app_theme.dart';
-import '../../core/ui/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/navigation_motion.dart';
 
@@ -128,10 +126,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
                             : NavigationMotion.outgoing(_controller.value),
                         child: RepaintBoundary(
                           child: Material(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.background
-                                : AppTheme.lightBg,
+                            color: Colors.transparent,
                             child: widget.children[i],
                           ),
                         ),

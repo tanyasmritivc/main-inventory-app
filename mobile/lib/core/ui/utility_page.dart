@@ -1,6 +1,7 @@
 import '../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'app_text.dart';
+import 'app_canvas.dart';
 
 /// Shared presentation for secondary pages, without changing the main shell.
 class UtilityPage extends StatelessWidget {
@@ -43,18 +44,21 @@ class UtilityPage extends StatelessWidget {
             ),
           ),
         ),
-        child: Scaffold(
-          appBar: AppBar(
-            title: AppText(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(fontSize: 17),
+        child: AppCanvas(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: AppText(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(fontSize: 17),
+              ),
+              centerTitle: true,
+              actions: actions,
             ),
-            centerTitle: true,
-            actions: actions,
+            body: SafeArea(top: false, child: body),
           ),
-          body: SafeArea(top: false, child: body),
         ),
       ),
     );

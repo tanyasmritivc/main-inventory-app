@@ -1,4 +1,3 @@
-import '../../core/app_theme.dart';
 import '../announcements/announcement_host.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../../core/ui/skeleton.dart';
@@ -727,12 +726,9 @@ class _WorldShellState extends State<WorldShell> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final focused = _tab == 0 && _chatFocused;
     return Scaffold(
-      backgroundColor: AppTheme.bg(context),
+      backgroundColor: Colors.transparent,
       body: DecoratedBox(
-        decoration: BoxDecoration(
-          // A flat, quiet page canvas keeps white controls distinct.
-          color: AppTheme.bg(context),
-        ),
+        decoration: BoxDecoration(color: Colors.transparent),
         child: SafeArea(
           top: !focused,
           child: Column(
@@ -787,6 +783,7 @@ class _WorldShellState extends State<WorldShell> {
                         Align(
                           alignment: Alignment.topCenter,
                           child: ScrollGlass(
+                            tint: false,
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _tabHeader(context, 1),
