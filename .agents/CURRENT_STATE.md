@@ -1,18 +1,19 @@
-## November 9 - Android foundation started
+## November 9 - Android foundation compiled
 
-The user requested the customer-facing FindEZ Android app. Isolated lane
-`feat/android-foundation` starts from build213 source `3ddf927f`. Android now has
-`com.findez.app` identity, SDK36/API24 configuration, Java17/desugaring, release
-keystore configuration, camera/microphone permissions, app_links ownership,
-access invitations and spreadsheet share filters. Google Android OAuth accepts
-an explicit web client ID and retains email access when unconfigured.
+User-requested customer-facing Android app is implemented on
+`feat/android-foundation`, draft PR378, based on submitted build213 (`3ddf927f`).
+Android now has `com.findez.app` identity, SDK36/API24, Java17/desugaring,
+upload-key signing configuration, camera/microphone permissions, auth/invitation
+callbacks and spreadsheet share filters. Google Android OAuth accepts an explicit
+web client ID with an actionable email fallback when unconfigured.
 
-Analysis passed locally. Local Flutter tests were blocked before execution by
-sandbox loopback-socket permissions. The Android SDK manager could not fetch
-package manifests locally. Added a clean Linux Android CI build with placeholder
-services; results are pending. No APK/device pass or Play release is claimed.
-See `mobile/ANDROID.md` for build commands, service setup and acceptance gaps.
-No backend/web/database or iOS release changes.
+Runtime `e4e2069a`: analysis clean; 1,369 local Flutter tests passed with one
+existing skip; all five repository CI checks passed (42728398280); Android APK
+compiled and artifact uploaded (42728397994). The APK uses placeholder services,
+not production accounts. No Android installation or physical-device pass is
+claimed. See `mobile/ANDROID.md` for configuration, signing, FCM, billing and
+device acceptance work still required before a real beta or Play distribution.
+No backend, database, web or iOS release changes were made.
 
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 

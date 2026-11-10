@@ -1,3 +1,11 @@
+## November 9 - Android shares the existing Flutter product
+
+Build Android from the submitted build213 mobile source and retain its API
+contracts and platform-gated iOS controls. Use `com.findez.app` for Android and
+an explicit upload-key configuration; never sign a release with the debug key.
+The first CI APK uses placeholder endpoints and proves compilation only. Track
+Android service setup and physical acceptance separately from iOS delivery.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement
