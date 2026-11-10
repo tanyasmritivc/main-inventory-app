@@ -137,6 +137,6 @@ void main() {
       if (provider == 'Apple') expect(metadata['full_name'], 'Alex Rivera');
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 }

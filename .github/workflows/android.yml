@@ -3,8 +3,6 @@ name: Android foundation
 on:
   pull_request:
     paths: ['mobile/**', '.github/workflows/android.yml']
-  push:
-    branches: [feat/android-foundation]
   workflow_dispatch:
 
 permissions:

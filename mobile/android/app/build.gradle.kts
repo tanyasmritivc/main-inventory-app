@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,7 +7,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val releaseKeys = java.util.Properties()
+val releaseKeys = Properties()
 val releaseKeysFile = rootProject.file("key.properties")
 if (releaseKeysFile.exists()) {
     releaseKeysFile.inputStream().use { releaseKeys.load(it) }
