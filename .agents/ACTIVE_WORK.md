@@ -1,3 +1,13 @@
+## November 9: profile notification indicator and Settings history
+
+Active lane `fix/profile-notification-history-214`, based on build213. Remove the
+main Ask home bell and history shortcut. Retain Notifications in Settings, add
+Chat history there, and show an unread dot on the home profile avatar using the
+existing account-bound notification polling and push refresh. Other pages and
+chat/scan behavior remain unchanged. Focused tests pass; full mobile validation
+and TestFlight build214 are in progress. Existing App Review submission remains
+unchanged.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement

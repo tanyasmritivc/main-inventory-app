@@ -387,7 +387,11 @@ void main() {
       return fallback(request);
     };
     await mount(tester, brightness: Brightness.dark);
-    await tester.tap(find.byTooltip('Chat history'));
+    expect(find.byIcon(Icons.notifications_none_rounded), findsNothing);
+    expect(find.byTooltip('Chat history'), findsNothing);
+    await tester.tap(find.byTooltip('Account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chat history'));
     await tester.pumpAndSettle();
     expect(find.text('Workshop tools'), findsOneWidget);
     expect(find.byType(BottomSheet), findsOneWidget);
@@ -474,7 +478,9 @@ void main() {
         return fallback(request);
       };
       await mount(tester, brightness: Brightness.dark);
-      await tester.tap(find.byTooltip('Chat history'));
+      await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chat history'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Saved photo'));
       await tester.pumpAndSettle();
@@ -491,7 +497,9 @@ void main() {
       );
       await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Chat history'));
+      await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chat history'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Photo'));
       await tester.pumpAndSettle();
@@ -507,7 +515,9 @@ void main() {
       );
       await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Chat history'));
+      await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chat history'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unavailable photo'));
       await tester.pumpAndSettle();
@@ -531,7 +541,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
-    await tester.tap(find.byTooltip('Chat history'));
+    await tester.tap(find.byTooltip('Account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chat history'));
     await tester.pumpAndSettle();
     expect(find.text('Start your first chat'), findsOneWidget);
     expect(tester.takeException(), isNull);

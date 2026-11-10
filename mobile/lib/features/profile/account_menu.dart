@@ -12,11 +12,17 @@ Future<void> showAccountMenu(
   BuildContext context, {
   required ApiClient api,
   required ProfileStore profile,
-}) {
+  VoidCallback? onOpenHistory,
+}) async {
   if (usesNativePresentation) {
-    return showNativeAccountMenu(context, api: api, profile: profile);
+    return showNativeAccountMenu(
+      context,
+      api: api,
+      profile: profile,
+      onOpenHistory: onOpenHistory,
+    );
   }
-  return showModalBottomSheet<void>(
+  final selected = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -55,6 +61,13 @@ Future<void> showAccountMenu(
 
             onTap: () => NotificationsPage.open(sheet, api: api),
           ),
+          if (onOpenHistory != null)
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              leading: const Icon(Icons.history_rounded),
+              title: const Text('Chat history'),
+              onTap: () => Navigator.of(sheet).pop('history'),
+            ),
           Expanded(
             child: ProfilePage(api: api, settingsOnly: true, store: profile),
           ),
@@ -62,4 +75,5 @@ Future<void> showAccountMenu(
       ),
     ),
   );
+  if (context.mounted && selected == 'history') onOpenHistory?.call();
 }

@@ -110,6 +110,61 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets('native Settings opens chat history after dismissal', (
+    tester,
+  ) async {
+    debugNativePresentationOverride = true;
+    addTearDown(() => debugNativePresentationOverride = null);
+    final profile = ProfileStore(api: fixture.api);
+    addTearDown(profile.dispose);
+    final completion = Completer<Object?>();
+    Map? model;
+    var historyOpened = false;
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      NativePresentation.channel,
+      (call) async {
+        if (call.method == 'present') {
+          model = call.arguments as Map;
+          return completion.future;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        NativePresentation.channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showAccountMenu(
+              context,
+              api: fixture.api,
+              profile: profile,
+              onOpenHistory: () => historyOpened = true,
+            ),
+            child: const Text('Settings'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    final rows = (model!['sections'] as List).expand((s) => s['rows'] as List);
+    expect(
+      rows.where((r) => r['id'] == 'history').single['title'],
+      'Chat history',
+    );
+    expect(rows.where((r) => r['id'] == 'notifications'), hasLength(1));
+    expect(historyOpened, false);
+    completion.complete({'action': 'history'});
+    await tester.pumpAndSettle();
+    expect(historyOpened, true);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'native settings persist confirmed preferences and retain prior selection on failure',
     (tester) async {
