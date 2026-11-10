@@ -332,8 +332,8 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
       expect(find.byType(AnnouncementSheet), findsOneWidget);
-      await tester.ensureVisible(find.text('Got it'));
-      await tester.tap(find.text('Got it'));
+      expect(find.text('Got it'), findsNothing);
+      await tester.tapAt(const Offset(5, 5));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 10));
       expect(find.byType(AnnouncementSheet), findsNothing);

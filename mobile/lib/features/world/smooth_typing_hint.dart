@@ -51,7 +51,7 @@ class SmoothTypingHint extends StatelessWidget {
               final end = width == 0 ? 0.0 : (edge / width).clamp(0.0, 1.0);
               final start = width == 0
                   ? 0.0
-                  : ((edge - 5) / width).clamp(0.0, end);
+                  : ((edge - 9) / width).clamp(0.0, end);
               return ShaderMask(
                 blendMode: BlendMode.dstIn,
                 shaderCallback: (rect) => LinearGradient(

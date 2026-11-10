@@ -11,7 +11,7 @@ enum NativeAppearanceColors {
 import CoreText
 
 /// System presentations only. Dart remains responsible for data and permissions.
-final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate {
+final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate, UIPopoverPresentationControllerDelegate {
   private let channel: FlutterMethodChannel
   private var result: FlutterResult?
   private var token: String?
@@ -50,7 +50,24 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     token = data["token"] as? String
     result = reply
     model = data
-    if data["kind"] as? String == "alert" {
+    if data["kind"] as? String == "organization" {
+      let list = NativeListController(page: data, owner: self)
+      list.modalPresentationStyle = .popover
+      let sections = data["sections"] as? [[String: Any]] ?? []
+      let rows = sections.reduce(0) { $0 + (($1["rows"] as? [[String: Any]])?.count ?? 0) }
+      list.preferredContentSize = CGSize(width: min(360, parent.view.bounds.width - 32),
+        height: min(CGFloat(rows) * 58 + CGFloat(sections.count) * 16 + 16, parent.view.bounds.height * 0.7))
+      if let popover = list.popoverPresentationController {
+        let anchor = data["anchor"] as? [String: Double] ?? [:]
+        popover.sourceView = parent.view
+        let rect = CGRect(x: anchor["x"] ?? 16, y: anchor["y"] ?? 60,
+          width: anchor["width"] ?? 160, height: anchor["height"] ?? 44)
+        popover.sourceRect = parent.view.convert(rect, from: parent.view.window)
+        popover.permittedArrowDirections = [.up, .down]
+        popover.delegate = self
+      }
+      controller = list
+    } else if data["kind"] as? String == "alert" {
       let alert = makeAlert(data) { [weak self] value in self?.finish(value) }
       controller = alert
     } else {
@@ -80,6 +97,13 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
       guard let self = self, self.model["load"] as? Bool == true else { return }
       self.perform(["id": "load", "close": false])
     }
+  }
+
+  func adaptivePresentationStyle(for controller: UIPresentationController,
+    traitCollection: UITraitCollection) -> UIModalPresentationStyle { .none }
+
+  func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
+    complete(nil)
   }
 
   private func makeAlert(_ data: [String: Any], completion: @escaping ([String: Any]?) -> Void) -> UIAlertController {
@@ -186,7 +210,7 @@ private final class NativeListController: UITableViewController, UISearchResults
   var pageID: String { page["pageID"] as? String ?? "root" }
   init(page: [String: Any], owner: NativePresentation) {
     self.page = page; self.owner = owner
-    super.init(style: .insetGrouped)
+    super.init(style: page["kind"] as? String == "organization" ? .grouped : .insetGrouped)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   override func viewDidLoad() {
@@ -214,6 +238,21 @@ private final class NativeListController: UITableViewController, UISearchResults
       definesPresentationContext = true
     }
     update(page)
+  }
+  override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    guard page["kind"] as? String == "organization" else { return }
+    let maximum = (presentingViewController?.view.bounds.height ?? 800) * 0.7
+    let height = min(tableView.contentSize.height, maximum)
+    if abs(preferredContentSize.height - height) > 1 {
+      preferredContentSize.height = height
+    }
+  }
+  override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    page["kind"] as? String == "organization" ? 8 : UITableView.automaticDimension
+  }
+  override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+    page["kind"] as? String == "organization" ? 1 : UITableView.automaticDimension
   }
   func update(_ data: [String: Any]) {
     page = data; title = data["title"] as? String
@@ -343,6 +382,16 @@ private final class NativeListController: UITableViewController, UISearchResults
         label.sizeToFit()
         label.frame.size.height = max(26, label.frame.height + 8)
         cell.accessoryView = label
+      }
+    }
+    if let initial = data["initial"] as? String {
+      content.image = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { _ in
+        UIColor.tertiarySystemFill.setFill()
+        UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: 32, height: 32)).fill()
+        let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 16), .foregroundColor: NativeAppearanceColors.primary]
+        let text = initial.uppercased() as NSString
+        let size = text.size(withAttributes: attributes)
+        text.draw(at: CGPoint(x: (32-size.width)/2, y: (32-size.height)/2), withAttributes: attributes)
       }
     }
     cell.contentConfiguration = content

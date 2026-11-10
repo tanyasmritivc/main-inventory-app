@@ -47,9 +47,11 @@ class AnnouncementController extends ChangeNotifier {
     required this.accountId,
     required this.isCurrent,
     required this.platform,
+    this.welcomeAfterSignIn = false,
   });
   final ApiClient api;
   final String accountId, platform;
+  final bool welcomeAfterSignIn;
   final bool Function() isCurrent;
   final sessionId = _sessionId();
   bool attempted = false, presented = false, _disposed = false;
@@ -57,6 +59,7 @@ class AnnouncementController extends ChangeNotifier {
   String get _outboxKey => 'announcement_receipts:$accountId';
   bool get current => !_disposed && isCurrent();
   Future<void>? _flushing;
+  DateTime? _retryAfter;
 
   Future<void> loadAccess() async {
     final result = await loadAnnouncementAccess(api);
@@ -66,8 +69,36 @@ class AnnouncementController extends ChangeNotifier {
   }
 
   Future<void> evaluate() async {
-    if (!current || attempted) return;
+    if (!current ||
+        attempted ||
+        (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
+      return;
+    }
     attempted = true;
+    if (welcomeAfterSignIn) {
+      // This is an account welcome, not a repeat claim for a server campaign.
+      // Never invent access: render only freshly verified account entitlements.
+      try {
+        final verified = await loadAnnouncementAccess(api);
+        if (!current) return;
+        access = verified;
+        if (verified['pilot'] == true) {
+          campaign = {
+            'id': 'sign-in-welcome',
+            'session_welcome': true,
+            'design': 'access',
+            'title': 'Founders Access',
+            'action': 'dismiss',
+          };
+        }
+        notifyListeners();
+      } catch (_) {
+        attempted = false;
+        _retryAfter = DateTime.now().add(const Duration(seconds: 15));
+        rethrow;
+      }
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     if (!current) return;
     await flush();

@@ -314,12 +314,25 @@ class _NotificationsPageState extends State<NotificationsPage>
           (item['invitation'] as Map?)?['invitation_id']?.toString() ??
           (item['metadata'] as Map?)?['invitation_id']?.toString();
       if (id == null) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              AccessInvitationPage(api: widget.api, invitationId: id),
-        ),
-      );
+      if (usesNativePresentation) {
+        await showGeneralDialog<void>(
+          context: context,
+          barrierColor: Colors.transparent,
+          transitionDuration: Duration.zero,
+          pageBuilder: (_, _, _) => AccessInvitationPage(
+            api: widget.api,
+            invitationId: id,
+            transparentHost: true,
+          ),
+        );
+      } else {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                AccessInvitationPage(api: widget.api, invitationId: id),
+          ),
+        );
+      }
       if (mounted) await _load();
     }
   }
@@ -469,6 +482,7 @@ class _NotificationsPageState extends State<NotificationsPage>
   };
 
   String _symbol(String action) {
+    if (action == 'access_invitation') return 'envelope';
     if (action.startsWith('task_')) return 'checkmark.circle';
     if (action.startsWith('item_')) return 'shippingbox';
     if (action.startsWith('space_')) return 'archivebox';

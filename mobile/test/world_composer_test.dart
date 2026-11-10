@@ -121,6 +121,10 @@ void main() {
           findsOneWidget,
         );
         if (!reduced) {
+          final textContext = tester.element(find.byType(SmoothTypingHint));
+          final hintStyle = DefaultTextStyle.of(textContext).style;
+          expect(hintStyle.fontSize, 14);
+          expect(hintStyle.color, const Color(0xFF737780));
           expect(
             tester
                 .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))

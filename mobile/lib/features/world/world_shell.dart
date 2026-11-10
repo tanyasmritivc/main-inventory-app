@@ -619,6 +619,11 @@ class _WorldShellState extends State<WorldShell> {
   @override
   Widget build(BuildContext context) => WorldStyle(
     child: AnnouncementGate(
+      isWelcomeSafe: () =>
+          !_chatFocused &&
+          !_creatingSpace &&
+          !_searchingSpaces &&
+          _activeOperations == 0,
       isSafe: () =>
           _loadedNavigation &&
           !widget.session.loading &&
