@@ -801,6 +801,9 @@ async def barcode_lookup_route(
     if not barcode:
         raise bad_request("Missing barcode")
 
+    from app.services.camera_barcode import internal_item_id
+    barcode = internal_item_id(barcode) or barcode
+
     # STEP -1: UUID → FindEZ QR code, look up by item_id directly
     _UUID_RE = re.compile(
         r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -917,26 +920,7 @@ async def lookup_barcode_product(barcode: str, user_id: str) -> BarcodeLookupRes
             logger.exception("OpenFoodFacts barcode lookup failed")
             out = None
 
-    # STEP 4: Final fallback to AI logic
-    if out is None:
-        try:
-            ai_out = await anyio.to_thread.run_sync(lambda: interpret_barcode(barcode=barcode))
-            if isinstance(ai_out, dict):
-                ai_norm: dict[str, Any] = {
-                    "barcode": barcode,
-                    "name": (ai_out.get("name") or "").strip(),
-                    "brand": (ai_out.get("brand") or "").strip() or None,
-                    "category": (ai_out.get("category") or "").strip() or None,
-                    "image_url": (ai_out.get("image_url") or "").strip() or None,
-                    "model": (ai_out.get("model") or ai_out.get("part_number") or None),
-                }
-                if is_valid_result(ai_norm):
-                    out = ai_norm
-                    save_to_catalog(barcode=barcode, data=out, source="ai")
-        except Exception:
-            logger.exception("AI barcode fallback failed")
-            out = None
-
+    # A barcode alone is not visual evidence. Unknown products stay unknown.
     if not is_valid_result(out):
         return BarcodeLookupResponse(
             barcode=barcode,
