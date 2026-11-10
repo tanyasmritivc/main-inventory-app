@@ -4,7 +4,7 @@ Active lane `fix/contained-menu-ambient-background-218`. Mobile presentation onl
 Narrow the native organization popover, cap its height and retain scrolling and
 all actions. Match supplied warm/cool ambient page backgrounds in both themes
 across Ask, Spaces, Settings and Profile without changing cards or workflows.
-Full suite: 1,383 passed, one existing skip. Focused checks: 103 passed. Analyzer clean. Native simulator visual checks passed for both themes, contained menu and larger text. Physical-device acceptance pending. Build 218 packaging and TestFlight delivery pending.
+Full suite: 1,383 passed, one existing skip. Focused checks: 103 passed. Analyzer clean. Native simulator visual checks passed for both themes, contained menu and larger text. Physical-device acceptance pending. Build 218 signed, verified, and acknowledged by Apple. All five CI jobs passed. Processing and tester availability pending, not polled. PR #384. Receipt: docs/plans/mobile218-release.json.
 
 ## November 9: scan and camera polish uploaded as build 217
 
