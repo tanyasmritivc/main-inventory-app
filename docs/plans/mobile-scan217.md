@@ -33,3 +33,12 @@ photo-source selection and outside dismissal. Native compilation passed after
 adding iOS 15 compatibility for custom sheet detents. Final release packaging and
 Apple receipt are recorded separately. Physical camera focus, real barcode
 recognition and latency with simultaneous live requests remain device acceptance.
+
+TestFlight 1.1.3 (217) upload was acknowledged by Apple, delivery
+`53017e44-112f-4f43-9b30-fabbc4f0003a`, from runtime
+`8ea220c912fce7b0691de55d50bd715f49817bed`. All five CI jobs passed on
+that commit. Final camera callbacks reject retired presentations. Strict
+signatures, 33 device executables in archive/export, 27 privacy manifests and
+production configuration passed verification. Apple validation passed. Processing
+and tester availability are pending and were not polled. The public App Store
+submission is unchanged. See mobile217-release.json for the delivery receipt.

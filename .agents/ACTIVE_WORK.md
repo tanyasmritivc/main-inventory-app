@@ -1,4 +1,4 @@
-## November 9: scan and camera polish ready for build 217
+## November 9: scan and camera polish uploaded as build 217
 
 Lane `fix/mobile-scan-polish-217`. Native photo source sheets, subdued More links,
 scan header/monochrome animation, scrolling result photo and bulk deselection,
@@ -11,7 +11,13 @@ and live concurrent latency acceptance remain pending.
 Backend lane `fix/barcode-camera-lookup-217`, PR382, is deployed healthy with
 checksums and rollback copies, preserving 150 unrelated sources. Backend suite
 passed 1,583 plus two new provider fallback tests. No database changes.
-Release build and Apple upload still pending. See docs/plans/mobile-scan217.md.
+Apple acknowledged TestFlight 1.1.3 (217), delivery
+`53017e44-112f-4f43-9b30-fabbc4f0003a`. Runtime
+`8ea220c912fce7b0691de55d50bd715f49817bed`; all five CI jobs passed
+(42778395040). Signed production package and Apple validation passed.
+Processing and tester availability remain pending, not polled. Public App Store
+submission is unchanged. Receipt: docs/plans/mobile217-release.json.
+See docs/plans/mobile-scan217.md.
 
 ## November 9: compact organization menu correction uploaded
 
