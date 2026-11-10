@@ -5,10 +5,10 @@ import 'package:mobile/features/scan/native_scan_camera.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
-  late Completer<Uint8List?> result;
+  late Completer<Object?> result;
   late List<MethodCall> calls;
   setUp(() {
-    result = Completer<Uint8List?>();
+    result = Completer<Object?>();
     calls = [];
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       NativeScanCamera.channel,
@@ -43,16 +43,37 @@ void main() {
       expect(await selected, isNull);
       expect(calls.map((c) => c.method), ['present', 'dismiss']);
       expect(calls.last.arguments['token'], calls.first.arguments['token']);
-      result = Completer<Uint8List?>()..complete(null);
+      result = Completer<Object?>()..complete(null);
       expect(await camera.pick(dark: false), isNull);
     },
   );
+  test(
+    'combined camera returns barcode without photo and drops late cancel results',
+    () async {
+      final camera = NativeScanCamera();
+      final capture = camera.capture(dark: true);
+      result.complete({'barcode': '012345678905'});
+      expect((await capture)?.barcode, '012345678905');
+      expect(calls.first.arguments['barcodes'], true);
+      result = Completer<Object?>();
+      final late = camera.capture(dark: false);
+      camera.cancel();
+      result.complete({'barcode': '012345678905'});
+      expect(await late, isNull);
+    },
+  );
+  test('combined camera returns photo bytes', () async {
+    final capture = NativeScanCamera().capture(dark: false);
+    final bytes = Uint8List.fromList([1, 2]);
+    result.complete({'photo': bytes});
+    expect((await capture)?.photo, bytes);
+  });
   test('native error releases the presentation so retry can succeed', () async {
     final camera = NativeScanCamera();
     final failed = camera.pick(dark: true);
     result.completeError(PlatformException(code: 'photo'));
     await expectLater(failed, throwsA(isA<PlatformException>()));
-    result = Completer<Uint8List?>()..complete(null);
+    result = Completer<Object?>()..complete(null);
     expect(await camera.pick(dark: true), isNull);
   });
 }

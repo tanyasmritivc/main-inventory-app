@@ -143,6 +143,77 @@ void main() {
     await t.pumpAndSettle();
   }
 
+  testWidgets('review photo scrolls away with extracted items', (t) async {
+    value['source_kind'] = 'photo';
+    value['items'] = List.generate(
+      20,
+      (i) => {
+        'index': i,
+        'selected': true,
+        'item': {'name': 'Tool $i', 'quantity': 1, 'category': 'Tools'},
+      },
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 500,
+            child: ChatCaptureCard(
+              api: api,
+              conversationId: 'conversation',
+              draft: value,
+              embedded: true,
+              reviewHeader: const SizedBox(
+                key: Key('review-photo-test'),
+                height: 180,
+                child: Text('Source photo'),
+              ),
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(
+      find.byKey(const Key('review-photo-test')).hitTestable(),
+      findsOneWidget,
+    );
+    await t.drag(
+      find.byKey(const Key('extraction-preview-scroll')),
+      const Offset(0, -600),
+    );
+    await t.pumpAndSettle();
+    expect(
+      find.byKey(const Key('review-photo-test')).hitTestable(),
+      findsNothing,
+    );
+    expect(
+      find.widgetWithText(FilledButton, 'Choose a Space').hitTestable(),
+      findsOneWidget,
+    );
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets(
+    'bulk controls deselect unknown rows without changing recognized rows',
+    (t) async {
+      value['source_kind'] = 'photo';
+      await mount(t);
+      await t.tap(find.text('Uncheck unknown items'));
+      await t.pumpAndSettle();
+      expect(value['items'][0]['selected'], true);
+      expect(value['items'][1]['selected'], false);
+      await t.tap(find.text('Select all'));
+      await t.pumpAndSettle();
+      expect(value['items'].every((row) => row['selected'] == true), true);
+      await t.tap(find.text('Uncheck all'));
+      await t.pumpAndSettle();
+      expect(value['items'].every((row) => row['selected'] == false), true);
+      expect(t.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'one creation action selects the new Space and saves the same draft',
     (t) async {

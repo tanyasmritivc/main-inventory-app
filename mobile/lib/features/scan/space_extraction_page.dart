@@ -141,6 +141,11 @@ class _SpaceExtractionPageState extends State<SpaceExtractionPage> {
                 conversationId: conversation!,
                 draft: draft!,
                 photo: MemoryImage(widget.bytes),
+                reviewHeader: ScanPhotoFrame(
+                  image: MemoryImage(widget.bytes),
+                  height: 180,
+                  scanning: false,
+                ),
                 fixedInventoryId: widget.api.inventoryContext!.inventoryId,
                 fixedSpaceId: widget.spaceId,
                 onChanged: (value) => setState(() {

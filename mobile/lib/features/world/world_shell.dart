@@ -506,12 +506,7 @@ class _WorldShellState extends State<WorldShell> {
               }
             }),
           ),
-          const SizedBox(height: 20),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: Text('More', style: Theme.of(context).textTheme.labelMedium),
-          ),
+          const SizedBox(height: 16),
           _more(context),
         ],
       ),
@@ -577,37 +572,46 @@ class _WorldShellState extends State<WorldShell> {
     };
     await _push(page);
   });
-  Widget _more(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      for (final label in [('Documents and notes', CupertinoIcons.doc_text)])
+  Widget _more(BuildContext context) => ListTileTheme(
+    data: ListTileThemeData(
+      iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      titleTextStyle: Theme.of(context).textTheme.bodySmall,
+      minLeadingWidth: 20,
+      visualDensity: VisualDensity.compact,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final label in [('Documents and notes', CupertinoIcons.doc_text)])
+          ListTile(
+            dense: true,
+            leading: Icon(label.$2),
+            title: Text(label.$1),
+            trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
+            onTap: () => _tool(label.$1),
+          ),
         ListTile(
           dense: true,
-          leading: Icon(label.$2),
-          title: Text(label.$1),
+          leading: const Icon(CupertinoIcons.person_2),
+          title: const Text('Workspaces'),
           trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-          onTap: () => _tool(label.$1),
-        ),
-      ListTile(
-        dense: true,
-        leading: const Icon(CupertinoIcons.person_2),
-        title: const Text('Workspaces'),
-        trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-        onTap: () => _push(
-          WorkspaceHome(
-            session: widget.session,
-            onOpenInventory: _openInventorySpaces,
+          onTap: () => _push(
+            WorkspaceHome(
+              session: widget.session,
+              onOpenInventory: _openInventorySpaces,
+            ),
           ),
         ),
-      ),
-      ListTile(
-        dense: true,
-        leading: const Icon(CupertinoIcons.gear),
-        title: const Text('Account settings'),
-        trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-        onTap: _account,
-      ),
-    ],
+        ListTile(
+          dense: true,
+          leading: const Icon(CupertinoIcons.gear),
+          title: const Text('Account settings'),
+          trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
+          onTap: _account,
+        ),
+      ],
+    ),
   );
   void _openScan() {
     setState(() => _tab = 0);

@@ -19,10 +19,13 @@ Future<void> runSpaceBarcodeFlow({
   required ApiClient api,
   required String preselectedSpace,
   required Future<void> Function() onItemsSaved,
+  String? detectedBarcode,
 }) async {
-  final barcode = await Navigator.of(context).push<String>(
-    MaterialPageRoute(builder: (_) => const _SpaceBarcodeScannerPage()),
-  );
+  final barcode =
+      detectedBarcode ??
+      await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => const _SpaceBarcodeScannerPage()),
+      );
   if (barcode == null || barcode.trim().isEmpty || !context.mounted) return;
   final scanCode = barcode.trim();
 
@@ -38,8 +41,27 @@ Future<void> runSpaceBarcodeFlow({
   }
   if (!context.mounted) return;
 
+  if (lookup.foundInInventory && lookup.existingItem != null) {
+    final item = lookup.existingItem!;
+    await showDialog<void>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text('${item['name'] ?? 'Saved item'}'),
+        content: Text(
+          'Already in your inventory.\nLocation: ${item['location'] ?? 'Not set'}\nQuantity: ${item['quantity'] ?? 'Unknown'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
   final name = (lookup.name ?? '').trim();
-  final isUnknown = name.isEmpty || name.toLowerCase() == 'unknown item';
+  final isUnknown = name.isEmpty || name.toLowerCase().startsWith('unknown');
   if (isUnknown) {
     final action = await showModalBottomSheet<String>(
       context: context,

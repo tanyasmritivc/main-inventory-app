@@ -67,6 +67,23 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
         popover.delegate = self
       }
       controller = list
+    } else if data["kind"] as? String == "photoSource" {
+      let sheet = NativePhotoSourceController(message: data["message"] as? String) { [weak self] choice in
+        self?.finish(choice.map { ["action": $0] })
+      }
+      sheet.modalPresentationStyle = .pageSheet
+      if let presentation = sheet.sheetPresentationController {
+        if #available(iOS 16.0, *) {
+          presentation.detents = [.custom(identifier: .init("photoSource")) { [weak sheet] context in
+            min(context.maximumDetentValue, sheet?.fittingHeight ?? 330)
+          }]
+        } else {
+          presentation.detents = [.medium(), .large()]
+        }
+        presentation.prefersGrabberVisible = true
+        presentation.prefersScrollingExpandsWhenScrolledToEdge = false
+      }
+      controller = sheet
     } else if data["kind"] as? String == "alert" {
       let alert = makeAlert(data) { [weak self] value in self?.finish(value) }
       controller = alert
@@ -92,7 +109,7 @@ final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelega
     controller.view.tintColor = NativeAppearanceColors.primary
     // UIAlertController owns its presentation delegate and asserts if replaced.
     // Only our sheet navigation controller needs interactive-dismiss callbacks.
-    if controller is UINavigationController { controller.presentationController?.delegate = self }
+    if controller is UINavigationController || controller is NativePhotoSourceController { controller.presentationController?.delegate = self }
     parent.present(controller, animated: (!UIAccessibility.isReduceMotionEnabled || UIAccessibility.prefersCrossFadeTransitions)) { [weak self] in
       guard let self = self, self.model["load"] as? Bool == true else { return }
       self.perform(["id": "load", "close": false])
@@ -536,4 +553,72 @@ private final class NativeControl: NSObject, FlutterPlatformView {
   }
   func view() -> UIView { button }
   deinit { channel.setMethodCallHandler(nil) }
+}
+
+/// Compact UIKit sheet shared by Ask and Space photo capture.
+private final class NativePhotoSourceController: UIViewController {
+  private let message: String?
+  private let completion: (String?) -> Void
+  private let stack = UIStackView()
+  var fittingHeight: CGFloat {
+    loadViewIfNeeded()
+    let width = max(240, view.bounds.width - 40)
+    return stack.systemLayoutSizeFitting(CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+      withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height + 66
+  }
+  init(message: String?, completion: @escaping (String?) -> Void) {
+    self.message = message; self.completion = completion
+    super.init(nibName: nil, bundle: nil)
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = NativeAppearanceColors.canvas
+    let scroll = UIScrollView()
+    scroll.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(scroll)
+    stack.axis = .vertical; stack.spacing = 12; stack.translatesAutoresizingMaskIntoConstraints = false
+    scroll.addSubview(stack)
+    for (id, title, symbol) in [("camera", "Take photo", "camera"), ("photos", "Choose photo", "photo.on.rectangle")] {
+      let button = UIButton(type: .system)
+      var configuration = UIButton.Configuration.plain()
+      configuration.title = title; configuration.image = UIImage(systemName: symbol)
+      configuration.imagePadding = 16
+      configuration.contentInsets = .init(top: 14, leading: 16, bottom: 14, trailing: 16)
+      button.configuration = configuration
+      button.contentHorizontalAlignment = .leading
+      button.titleLabel?.font = .preferredFont(forTextStyle: .body)
+      button.titleLabel?.adjustsFontForContentSizeCategory = true
+      button.titleLabel?.numberOfLines = 0
+      button.tintColor = NativeAppearanceColors.primary
+      button.backgroundColor = .secondarySystemGroupedBackground
+      button.layer.cornerRadius = 16; button.layer.cornerCurve = .continuous
+      button.heightAnchor.constraint(greaterThanOrEqualToConstant: 54).isActive = true
+      button.addAction(UIAction { [weak self] _ in self?.completion(id) }, for: .touchUpInside)
+      stack.addArrangedSubview(button)
+    }
+    if let message = message {
+      let label = UILabel(); label.text = message; label.numberOfLines = 0
+      label.font = .preferredFont(forTextStyle: .footnote); label.adjustsFontForContentSizeCategory = true
+      label.textColor = NativeAppearanceColors.secondary
+      stack.addArrangedSubview(label)
+    }
+    let cancel = UIButton(type: .system)
+    cancel.setTitle("Cancel", for: .normal); cancel.tintColor = NativeAppearanceColors.primary
+    cancel.titleLabel?.font = .preferredFont(forTextStyle: .body)
+    cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+    cancel.addAction(UIAction { [weak self] _ in self?.completion(nil) }, for: .touchUpInside)
+    stack.addArrangedSubview(cancel)
+    NSLayoutConstraint.activate([
+      scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 26),
+      scroll.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+      scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+      scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+      stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
+      stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -8),
+      stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
+      stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
+      stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor)
+    ])
+  }
 }

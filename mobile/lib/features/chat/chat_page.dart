@@ -261,6 +261,10 @@ class _ChatPageState extends State<ChatPage>
   final List<ChatSource> _sources = [];
   bool _sourceMenuOpen = false;
   StreamIterator<AiStreamEvent>? _activeReply;
+  StreamIterator<AiStreamEvent>? _activeScan;
+  int _scanGeneration = 0;
+  String? _scanProgress;
+  bool _scanConversationReady = false;
 
   // Conversation history
   String? get _currentConversationId => _session.conversationId;
@@ -502,6 +506,10 @@ class _ChatPageState extends State<ChatPage>
   void _resetChat() {
     _nativeScanCamera.cancel();
     _voice.cancel();
+    _scanGeneration++;
+    final scan = _activeScan;
+    _activeScan = null;
+    if (scan != null) unawaited(scan.cancel());
     _requestGeneration++;
     final active = _activeReply;
     _activeReply = null;
@@ -2083,7 +2091,7 @@ class _ChatPageState extends State<ChatPage>
     int? retryAssistantIndex,
     String? retryOf,
   }) async {
-    if (_savingCapture || _scanningPreview) return;
+    if (_savingCapture || (_scanningPreview && !_scanConversationReady)) return;
     if (retryAssistantIndex != null &&
         (requestId == null ||
             retryAssistantIndex < 0 ||
@@ -2135,8 +2143,10 @@ class _ChatPageState extends State<ChatPage>
         return;
       }
     }
-    if (!_sending && _previewDraft != null) _publishPreview();
-    if (_pickingPhoto) return;
+    if (!_sending && !_scanningPreview && _previewDraft != null) {
+      _publishPreview();
+    }
+    if (_pickingPhoto && !_scanningPreview) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
       _queuedFollowUps.add(q);
@@ -2490,8 +2500,8 @@ class _ChatPageState extends State<ChatPage>
     if (_voice.active ||
         _sending ||
         _savingCapture ||
-        _scanningPreview ||
-        _pickingPhoto) {
+        (_scanningPreview && !_scanConversationReady) ||
+        (_pickingPhoto && !_scanningPreview)) {
       return;
     }
     _voiceOwner = widget.api.accountId;
@@ -2541,6 +2551,10 @@ class _ChatPageState extends State<ChatPage>
   void dispose() {
     _nativeScanCamera.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    _scanGeneration++;
+    final scan = _activeScan;
+    _activeScan = null;
+    if (scan != null) unawaited(scan.cancel());
     _requestGeneration++;
     final active = _activeReply;
     if (active != null) unawaited(active.cancel());
@@ -2647,6 +2661,16 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
+    if (_scanningPreview) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: LiquidIconButton(
+          tooltip: 'Back',
+          icon: CupertinoIcons.chevron_left,
+          onPressed: _returnToHome,
+        ),
+      );
+    }
     if (widget.contextual) {
       return Row(
         children: [
@@ -2807,7 +2831,7 @@ class _ChatPageState extends State<ChatPage>
 
   final _attachmentAnchor = GlobalKey();
 
-  Future<void> _captureSource(String kind) async {
+  Future<void> _captureSource(String kind, {String? detectedBarcode}) async {
     if (_sending || _pickingPhoto) return;
     if (kind != 'barcode') {
       await Navigator.of(context).push(
@@ -2823,7 +2847,7 @@ class _ChatPageState extends State<ChatPage>
     bool current() => mounted && generation == _requestGeneration;
     setState(() => _pickingPhoto = true);
     try {
-      final code = await scanBarcodeForDraft(context);
+      final code = detectedBarcode ?? await scanBarcodeForDraft(context);
       if (!current() || code == null) return;
       setState(() => _progress = 'Looking up barcode...');
       final result = await widget.api.collaboration(
@@ -2836,6 +2860,25 @@ class _ChatPageState extends State<ChatPage>
       );
       widget.api.assertCurrentContext();
       if (!mounted || !current()) return;
+      final existing = result['existing_item'];
+      if (result['found_in_inventory'] == true && existing is Map) {
+        await showDialog<void>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: Text('${existing['name'] ?? 'Saved item'}'),
+            content: Text(
+              'Already in your inventory.\nLocation: ${existing['location'] ?? 'Not set'}\nQuantity: ${existing['quantity'] ?? 'Unknown'}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
       final id = result['conversation_id'] as String;
       if (!await _loadConversation(id) || !mounted) return;
       setState(() => _pickingPhoto = false);
@@ -3067,15 +3110,19 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted || generation != _requestGeneration) return;
     setState(() => _pickingPhoto = true);
     var picked = false;
+    String? detectedBarcode;
     try {
       AskPhoto? photo;
       if (widget.photoPicker != null) {
         photo = await widget.photoPicker!(camera);
-      } else if (nativeScan && usesNativePresentation) {
-        final bytes = await _nativeScanCamera.pick(
+      } else if (camera &&
+          (nativeScan || autoExtract) &&
+          usesNativePresentation) {
+        final captured = await _nativeScanCamera.capture(
           dark: Theme.of(context).brightness == Brightness.dark,
         );
-        if (bytes != null) photo = AskPhoto(bytes: bytes);
+        detectedBarcode = captured?.barcode;
+        if (captured?.photo != null) photo = AskPhoto(bytes: captured!.photo!);
       } else {
         final file = await ImagePicker().pickImage(
           source: camera ? ImageSource.camera : ImageSource.gallery,
@@ -3124,6 +3171,12 @@ class _ChatPageState extends State<ChatPage>
         setState(() => _pickingPhoto = false);
       }
     }
+    if (detectedBarcode != null &&
+        mounted &&
+        generation == _requestGeneration) {
+      await _captureSource('barcode', detectedBarcode: detectedBarcode);
+      return;
+    }
     if (picked &&
         mounted &&
         generation == _requestGeneration &&
@@ -3140,15 +3193,15 @@ class _ChatPageState extends State<ChatPage>
     }
     // Closing an unfinished extraction must retire its stream and restore the
     // regular home when there is no conversation, without clearing typed text.
-    _requestGeneration++;
-    final active = _activeReply;
-    _activeReply = null;
+    _scanGeneration++;
+    final active = _activeScan;
+    _activeScan = null;
     if (active != null) unawaited(active.cancel());
     final hasMessages = _session.messages.isNotEmpty;
     setState(() {
       _scanningPreview = false;
       _pickingPhoto = false;
-      _progress = null;
+      _scanProgress = null;
       _previewDraft = null;
       _previewPhoto = null;
       _scanRegions = const [];
@@ -3183,16 +3236,17 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _extractPreview() async {
     final photo = _photo;
     if (photo == null || _sending || _scanningPreview) return;
-    final generation = ++_requestGeneration;
+    final generation = ++_scanGeneration;
     _focusNode.unfocus();
     setState(() {
       _previewPhoto = MemoryImage(photo.bytes);
       _scanRegions = const [];
       _photo = null;
       _scanningPreview = true;
+      _scanConversationReady = false;
       _pickingPhoto = true;
       _worldHome = false;
-      _progress = 'Reading your photo...';
+      _scanProgress = 'Reading your photo...';
     });
     widget.onChatStateChanged?.call(true);
     final iterator = StreamIterator(
@@ -3203,16 +3257,21 @@ class _ChatPageState extends State<ChatPage>
         previewOnly: true,
       ),
     );
-    _activeReply = iterator;
+    _activeScan = iterator;
     try {
       var completed = false;
       while (await iterator.moveNext()) {
-        if (!mounted || generation != _requestGeneration) return;
+        if (!mounted || generation != _scanGeneration) return;
         final event = iterator.current;
         if (event.conversationId != null) {
-          _currentConversationId = event.conversationId;
+          setState(() {
+            _currentConversationId = event.conversationId;
+            _scanConversationReady = true;
+          });
         }
-        if (event.type == 'status') setState(() => _progress = event.message);
+        if (event.type == 'status') {
+          setState(() => _scanProgress = event.message);
+        }
         if (event.type == 'scan_regions') {
           setState(
             () => _scanRegions = applyScanRegions(_scanRegions, event.result),
@@ -3230,7 +3289,7 @@ class _ChatPageState extends State<ChatPage>
         throw StateError('Extraction interrupted');
       }
     } catch (_) {
-      if (mounted && generation == _requestGeneration) {
+      if (mounted && generation == _scanGeneration) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -3248,12 +3307,12 @@ class _ChatPageState extends State<ChatPage>
       }
     } finally {
       unawaited(iterator.cancel());
-      if (mounted && generation == _requestGeneration) {
-        _activeReply = null;
+      if (mounted && generation == _scanGeneration) {
+        _activeScan = null;
         setState(() {
           _scanningPreview = false;
           _pickingPhoto = false;
-          _progress = null;
+          _scanProgress = null;
         });
       }
     }
@@ -3264,21 +3323,13 @@ class _ChatPageState extends State<ChatPage>
         const ['text', 'spreadsheet'].contains(_previewDraft?['source_kind'])) {
       return LiquidSurface(radius: 26, child: child);
     }
-    return Container(
-      height: _previewPhoto == null ? null : bounds.maxHeight,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xff1c1c1e)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: .08)
-              : AppTheme.border(context),
-        ),
+    return LiquidSurface(
+      radius: 28,
+      quiet: true,
+      child: SizedBox(
+        height: _previewPhoto == null ? null : bounds.maxHeight,
+        child: child,
       ),
-      child: child,
     );
   }
 
@@ -3295,7 +3346,7 @@ class _ChatPageState extends State<ChatPage>
               height: bounds.maxHeight,
               child: NativeScanProgress(
                 image: _previewPhoto!,
-                message: _progress ?? 'Reading your photo...',
+                message: _scanProgress ?? 'Reading your photo...',
                 regions: _scanRegions,
                 onStop: _closeCapturePreview,
               ),
@@ -3315,25 +3366,7 @@ class _ChatPageState extends State<ChatPage>
                           : const EdgeInsets.fromLTRB(18, 10, 10, 8),
                       child: Row(
                         children: [
-                          Icon(
-                            CupertinoIcons.viewfinder,
-                            size: 21,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Review extraction',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
+                          const Spacer(),
                           IconButton(
                             tooltip: _scanningPreview
                                 ? 'Stop scanning'
@@ -3352,7 +3385,9 @@ class _ChatPageState extends State<ChatPage>
                         ],
                       ),
                     ),
-                    if (_previewPhoto != null && bounds.maxHeight > 200)
+                    if (_previewPhoto != null &&
+                        _previewDraft == null &&
+                        bounds.maxHeight > 200)
                       ScanPhotoFrame(
                         image: _previewPhoto!,
                         scanning: _scanningPreview,
@@ -3371,7 +3406,7 @@ class _ChatPageState extends State<ChatPage>
                       Flexible(
                         child: SingleChildScrollView(
                           child: ExtractionProgressPanel(
-                            message: _progress ?? 'Reading your photo...',
+                            message: _scanProgress ?? 'Reading your photo...',
                             regions: _scanRegions,
                           ),
                         ),
@@ -3385,6 +3420,13 @@ class _ChatPageState extends State<ChatPage>
                           draft: _previewDraft!,
                           embedded: true,
                           photo: _previewPhoto,
+                          reviewHeader: _previewPhoto == null
+                              ? null
+                              : ScanPhotoFrame(
+                                  image: _previewPhoto!,
+                                  scanning: false,
+                                  height: 180,
+                                ),
                           disabled: _scanningPreview,
                           onChanged: _onCaptureChanged,
                           onSaved: () {
@@ -3842,8 +3884,8 @@ class _ChatPageState extends State<ChatPage>
         (widget.contextual || MediaQuery.textScalerOf(context).scale(16) > 32);
     final canSend =
         !_savingCapture &&
-        !_scanningPreview &&
-        !_pickingPhoto &&
+        (!_scanningPreview || _scanConversationReady) &&
+        (!_pickingPhoto || _scanningPreview) &&
         (_controller.text.trim().isNotEmpty ||
             _photo != null ||
             _sources.isNotEmpty) &&

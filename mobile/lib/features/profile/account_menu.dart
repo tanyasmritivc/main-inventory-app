@@ -43,14 +43,8 @@ Future<void> showAccountMenu(
 
             onTap: () => Navigator.of(sheet).push(
               MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(title: const Text('Profile')),
-                  body: ProfilePage(
-                    api: api,
-                    accountOnly: true,
-                    store: profile,
-                  ),
-                ),
+                builder: (_) =>
+                    ProfilePage(api: api, accountOnly: true, store: profile),
               ),
             ),
           ),

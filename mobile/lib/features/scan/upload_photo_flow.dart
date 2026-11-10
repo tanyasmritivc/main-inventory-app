@@ -1,4 +1,8 @@
-import '../../core/ui/photo_scan_hint.dart';
+import 'dart:typed_data';
+import '../../core/ui/native_presentation.dart';
+import 'native_scan_camera.dart';
+import 'space_barcode_flow.dart';
+import '../../core/ui/photo_source_sheet.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -227,75 +231,52 @@ Future<void> runUploadPhotoFlow({
   String? barcodeToAssociate,
 }) async {
   // Step 1: pick image source
-  final src = await showModalBottomSheet<ImageSource>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_camera_outlined,
-                    color: AppTheme.foreground(ctx, Colors.white),
-                  ),
-                  title: AppText(
-                    'Take Photo',
-                    style: TextStyle(
-                      color: AppTheme.foreground(ctx, Colors.white),
-                    ),
-                  ),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_outlined,
-                    color: AppTheme.foreground(ctx, Colors.white),
-                  ),
-                  title: AppText(
-                    'Choose from Library',
-                    style: TextStyle(
-                      color: AppTheme.foreground(ctx, Colors.white),
-                    ),
-                  ),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: PhotoScanHint(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-  if (src == null) return;
+  final camera = await showPhotoSourceSheet(context, scanning: true);
+  if (camera == null || !context.mounted) return;
+  final src = camera ? ImageSource.camera : ImageSource.gallery;
 
-  // Step 2: pick image
-  final picker = ImagePicker();
-  final x = await picker.pickImage(
-    source: src,
-    maxWidth: 2048,
-    imageQuality: 92,
-  );
-  if (x == null) return;
-  if (!context.mounted) return;
-
-  final rawBytes = await x.readAsBytes();
-  if (!context.mounted) return;
-  final bytes = rawBytes;
+  Uint8List? pickedBytes;
+  var filename = 'scan.jpg';
+  try {
+    if (camera && usesNativePresentation) {
+      final capture = await NativeScanCamera().capture(
+        dark: Theme.of(context).brightness == Brightness.dark,
+      );
+      if (!context.mounted) return;
+      api.assertCurrentContext();
+      if (capture?.barcode != null) {
+        await runSpaceBarcodeFlow(
+          context: context,
+          api: api,
+          preselectedSpace: preselectedSpace,
+          onItemsSaved: onItemsSaved,
+          detectedBarcode: capture!.barcode,
+        );
+        return;
+      }
+      pickedBytes = capture?.photo;
+    } else {
+      final x = await ImagePicker().pickImage(
+        source: src,
+        maxWidth: 2048,
+        imageQuality: 92,
+      );
+      if (x != null) {
+        pickedBytes = await x.readAsBytes();
+        filename = x.name;
+      }
+    }
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+    return;
+  }
+  if (pickedBytes == null || !context.mounted) return;
+  final bytes = pickedBytes;
+  api.assertCurrentContext();
 
   if (api.inventoryContext != null &&
       preselectedSpaceId != null &&
@@ -321,7 +302,7 @@ Future<void> runUploadPhotoFlow({
   // Step 3: extract with an owned loading dialog
   debugPrint(
     'FINDEZ bulkCreate: calling extractInventoryFromImage with '
-    '${bytes.length} bytes, filename: ${x.name}',
+    '${bytes.length} bytes, filename: $filename',
   );
   MultiExtractResult extracted;
   try {
@@ -332,7 +313,7 @@ Future<void> runUploadPhotoFlow({
       itemCount: (result) => result.items.length,
       extract: (cancelToken) => api.extractInventoryFromImage(
         bytes: bytes,
-        filename: x.name,
+        filename: filename,
         cancelToken: cancelToken,
         onProgress: cancelToken.report,
       ),

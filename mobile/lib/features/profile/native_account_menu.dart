@@ -147,6 +147,10 @@ Future<void> showNativeAccountMenu(
               ],
             },
             {
+              'title': 'Community',
+              'rows': [row('community', 'Join our Discord', 'person.2')],
+            },
+            {
               'title': 'Support',
               'rows': [
                 row('feedback', 'Send feedback', 'envelope', disclosure: false),
@@ -246,10 +250,19 @@ Future<void> showNativeAccountMenu(
     late Widget page;
     switch (action) {
       case 'profile':
-        page = Scaffold(
-          appBar: AppBar(title: const Text('Profile')),
-          body: ProfileEditorPage(api: api, store: profile),
+        page = ProfileEditorPage(api: api, store: profile);
+      case 'community':
+        final opened = await tryOpenExternalUrl(
+          Uri.parse('https://discord.gg/vN2qfhMzs'),
         );
+        if (!opened && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open Discord. Please try again.'),
+            ),
+          );
+        }
+        return;
       case 'history':
         onOpenHistory?.call();
         return;

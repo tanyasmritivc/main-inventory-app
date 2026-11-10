@@ -198,8 +198,8 @@ void main() {
       await open(tester);
       await tester.tap(find.text('Scan Photo'));
       await tester.pumpAndSettle();
-      expect(find.text('Take Photo'), findsOneWidget);
-      expect(find.text('Choose from Library'), findsOneWidget);
+      expect(find.text('Take photo'), findsOneWidget);
+      expect(find.text('Choose photo'), findsOneWidget);
       expect(find.byType(ItemEditorSheet), findsNothing);
       await tester.pageBack();
       await tester.pumpAndSettle();
