@@ -32,5 +32,9 @@ were corrected. Native visual inspection used a network-free disposable iPhone
 16e simulator on iOS26.2, not customer accounts. Physical device OAuth, VoiceOver,
 push delivery and final TestFlight acceptance remain unverified.
 
-Build 1.1.3 (215) is being prepared. Public App Store submission is unchanged.
+Apple acknowledged TestFlight 1.1.3 (215), delivery
+`945383dc-03a9-4cd0-9d90-db359d79f667`. All five CI jobs passed for runtime
+`7fb721f3de8cd8c1a9f2ba020d73911630d0d626`. Production package and Apple
+validation passed. Processing and tester availability are pending, not polled.
+Public App Store submission is unchanged. Receipt: `mobile215-release.json`.
 No backend, database, web, extraction or chat request behavior changes.

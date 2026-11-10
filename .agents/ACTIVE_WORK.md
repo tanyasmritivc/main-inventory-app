@@ -1,9 +1,29 @@
-## November 9: native home and invitation polish in progress
+## November 9: native home and invitation polish uploaded
 
-Active lane `fix/native-home-invitations-215`, based on uploaded build214.
-Scope: native organization popover, brighter home shine, smaller gray and faster
-smooth placeholders, Founders Access on explicit sign-in with gesture dismissal,
-and readable invitation details. Preserve backend permissions and scan/chat logic.
+Apple acknowledged TestFlight 1.1.3 (215), delivery
+`945383dc-03a9-4cd0-9d90-db359d79f667`. Runtime
+`7fb721f3de8cd8c1a9f2ba020d73911630d0d626`; all five CI jobs passed
+(42768479596). PR380, branch `fix/native-home-invitations-215`.
+
+Organization selection now uses a UIKit popover with existing choices and actions.
+Notification invitations use expanded native details with explicit acceptance.
+Home text is brighter with shine; placeholder hints are smaller, gray and faster.
+Explicit sign-in shows freshly verified Founders Access after any OS notification
+permission prompt closes. It persists until gesture or accessibility dismissal;
+manual plan viewing retains its existing controls. Backend permissions, chat
+requests and extraction behavior are unchanged.
+
+All 1,375 Flutter tests passed with one existing skip, and analysis was clean.
+Light/dark iPhone simulator checks used synthetic fixtures, including invitation
+acceptance and returning to Notifications. Outside-tap dismissal was inspected;
+swipe dismissal has widget coverage. Physical OAuth, VoiceOver, push delivery and
+final device acceptance remain unverified. Disposable simulator removed.
+
+Signed production archive and export passed strict signatures, 33 device executable
+checks each, 27 privacy manifests and production configuration verification.
+Apple validation and upload passed. Processing and tester availability are pending,
+not polled. Public App Store submission is unchanged. Receipt:
+`docs/plans/mobile215-release.json`; details: `docs/plans/native-home215.md`.
 
 ## November 9: profile notification dot and Settings history uploaded
 
