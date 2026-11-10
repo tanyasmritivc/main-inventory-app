@@ -21,6 +21,7 @@ Future<void> showNativeAccountMenu(
   BuildContext context, {
   required ApiClient api,
   required ProfileStore profile,
+  VoidCallback? onOpenHistory,
 }) async {
   final appearance = AppearanceScope.maybeOf(context);
   final prefs = await SharedPreferences.getInstance();
@@ -59,6 +60,8 @@ Future<void> showNativeAccountMenu(
                   'subtitle': 'Edit profile',
                 },
                 row('notifications', 'Notifications', 'bell'),
+                if (onOpenHistory != null)
+                  row('history', 'Chat history', 'clock'),
               ],
             },
             {
@@ -247,6 +250,9 @@ Future<void> showNativeAccountMenu(
           appBar: AppBar(title: const Text('Profile')),
           body: ProfileEditorPage(api: api, store: profile),
         );
+      case 'history':
+        onOpenHistory?.call();
+        return;
       case 'notifications':
         await NotificationsPage.open(context, api: api);
         return;

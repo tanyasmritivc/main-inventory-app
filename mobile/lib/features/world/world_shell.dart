@@ -11,7 +11,6 @@ import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
-import '../../core/ui/native_menu_button.dart';
 import '../../core/ui/native_presentation.dart';
 import 'world_style.dart';
 import '../inventory/space_directory.dart';
@@ -338,7 +337,12 @@ class _WorldShellState extends State<WorldShell> {
     if (mounted) unawaited(_load());
   });
   Future<void> _account() async {
-    await showAccountMenu(context, api: widget.session.api, profile: _profile);
+    await showAccountMenu(
+      context,
+      api: widget.session.api,
+      profile: _profile,
+      onOpenHistory: () => _history?.call(),
+    );
     if (mounted) await _profile.load(force: true);
   }
 
@@ -663,24 +667,6 @@ class _WorldShellState extends State<WorldShell> {
                   ),
           ),
         ),
-        if (index == 0) NotificationBell(api: _chatApi),
-        if (index == 0)
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: usesNativePresentation
-                ? NativeToolbarButton(
-                    symbol: 'clock',
-                    label: 'Chat history',
-                    glass: false,
-                    symbolSize: 18,
-                    onPressed: _history,
-                  )
-                : IconButton(
-                    tooltip: 'Chat history',
-                    onPressed: _history,
-                    icon: const Icon(CupertinoIcons.clock, size: 18),
-                  ),
-          ),
         if (index == 1)
           IconButton(
             tooltip: _searchingSpaces ? 'Close Space search' : 'Search Spaces',
@@ -694,10 +680,10 @@ class _WorldShellState extends State<WorldShell> {
             }),
           ),
         if (index == 0)
-          IconButton(
-            tooltip: 'Account',
-            onPressed: _account,
-            icon: MemberAvatar(
+          NotificationProfileButton(
+            api: widget.session.api,
+            onOpen: _account,
+            avatar: MemberAvatar(
               name: _profile.name,
               photoUrl: _profile.photoUrl,
               size: 36,

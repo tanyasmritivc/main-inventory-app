@@ -7,7 +7,7 @@ import '../../core/push_notifications.dart';
 import 'notifications_page.dart';
 
 /// A direct inbox entry, independent of the selected inventory.
-class NotificationBell extends StatefulWidget {
+class NotificationBell extends StatelessWidget {
   const NotificationBell({
     super.key,
     required this.api,
@@ -18,10 +18,51 @@ class NotificationBell extends StatefulWidget {
   final ValueListenable<int>? count;
   final Future<void> Function()? onOpen;
   @override
-  State<NotificationBell> createState() => _NotificationBellState();
+  Widget build(BuildContext context) =>
+      _NotificationButton(api: api, count: count, onOpen: onOpen);
 }
 
-class _NotificationBellState extends State<NotificationBell>
+/// Settings remains the avatar action; its dot reports the existing inbox count.
+class NotificationProfileButton extends StatelessWidget {
+  const NotificationProfileButton({
+    super.key,
+    required this.api,
+    required this.avatar,
+    required this.onOpen,
+    this.count,
+  });
+  final ApiClient api;
+  final Widget avatar;
+  final Future<void> Function() onOpen;
+  final ValueListenable<int>? count;
+
+  @override
+  Widget build(BuildContext context) => _NotificationButton(
+    key: ValueKey(api.accountId),
+    api: api,
+    count: count,
+    onOpen: onOpen,
+    avatar: avatar,
+  );
+}
+
+class _NotificationButton extends StatefulWidget {
+  const _NotificationButton({
+    super.key,
+    required this.api,
+    this.count,
+    this.onOpen,
+    this.avatar,
+  });
+  final ApiClient api;
+  final ValueListenable<int>? count;
+  final Future<void> Function()? onOpen;
+  final Widget? avatar;
+  @override
+  State<_NotificationButton> createState() => _NotificationButtonState();
+}
+
+class _NotificationButtonState extends State<_NotificationButton>
     with WidgetsBindingObserver {
   late final String? _account;
   int _count = 0, _generation = 0;
@@ -111,15 +152,27 @@ class _NotificationBellState extends State<NotificationBell>
     super.dispose();
   }
 
-  Widget _button(int count) => IconButton(
-    tooltip: count > 0 ? 'Notifications, $count unread' : 'Notifications',
-    onPressed: _open,
-    icon: Badge(
-      isLabelVisible: count > 0,
-      label: Text(count > 99 ? '99+' : '$count'),
-      child: const Icon(Icons.notifications_none_rounded),
-    ),
-  );
+  Widget _button(int count) {
+    final profile = widget.avatar != null;
+    final label = profile ? 'Account' : 'Notifications';
+    return IconButton(
+      tooltip: !profile && count > 0 ? '$label, $count unread' : label,
+      onPressed: _open,
+      icon: Semantics(
+        label: count > 0 ? '$count unread notifications' : null,
+        child: Badge(
+          key: profile ? const ValueKey('profile-notification-dot') : null,
+          isLabelVisible: count > 0,
+          alignment: Alignment.topRight,
+          backgroundColor: profile ? const Color(0xFFFF3B30) : null,
+          smallSize: 9,
+          label: profile ? null : Text(count > 99 ? '99+' : '$count'),
+          child: widget.avatar ?? const Icon(Icons.notifications_none_rounded),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => widget.count == null
       ? _button(widget.api.accountId == _account ? _count : 0)
