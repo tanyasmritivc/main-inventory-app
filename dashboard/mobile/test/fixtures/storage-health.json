@@ -1,0 +1,170 @@
+{
+  "infrastructure": {
+    "checks": [
+      {
+        "id": "api",
+        "label": "Backend API",
+        "healthy": true,
+        "latency_ms": 0,
+        "at": "2026-11-10T03:48:39.165064+00:00"
+      },
+      {
+        "id": "database",
+        "label": "Database connection",
+        "healthy": true,
+        "latency_ms": 0,
+        "at": "2026-11-10T03:48:39.165398+00:00"
+      },
+      {
+        "id": "web",
+        "label": "Web application",
+        "healthy": true,
+        "latency_ms": 0,
+        "at": "2026-11-10T03:48:39.165454+00:00"
+      },
+      {
+        "id": "upload_storage",
+        "label": "Upload storage",
+        "healthy": true,
+        "latency_ms": null,
+        "at": "2026-11-10T03:48:39.165506+00:00"
+      }
+    ],
+    "metrics": [
+      {
+        "id": "disk",
+        "label": "Server disk used",
+        "value": 74,
+        "unit": "percent",
+        "source": "Current server filesystem",
+        "definition": "Capacity unavailable to uploads, including filesystem reserves. Warning at 80% used or 5 GiB free. Critical at 90% used or 2 GiB free.",
+        "period": "Current",
+        "note": "",
+        "status": "live"
+      },
+      {
+        "id": "disk_free",
+        "label": "Space available for uploads",
+        "value": 16.0,
+        "unit": "GiB",
+        "source": "Current server filesystem",
+        "definition": "Free space shared by uploads, saved photos, database, logs and deployed services. This is not a per-user upload allowance.",
+        "period": "Current",
+        "note": "",
+        "status": "live"
+      },
+      {
+        "id": "disk_total",
+        "label": "Server capacity",
+        "value": 61.0,
+        "unit": "GiB",
+        "source": "Current server filesystem",
+        "definition": "Server capacity",
+        "period": "Current",
+        "note": "",
+        "status": "live"
+      },
+      {
+        "id": "storage_cleanup",
+        "label": "Automatic cache cleanup",
+        "value": "On",
+        "unit": "count",
+        "source": "Hourly cleanup receipt",
+        "definition": "Runs hourly and removes only inactive website compiler caches untouched for at least 24 hours. Active releases, photos, inventory, databases and backups are excluded. A missing, failed or more than two-hour-old result opens an issue.",
+        "period": "Current",
+        "note": "Hourly. Old build caches only.",
+        "status": "live"
+      },
+      {
+        "id": "storage_cleanup_removed",
+        "label": "Build cache removed",
+        "value": 0.0,
+        "unit": "GiB",
+        "source": "Cleanup file allocation count",
+        "definition": "Allocated size of compiler cache files removed in the latest hourly run. Zero means nothing eligible needed removal. Filesystem free space may change independently.",
+        "period": "Latest cleanup: 2026-11-10T04:00:00+00:00",
+        "note": "",
+        "status": "live"
+      },
+      {
+        "id": "storage_capacity",
+        "label": "Storage upgrade",
+        "value": "OK",
+        "unit": "count",
+        "source": "Current server capacity thresholds",
+        "definition": "If storage stays above 80% used or below 5 GiB free after cleanup, increase the server volume through the hosting provider. This dashboard does not purchase or resize storage.",
+        "period": "Current",
+        "note": "No capacity alert right now.",
+        "status": "live"
+      },
+      {
+        "id": "uptime",
+        "label": "Historical availability",
+        "value": null,
+        "unit": "count",
+        "source": "Not connected",
+        "definition": "Monitoring history starts when this dashboard is installed. A current healthy probe is not historical uptime.",
+        "period": "Current",
+        "note": "",
+        "status": "unavailable"
+      },
+      {
+        "id": "api_latency",
+        "label": "Customer API latency",
+        "value": null,
+        "unit": "count",
+        "source": "Not connected",
+        "definition": "Health-check response times do not measure real customer endpoint latency.",
+        "period": "Current",
+        "note": "",
+        "status": "unavailable"
+      },
+      {
+        "id": "backups",
+        "label": "Verified backup status",
+        "value": null,
+        "unit": "count",
+        "source": "Not connected",
+        "definition": "Backup verification records are not connected.",
+        "period": "Current",
+        "note": "",
+        "status": "unavailable"
+      },
+      {
+        "id": "ssl",
+        "label": "Public SSL expiry",
+        "value": null,
+        "unit": "count",
+        "source": "Not connected",
+        "definition": "Certificate inventory is not connected.",
+        "period": "Current",
+        "note": "",
+        "status": "unavailable"
+      },
+      {
+        "id": "storage",
+        "label": "Object storage use",
+        "value": null,
+        "unit": "count",
+        "source": "Not connected",
+        "definition": "Storage capacity telemetry is not connected.",
+        "period": "Current",
+        "note": "",
+        "status": "unavailable"
+      }
+    ],
+    "storage": {
+      "used_percent": 74,
+      "level": "healthy",
+      "free_bytes": 17179869184,
+      "total_bytes": 65498251264,
+      "cleanup": {
+        "status": "ok",
+        "removed_bytes": 0,
+        "removed_caches": 0,
+        "at": "2026-11-10T04:00:00+00:00"
+      }
+    }
+  },
+  "monitoring_history": []
+}

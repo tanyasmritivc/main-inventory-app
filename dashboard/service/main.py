@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from collectors import Sources, journal_summary, metric
 from store import Store, now
+from storage_monitor import update_storage_incidents
 
 
 class IssueInput(BaseModel):
@@ -39,13 +40,15 @@ def create_app(sources=None, store=None, owner=None, monitor=True):
         while True:
             try:
                 health = await data.health()
-                db.sample({"at": now(), "checks": health["checks"]})
+                db.sample({"at": now(), "checks": health["checks"], "storage": health.get("storage")})
                 for check in health["checks"]:
+                    if check["id"] == "upload_storage":
+                        continue  # Storage has capacity-specific warning/critical incidents.
                     db.incident("health:"+check["id"], check["label"]+" unavailable",
                                 "A direct service health probe failed. Open Infrastructure for the latest status.",
                                 "critical", not check["healthy"])
-                used = next(m["value"] for m in health["metrics"] if m["id"] == "disk")
-                db.incident("health:disk", "Server disk needs attention", "Server disk usage is above 85%.", "warning", used >= 85)
+                if health.get("storage"):
+                    update_storage_incidents(db, health["storage"])
             except Exception:
                 db.incident("monitor:collection", "Monitoring collection failed", "The monitor could not complete its health collection. Metrics may be stale.", "warning", True)
             else:
@@ -166,6 +169,8 @@ def create_app(sources=None, store=None, owner=None, monitor=True):
                 else:
                     result[name] = value
                     result["source_status"].append({"name": name, "status": "not connected" if value.get("connected") is False else "partial" if value.get("partial") else "synced"})
+            if result["infrastructure"].get("storage"):
+                update_storage_incidents(db, result["infrastructure"]["storage"])
             result["customers"] = result["analytics"].pop("customers", [])
             result["activity"] = result["analytics"].pop("activity", []) + result["diagnostics"].pop("events", [])
             result["activity"].sort(key=lambda e: e["at"], reverse=True)

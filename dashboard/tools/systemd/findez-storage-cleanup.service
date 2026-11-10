@@ -1,0 +1,21 @@
+[Unit]
+Description=FindEZ inactive compiler cache cleanup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+ExecStart=/usr/bin/python3 /home/ubuntu/findez-dashboard/releases/20261109-storage/storage_cleanup.py --apply
+UMask=0077
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=5min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/findez-web-releases /home/ubuntu/findez-dashboard-data
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX

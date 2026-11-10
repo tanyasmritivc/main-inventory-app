@@ -1,0 +1,11 @@
+[Unit]
+Description=Check FindEZ compiler caches every hour
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=60
+Persistent=true
+Unit=findez-storage-cleanup.service
+
+[Install]
+WantedBy=timers.target

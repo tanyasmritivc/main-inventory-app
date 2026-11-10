@@ -81,6 +81,7 @@ class Store:
             if active:
                 db.execute("""INSERT INTO issues VALUES (?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at,
+                    title=excluded.title, description=excluded.description, severity=excluded.severity,
                     status=CASE WHEN issues.status='resolved' THEN 'open' ELSE issues.status END,
                     occurrences=issues.occurrences+1""",
                            (identity, title, description, severity, "open", "incident", at, at, "Monitoring", 1))

@@ -1203,3 +1203,11 @@ billing, original logo assets, native lifecycle and FIND transport are unchanged
 
 No task-specific handoff is registered in `.agents/HANDOFFS/`. Current release
 preflight evidence and blockers are in `CURRENT_STATE.md` and the release checklist.
+
+## Dashboard storage protection, November 9
+
+`feat/dashboard-storage-protection` in `dev/findez-dashboard-storage` adds dynamic
+storage cards and 80%/90% warnings to the existing private dashboard app. A separate
+hourly worker removes only old inactive webpack compiler caches. Dashboard API
+permissions and customer services stay unchanged. No customer storage deletion or
+automatic volume resize. No new native runtime source or binary required.

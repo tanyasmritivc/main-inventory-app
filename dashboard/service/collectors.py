@@ -11,6 +11,7 @@ import time
 import httpx
 
 from store import now
+from storage_monitor import storage_status, GIB
 
 
 def metric(identity, label, value=None, *, unit="count", source="Not connected", definition="", period="Current", note="", status=None):
@@ -231,14 +232,29 @@ class Sources:
                                       check("database", "Database connection", "http://127.0.0.1:8000/health/db"),
                                       check("web", "Web application", "http://127.0.0.1:3000/"))
         disk = shutil.disk_usage("/")
-        ms = [metric("disk", "Server disk used", round(disk.used/disk.total*100, 1), unit="percent", source="Current server filesystem"),
-              metric("disk_free", "Server disk free", round(disk.free/1024**3, 1), unit="GB", source="Current server filesystem"),
+        storage = storage_status(disk)
+        cleanup = storage['cleanup']
+        checks.append(dict(id="upload_storage", label="Upload storage", healthy=storage['level'] == 'healthy', latency_ms=None, at=now()))
+        ms = [metric("disk", "Server disk used", storage['used_percent'], unit="percent", source="Current server filesystem",
+                     definition="Capacity unavailable to uploads, including filesystem reserves. Warning at 80% used or 5 GiB free. Critical at 90% used or 2 GiB free."),
+              metric("disk_free", "Space available for uploads", round(disk.free/GIB, 1), unit="GiB", source="Current server filesystem",
+                     definition="Free space shared by uploads, saved photos, database, logs and deployed services. This is not a per-user upload allowance."),
+              metric("disk_total", "Server capacity", round(disk.total/GIB, 1), unit="GiB", source="Current server filesystem"),
+              metric("storage_cleanup", "Automatic cache cleanup", "On" if cleanup['status'] == 'ok' else "Check", source="Hourly cleanup receipt",
+                     definition="Runs hourly and removes only inactive website compiler caches untouched for at least 24 hours. Active releases, photos, inventory, databases and backups are excluded. A missing, failed or more than two-hour-old result opens an issue.",
+                     note="Hourly. Old build caches only." if cleanup['status'] == 'ok' else "Cleanup needs attention. See Issues."),
+              metric("storage_cleanup_removed", "Build cache removed", round(cleanup['removed_bytes']/GIB, 2) if cleanup['removed_bytes'] is not None else None,
+                     unit="GiB", source="Cleanup file allocation count", period="Latest cleanup: " + (cleanup['at'] or "Unavailable"),
+                     definition="Allocated size of compiler cache files removed in the latest hourly run. Zero means nothing eligible needed removal. Filesystem free space may change independently."),
+              metric("storage_capacity", "Storage upgrade", "Plan" if storage['level'] != 'healthy' else "OK", source="Current server capacity thresholds",
+                     definition="If storage stays above 80% used or below 5 GiB free after cleanup, increase the server volume through the hosting provider. This dashboard does not purchase or resize storage.",
+                     note="Review capacity after cleanup." if storage['level'] != 'healthy' else "No capacity alert right now."),
               metric("uptime", "Historical availability", definition="Monitoring history starts when this dashboard is installed. A current healthy probe is not historical uptime."),
               metric("api_latency", "Customer API latency", definition="Health-check response times do not measure real customer endpoint latency."),
               metric("backups", "Verified backup status", definition="Backup verification records are not connected."),
               metric("ssl", "Public SSL expiry", definition="Certificate inventory is not connected."),
               metric("storage", "Object storage use", definition="Storage capacity telemetry is not connected.")]
-        return dict(checks=checks, metrics=ms)
+        return dict(checks=checks, metrics=ms, storage=storage)
 
 
 async def journal_summary():

@@ -202,3 +202,32 @@ internal-only upload. The later availability repair assigned it to Founder
 Private, where Apple reports VALID and IN_BETA_TESTING. Tanya confirmed real
 fresh sign-in and return to Overview after phone lock/reopen/unlock. No Git push
 or public submission.
+
+## Storage protection (November 9)
+
+The existing app receives the new Infrastructure cards through its snapshot API,
+so this update does not require a replacement iOS build. Infrastructure shows
+available upload space, total capacity, automatic cleanup status, latest cache
+removal and capacity advice. Overview includes an Upload storage health check.
+Issues warns at 80% unavailable capacity or 5 GiB free, and escalates to critical
+at 90% or 2 GiB free. Warnings resolve after recovery and reopen if pressure returns.
+These are dashboard alerts, not iOS push notifications.
+
+A separate restricted systemd timer runs hourly. It deletes only
+`findez-web-releases/<release>/frontend/.next/cache/webpack` trees that have not
+changed for at least 24 hours and are not associated with the configured or a
+running web release. Symlinked paths are skipped. Customer photos, inventory,
+databases, backups, release code and active build output are never cleanup targets.
+The dashboard service retains read-only access to releases and cannot invoke
+arbitrary filesystem deletion. The cleanup worker has no provider credentials.
+
+The receipt is stored at `findez-dashboard-data/storage-cleanup.json`. A failed,
+missing or more than two-hour-old receipt opens an issue. The app shows the last
+successful run's allocated cache bytes removed; zero means there was nothing to
+clean. Storage expansion is advice only, with no automatic purchase or resize.
+
+Runtime release: `/home/ubuntu/findez-dashboard/releases/20261109-storage`.
+Rollback: disable `findez-storage-cleanup.timer`, remove only the
+`storage-release.conf` dashboard systemd override, reload systemd and restart only
+`findez-dashboard`. The previous dashboard runtime remains intact. Removed
+compiler caches regenerate during builds.
