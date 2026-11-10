@@ -5,9 +5,15 @@ import 'package:flutter/rendering.dart';
 
 /// Bounded blur that dissolves toward the scrollable content.
 class ScrollGlass extends StatelessWidget {
-  const ScrollGlass({super.key, required this.child, this.top = true});
+  const ScrollGlass({
+    super.key,
+    required this.child,
+    this.top = true,
+    this.tint = true,
+  });
   final Widget child;
   final bool top;
+  final bool tint;
   @override
   Widget build(BuildContext context) {
     final background = Theme.of(context).brightness == Brightness.dark
@@ -41,24 +47,25 @@ class ScrollGlass extends StatelessWidget {
                           ),
                         ),
                       ),
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: top
-                                ? Alignment.topCenter
-                                : Alignment.bottomCenter,
-                            end: top
-                                ? Alignment.bottomCenter
-                                : Alignment.topCenter,
-                            colors: [
-                              background.withValues(alpha: .85),
-                              background.withValues(alpha: 0),
-                            ],
+                    if (tint)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: top
+                                  ? Alignment.topCenter
+                                  : Alignment.bottomCenter,
+                              end: top
+                                  ? Alignment.bottomCenter
+                                  : Alignment.topCenter,
+                              colors: [
+                                background.withValues(alpha: .85),
+                                background.withValues(alpha: 0),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

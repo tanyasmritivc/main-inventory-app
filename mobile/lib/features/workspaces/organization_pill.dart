@@ -121,7 +121,9 @@ class _OrganizationPillState extends State<OrganizationPill> {
             ),
             Offset.zero & overlay.size,
           ),
-          constraints: BoxConstraints(maxWidth: overlay.size.width - 32),
+          constraints: BoxConstraints(
+            maxWidth: (overlay.size.width - 48).clamp(0, 280),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
           ),

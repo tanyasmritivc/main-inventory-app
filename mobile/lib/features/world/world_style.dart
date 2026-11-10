@@ -1,6 +1,7 @@
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_typography.dart';
+import '../../core/ui/app_canvas.dart';
 
 /// A local visual theme; scoped inventory routes and API contracts are unchanged.
 class WorldStyle extends StatelessWidget {
@@ -41,6 +42,7 @@ class WorldStyle extends StatelessWidget {
     return AppTypography(
       child: Theme(
         data: theme.copyWith(
+          scaffoldBackgroundColor: Colors.transparent,
           textTheme: theme.textTheme.copyWith(
             headlineLarge: title,
             headlineMedium: title.copyWith(fontSize: 26),
@@ -105,7 +107,7 @@ class WorldStyle extends StatelessWidget {
             space: 24,
           ),
         ),
-        child: child,
+        child: AppCanvas(child: child),
       ),
     );
   }

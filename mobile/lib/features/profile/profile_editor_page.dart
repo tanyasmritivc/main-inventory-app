@@ -1,4 +1,5 @@
 import '../../core/app_theme.dart';
+import '../../core/ui/app_canvas.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -337,198 +338,200 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
     onPopInvokedWithResult: (didPop, _) {
       if (!didPop) unawaited(_close());
     },
-    child: Scaffold(
-      backgroundColor: AppTheme.adaptive(context, HomeColors.background),
-      appBar: AppBar(
-        backgroundColor: AppTheme.adaptive(context, HomeColors.background),
-        surfaceTintColor: Colors.transparent,
-        leading: BackButton(onPressed: _close),
-        title: const AppText(
-          'Edit profile',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+    child: AppCanvas(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          leading: BackButton(onPressed: _close),
+          title: const AppText(
+            'Edit profile',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+          ),
         ),
-      ),
-      body: !_loaded
-          ? Center(
-              child: _store.failed
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
+        body: !_loaded
+            ? Center(
+                child: _store.failed
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const AppText('Could not load profile.'),
+                          TextButton(
+                            onPressed: () => _load(force: true),
+                            child: const AppText('Retry'),
+                          ),
+                        ],
+                      )
+                    : const CircularProgressIndicator(),
+              )
+            : SafeArea(
+                top: false,
+                child: Form(
+                  key: _form,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const AppText('Could not load profile.'),
-                        TextButton(
-                          onPressed: () => _load(force: true),
-                          child: const AppText('Retry'),
-                        ),
-                      ],
-                    )
-                  : const CircularProgressIndicator(),
-            )
-          : SafeArea(
-              top: false,
-              child: Form(
-                key: _form,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Column(
-                          children: [
-                            MemberAvatar(
-                              key: ValueKey(_store.photoRevision),
-                              name: _store.name,
-                              photoUrl: _store.photoUrl,
-                              colorHex: _color,
-                              size: 76,
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _busy ? null : _choosePhoto,
-                              child: AppText(
-                                _photoBusy
-                                    ? 'Updating photo...'
-                                    : 'Change photo',
+                        Center(
+                          child: Column(
+                            children: [
+                              MemberAvatar(
+                                key: ValueKey(_store.photoRevision),
+                                name: _store.name,
+                                photoUrl: _store.photoUrl,
+                                colorHex: _color,
+                                size: 76,
                               ),
-                            ),
-                            if (_store.email.isNotEmpty)
-                              AppText(
-                                _store.email,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    HomeColors.secondary,
-                                  ),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: _busy ? null : _choosePhoto,
+                                child: AppText(
+                                  _photoBusy
+                                      ? 'Updating photo...'
+                                      : 'Change photo',
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _group([
-                        _field('Name', _name, limit: 100, required: true),
-                      ]),
-                      const SizedBox(height: 24),
-                      AppText(
-                        'Collaboration details',
-                        style: TextStyle(
-                          color: AppTheme.foreground(
-                            context,
-                            HomeColors.secondary,
-                          ),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _group([
-                        _field(
-                          'Organization or team (optional)',
-                          _organization,
-                        ),
-                        _field('Role (optional)', _role),
-                        _field(
-                          'Contact email (optional)',
-                          _contact,
-                          email: true,
-                          limit: 200,
-                        ),
-                      ]),
-                      Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: AppText(
-                          'Visible only to people you collaborate with.',
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              HomeColors.secondary,
-                            ),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
+                              if (_store.email.isNotEmpty)
+                                AppText(
+                                  _store.email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      HomeColors.secondary,
+                                    ),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                      ),
-                      if (_store.photoUrl.isEmpty) ...[
+                        const SizedBox(height: 24),
+                        _group([
+                          _field('Name', _name, limit: 100, required: true),
+                        ]),
                         const SizedBox(height: 24),
                         AppText(
-                          'Avatar color',
+                          'Collaboration details',
                           style: TextStyle(
                             color: AppTheme.foreground(
                               context,
                               HomeColors.secondary,
                             ),
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            for (final color in [
-                              '#636366',
-                              '#8FB5E9',
-                              '#8DD0BD',
-                              '#BAA2E6',
-                              '#EDA2B9',
-                              '#EBC28A',
-                            ])
-                              Semantics(
-                                label: 'Avatar color $color',
-                                selected: _color == color,
-                                button: true,
-                                child: InkWell(
-                                  onTap: _busy
-                                      ? null
-                                      : () => setState(() => _color = color),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Color(
-                                        int.parse(
-                                          'FF${color.substring(1)}',
-                                          radix: 16,
+                        const SizedBox(height: 8),
+                        _group([
+                          _field(
+                            'Organization or team (optional)',
+                            _organization,
+                          ),
+                          _field('Role (optional)', _role),
+                          _field(
+                            'Contact email (optional)',
+                            _contact,
+                            email: true,
+                            limit: 200,
+                          ),
+                        ]),
+                        Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: AppText(
+                            'Visible only to people you collaborate with.',
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                HomeColors.secondary,
+                              ),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        if (_store.photoUrl.isEmpty) ...[
+                          const SizedBox(height: 24),
+                          AppText(
+                            'Avatar color',
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                HomeColors.secondary,
+                              ),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              for (final color in [
+                                '#636366',
+                                '#8FB5E9',
+                                '#8DD0BD',
+                                '#BAA2E6',
+                                '#EDA2B9',
+                                '#EBC28A',
+                              ])
+                                Semantics(
+                                  label: 'Avatar color $color',
+                                  selected: _color == color,
+                                  button: true,
+                                  child: InkWell(
+                                    onTap: _busy
+                                        ? null
+                                        : () => setState(() => _color = color),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(
+                                          int.parse(
+                                            'FF${color.substring(1)}',
+                                            radix: 16,
+                                          ),
                                         ),
-                                      ),
-                                      border: Border.all(
-                                        color: _color == color
-                                            ? AppTheme.adaptive(
-                                                context,
-                                                HomeColors.text,
-                                              )
-                                            : Colors.transparent,
-                                        width: 2,
+                                        border: Border.all(
+                                          color: _color == color
+                                              ? AppTheme.adaptive(
+                                                  context,
+                                                  HomeColors.text,
+                                                )
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 28),
+                        FilledButton(
+                          onPressed: _busy ? null : _save,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: AppText(
+                            _saving ? 'Saving...' : 'Save changes',
+                            style: const TextStyle(fontWeight: FontWeight.w400),
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 28),
-                      FilledButton(
-                        onPressed: _busy ? null : _save,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: AppText(
-                          _saving ? 'Saving...' : 'Save changes',
-                          style: const TextStyle(fontWeight: FontWeight.w400),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     ),
   );
 }
