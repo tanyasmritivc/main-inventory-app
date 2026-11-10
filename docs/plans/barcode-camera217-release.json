@@ -1,0 +1,9 @@
+{
+  "healthy": true,
+  "preserved_sources": 150,
+  "files": {
+    "app/api/routes/items.py": "b2b2c8b385581e50c1ba86c65307bf1ab896ca17981f4a2145dfcc64768a7b17",
+    "app/api/routes/world_chat.py": "73a4d04c285150a478dd770bfa7831ab9c1f2135db4a769a3dd52b85fbe23c1b",
+    "app/services/camera_barcode.py": "d76a9a7a693a6b0c9f91ff00f4c214badebccb83994f8a1571b25360c29d5c71"
+  }
+}

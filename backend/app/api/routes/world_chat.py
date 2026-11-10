@@ -429,6 +429,10 @@ async def barcode_draft(request: Request, world_id: str, body: BarcodeDraft,
     code = body.barcode.strip()
     if not code:
         raise HTTPException(422, 'Scan or enter a barcode.')
+    from app.services.camera_barcode import resolve_internal_item
+    existing = await asyncio.to_thread(resolve_internal_item, user.user_id, key, code)
+    if existing is not None:
+        return existing
     if not (await check_limit(user.user_id, 'barcode_scan'))['allowed']:
         raise HTTPException(403, 'Your barcode allowance has been reached.')
     product = await lookup_barcode_product(code, user.user_id)
