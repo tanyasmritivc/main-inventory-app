@@ -1,0 +1,20 @@
+{
+  "runtime_commit": "e4e2069a0f088e6dcc1b7b5e69649d2926e08193",
+  "pr": "https://github.com/tanyasmritivc/main-inventory-app/pull/378",
+  "local_tests": {
+    "passed": 1369,
+    "skipped": 1
+  },
+  "repository_ci": {
+    "run": 42728398280,
+    "result": "success"
+  },
+  "android_ci": {
+    "run": 42728397994,
+    "result": "success",
+    "artifact": "findez-android-compile-check",
+    "services": "placeholder"
+  },
+  "device_acceptance": "not performed",
+  "play_store_release": "not performed"
+}

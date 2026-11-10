@@ -1,3 +1,20 @@
+## November 9 - Android foundation compiled
+
+User-requested customer-facing Android app is implemented on
+`feat/android-foundation`, draft PR378, based on submitted build213 (`3ddf927f`).
+Android now has `com.findez.app` identity, SDK36/API24, Java17/desugaring,
+upload-key signing configuration, camera/microphone permissions, auth/invitation
+callbacks and spreadsheet share filters. Google Android OAuth accepts an explicit
+web client ID with an actionable email fallback when unconfigured.
+
+Runtime `e4e2069a`: analysis clean; 1,369 local Flutter tests passed with one
+existing skip; all five repository CI checks passed (42728398280); Android APK
+compiled and artifact uploaded (42728397994). The APK uses placeholder services,
+not production accounts. No Android installation or physical-device pass is
+claimed. See `mobile/ANDROID.md` for configuration, signing, FCM, billing and
+device acceptance work still required before a real beta or Play distribution.
+No backend, database, web or iOS release changes were made.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement

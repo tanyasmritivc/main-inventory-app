@@ -5,11 +5,13 @@ import 'dart:async';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import '../../core/config.dart';
 import '../../core/app_theme.dart';
 import '../../core/legal_links.dart';
 import '../profile/privacy_policy_page.dart';
@@ -453,7 +455,19 @@ class _AuthPageState extends State<AuthPage> {
     });
 
     try {
-      final googleSignIn = GoogleSignIn(scopes: const ['email']);
+      final isAndroid =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      if (isAndroid && AppConfig.googleServerClientId.isEmpty) {
+        const message =
+            'Google sign-in is not configured for this Android build. Please use email to sign in.';
+        setState(() => _error = message);
+        _showMessage(message);
+        return;
+      }
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['email'],
+        serverClientId: isAndroid ? AppConfig.googleServerClientId : null,
+      );
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         // User cancelled the native sheet — no error to show.

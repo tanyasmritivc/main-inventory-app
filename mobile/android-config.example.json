@@ -1,0 +1,6 @@
+{
+  "SUPABASE_URL": "https://your-auth-host.example",
+  "SUPABASE_ANON_KEY": "your-public-anon-key",
+  "API_BASE_URL": "https://your-api-host.example",
+  "GOOGLE_SERVER_CLIENT_ID": "your-web-oauth-client.apps.googleusercontent.com"
+}
