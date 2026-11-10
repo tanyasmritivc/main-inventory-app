@@ -1847,3 +1847,9 @@ plain text, links, access decisions and expiry behavior remain unchanged.
 Validation: 1,576 backend tests passed; light/dark mobile browser previews at 390px
 have no horizontal overflow. No real invitations sent during QA. Backend-only
 selective deployment preserves unrelated live modifications.
+Deployment completed: all four deployed file hashes verified against the staged
+manifest, `findez.service` active, `/health` OK and `/health/db` reachable.
+Original files are backed up under
+`/home/ubuntu/findez-invitation-email-ui-20261109/backup`.
+Existing emails in inboxes keep their original HTML; newly sent invitations use
+this design. Gmail device rendering still depends on the recipient client.
