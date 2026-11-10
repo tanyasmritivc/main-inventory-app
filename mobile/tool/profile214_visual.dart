@@ -14,14 +14,15 @@ Future<void> main() async {
   var unread = true;
   fixture.respond = (r) {
     if (r.path.endsWith('/profile/me')) return {'display_name': 'Alex Example'};
-    if (r.path.endsWith('/directory'))
+    if (r.path.endsWith('/directory')) {
       return {'has_items': false, 'inventories': []};
+    }
     if (r.path.endsWith('/spaces')) return {'inventories': []};
     if (r.path.endsWith('/notifications/read')) {
       unread = false;
       return {'ok': true};
     }
-    if (r.path.endsWith('/notifications'))
+    if (r.path.endsWith('/notifications')) {
       return {
         'unread_count': unread ? 1 : 0,
         'notifications': [
@@ -34,11 +35,13 @@ Future<void> main() async {
           },
         ],
       };
-    if (r.path.endsWith('/conversations'))
+    }
+    if (r.path.endsWith('/conversations')) {
       return [
         {'id': 'sample', 'title': 'Workshop tools'},
       ];
-    if (r.path.endsWith('/conversations/sample'))
+    }
+    if (r.path.endsWith('/conversations/sample')) {
       return {
         'conversation': {'id': 'sample', 'title': 'Workshop tools'},
         'messages': [
@@ -50,6 +53,7 @@ Future<void> main() async {
           },
         ],
       };
+    }
     return <String, dynamic>{};
   };
   final session = PlaceSession(fixture.api, 'actor-a')
