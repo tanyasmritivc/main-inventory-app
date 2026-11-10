@@ -56,15 +56,27 @@ final class NativeScanCamera: NSObject, UIImagePickerControllerDelegate, UINavig
     guard result != nil else { return }
     if barcodes {
       let camera = PhotoBarcodeCameraController()
-      camera.onPhoto = { [weak self] image in self?.encode(image) }
-      camera.onBarcode = { [weak self] code in self?.finish(["barcode": code]) }
-      camera.onCancel = { [weak self] in self?.finish(nil) }
+      let active = token
+      camera.onPhoto = { [weak self] image in
+        guard let self = self, self.token == active else { return }; self.encode(image)
+      }
+      camera.onBarcode = { [weak self] code in
+        guard let self = self, self.token == active else { return }; self.finish(["barcode": code])
+      }
+      camera.onCancel = { [weak self] in
+        guard let self = self, self.token == active else { return }; self.finish(nil)
+      }
       camera.onLibrary = { [weak self, weak camera] in
+        guard self?.token == active else { return }
         camera?.dismiss(animated: !UIAccessibility.isReduceMotionEnabled) {
+          guard self?.token == active else { return }
           self?.controller = nil; self?.showLibrary()
         }
       }
-      camera.onFailure = { [weak self] in self?.finish(FlutterError(code: "camera", message: "Could not start the camera. Try again or choose a photo.", details: nil)) }
+      camera.onFailure = { [weak self] in
+        guard let self = self, self.token == active else { return }
+        self.finish(FlutterError(code: "camera", message: "Could not start the camera. Try again or choose a photo.", details: nil))
+      }
       present(camera)
       return
     }
@@ -107,6 +119,7 @@ final class NativeScanCamera: NSObject, UIImagePickerControllerDelegate, UINavig
   }
   func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { finish(nil) }
   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+    guard controller === picker, result != nil else { return }
     guard let image = info[.originalImage] as? UIImage else { finish(FlutterError(code: "photo", message: "Could not read this photo.", details: nil)); return }
     encode(image)
   }
