@@ -1,8 +1,26 @@
-## November 9: compact organization menu correction in progress
+## November 9: compact organization menu correction uploaded
 
-Lane `fix/compact-organization-menu-216`, based on build215. Correct the oversized
-grouped-table padding in the native organization popover only. Keep every row
-action, account guard, and all other native sheets unchanged.
+Apple acknowledged TestFlight 1.1.3 (216), delivery
+`471fcc9c-67ca-4b41-b20a-fdb229d2f735`. Runtime
+`27bfcb067f1f579815e954993a35ea59f7333510`; all five CI jobs passed
+(42771665647). PR381, branch `fix/compact-organization-menu-216`.
+
+The user reported that build215's grouped native organization table had excessive
+blank bands. The popover now uses a single plain native list with no empty section
+spacing, regular 16-point system text, consistent icon alignment and content-sized
+height. Existing choices/actions, other native sheets and all chat/scan logic stay
+unchanged. The synthetic preview includes a long organization name.
+
+All 1,375 Flutter tests passed with one existing skip; analysis clean. Native
+simulator checks covered light/dark, long names, accessibility-large text,
+organization/Personal selection, creation open/cancel, invitation navigation and
+outside dismissal. No customer writes. Disposable simulator removed. Physical
+TestFlight acceptance remains pending.
+
+Signed package signatures, production configuration, 33 device executables in
+both archive/export and 27 privacy manifests passed verification. Apple validation
+and upload passed. Processing/tester availability are pending, not polled. Public
+App Store submission is unchanged. Receipt: `docs/plans/mobile216-release.json`.
 
 ## November 9: native home and invitation polish uploaded
 

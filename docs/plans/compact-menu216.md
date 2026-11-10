@@ -18,4 +18,7 @@ accessibility-large text sizes. Organization/Personal switching, selection check
 creation open/cancel, invitation navigation and outside dismissal were inspected.
 No customer account or data was used. Physical device acceptance remains pending.
 
-Signed TestFlight 1.1.3 (216) is being prepared. Public submission is unchanged.
+Apple acknowledged signed TestFlight 1.1.3 (216), delivery
+`471fcc9c-67ca-4b41-b20a-fdb229d2f735`. All five CI checks passed for runtime
+`27bfcb067f1f579815e954993a35ea59f7333510`. Processing/tester availability are
+pending, not polled. Public submission is unchanged. See `mobile216-release.json`.
