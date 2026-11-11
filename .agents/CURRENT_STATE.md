@@ -1,3 +1,16 @@
+## November 10 - Gmail purchase integration candidate
+
+User selected each shopper's Gmail instead of mail forwarding. Read-only Google
+OAuth/PKCE, encrypted tokens and queued bodies, filtered scheduled Amazon email
+imports, conservative quantity evidence, review UI and disconnect/purge are built.
+No mailbox messages or physical stock are mutated. New two-table/three-function
+migration is NOT applied. Google project/client, public verification, gateway data
+handling, callback proxy fixes and live consent/worker acceptance remain pending.
+Full local checks: 1,698 backend tests + 10 subtests, 358 web tests, TypeScript/lint,
+compile-only webpack with synthetic env/fonts, and 47 disposable SQL assertions.
+Compile artifacts must not be deployed. No actual Gmail has been read.
+See docs/plans/gmail-purchases.md and commerce handoff.
+
 ## November 10 - Commerce deployed, provider activation pending
 
 `feat/commerce-connectors` adds disabled-by-default Shopify merchant and Amazon
@@ -12,7 +25,7 @@ implemented with account/inventory guards and single-exchange callbacks. The use
 approved and deployed the five-table/three-function migration plus backend/web
 release at 04:34:44 UTC November 11. No provider app installation, server credentials
 or live store synchronization exists yet.
-Amazon setup pending. Consumer CSV is API-only; no mobile/FIND integration yet.
+Amazon seller developer account/sandbox now exist, but no live seller tokens. The user clarified US consumer purchases and selected Gmail OAuth. Gmail implementation is a separate, not-deployed candidate; see docs/plans/gmail-purchases.md. Consumer CSV is API-only; no mobile/FIND integration yet.
 Web validation: 353 tests/47 suites, TypeScript, changed-file lint, compile-only
 webpack build and callback header manifest checks pass. Safari fixtures inspected
 at desktop/390px in light/dark. Local HTTP bind denied by sandbox; no live OAuth

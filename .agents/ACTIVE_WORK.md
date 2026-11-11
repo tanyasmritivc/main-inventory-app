@@ -8,7 +8,7 @@ Connections screen and OAuth callbacks here; these are implemented in the isolat
 branch. No CAD, canonical inventory, chat or mobile changes. Shopify organization,
 FindEZ Connect app and development store
 exist; secret remains in Shopify, with server configuration and test connection
-pending. Amazon developer registration has not started.
+pending. Amazon seller sandbox exists, but the user clarified US personal shopping accounts. This lane now owns consumer Gmail OAuth (commerce Gmail/email service, private queue migration, workers, tests and Connections UI); no seller identity onboarding. The user replaced forwarding with Gmail; company email/Resend are out of scope. Gmail candidate validation passes; production activation and Google project/app setup remain pending. See docs/plans/gmail-purchases.md.
 User approved and deployed the private schema plus backend/web release. Commerce
 remains disabled pending provider setup and correction of the public proxy's
 callback Referrer-Policy override. Available SSH logins cannot access that proxy.

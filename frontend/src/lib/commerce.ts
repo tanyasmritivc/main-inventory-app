@@ -8,7 +8,8 @@ export type CommerceConnection = {
   region: string; marketplace: string; status: string; scopes: string[];
   last_sync_at: string | null;
 };
-export type CommerceCapabilities = { providers: { provider: CommerceProvider; configured: boolean }[] };
+export type CommerceCapabilities = { providers: { provider: CommerceProvider; configured: boolean }[];
+  amazon_gmail?: { configured: boolean; mode: "gmail_oauth" } };
 export type CommerceRecord = {
   kind: "catalog_variant" | "merchant_stock" | "sale_line" | "purchase_line";
   external_id: string; observed_at: string;

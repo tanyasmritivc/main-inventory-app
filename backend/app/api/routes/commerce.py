@@ -21,7 +21,10 @@ from app.services.commerce.purchase_import import MAX_BYTES, preview
 from app.services.commerce.security import digest, seal, shop_domain, unseal, validate_shopify_callback
 from app.services.commerce.webhooks import verified_event
 
+from app.api.routes.purchase_email import router as purchase_email_router
+
 router = APIRouter(prefix='/commerce', tags=['commerce'])
+router.include_router(purchase_email_router)
 
 
 @router.post('/webhooks/shopify')
@@ -95,7 +98,13 @@ def capabilities(user: AuthenticatedUser = Depends(get_current_user)):
         result.append({'provider': provider, 'configured': ready,
                        'mode': 'purchase_csv' if provider == 'amazon_consumer' else 'merchant_oauth',
                        'physical_stock_writes': False})
-    return {'providers': result, 'shopify_buyer': 'not_implemented', 'consumer_cart': 'not_implemented'}
+    try:
+        cfg.require_gmail()
+        gmail_ready = True
+    except HTTPException:
+        gmail_ready = False
+    return {'providers': result, 'amazon_gmail': {'configured': gmail_ready, 'mode': 'gmail_oauth'},
+            'shopify_buyer': 'not_implemented', 'consumer_cart': 'not_implemented'}
 
 
 @router.get('/connections')
@@ -215,6 +224,10 @@ def source_records(connection_id: UUID, offset: int = Query(0, ge=0, le=1000000)
 def disconnect(connection_id: UUID, purge: bool = False, user: AuthenticatedUser = Depends(get_current_user)):
     # Owners can remove their credentials even when feature configuration or
     # inventory access is subsequently revoked. This never deletes physical items.
+    c = repo.connection(connection_id, user.user_id, require_access=False)
+    if c['provider'] == 'amazon_consumer' and c['status'] == 'connected':
+        from app.services.commerce import gmail
+        gmail.disconnect(user.user_id, c['inventory_id'], purge)
     return repo.transition(user.user_id, connection_id, 'disconnect', {'purge': purge})
 
 

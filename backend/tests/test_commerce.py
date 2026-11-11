@@ -309,10 +309,24 @@ def test_consumer_confirm_checksum_and_explicit_commit(client):
 
 def test_disconnect_works_without_inventory_access_or_provider_configuration(client):
     with patch.object(commerce, 'settings', return_value=CommerceSettings()), \
+         patch.object(commerce.repo, 'connection', return_value=CONNECTION) as lookup, \
          patch.object(commerce.repo, 'transition', return_value={'status':'disconnected','purged':True}) as mutation:
         result = client.delete(f'/commerce/connections/{CID}?purge=true')
     assert result.status_code == 200
     assert mutation.call_args.args == (ACTOR, UUID(CID), 'disconnect', {'purge': True})
+    assert lookup.call_args.kwargs == {'require_access': False}
+
+
+@pytest.mark.parametrize('status', ['connected', 'disconnected'])
+def test_consumer_disconnect_revokes_only_the_current_gmail_connection(client, status):
+    with patch.object(commerce.repo, 'connection', return_value={**CONNECTION, 'provider': 'amazon_consumer', 'status': status}), \
+         patch.object(commerce.repo, 'transition', return_value={'status': 'disconnected'}), \
+         patch('app.services.commerce.gmail.disconnect') as gmail_disconnect:
+        assert client.delete(f'/commerce/connections/{CID}').status_code == 200
+        if status == 'connected':
+            gmail_disconnect.assert_called_once_with(ACTOR, INVENTORY, False)
+        else:
+            gmail_disconnect.assert_not_called()
 
 
 def webhook(body, topic='customers/redact'):

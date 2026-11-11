@@ -93,3 +93,4 @@ SELECT pg_temp.check((SELECT token_ciphertext IS NULL AND status='disconnected' 
 SELECT findez_commerce_shopify_event('privacy.myshopify.com','shop/redact','event4',now());
 SELECT pg_temp.check((SELECT count(*)=0 FROM commerce_connections),'shop redaction removes disconnected accounts');
 SELECT pg_temp.check((SELECT count(*)=0 FROM commerce_order_redactions),'shop redaction removes suppression metadata');
+\ir purchase_email.sql

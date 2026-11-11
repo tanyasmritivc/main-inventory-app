@@ -18,8 +18,16 @@ class CommerceSettings(BaseSettings):
     amazon_application_id: str | None = None
     amazon_redirect_uri: str | None = None
     amazon_draft: bool = True
+    gmail_enabled: bool = False
+    gmail_client_id: str | None = None
+    gmail_client_secret: SecretStr | None = None
+    gmail_redirect_uri: str | None = None
 
-    @field_validator('shopify_redirect_uri', 'amazon_redirect_uri')
+    def require_gmail(self):
+        if not self.gmail_enabled or not all((self.gmail_client_id, self.gmail_client_secret, self.gmail_redirect_uri, self.encryption_key)):
+            raise HTTPException(503, 'Gmail purchase imports are not enabled yet.')
+
+    @field_validator('shopify_redirect_uri', 'amazon_redirect_uri', 'gmail_redirect_uri')
     @classmethod
     def https_callback(cls, value):
         if value is not None:

@@ -4,7 +4,7 @@ Status: backend, merchant web UI and private schema deployed with explicit user
 authorization November 10, 2026. Commerce remains disabled pending the public
 callback header correction and provider credentials/configuration. Shopify dev
 resources exist; no live connection, browser extension, mobile UI or provider
-approval is claimed. Amazon registration is pending. Release and remaining work:
+approval is claimed. Amazon seller account/sandbox now exist; consumer Gmail implementation is described in `gmail-purchases.md` and is not yet deployed. Release and remaining work:
 `commerce-production-rollout.md` and `commerce-edge-proxy.md`.
 
 ## Shopify setup receipt - November 10, 2026

@@ -36,7 +36,7 @@ and FindEZ Connect app 446104666113, active configuration commerce-dev-1. See th
 setup receipt in the contract for dashboard URLs and exact settings. Client secret
 remains unrevealed in Shopify; no FindEZ server credentials were configured.
 
-Amazon registration, Shopify distribution/webhook subscriptions, test installation,
+Shopify distribution/webhook subscriptions, test installation,
 live sync, public proxy callback correction and FIND binding remain
 pending. The user approved the schema/backend/web deployment, completed at
 04:34:44 UTC November 11. No outbound messages have been sent. All five CI
@@ -57,3 +57,28 @@ same-origin; two available SSH routes rejected authentication. See
 made, and no provider secret/encryption key was configured. Future changes must
 preserve other terminals' live source and the now-deployed commerce files. Do not expose
 the private server-only database backup, environment copies or raw logs.
+
+## Consumer Gmail continuation
+
+The user clarified personal US Amazon shopping accounts, then chose Gmail OAuth
+instead of forwarding. Forwarding/Resend/company mail setup was withdrawn before
+any deployment, account creation, DNS/mail routing or message access.
+
+Amazon SP-API sandbox **FindEZ Connect Sandbox** was created in the FindEZ AI
+account before that clarification; this does not provide consumer purchases. Its
+secret remains unrevealed and no refresh token or seller API call was made. The
+seller identity form is unfinished and should not be continued for this feature.
+
+Gmail code, migration, worker commands, limits and activation gates are described
+in docs/plans/gmail-purchases.md. New migration is unapproved/unapplied; server
+credentials and real OAuth acceptance are pending. Own new purchase_email route,
+service, migration/tests plus gmail service/client/callback files. Preserve other
+lanes. Canonical item reconciliation and chat binding remain the foundation lane.
+
+Local 1,698 backend tests + ten subtests, 358 web tests, TypeScript/lint and
+compile-only webpack pass. Disposable PostgreSQL tests apply migrations twice;
+47 assertions pass; temporary container removed. The compile used synthetic
+environment/fonts and must not be deployed. SQL test used no production data.
+Google Cloud project FindEZ Connect (`findez-connect`, number 757329840369) was created under findezai@gmail.com and verified. Gmail API is enabled. OAuth branding was created after explicit policy acceptance approval; external/testing, support findezai@gmail.com, developer contact info@findez.ai. No client created. Search Console was initially
+mistaken for a Cloud project. Do not create a second project without checking the
+latest UI and setup receipt. Never expose OAuth secrets or user email contents.

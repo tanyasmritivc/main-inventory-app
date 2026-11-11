@@ -8,6 +8,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { ApiError } from "@/lib/api";
 import { prepareCommerceRedirect, providerLabel, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider } from "@/lib/commerce";
 import styles from "./commerce-client.module.css";
+import { PurchaseEmailClient } from "./purchase-email-client";
 
 const marketplaces = [
   ["na", "ATVPDKIKX0DER", "United States"], ["na", "A2EUQ1WTGCTBG2", "Canada"], ["na", "A1AM78C64UM0Y8", "Mexico"],
@@ -123,12 +124,14 @@ function InventoryCommerce({ inventory }: { inventory: InventorySelection }) {
   const configured = (provider: OAuthProvider) => capabilities?.providers.some((entry) => entry.provider === provider && entry.configured) ?? false;
   return <div className={styles.page}>
     <header><p className={styles.eyebrow}>FindEZ Connect</p><h1>Connections</h1>
-      <p>Bring store products, stock, and sales into <strong>{inventory.name}</strong>. Connected data is private to your FindEZ account.</p>
+      <p>Bring purchases and store information into <strong>{inventory.name}</strong>. Connected data is private to your FindEZ account.</p>
       <p>Store stock and purchase records are separate from physically verified inventory.</p>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     {loading && <p role="status">Loading connections...</p>}
+    <PurchaseEmailClient accountId={inventory.accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
+      available={!!capabilities?.amazon_gmail} request={request} />
     <div className={styles.grid}>
       <section className={styles.card}><h2>Shopify store</h2><p>Read your store&apos;s product catalog, available stock, and recent sales.</p>
         {!loading && !configured("shopify") && <p className={styles.hint}>Shopify connections are not enabled yet.</p>}
