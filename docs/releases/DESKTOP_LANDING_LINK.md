@@ -62,3 +62,11 @@ Only sections.js differs from that release. Active directory:
 /home/ubuntu/findez-desktop-auth-nav-20261111/frontend. Rollback: remove only
 zzzzzzzzzzzzzz-desktop-auth-nav.conf, daemon-reload and restart findez-web.
 No backend, database, mobile, or authentication logic changes.
+
+## Follow-up: Header action order
+
+Swapped Sign in to the left and Apple-logo Download to the right, preserving
+styles, destinations and mobile menu. Production build and live 1440/390px browser
+checks passed, including exact link order and sign-in/sign-up navigation.
+Only sections.js changed in release /home/ubuntu/findez-nav-order-20261111/frontend.
+Rollback: remove only zzzzzzzzzzzzzzz-nav-order.conf, reload and restart findez-web.

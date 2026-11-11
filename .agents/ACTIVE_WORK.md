@@ -1,3 +1,10 @@
+## November 11 - Header action order
+
+Swapped desktop header actions: Sign in first, Apple-logo Download second.
+Styles and mobile menu unchanged. Production build and live 1440/390px browser
+checks passed, including exact link order and sign-up navigation.
+Active release: /home/ubuntu/findez-nav-order-20261111/frontend.
+
 ## November 11 - Two header actions
 
 Header now has Apple-logo Download and primary Sign in; removed Get started free
