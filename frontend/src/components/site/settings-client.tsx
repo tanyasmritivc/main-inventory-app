@@ -393,7 +393,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
         </footer>
       </section>}
 
-      {section === "profile" && <section className="settings-panel"><header><h2>Connections</h2></header><div className="settings-row"><div><strong>Amazon &amp; Shopify</strong><small>Manage your purchase and store connections.</small></div><Link href="/settings/connections" className="workspace-button">Manage connections</Link></div></section>}
+      {section === "profile" && <section className="settings-panel"><header><h2>Connections</h2></header><div className="settings-row"><div><strong>Amazon &amp; Shopify</strong><small>Manage private Personal purchases or organization connections. Choose an inventory only when adding items you still own.</small></div><Link href="/settings/connections" className="workspace-button">Manage connections</Link></div></section>}
 
       {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Appearance</h2></header>
         <div className="settings-static-row">

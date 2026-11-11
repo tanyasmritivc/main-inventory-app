@@ -1,4 +1,4 @@
-"""Actor-private, inventory-bound commerce connections. No physical stock writes."""
+"""Personal or organization-owned commerce connections. No physical stock writes."""
 import hmac
 import re
 import secrets
@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from starlette.concurrency import run_in_threadpool
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.limiter import limiter
@@ -54,7 +54,17 @@ def privacy_exports(connection_id: UUID, user: AuthenticatedUser = Depends(get_c
 
 class ConnectRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    inventory_id: UUID
+    inventory_id: UUID | None = None  # Legacy clients only.
+    scope_type: Literal['personal', 'organization'] = 'personal'
+    organization_id: UUID | None = None
+
+    @model_validator(mode='after')
+    def validate_owner(self):
+        if self.inventory_id and (self.scope_type != 'personal' or self.organization_id):
+            raise ValueError('Inventory and owner scope cannot be combined.')
+        if (self.scope_type == 'organization') != (self.organization_id is not None):
+            raise ValueError('Choose Personal or an organization.')
+        return self
     provider: Provider
     external_account: str = Field(default='', max_length=200)
     region: Literal['na', 'eu', 'fe'] = 'na'
@@ -108,16 +118,22 @@ def capabilities(user: AuthenticatedUser = Depends(get_current_user)):
 
 
 @router.get('/connections')
-def list_connections(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+def list_connections(inventory_id: UUID | None = None, scope_type: Literal['personal', 'organization'] = 'personal',
+                     organization_id: UUID | None = None, user: AuthenticatedUser = Depends(get_current_user)):
     settings().require()
-    return {'connections': repo.connections(inventory_id, user.user_id)}
+    if inventory_id and (scope_type != 'personal' or organization_id):
+        raise HTTPException(422, 'Inventory and owner scope cannot be combined.')
+    return {'connections': repo.connections(inventory_id, user.user_id) if inventory_id else repo.connections(None, user.user_id, scope_type, organization_id)}
 
 
 @router.post('/connections')
 @limiter.limit('5/minute')
 def connect(request: Request, body: ConnectRequest, user: AuthenticatedUser = Depends(get_current_user)):
     settings().require(body.provider)
-    repo.authorize(body.inventory_id, user.user_id)
+    if body.inventory_id:
+        repo.authorize(body.inventory_id, user.user_id)
+    else:
+        repo.authorize_scope(body.scope_type, body.organization_id, user.user_id)
     account = body.external_account
     if body.provider == 'shopify':
         account = shop_domain(account)
@@ -125,15 +141,15 @@ def connect(request: Request, body: ConnectRequest, user: AuthenticatedUser = De
         if not re.fullmatch(r'[A-Z0-9]{5,32}', account) or body.marketplace not in REGIONS[body.region][2]:
             raise HTTPException(422, 'Use a valid seller ID and supported marketplace for the chosen region.')
     else:
-        account = digest(user.user_id + ':' + str(body.inventory_id))
+        account = digest(user.user_id + ':' + str(body.inventory_id)) if body.inventory_id else digest(body.scope_type + ':' + (str(body.organization_id) if body.organization_id else user.user_id))
     state = secrets.token_urlsafe(32)
     url = None
     if body.provider != 'amazon_consumer':
         seal({}, 'configuration-check')
         url = authorization_url(body.provider, account, body.region, state)
-    c = repo.start(user.user_id, body.inventory_id, body.provider, account,
-                   body.region if body.provider == 'amazon_seller' else '',
-                   body.marketplace if body.provider == 'amazon_seller' else '', digest(state))
+    args = (body.provider, account, body.region if body.provider == 'amazon_seller' else '',
+            body.marketplace if body.provider == 'amazon_seller' else '', digest(state))
+    c = repo.start(user.user_id, body.inventory_id, *args) if body.inventory_id else repo.start_scoped(user.user_id, body.scope_type, body.organization_id, *args)
     return {'connection': repo.public(c), 'authorization_url': url, 'expires_in': 600 if url else None}
 
 
@@ -225,7 +241,7 @@ def disconnect(connection_id: UUID, purge: bool = False, user: AuthenticatedUser
     # Owners can remove their credentials even when feature configuration or
     # inventory access is subsequently revoked. This never deletes physical items.
     c = repo.connection(connection_id, user.user_id, require_access=False)
-    if c['provider'] == 'amazon_consumer' and c['status'] == 'connected':
+    if c['provider'] == 'amazon_consumer' and c['status'] == 'connected' and c.get('inventory_id'):
         from app.services.commerce import gmail
         gmail.disconnect(user.user_id, c['inventory_id'], purge)
     return repo.transition(user.user_id, connection_id, 'disconnect', {'purge': purge})
@@ -256,9 +272,15 @@ async def purchase_file(request: Request, connection_id: UUID, file: UploadFile 
 
 @router.post('/purchase-file/preview')
 @limiter.limit('10/minute')
-async def preview_purchase_file(request: Request, inventory_id: UUID = Form(...), file: UploadFile = File(...),
+async def preview_purchase_file(request: Request, inventory_id: UUID | None = Form(None), file: UploadFile = File(...),
+                                scope_type: Literal['personal', 'organization'] = Form('personal'), organization_id: UUID | None = Form(None),
                                 user: AuthenticatedUser = Depends(get_current_user)):
     settings().require('amazon_consumer')
-    await run_in_threadpool(repo.authorize, inventory_id, user.user_id)
+    if inventory_id:
+        if scope_type != 'personal' or organization_id:
+            raise HTTPException(422, 'Inventory and owner scope cannot be combined.')
+        await run_in_threadpool(repo.authorize, inventory_id, user.user_id)
+    else:
+        await run_in_threadpool(repo.authorize_scope, scope_type, organization_id, user.user_id)
     result = await run_in_threadpool(preview, await file.read(MAX_BYTES + 1))
     return {**result, 'committed': False}

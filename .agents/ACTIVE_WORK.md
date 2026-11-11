@@ -1,3 +1,12 @@
+## November 11 - Connection ownership correction (candidate, approval pending)
+
+Owner: feat/connection-ownership, findez-amazon-history worktree. Personal and
+Organization connections, no inventory gate; website entry points and exact
+instructions updated. Database ownership migration and service checks prepared;
+production remains unchanged until explicit migration authorization. Current live
+source overlay preserves newer CAD/auth/navigation work. See
+`docs/plans/connection-ownership.md` for tests, rollout and acceptance still needed.
+
 ## November 11 - Amazon order-history import (deployed)
 
 User replaced the primary Gmail flow with one-time Amazon CSV/ZIP upload.

@@ -245,12 +245,12 @@ def test_feature_disabled_does_not_claim_provider_ready():
     assert all(not p['configured'] for p in result['providers'])
 
 
-def test_private_connection_query_filters_actor_and_inventory_access():
+def test_legacy_connection_checks_actor_and_inventory_access():
     query = MagicMock()
-    query.table.return_value.select.return_value.eq.return_value.eq.return_value.limit.return_value.execute.return_value.data = [CONNECTION]
+    query.table.return_value.select.return_value.eq.return_value.limit.return_value.execute.return_value.data = [CONNECTION]
     with patch.object(repository, 'get_supabase_raw', return_value=query), patch.object(repository, 'authorize') as access:
         repository.connection(CID, ACTOR)
-    query.table.return_value.select.return_value.eq.return_value.eq.assert_called_once_with('actor_id', ACTOR)
+    query.table.return_value.select.return_value.eq.assert_called_once_with('id', CID)
     access.assert_called_once_with(INVENTORY, ACTOR)
     assert 'token_ciphertext' not in repository.public({**CONNECTION, 'token_ciphertext':'secret'})
 

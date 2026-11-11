@@ -1,3 +1,13 @@
+## November 11 - Connections belong to Personal or Organization
+
+User requested this correction throughout the website. Imports are historical
+purchase evidence, never automatic inventory stock. Only current organization
+owners/admins manage that organization's connections; personal records do not
+become shared through membership or switching the UI owner. Existing records
+retain their IDs and stay private, with revoked inventory access preserved.
+Candidate migration pending explicit production authorization; see
+`docs/plans/connection-ownership.md` and `docs/guides/connections.md`.
+
 ## November 11 - Amazon purchases start with a file import
 
 User chose a one-time Amazon order-history download/upload as the primary consumer

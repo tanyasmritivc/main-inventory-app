@@ -57,3 +57,23 @@ test("late preview after unmount does not create or save", async () => {
   const view = mount(); choose(); fireEvent.click(screen.getByRole("button", { name: "Preview order history" })); view.unmount();
   resolve(preview); await waitFor(() => expect(request).toHaveBeenCalledTimes(1)); expect(saved).not.toHaveBeenCalled();
 });
+
+test('personal scope preview and save work without inventory selection', async () => {
+  const scoped = {...connection, inventory_id:null, scope_type:'personal',organization_id:null};
+  request.mockImplementation(async (path: string) => path.endsWith('/preview') ? preview : path.includes('?') ? {connections:[scoped]} : {committed:true,count:1,sha256:preview.sha256,stock_effect:'none'});
+  render(<AmazonHistoryImport scope={{scope_type:'personal'}} configured loading={false} request={request} onSaved={saved} />);
+  choose(); fireEvent.click(screen.getByText('Preview order history')); await screen.findByText('Motor');
+  expect(request.mock.calls[0][1].body.get('scope_type')).toBe('personal');
+  expect(request.mock.calls[0][1].body.get('inventory_id')).toBeNull();
+  fireEvent.click(screen.getByText('Save purchase history')); await screen.findByText(/Saved 1 purchase records/);
+  expect(request).toHaveBeenCalledWith('/commerce/connections?scope_type=personal'); expect(saved).toHaveBeenCalledWith(scoped);
+});
+test('organization import rejects a returned personal destination before sending file', async () => {
+  request.mockImplementation(async (path: string) => path.endsWith('/preview') ? preview : path.includes('?') ? {connections:[]} : {connection:{...connection,inventory_id:null,scope_type:'personal'}});
+  render(<AmazonHistoryImport scope={{scope_type:'organization',organization_id:'org'}} ownerName="Team" configured loading={false} request={request} onSaved={saved} />);
+  choose(); fireEvent.click(screen.getByText('Preview order history')); await screen.findByText('Motor');
+  expect(screen.getByText(/Organization owners and administrators will/)).toBeTruthy();
+  fireEvent.click(screen.getByText('Save purchase history')); await screen.findByRole('alert');
+  expect(request.mock.calls.some(c=>c[0].endsWith('/purchase-file'))).toBe(false);
+  expect(request).toHaveBeenCalledWith('/commerce/connections',expect.objectContaining({body:{scope_type:'organization',organization_id:'org',provider:'amazon_consumer'}}));
+});

@@ -1,4 +1,4 @@
-import { Boxes, Building2, FileStack, FolderKanban, History, MapPin, Users, Home, Settings } from "lucide-react";
+import { Boxes, Building2, FileStack, FolderKanban, History, MapPin, Users, Home, Settings, Plug } from "lucide-react";
 import type { AppNavItem } from "@/components/site/app-sidebar";
 import type { InventoryWorkspace } from "@/lib/inventory-selection";
 
@@ -14,7 +14,7 @@ export function organizationNavigation(id: string, name: string, view: Organizat
   const home = `/organizations/${encodeURIComponent(id)}`;
   return { breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
     activeRoute: view === "people" ? `${home}?view=people` : home,
-    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }] };
+    items: [{ label: "Connections", route: `/settings/connections?organization=${encodeURIComponent(id)}`, icon: Plug, section: "Organization" }, { label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }] };
 }
 export function workspaceNavigation(workspace: InventoryWorkspace, view: WorkspaceView): NavigationContext {
   const home = `/workspaces/${encodeURIComponent(workspace.workspace_id)}`;

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { accountRequest } from "@/lib/account-request";
 import { ApiError } from "@/lib/api";
-import type { CommerceConnection, ConnectResult } from "@/lib/commerce";
+import { matchesScope, scopeQuery, type ConnectionScope, type CommerceConnection, type ConnectResult } from "@/lib/commerce";
 import styles from "./commerce-client.module.css";
 
 type Purchase = { external_id: string; order_id: string; title: string; asin: string | null;
@@ -21,8 +21,8 @@ function importError(reason: unknown) {
   return reason instanceof Error ? reason.message : "The import could not be confirmed. You can retry the same file without duplicating matching purchases.";
 }
 
-export function AmazonHistoryImport({ inventoryId, configured, loading, request, onSaved }: {
-  inventoryId: string; configured: boolean; loading: boolean; request: Request;
+export function AmazonHistoryImport({ inventoryId, scope, ownerName = "Personal", configured, loading, request, onSaved }: {
+  inventoryId?: string; scope?: ConnectionScope; ownerName?: string; configured: boolean; loading: boolean; request: Request;
   onSaved: (connection: CommerceConnection) => Promise<void>;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -43,19 +43,20 @@ export function AmazonHistoryImport({ inventoryId, configured, loading, request,
     try {
       const body = new FormData(); body.append("file", file);
       if (!save) {
-        body.append("inventory_id", inventoryId);
+        if (scope) { body.append("scope_type", scope.scope_type); if (scope.organization_id) body.append("organization_id", scope.organization_id); }
+        else body.append("inventory_id", inventoryId!);
         const result = await request<Preview>("/commerce/purchase-file/preview", { method: "POST", body });
         if (alive.current) { setPreview(result); setVisible(20); }
       } else {
         // A lost create response is recoverable: look up the actor's existing
         // destination before every save, rather than creating a second import.
-        const existing = await request<{ connections: CommerceConnection[] }>(`/commerce/connections?inventory_id=${encodeURIComponent(inventoryId)}`);
-        let connection = existing.connections.find(c => c.provider === "amazon_consumer" && c.status === "connected");
+        const existing = await request<{ connections: CommerceConnection[] }>(`/commerce/connections?${scope ? scopeQuery(scope) : `inventory_id=${encodeURIComponent(inventoryId!)}`}`);
+        let connection = existing.connections.find(c => c.provider === "amazon_consumer" && c.status === "connected" && (!scope || matchesScope(c, scope)));
         if (!connection) {
-          const result = await request<ConnectResult>("/commerce/connections", { method: "POST", body: { inventory_id: inventoryId, provider: "amazon_consumer" } });
+          const result = await request<ConnectResult>("/commerce/connections", { method: "POST", body: { ...(scope || { inventory_id: inventoryId }), provider: "amazon_consumer" } });
           connection = result.connection;
         }
-        if (connection.provider !== "amazon_consumer" || connection.inventory_id !== inventoryId || connection.status !== "connected") throw new Error("The import destination could not be verified. Refresh Connections.");
+        if (connection.provider !== "amazon_consumer" || (scope ? !matchesScope(connection, scope) : connection.inventory_id !== inventoryId) || connection.status !== "connected") throw new Error("The import destination could not be verified. Refresh Connections.");
         body.append("confirmed_sha256", preview!.sha256);
         const result = await request<{ committed: boolean; count: number; sha256: string; stock_effect: string }>(`/commerce/connections/${connection.id}/purchase-file`, { method: "POST", body });
         if (!result.committed || result.sha256 !== preview!.sha256 || result.stock_effect !== "none") throw new Error("Import was not confirmed. Refresh your records before retrying.");
@@ -87,6 +88,7 @@ export function AmazonHistoryImport({ inventoryId, configured, loading, request,
     {!preview && <button className={styles.primary} disabled={!file || busy || loading || !configured} onClick={() => void upload(false)}>Preview order history</button>}
     {preview && <div aria-label="Order history preview">
       <h3>{preview.count} purchase records · {preview.order_count} orders</h3>
+      <p>Saving to <strong>{ownerName}</strong>. {scope?.scope_type === "organization" ? "Organization owners and administrators will be able to view these purchases." : "Only you can view these purchases."}</p>
       <p>No purchases have been saved yet. Quantities are ordered units or packs, not a count of what you still own.</p>
       {preview.duplicates_in_file > 0 && <p>{preview.duplicates_in_file} identical rows in the file were ignored.</p>}
       <div className={styles.tableWrap}><table><thead><tr><th>Product / order</th><th>Ordered</th><th>Quantity</th><th>Status</th></tr></thead>

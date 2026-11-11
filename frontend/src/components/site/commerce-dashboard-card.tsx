@@ -2,12 +2,12 @@ import Link from "next/link";
 import { ArrowUpRight, Plug } from "lucide-react";
 import styles from "./commerce-dashboard-card.module.css";
 
-export function CommerceDashboardCard({ inventoryId }: { inventoryId: string }) {
+export function CommerceDashboardCard({ organizationId }: { inventoryId?: string; organizationId?: string }) {
   return (
     <Link
       id="findez-connect"
       className={`${styles.card} theme-card`}
-      href={`/inventory/connect?inventory=${encodeURIComponent(inventoryId)}`}
+      href={organizationId ? `/settings/connections?organization=${encodeURIComponent(organizationId)}` : "/settings/connections"}
       aria-label="Open Amazon and Shopify connections"
     >
       <span className={`theme-tool-icon ${styles.icon}`}><Plug size={22} aria-hidden="true" /></span>

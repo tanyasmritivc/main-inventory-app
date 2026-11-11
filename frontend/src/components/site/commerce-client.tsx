@@ -6,7 +6,7 @@ import { activeInventory, assertInventory, type InventorySelection } from "@/lib
 import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { ApiError } from "@/lib/api";
-import { prepareCommerceRedirect, providerLabel, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider, type CommerceProvider } from "@/lib/commerce";
+import { prepareCommerceRedirect, providerLabel, scopeQuery, type ConnectionScope, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider, type CommerceProvider } from "@/lib/commerce";
 import styles from "./commerce-client.module.css";
 import { AmazonHistoryImport } from "./amazon-history-import";
 import { PurchaseEmailClient } from "./purchase-email-client";
@@ -36,6 +36,15 @@ export function CommerceClient() {
 export function InventoryCommerce({ inventory, inventoryBinding = inventory, embedded = false }: {
   inventory: InventorySelection; inventoryBinding?: InventorySelection | null; embedded?: boolean;
 }) {
+  return <ScopedCommerce accountId={inventory.accountId} ownerName={inventory.name} inventory={inventory} inventoryBinding={inventoryBinding} embedded={embedded} />;
+}
+
+export function ScopedCommerce({ accountId, ownerName, scope, inventory, inventoryBinding = null, embedded = false }: {
+  accountId: string; ownerName: string; scope?: ConnectionScope; inventory?: InventorySelection;
+  inventoryBinding?: InventorySelection | null; embedded?: boolean;
+}) {
+  const destinationQuery = scope ? scopeQuery(scope) : `inventory_id=${encodeURIComponent(inventory!.inventory_id)}`;
+  const destinationBody = scope || { inventory_id: inventory!.inventory_id };
   const { confirmAction } = useAppDialog();
   const [capabilities, setCapabilities] = useState<CommerceCapabilities | null>(null);
   const [connections, setConnections] = useState<CommerceConnection[]>([]);
@@ -50,25 +59,25 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
   const lock = useRef(false), live = useRef(false), generation = useRef(0);
   const current = useCallback(() => {
     if (!live.current) throw new Error("This page is no longer active.");
-    assertInventory(inventoryBinding);
+    if (inventoryBinding) assertInventory(inventoryBinding);
   }, [inventoryBinding]);
   const request = useCallback(async <T,>(path: string, options: Parameters<typeof accountRequest>[2] = {}) => {
     current();
-    const value = await accountRequest<T>(inventory.accountId, path, options);
+    const value = await accountRequest<T>(accountId, path, options);
     current();
     return value;
-  }, [inventory, current]);
+  }, [accountId, current]);
   const reload = useCallback(async () => {
     const version = ++generation.current;
     setLoading(true);
     try {
       const caps = await request<CommerceCapabilities>("/commerce/capabilities");
       const result = caps.providers.some((p) => p.configured)
-        ? await request<{ connections: CommerceConnection[] }>(`/commerce/connections?inventory_id=${encodeURIComponent(inventory.inventory_id)}`)
+        ? await request<{ connections: CommerceConnection[] }>(`/commerce/connections?${destinationQuery}`)
         : { connections: [] };
       if (version === generation.current) { setCapabilities(caps); setConnections(result.connections); }
     } finally { if (live.current && version === generation.current) setLoading(false); }
-  }, [request, inventory.inventory_id]);
+  }, [request, destinationQuery]);
   useEffect(() => {
     let active = true;
     live.current = true;
@@ -80,7 +89,7 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(""); setNotice("");
     try { current(); await action(); }
-    catch (reason) { if (live.current && activeInventory() === inventoryBinding) setError(errorMessage(reason)); }
+    catch (reason) { if (live.current && (!inventoryBinding || activeInventory() === inventoryBinding)) setError(errorMessage(reason)); }
     finally { lock.current = false; if (live.current) setBusy(false); }
   }
   function connect(event: FormEvent, provider: OAuthProvider) {
@@ -90,13 +99,13 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
       sessionStorage.setItem("findez.commerce.check", "1"); sessionStorage.removeItem("findez.commerce.check");
       const market = marketplaces.find((entry) => entry[1] === marketplace)!;
       const result = await request<ConnectResult>("/commerce/connections", { method: "POST", body: {
-        inventory_id: inventory.inventory_id, provider, external_account: provider === "shopify" ? shop.trim().toLowerCase() : seller.trim(),
+        ...destinationBody, provider, external_account: provider === "shopify" ? shop.trim().toLowerCase() : seller.trim(),
         ...(provider === "amazon_seller" ? { region: market[0], marketplace: market[1] } : {}),
       } });
       // Retain the pending row on this page if navigation preparation fails.
       setConnections((values) => [...values, result.connection]);
-      await accountToken(inventory.accountId); current();
-      const url = prepareCommerceRedirect(result, inventory.accountId, inventory.inventory_id, window.location.origin, sessionStorage);
+      await accountToken(accountId); current();
+      const url = prepareCommerceRedirect(result, accountId, scope || inventory!.inventory_id, window.location.origin, sessionStorage);
       window.location.assign(url);
     });
   }
@@ -127,16 +136,16 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
   const configured = (provider: CommerceProvider) => capabilities?.providers.some((entry) => entry.provider === provider && entry.configured) ?? false;
   return <div className={styles.page}>
     <header>{!embedded && <><p className={styles.eyebrow}>FindEZ Connect</p><h1>Connections</h1></>}
-      <p>Bring purchases and store information into <strong>{inventory.name}</strong>. Connected data is private to your FindEZ account.</p>
+      <p>Connections belong to <strong>{ownerName}</strong>. {scope?.scope_type === "organization" ? "Records are shared with this organization’s owners and administrators. Upload only purchases intended for this organization." : "Your purchase history is private to you, including when you belong to an organization."}</p>
       <p>Store stock and purchase records are separate from physically verified inventory.</p>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     {loading && <p role="status">Loading connections...</p>}
-    <AmazonHistoryImport key={`${inventory.accountId}:${inventory.inventory_id}`} inventoryId={inventory.inventory_id}
+    <AmazonHistoryImport key={`${accountId}:${destinationQuery}`} inventoryId={inventory?.inventory_id} scope={scope} ownerName={ownerName}
       configured={configured("amazon_consumer")} loading={loading} request={request}
       onSaved={async connection => { await reload(); await readRecords(connection); }} />
-    {capabilities?.amazon_gmail?.configured && <details><summary>Optional Gmail purchase updates</summary><PurchaseEmailClient accountId={inventory.accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
+    {inventory && capabilities?.amazon_gmail?.configured && <details><summary>Optional Gmail purchase updates</summary><PurchaseEmailClient accountId={accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
       available={!!capabilities?.amazon_gmail} request={request} /></details>}
     <div className={styles.grid}>
       <section className={styles.card}><h2>Shopify store</h2><p>Read your store&apos;s product catalog, available stock, and recent sales.</p>
@@ -154,12 +163,13 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
         </form></section>
     </div>
     <section className={styles.card}><div className={styles.heading}><h2>Your connections</h2><button disabled={busy || loading} onClick={() => void perform(reload)}>Refresh</button></div>
-      {!loading && !connections.length && <p>No connections for this inventory yet.</p>}
+      {!loading && !connections.length && <p>No connections for this owner yet.</p>}
       {connections.map((connection) => <article key={connection.id} className={styles.connection}>
-        <h3>{providerLabel(connection.provider)}</h3><p className={styles.account}>{connection.provider === "amazon_consumer" ? "Order history import" : connection.external_account}</p>
+        <h3>{providerLabel(connection.provider)}</h3>{connection.inventory_id && <p>Previous inventory connection. These records remain private to you; viewing them requires access to the original inventory.</p>}<p className={styles.account}>{connection.provider === "amazon_consumer" ? "Order history import" : connection.external_account}</p>
         <p><strong>{connection.provider === "amazon_consumer" && connection.status === "connected" ? "Ready for uploads" : connection.status === "pending" ? "Awaiting authorization" : connection.status === "authorizing" ? "Checking authorization" : connection.status === "connected" ? "Connected" : "Disconnected"}</strong> / {date(connection.last_sync_at)}</p>
         {connection.status === "disconnected" && <p>Saved records are historical. They do not show current availability.</p>}
         {(connection.status === "pending" || connection.status === "authorizing") && <p>If authorization was interrupted, refresh to check its status. Disconnect this entry before starting again.</p>}
+        {connection.inventory_id && connection.provider === "amazon_consumer" && capabilities?.amazon_gmail?.configured && <PurchaseEmailClient accountId={accountId} inventoryId={connection.inventory_id} configured available request={request} />}
         <div className={styles.actions}>
           {connection.status === "connected" && connection.provider !== "amazon_consumer" && <>
             <button disabled={busy || loading || !configured(connection.provider)} onClick={() => sync(connection, connection.provider === "shopify" ? "catalog" : "stock")}>{connection.provider === "shopify" ? "Sync products and stock" : "Sync FBA stock"}</button>

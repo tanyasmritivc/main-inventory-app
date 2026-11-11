@@ -104,3 +104,18 @@ test("Amazon uses the seller callback and preserves its provider fields", async 
   await expect(completeCommerceCallback("amazon_seller", browser("?state=signed-state&selling_partner_id=SELLER123&spapi_oauth_code=seller-code"))).resolves.toContain(inventoryId);
   expect(accountRequest).toHaveBeenCalledWith("actor", expect.any(String), { method: "POST", body: { parameters: { state: "signed-state", selling_partner_id: "SELLER123", spapi_oauth_code: "seller-code" } } });
 });
+
+test('organization OAuth preserves owner and returns to organization Connections', async () => {
+  const scope = {scope_type:'organization' as const,organization_id:inventoryId};
+  const result=start(); result.connection={...result.connection,inventory_id:null,...scope};
+  prepareCommerceRedirect(result,'actor',scope,origin,sessionStorage);
+  expect(readPendingCommerce('shopify','signed-state',sessionStorage).scope).toEqual(scope);
+  jest.mocked(accountRequest).mockResolvedValue({connection:{...result.connection,status:'connected'}});
+  expect(await completeCommerceCallback('shopify',browser())).toBe(`/settings/connections?organization=${inventoryId}`);
+});
+test('OAuth completion cannot silently switch a personal connection into an organization', async () => {
+  const result=start(); result.connection={...result.connection,inventory_id:null,scope_type:'personal',organization_id:null};
+  prepareCommerceRedirect(result,'actor',{scope_type:'personal'},origin,sessionStorage);
+  jest.mocked(accountRequest).mockResolvedValue({connection:{...result.connection,status:'connected',scope_type:'organization',organization_id:inventoryId}});
+  await expect(completeCommerceCallback('shopify',browser())).rejects.toThrow(/not confirmed/);
+});

@@ -1,0 +1,57 @@
+{
+  "base": "/home/ubuntu/findez-amazon-history-20261111/frontend",
+  "files": {
+    "src/components/site/world-tools.tsx": {
+      "before": "6c13e2387c5594417b336b4ae41ff146e93f4164b46e26f2a6ceca72935d0d13",
+      "after": "6141712b4e1db2d9a06dbe29b8bff492b68b257ac7988a5446d78946c701f0a1"
+    },
+    "src/components/site/settings-connections.module.css": {
+      "before": "4748250f33beb3ac8e4a8dd809921faace024acc33c83c82b294ba73b75ed86d",
+      "after": "cb7982dd9de9b29f8cee3a1f331b8b4a47b977c00a0ec4bea0e9f4d53273b0cc"
+    },
+    "src/components/site/app-sidebar.tsx": {
+      "before": "f48b892f13f44ea31a85fdfcaf1448e113b0ee1b8befe4f6ba5970785405697b",
+      "after": "dddf47d912704f2a37f7b5d912f90c6535869f29797f454b28feea1198cb0f64"
+    },
+    "src/components/site/settings-client.tsx": {
+      "before": "bde72b2c4be472b0438d53a4f52a2728036241496cba4e5c8179ec63c92b012a",
+      "after": "2fee4e0b75df97b66f982411764c63a53d285cf7950c81b659e525947883a0fe"
+    },
+    "src/components/site/commerce-dashboard-card.tsx": {
+      "before": "8435e4df5eeb14c53f9074d722224236d56732df17aa13b28ab04f8742e21d84",
+      "after": "abb88272630f0b032bb158dded16c144d19193d03948f47051a24177a7b4ba82"
+    },
+    "src/components/site/commerce-client.tsx": {
+      "before": "065a5fc6f234f548215ba68b7266ad64940ca3efe75630957e0693b9491ad392",
+      "after": "cc006c0983a9902c220321517044d7cec7349390432fb4ed845a0f740ee73f97"
+    },
+    "src/components/site/amazon-history-import.tsx": {
+      "before": "bdb5fcf348ffe68fc9c361608319d9afc8cd5ec81817e7b8753750e9938e4fa8",
+      "after": "03afa8fb66860adb557dda4ea37a79af61cc25797d8f24d19484954d43412931"
+    },
+    "src/components/site/world-workspace.tsx": {
+      "before": "e41a2351d6c7733b0b2d926189d3e435849f82e57fcddab6f75ee7628c3e2198",
+      "after": "480ef7dfd6c08fb2e43741680d048b945b8f00ed2e9551d522962afa2d718b1e"
+    },
+    "src/components/site/chat-plus-menu.tsx": {
+      "before": "6afd6058670a2a8fe69487231e92d7963cf05e16e1b8a811eac3b396ec5a1b54",
+      "after": "ec85e99e3434a7630bac71fd853b6366d671a89ea554960337a8a3d61010a0c0"
+    },
+    "src/components/site/settings-connections.tsx": {
+      "before": "506d384a693df6a2322b35d032aeef5ef9f10ebf98c8e71db93e4a7d742f5358",
+      "after": "7dea8ccf78b16d0f1bbd1a991af9554feff7ba02195ca973077e7c7f2b8399d4"
+    },
+    "src/app/(workspace)/inventory/connect/page.tsx": {
+      "before": "e0f6789af6a2e683eaff24e692b63f03282ab8be91b779e719cab565b93cf61d",
+      "after": "6e47065b4519cc3bde1a2b10ed7fac0bc3c9cbf3fa94ebb77605d3adb70b6f66"
+    },
+    "src/lib/world-navigation.ts": {
+      "before": "2ddf2f1c102e00e57cc6d0bb2468428b13cb87a30adbe20968537a58614e6284",
+      "after": "2f87aa2501f6b75122d6e8b41369b2ae448665d5291c878f37712fe5a170fb3b"
+    },
+    "src/lib/commerce.ts": {
+      "before": "7e03b011aa7124795b3d11057d0ea724a4fcb7eebb3a6c3f5c8801373dba071f",
+      "after": "73354303369561f5ef60f727ca922b499fbdd3c320895321c077d88344523ec8"
+    }
+  }
+}
