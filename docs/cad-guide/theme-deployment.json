@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-11T22:26:25.656174+00:00",
+  "live": "/home/ubuntu/findez-cad-guide-theme-20261111/frontend",
+  "build_id": "_D73QJNK4OSydFmK6o2e8",
+  "changed_files": [
+    "src/lib/app-theme-constants.ts"
+  ],
+  "preserved_files": 602,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

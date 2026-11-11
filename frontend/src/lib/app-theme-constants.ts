@@ -35,8 +35,8 @@ export function isInteriorPath(pathname: string): boolean {
   return INTERIOR_PATH_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-// Public API docs share Appearance without becoming an authenticated product route.
-export const THEMED_PATH_PREFIXES = [...INTERIOR_PATH_PREFIXES, "/docs/api"];
+// Public setup/API docs share Appearance without becoming an authenticated product route.
+export const THEMED_PATH_PREFIXES = [...INTERIOR_PATH_PREFIXES, "/docs/api", "/docs/cad"];
 
 export function isThemedPath(pathname: string): boolean {
   return THEMED_PATH_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));

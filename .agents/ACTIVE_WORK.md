@@ -1691,3 +1691,9 @@ No backend/mobile/auth/dependency/environment changes. No inventory writes.
 CAD setup-guide font follow-up: scoped the guide to the existing app Inter font.
 Deployed `findez-cad-guide-font-20261111`; one CSS file changed, 602 preserved.
 Production build and served CSS verification passed. No functional changes.
+
+CAD setup-guide Appearance follow-up: /docs/cad now follows Light/Dark/System
+through the existing shared appearance system, including first paint. Deployed
+`findez-cad-guide-theme-20261111`; only route classification changed at runtime.
+Build, 12 appearance tests, and four mode checks against the live HTML script
+passed. Existing auth boundaries and marketing theme behavior preserved.

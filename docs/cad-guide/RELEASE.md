@@ -50,3 +50,15 @@ Only cad.module.css changed at runtime; 602 other frontend files preserved.
 Production build passed and the public guide stylesheet contains the exact new
 font rule. Safari actions timed out, so this follow-up was verified from the
 served HTML/CSS. See font-deployment.json.
+
+## Appearance setting follow-up
+
+Added /docs/cad to the existing shared themed routes. The guide now uses the
+FindEZ Light, Dark, or System setting through the root first-paint script and
+reactive document theme controller, including system-preference and cross-tab
+updates. The public guide remains accessible without sign-in.
+
+Only app-theme-constants.ts changed in production; 602 other files preserved.
+Production build passed, all 12 existing appearance tests passed, and the actual
+served initialization script passed Light/Dark and both System preference cases.
+See theme-deployment.json. No new manual browser appearance check was claimed.
