@@ -1,3 +1,11 @@
+## November 10: complete release readiness audit, build 220
+
+Active lane `fix/app-store-readiness-220`. Run complete host, database and native
+automated suites, investigate failures, audit App Store package and metadata,
+and prepare a signed production candidate. Physical-device checks remain separate
+from simulator results. No public App Review submission is authorized by this task.
+Evidence: `projects/findez-readiness220-private`.
+
 ## November 10: surface corrections and camera controls, build 219
 
 Active lane `fix/mobile-surfaces-camera-219`. Replace the unreliable organization

@@ -46,7 +46,13 @@ void main() {
     deletion.releaseAuditCapture = capture;
     profile.releaseAuditCapture = capture;
   }
-  group('Native workspace directory', hierarchy.main);
+  group('Native workspace directory', () {
+    // These assertions inspect Flutter invitation controls. UIKit invitation
+    // presentation is covered separately through the native inbox audit.
+    setUp(() => debugNativePresentationOverride = false);
+    tearDown(() => debugNativePresentationOverride = null);
+    hierarchy.main();
+  });
   group('Native organization navigation', workspace.main);
   group('Native move and deletion dialogs', deletion.main);
   group('Native organization leave', leave.main);

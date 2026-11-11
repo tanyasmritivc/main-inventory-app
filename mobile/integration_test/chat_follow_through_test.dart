@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 // Native rendering with synthetic APIs. Never writes customer inventory.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -7,6 +8,7 @@ import '../test/ask_page_test.dart' as chat;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   group('World creation and navigation', world.main);
   group('Action receipts', actions.main);
   group('Chat history and retry', chat.main);

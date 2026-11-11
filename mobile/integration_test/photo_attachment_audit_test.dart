@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../test/chat_photo_attachment_test.dart' as photos;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   photos.photoAuditCapture = (name) async {
     final boundary =
         find

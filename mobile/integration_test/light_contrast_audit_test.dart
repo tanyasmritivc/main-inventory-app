@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 // Runs existing user-flow fixtures on iOS and retains frames for visual review.
 import 'dart:io';
 import 'dart:typed_data';
@@ -26,6 +27,7 @@ Future<void> retainFrame(String name, Uint8List bytes) async {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   // Flutter's test driver cannot tap embedded UIKit controls. Their native
   // presentation is unchanged; this audit exercises the changed Flutter surfaces.
   debugNativePresentationOverride = false;

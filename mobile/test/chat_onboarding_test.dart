@@ -530,6 +530,7 @@ void main() {
       }
       final button = find.widgetWithText(FilledButton, 'Sign in');
       await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
       await tester.tap(button);
       await pump(tester, 2500);
       expect(find.byType(AuthPage), findsNothing);

@@ -110,6 +110,7 @@ void main() {
     ValueChanged<AskResourceLink>? onOpen,
     Map<String, dynamic>? creation,
   }) async {
+    final nativePixelRatio = t.view.devicePixelRatio;
     t.view.physicalSize = const Size(390, 844);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.resetPhysicalSize);
@@ -118,9 +119,14 @@ void main() {
       MaterialApp(
         theme: AppTheme.create(brightness),
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(scale)),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(scale),
+            // The fixture uses logical pixels while native keyboard metrics
+            // still arrive in the simulator display's physical pixels.
+            padding: MediaQuery.of(context).padding / nativePixelRatio,
+            viewPadding: MediaQuery.of(context).viewPadding / nativePixelRatio,
+            viewInsets: MediaQuery.of(context).viewInsets / nativePixelRatio,
+          ),
           child: RepaintBoundary(
             key: const ValueKey('capture-audit-frame'),
             child: child!,
@@ -515,6 +521,8 @@ void main() {
         t.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
         '',
       );
+      await t.ensureVisible(find.text('Leave this item out for now'));
+      await t.pumpAndSettle();
       await t.tap(find.text('Leave this item out for now'));
       await t.pumpAndSettle();
       await t.pump(const Duration(milliseconds: 400));
@@ -560,6 +568,8 @@ void main() {
     await t.tap(find.text('Add quantity'));
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextFormField), '1');
+    await t.ensureVisible(find.text('Update quantity'));
+    await t.pumpAndSettle();
     await t.tap(find.text('Update quantity'));
     await t.pumpAndSettle();
     await t.pump(const Duration(milliseconds: 400));

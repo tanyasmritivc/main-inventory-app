@@ -176,7 +176,14 @@ Widget _page(
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
         textScaler: scaler,
-        viewInsets: keyboardHeight == null
+        // Synthetic 1x viewports must not inherit 3x native safe-area pixels.
+      padding: keyboardHeight == null
+          ? null
+          : EdgeInsets.only(top: 44, bottom: keyboardHeight == 0 ? 34 : 0),
+      viewPadding: keyboardHeight == null
+          ? null
+          : const EdgeInsets.only(top: 44, bottom: 34),
+      viewInsets: keyboardHeight == null
             ? null
             : EdgeInsets.only(bottom: keyboardHeight),
       ),
@@ -587,7 +594,7 @@ void main() {
             api,
             brightness: brightness,
             scaler: const TextScaler.linear(2.6),
-            keyboardHeight: 320,
+            keyboardHeight: 0,
           ),
         );
         await tester.pumpAndSettle();
@@ -597,6 +604,17 @@ void main() {
           scrollable: find.byType(Scrollable).first,
         );
         await _action(tester, 'manual.pdf', 'Rename');
+        // Open the keyboard only after opening the editor, as on a device.
+        // Starting with it raised can put the document menu behind the inset.
+        await tester.pumpWidget(
+          _page(
+            api,
+            brightness: brightness,
+            scaler: const TextScaler.linear(2.6),
+            keyboardHeight: 320,
+          ),
+        );
+        await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await tester.enterText(find.byType(TextField).last, 'Updated manual');
         await tester.pumpAndSettle();

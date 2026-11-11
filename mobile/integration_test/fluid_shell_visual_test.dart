@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'dart:io';
@@ -28,6 +29,7 @@ Future<void> capture(String key, String name) async {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   // The test driver cannot tap embedded UIKit views. Use Flutter controls for
   // automated navigation; real UIKit layout is covered by world_audit_test.
   debugNativePresentationOverride = false;
