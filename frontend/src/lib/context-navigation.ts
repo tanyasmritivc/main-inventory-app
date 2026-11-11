@@ -14,7 +14,7 @@ export function organizationNavigation(id: string, name: string, view: Organizat
   const home = `/organizations/${encodeURIComponent(id)}`;
   return { breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
     activeRoute: view === "people" ? `${home}?view=people` : home,
-    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }] };
+    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }, { label: "CAD Intelligence", route: `/cad?world=${encodeURIComponent(id)}`, icon: Boxes, section: "Organization" }] };
 }
 export function workspaceNavigation(workspace: InventoryWorkspace, view: WorkspaceView): NavigationContext {
   const home = `/workspaces/${encodeURIComponent(workspace.workspace_id)}`;

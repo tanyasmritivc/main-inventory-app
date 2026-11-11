@@ -5,7 +5,7 @@ import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Menu, Search, Users, UserRound, ArrowLeft, Palette, Sparkles, KeyRound, BookOpen, Settings, CreditCard } from "lucide-react";
+import { Bell, Menu, Search, Users, UserRound, ArrowLeft, Palette, Sparkles, KeyRound, BookOpen, Settings, CreditCard, Boxes } from "lucide-react";
 import {
   APP_NAV_ITEMS,
   type AppNavItem,
@@ -213,6 +213,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   const accountItems: AppNavItem[] = [
     {label:"Back to workspaces",route:"/workspaces",icon:ArrowLeft,section:"Account"},
     {label:"Profile",route:"/settings/profile",icon:UserRound,section:"Account settings"},
+    { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Account settings" },
     {label:"Appearance",route:"/settings/appearance",icon:Palette,section:"Account settings"},
     {label:"AI memory",route:"/settings/memory",icon:Sparkles,section:"Account settings"},
     {label:"Plans",route:"/settings/plans",icon:CreditCard,section:"Account settings"},

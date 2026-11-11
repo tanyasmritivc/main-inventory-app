@@ -1,3 +1,12 @@
+## November 10 — CAD navigation published
+
+CAD Intelligence links now appear in the profile menu, Profile and Settings,
+and organization navigation. Authorized inventory selection handles context-free
+entry. Final live-source build and 18 focused tests pass; public browser checks
+pass, with existing Connections changes preserved. No backend/mobile/schema
+changes. See `docs/plans/cad-intelligence/CAD_NAVIGATION_RELEASE.md` for evidence,
+preexisting profile test failures and rollback. Task complete.
+
 ## November 10 - Fusion CAD comparison preview deployed
 
 Lane `feat/fusion-cad-prototype` adds a local Fusion BOM exporter, bounded

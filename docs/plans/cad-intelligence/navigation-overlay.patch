@@ -1,0 +1,131 @@
+--- a/frontend/src/__tests__/cad-page.test.tsx
++++ b/frontend/src/__tests__/cad-page.test.tsx
+@@ -4,9 +4,16 @@
+ jest.mock("@/lib/auth-guard", () => ({ requireUser: jest.fn() }));
+ jest.mock("@/components/site/inventory-boundary", () => ({ InventoryBoundary: () => null }));
+ jest.mock("@/components/cad/cad-client", () => ({ CadClient: () => null }));
++jest.mock("@/components/cad/cad-entry", () => ({ CadEntry: () => null }));
+ 
+ test("CAD verifies sign-in before returning the client inventory gate", async () => {
+   jest.mocked(requireUser).mockRejectedValue(new Error("redirect-to-signin"));
+   await expect(CadPage({ searchParams: Promise.resolve({ inventory: "selected-inventory" }) })).rejects.toThrow("redirect-to-signin");
+   expect(requireUser).toHaveBeenCalledWith("/cad?inventory=selected-inventory");
+ });
++
++test("organization entry preserves its destination through sign-in", async () => {
++  jest.mocked(requireUser).mockRejectedValue(new Error("redirect-to-signin"));
++  await expect(CadPage({ searchParams: Promise.resolve({ world: "robotics" }) })).rejects.toThrow("redirect-to-signin");
++  expect(requireUser).toHaveBeenCalledWith("/cad?world=robotics");
++});
+--- a/frontend/src/lib/world-navigation.ts
++++ b/frontend/src/lib/world-navigation.ts
+@@ -2,6 +2,7 @@
+   MessageSquarePlus,
+   MapPin,
+   Wrench,
++  Boxes,
+   Plug,
+   FolderKanban,
+   Users,
+@@ -21,7 +22,7 @@
+     organization: world === "personal" ? undefined : { id: world, name },
+     personal: world === "personal",
+     homeHref: home,
+-    activeRoute: worldHref(world, view),
++    activeRoute: view === "cad" ? `/cad?world=${encodeURIComponent(world)}` : worldHref(world, view),
+     breadcrumbs: [{ label: name, href: home }],
+     items: [
+       {
+@@ -40,6 +41,12 @@
+         label: "Tools",
+         route: worldHref(world, "tools"),
+         icon: Wrench,
++        section: "Organization",
++      },
++      {
++        label: "CAD Intelligence",
++        route: `/cad?world=${encodeURIComponent(world)}`,
++        icon: Boxes,
+         section: "Organization",
+       },
+       {
+--- a/frontend/src/components/site/account-menu.tsx
++++ b/frontend/src/components/site/account-menu.tsx
+@@ -1,7 +1,7 @@
+ "use client";
+ import styles from "./account-layout.module.css";
+ import {useMemo,useState} from 'react';
+-import {UserRound,LogOut,FolderKanban,Settings} from 'lucide-react';
++import {UserRound,LogOut,FolderKanban,Settings,Boxes} from 'lucide-react';
+ import {DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuLabel,DropdownMenuItem,DropdownMenuSeparator,DropdownMenuRadioGroup,DropdownMenuRadioItem} from '@/components/ui/dropdown-menu';
+ import {useAppTheme,type AppThemeChoice} from './use-app-theme';
+ import {useInventoryRouter} from './inventory-link';
+@@ -21,6 +21,7 @@
+   <DropdownMenuLabel><strong style={{display:'block',fontWeight:500}}>{name}</strong>{email&&<span style={{fontWeight:400,color:'var(--app-muted)',fontSize:12}}>{email}</span>}</DropdownMenuLabel>
+   <DropdownMenuSeparator/>
+   <DropdownMenuItem onSelect={()=>router.push('/settings')}><Settings size={14}/>Account settings</DropdownMenuItem>
++  <DropdownMenuItem onSelect={()=>router.push('/cad')}><Boxes size={14}/>CAD Intelligence</DropdownMenuItem>
+   <DropdownMenuItem onSelect={()=>router.push('/workspaces')}><FolderKanban size={14}/>All workspaces</DropdownMenuItem>
+   <DropdownMenuSeparator/><DropdownMenuLabel style={{fontWeight:400,color:'var(--app-muted)'}}>Theme</DropdownMenuLabel>
+   <DropdownMenuRadioGroup value={theme} onValueChange={value=>{try{setTheme(value as AppThemeChoice);}catch{setError('Appearance could not be saved. Please try again.');}}}>
+--- a/frontend/src/components/site/settings-client.tsx
++++ b/frontend/src/components/site/settings-client.tsx
+@@ -263,6 +263,7 @@
+     <div className="settings-content">
+       {section === "connections" && <SettingsConnections />}
+       {pendingPhoto && <ProfilePhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={changePhoto} />}
++      {section === "profile" && <section className="settings-panel"><header><h2>CAD Intelligence</h2><p>Compare a Fusion assembly with your inventory.</p></header><Link className="workspace-button" href="/cad">Open CAD Intelligence <ChevronRight size={16} aria-hidden="true" /></Link></section>}
+       {section === "profile" && <section className="settings-panel" id="profile">
+         <header>
+           <h2>Personal details</h2>
+--- a/frontend/src/components/site/app-shell.tsx
++++ b/frontend/src/components/site/app-shell.tsx
+@@ -6,6 +6,7 @@
+ import { usePathname } from "next/navigation";
+ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import {
++  Boxes,
+   Menu,
+   Search,
+   Users,
+@@ -300,6 +301,7 @@
+       icon: Plug,
+       section: "Account settings",
+     },
++    { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Account settings" },
+     {
+       label: "Appearance",
+       route: "/settings/appearance",
+@@ -341,7 +343,7 @@
+     ? worldNavigation(
+         inventory.workspace.organization_id || "personal",
+         inventory.workspace.organization_name || "Personal",
+-        ["/inventory", "/home", "/spaces"].includes(pathname)
++        pathname === "/cad" ? "cad" : ["/inventory", "/home", "/spaces"].includes(pathname)
+           ? "spaces"
+           : "tools",
+       )
+--- a/frontend/src/app/cad/page.tsx
++++ b/frontend/src/app/cad/page.tsx
+@@ -2,15 +2,19 @@
+ import { requireUser } from "@/lib/auth-guard";
+ import { InventoryBoundary } from "@/components/site/inventory-boundary";
+ import { CadClient } from "@/components/cad/cad-client";
++import { CadEntry } from "@/components/cad/cad-entry";
+ 
+ export const metadata = { title: "CAD Intelligence", robots: { index: false, follow: false } };
+ 
+-export default async function CadPage({ searchParams }: { searchParams: Promise<{ inventory?: string }> }) {
++export default async function CadPage({ searchParams }: { searchParams: Promise<{ inventory?: string; world?: string }> }) {
+   const params = await searchParams;
+-  const destination = typeof params.inventory === "string" ? `/cad?inventory=${encodeURIComponent(params.inventory)}` : "/cad";
++  const inventory = typeof params.inventory === "string" && params.inventory ? params.inventory : undefined;
++  const world = typeof params.world === "string" && params.world ? params.world : undefined;
++  const destination = inventory ? `/cad?inventory=${encodeURIComponent(inventory)}` : world ? `/cad?world=${encodeURIComponent(world)}` : "/cad";
+   // Verify before rendering the client inventory gate. A redirect nested behind
+   // its anonymous loading state may never be consumed by the client router.
+   await requireUser(destination);
++  if (!inventory) return <Suspense fallback={<div role="status">Opening CAD Intelligence...</div>}><CadEntry worldId={world} /></Suspense>;
+   return <Suspense fallback={<div role="status">Opening inventory...</div>}>
+     <InventoryBoundary><CadClient /></InventoryBoundary>
+   </Suspense>;

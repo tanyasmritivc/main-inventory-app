@@ -1,0 +1,13 @@
+{
+  "previous_web": "/home/ubuntu/findez-settings-connections-20261111/frontend",
+  "active_web": "/home/ubuntu/findez-cad-navigation-20261111/candidate-v2/frontend",
+  "build_id": "0pox6Msgm8YJ9C1Oeesk9",
+  "preserved_files": 582,
+  "backend_changed": false,
+  "focused_tests_passed": 18,
+  "baseline_profile_failures_unchanged": 9,
+  "deployed_at_utc": "2026-11-11T06:23:04Z",
+  "public_browser_acceptance": true,
+  "qa_accounts_deleted": 2,
+  "remaining_qa_items": 0
+}

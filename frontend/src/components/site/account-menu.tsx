@@ -1,7 +1,7 @@
 "use client";
 import styles from "./account-layout.module.css";
 import {useMemo,useState} from 'react';
-import {UserRound,LogOut,FolderKanban,Settings} from 'lucide-react';
+import {UserRound,LogOut,FolderKanban,Settings,Boxes} from 'lucide-react';
 import {DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuLabel,DropdownMenuItem,DropdownMenuSeparator,DropdownMenuRadioGroup,DropdownMenuRadioItem} from '@/components/ui/dropdown-menu';
 import {useAppTheme,type AppThemeChoice} from './use-app-theme';
 import {useInventoryRouter} from './inventory-link';
@@ -21,6 +21,7 @@ export function AccountMenu({name,email,initial,avatarUrl}:{name:string;email:st
   <DropdownMenuLabel><strong style={{display:'block',fontWeight:500}}>{name}</strong>{email&&<span style={{fontWeight:400,color:'var(--app-muted)',fontSize:12}}>{email}</span>}</DropdownMenuLabel>
   <DropdownMenuSeparator/>
   <DropdownMenuItem onSelect={()=>router.push('/settings')}><Settings size={14}/>Account settings</DropdownMenuItem>
+  <DropdownMenuItem onSelect={()=>router.push('/cad')}><Boxes size={14}/>CAD Intelligence</DropdownMenuItem>
   <DropdownMenuItem onSelect={()=>router.push('/workspaces')}><FolderKanban size={14}/>All workspaces</DropdownMenuItem>
   <DropdownMenuSeparator/><DropdownMenuLabel style={{fontWeight:400,color:'var(--app-muted)'}}>Theme</DropdownMenuLabel>
   <DropdownMenuRadioGroup value={theme} onValueChange={value=>{try{setTheme(value as AppThemeChoice);}catch{setError('Appearance could not be saved. Please try again.');}}}>
