@@ -17,6 +17,7 @@ import { LEGAL_VERSION } from "@/lib/legal-content";
 import { previewPrompt, previewAuthDestination } from "@/lib/landing-preview";
 import previewStyles from "./preview-handoff.module.css";
 import styles from "./auth-form.module.css";
+import { AuthSplitBrand, AuthSplitLayout } from "./auth-split-layout";
 import { signupDestination } from "@/lib/web-onboarding";
 
 type Mode = "signin" | "signup";
@@ -391,7 +392,7 @@ export function AuthForm({
     <div className={`auth-card-frame ${prompt ? previewStyles.enter : ""}`}>
       <div className={`auth-card ${styles.card}`}>
         {/* Logo mark */}
-        <div
+        <div className={styles.brand}
           style={{
             display: "flex",
             alignItems: "center",
@@ -399,13 +400,15 @@ export function AuthForm({
             marginBottom: 28,
           }}
         >
+          <AuthSplitBrand />
           <FindEZWordmark
+            className={styles.originalBrand}
             width={112}
             height={30}
             style={{ color: "var(--ink)", flexShrink: 0 }}
           />
         </div>
-        <div
+        <div className={styles.by}
           style={{
             fontSize: "11px",
             color: "var(--text-secondary)",
@@ -431,7 +434,7 @@ export function AuthForm({
             </small>
           </aside>
         )}
-        <h1
+        <h1 className={styles.heading}
           style={{
             fontSize: 22,
             fontWeight: 700,
@@ -442,7 +445,7 @@ export function AuthForm({
         >
           {mode === "signup" ? "Create account" : "Welcome back"}
         </h1>
-        <p
+        <p className={styles.lead}
           style={{
             fontSize: 13,
             color: "var(--text-secondary)",
@@ -455,7 +458,7 @@ export function AuthForm({
             : "Sign in to manage your FindEZ account."}
         </p>
 
-        <div
+        <div className={styles.oauth}
           style={{
             display: "flex",
             flexDirection: "column",
@@ -538,7 +541,7 @@ export function AuthForm({
           </button>
         </div>
 
-        <div
+        <div className={styles.divider}
           style={{
             display: "flex",
             alignItems: "center",
@@ -557,7 +560,7 @@ export function AuthForm({
           />
         </div>
 
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: 18 }}>
+        <form className={styles.form} data-mode={mode} onSubmit={onSubmit} style={{ display: "grid", gap: 18 }}>
           <style>{`.auth-card input:-webkit-autofill, .auth-card textarea:-webkit-autofill {
         -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
         -webkit-text-fill-color: #000000 !important;
@@ -683,12 +686,12 @@ export function AuthForm({
             />
           </div>
 
-          <div style={{ display: "grid", gap: 6 }}>
+          <div className={styles.password} style={{ display: "grid", gap: 6 }}>
             <Label htmlFor="password" className="sr-only">
               Password
             </Label>
             {mode === "signin" ? (
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div className={styles.forgot} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button
                   type="button"
                   disabled={loading || resetSending || resendingConfirmation}
@@ -828,6 +831,7 @@ export function AuthForm({
           </Button>
           {(mode === "signin" || notice) && (
             <button
+              className={styles.resend}
               type="button"
               disabled={loading || resetSending || resendingConfirmation}
               onClick={() => void resendConfirmation()}
@@ -847,7 +851,7 @@ export function AuthForm({
           )}
         </form>
         {mode === "signin" && (
-          <p
+          <p className={styles.legal}
             style={{
               marginTop: 16,
               fontSize: 12,
@@ -862,7 +866,7 @@ export function AuthForm({
           </p>
         )}
 
-        <p
+        <p className={styles.alternate}
           style={{
             marginTop: 20,
             textAlign: "center",
@@ -941,5 +945,5 @@ export function AuthForm({
 
   if (onSuccess) return card;
 
-  return <div className="auth-page-shell">{card}</div>;
+  return <AuthSplitLayout>{card}</AuthSplitLayout>;
 }

@@ -1635,3 +1635,14 @@ HTTPS checks. Desktop/narrow browser notices inspected. Six runtime files change
 544 unrelated files preserved, backend untouched. Receipt:
 `docs/plans/photo-scan-timing-web-release.json`.
 
+
+## Auth split design, November 11, 2026
+
+Completed and deployed on `design/auth-split-production`. Four auth presentation
+files changed on the current self-hosted release; 593 unrelated files and all
+auth handlers preserved. Dark mode gets the supplied split canvas design;
+light mode stays unchanged. Sign-up shares the layout; reset password does not.
+Production build passed. Safari desktop/tablet/phone layouts, provider handoffs,
+empty-field controls, and an 81-second memory observation completed. Full auth
+and email delivery were not exercised. See `docs/auth-split/RELEASE.md` and its
+live screenshots and deployment receipt. No backend or mobile changes.

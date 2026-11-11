@@ -1,0 +1,16 @@
+{
+  "deployed_at": "2026-11-11T18:00:30.802582+00:00",
+  "live": "/home/ubuntu/findez-auth-split-20261111/frontend",
+  "build_id": "f9EVHO1AABqYhoMSr8gL8",
+  "changed_files": [
+    "src/components/site/auth-art.tsx",
+    "src/components/site/auth-form.module.css",
+    "src/components/site/auth-form.tsx",
+    "src/components/site/auth-split-layout.tsx"
+  ],
+  "preserved_files": 593,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

@@ -12,3 +12,160 @@
   .card input:not([type="checkbox"]), .card button { min-height: 44px; }
   .card button[type="submit"]:hover { transform: none; }
 }
+
+/* Light mode and embedded forms retain their existing presentation. */
+.side { display: contents; }
+.art, .darkBrand { display: none; }
+
+.shell[data-auth-theme="dark"] {
+  --ink: #f4f0f0;
+  --text-primary: #f4f0f0;
+  --text-secondary: rgba(244,240,240,.64);
+  --light-panel: #141113;
+  --light-raised: #141113;
+  --light-line: rgba(255,255,255,.08);
+  --copper: #f4f0f0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  place-items: stretch;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  background: #0a0809;
+  color: #f4f0f0;
+  font-family: var(--font-app-inter), Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+.shell[data-auth-theme="dark"] .side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 56px 40px;
+}
+.shell[data-auth-theme="dark"] :global(.auth-card-frame) { width: 100%; max-width: 380px; }
+.shell[data-auth-theme="dark"] .card {
+  padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; text-align: left;
+}
+.shell[data-auth-theme="dark"] .brand { margin: 0 !important; }
+.shell[data-auth-theme="dark"] .originalBrand { display: none; }
+.shell[data-auth-theme="dark"] .darkBrand {
+  display: flex; align-items: center; gap: 11px;
+  font-family: var(--font-app-tight), var(--font-app-inter), sans-serif;
+  font-size: 24px; font-weight: 500; line-height: normal; letter-spacing: -.02em;
+}
+.shell[data-auth-theme="dark"] .by {
+  margin: 8px 0 0 !important; font-size: 12.5px !important; text-align: left !important;
+  color: rgba(244,240,240,.42) !important; letter-spacing: normal !important;
+}
+.shell[data-auth-theme="dark"] .heading {
+  margin: 44px 0 0 !important; font-size: 38px !important; font-weight: 400 !important;
+  line-height: 1.08; letter-spacing: -.035em !important;
+}
+.shell[data-auth-theme="dark"] .lead {
+  margin: 10px 0 0 !important; font-size: 15px !important; line-height: normal;
+  letter-spacing: normal !important;
+}
+.shell[data-auth-theme="dark"] .oauth { margin: 32px 0 0 !important; gap: 10px !important; }
+.shell[data-auth-theme="dark"] .oauth button {
+  height: 50px; min-height: 50px; border: 0 !important; border-radius: 25px !important;
+  background: transparent !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+  font-family: inherit; font-size: 15px !important; font-weight: 500 !important; gap: 11px !important;
+  transition: background .2s, transform .15s;
+}
+.shell[data-auth-theme="dark"] .oauth button:hover:not(:disabled) { background: rgba(255,255,255,.04) !important; }
+.shell[data-auth-theme="dark"] button:active:not(:disabled) { transform: scale(.985); }
+.shell[data-auth-theme="dark"] button:disabled { cursor: not-allowed; opacity: .6; }
+.shell[data-auth-theme="dark"] .divider { margin: 26px 0 22px !important; gap: 14px !important; }
+.shell[data-auth-theme="dark"] .divider span { color: rgba(244,240,240,.42) !important; font-size: 13px !important; }
+.shell[data-auth-theme="dark"] .form { gap: 0 !important; }
+.shell[data-auth-theme="dark"] .form[data-mode="signup"] { gap: 12px !important; }
+.shell[data-auth-theme="dark"] .card input:not([type="checkbox"]) {
+  width: 100%; height: 50px; min-height: 50px; padding: 0 16px !important;
+  border: 0 !important; border-radius: 14px !important; background: #141113 !important;
+  color: #f4f0f0 !important; font-family: inherit; font-size: 15px !important; font-weight: 400;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08) !important;
+  outline: none; transition: box-shadow .2s;
+}
+.shell[data-auth-theme="dark"] .card input::placeholder { color: rgba(244,240,240,.42); opacity: 1; }
+.shell[data-auth-theme="dark"] .card input:not([type="checkbox"]):focus {
+  box-shadow: inset 0 0 0 1px rgba(201,138,147,.75) !important;
+}
+.shell[data-auth-theme="dark"] .card input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #141113 inset !important;
+  box-shadow: 0 0 0 1000px #141113 inset !important;
+  -webkit-text-fill-color: #f4f0f0 !important;
+  caret-color: #f4f0f0 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+}
+.shell[data-auth-theme="dark"] .card input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #141113 inset !important;
+  box-shadow: 0 0 0 1000px #141113 inset !important;
+  border: 1px solid rgba(201,138,147,.75) !important;
+}
+.shell[data-auth-theme="dark"] .password { gap: 0 !important; }
+.shell[data-auth-theme="dark"] .forgot { margin: 12px 0 10px; }
+.shell[data-auth-theme="dark"] .forgot button {
+  min-height: 0; color: rgba(244,240,240,.64) !important; font-size: 13px !important; line-height: normal;
+}
+.shell[data-auth-theme="dark"] .forgot button:hover { color: #f4f0f0 !important; }
+.shell[data-auth-theme="dark"] .form button[type="submit"] {
+  margin-top: 20px; height: 50px; min-height: 50px; padding: 0 16px !important;
+  border: 0 !important; border-radius: 25px !important; background: #f2eeee !important;
+  color: #151012 !important; font-family: inherit; font-size: 15px !important; font-weight: 500 !important;
+  letter-spacing: normal !important; transition: background .2s, transform .15s !important;
+}
+.shell[data-auth-theme="dark"] .form button[type="submit"]:hover:not(:disabled) { background: #fff !important; }
+.shell[data-auth-theme="dark"] .resend {
+  display: block; margin: 20px auto 0; padding: 0 !important; min-height: 0;
+  color: rgba(244,240,240,.64) !important; font-size: 13.5px !important; font-weight: 500; line-height: normal;
+}
+.shell[data-auth-theme="dark"] .resend:hover { color: #f4f0f0 !important; }
+.shell[data-auth-theme="dark"] .legal {
+  margin: 28px 0 0 !important; font-size: 12.5px !important; line-height: 1.6 !important; color: rgba(244,240,240,.42) !important;
+}
+.shell[data-auth-theme="dark"] .legal a { color: rgba(244,240,240,.64); text-decoration: underline; }
+.shell[data-auth-theme="dark"] .alternate {
+  margin: 22px 0 0 !important; font-size: 14px !important; letter-spacing: normal !important; line-height: normal;
+}
+.shell[data-auth-theme="dark"] .alternate a, .shell[data-auth-theme="dark"] .alternate button {
+  color: #f4f0f0 !important; font-weight: 500; text-decoration: underline; text-underline-offset: 3px;
+}
+.shell[data-auth-theme="dark"] .card [role="alert"], .shell[data-auth-theme="dark"] .card [role="status"] {
+  margin-top: 12px !important; padding: 12px 16px; border-radius: 14px;
+  background: #141113; color: #f4f0f0 !important; border: 1px solid rgba(255,255,255,.14);
+}
+.shell[data-auth-theme="dark"] .card > aside { margin-top: 24px; }
+.shell[data-auth-theme="dark"] button:focus-visible, .shell[data-auth-theme="dark"] a:focus-visible {
+  outline: 2px solid rgba(201,138,147,.75); outline-offset: 3px;
+}
+.shell[data-auth-theme="dark"] .art {
+  display: block; position: relative; min-width: 0; overflow: hidden; background: #120d0f; pointer-events: none;
+}
+.art canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.artCopy { position: absolute; left: 56px; top: 56px; right: 56px; max-width: 520px; }
+.artCopy h2 {
+  margin: 0; font-family: var(--font-app-tight), var(--font-app-inter), sans-serif;
+  font-size: 42px; font-weight: 500; line-height: 1.08; letter-spacing: -.035em; color: #f6f0f1;
+}
+.artCopy p { margin: 16px 0 0; font-size: 16px; line-height: 1.5; color: rgba(246,240,241,.66); max-width: 420px; }
+.artFoot { position: absolute; left: 56px; right: 40px; bottom: 48px; font-size: 14px; color: rgba(246,240,241,.6); }
+.artFoot b { color: #f6f0f1; font-weight: 500; }
+@media (max-width: 959px) {
+  .shell[data-auth-theme="dark"] { grid-template-columns: minmax(0,1fr); }
+  .shell[data-auth-theme="dark"] .side { padding: 36px 16px 48px; }
+  .shell[data-auth-theme="dark"] .art { order: -1; height: 300px; }
+  .shell[data-auth-theme="dark"] .heading { margin-top: 30px !important; }
+  .artCopy { left: 24px; top: 24px; right: 24px; }
+  .artCopy h2 { font-size: 26px; }
+  .artCopy p, .artFoot { display: none; }
+}
+@media (hover: none) and (pointer: coarse) {
+  /* Keep Safari from zooming the page when a phone field receives focus. */
+  .shell[data-auth-theme="dark"] .card input:not([type="checkbox"]) { font-size: 16px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell[data-auth-theme="dark"] button, .shell[data-auth-theme="dark"] input { transition: none !important; }
+  .shell[data-auth-theme="dark"] button:active:not(:disabled) { transform: none; }
+}
