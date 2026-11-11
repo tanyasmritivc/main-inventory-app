@@ -1652,3 +1652,9 @@ with one scoped CSS rule. Deployed `findez-no-founder-dots-20261111` on top of t
 latest navigation release, preserving 596 other frontend files. The production
 build passed after reusing the existing font cache; public HTML and its served
 stylesheet confirm the overlay rule is active. No auth or mobile changes.
+
+Auth focus follow-up: replaced all three dusty-rose focus colors with neutral
+gray in the scoped auth stylesheet. Deployed `findez-neutral-auth-focus-20261111`;
+production build passed and the public CSS contains the new ring with no old
+rose focus color. Preserved 596 other frontend files. Removed only regenerable
+build caches from this lane's inactive releases to recover deployment disk space.

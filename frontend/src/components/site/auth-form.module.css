@@ -90,7 +90,7 @@
 }
 .shell[data-auth-theme="dark"] .card input::placeholder { color: rgba(244,240,240,.42); opacity: 1; }
 .shell[data-auth-theme="dark"] .card input:not([type="checkbox"]):focus {
-  box-shadow: inset 0 0 0 1px rgba(201,138,147,.75) !important;
+  box-shadow: inset 0 0 0 1px rgba(244,240,240,.55) !important;
 }
 .shell[data-auth-theme="dark"] .card input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #141113 inset !important;
@@ -102,7 +102,7 @@
 .shell[data-auth-theme="dark"] .card input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #141113 inset !important;
   box-shadow: 0 0 0 1000px #141113 inset !important;
-  border: 1px solid rgba(201,138,147,.75) !important;
+  border: 1px solid rgba(244,240,240,.55) !important;
 }
 .shell[data-auth-theme="dark"] .password { gap: 0 !important; }
 .shell[data-auth-theme="dark"] .forgot { margin: 12px 0 10px; }
@@ -138,7 +138,7 @@
 }
 .shell[data-auth-theme="dark"] .card > aside { margin-top: 24px; }
 .shell[data-auth-theme="dark"] button:focus-visible, .shell[data-auth-theme="dark"] a:focus-visible {
-  outline: 2px solid rgba(201,138,147,.75); outline-offset: 3px;
+  outline: 2px solid rgba(244,240,240,.55); outline-offset: 3px;
 }
 .shell[data-auth-theme="dark"] .art {
   display: block; position: relative; min-width: 0; overflow: hidden; background: #120d0f; pointer-events: none;
