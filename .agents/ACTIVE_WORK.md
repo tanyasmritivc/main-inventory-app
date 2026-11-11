@@ -1,3 +1,11 @@
+## November 11 - Two header actions
+
+Header now has Apple-logo Download and primary Sign in; removed Get started free
+from the header. Sign in retains its Sign up link. Production build and 1440/390px
+browser navigation checks pass, including the small-screen download menu.
+Release: /home/ubuntu/findez-desktop-auth-nav-20261111/frontend; preserves the
+newer auth-split release deployed during verification. No authentication logic changes.
+
 ## November 11 - Apple logo Download button
 
 Desktop navigation and mobile menu now show the existing Apple SVG plus Download.

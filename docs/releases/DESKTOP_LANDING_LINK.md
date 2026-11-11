@@ -46,3 +46,19 @@ The icon is decorative and hidden from assistive technology. Production build,
 1440/390px browser layout and destination checks pass; screenshot and live HTML
 verified. Only sections.js changed. Active release: desktop-apple-button-20261111;
 rollback override: zzzzzzzzzzzzz-desktop-apple-button.conf.
+
+## Follow-up: Two header actions
+
+Removed Get started free from the header. Apple-logo Download remains outlined;
+Sign in uses the primary style so it remains visible on mobile. The existing
+Sign up link on the sign-in page provides account creation. Other page CTAs remain.
+Production build and browser checks at 1440/390px passed: two header links, no
+horizontal overflow, visible Sign in, mobile Download menu, and navigation from
+Sign in to Sign up. Desktop/mobile screenshots reviewed.
+
+The auth-split release went live during verification. Rebased the staged release
+on its current source and rebuilt/retested; all unrelated source is preserved.
+Only sections.js differs from that release. Active directory:
+/home/ubuntu/findez-desktop-auth-nav-20261111/frontend. Rollback: remove only
+zzzzzzzzzzzzzz-desktop-auth-nav.conf, daemon-reload and restart findez-web.
+No backend, database, mobile, or authentication logic changes.
