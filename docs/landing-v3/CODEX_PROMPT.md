@@ -32,13 +32,13 @@ WEB (NEXT.JS) ONLY. HOME PAGE ONLY. Replace the current home page (`/`) on finde
 - **Use the copy in the prototype exactly.** Don't add or remove lines.
 - **All app data shown is sample data.** Keep the "Sample data" tags and the "Example questions and answers." note. Nothing on this page calls an API.
 - **Privacy:** the tour uses "Alex", an "A" avatar and "Team Voltage". Never put a real user name, photo or team on this page.
-- **Links:**
-  - "Download" and "Download for iPhone" go to the App Store link already used on the site.
-  - "Open the web app" goes to the existing app or sign-in route.
-  - "Join Founders Access" goes to the existing Founders Access sign-up route.
-  - "Sign in" goes to the existing sign-in page.
-  - Nav: Solutions and Developers keep their current routes; "CAD Intelligence" scrolls to `#cad`; "Founders Access" scrolls to `#x-fa`.
-  - Tell me which routes you used.
+- **Links:** the prototype already uses the live site's routes. Keep them:
+  - Logo `/`, Solutions `/solutions`, Founders Access `/founders`, Developers `/docs/api`, Sign in `/signin`, header Download `/desktop`.
+  - Community menu: Discord `https://discord.gg/sKRrWA5wbf` and Instagram `https://www.instagram.com/findezai/` (new tab).
+  - "Download for iPhone": `https://apps.apple.com/us/app/findez-ai/id6760401697`. "Open the web app": `/signin`. "Join Founders Access": `/signup`.
+  - "CAD Intelligence" scrolls to `#cad` on this page (`/#cad` from other pages).
+  - Footer: Plans & access `/pricing`, Research `/research`, Contact `mailto:info@findez.ai`, Privacy `/privacy`, Terms `/terms`, plus the Community column.
+  - If any of these routes changed in the repo, use the repo's current route and tell me.
 - **Plan name:** if the app calls it "Founding Access" instead of "Founders Access", use the app's name everywhere and tell me.
 
 ## What's in this folder

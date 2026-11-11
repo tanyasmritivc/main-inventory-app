@@ -1711,3 +1711,16 @@ anchors and bidirectional pinned animation checked. Memory reached a stable
 reviewed but manual emulation and physical iPhone acceptance are not claimed.
 See `docs/releases/landing-home-20261111/README.md` for routes, file list and six
 live screenshots. Backend, mobile, auth, config and dependencies unchanged.
+
+
+## Homepage package 2, November 11, 2026
+
+Deployed supplied `findez-landing-codex-2.zip` on `feat/landing-home` directly to
+the current self-hosted `findez-tab-icon-20261111` release. Two runtime files
+changed: home-content.tsx and home.css. Community menu/footer added, header
+Download points to /desktop, Founders links to /founders, pinned step numbers
+removed. Animation scripts and assets unchanged. Production build
+`hzTuddxupGo8jRJZAez5I` passed after authentic Google Fonts caching resolved the
+existing loader failure. No app config changes. Public destinations return 200;
+Safari desktop and 390px layouts inspected. Details and six live screenshots:
+`docs/releases/landing-home2-20261111/README.md`.

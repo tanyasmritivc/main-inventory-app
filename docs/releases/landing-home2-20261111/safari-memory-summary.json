@@ -1,0 +1,20 @@
+{
+  "url": "https://findez.ai/",
+  "build": "hzTuddxupGo8jRJZAez5I",
+  "duration_seconds": 153.23,
+  "peak_MiB": 275.03,
+  "final_minute": {
+    "samples": 106,
+    "min_MiB": 197.45,
+    "max_MiB": 208.1,
+    "first_MiB": 207.84,
+    "last_MiB": 208.1
+  },
+  "discontinuities": [
+    {
+      "startTime": 60.589547500014305,
+      "endTime": 81.98747208336135
+    }
+  ],
+  "limitation": "Safari switched tabs during the extended observation. Background throttling affects the result, so this is not an uninterrupted foreground flat-memory acceptance result."
+}
