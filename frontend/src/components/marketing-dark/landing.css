@@ -581,3 +581,6 @@ html:has(.landing-dark),body:has(.landing-dark) { scrollbar-width:none; }
  .landing-dark nav.top .btn{height:36px;padding:0 12px;font-size:12px}
  .landing-dark nav.top .ib{width:44px;height:44px}
 }
+
+/* Keep the Founders Access photo free of the decorative dot overlay. */
+.landing-dark .words .ambient-dots { display: none; }

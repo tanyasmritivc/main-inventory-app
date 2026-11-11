@@ -1646,3 +1646,9 @@ Production build passed. Safari desktop/tablet/phone layouts, provider handoffs,
 empty-field controls, and an 81-second memory observation completed. Full auth
 and email delivery were not exercised. See `docs/auth-split/RELEASE.md` and its
 live screenshots and deployment receipt. No backend or mobile changes.
+
+Follow-up: removed the dotted overlay from the Founders Access photo section
+with one scoped CSS rule. Deployed `findez-no-founder-dots-20261111` on top of the
+latest navigation release, preserving 596 other frontend files. The production
+build passed after reusing the existing font cache; public HTML and its served
+stylesheet confirm the overlay rule is active. No auth or mobile changes.
