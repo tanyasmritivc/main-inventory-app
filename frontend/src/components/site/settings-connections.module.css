@@ -1,0 +1,6 @@
+.page { max-width: 1040px; }
+.intro { color: var(--text-secondary); line-height: 1.6; margin: 0 0 24px; }
+.selector { display: grid; gap: 8px; max-width: 520px; margin: 0 0 20px; font-size: 14px; }
+.selector select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--light-line); border-radius: 8px; color: var(--ink); background: var(--light-panel); }
+.selector select:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.paging { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }

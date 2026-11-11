@@ -32,7 +32,9 @@ export function CommerceClient() {
   return <InventoryCommerce key={`${accountId}:${inventory.inventory_id}`} inventory={inventory} />;
 }
 
-function InventoryCommerce({ inventory }: { inventory: InventorySelection }) {
+export function InventoryCommerce({ inventory, inventoryBinding = inventory, embedded = false }: {
+  inventory: InventorySelection; inventoryBinding?: InventorySelection | null; embedded?: boolean;
+}) {
   const { confirmAction } = useAppDialog();
   const [capabilities, setCapabilities] = useState<CommerceCapabilities | null>(null);
   const [connections, setConnections] = useState<CommerceConnection[]>([]);
@@ -47,8 +49,8 @@ function InventoryCommerce({ inventory }: { inventory: InventorySelection }) {
   const lock = useRef(false), live = useRef(false), generation = useRef(0);
   const current = useCallback(() => {
     if (!live.current) throw new Error("This page is no longer active.");
-    assertInventory(inventory);
-  }, [inventory]);
+    assertInventory(inventoryBinding);
+  }, [inventoryBinding]);
   const request = useCallback(async <T,>(path: string, options: Parameters<typeof accountRequest>[2] = {}) => {
     current();
     const value = await accountRequest<T>(inventory.accountId, path, options);
@@ -77,7 +79,7 @@ function InventoryCommerce({ inventory }: { inventory: InventorySelection }) {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(""); setNotice("");
     try { current(); await action(); }
-    catch (reason) { if (live.current && activeInventory() === inventory) setError(errorMessage(reason)); }
+    catch (reason) { if (live.current && activeInventory() === inventoryBinding) setError(errorMessage(reason)); }
     finally { lock.current = false; if (live.current) setBusy(false); }
   }
   function connect(event: FormEvent, provider: OAuthProvider) {
@@ -123,7 +125,7 @@ function InventoryCommerce({ inventory }: { inventory: InventorySelection }) {
   }
   const configured = (provider: OAuthProvider) => capabilities?.providers.some((entry) => entry.provider === provider && entry.configured) ?? false;
   return <div className={styles.page}>
-    <header><p className={styles.eyebrow}>FindEZ Connect</p><h1>Connections</h1>
+    <header>{!embedded && <><p className={styles.eyebrow}>FindEZ Connect</p><h1>Connections</h1></>}
       <p>Bring purchases and store information into <strong>{inventory.name}</strong>. Connected data is private to your FindEZ account.</p>
       <p>Store stock and purchase records are separate from physically verified inventory.</p>
     </header>

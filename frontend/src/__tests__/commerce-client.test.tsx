@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import { StrictMode } from "react";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
-import { CommerceClient } from "@/components/site/commerce-client";
+import { CommerceClient, InventoryCommerce } from "@/components/site/commerce-client";
 import { CommerceCallbackClient } from "@/components/site/commerce-callback-client";
 import { accountRequest } from "@/lib/account-request";
 import { completeCommerceCallback } from "@/lib/commerce";
@@ -30,6 +30,15 @@ beforeEach(() => {
   });
 });
 afterEach(() => { cleanup(); selectInventory(null); });
+
+test("settings-bound connections preserve the empty global context and report operation failures", async () => {
+  selectInventory(null);
+  render(<InventoryCommerce inventory={inventory} inventoryBinding={null} embedded />);
+  await screen.findByText("example.myshopify.com");
+  jest.mocked(accountRequest).mockRejectedValueOnce(new Error("Sync unavailable"));
+  fireEvent.click(screen.getByRole("button", { name: "Sync products and stock" }));
+  expect((await screen.findByRole("alert")).textContent).toContain("Sync unavailable");
+});
 
 test("shows readiness honestly and only enables configured provider", async () => {
   render(<CommerceClient />);
