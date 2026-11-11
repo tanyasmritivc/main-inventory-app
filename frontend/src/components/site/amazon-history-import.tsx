@@ -15,7 +15,7 @@ type Request = <T>(path: string, options?: Parameters<typeof accountRequest>[2])
 function importError(reason: unknown) {
   if (reason instanceof ApiError) {
     if (reason.status === 413) return "This file is too large. Upload up to 10 MB, with at most 10,000 order rows.";
-    if (reason.status === 422) return "We could not read this export. Choose the Amazon order-history CSV or its ZIP, with Order ID, Product Name (or Title), Quantity and Order Date. Check that quantities and dates are valid.";
+    if (reason.status === 422) return "We could not read this export. Choose the Amazon order-history CSV or its ZIP, with Order ID, Product Name (or Title), Quantity (or Original Quantity) and Order Date. Check that quantities and dates are valid.";
     if (reason.status === 409) return "The file or import destination changed. Preview the file again before saving.";
   }
   return reason instanceof Error ? reason.message : "The import could not be confirmed. You can retry the same file without duplicating matching purchases.";
@@ -33,8 +33,12 @@ export function AmazonHistoryImport({ inventoryId, scope, ownerName = "Personal"
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function choose(value: File | null) {
     setPreview(null); setNotice(""); setError(""); setVisible(20); setFile(value);
-    if (value && (value.size > 10 * 1024 * 1024 || !/\.(csv|zip)$/i.test(value.name))) {
-      setFile(null); setError("Choose an Amazon order-history CSV or ZIP, up to 10 MB.");
+    if (value && !/\.(csv|zip)$/i.test(value.name)) {
+      setFile(null); if (input.current) input.current.value = "";
+      setError("Choose a CSV or ZIP file, not the Your Orders folder. Open Your Orders → Your Amazon Orders and select Order History.csv. Some exports call it Retail.OrderHistory.csv.");
+    } else if (value && value.size > 10 * 1024 * 1024) {
+      setFile(null); if (input.current) input.current.value = "";
+      setError("This file is too large. Choose the order-history CSV inside the export, or a ZIP up to 10 MB.");
     }
   }
   async function upload(save: boolean) {
@@ -73,11 +77,12 @@ export function AmazonHistoryImport({ inventoryId, scope, ownerName = "Personal"
     <p>See what you ordered, all in one place. Import your past purchases once; add a newer export whenever you want to update them. No Amazon connection or Gmail access needed.</p>
     <ol className={styles.steps}>
       <li><strong>Request your orders.</strong> Open <a href="https://www.amazon.com/hz/privacy-central/data-requests/preview.html" target="_blank" rel="noopener noreferrer">Amazon’s Request Your Data page ↗</a>, choose your order data and follow Amazon’s confirmation steps. Availability and labels vary by region; use your local Amazon account if needed.</li>
-      <li><strong>Download the export.</strong> When Amazon makes it available, download the ZIP. You can also upload its order-history CSV, usually named Retail.OrderHistory. This covers the orders included in that export.</li>
+      <li><strong>Download the export.</strong> When Amazon makes it available, download the ZIP. You can also upload its Order History.csv or Retail.OrderHistory.csv file. This covers the orders included in that export.</li>
       <li><strong>Review and save.</strong> Check the products, dates, quantities and statuses below before saving your purchase history.</li>
     </ol>
     <p className={styles.hint}>Previously purchased does not mean currently owned. Returned, cancelled, gifted or used items may no longer be available. Confirm what you still own and its location in your inventory before counting it toward a build.</p>
     {!loading && !configured && <p role="status">Order-history imports are temporarily unavailable. Please try again later.</p>}
+    <p className={styles.hint}><strong>Safari downloaded a folder?</strong> Open <strong>Your Orders → Your Amazon Orders → Order History.csv</strong> in the file picker. Select the CSV inside, not the folder. Your export may instead contain Retail.OrderHistory.csv.</p>
     <label htmlFor="amazon-history-file">Amazon order-history file</label>
     <input ref={input} id="amazon-history-file" type="file" accept=".csv,.zip,text/csv,application/zip" disabled={busy || loading || !configured}
       onChange={event => choose(event.target.files?.[0] ?? null)} />

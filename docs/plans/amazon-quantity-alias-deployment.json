@@ -1,0 +1,8 @@
+{
+  "changed_file": "app/services/commerce/purchase_import.py",
+  "change": "Accept Original Quantity alias",
+  "sha256": "1e691095b6f784cde7b42ce404807eb76ba0f05a6d39f4d1e112c2e143aeec1d",
+  "health": 200,
+  "database_health": 200,
+  "inventory_writes": false
+}

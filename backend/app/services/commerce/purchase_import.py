@@ -67,7 +67,7 @@ def _native(raw):
         raise ValueError('duplicate columns')
     aliases = {
         'order_id': ('orderid',), 'title': ('productname', 'title', 'itemname'),
-        'quantity': ('quantity', 'quantityordered'), 'ordered_at': ('orderdate',),
+        'quantity': ('quantity', 'quantityordered', 'originalquantity'), 'ordered_at': ('orderdate',),
         'asin': ('asin', 'asinisbn', 'asinisbnproductcode'),
         'line_id': ('orderitemid', 'lineid'), 'status': ('orderstatus', 'status'),
     }

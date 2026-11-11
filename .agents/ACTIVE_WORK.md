@@ -1705,3 +1705,17 @@ TypeScript passed. Live HTML and all four downloads verified byte-for-byte; PNG
 sizes validated. Safari may retain its old tab icon until the tab is reopened.
 No app behavior, backend, mobile or dependency changes. Receipt:
 `docs/plans/tab-icon-deployment.json`.
+
+Amazon export folder/quantity fix, November 11: Safari supplied an extracted
+Your Orders folder, and its native Order History.csv uses Original Quantity.
+Added that quantity alias in the purchase parser and clear folder-picker guidance
+and separate file-size validation in the upload UI. Invalid selections now clear.
+Deployed backend parser with guarded one-line diff and rollback; frontend release
+`findez-amazon-csv-help-20261111` preserves concurrent homepage changes.
+Four synthetic regression tests (nine cases) passed against the deployed parser;
+production frontend build passed. Health/database 200 and anonymous preview 401.
+Served JavaScript contains updated instructions. No customer purchase data was
+uploaded or saved; no inventory writes. Only local filenames and CSV headers
+were inspected. Receipts: `docs/plans/amazon-csv-help-deployment.json` and
+`docs/plans/amazon-quantity-alias-deployment.json`. Full user-file import remains
+for the user's preview and confirmation.
