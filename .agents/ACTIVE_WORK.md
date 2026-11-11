@@ -1,3 +1,7 @@
+## November 11 — Desktop download link on landing
+
+Added the Mac/Windows download link to the first screen. Production build and three responsive browser checks passed. See docs/releases/DESKTOP_LANDING_LINK.md.
+
 # Active work
 
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not
