@@ -70,3 +70,12 @@ Final SHA-256 (after stapling):
 7484548f9525ffc4b354e12f8f21c7d77a7e07eef2035831839ccf07f4061aff  FindEZ-0.1.2-mac-x64.dmg
 c0a490f106db5e433c1436b9b15ffa04818c65e8b0241136d1a20e090f2f1e0a  FindEZ-0.1.2-win-x64.exe
 ```
+
+## Windows download visibility
+
+At user request, Windows is hidden from /desktop and the landing CTA now says
+Download for Mac. Two-column cards collapse to one on narrow screens. Existing
+Windows installers and build configuration are retained. Published through
+zzzzzzzzzzz-desktop-mac-only.conf; lint, production build, live Mac-only link and
+metadata checks pass. Only three intended source files differ from the prior
+active release. No binary rebuild.

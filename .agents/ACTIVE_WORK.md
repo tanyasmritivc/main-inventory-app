@@ -1,3 +1,10 @@
+## November 11 - Windows download hidden
+
+User requested temporary hiding only. Public desktop page now shows two Mac cards;
+Windows copy removed and landing CTA says Download for Mac. Installer files and
+Windows build configuration retained. Lint, production build and live link checks
+pass. Active release: /home/ubuntu/findez-desktop-mac-only-20261111/frontend.
+
 ## November 11 - Desktop 0.1.2 released
 
 Branch feat/findez-desktop. Developer ID signed Mac apps, Apple notarization Accepted
