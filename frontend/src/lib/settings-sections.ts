@@ -1,5 +1,6 @@
 export const SETTINGS_SECTIONS = {
   profile: "Profile",
+  connections: "Connections",
   appearance: "Appearance",
   memory: "AI memory",
   plans: "Plans",

@@ -1,0 +1,10 @@
+.card { display: flex; align-items: center; gap: 18px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--light-line, #d8ddd6); border-radius: 16px; color: inherit; text-decoration: none; scroll-margin-top: 24px; }
+.card:hover { border-color: var(--text-secondary, #626a64); }
+.card:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.icon { flex-shrink: 0; }
+.content { display: grid; gap: 5px; flex: 1; min-width: 0; }
+.content strong { font-size: 20px; font-weight: 600; }
+.eyebrow { color: var(--text-secondary, #626a64); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+.description { color: var(--text-secondary, #626a64); font-size: 14px; line-height: 1.5; }
+.action { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; }
+@media (max-width: 650px) { .card { flex-wrap: wrap; padding: 20px; gap: 14px; } .action { width: 100%; } }

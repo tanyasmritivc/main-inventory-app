@@ -1,4 +1,5 @@
 "use client";
+import { SettingsConnections } from "./settings-connections";
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
@@ -263,6 +264,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
 
   return (
     <div className="settings-content">
+      {section === "connections" && <SettingsConnections />}
       {section === "profile" && <section className="settings-panel" id="profile">
         <header>
           <h2>Profile</h2>
@@ -390,6 +392,8 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
           </button>
         </footer>
       </section>}
+
+      {section === "profile" && <section className="settings-panel"><header><h2>Connections</h2></header><div className="settings-row"><div><strong>Amazon &amp; Shopify</strong><small>Manage your purchase and store connections.</small></div><Link href="/settings/connections" className="workspace-button">Manage connections</Link></div></section>}
 
       {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Appearance</h2></header>
         <div className="settings-static-row">

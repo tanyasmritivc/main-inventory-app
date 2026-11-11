@@ -1,3 +1,22 @@
+## November 10 - Amazon and Shopify integration lane
+
+Owner: user-assigned commerce terminal; isolated `feat/commerce-connectors` in
+`projects/findez-command-center/findez-commerce`, based on backend barcode217.
+Owns commerce service/routes, private commerce migration and tests. Shared router
+change is one additive registration. User subsequently assigned the merchant web
+Connections screen and OAuth callbacks here; these are implemented in the isolated
+branch. No CAD, canonical inventory, chat or mobile changes. Shopify organization,
+FindEZ Connect app and development store
+exist; secret remains in Shopify, with server configuration and test connection
+pending. Amazon seller sandbox exists, but the user clarified US personal shopping accounts. This lane now owns consumer Gmail OAuth (commerce Gmail/email service, private queue migration, workers, tests and Connections UI); no seller identity onboarding. The user replaced forwarding with Gmail; company email/Resend are out of scope. Gmail candidate validation passes; production activation and Google project/app setup remain pending. See docs/plans/gmail-purchases.md.
+User approved and deployed the private schema plus backend/web release. Commerce
+remains disabled pending provider setup and correction of the public proxy's
+callback Referrer-Policy override. Available SSH logins cannot access that proxy.
+Actual production-source overlay, real web build, loopback callback HTTP checks,
+isolated database rehearsal and live health/access checks passed.
+See `docs/plans/commerce-production-rollout.md`. Contract and pending client
+handoff: `docs/plans/commerce-connectors.md` and `.agents/HANDOFFS/commerce-connectors.md`.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.
@@ -1837,3 +1856,5 @@ Live Safari acceptance passed: the same question completed in 17.82257 seconds
 with one world_query, versus 178.841448 seconds and eight reads before the fix.
 The response includes saved zero-stock records and item links. No inventory
 writes were performed; one verification chat was saved in the test account.
+
+Gmail lane update: approved release deployed with imports disabled (2026-11-11 05:54 UTC). Implementation/runtime checks complete; awaiting public proxy correction and gateway data-handling verification before mailbox activation. See docs/plans/gmail-purchases.md.

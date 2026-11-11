@@ -1,3 +1,104 @@
+## November 11 - Sidebar Connections opens the page directly
+
+The world sidebar Connections link now targets `/settings/connections`, removing
+the Tools-card detour. Both the initial dashboard overlay and a guarded upgrade
+script carry the fix. Deployed 06:31:53 UTC from
+`/home/ubuntu/findez-connections-link-20261111/frontend`, build
+`skyU7PfRvStpn62l-xCxQ`. One navigation file changed; 589 other files from the
+latest CAD hover release were preserved. Changed-file ESLint and the production
+webpack build passed. Signed-in Safari verified the updated href and clicked it
+to the Connections page. Backend/schema/provider activation unchanged.
+Effective override: `/etc/systemd/system/findez-web.service.d/zzzzz-cad-hover.conf`;
+private release `deployment.json` and `zzzzz-cad-hover.before` record rollback.
+
+## November 11 - Connections in Profile and Settings
+
+Runtime 7fc35072 deployed 06:20:28 UTC as a regular settings page (not a modal).
+Sidebar Connections and Profile Manage connections verified live, including
+workspace/inventory selection and inline controls. Current web release:
+/home/ubuntu/findez-settings-connections-20261111/frontend. Effective override:
+/etc/systemd/system/findez-web.service.d/zzz-cad.conf; this outranks zz-commerce.
+Combined candidate preserves 579 unrelated files from the parallel CAD release.
+17 focused tests, TypeScript/lint and real production build passed. Backend/schema
+unchanged; Gmail disabled. Receipt/rollback: docs/plans/gmail-purchases.md.
+
+## November 11 - Connections visible on the Tools dashboard
+
+User could not find commerce in the newer live world layout. Runtime 65618ca3 adds
+an Amazon & Shopify dashboard card and Connections sidebar shortcut via a guarded
+live-source overlay. Deployed 06:01:37 UTC, preserving 572 unrelated files. TypeScript,
+lint, production build and visual/link acceptance in Safari passed. Current web:
+/home/ubuntu/findez-connect-dashboard-20261111/frontend. Gmail remains disabled;
+backend/schema unchanged. See docs/plans/gmail-purchases.md for overlay/rollback.
+
+## November 11 - Gmail release deployed, imports disabled
+
+Explicit user approval covered the two-table/three-function Gmail migration and
+staged release. Deployment completed 05:54:39 UTC, runtime 0da7747e. Fresh backup,
+live-source checks, production RLS/grants, API/db/web health and anonymous denial
+passed. Live Safari shows Amazon purchases on Connections with Gmail disabled.
+Credentials installed via a private server-only EnvironmentFile; no mailbox grants,
+polling or physical stock writes. Nginx now omits Gmail callback query/referrer data;
+public Caddy still overrides no-referrer. Gateway retention/deletion/training review
+and proxy correction remain required before activation. Deployment and rollback
+receipt: docs/plans/gmail-purchases.md; private /home/ubuntu/findez-gmail-20261111.
+
+## November 11 - Gmail Google setup and server candidate ready
+
+Created FindEZ Gmail Purchases OAuth client after approval; read-only scope saved,
+findezai@gmail.com eligible for testing. Credentials staged privately, Gmail disabled.
+Fresh isolated production-copy migration rehearsal preserved all 112 existing tables;
+live-source overlay preserved 578 unrelated files, focused tests and production build
+passed, callback HTTP smoke passed. Migration/deployment require explicit approval;
+public proxy and gateway data-handling gates still prevent live mailbox activation.
+See docs/plans/gmail-purchases.md for exact migration digest and receipts.
+
+## November 10 - Gmail purchase integration candidate
+
+User selected each shopper's Gmail instead of mail forwarding. Read-only Google
+OAuth/PKCE, encrypted tokens and queued bodies, filtered scheduled Amazon email
+imports, conservative quantity evidence, review UI and disconnect/purge are built.
+No mailbox messages or physical stock are mutated. New two-table/three-function
+migration is NOT applied. Google project/client, public verification, gateway data
+handling, callback proxy fixes and live consent/worker acceptance remain pending.
+Full local checks: 1,698 backend tests + 10 subtests, 358 web tests, TypeScript/lint,
+compile-only webpack with synthetic env/fonts, and 47 disposable SQL assertions.
+Compile artifacts must not be deployed. No actual Gmail has been read.
+See docs/plans/gmail-purchases.md and commerce handoff.
+
+## November 10 - Commerce deployed, provider activation pending
+
+`feat/commerce-connectors` adds disabled-by-default Shopify merchant and Amazon
+seller adapters, Amazon consumer CSV imports, private source evidence, token
+protection and Shopify lifecycle/privacy handling. No physical stock writes.
+1,671 backend/API-doc tests plus ten subtests and 46 focused commerce tests pass;
+disposable SQL migration replay/access/race/privacy assertions pass. All five CI
+jobs passed for 496c3cd1. Shopify FindEZ Connect app and sample-data dev store now
+exist under AI Robots INC. The user assigned merchant web UI/callbacks to this
+lane: Connections, read-only sync, source pagination, disconnect and purge are
+implemented with account/inventory guards and single-exchange callbacks. The user
+approved and deployed the five-table/three-function migration plus backend/web
+release at 04:34:44 UTC November 11. No provider app installation, server credentials
+or live store synchronization exists yet.
+Amazon seller developer account/sandbox now exist, but no live seller tokens. The user clarified US consumer purchases and selected Gmail OAuth. Gmail implementation is a separate, not-deployed candidate; see docs/plans/gmail-purchases.md. Consumer CSV is API-only; no mobile/FIND integration yet.
+Web validation: 353 tests/47 suites, TypeScript, changed-file lint, compile-only
+webpack build and callback header manifest checks pass. Safari fixtures inspected
+at desktop/390px in light/dark. Local HTTP bind denied by sandbox; no live OAuth
+acceptance claimed. Compile fixture output must not be deployed.
+Production preparation now passed: isolated full-database rehearsal preserved
+107 existing tables and checked schema objects; all 46 staged backend tests pass.
+The actual live-source web overlay builds with real production configuration;
+both callback HTTP security headers and anonymous Connections protection pass.
+Staged web has the same 78 failures as the live baseline, with no new failures.
+All five CI gates passed for 8d78f05c (run 42957769542). Public API/database health
+200, anonymous commerce denial 401 and Connections sign-in redirect 307 pass.
+Nginx callback logs omit query strings and referrers. Public Caddy still overrides
+callback no-referrer to same-origin; available SSH logins were rejected. Commerce
+stays disabled. The deployment receipt and rollback are in
+docs/plans/commerce-production-rollout.md; proxy operator instructions are in
+docs/plans/commerce-edge-proxy.md. See docs/plans/commerce-connectors.md
+and .agents/HANDOFFS/commerce-connectors.md for provider setup and handoff.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.

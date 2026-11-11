@@ -1,3 +1,23 @@
+## November 10 - US Amazon shoppers use opt-in Gmail
+
+The Amazon seller API is not the consumer purchase source. The user ultimately
+chose each shopper's Gmail over forwarded mail. Do not add Resend, company-inbox
+access or mail-server routes. Google gmail.readonly grants broad read permission;
+app queries/processes Amazon purchase notifications only and discloses this
+accurately. Purchases remain evidence, not current owned stock. No general-model
+training from Gmail-derived data; validate gateway handling before activation.
+Merchant integrations stay separate. See docs/plans/gmail-purchases.md.
+
+## November 10 - Commerce is source evidence, not physical stock
+
+Amazon/Shopify adapters retain actor-private, inventory-bound commerce records.
+Merchant sales never become consumer purchases; provider stock and purchase
+claims never increment items. SourceRecord is the handoff to the parallel FIND
+foundation lane. One live connection per provider/account avoids Shopify offline
+token conflicts. OAuth completion requires the initiating FindEZ JWT plus durable
+single-use state. Shopify redacted orders remain suppressed in later syncs.
+See docs/plans/commerce-connectors.md. This is a candidate, not deployed behavior.
+
 ## November 7 — Contextual questions bind to a persistent Space
 
 The Space Ask sheet must pass its Space ID and verify it server-side on every turn. Parent inventory context alone is insufficient. Image/file questions do not imply extraction or imports. Scoped history cannot be reused for another Space, and empty/deleted Spaces must never fall back to broader data. Main Chat remains separate.
