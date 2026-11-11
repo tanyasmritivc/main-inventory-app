@@ -34,13 +34,13 @@ const P={
 
 export function pageContent(key){return key.startsWith('sol:')?P.sol(key.slice(4)):P[key]()}
 export const navigation=`<nav class="top" id="nav"><div class="wrap"><a class="logo" href="#/"><span id="lg"></span>FindEZ AI</a>
- <div class="nl"><a href="#/solutions" data-r="solutions">Solutions</a><a href="#/founders" data-r="founders">Founders Access</a><a href="#/plans" data-r="plans">Plans &amp; access</a><a onclick="ext('docs')">Developers</a><div data-community></div></div>
+ <div class="nl"><a href="#/solutions" data-r="solutions">Solutions</a><a href="#/founders" data-r="founders">Founders Access</a><a onclick="ext('docs')">Developers</a><div data-community></div></div>
  <div class="nr"><a class="btn s" onclick="ext('signin')">Sign in</a><a class="btn p" onclick="ext('signup')">Get started free</a><button class="ib" onclick="mnav(1)" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></nav>
-<div class="mnav" id="mnav"><button class="ib" style="display:grid;align-self:flex-end" onclick="mnav(0)" aria-label="Close"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button><small>FindEZ</small><a href="#/" onclick="mnav(0)">Overview</a><a href="#/solutions" onclick="mnav(0)">Solutions</a><a href="#/founders" onclick="mnav(0)">Founders Access</a><a href="#/plans" onclick="mnav(0)">Plans &amp; access</a><div data-community></div><a onclick="ext('signin')">Sign in</a></div>
+<div class="mnav" id="mnav"><button class="ib" style="display:grid;align-self:flex-end" onclick="mnav(0)" aria-label="Close"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button><small>FindEZ</small><a href="#/" onclick="mnav(0)">Overview</a><a href="#/solutions" onclick="mnav(0)">Solutions</a><a href="#/founders" onclick="mnav(0)">Founders Access</a><div data-community></div><a onclick="ext('signin')">Sign in</a></div>
 `;
 export const footer=`<footer><div class="wrap"><div class="cols">
  <div><a class="logo" href="#/" style="display:flex"><span id="lg2"></span>FindEZ AI</a><p style="color:var(--tx2);margin-top:12px;max-width:300px">Know what you have. Find what you need. Instantly.</p></div>
- <div><h4>Product</h4><a href="#/founders">Founders Access</a><a onclick="ext('ios')">iPhone app</a><a onclick="ext('docs')">Developers</a></div>
+ <div><h4>Product</h4><a href="#/founders">Founders Access</a><a href="#/plans">Plans &amp; access</a><a onclick="ext('ios')">iPhone app</a><a onclick="ext('docs')">Developers</a></div>
  <div><h4>Company</h4><a onclick="ext('research')">Research</a><a onclick="ext('contact')">Contact</a><a onclick="ext('privacy')">Privacy</a><a onclick="ext('terms')">Terms</a></div></div>
  <div class="bot"><span>© 2026 AI Robots Inc.</span><span>FindEZ AI answers from what's recorded in your inventory.</span></div></div></footer>
 `;

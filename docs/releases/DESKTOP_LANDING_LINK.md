@@ -16,3 +16,13 @@ All desktop installers, callback fixes and unrelated production changes retained
 Service override: `zzzzzzzz-desktop-hero.conf`. Removing only that override and
 reloading/restarting findez-web restores the previous release. No backend/mobile
 or database changes.
+
+## Follow-up: Plans & access in footer
+
+Moved Plans & access from desktop and mobile marketing navigation into the Product
+footer, preserving its /pricing destination. Candidate release:
+`/home/ubuntu/findez-footer-plans-20261111/frontend`, copied from the desktop hero
+release with only sections.js replaced. No desktop download changes.
+Production build passed; live browser checks at 1440px and 390px confirmed no
+Plans & access link in either navigation and a working footer link to /pricing.
+Service override: zzzzzzzzz-footer-plans.conf; remove only that override to roll back.

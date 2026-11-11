@@ -1,3 +1,7 @@
+## November 11 — Plans & access moved to footer
+
+Removed from desktop/mobile marketing navigation; available under Product in the footer. Build and live desktop/mobile link checks passed.
+
 ## November 11 — Desktop download link on landing
 
 Added the Mac/Windows download link to the first screen. Production build and three responsive browser checks passed. See docs/releases/DESKTOP_LANDING_LINK.md.
