@@ -218,3 +218,33 @@ now points there. Private `manifest.private.json`, `deployment.json` and
 activation are unchanged. Signed-in Safari verified the card visually, followed it
 to the correct inventory's Connections screen, then verified the sidebar shortcut
 and left the dashboard card open. Connect Gmail remains disabled.
+
+
+## Profile and settings Connections — deployed November 11, 06:20:28 UTC
+
+Runtime `7fc35072` adds Connections to the account settings sidebar and a Manage
+connections link on Profile. The user explicitly corrected the initial request:
+this is a regular `/settings/connections` page, not a modal. It embeds the existing
+Amazon/Shopify controls after explicit workspace and inventory selection, checks
+inventory identity and edit permissions, and discards stale selection requests.
+It does not change the global inventory selection.
+
+`scripts/commerce_settings_overlay.py` applies guarded changes to the newer live
+settings/navigation files. The candidate was copied from the parallel CAD release
+and preserves 579 unrelated frontend files. Do not replace newer settings files
+with this branch's older baseline. Focused tests: 17 passed; TypeScript, changed-file
+ESLint and real production webpack build passed. Build ID: `pHTHWQUYNC_3TvbcVxlpb`.
+
+Current web release: `/home/ubuntu/findez-settings-connections-20261111/frontend`.
+The effective override is `/etc/systemd/system/findez-web.service.d/zzz-cad.conf`.
+An initial update to `zz-commerce.conf` was shadowed by that later override; the
+live 404 check caught it. The final deployment checks effective WorkingDirectory,
+restarts the combined build and verifies callback health. Future deployments must
+inspect effective systemd configuration, not assume a particular drop-in wins.
+Private `deployment.json` and `zzz-cad.before` in the release directory hold the
+receipt and winning-override rollback. Backend, schema and Gmail activation did
+not change; imports remain disabled.
+
+Signed-in Safari verified Connections navigation, workspace/inventory selection,
+inline controls, and the Profile Manage connections link returning to the regular
+Connections page. No mailbox was connected and no purchase data was imported.

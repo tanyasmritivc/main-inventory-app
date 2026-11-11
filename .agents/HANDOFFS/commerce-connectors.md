@@ -88,3 +88,33 @@ November 11 continuation: Google OAuth client created with user approval; Gmail 
 Deployment continuation: user explicitly approved; Gmail migration and runtime deployed at 2026-11-11T05:54:39Z with imports disabled. Production schema grants, health, anonymous denial and signed-in Safari card verified. Nginx Gmail log redaction verified; Caddy override and gateway data handling still block activation. Private deployment.json and deployment-backup contain receipt/rollback. No mailbox grant or messages read.
 
 Dashboard follow-up deployed at 06:01:37 UTC (65618ca3): Amazon & Shopify card on Tools plus Connections in world sidebar. Guarded scripts/commerce_dashboard_overlay.py applies to the newer live world files absent from this branch; two new card files are tracked. Current web release /home/ubuntu/findez-connect-dashboard-20261111/frontend, preserving 572 unrelated files. TypeScript/lint/real build and live visual/card/sidebar link checks pass. Gmail still disabled.
+
+
+## Profile and settings Connections — deployed November 11, 06:20:28 UTC
+
+Runtime `7fc35072` adds Connections to the account settings sidebar and a Manage
+connections link on Profile. The user explicitly corrected the initial request:
+this is a regular `/settings/connections` page, not a modal. It embeds the existing
+Amazon/Shopify controls after explicit workspace and inventory selection, checks
+inventory identity and edit permissions, and discards stale selection requests.
+It does not change the global inventory selection.
+
+`scripts/commerce_settings_overlay.py` applies guarded changes to the newer live
+settings/navigation files. The candidate was copied from the parallel CAD release
+and preserves 579 unrelated frontend files. Do not replace newer settings files
+with this branch's older baseline. Focused tests: 17 passed; TypeScript, changed-file
+ESLint and real production webpack build passed. Build ID: `pHTHWQUYNC_3TvbcVxlpb`.
+
+Current web release: `/home/ubuntu/findez-settings-connections-20261111/frontend`.
+The effective override is `/etc/systemd/system/findez-web.service.d/zzz-cad.conf`.
+An initial update to `zz-commerce.conf` was shadowed by that later override; the
+live 404 check caught it. The final deployment checks effective WorkingDirectory,
+restarts the combined build and verifies callback health. Future deployments must
+inspect effective systemd configuration, not assume a particular drop-in wins.
+Private `deployment.json` and `zzz-cad.before` in the release directory hold the
+receipt and winning-override rollback. Backend, schema and Gmail activation did
+not change; imports remain disabled.
+
+Signed-in Safari verified Connections navigation, workspace/inventory selection,
+inline controls, and the Profile Manage connections link returning to the regular
+Connections page. No mailbox was connected and no purchase data was imported.

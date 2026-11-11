@@ -1,3 +1,14 @@
+## November 11 - Connections in Profile and Settings
+
+Runtime 7fc35072 deployed 06:20:28 UTC as a regular settings page (not a modal).
+Sidebar Connections and Profile Manage connections verified live, including
+workspace/inventory selection and inline controls. Current web release:
+/home/ubuntu/findez-settings-connections-20261111/frontend. Effective override:
+/etc/systemd/system/findez-web.service.d/zzz-cad.conf; this outranks zz-commerce.
+Combined candidate preserves 579 unrelated files from the parallel CAD release.
+17 focused tests, TypeScript/lint and real production build passed. Backend/schema
+unchanged; Gmail disabled. Receipt/rollback: docs/plans/gmail-purchases.md.
+
 ## November 11 - Connections visible on the Tools dashboard
 
 User could not find commerce in the newer live world layout. Runtime 65618ca3 adds
