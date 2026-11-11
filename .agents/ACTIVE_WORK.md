@@ -1697,3 +1697,11 @@ through the existing shared appearance system, including first paint. Deployed
 `findez-cad-guide-theme-20261111`; only route classification changed at runtime.
 Build, 12 appearance tests, and four mode checks against the live HTML script
 passed. Existing auth boundaries and marketing theme behavior preserved.
+
+Browser-tab logo cache refresh: updated icon/shortcut metadata to new dated URLs
+for the existing current logo assets, preserving the artwork exactly. Deployed
+`findez-tab-icon-20261111`; four assets and root icon metadata changed. Build and
+TypeScript passed. Live HTML and all four downloads verified byte-for-byte; PNG
+sizes validated. Safari may retain its old tab icon until the tab is reopened.
+No app behavior, backend, mobile or dependency changes. Receipt:
+`docs/plans/tab-icon-deployment.json`.

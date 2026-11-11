@@ -1,0 +1,17 @@
+{
+  "deployed_at": "2026-11-11T23:11:57.009864+00:00",
+  "live": "/home/ubuntu/findez-tab-icon-20261111/frontend",
+  "build_id": "Jym1a1CJIIAux8AM88dWL",
+  "changed_files": [
+    "public/brand/findez-tab-20261111-16.png",
+    "public/brand/findez-tab-20261111-32.png",
+    "public/brand/findez-tab-20261111-96.png",
+    "public/brand/findez-tab-20261111.svg",
+    "src/app/layout.tsx"
+  ],
+  "preserved_files": 617,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}
