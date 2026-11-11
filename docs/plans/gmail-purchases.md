@@ -1,7 +1,7 @@
 # Amazon purchases through Gmail
 
-Status: tested release candidate in `feat/commerce-connectors`, PR388. Not deployed
-or enabled. User chose Gmail instead of forwarding; there is no receiving address,
+Status: deployed November 11, 2026 at 05:54:39 UTC from runtime `0da7747e`,
+`feat/commerce-connectors`, PR388. Gmail imports remain disabled. User chose Gmail instead of forwarding; there is no receiving address,
 Resend account, inbound webhook or company-mail integration in this change.
 
 Each FindEZ user authorizes their own Gmail through a separate OAuth client in the
@@ -47,16 +47,16 @@ foundation lane and are not implemented here. It must match/review these observa
 against current stock before allocating, claiming ownership or increasing quantities.
 Email status is source evidence, not proof of delivery/current possession.
 
-## Server setup (pending)
+## Server setup (deployed; activation pending)
 
-New migration `20261111_purchase_email.sql` adds two private RLS tables and three
-service-only functions. It does not modify existing items, merchant records, roles
-or commerce functions. Production schema changes require separate explicit approval
-under AGENTS.md; prior approval covered only the earlier commerce schema.
+Migration `20261111_purchase_email.sql` was applied after explicit user approval
+and a fresh private backup. It adds two private RLS tables and three service-only
+functions without modifying existing inventory quantities or merchant records.
+RLS and denied client access were verified in production.
 
-Configure the existing encryption key plus `FINDEZ_COMMERCE_GMAIL_*` from
-`backend/commerce.env.example`. Keep Gmail disabled until credentials, migration,
-callback security and worker smoke checks pass. Merchant activation is independent.
+A new encryption key and `FINDEZ_COMMERCE_GMAIL_*` are installed through a private
+server-only environment file, with Gmail disabled. Keep it disabled until callback
+security, data handling and worker smoke checks pass. Merchant activation is independent.
 
 Configure two separate systemd timers on the self-hosted API server, approximately
 once per minute, using the same server-only environment and deployed Python venv:
@@ -100,9 +100,9 @@ Never claim review is complete.
 - [Message retrieval](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/get)
 
 The existing Caddy callback Referrer-Policy override also affects this route. Extend
-the edge no-referrer/no-store and query-free logging rules to Gmail; the currently
-deployed Nginx special log location covers Shopify/Amazon only. Do this before a real
-OAuth round trip. See `commerce-edge-proxy.md`. No live Gmail has been read.
+the edge no-referrer/no-store and query-free logging rules to Gmail; Nginx special logging now covers all three callbacks and was verified with synthetic
+values. The separate Caddy change is still required before a real OAuth round trip.
+See `commerce-edge-proxy.md`. No live Gmail has been read.
 
 ## Verification
 
@@ -132,8 +132,8 @@ client **FindEZ Gmail Purchases**, with the sole redirect URI
 `https://www.findez.ai/connect/gmail/callback`. Saved only `gmail.readonly` in Data
 Access and verified `findezai@gmail.com` in the test-user list. No mailbox grant
 was authorized. The client JSON was copied to server staging, verified by digest,
-and protected with mode 0600 inside a mode 0700 directory. A disabled pending
-environment file and a new encryption key are staged; no live environment changed.
+and protected with mode 0600 inside a mode 0700 directory. The disabled environment
+file and new encryption key were installed during the approved deployment.
 A duplicate downloaded JSON remains in the local Downloads folder: sandbox
 restrictions prevented tightening its permissions. Remove that duplicate manually
 after confirming the secure copies; never paste its contents into chat.
@@ -168,11 +168,29 @@ Private receipts: `rehearsal.json`, `validation.json`, `http-smoke.json`,
 raw logs are excluded from source control. The configured gateway uses HTTPS;
 its upstream retention/deletion and training policy still require verification.
 
-Proposed deployment requires explicit production-database approval per AGENTS.md.
-Recheck live hashes, take a fresh backup, apply the exact migration, verify grants,
-then deploy the scoped backend overlay and switch the web service to this candidate.
-Install pending configuration with **Gmail disabled**; do not start polling workers.
+Deployment was explicitly approved and completed at 05:54:39 UTC. Live hashes were
+rechecked, a fresh backup taken, the exact migration applied and grants verified.
+The scoped backend overlay and staged web build are live with **Gmail disabled**.
+Polling workers have not been started.
 Keep previous source/service configuration for rollback; on failure restore those
 and retain the additive empty private schema instead of dropping user data.
 Public activation is a separate gate after proxy/log protection and data-handling
 checks; Google restricted-scope verification is required before broad release.
+
+
+## Deployment verification
+
+API/database/web health returned 200; the public Gmail endpoint rejected anonymous
+requests with 401. The public Gmail callback returned 200/no-store, while Caddy
+still replaces no-referrer with same-origin. Anonymous Connections redirects to
+sign-in with 307. Signed-in Safari verified the new Amazon purchases card, its
+mailbox/AI disclosures, disabled Connect Gmail button and no connected account.
+
+The API service loads `/home/ubuntu/findez-gmail-20261111/gmail.env` via
+`/etc/systemd/system/findez.service.d/zz-commerce-gmail.conf`; effective process
+configuration was checked without exposing values. The web service's existing
+`zz-commerce.conf` now targets `/home/ubuntu/findez-gmail-20261111/candidate/frontend`.
+Private rollback files/database backup are in `deployment-backup/`; receipts are
+`deployment.json` and `callback-logging.json`. Nginx configuration validation and
+reload passed, with synthetic Gmail parameters/referrers absent from callback logs.
+No mailbox grant, polling, email import or physical-stock write occurred.

@@ -1856,3 +1856,5 @@ Live Safari acceptance passed: the same question completed in 17.82257 seconds
 with one world_query, versus 178.841448 seconds and eight reads before the fix.
 The response includes saved zero-stock records and item links. No inventory
 writes were performed; one verification chat was saved in the test account.
+
+Gmail lane update: approved release deployed with imports disabled (2026-11-11 05:54 UTC). Implementation/runtime checks complete; awaiting public proxy correction and gateway data-handling verification before mailbox activation. See docs/plans/gmail-purchases.md.

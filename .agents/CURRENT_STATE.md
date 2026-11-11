@@ -1,3 +1,15 @@
+## November 11 - Gmail release deployed, imports disabled
+
+Explicit user approval covered the two-table/three-function Gmail migration and
+staged release. Deployment completed 05:54:39 UTC, runtime 0da7747e. Fresh backup,
+live-source checks, production RLS/grants, API/db/web health and anonymous denial
+passed. Live Safari shows Amazon purchases on Connections with Gmail disabled.
+Credentials installed via a private server-only EnvironmentFile; no mailbox grants,
+polling or physical stock writes. Nginx now omits Gmail callback query/referrer data;
+public Caddy still overrides no-referrer. Gateway retention/deletion/training review
+and proxy correction remain required before activation. Deployment and rollback
+receipt: docs/plans/gmail-purchases.md; private /home/ubuntu/findez-gmail-20261111.
+
 ## November 11 - Gmail Google setup and server candidate ready
 
 Created FindEZ Gmail Purchases OAuth client after approval; read-only scope saved,
