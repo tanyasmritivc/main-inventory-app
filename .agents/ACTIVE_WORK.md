@@ -1687,3 +1687,7 @@ Authenticated desktop Safari rendering and inventory selection checked. Guide an
 both downloads return 200. Safari automation then timed out; phone layout and
 fresh file-upload interaction remain unverified. See `docs/cad-guide/RELEASE.md`.
 No backend/mobile/auth/dependency/environment changes. No inventory writes.
+
+CAD setup-guide font follow-up: scoped the guide to the existing app Inter font.
+Deployed `findez-cad-guide-font-20261111`; one CSS file changed, 602 preserved.
+Production build and served CSS verification passed. No functional changes.

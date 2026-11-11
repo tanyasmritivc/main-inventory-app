@@ -41,3 +41,12 @@ and a fresh uploaded-file comparison were not completed in this pass. Responsive
 CSS is included, but no physical-phone or Fusion execution claim is made.
 The private desktop screenshot is retained outside the repository because browser
 chrome and the signed-in app contain personal account information.
+
+## Setup-guide font follow-up
+
+The standalone guide now scopes --font-main to the existing app Inter font.
+Its headings, body copy and links no longer inherit the public Jakarta default.
+Only cad.module.css changed at runtime; 602 other frontend files preserved.
+Production build passed and the public guide stylesheet contains the exact new
+font rule. Safari actions timed out, so this follow-up was verified from the
+served HTML/CSS. See font-deployment.json.

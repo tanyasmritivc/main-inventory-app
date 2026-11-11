@@ -114,7 +114,7 @@
 .inventoryList a:hover { background:color-mix(in srgb,var(--cad-text) 4%,transparent); text-decoration:none; }
 .inventoryList small { margin:0 0 5px; font-size:12px; }
 .inventoryList strong { font-size:16px; font-weight:500; }
-.guidePage { padding-top:32px; }
+.guidePage { --font-main:var(--font-app-inter),Inter,Arial,sans-serif; font-family:var(--font-main); padding-top:32px; }
 .guidePage > .hero { padding:32px 0; }
 .guideLayout { display:grid; grid-template-columns:210px minmax(0,1fr); gap:64px; }
 .guideNav { display:flex; flex-direction:column; align-items:flex-start; gap:16px; position:sticky; top:28px; align-self:start; font-size:13px; }
