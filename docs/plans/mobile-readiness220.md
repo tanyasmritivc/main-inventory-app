@@ -25,6 +25,10 @@ with physical iPhone acceptance deferred. Public review submission is not author
 - Explicit production configuration test: passed using private release definitions.
 - Flutter analysis: no issues. Final chat/world follow-up: 82 host tests passed;
   both corrected chat assertions also passed on the native simulator.
+- Onboarding follow-up: all 29 host cases passed; the retained-trial sign-in
+  flow also passed on iOS after normalizing its synthetic viewport and giving
+  the fixture ownership of injected text input. The other 28 native cases
+  passed in the preceding full onboarding run.
 - Backend mobile-branch snapshot: 845 passed. Current deployed backend source:
   1,625 passed. No backend source or customer inventory was changed.
 - PostgreSQL 17 isolation, concurrent writes, and account-memory suites: passed on

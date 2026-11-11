@@ -501,13 +501,29 @@ void main() {
         ..keep = true;
       (await TrialTemplates.load()).list(draft, '3 hammers, a drill');
       await ChatOnboardingStore.save(draft);
+      final nativePixelRatio = tester.view.devicePixelRatio;
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       draft.method = 'email';
       await ChatOnboardingStore.save(draft);
-      await tester.pumpWidget(MaterialApp(home: LaunchAuthGate(api: api)));
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) {
+            final metrics = MediaQuery.of(context);
+            return MediaQuery(
+              data: metrics.copyWith(
+                padding: metrics.padding / nativePixelRatio,
+                viewPadding: metrics.viewPadding / nativePixelRatio,
+                viewInsets: metrics.viewInsets / nativePixelRatio,
+              ),
+              child: child!,
+            );
+          },
+          home: LaunchAuthGate(api: api),
+        ),
+      );
       await pump(tester);
       await tester.tap(
         find.text('Already have an account? Sign in', findRichText: true),
@@ -518,6 +534,12 @@ void main() {
       await tester.tap(find.byKey(const Key('auth-email-option')));
       await pump(tester);
       expect(find.byType(AuthPage), findsOneWidget);
+      // This fixture injects editing values; the native IME must not replace
+      // them or animate a physical keyboard over its synthetic viewport.
+      if (!tester.testTextInput.isRegistered) {
+        tester.testTextInput.register();
+        addTearDown(tester.testTextInput.unregister);
+      }
       for (final entry in {
         'Email': 'trial@example.test',
         'Password': 'test-password',
@@ -529,6 +551,7 @@ void main() {
         await tester.enterText(field, entry.value);
       }
       final button = find.widgetWithText(FilledButton, 'Sign in');
+      await tester.pumpAndSettle();
       await tester.ensureVisible(button);
       await tester.pumpAndSettle();
       await tester.tap(button);
