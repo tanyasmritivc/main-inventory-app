@@ -23,7 +23,7 @@ const NUMS=rows=>`<div class="nums">${rows.map((r,i)=>`<div class="nr2 rv"><span
 
 const PROB=(h,b,close,solution=false)=>`<section ${solution?'class="solution-intro"':'class="blk" style="padding-bottom:60px"'}><div class="wrap prob"><h2 class="h2 rv">${h}</h2><p class="rv">${b}${close?`<b>${close}</b>`:''}</p></div></section>`;
 const P={
- home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','',{home:true,cta:'<div style="margin-top:12px"><a class="btn s" href="/desktop" style="min-height:44px">Download for Mac &amp; Windows</a></div>'})+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.','Join Founders Access',true)}),
+ home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','',{home:true,cta:'<div style="margin-top:12px"><a class="btn s" href="/desktop" style="min-height:44px">Download for Mac</a></div>'})+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.','Join Founders Access',true)}),
  solutions:()=>({k:null,html:solutionsSections()}),
  sol:k=>{const s=SOL[k];const extra=k==='home'?`<section class="blk"><div class="wrap"><h2 class="h2 rv">${s.uh?s.uh[0]:'How it helps'}</h2>${s.uh?`<p class="lead rv">${s.uh[1]}</p>`:''}${NUMS(s.uses)}</div></section>`+RAIL(k):'';return {k,labels:s.labels,html:(k==='home'?HERO(s.h,s.p,{eb:s.t}):`<div data-solution-hero="${k}"></div>`)+(s.prob?PROB(s.prob[0],s.prob[1],undefined,k!=='home'):'')+SCENE(k)+extra+WORDS(s.cta+' '+FA_TXT,'Get Free Founders Access')}},
  founders:()=>({k:null,html:foundersSections()}),
