@@ -105,7 +105,11 @@ void main() {
       );
       expect(finished, isFalse);
       await tester.pump(const Duration(milliseconds: 249));
-      expect(finished, isFalse);
+      // Native frames use wall time, so rendering overhead can cross the
+      // 600ms deadline. The host clock verifies this exact boundary.
+      if (tester.binding is AutomatedTestWidgetsFlutterBinding) {
+        expect(finished, isFalse);
+      }
       await tester.pump(const Duration(milliseconds: 1));
       await tester.pumpAndSettle();
       expect(finished, isTrue);
@@ -174,7 +178,10 @@ void main() {
     }
     handle.update('Checking confidence and trimming item photos...');
     await tester.pump();
-    expect(find.text('Checking confidence and trimming item photos...'), findsOneWidget);
+    expect(
+      find.text('Checking confidence and trimming item photos...'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
     handle.dismiss();
     await tester.pumpAndSettle();

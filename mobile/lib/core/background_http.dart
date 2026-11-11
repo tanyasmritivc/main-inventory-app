@@ -5,10 +5,20 @@ import 'package:http/http.dart' as http;
 
 /// File-backed URLSession uploads keep the HTTP exchange owned by iOS while
 /// Flutter is suspended. The same SSE decoder still owns application events.
-http.Client assistantHttpClient() =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
-    ? BackgroundHttpClient()
-    : http.Client();
+@visibleForTesting
+http.Client Function()? debugAssistantHttpClientFactory;
+
+http.Client assistantHttpClient() {
+  http.Client? testClient;
+  assert(() {
+    testClient = debugAssistantHttpClientFactory?.call();
+    return true;
+  }());
+  return testClient ??
+      (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
+          ? BackgroundHttpClient()
+          : http.Client());
+}
 
 class BackgroundHttpClient extends http.BaseClient {
   static const channel = MethodChannel('com.findez.app/assistant-network');

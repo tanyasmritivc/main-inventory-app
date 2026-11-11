@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -8,6 +9,7 @@ import '../test/inventory_chat_test.dart' as chat;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   typography.typographyCapture = (tester, name) async {
     final boundary = tester.renderObject<RenderRepaintBoundary>(
       find.byKey(const Key('system-font-frame')),

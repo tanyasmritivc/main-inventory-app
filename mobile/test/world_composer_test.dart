@@ -139,11 +139,16 @@ void main() {
               .widget<SmoothTypingHint>(find.byType(SmoothTypingHint))
               .visibleCharacters;
           expect(after, greaterThan(before));
-          expect(
-            after - before,
-            lessThan(1),
-            reason: 'Reveal advances every frame, not in whole-character jumps',
-          );
+          // A live device can render several frames during a 16ms pump.
+          // The host clock deterministically checks sub-character increments.
+          if (tester.binding is AutomatedTestWidgetsFlutterBinding) {
+            expect(
+              after - before,
+              lessThan(1),
+              reason:
+                  'Reveal advances every frame, not in whole-character jumps',
+            );
+          }
           expect(find.byType(ShaderMask), findsOneWidget);
         }
         await tester.enterText(find.byType(TextField), 'Keep this draft');

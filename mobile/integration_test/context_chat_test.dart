@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import '../test/inventory_chat_test.dart' as contextual;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   setUpAll(() async {
     // Resolve bundled font loading before native test frames mount paragraphs.
     AppTheme.create(Brightness.light);

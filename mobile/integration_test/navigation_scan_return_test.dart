@@ -1,3 +1,4 @@
+import 'support/synthetic_host.dart';
 // Runs existing user-flow fixtures on iOS and retains frames for visual review.
 import 'dart:io';
 import 'dart:typed_data';
@@ -25,6 +26,7 @@ Future<void> retainFrame(String name, Uint8List bytes) async {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   // Flutter taps exercise shell/cancellation. Actual UIKit bar taps are checked
   // separately with tool/native_tabs_visual.dart on the simulator.
   debugNativePresentationOverride = false;

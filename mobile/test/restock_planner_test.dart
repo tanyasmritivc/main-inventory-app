@@ -152,6 +152,13 @@ Widget _page(
     data: MediaQuery.of(context).copyWith(
       boldText: true,
       textScaler: TextScaler.linear(scale),
+      // Synthetic 1x viewports must not inherit 3x native safe-area pixels.
+      padding: keyboardHeight == null
+          ? null
+          : EdgeInsets.only(top: 44, bottom: keyboardHeight == 0 ? 34 : 0),
+      viewPadding: keyboardHeight == null
+          ? null
+          : const EdgeInsets.only(top: 44, bottom: 34),
       viewInsets: keyboardHeight == null
           ? null
           : EdgeInsets.only(bottom: keyboardHeight),
@@ -164,12 +171,18 @@ Widget _page(
     canEditStock: !viewOnly,
   ),
 );
-Future<void> _count(WidgetTester tester, String button, int count) async {
+Future<void> _count(
+  WidgetTester tester,
+  String button,
+  int count, {
+  Future<void> Function()? beforeTyping,
+}) async {
   final action = find.widgetWithText(FilledButton, button);
   await tester.ensureVisible(action);
   await tester.pumpAndSettle();
   await tester.tap(action);
   await tester.pumpAndSettle();
+  await beforeTyping?.call();
   await tester.enterText(
     find.byKey(const ValueKey('restock-count')),
     count.toString(),
@@ -744,15 +757,11 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         await _seed(ordered: true);
+        final api = _Api();
         await tester.pumpWidget(
           // The fixture forces devicePixelRatio=1. Native keyboard physical
           // pixels must not be interpreted as logical pixels on a 3x simulator.
-          _page(
-            _Api(),
-            brightness: brightness,
-            scale: 2.6,
-            keyboardHeight: 280,
-          ),
+          _page(api, brightness: brightness, scale: 2.6, keyboardHeight: 0),
         );
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
@@ -760,7 +769,22 @@ void main() {
           120,
         );
         expect(tester.takeException(), isNull);
-        await _count(tester, 'Record arrival', 5);
+        await _count(
+          tester,
+          'Record arrival',
+          5,
+          beforeTyping: () async {
+            await tester.pumpWidget(
+              _page(
+                api,
+                brightness: brightness,
+                scale: 2.6,
+                keyboardHeight: 280,
+              ),
+            );
+            await tester.pumpAndSettle();
+          },
+        );
         expect(tester.takeException(), isNull);
         await tester.ensureVisible(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
@@ -769,6 +793,9 @@ void main() {
           findsOneWidget,
         );
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpWidget(
+          _page(api, brightness: brightness, scale: 2.6, keyboardHeight: 0),
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await tester.scrollUntilVisible(

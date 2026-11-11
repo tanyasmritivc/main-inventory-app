@@ -38,6 +38,15 @@ void main() {
       null,
     ),
   );
+  test('synthetic native audits use the injected client', () {
+    final client = http.Client();
+    debugAssistantHttpClientFactory = () => client;
+    addTearDown(() {
+      debugAssistantHttpClientFactory = null;
+      client.close();
+    });
+    expect(assistantHttpClient(), same(client));
+  });
   test(
     'native response preserves chunk ordering and exact scoped request',
     () async {
