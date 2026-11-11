@@ -1,3 +1,12 @@
+## November 10 - Private CAD prototype acceptance
+
+The user declined to provide a private design or inventory. Continue with
+synthetic data; do not repeatedly request access. The initial Fusion preview uses
+local metadata export and an explicit browser upload into an authenticated
+inventory. It creates no persistent CAD records or stock mutations. Native host
+acceptance, direct desktop authentication and allocation transactions remain
+separate gates; unit tests do not certify them.
+
 ## November 10 - Fusion first; one stock reservation ledger
 
 Tanya confirmed Fusion 360 for the first robotics team. CAD Phase 0 specifies a

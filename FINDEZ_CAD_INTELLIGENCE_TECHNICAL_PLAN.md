@@ -1,6 +1,9 @@
 # FindEZ CAD Intelligence: technical implementation specification
 
-Status: Phase 0 discovery complete; implementation and deployment NOT started.
+Status: Phase 0 discovery complete. A subsequent read-only Fusion prototype is
+documented in [the implementation receipt](docs/plans/cad-intelligence/PROTOTYPE.md).
+Production deployment has not started; the full architecture below remains the
+target specification, not a claim that every capability is implemented.
 Audit date: 2026-11-10. First customer platform: **Autodesk Fusion 360**, confirmed
 by Tanya during this audit. Onshape is the second adapter. Work is organized by
 acceptance gates, not calendar estimates.
@@ -32,8 +35,8 @@ V2 adds safe allocation/consumption, evidence-backed alternatives and Assist too
 V3 may add transient CAD highlighting and geometry comparisons. Never infer
 engineering fitness from an inventory percentage or visual resemblance.
 
-No production application, mobile, inventory schema, environment or deployment
-configuration is changed by this delivery. Draft SQL is in
+The Phase 0 documentation delivery changed no production application, mobile,
+inventory schema, environment or deployment configuration. Draft SQL is in
 [`docs/plans/cad-intelligence/drafts/`](docs/plans/cad-intelligence/drafts/README.md),
 outside migration discovery, with an unconditional execution guard. It has not
 been applied to any database.

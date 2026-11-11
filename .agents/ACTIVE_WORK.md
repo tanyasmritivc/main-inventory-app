@@ -1,3 +1,13 @@
+## November 10 - Fusion CAD comparison prototype (not deployed)
+
+Lane `feat/fusion-cad-prototype` adds a local Fusion BOM exporter, bounded
+stateless inventory comparison API and authenticated `/cad` web review/download.
+No migrations, inventory writes, mobile changes or production deployment. User
+declined private CAD/inventory access; use synthetic fixtures and private user
+acceptance instructions. Native Fusion execution remains unverified. Read
+`docs/plans/cad-intelligence/PROTOTYPE.md` for tests, scope and rollout gates.
+Preserve newer production overlays; do not deploy the whole audit branch.
+
 ## November 10 - CAD Intelligence Phase 0 specification
 
 Documentation lane `docs/cad-intelligence-phase0`, based on `17632a92`. Tanya

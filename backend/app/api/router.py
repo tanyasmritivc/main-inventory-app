@@ -93,3 +93,6 @@ api_router.include_router(world_chat_router)
 
 from app.api.routes.personalization import router as personalization_router
 api_router.include_router(personalization_router)
+
+from app.api.routes.cad import router as cad_router
+api_router.include_router(cad_router)

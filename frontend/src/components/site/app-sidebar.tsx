@@ -84,6 +84,13 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     section: "Your world",
   },
   {
+    label: "CAD Intelligence",
+    route: "/cad",
+    icon: Boxes,
+    section: "Your world",
+    keywords: ["Fusion", "assembly", "BOM", "shortages"],
+  },
+  {
     label: "Review",
     route: "/review",
     icon: ListChecks,
