@@ -1,3 +1,15 @@
+## November 11 - Crop-first Auto Extract deployed
+
+Runtime 9807c471 deployed 08:27:34 UTC. One-file image-only follow-up adds regional
+close-ups from explicit area notes after the unchanged analysis, without extra AI
+calls. Crop is first and original second in saved galleries; missing/ambiguous
+locations keep the full source. All five CI gates pass, 1,653 local backend tests
+and 121 current-production candidate tests pass. Actual candidate Space saves,
+private image reads and duplicate-free retries verified. 171 unrelated Python
+files preserved. Live public HTTPS scan/Save/gallery/retry checks also pass; synthetic QA data removed. Chat,
+attachments, quantities, schema and clients are unchanged. Details/limitations:
+docs/plans/auto-extract-direct-vision.md.
+
 ## November 11 - Auto Extract whole-photo path live
 
 Runtime d755769d deployed 07:57:52 UTC after five CI gates (1,638 backend tests).

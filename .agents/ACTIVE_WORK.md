@@ -1,11 +1,14 @@
-## November 11 - Crop-first Auto Extract follow-up (in progress)
+## November 11 - Crop-first Auto Extract follow-up (deployed)
 
 Same branch/PR389. User requests images only: cropped item thumbnail first and
 retained full source second in the saved Space gallery. Whole-photo analysis,
 row conversion, quantities, chat attachments and AI chat must remain unchanged.
-Testing a separate optional localization step after the existing analysis; it
-cannot drop or rewrite rows. Existing capture_save/item_photos already retain
-and order both slides. No UI or database changes planned. Not deployed yet.
+Runtime 9807c471 adds regional close-ups from explicit area notes, with no extra
+AI calls or changes to analysis/counts. Existing capture_save/item_photos retain
+crop first and original second. Missing locations use the original. All five CI
+gates, 1,653 local tests and 121 current-server tests pass; candidate HTTP Save,
+private photos and retry checks pass. One-file deployment preserves 171 others.
+No UI, mobile binary or database change. Live public HTTPS scan/Save/gallery/retry checks also pass; synthetic QA data removed.
 
 ## November 11 - Auto Extract whole-photo vision (deployed)
 

@@ -18,13 +18,43 @@ change is needed. Existing saved records are not rewritten; this applies to new
 extractions. A separate AI coordinate experiment was rejected for latency and
 unreliable localization; no such inference is in the shipped implementation.
 
-Validation in progress: regional crop pixels, EXIF handling, image/source pairing,
+Validation: regional crop pixels, EXIF handling, image/source pairing,
 unchanged quantities, source fallback, shared-bin row preservation and existing
 save/retry/gallery ordering are covered by tests. AST comparison confirms
 `_read_photo`, `_stream_text` and `_prepare` remain identical to the prior release.
 The same frozen 29-row analysis yields 29 regional close-ups in 1.5 seconds including
 JPEG processing/contact-sheet rendering; this is not an end-to-end timing promise.
-Candidate/live HTTP save validation and deployment receipts follow below.
+All 1,653 local backend tests and 121 production-candidate tests pass. CI run
+42986237217 passes all five gates for runtime 9807c471. The unchanged legacy dense
+scan concurrency test again failed its 20ms peak-worker assertion on the first
+attempt (3 versus 4) and passed when that job was rerun; no extractor/test change.
+
+Deployed 2026-11-11 08:27:34 UTC as a guarded one-file overlay, preserving all 171
+other Python files. Health/database checks and anonymous denial pass. Receipt and
+rollback: `/home/ubuntu/findez-auto-extract-crops-20261111`.
+SHA256 `c8933ef54ba50afc39645cb93e584a2c28dcd6ea435278ba93e3c15569181d00`.
+
+Candidate HTTP checks saved one actual extracted item from each photo into a
+synthetic Space, verified both privately readable gallery images (crop first,
+original second), a smaller crop pixel area and duplicate-free retry. Crowded:
+30 rows/30 regional crops in 38.6s. Regular: 7 rows/2 regional crops in 15.3s;
+other rows retained their source because no explicit area was available.
+Synthetic account/items and 34 uploads were removed.
+
+Unchanged analysis limitation: descriptions and their formatting vary between
+inference calls. One candidate produced 28 recognized counts/14 estimates; the
+final crowded candidate's descriptions produced no recognized structured counts.
+The existing parser/placeholder handling was intentionally not modified by this
+image-only task. Cropping preserves every analyzed field and cannot improve or
+reduce counting accuracy. Exact segmentation and universal crop coverage are
+not implemented; area close-ups can include neighboring objects.
+
+Live public HTTPS verification also passes: crowded photo 32 rows/27 regional
+close-ups in 50.3s (31 recognized counts, 9 estimates); regular photo 7 rows/1
+regional close-up in 14.1s. Both saved to the disposable Space with crop first,
+original second, privately readable pixels and no duplicate on retry. The account,
+its two synthetic items and all 30 uploads were removed. Physical-phone acceptance
+remains for the user; no new app binary is required. Historical records are unchanged.
 
 ---
 
