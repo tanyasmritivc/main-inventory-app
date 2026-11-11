@@ -1,3 +1,14 @@
+## November 10 - CAD preview deployed
+
+The user authorized deploying the read-only Fusion BOM comparison for private
+user acceptance. Web build `LtL_paVYP-cqQal7EwtC1` and the additive CAD API are
+live, preserving the concurrent Gmail and Connections dashboard releases.
+No schema, mobile or inventory quantity changes. All 42 production-candidate
+CAD tests pass; web has 435 passing tests and the same 78 failures as its live
+baseline. Real production build and synthetic HTTPS 8/6/2 comparison pass.
+See `docs/plans/cad-intelligence/PRODUCTION_RELEASE.md` for release verification,
+limitations and rollback. Native Fusion execution remains unverified.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.

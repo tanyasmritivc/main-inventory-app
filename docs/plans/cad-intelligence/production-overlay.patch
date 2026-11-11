@@ -1,0 +1,83 @@
+--- a/frontend/src/components/site/app-sidebar.tsx
++++ b/frontend/src/components/site/app-sidebar.tsx
+@@ -85,6 +85,7 @@
+     icon: FileStack,
+     section: "Your world",
+   },
++  { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Your world", keywords: ["Fusion", "assembly", "BOM", "shortages"] },
+   {
+     label: "Review",
+     route: "/review",
+--- a/frontend/src/lib/inventory-selection.ts
++++ b/frontend/src/lib/inventory-selection.ts
+@@ -45,13 +45,13 @@
+   if (selection !== value) throw new Error("The inventory changed. Reopen this page and try again.");
+ }
+ 
+-const dataRoutes = /^\/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)/;
++const dataRoutes = /^\/(?:cad|search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)/;
+ export function inventoryApiPath(path: string, selected = selection) {
+   if (contextRequired && !selected && dataRoutes.test(path)) throw new Error("Choose an inventory before opening this page.");
+   return selected && dataRoutes.test(path) ? `/inventories/${selected.inventory_id}${path}` : path;
+ }
+ export function isInventoryPage(path: string) {
+-  return /^\/(?:home|scan|assist|inventory|inventory-access|spaces|documents|activity|review|restock|checkout|project-kits|collections|labels)(?:\/|$)/.test(path.split("?")[0]);
++  return /^\/(?:cad|home|scan|assist|inventory|inventory-access|spaces|documents|activity|review|restock|checkout|project-kits|collections|labels)(?:\/|$)/.test(path.split("?")[0]);
+ }
+ export function inventoryHref(href: string, selected = selection): string {
+   if (!selected || !href.startsWith("/") || href.startsWith("//")) return href;
+--- a/frontend/src/lib/protected-routes.ts
++++ b/frontend/src/lib/protected-routes.ts
+@@ -5,6 +5,7 @@
+  * `requireUser()` on the server; a test keeps this list and those pages in sync.
+  */
+ export const PROTECTED_ROUTE_PREFIXES = [
++  "/cad",
+   "/agent-approvals",
+   "/assist",
+   "/spaces",
+--- a/frontend/src/lib/app-theme-constants.ts
++++ b/frontend/src/lib/app-theme-constants.ts
+@@ -4,6 +4,7 @@
+ // from the router at runtime, because the inline theme script in
+ // layout.tsx runs before React and cannot import route metadata.
+ export const INTERIOR_PATH_PREFIXES = [
++  "/cad",
+   "/join/access",
+   "/organizations",
+   "/worlds",
+--- a/frontend/src/components/site/world-tools.tsx
++++ b/frontend/src/components/site/world-tools.tsx
+@@ -1,5 +1,5 @@
+ "use client";
+-import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
++import { Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
+ import Link from "next/link";
+ import { useState } from "react";
+ import { InventoryChatArchive } from "./inventory-chat-archive";
+@@ -8,6 +8,7 @@
+ 
+ const tools = [
+   ["Capture / Import", "Photos, barcodes and spreadsheets", "/scan"],
++  ["CAD Intelligence", "Compare a Fusion assembly with your inventory", "/cad"],
+   ["Documents", "Files for your inventory", "/documents"],
+   ["Review", "Check items before saving", "/review"],
+   ["Activity", "Recent inventory changes", "/activity"],
+@@ -16,7 +17,7 @@
+   ["Labels", "Print and identify items", "/labels"],
+   ["Inventory settings", "Access and preferences", "/inventory-access"],
+ ] as const;
+-const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
++const toolIcons = [Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
+ type Inventory = { inventory_id: string; name: string; workspace_name: string; can_edit: boolean };
+ export function WorldTools({accountId, inventories}: {accountId: string; inventories: Inventory[]}) {
+   const [selected, setSelected] = useState("");
+--- a/backend/app/api/router.py
++++ b/backend/app/api/router.py
+@@ -108,3 +108,6 @@
+ 
+ from app.api.routes.commerce import router as commerce_router
+ api_router.include_router(commerce_router)
++
++from app.api.routes.cad import router as cad_router
++api_router.include_router(cad_router)

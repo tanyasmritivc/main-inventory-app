@@ -1,3 +1,11 @@
+## November 10 - User-authorized CAD preview deployment
+
+Deploy the read-only Fusion preview before the user tests their own assembly.
+Preserve current production overlays and use synthetic accounts/stock for release
+checks. The existing 78 web failures are baseline failures, not a green suite;
+CAD checks and real public comparison must pass. No private-design access,
+allocation writes, migrations or native certification is implied by deployment.
+
 ## November 10 - Private CAD prototype acceptance
 
 The user declined to provide a private design or inventory. Continue with

@@ -1,0 +1,16 @@
+{
+  "source_commit": "f917c4e7fa97249db7bec48f50d2870b4c775e15",
+  "started_at": "2026-11-11T06:04:20.863369+00:00",
+  "build_id": "LtL_paVYP-cqQal7EwtC1",
+  "schema_changed": false,
+  "inventory_mutations": false,
+  "backend_deployed": true,
+  "web_deployed": true,
+  "old_web": "/home/ubuntu/findez-connect-dashboard-20261111/frontend",
+  "new_web": "/home/ubuntu/findez-cad-release-20261111/candidate-v2/frontend",
+  "api_health": 200,
+  "web_health": 200,
+  "unrelated_backend_files_preserved": 164,
+  "unrelated_web_files_preserved": 433,
+  "completed_at": "2026-11-11T06:04:24.896210+00:00"
+}

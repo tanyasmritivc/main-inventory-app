@@ -2,8 +2,9 @@
 
 Status: Phase 0 discovery complete. A subsequent read-only Fusion prototype is
 documented in [the implementation receipt](docs/plans/cad-intelligence/PROTOTYPE.md).
-Production deployment has not started; the full architecture below remains the
-target specification, not a claim that every capability is implemented.
+The read-only preview is [deployed](docs/plans/cad-intelligence/PRODUCTION_RELEASE.md).
+The full architecture below remains the target specification, not a claim that
+every capability is implemented.
 Audit date: 2026-11-10. First customer platform: **Autodesk Fusion 360**, confirmed
 by Tanya during this audit. Onshape is the second adapter. Work is organized by
 acceptance gates, not calendar estimates.

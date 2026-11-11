@@ -1,8 +1,9 @@
 # Fusion CAD comparison prototype
 
 Date: 2026-11-10. Branch: `feat/fusion-cad-prototype`, based on the Phase 0
-documentation commit `0eeac588`. Status: implemented and tested locally; not
-deployed. This is an initial read-only vertical slice, not the complete roadmap.
+documentation commit `0eeac588`. Status: the read-only preview is deployed;
+see [the production receipt](PRODUCTION_RELEASE.md) for the current live overlay,
+verification and rollback. This is an initial vertical slice, not the complete roadmap.
 
 The user declined to provide a private assembly or target inventory. Respect that
 decision: automated and visual checks use synthetic designs/stock only. No
@@ -96,9 +97,10 @@ final production build. No application type checking was disabled.
 - At most 5 MiB JSON, 20,000 occurrences, 5,000 definitions, depth 64 and 50,000
   records per stock table. More than 100 candidate stock records for one line
   produces an explicit review warning, not truncated automatic coverage.
-- Reconcile newer production source overlays before a rollout. Do not deploy this
-  older branch wholesale. No production SQL, environment changes, service restart,
-  mobile binary, external account registration or private-data migration occurred.
+- Future rollouts must reconcile current production source overlays rather than
+  deploy this older branch wholesale. The subsequent user-authorized preview
+  rollout is documented in `PRODUCTION_RELEASE.md`; no production SQL, mobile
+  binary, CAD account registration or private-data migration was needed.
 
 The full implementation plan and unapplied schema remain in the Phase 0 document.
 Stock writes still require the shared all-writer locking and transactional tests
