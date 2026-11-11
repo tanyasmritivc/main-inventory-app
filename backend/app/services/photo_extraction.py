@@ -21,6 +21,7 @@ async def extract_inventory_items(
     source_frame_url=None,
     on_progress=None,
     on_regions=None,
+    direct_photo=False,
 ):
     settings = get_settings()
     if settings.findez_extraction_provider == "find":
@@ -31,7 +32,10 @@ async def extract_inventory_items(
             user_id=user_id,
             source_frame_url=source_frame_url,
         )
-    from app.services.glm_extraction import extract
+    if direct_photo:
+        from app.services.direct_photo_extraction import extract
+    else:
+        from app.services.glm_extraction import extract
 
     try:
         return await asyncio.to_thread(

@@ -145,7 +145,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     def report(message):
                         loop.call_soon_threadsafe(progress.put_nowait, message)
                     extraction = asyncio.create_task(extract_inventory_items(
-                        filename='photo.jpg', image_bytes=photo, content_type='image/jpeg',
+                        filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', direct_photo=True,
                         user_id=actor, source_frame_url=stored.url, on_progress=report))
                     last_heartbeat = loop.time()
                     try:

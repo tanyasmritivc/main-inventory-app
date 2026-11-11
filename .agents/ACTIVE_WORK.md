@@ -1,3 +1,26 @@
+## November 11 - Crop-first Auto Extract follow-up (deployed)
+
+Same branch/PR389. User requests images only: cropped item thumbnail first and
+retained full source second in the saved Space gallery. Whole-photo analysis,
+row conversion, quantities, chat attachments and AI chat must remain unchanged.
+Runtime 9807c471 adds regional close-ups from explicit area notes, with no extra
+AI calls or changes to analysis/counts. Existing capture_save/item_photos retain
+crop first and original second. Missing locations use the original. All five CI
+gates, 1,653 local tests and 121 current-server tests pass; candidate HTTP Save,
+private photos and retry checks pass. One-file deployment preserves 171 others.
+No UI, mobile binary or database change. Live public HTTPS scan/Save/gallery/retry checks also pass; synthetic QA data removed.
+
+## November 11 - Auto Extract whole-photo vision (deployed)
+
+User explicitly requested the successful ordinary photo-chat approach for Auto
+Extract and forbids changes to chat attachments or AI chat. Isolated branch
+fix/auto-extract-direct-vision owns only photo_extraction.py dispatch, the new
+direct_photo_extraction.py and extraction tests/docs. Chat services, gateway
+client, model configuration, mobile/web UI and database remain untouched.
+Deployed d755769d after five CI gates and candidate/live same-photo API checks.
+Whole-photo vision plus text-only conversion preserves review/save contracts.
+See docs/plans/auto-extract-direct-vision.md for limits and rollback. Commerce is paused.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.

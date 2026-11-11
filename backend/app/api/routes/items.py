@@ -567,6 +567,7 @@ async def extract_from_image_route(
     )
     try:
         data = await extract_inventory_items(
+            direct_photo=True,
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",
@@ -655,6 +656,7 @@ async def inventory_extract_from_image_route(
 
     try:
         data = await extract_inventory_items(
+            direct_photo=True,
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",

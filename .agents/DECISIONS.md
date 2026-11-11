@@ -1,3 +1,11 @@
+## November 11 — Image-only follow-up preserves Auto Extract analysis
+
+The crop-first request must not alter the newly deployed whole-photo analysis,
+row list, quantities or ordinary chat. Derive regional close-ups only from explicit
+area notes after analysis; ambiguous locations retain the source. These are broad
+context crops, not exact object boundaries. Existing save/gallery code keeps the
+crop first and original second. No extra model pass or new identity/counting logic.
+
 ## November 7 — Contextual questions bind to a persistent Space
 
 The Space Ask sheet must pass its Space ID and verify it server-side on every turn. Parent inventory context alone is insufficient. Image/file questions do not imply extraction or imports. Scoped history cannot be reused for another Space, and empty/deleted Spaces must never fall back to broader data. Main Chat remains separate.

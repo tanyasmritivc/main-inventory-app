@@ -1,3 +1,34 @@
+## November 11 - Crop-first Auto Extract deployed
+
+Runtime 9807c471 deployed 08:27:34 UTC. One-file image-only follow-up adds regional
+close-ups from explicit area notes after the unchanged analysis, without extra AI
+calls. Crop is first and original second in saved galleries; missing/ambiguous
+locations keep the full source. All five CI gates pass, 1,653 local backend tests
+and 121 current-production candidate tests pass. Actual candidate Space saves,
+private image reads and duplicate-free retries verified. 171 unrelated Python
+files preserved. Live public HTTPS scan/Save/gallery/retry checks also pass; synthetic QA data removed. Chat,
+attachments, quantities, schema and clients are unchanged. Details/limitations:
+docs/plans/auto-extract-direct-vision.md.
+
+## November 11 - Auto Extract whole-photo path live
+
+Runtime d755769d deployed 07:57:52 UTC after five CI gates (1,638 backend tests).
+Same original parts-bin photo produced 31 editable rows in 43.1s over public HTTPS;
+13 counts are estimates. Ordinary chat/attachments and model configuration remain
+unchanged; only explicit Auto Extract opts in. Source-photo previews replace crop
+inference. 168 unrelated production files preserved; no schema or client changes.
+No automatic inventory writes; disposable QA accounts/uploads removed. Details and
+rollback: docs/plans/auto-extract-direct-vision.md. No mobile update required.
+
+## November 11 - Auto Extract direct vision candidate
+
+User requests the photo-chat analysis for Auto Extract, while prohibiting changes
+to ordinary attachments/chat. New explicit extraction opt-in uses whole-photo
+vision then text-only row conversion; default legacy dispatch is unchanged.
+All 1,627 local backend tests and 81 isolated current-production tests pass.
+Real HTTP validation/deployment is in progress. See
+`docs/plans/auto-extract-direct-vision.md`. No chat/model/schema/UI changes.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.
