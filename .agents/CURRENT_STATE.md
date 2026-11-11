@@ -1,3 +1,12 @@
+## November 11 - Connections visible on the Tools dashboard
+
+User could not find commerce in the newer live world layout. Runtime 65618ca3 adds
+an Amazon & Shopify dashboard card and Connections sidebar shortcut via a guarded
+live-source overlay. Deployed 06:01:37 UTC, preserving 572 unrelated files. TypeScript,
+lint, production build and visual/link acceptance in Safari passed. Current web:
+/home/ubuntu/findez-connect-dashboard-20261111/frontend. Gmail remains disabled;
+backend/schema unchanged. See docs/plans/gmail-purchases.md for overlay/rollback.
+
 ## November 11 - Gmail release deployed, imports disabled
 
 Explicit user approval covered the two-table/three-function Gmail migration and

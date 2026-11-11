@@ -194,3 +194,27 @@ Private rollback files/database backup are in `deployment-backup/`; receipts are
 `deployment.json` and `callback-logging.json`. Nginx configuration validation and
 reload passed, with synthetic Gmail parameters/referrers absent from callback logs.
 No mailbox grant, polling, email import or physical-stock write occurred.
+
+
+## Dashboard discoverability — deployed November 11, 06:01:37 UTC
+
+Runtime `65618ca3` adds an Amazon & Shopify card above the Tools grid and a visible
+Connections shortcut in organization/personal world navigation. The card carries
+the Tools inventory selection into `/inventory/connect`; the shortcut opens the
+card without assuming an inventory from another organization.
+
+The live world dashboard is newer than this commerce branch. Its existing source
+was preserved: `scripts/commerce_dashboard_overlay.py` makes two guarded changes
+to `world-tools.tsx` and `world-navigation.ts` in a fresh live-source candidate,
+which also receives the two new commerce-dashboard-card files. Apply that overlay
+when porting this branch to the current world UI; do not replace live dashboard
+files with the older branch. This preserves 572 unrelated frontend files.
+
+TypeScript, changed-component ESLint and the real production webpack build pass.
+Build `Taahjb8fsWD206UgC85Jy` deployed from
+`/home/ubuntu/findez-connect-dashboard-20261111/frontend`; the web service override
+now points there. Private `manifest.private.json`, `deployment.json` and
+`zz-commerce.before` preserve the review/rollback receipt. API/database and Gmail
+activation are unchanged. Signed-in Safari verified the card visually, followed it
+to the correct inventory's Connections screen, then verified the sidebar shortcut
+and left the dashboard card open. Connect Gmail remains disabled.
