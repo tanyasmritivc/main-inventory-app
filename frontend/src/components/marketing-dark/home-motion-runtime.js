@@ -71,11 +71,11 @@ const rio=life.observer(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classLi
 if(RM)document.querySelectorAll('.x-h2').forEach(h=>h.classList.add('on'));
 
 let last=-1;function frame(){if(!RM&&fine){const d=tgt-cur;if(Math.abs(d)>.5){cur+=d*.16;window.scrollTo(0,cur)}else if(cur!==tgt){cur=tgt;window.scrollTo(0,cur)}}
- const y=scrollY;if(last!==y){last=y;const k=RM?1:eo(cl(y/520));$('x-stage').style.transform=`rotateX(${(1-k)*16}deg) scale(${.93+.07*k}) translateY(${(1-k)*-12}px)`}if(!document.hidden)life.raf(frame)}
+ const y=scrollY;if(last!==y){last=y;const k=RM?1:eo(cl(y/520));if($('x-stage'))$('x-stage').style.transform=`rotateX(${(1-k)*16}deg) scale(${.93+.07*k}) translateY(${(1-k)*-12}px)`}if(!document.hidden)life.raf(frame)}
 life.on(document,'visibilitychange',()=>{if(!document.hidden)life.raf(frame)});life.raf(frame);
-const mq=document.querySelector('.landing-home .mqr');life.observer(es=>{mq.style.animationPlayState=es[0].isIntersecting?'running':'paused'}).observe(mq);
+const mq=document.querySelector('.landing-home .mqr');if(mq)life.observer(es=>{mq.style.animationPlayState=es[0].isIntersecting?'running':'paused'}).observe(mq);
 return ()=>life.close();}
-export function mountBackground(){const life=homeLife();// ---- background: the mark's petals drift apart into bins and come back ----
+export function mountBackground(occluders=[["pm",.6,.4],["fa-card",.7,.3]]){const life=homeLife();// ---- background: the mark's petals drift apart into bins and come back ----
 const bg=$('x-bg'),g=bg.getContext('2d'),MK=new Path2D('M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z');let W=0,H=0;
 function bsize(){const d=1;W=innerWidth;H=innerHeight;bg.width=W*d;bg.height=H*d;g.setTransform(d,0,0,d,0,0)}life.on(window,'resize',bsize);bsize();
 const QD=[[0,0,-1,-1],[50,0,1,-1],[0,50,-1,1],[50,50,1,1]];
@@ -87,7 +87,7 @@ function drawBg(p,t){g.clearRect(0,0,W,H);const mob=W<700,apart=ss(.1,.32,p)*(1-
  g.restore()}
 
 let last=-1,dirty=true;life.on(window,'resize',()=>{dirty=true});
-function frame(){const y=scrollY;if(y!==last||dirty){last=y;dirty=false;const max=document.documentElement.scrollHeight-innerHeight;const r=$('pm').getBoundingClientRect(),f=$('fa-card').getBoundingClientRect();const hidden=(r.top<innerHeight*.6&&r.bottom>innerHeight*.4)||(f.top<innerHeight*.7&&f.bottom>innerHeight*.3);bg.style.opacity=hidden?'0':'1';if(!hidden)drawBg(max>0?y/max:0,0)}if(!document.hidden)life.raf(frame)}
+function frame(){const y=scrollY;if(y!==last||dirty){last=y;dirty=false;const max=document.documentElement.scrollHeight-innerHeight;const hidden=occluders.some(([id,top,bottom])=>{const el=$(id);if(!el)return false;const r=el.getBoundingClientRect();return r.top<innerHeight*top&&r.bottom>innerHeight*bottom});bg.style.opacity=hidden?'0':'1';if(!hidden)drawBg(max>0?y/max:0,0)}if(!document.hidden)life.raf(frame)}
 life.on(document,'visibilitychange',()=>{if(!document.hidden){dirty=true;life.raf(frame)}});life.raf(frame);life.dispose(()=>{bg.width=bg.height=0});
 return ()=>life.close();}
 export function mountPinned(){const life=homeLife(),RM=matchMedia('(prefers-reduced-motion: reduce)').matches;// ---- pinned section: photo -> particles -> parts list ----

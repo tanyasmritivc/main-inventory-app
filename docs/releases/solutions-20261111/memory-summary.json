@@ -1,0 +1,10 @@
+{
+  "samples": 251,
+  "elapsed_seconds": 161.74,
+  "peak_MiB": 142.78,
+  "final_MiB": 135.5,
+  "last_60s_min_MiB": 134.94,
+  "last_60s_max_MiB": 135.5,
+  "last_60s_first_MiB": 135.1,
+  "notes": "Safari Memory timeline on the live Solutions page; two complete scroll passes, followed by a sustained interval. Recording paused briefly for an intermediate export and then resumed. Measures page categories, not total Safari process RSS."
+}

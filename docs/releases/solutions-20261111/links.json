@@ -1,0 +1,78 @@
+[
+  {
+    "path": "/",
+    "status": "200"
+  },
+  {
+    "path": "/#cad",
+    "status": "200"
+  },
+  {
+    "path": "/desktop",
+    "status": "200"
+  },
+  {
+    "path": "/docs/api",
+    "status": "200"
+  },
+  {
+    "path": "/founders",
+    "status": "200"
+  },
+  {
+    "path": "/pricing",
+    "status": "200"
+  },
+  {
+    "path": "/privacy",
+    "status": "200"
+  },
+  {
+    "path": "/research",
+    "status": "200"
+  },
+  {
+    "path": "/signin",
+    "status": "200"
+  },
+  {
+    "path": "/signup",
+    "status": "200"
+  },
+  {
+    "path": "/solutions",
+    "status": "200"
+  },
+  {
+    "path": "/solutions/engineering-labs",
+    "status": "200"
+  },
+  {
+    "path": "/solutions/makerspaces",
+    "status": "200"
+  },
+  {
+    "path": "/solutions/robotics",
+    "status": "200"
+  },
+  {
+    "path": "/solutions/workshops",
+    "status": "200"
+  },
+  {
+    "path": "/terms",
+    "status": "200"
+  },
+  {
+    "path": "https://apps.apple.com/us/app/findez-ai/id6760401697",
+    "status": "200"
+  },
+  {
+    "path": "https://discord.gg/sKRrWA5wbf",
+    "status": "200"
+  },
+  {
+    "path": "https://www.instagram.com/findezai/",
+    "status": "200"
+  }
+]

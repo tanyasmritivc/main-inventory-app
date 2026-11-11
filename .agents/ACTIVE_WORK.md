@@ -1724,3 +1724,15 @@ removed. Animation scripts and assets unchanged. Production build
 existing loader failure. No app config changes. Public destinations return 200;
 Safari desktop and 390px layouts inspected. Details and six live screenshots:
 `docs/releases/landing-home2-20261111/README.md`.
+
+## Solutions replacement, November 11, 2026
+
+Completed on feat/landing-home. Replaced /solutions using supplied solutions-v3.
+Reused homepage header/footer, scroll/background controllers and frame scheduler
+with identical home defaults. Preserved the four sub-pages and shared legacy
+modules used by other routes. Deployed directly to active self-hosted
+findez-amazon-csv-help-20261111 release. Production build YC7_goO_VyAqbzcsjPHm8
+passed. Safari 1440×900 and 390×844 verified; map cycling, destinations, header,
+anchor and bidirectional pinned morph inspected. All 19 HTTP destinations return
+200. Final minute memory 134.94–135.50 MiB. No local preview or external hosting.
+Report, file list, routes and six screenshots: docs/releases/solutions-20261111/README.md.
