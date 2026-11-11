@@ -1,3 +1,12 @@
+## November 10 — Spreadsheet BOMs are flat, user-confirmed requirements
+
+CSV/XLSX imports must not fabricate Fusion occurrences or infer nested totals.
+Review a single worksheet, map fields, require positive whole each quantities,
+and confirm assembly/subtotal rows are excluded. Preserve source row identity,
+share stock across repeated rows, and retain conservative identity matching.
+Reject lossy numeric Excel identifiers rather than guessing leading zeros.
+No persistent BOM records or inventory mutation is authorized by comparison.
+
 ## November 10 - User-authorized CAD preview deployment
 
 Deploy the read-only Fusion preview before the user tests their own assembly.

@@ -36,3 +36,11 @@
 .error { color: var(--cad-text); padding-left: 12px; border-left: 3px solid currentColor; }
 .empty { padding: 20px; }
 @media (max-width: 650px) { .metrics { grid-template-columns: 1fr; } .card { padding: 20px; } }
+
+.mapping { min-width: 0; margin: 20px 0; padding: 18px; border: 1px solid var(--cad-line); border-radius: 12px; display: grid; gap: 18px; }
+.mapping label { display: grid; gap: 8px; font-size: 14px; }
+.mapping select { width: 100%; min-width: 0; }
+.mappingGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; }
+.mapping label.confirm { display: flex; align-items: flex-start; line-height: 1.5; }
+.confirm input { margin-top: 4px; flex-shrink: 0; }
+.mapping td { overflow-wrap: anywhere; min-width: 100px; max-width: 300px; }

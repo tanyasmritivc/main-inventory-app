@@ -18,16 +18,34 @@ export type CadComparison = {
   items: CadLine[];
 };
 
-export async function compareCad(file: File, signal: AbortSignal): Promise<CadComparison> {
+export type BomField = "name" | "quantity" | "part_number" | "manufacturer" | "barcode" | "unit";
+export type BomMapping = Partial<Record<BomField, number>>;
+export type BomSheet = { name: string; headers: string[]; row_count: number; sample: string[][]; suggested_mapping: BomMapping };
+export type BomPreview = { inventory_id: string; file_sha256: string; sheets: BomSheet[] };
+export type BomOptions = { sheet: string; mapping: BomMapping; confirmed: boolean };
+
+async function uploadBom<T extends { inventory_id: string }>(path: string, file: File, signal: AbortSignal, options?: BomOptions): Promise<T> {
   const inventory = activeInventory();
   if (!inventory) throw new Error("Choose an inventory first.");
-  if (!file.name.toLowerCase().endsWith(".json") || !file.size || file.size > 5 * 1024 * 1024)
-    throw new Error("Choose a FindEZ Fusion JSON export smaller than 5 MiB.");
+  if (!/\.(json|csv|xlsx)$/i.test(file.name) || !file.size || file.size > 5 * 1024 * 1024)
+    throw new Error("Choose a Fusion JSON, CSV or Excel (.xlsx) BOM smaller than 5 MiB.");
   const body = new FormData(); body.append("file", file);
-  const result = await apiRequest<CadComparison>("/cad/compare", { method: "POST", body, signal });
+  if (options) {
+    body.append("sheet", options.sheet); body.append("mapping", JSON.stringify(options.mapping));
+    body.append("flat_bom_confirmed", String(options.confirmed));
+  }
+  const result = await apiRequest<T>(path, { method: "POST", body, signal });
   assertInventory(inventory);
   if (result.inventory_id !== inventory.inventory_id) throw new Error("The inventory changed. Compare again.");
   return result;
+}
+
+export function previewBom(file: File, signal: AbortSignal): Promise<BomPreview> {
+  return uploadBom<BomPreview>("/cad/preview", file, signal);
+}
+
+export function compareCad(file: File, signal: AbortSignal, options?: BomOptions): Promise<CadComparison> {
+  return uploadBom<CadComparison>("/cad/compare", file, signal, options);
 }
 
 export function shortageCsv(result: CadComparison): string {

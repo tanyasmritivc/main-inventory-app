@@ -1,0 +1,22 @@
+{
+  "previous_web": "/home/ubuntu/findez-connections-link-20261111/frontend",
+  "active_web": "/home/ubuntu/findez-cad-sheets-20261111/candidate-v2/frontend",
+  "build_id": "WfWMGfPCND7k6Ul5w4SsC",
+  "backend_changed": [
+    "app/api/routes/cad.py",
+    "app/services/cad/comparison.py",
+    "app/services/cad/repository.py",
+    "app/services/cad/tabular.py"
+  ],
+  "preserved_backend_files": 262,
+  "preserved_web_files": 586,
+  "deployed_at_utc": "2026-11-11T06:50:51Z",
+  "local_backend_checks": 132,
+  "production_backend_checks": 75,
+  "frontend_checks": 21,
+  "live_csv_xlsx_browser_checks": true,
+  "fusion_json_regression": true,
+  "stock_unchanged": true,
+  "qa_accounts_removed": 2,
+  "staging_stopped": true
+}

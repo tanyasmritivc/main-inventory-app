@@ -1,3 +1,12 @@
+## November 10 — CAD spreadsheet import deployed
+
+Read-only CSV/XLSX BOM preview, column mapping, validation and comparison are live.
+Fusion JSON is preserved. 132 local backend, 75 production-candidate backend and
+21 frontend checks passed, plus real CSV/XLSX browser and Fusion JSON HTTP
+acceptance. Synthetic QA data removed; staging stopped. No mobile changes, stock
+writes or migrations. Details: docs/plans/cad-intelligence/SPREADSHEET_BOM_RELEASE.md.
+Task complete.
+
 ## November 10 — CAD navigation published
 
 CAD Intelligence links now appear in the profile menu, Profile and Settings,

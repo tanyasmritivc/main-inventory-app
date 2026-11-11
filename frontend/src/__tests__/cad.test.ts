@@ -1,4 +1,4 @@
-import { compareCad, shortageCsv, type CadComparison } from "@/lib/cad";
+import { compareCad, previewBom, shortageCsv, type CadComparison } from "@/lib/cad";
 import { apiRequest } from "@/lib/api";
 import { inventoryApiPath, inventoryHref, isInventoryPage, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import { INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
@@ -26,7 +26,7 @@ test("only explicit valid file uploads use the scoped request", async () => {
   const controller = new AbortController();
   expect(await compareCad(file, controller.signal)).toBe(result);
   expect(request).toHaveBeenCalledWith("/cad/compare", expect.objectContaining({ method: "POST", signal: controller.signal }));
-  await expect(compareCad(new File(["{}"], "robot.f3d"), controller.signal)).rejects.toThrow("JSON export");
+  await expect(compareCad(new File(["{}"], "robot.f3d"), controller.signal)).rejects.toThrow("Fusion JSON");
   expect(request).toHaveBeenCalledTimes(1);
 });
 
@@ -49,4 +49,21 @@ test("CSV exports only shortages and neutralizes spreadsheet formulas", () => {
   expect(csv).toContain("'+Bad");
   expect(csv).toContain('"00123"');
   expect(csv).not.toContain("Covered component");
+});
+
+test("spreadsheet preview and mapped comparison stay inventory-scoped", async () => {
+  request.mockResolvedValue(result);
+  const file = new File(["sheet"], "bom.xlsx"); const signal = new AbortController().signal;
+  await previewBom(file, signal);
+  expect(request).toHaveBeenLastCalledWith("/cad/preview", expect.objectContaining({ signal }));
+  await compareCad(file, signal, {sheet:"Parts",mapping:{name:0,quantity:1},confirmed:true});
+  const form = (request.mock.calls[1][1] as {body:FormData}).body;
+  expect(form.get("sheet")).toBe("Parts");
+  expect(form.get("mapping")).toBe('{"name":0,"quantity":1}');
+  expect(form.get("flat_bom_confirmed")).toBe("true");
+});
+
+test("spreadsheet preview discards a response after inventory switch", async () => {
+  request.mockImplementation(async () => {selectInventory({...inventory,inventory_id:"other"});return result;});
+  await expect(previewBom(new File(["csv"],"bom.csv"),new AbortController().signal)).rejects.toThrow("inventory changed");
 });

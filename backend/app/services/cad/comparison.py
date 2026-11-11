@@ -6,6 +6,7 @@ import hashlib
 import json
 
 from .snapshot import Snapshot, requirements
+from .tabular import TabularSnapshot
 
 
 def normalized(value):
@@ -18,8 +19,8 @@ def count(value):
     return value if type(value) is int and 0 <= value <= 1_000_000_000 else 0
 
 
-def compare(snapshot: Snapshot, inventory: list[dict], reservations: list[dict], checkouts: list[dict]) -> dict:
-    rows, warnings = requirements(snapshot)
+def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reservations: list[dict], checkouts: list[dict]) -> dict:
+    rows, warnings = snapshot.requirements() if isinstance(snapshot, TabularSnapshot) else requirements(snapshot)
     items = {str(i['item_id']): i for i in inventory}
     if len(items) != len(inventory):
         raise ValueError('Inventory changed during paging. Try again.')

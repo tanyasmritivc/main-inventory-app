@@ -1,3 +1,11 @@
+## November 10 — CSV/XLSX CAD BOM imports live
+
+CAD now accepts CSV and Excel (.xlsx) with explicit worksheet/column review and
+flat-parts confirmation, in addition to Fusion JSON. It uses existing inventory
+matching and deductions without changing stock. Production build
+`WfWMGfPCND7k6Ul5w4SsC`; public browser and HTTP acceptance pass. See
+`docs/plans/cad-intelligence/SPREADSHEET_BOM_RELEASE.md` for limits and rollback.
+
 ## November 10 — CAD hover styling published
 
 CSS-only build `FbnIQsJwJlPGjJEf6lzk7` adds hover/focus underlines to CAD
