@@ -1,11 +1,11 @@
 {
   "name": "findez-desktop",
   "productName": "FindEZ",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "description": "FindEZ inventory, CAD Intelligence and Ask on your desktop",
   "author": {
-    "name": "FindEZ",
+    "name": "AI Robots Inc.",
     "email": "info@findez.ai"
   },
   "license": "UNLICENSED",

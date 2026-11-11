@@ -44,10 +44,22 @@ function createWindow(){
     item.setSaveDialogOptions({title:'Save from FindEZ',defaultPath:path.join(app.getPath('downloads'),path.basename(item.getFilename()))});
     item.once('done',(_e,state)=>{if(state==='interrupted')void showError('The download was interrupted. Please try again.');});
   });
-  window=new BrowserWindow({width:1280,height:860,minWidth:720,minHeight:560,show:false,title:'FindEZ',backgroundColor:'#111112',icon:path.join(__dirname,'../build/icon.png'),autoHideMenuBar:process.platform!=='darwin',webPreferences:{partition:'persist:findez',nodeIntegration:false,nodeIntegrationInWorker:false,nodeIntegrationInSubFrames:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,spellcheck:true}});
+  window=new BrowserWindow({width:1280,height:860,minWidth:1000,minHeight:640,show:false,title:'FindEZ',backgroundColor:'#111112',icon:path.join(__dirname,'../build/icon.png'),autoHideMenuBar:process.platform!=='darwin',webPreferences:{partition:'persist:findez',nodeIntegration:false,nodeIntegrationInWorker:false,nodeIntegrationInSubFrames:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,spellcheck:true}});
   window.once('ready-to-show',()=>window.show());window.on('closed',()=>{window=null;});
   const contents=window.webContents;
   contents.on('will-navigate',route);contents.on('will-redirect',route);
+  // The signed-in app keeps the web desktop layout. Onboarding remains responsive.
+  const applyWindowLayout=()=>{
+    if(window?.isDestroyed() || !window)return;
+    let onboarding=false;
+    try{const u=new URL(contents.getURL());onboarding=trusted(u.href)&&(u.pathname==='/onboarding'||u.pathname.startsWith('/onboarding/'));}catch{}
+    const minWidth=onboarding?720:1000, minHeight=onboarding?560:640;
+    window.setMinimumSize(minWidth,minHeight);
+    const [width,height]=window.getSize();
+    if(width<minWidth||height<minHeight)window.setSize(Math.max(width,minWidth),Math.max(height,minHeight));
+  };
+  contents.on('did-navigate',applyWindowLayout);
+  contents.on('did-navigate-in-page',applyWindowLayout);
   contents.on('will-attach-webview',event=>event.preventDefault());
   contents.setWindowOpenHandler(({url})=>{if(oauth(url))void startBrowserSignIn(url);else if(trusted(url))void contents.loadURL(url);else void openOutside(url);return {action:'deny'};});
   contents.on('did-fail-load',(_event,code,_description,failedUrl,isMainFrame)=>{if(isMainFrame && code!==-3 && trusted(failedUrl))void window?.loadFile(offline);});
@@ -65,7 +77,7 @@ function makeMenu(){
     {role:'windowMenu'},
     {label:'Help',submenu:[{label:'Download updates',click:()=>void openOutside(APP_ORIGIN+'/desktop')},{label:'Open FindEZ in browser',click:()=>void openOutside(APP_ORIGIN+'/worlds')},{label:'Privacy',click:()=>void openOutside(APP_ORIGIN+'/privacy')},...(process.platform==='darwin'?[]:[{role:'about'}])]},
   ];
-  app.setAboutPanelOptions({applicationName:'FindEZ',applicationVersion:app.getVersion(),copyright:'Copyright © 2026 FindEZ',website:APP_ORIGIN,iconPath:path.join(__dirname,'../build/icon.png'),credits:'Desktop preview. Internet connection required.'});
+  app.setAboutPanelOptions({applicationName:'FindEZ',applicationVersion:app.getVersion(),copyright:'Copyright © 2026 AI Robots Inc.',website:APP_ORIGIN,iconPath:path.join(__dirname,'../build/icon.png'),credits:'Desktop preview. Internet connection required.'});
   Menu.setApplicationMenu(Menu.buildFromTemplate(items));
 }
 app.on('activate',()=>{if(app.isReady())createWindow();});

@@ -1,6 +1,6 @@
 appId: ai.findez.desktop
 productName: FindEZ
-copyright: Copyright © 2026 FindEZ
+copyright: Copyright © 2026 AI Robots Inc.
 asar: true
 files:
   - src/**
@@ -23,7 +23,7 @@ electronFuses:
 mac:
   category: public.app-category.productivity
   icon: build/icon.icns
-  identity: '-'
+  identity: 'Vinod Rex (Y68YH9U95S)'
   notarize: false
   minimumSystemVersion: '13.0'
   extendInfo:

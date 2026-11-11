@@ -1,9 +1,9 @@
 # FindEZ desktop preview
 
 Electron desktop client for the existing hosted FindEZ app. Mac Apple silicon,
-Mac Intel and Windows x64 installers. Internet access is required. Version 0.1.0
-is a preview: Mac has an ad-hoc integrity signature, not a Developer ID signature
-or notarization; Windows is unsigned. Windows runtime acceptance remains pending.
+Mac Intel and Windows x64 installers. Internet access is required. Version 0.1.2
+uses Developer ID signed Mac apps with Apple-notarized, stapled DMGs. Windows remains unsigned;
+Windows runtime acceptance remains pending.
 macOS 13+, Windows 10+. No offline inventory database or automatic updater.
 
 ## Build
@@ -45,6 +45,21 @@ covers this callback. Closing the app during OAuth requires starting sign-in aga
 Email verification/password reset and actual Google/Apple account completion need
 manual end-to-end acceptance before a stable release.
 
+## Mac distribution
+
+The configured Developer ID Application identity is Vinod Rex (Y68YH9U95S).
+Its private key stays in the local login keychain and private-key directory, never
+in this repository. `notarize: false` deliberately separates packaging from release
+authentication: submit each completed DMG using `xcrun notarytool submit`, wait for
+Accepted, staple with `xcrun stapler staple`, validate the staple, then verify the
+contained app with `codesign --verify --deep --strict` and `spctl --assess --type execute`.
+Generate release checksums only after stapling. Do not publish a pending or rejected
+submission, remove quarantine, or instruct users to disable Gatekeeper.
+
+The signed-in app opens at 1280x860 and cannot shrink below 1000x640, preserving
+the website's desktop sidebar. `/onboarding` keeps its existing responsive page
+and permits 720x560; leaving it restores the desktop minimum.
+
 ## Acceptance testing
 
 `test/policy.test.cjs` exercises navigation, permission and PKCE validation.
@@ -57,10 +72,14 @@ FINDEZ_QA_CSV and FINDEZ_QA_XLSX. Never use a customer's inventory. It checks br
 OAuth routing, password login, CSV/XLSX comparison, persisted session and offline UI.
 Delete disposable accounts and inventory after testing.
 
+`test/layout-acceptance.cjs` uses PLAYWRIGHT_MODULE and FINDEZ_QA_ACCOUNTS to
+verify the actual Electron minimum-size sidebar and navigation to/from onboarding.
+The onboarding route uses a static fixture to test window policy, not signup.
+Optionally set FINDEZ_LAYOUT_SCREENSHOT to a local screenshot path.
+
 ## Stable release gates
 
-Obtain a Developer ID Application identity and notarize Mac artifacts; configure
-Windows publisher signing. Test installed builds on Intel Mac and Windows, actual
+Keep Developer ID signing and notarization valid; configure Windows publisher signing. Test installed builds on Intel Mac and Windows, actual
 Google/Apple completion, email links, camera, microphone, notifications, downloads,
 uninstall/reinstall and protocol association. Use the Help menu to download updates;
 this preview does not silently replace binaries.
