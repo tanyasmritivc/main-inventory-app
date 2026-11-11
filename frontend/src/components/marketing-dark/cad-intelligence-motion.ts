@@ -14,51 +14,94 @@ export function mountCadDemo(root: HTMLElement, styles: Record<string, string>) 
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const element = (id: string) => root.querySelector<HTMLElement>(`[data-cad="${id}"]`)!;
   const cv = root.querySelector<HTMLCanvasElement>('canvas')!;
-  const win = element('win');
   const g = cv.getContext('2d');
-  const rows = CAD_SAMPLE.map((_, i) => ({ row: element('r'+i), count: element('h'+i), chip: element('t'+i) }));
-  const upload = element('prog'), bar = element('progress'), done = element('done');
-  const scan = element('scan'), label = element('mlab');
-  const ready = element('ready'), sums = element('sums'), mb = element('mb'), mu = element('mu');
+  const D = CAD_SAMPLE;
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const counters = new Set<number>();
+  let alive = true, started = false, windowVisible = false, canvasVisible = false;
+  let replayPending = false, frameId = 0, W = 0, H = 0, ratio = 1;
   const ST = Array(8).fill(0);
-  let CUR = -1, progress = 0, target = 0, frameId = 0, lastTime = 0;
-  let alive = true, W = 0, H = 0, ratio = 1;
-  const clamp = (n: number) => Math.max(0, Math.min(1, n));
-  // Scroll controls every stage. Disable timed CSS transitions so they never lag behind it.
-  [bar, scan, mb, mu, ...rows.flatMap(({row, chip}) => [row, chip])].forEach(el => { el.style.transition = 'none'; });
-  function render() {
-    const p = progress;
-    const uploaded = p >= .16;
-    upload.style.display = uploaded ? 'none' : '';
-    done.style.display = uploaded ? 'block' : 'none';
-    bar.style.width = `${clamp(p / .16) * 100}%`;
-    CUR = -1;
-    rows.forEach(({row, count, chip}, i) => {
-      const [, , needed, stock] = CAD_SAMPLE[i];
-      const start = .16 + i * .085;
-      const local = clamp((p - start) / .085);
-      const shown = clamp(local / .45);
-      const resolved = clamp((local - .65) / .35);
-      row.style.opacity = String(shown);
-      row.style.transform = `translateY(${(1-shown)*6}px)`;
-      row.className = `${styles.r}${resolved > 0 && stock < needed ? ' '+styles.flag : ''}`;
-      count.textContent = String(Math.round(stock * (1-Math.pow(1-local,3))));
-      chip.className = `${styles.st} ${styles[stock >= needed ? 'ok' : stock === 0 ? 'miss' : 'short']}`;
-      chip.textContent = stock >= needed ? 'Ready' : stock === 0 ? 'Missing' : 'Short '+(needed-stock);
-      chip.style.opacity = String(resolved);
-      ST[i] = resolved > 0 ? (stock >= needed ? 1 : 2) : 0;
-      if (local > 0 && local < 1) CUR = i;
+  let CUR = -1;
+  const t0 = performance.now();
+
+  const at = (ms: number, fn: () => void) => {
+    const id = setTimeout(() => { timers.delete(id); if (alive) fn(); }, ms);
+    timers.add(id);
+  };
+  function clearSequence() {
+    timers.forEach(clearTimeout); timers.clear();
+    counters.forEach(cancelAnimationFrame); counters.clear();
+  }
+  function count(i: number, ms: number) {
+    const el = element('h'+i), to = D[i][3], start = performance.now();
+    function tick(now: number) {
+      const k = Math.min(1,(now-start)/ms);
+      el.textContent = String(Math.round(to*(1-Math.pow(1-k,3))));
+      if (k < 1) {
+        const id = requestAnimationFrame(time => { counters.delete(id); if (alive) tick(time); });
+        counters.add(id);
+      }
+    }
+    tick(start);
+  }
+  function reset() {
+    clearSequence(); ST.fill(0); CUR = -1;
+    element('mlab').textContent = 'Reading assembly';
+    D.forEach((_,i) => {
+      element('r'+i).className = styles.r;
+      element('h'+i).textContent = '0';
+      element('t'+i).className = styles.st;
+      element('t'+i).textContent = '';
     });
-    const completed = p >= .9;
-    scan.style.opacity = CUR >= 0 ? '1' : '0';
-    if (CUR >= 0) scan.style.top = rows[CUR].row.offsetTop+'px';
-    label.textContent = completed ? 'Shortages shown in amber' : CUR >= 0 ? 'Matching: '+CAD_SAMPLE[CUR][0] : 'Reading assembly';
-    const summary = clamp((p-.9)/.1);
-    mb.style.width = `${62.5*summary}%`;
-    mu.style.width = `${37.5*summary}%`;
-    ready.textContent = completed ? '5' : '0';
-    sums.textContent = completed ? '3 short or missing' : uploaded ? 'Comparing' : p > 0 ? 'Uploading' : 'Waiting for upload';
-    draw();
+    element('prog').style.display = '';
+    element('progress').style.transition = 'none'; element('progress').style.width = '0';
+    element('done').style.display = 'none';
+    element('mb').style.width = element('mu').style.width = '0';
+    element('ready').textContent = '0';
+    element('sums').textContent = 'Waiting for upload';
+    element('scan').style.opacity = '0';
+  }
+  function status(i: number) {
+    const [, ,n,h] = D[i], chip = element('t'+i);
+    ST[i] = h >= n ? 1 : 2;
+    chip.className = `${styles.st} ${styles[h >= n ? 'ok' : h === 0 ? 'miss' : 'short']} ${styles.on}`;
+    chip.textContent = h >= n ? 'Ready' : h === 0 ? 'Missing' : 'Short '+(n-h);
+    if (h < n) element('r'+i).classList.add(styles.flag);
+  }
+  function summary() {
+    const ok = D.filter(d => d[3] >= d[2]).length, short = D.length-ok;
+    element('mb').style.width = (ok/D.length*100)+'%';
+    element('mu').style.width = (short/D.length*100)+'%';
+    element('ready').textContent = String(ok);
+    element('sums').textContent = `${short} short or missing`;
+  }
+  function finished() {
+    clearSequence(); CUR = -1;
+    D.forEach((d,i) => { element('r'+i).classList.add(styles.on); element('h'+i).textContent = String(d[3]); status(i); });
+    element('prog').style.display = 'none'; element('done').style.display = 'block';
+    element('scan').style.opacity = '0';
+    summary(); element('mlab').textContent = 'Shortages shown in amber';
+    draw(performance.now());
+  }
+  function play() {
+    if (motion.matches) { finished(); return; }
+    if (!windowVisible || document.hidden) { replayPending = true; return; }
+    replayPending = false;
+    reset(); element('sums').textContent = 'Uploading';
+    at(60, () => { element('progress').style.transition = 'width 1.5s cubic-bezier(.32,.72,0,1)'; element('progress').style.width = '100%'; });
+    at(1650, () => { element('prog').style.display = 'none'; element('done').style.display = 'block'; element('sums').textContent = 'Comparing'; });
+    D.forEach((d,i) => {
+      const time = 1900+i*340;
+      at(time, () => {
+        const row = element('r'+i), scan = element('scan');
+        row.classList.add(styles.on); scan.style.opacity = '1'; scan.style.top = row.offsetTop+'px';
+        count(i,420); CUR = i; element('mlab').textContent = 'Matching: '+d[0];
+      });
+      at(time+430, () => status(i));
+    });
+    const end = 1900+D.length*340+500;
+    at(end, () => { element('scan').style.opacity = '0'; CUR = -1; element('mlab').textContent = 'Shortages shown in amber'; summary(); });
+    at(end+6500,play);
   }
 
   // Point generation and projection are ported unchanged from the supplied source.
@@ -76,9 +119,9 @@ for(const sx of [-1,1]){
 for(let i=0;i<90;i++)add((R()*2-1)*.82,(R()<.5?-1:1)*.06,(R()<.5?-1:1)*1.2,6);
 for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1)*.16;add(f==0?Math.sign(x)*.22:x,f==1?Math.sign(y)*.12:y,f==2?Math.sign(z)*.16:z,7)}
 
-  function draw() {
+  function draw(now: number) {
     if (!g || !W || !H) return;
-    const t = motion.matches ? 1.1 : progress * 4;
+    const t = motion.matches ? 1.1 : (now-t0)/1000;
     g.clearRect(0,0,W,H);
  const cx=W*.5,cy=H*.47,S=Math.min(W*.15,H*.29),ay=t*.35+.7,ax=-.42;const ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.cos(ax),sb=Math.sin(ax);
  const pul=.5+.5*Math.sin(t*8);
@@ -88,52 +131,52 @@ for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1
   g.fillStyle=c;const s=(cur?1.5:1)*(1+1.1*dep);g.fillRect(px-s/2,py-s/2,s,s)}
 
   }
-  function stop() { cancelAnimationFrame(frameId); frameId = 0; lastTime = 0; }
+  function stopCanvas() { cancelAnimationFrame(frameId); frameId = 0; }
   function frame(now: number) {
     frameId = 0;
-    if (!alive || document.hidden) return;
-    const elapsed = lastTime ? Math.min(64, now-lastTime) : 16;
-    lastTime = now;
-    progress += (target-progress) * (1-Math.exp(-elapsed/65));
-    if (Math.abs(target-progress) < .0005) progress = target;
-    render();
-    if (progress !== target) frameId = requestAnimationFrame(frame);
-    else lastTime = 0;
+    if (!alive || motion.matches || document.hidden || !canvasVisible) return;
+    draw(now); frameId = requestAnimationFrame(frame);
   }
-  function update() {
-    if (!alive || document.hidden) return;
-    const rect = win.getBoundingClientRect();
-    const viewport = window.innerHeight;
-    // A short natural scroll completes the demo; no pinning or extra page height.
-    const distance = Math.min(420, Math.max(220, viewport*.48));
-    target = motion.matches ? 1 : clamp((viewport*.8-rect.top)/distance);
-    if (motion.matches || rect.bottom <= 0 || rect.top >= viewport) {
-      stop(); progress = target; render();
-    } else if (!frameId && progress !== target) frameId = requestAnimationFrame(frame);
+  function refreshCanvas() {
+    stopCanvas();
+    if (document.hidden || !canvasVisible) return;
+    draw(performance.now());
+    if (!motion.matches) frameId = requestAnimationFrame(frame);
   }
   function size() {
     const r = cv.getBoundingClientRect(), d = Math.min(2,devicePixelRatio||1);
-    if (W !== r.width || H !== r.height || ratio !== d) {
-      W = r.width; H = r.height; ratio = d;
-      cv.width = W*d; cv.height = H*d; g?.setTransform(d,0,0,d,0,0);
-      render();
-    }
-    update();
+    if (W === r.width && H === r.height && ratio === d) return;
+    W = r.width; H = r.height; ratio = d;
+    cv.width = W*d; cv.height = H*d; g?.setTransform(d,0,0,d,0,0);
+    draw(performance.now());
   }
-  function visibilityChanged() { if (document.hidden) stop(); else update(); }
+  function motionChanged() {
+    if (motion.matches) finished(); else if (started || windowVisible) { started = true; play(); }
+    refreshCanvas();
+  }
+  function visibilityChanged() {
+    refreshCanvas();
+    if (document.hidden && started && !motion.matches) { clearSequence(); replayPending = true; }
+    else if (replayPending) play();
+  }
+  const trigger = new IntersectionObserver(entries => {
+    windowVisible = entries[0].isIntersecting && entries[0].intersectionRatio >= .35;
+    if (windowVisible && !motion.matches && (!started || replayPending)) { started = true; play(); }
+  }, { threshold: [0,.35] });
+  const canvasObserver = new IntersectionObserver(entries => { canvasVisible = entries[0].isIntersecting; refreshCanvas(); });
   const resizeObserver = new ResizeObserver(size);
-  resizeObserver.observe(cv);
-  window.addEventListener('scroll',update,{passive:true});
+  trigger.observe(element('win')); canvasObserver.observe(cv); resizeObserver.observe(cv);
   window.addEventListener('resize',size);
   document.addEventListener('visibilitychange',visibilityChanged);
-  motion.addEventListener('change',update);
-  size(); render();
+  motion.addEventListener('change',motionChanged);
+  size();
+  if (motion.matches) finished();
   return () => {
-    alive = false; stop(); resizeObserver.disconnect();
-    window.removeEventListener('scroll',update);
+    alive = false; clearSequence(); stopCanvas();
+    trigger.disconnect(); canvasObserver.disconnect(); resizeObserver.disconnect();
     window.removeEventListener('resize',size);
     document.removeEventListener('visibilitychange',visibilityChanged);
-    motion.removeEventListener('change',update);
+    motion.removeEventListener('change',motionChanged);
     cv.width = cv.height = 0;
   };
 }

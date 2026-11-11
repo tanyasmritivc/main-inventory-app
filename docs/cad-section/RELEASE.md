@@ -30,10 +30,3 @@ Activation compared the current live source against the release baseline, allowe
 ## Visual differences
 
 The live page retains its existing fixed navigation, which is absent from the standalone reference. Existing site font files are reused. Browser font rasterization and the canvas's randomized dots/current animation angle can differ from the target screenshots. No substantive design changes were made to the supplied section.
-
-
-## Scroll interaction follow-up
-
-At the user's request, the right-hand comparison now follows scroll position instead of playing on timers. Upload, row reveals, counts, status chips, summary, and model orientation advance across approximately 220 to 420 pixels of natural scrolling. Scrolling back reverses the sequence. Brief frame smoothing removes abrupt jumps, then all animation frames stop once the current scroll position is reached. There is no pinning, added page height, timed replay, or change to the section's copy/layout. Reduced motion shows the finished still state immediately.
-
-Deployed as `findez-cad-scroll-20261111` after the production build passed. Exactly one runtime file changed and 599 other frontend files were preserved. Live Safari scrolling was checked in both directions through upload, intermediate matching, and completed summary states. Receipt: `live/scroll-deployment.json`.

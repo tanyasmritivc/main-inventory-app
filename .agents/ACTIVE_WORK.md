@@ -1673,10 +1673,3 @@ and manual reduced-motion emulation remain unverified because Safari was
 switched during inspection. See `docs/cad-section/RELEASE.md` and live screenshots.
 No backend, mobile, auth, navigation, dependency, or environment changes. No
 Vercel, Render, local preview, or staging website was used.
-
-CAD follow-up: replaced timed demo playback with quick, smoothed scroll progress
-in `cad-intelligence-motion.ts` only. Upload, rows, stock counts, summary and
-model orientation follow scrolling in both directions and stop at rest. No
-pinning or layout/copy changes. Deployed `findez-cad-scroll-20261111`; production
-build passed after retrying the existing font-loader failure. Preserved 599
-other frontend files. Live Safari forward/reverse scroll states verified.
