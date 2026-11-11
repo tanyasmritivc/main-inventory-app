@@ -1,3 +1,10 @@
+## November 11 - Apple logo Download button
+
+Desktop navigation and mobile menu now show the existing Apple SVG plus Download.
+Accessible name remains Download for Mac. Production build and desktop/mobile
+browser checks pass, including destination and no overflow; live markup verified.
+Active release: /home/ubuntu/findez-desktop-apple-button-20261111/frontend.
+
 ## November 11 - Mac download moved into navigation
 
 Download for Mac now sits beside Sign in on desktop and in the small-screen menu;

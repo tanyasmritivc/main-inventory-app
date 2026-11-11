@@ -37,3 +37,12 @@ Desktop/mobile screenshots reviewed. Live HTML verifies nav/menu placement and
 no hero download link. Only sections.js changed in the production overlay.
 Release: /home/ubuntu/findez-desktop-nav-20261111/frontend. Rollback: remove only
 zzzzzzzzzzzz-desktop-nav.conf, daemon-reload and restart findez-web.
+
+## Follow-up: Apple logo and shorter label
+
+Navigation now uses the existing Apple SVG from the authentication UI followed by
+Download. Both links retain the accessible name Download for Mac and /desktop.
+The icon is decorative and hidden from assistive technology. Production build,
+1440/390px browser layout and destination checks pass; screenshot and live HTML
+verified. Only sections.js changed. Active release: desktop-apple-button-20261111;
+rollback override: zzzzzzzzzzzzz-desktop-apple-button.conf.
