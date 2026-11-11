@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'support/synthetic_host.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -8,6 +9,7 @@ import '../test/onboarding_v5_test.dart' as onboarding;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  syntheticHostControls();
   var count = 0;
   onboarding.main(
     capture: const bool.fromEnvironment('ONBOARDING_V5_EVIDENCE')

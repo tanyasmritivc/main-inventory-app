@@ -29,6 +29,9 @@ with physical iPhone acceptance deferred. Public review submission is not author
   flow also passed on iOS after normalizing its synthetic viewport and giving
   the fixture ownership of injected text input. The other 28 native cases
   passed in the preceding full onboarding run.
+- Shared imported-widget simulator fixtures now own injected text input; this
+  prevents a physical IME from overwriting values or obscuring synthetic views.
+  All 25 native Spaces/detail assertions passed after that correction.
 - Backend mobile-branch snapshot: 845 passed. Current deployed backend source:
   1,625 passed. No backend source or customer inventory was changed.
 - PostgreSQL 17 isolation, concurrent writes, and account-memory suites: passed on
