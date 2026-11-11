@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class CommerceSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='FINDEZ_COMMERCE_', env_file='.env', extra='ignore')
     enabled: bool = False
+    purchase_import_enabled: bool = False
     encryption_key: SecretStr | None = None
     shopify_client_id: str | None = None
     shopify_client_secret: SecretStr | None = None
@@ -37,6 +38,10 @@ class CommerceSettings(BaseSettings):
         return value
 
     def require(self, provider=None):
+        if provider == 'amazon_consumer' and self.purchase_import_enabled:
+            return
+        if provider is None and self.purchase_import_enabled:
+            return
         if not self.enabled:
             raise HTTPException(503, 'Commerce integrations are not enabled yet.')
         if provider in ('shopify', 'amazon_seller'):

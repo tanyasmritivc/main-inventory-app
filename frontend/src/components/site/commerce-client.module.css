@@ -12,7 +12,7 @@
 .page button:disabled, .page input:disabled, .page select:disabled { opacity: .55; cursor: default; }
 .page :is(input, select, button, a):focus-visible { outline: 2px solid var(--clay, #8f5b3b); outline-offset: 3px; }
 .page form button { margin-top: 18px; }
-.page .primary { background: var(--control-primary, #cde596); color: var(--ink, #182219); border-color: transparent; font-weight: 600; }
+.page .primary { background: var(--control-primary, #cde596); color: var(--control-on-primary, var(--ink, #182219)); border-color: transparent; font-weight: 600; }
 .page .danger { color: var(--danger-ink, #ad3333); }
 .page .error { color: var(--danger-ink, #ad3333); padding: 14px; border: 1px solid currentColor; border-radius: 8px; }
 .page .notice { color: var(--success-ink, #356246); }
@@ -28,3 +28,8 @@
 .callback { margin: 12vh auto; padding: 24px; max-width: 640px; }
 .callback a { display: inline-block; margin-top: 16px; text-decoration: underline; }
 @media (max-width: 650px) { .grid { grid-template-columns: 1fr; gap: 0; } .actions button { width: 100%; } }
+
+.steps { padding-left: 24px; color: var(--text-secondary); line-height: 1.65; }
+.steps li { padding: 6px 0; }
+.steps a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.page input[type="file"] { max-width: 100%; }

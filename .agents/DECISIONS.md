@@ -1,3 +1,12 @@
+## November 11 - Amazon purchases start with a file import
+
+User chose a one-time Amazon order-history download/upload as the primary consumer
+Connections flow, replacing the Gmail-first introduction. Later uploads update
+matching historical order products. Purchase history stays private to its uploader
+and separate from physically confirmed inventory. Never add old ordered quantities
+to available stock automatically. Gmail remains optional and disabled; no seller
+authorization is necessary for this flow.
+
 ## November 10 - US Amazon shoppers use opt-in Gmail
 
 The Amazon seller API is not the consumer purchase source. The user ultimately

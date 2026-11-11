@@ -1,3 +1,15 @@
+## November 11 - Amazon order-history import (deployed)
+
+User replaced the primary Gmail flow with one-time Amazon CSV/ZIP upload.
+Owner: feat/amazon-order-history, isolated findez-amazon-history worktree.
+Uses existing private commerce records and transactions; no physical stock writes,
+new schema, mobile edits, seller OAuth or Gmail activation. Deployed to
+/home/ubuntu/findez-amazon-history-20261111/frontend. Existing CAD landing, auth,
+downloads and unrelated backend source preserved. 1,675 backend tests plus 10
+subtests, 38 web tests, TypeScript/lint and production build passed. Public browser
+upload/preview/save, repeat-import deduplication, account isolation, desktop/mobile
+and light/dark contrast verified with synthetic data. See docs/plans/amazon-order-history.md.
+
 ## November 10 - Amazon and Shopify integration lane
 
 Owner: user-assigned commerce terminal; isolated `feat/commerce-connectors` in

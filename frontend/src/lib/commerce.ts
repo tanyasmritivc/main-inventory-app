@@ -13,7 +13,7 @@ export type CommerceCapabilities = { providers: { provider: CommerceProvider; co
 export type CommerceRecord = {
   kind: "catalog_variant" | "merchant_stock" | "sale_line" | "purchase_line";
   external_id: string; observed_at: string;
-  data: { title: string; sku?: string | null; quantity?: number | null;
+  data: { order_id?: string | null; ordered_at?: string | null; title: string; sku?: string | null; quantity?: number | null;
     available_quantity?: number | null; source_status: string; physically_verified: false };
 };
 export type CommerceRecords = { connection: CommerceConnection; records: CommerceRecord[]; next_offset: number | null };

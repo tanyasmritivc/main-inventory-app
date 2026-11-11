@@ -235,11 +235,11 @@ def disconnect(connection_id: UUID, purge: bool = False, user: AuthenticatedUser
 @limiter.limit('5/minute')
 async def purchase_file(request: Request, connection_id: UUID, file: UploadFile = File(...),
                         confirmed_sha256: str | None = Form(None), user: AuthenticatedUser = Depends(get_current_user)):
-    settings().require()
+    settings().require('amazon_consumer')
     c = repo.connection(connection_id, user.user_id)
     if c['provider'] != 'amazon_consumer' or c['status'] != 'connected':
         raise HTTPException(422, 'Select a connected Amazon consumer import destination.')
-    result = preview(await file.read(MAX_BYTES + 1))
+    result = await run_in_threadpool(preview, await file.read(MAX_BYTES + 1))
     if confirmed_sha256 is None:
         return {**result, 'committed': False}
     if not re.fullmatch(r'[0-9a-f]{64}', confirmed_sha256) or not hmac.compare_digest(confirmed_sha256, result['sha256']):
@@ -252,3 +252,13 @@ async def purchase_file(request: Request, connection_id: UUID, file: UploadFile 
         failed(user.user_id, c)
         raise
     return {'committed': True, 'count': result['count'], 'sha256': result['sha256'], 'stock_effect': 'none'}
+
+
+@router.post('/purchase-file/preview')
+@limiter.limit('10/minute')
+async def preview_purchase_file(request: Request, inventory_id: UUID = Form(...), file: UploadFile = File(...),
+                                user: AuthenticatedUser = Depends(get_current_user)):
+    settings().require('amazon_consumer')
+    await run_in_threadpool(repo.authorize, inventory_id, user.user_id)
+    result = await run_in_threadpool(preview, await file.read(MAX_BYTES + 1))
+    return {**result, 'committed': False}

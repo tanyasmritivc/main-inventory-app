@@ -6,8 +6,9 @@ import { activeInventory, assertInventory, type InventorySelection } from "@/lib
 import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { ApiError } from "@/lib/api";
-import { prepareCommerceRedirect, providerLabel, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider } from "@/lib/commerce";
+import { prepareCommerceRedirect, providerLabel, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider, type CommerceProvider } from "@/lib/commerce";
 import styles from "./commerce-client.module.css";
+import { AmazonHistoryImport } from "./amazon-history-import";
 import { PurchaseEmailClient } from "./purchase-email-client";
 
 const marketplaces = [
@@ -123,7 +124,7 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
       setNotice(purge ? "Connection and imported records deleted." : "Disconnected. Provider access can also be revoked in Shopify or Amazon.");
     });
   }
-  const configured = (provider: OAuthProvider) => capabilities?.providers.some((entry) => entry.provider === provider && entry.configured) ?? false;
+  const configured = (provider: CommerceProvider) => capabilities?.providers.some((entry) => entry.provider === provider && entry.configured) ?? false;
   return <div className={styles.page}>
     <header>{!embedded && <><p className={styles.eyebrow}>FindEZ Connect</p><h1>Connections</h1></>}
       <p>Bring purchases and store information into <strong>{inventory.name}</strong>. Connected data is private to your FindEZ account.</p>
@@ -132,8 +133,11 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
     {error && <p className={styles.error} role="alert">{error}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     {loading && <p role="status">Loading connections...</p>}
-    <PurchaseEmailClient accountId={inventory.accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
-      available={!!capabilities?.amazon_gmail} request={request} />
+    <AmazonHistoryImport key={`${inventory.accountId}:${inventory.inventory_id}`} inventoryId={inventory.inventory_id}
+      configured={configured("amazon_consumer")} loading={loading} request={request}
+      onSaved={async connection => { await reload(); await readRecords(connection); }} />
+    {capabilities?.amazon_gmail?.configured && <details><summary>Optional Gmail purchase updates</summary><PurchaseEmailClient accountId={inventory.accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
+      available={!!capabilities?.amazon_gmail} request={request} /></details>}
     <div className={styles.grid}>
       <section className={styles.card}><h2>Shopify store</h2><p>Read your store&apos;s product catalog, available stock, and recent sales.</p>
         {!loading && !configured("shopify") && <p className={styles.hint}>Shopify connections are not enabled yet.</p>}
@@ -152,8 +156,8 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
     <section className={styles.card}><div className={styles.heading}><h2>Your connections</h2><button disabled={busy || loading} onClick={() => void perform(reload)}>Refresh</button></div>
       {!loading && !connections.length && <p>No connections for this inventory yet.</p>}
       {connections.map((connection) => <article key={connection.id} className={styles.connection}>
-        <h3>{providerLabel(connection.provider)}</h3><p className={styles.account}>{connection.provider === "amazon_consumer" ? "Personal purchase import" : connection.external_account}</p>
-        <p><strong>{connection.status === "pending" ? "Awaiting authorization" : connection.status === "authorizing" ? "Checking authorization" : connection.status === "connected" ? "Connected" : "Disconnected"}</strong> / {date(connection.last_sync_at)}</p>
+        <h3>{providerLabel(connection.provider)}</h3><p className={styles.account}>{connection.provider === "amazon_consumer" ? "Order history import" : connection.external_account}</p>
+        <p><strong>{connection.provider === "amazon_consumer" && connection.status === "connected" ? "Ready for uploads" : connection.status === "pending" ? "Awaiting authorization" : connection.status === "authorizing" ? "Checking authorization" : connection.status === "connected" ? "Connected" : "Disconnected"}</strong> / {date(connection.last_sync_at)}</p>
         {connection.status === "disconnected" && <p>Saved records are historical. They do not show current availability.</p>}
         {(connection.status === "pending" || connection.status === "authorizing") && <p>If authorization was interrupted, refresh to check its status. Disconnect this entry before starting again.</p>}
         <div className={styles.actions}>
@@ -162,21 +166,21 @@ export function InventoryCommerce({ inventory, inventoryBinding = inventory, emb
             <button disabled={busy || loading || !configured(connection.provider)} onClick={() => sync(connection, "orders")}>Sync orders / last 30 days</button>
           </>}
           <button disabled={busy || loading} onClick={() => void perform(() => readRecords(connection))}>View records</button>
-          {connection.status !== "disconnected" && <button disabled={busy || loading} onClick={() => disconnect(connection, false)}>Disconnect</button>}
+          {connection.provider !== "amazon_consumer" && connection.status !== "disconnected" && <button disabled={busy || loading} onClick={() => disconnect(connection, false)}>Disconnect</button>}
           <button className={styles.danger} disabled={busy || loading} onClick={() => disconnect(connection, true)}>Delete imported records</button>
         </div>
       </article>)}
     </section>
     {busy && <p role="status">Working on your connection...</p>}
     {records && <section className={styles.card} aria-label="Imported records"><h2>{providerLabel(records.connection.provider)} records</h2>
-      <p>Source observations, not a physical stock count. Orders cover only the periods you have synced.</p>
+      <p>Previously purchased items are not confirmed inventory. Only the orders included in your uploads or syncs appear here.</p>
       {records.connection.status === "disconnected" && <p>Disconnected: these records are historical.</p>}
-      {!records.records.length ? <p>No records yet. Run a sync to bring them into FindEZ.</p> : <div className={styles.tableWrap}><table>
-        <thead><tr><th>Item</th><th>Source</th><th>Quantity</th><th>Status</th><th>Observed</th></tr></thead>
+      {!records.records.length ? <p>No records yet. Upload order history or sync a configured store to bring records into FindEZ.</p> : <div className={styles.tableWrap}><table>
+        <thead><tr><th>Item</th><th>Source</th><th>Quantity</th><th>Status</th><th>Order / date</th></tr></thead>
         <tbody>{records.records.map((record) => <tr key={`${record.kind}:${record.external_id}`}>
           <td>{record.data.title}<small>{record.data.sku}</small></td><td>{kindLabels[record.kind]}</td>
           <td>{record.kind === "merchant_stock" ? (record.data.available_quantity ?? "Unknown") : (record.data.quantity ?? "Not a stock count")}{record.kind === "merchant_stock" && <small>Available at source</small>}</td>
-          <td>{record.data.source_status}</td><td>{date(record.observed_at)}</td>
+          <td>{record.data.source_status}{record.kind === "purchase_line" && <small>Ownership unconfirmed</small>}</td><td>{record.kind === "purchase_line" ? <>{record.data.order_id}<small>{record.data.ordered_at?.slice(0, 10) || "Date unknown"}</small></> : date(record.observed_at)}</td>
         </tr>)}</tbody>
       </table></div>}
       {records.next_offset !== null && <button disabled={busy} onClick={() => void perform(() => readRecords(records.connection, records.next_offset!))}>Load more records</button>}
