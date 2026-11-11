@@ -1,0 +1,15 @@
+{
+  "deployed_at": "2026-11-11T23:46:55.553211+00:00",
+  "live": "/home/ubuntu/findez-purchase-intelligence-20261111/frontend",
+  "build_id": "XcsnfmrmNPwQAK09sZcMy",
+  "changed_files": [
+    "src/components/site/commerce-client.tsx",
+    "src/components/site/purchase-library.module.css",
+    "src/components/site/purchase-library.tsx"
+  ],
+  "preserved_files": 626,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

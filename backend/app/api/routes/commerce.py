@@ -284,3 +284,32 @@ async def preview_purchase_file(request: Request, inventory_id: UUID | None = Fo
         await run_in_threadpool(repo.authorize_scope, scope_type, organization_id, user.user_id)
     result = await run_in_threadpool(preview, await file.read(MAX_BYTES + 1))
     return {**result, 'committed': False}
+
+
+class PurchaseCheckRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    scope_type: Literal['personal', 'organization'] = 'personal'
+    organization_id: UUID | None = None
+    query: str = Field(min_length=2, max_length=1000)
+
+
+def purchase_world(scope_type, organization_id):
+    if (scope_type == 'organization') != (organization_id is not None):
+        raise HTTPException(422, 'Choose Personal or an organization.')
+    return str(organization_id) if organization_id else 'personal'
+
+
+@router.get('/purchases')
+def purchase_library(scope_type: Literal['personal', 'organization'] = 'personal',
+                     organization_id: UUID | None = None, query: str = Query('', max_length=1000),
+                     status: Literal['all', 'active', 'cancelled', 'returned', 'unknown'] = 'all',
+                     offset: int = Query(0, ge=0, le=10000), user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.commerce.purchase_intelligence import library
+    return library(user.user_id, purchase_world(scope_type, organization_id), query, status, offset)
+
+
+@router.post('/purchase-check')
+@limiter.limit('20/minute')
+def check_before_buying(request: Request, body: PurchaseCheckRequest, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.commerce.purchase_intelligence import check
+    return check(user.user_id, purchase_world(body.scope_type, body.organization_id), body.query)

@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api";
 import { prepareCommerceRedirect, providerLabel, scopeQuery, type ConnectionScope, type CommerceCapabilities, type CommerceConnection, type CommerceRecords, type ConnectResult, type OAuthProvider, type CommerceProvider } from "@/lib/commerce";
 import styles from "./commerce-client.module.css";
 import { AmazonHistoryImport } from "./amazon-history-import";
+import { PurchaseLibrary } from "./purchase-library";
 import { PurchaseEmailClient } from "./purchase-email-client";
 
 const marketplaces = [
@@ -142,9 +143,10 @@ export function ScopedCommerce({ accountId, ownerName, scope, inventory, invento
     {error && <p className={styles.error} role="alert">{error}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     {loading && <p role="status">Loading connections...</p>}
+    {scope && !loading && <PurchaseLibrary key={`${accountId}:${destinationQuery}`} scope={scope} request={request} />}
     <AmazonHistoryImport key={`${accountId}:${destinationQuery}`} inventoryId={inventory?.inventory_id} scope={scope} ownerName={ownerName}
       configured={configured("amazon_consumer")} loading={loading} request={request}
-      onSaved={async connection => { await reload(); await readRecords(connection); }} />
+      onSaved={async connection => { await reload(); if (!scope) await readRecords(connection); else setNotice("Purchase history saved. Your purchase library is updated below Check before buying."); }} />
     {inventory && capabilities?.amazon_gmail?.configured && <details><summary>Optional Gmail purchase updates</summary><PurchaseEmailClient accountId={accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
       available={!!capabilities?.amazon_gmail} request={request} /></details>}
     <div className={styles.grid}>

@@ -1730,3 +1730,32 @@ Five synthetic regression tests pass locally and against the deployed parser.
 Guarded one-file deployment `findez-amazon-zero-20261111` passed health/database
 200 and anonymous preview 401. No frontend changes. Receipt:
 `docs/plans/amazon-zero-quantity-deployment.json`.
+
+Purchase intelligence, November 11: deployed read-only purchase library and
+Check before buying to self-hosted production in release
+`findez-purchase-intelligence-20261111`. Connections now groups saved import
+lines by ASIN or title, with search/status filters, newest-first pagination and
+per-product order history. Before-buy checks search the selected owner's imports
+and authorized recorded inventory; exact ASIN evidence is distinguished from
+possible text matches. Cancelled/returned/zero lines never imply owned stock;
+zero-stock inventory receives a distinct result. No purchase or inventory write.
+
+Added owner-scoped GET /commerce/purchases and POST /commerce/purchase-check.
+FIND now has world_purchases and world_purchase_check read tools and explicit
+purchase/ownership guidance. Other chat paths, photo attachment and extraction
+were preserved. Existing organization owner/admin commerce policy applies;
+personal records never fall back to another owner. Sources are allowlisted and
+reauthorized after reading; no address/payment fields enter these responses.
+No database, environment, dependency or mobile change.
+
+Validation: 9 service tests, 3 full-backend synthetic API/chat integration tests,
+3 web interaction tests, changed-component lint and production build/TypeScript
+passed. Live backend health/database 200 and anonymous new endpoints 401.
+Guarded frontend overlay preserved 626 existing files, including the parallel
+homepage work. Safari signed-in Connections showed the new UI; a motor check
+completed successfully. Live FIND answered that it can read saved imports and
+correctly reported 0 products/orders/records for the current Personal scope.
+No user export was uploaded or saved by this work. Positive purchase matches
+and organization isolation were tested with synthetic fixtures; no live customer
+purchase fixture was created. Existing imports in other scopes were not inspected.
+Receipts: docs/plans/purchase-intelligence-{backend,web}-deployment.json.
