@@ -21,3 +21,11 @@ Thumbs.db
 .env.*
 
 mobile/.env.claude/settings.local.json
+
+# Desktop app
+/desktop/node_modules/
+/desktop/dist/
+/desktop/test-results/
+
+/desktop/build/icon.iconset/
+/frontend/public/downloads/desktop/

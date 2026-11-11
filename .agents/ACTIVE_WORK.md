@@ -1,3 +1,7 @@
+## November 10 — FindEZ desktop preview
+
+Branch feat/findez-desktop. Mac Apple silicon/Intel DMGs and Windows x64 NSIS installer; hosted-web shell, system-browser PKCE callback and /desktop downloads. Focused automated checks, Mac runtime and synthetic CSV/XLSX comparison passed. Preview only: no Developer ID/notarization or Windows publisher signing; Windows/Intel runtime and provider/hardware acceptance pending. See docs/releases/DESKTOP_PREVIEW_0_1_0.md. Production overlay preserves newer work.
+
 ## November 10 — CAD spreadsheet import deployed
 
 Read-only CSV/XLSX BOM preview, column mapping, validation and comparison are live.

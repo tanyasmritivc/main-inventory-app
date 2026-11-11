@@ -1,0 +1,34 @@
+{
+  "name": "findez-desktop",
+  "productName": "FindEZ",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FindEZ inventory, CAD Intelligence and Ask on your desktop",
+  "author": {
+    "name": "FindEZ",
+    "email": "info@findez.ai"
+  },
+  "license": "UNLICENSED",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "build:mac": "electron-builder --mac dmg --arm64 --x64 --publish never",
+    "build:windows": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "app-builder-lib": {
+      "minimatch": "11.0.1"
+    },
+    "@electron/universal": {
+      "minimatch": "11.0.1"
+    }
+  }
+}

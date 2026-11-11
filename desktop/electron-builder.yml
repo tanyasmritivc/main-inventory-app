@@ -1,0 +1,45 @@
+appId: ai.findez.desktop
+productName: FindEZ
+copyright: Copyright © 2026 FindEZ
+asar: true
+files:
+  - src/**
+  - package.json
+  - build/icon.png
+protocols:
+  - name: FindEZ desktop sign-in
+    schemes: [findez-desktop]
+directories:
+  output: dist
+  buildResources: build
+artifactName: FindEZ-${version}-${os}-${arch}.${ext}
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+mac:
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  identity: '-'
+  notarize: false
+  minimumSystemVersion: '13.0'
+  extendInfo:
+    NSCameraUsageDescription: FindEZ uses the camera when you choose to scan items or barcodes.
+    NSMicrophoneUsageDescription: FindEZ uses the microphone when you choose voice input.
+win:
+  icon: build/icon.ico
+  signExecutable: false
+  requestedExecutionLevel: asInvoker
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+publish: null

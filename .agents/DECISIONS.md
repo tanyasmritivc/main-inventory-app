@@ -1422,3 +1422,7 @@ then reach the verified private GLM model as pixels; they consume no scan credit
 and create no extraction draft. Retain owned images for follow-ups and failed
 response retries. GLM box/crop extraction remains opt-in until comparative QA
 shows reliable results. Do not infer model identity from the older gateway alias.
+
+## 2026-11-10 — Desktop preview
+
+Use a sandboxed Electron shell around the existing hosted web app. Keep Supabase PKCE verification in the originating desktop session; transfer only one-use authorization code plus random state through the app protocol. No second auth/database. Publish clearly labeled unsigned/unnotarized preview installers; stable distribution requires publisher signing and platform acceptance.
