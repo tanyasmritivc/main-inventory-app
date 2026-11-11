@@ -1,8 +1,8 @@
 # Amazon and Shopify integration lane
 
-Status: backend candidate, disabled by default; Shopify development resources
-created, but no live connection, deployment, production migration, browser
-extension, web/mobile UI, or provider approval. Amazon registration is pending.
+Status: backend and merchant web candidate, disabled by default; Shopify development
+resources created, but no live connection, deployment, production migration,
+browser extension, mobile UI, or provider approval. Amazon registration is pending.
 
 ## Shopify setup receipt - November 10, 2026
 
@@ -25,8 +25,8 @@ Organization: AI Robots INC (`246688821`), API contact `info@findez.ai`.
   copied, committed, or configured on a FindEZ server.
 
 No app installation or store synchronization has occurred. Distribution is not
-selected, privacy/uninstall subscriptions are not registered, and the callback
-page remains a web-lane dependency. Complete those plus backend activation and
+selected, privacy/uninstall subscriptions are not registered, and the implemented
+callback pages are not deployed. Complete those plus backend activation and
 test-store authorization before treating this as an operational connection.
 All five CI jobs passed in run `42955103759` for backend commit `496c3cd1`.
 
@@ -37,8 +37,9 @@ backend history; do not use it as the backend integration base.
 ## Scope and coordination
 
 This lane owns `backend/app/services/commerce/`, `backend/app/api/routes/commerce.py`,
-the commerce migration/tests, and the small router registration. It does not own
-CAD, canonical inventory identity, chat orchestration, web, or Flutter.
+the commerce migration/tests, and the small router registration. The user also
+assigned the merchant Connections screen and OAuth callback pages to this terminal.
+It does not own CAD, canonical inventory identity, chat orchestration, or Flutter.
 
 Existing `items`, stock, Project Kits, reservations, imports, and FIND extraction
 remain authoritative for their current responsibilities. No commerce operation
@@ -66,6 +67,46 @@ Not implemented: Shopify buyer OAuth/storefront carts, Amazon consumer-account
 OAuth/carts, receipt email access, a browser extension, automatic scheduling,
 catalog identity matching, provider write-back, merchant financial analytics,
 Amazon merchant-fulfilled stock/listings, or provider return-event history.
+
+## Merchant web client
+
+Inventory navigation now includes Connections at
+`/inventory/connect?inventory=INVENTORY_UUID`. Existing server authentication and
+InventoryBoundary verify the selected inventory. Editing access is required.
+The screen supports Shopify merchant and Amazon seller authorization, explicit
+catalog/stock and last-30-day order sync, paginated source records, disconnect with
+retained history, and separately confirmed deletion of imported records. Readiness
+comes from `/commerce/capabilities`; unavailable providers cannot be connected.
+Amazon consumer CSV remains an API feature without an upload screen in this step.
+
+Standalone `/connect/shopify/callback` and `/connect/amazon/callback` pages remove
+the query before asynchronous auth work, reject duplicate query keys, preserve all
+once-decoded signed fields, and require the initiating FindEZ account. Pending
+connection identity/state expires after ten minutes in per-tab sessionStorage;
+codes and tokens are never stored there. Redirect host/path and callback origin
+are checked before leaving FindEZ. The configured callback must use the same web
+origin as the initiating page. Strict Mode reuses one completion promise; failed
+exchanges are not replayed. Refresh Connections to resolve uncertain completion.
+Callback responses use no-referrer and no-store headers; they do not redirect
+unauthenticated callback queries into sign-in URLs or render provider parameters.
+
+The client uses account-bound API requests, with stale account/inventory results
+discarded. Source stock, sales and purchases remain visibly distinct from verified
+physical inventory. No client operation calls item mutation routes.
+
+Validation: 28 focused OAuth/UI tests, all 353 web tests in 47 suites, TypeScript,
+changed-file ESLint, and the repository compile-only webpack check pass. The
+compiled route manifest confirms no-referrer/no-store on both callbacks. The
+sandbox denied binding a localhost server (EPERM), so HTTP smoke testing is not
+claimed. The compile check uses synthetic
+auth settings/substituted fonts and its output must not be deployed. Rendered
+light/dark fixtures contain fictional data, not successful provider authorization.
+Desktop and 390px fixture layouts were inspected in Safari. Generate fixtures
+from frontend:
+
+```bash
+FINDEZ_COMMERCE_PREVIEW=/private/tmp/findez-commerce-preview npx jest --runInBand commerce-client.test.tsx
+```
 
 ## Client API contract
 
@@ -106,8 +147,8 @@ OAuth start returns `connection`, `authorization_url`, and `expires_in=600`.
 Save the connection ID in actor-bound client session state and navigate to the
 authorization URL. Configure a frontend HTTPS callback page to collect provider
 query parameters and POST `{"parameters":{...}}` to `/complete` with the FindEZ
-JWT. This frontend callback page is a dependency for the other terminal, not
-implemented here. Reject duplicate query keys, decode once, forward all Shopify
+JWT. The frontend callback pages are implemented in this branch. Reject duplicate
+query keys, decode once, forward all Shopify
 parameters unchanged for HMAC validation, and strip the authorization code from
 browser history immediately. Do not store it in analytics or browser logs.
 If the FindEZ account changed, cancel the flow instead of attaching credentials.

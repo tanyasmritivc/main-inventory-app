@@ -7,18 +7,23 @@ Backend base: `17632a92024a986cb08dcfb795ba518fd9897ee9` (barcode217).
 Keep other lanes out of `backend/app/services/commerce/`, routes/commerce.py,
 commerce tests and `20261110_commerce_connectors.sql` while this branch is active.
 The shared router has one additive import/registration; merge that hunk only.
-No CAD, canonical item/purchase schema, Assist orchestration, mobile or web edits.
+No CAD, canonical item/purchase schema, Assist orchestration or mobile edits.
+The user subsequently assigned merchant connection UI and callbacks to this lane.
 
 Implemented backend candidate: Shopify merchant OAuth/catalog/stock/order lines,
 Amazon seller OAuth/orders/FBA stock, consumer purchase CSV review/confirmation,
 encrypted tokens, actor-private source evidence, disconnect/purge, Shopify privacy
 and uninstall hooks. Full contract/setup/limits: `docs/plans/commerce-connectors.md`.
 
-Web lane: implement the authenticated connect UI and HTTPS callback pages described
-in the contract. The URLs in commerce.env.example are proposed callback routes,
-not existing pages. Preserve actor-bound connection ID through navigation; reject
-duplicate callback keys, strip query credentials, then POST all parameters with
-the existing FindEZ JWT to `/commerce/connections/{id}/complete`.
+Merchant web UI and callbacks are now implemented in this branch. Connections is
+an inventory-scoped navigation entry at `/inventory/connect`. Callback routes are
+`/connect/shopify/callback` and `/connect/amazon/callback`. They preserve actor-bound
+connection identity in per-tab storage, reject duplicate callback keys, strip query
+credentials, and POST all parameters with the original account's JWT to `/complete`.
+Neither callbacks nor the backend are deployed. Match callback origin exactly to
+the initiating web origin; cross-origin sessionStorage handoff is unsupported.
+Web consumer purchase CSV upload, mobile integration and FIND binding remain future
+work. Do not independently implement competing callback or connection screens.
 
 FIND/unified-inventory lane: consume SourceRecord with connection and observation
 metadata. Sales, merchant stock and consumer purchases are separate record kinds;
@@ -32,7 +37,7 @@ setup receipt in the contract for dashboard URLs and exact settings. Client secr
 remains unrevealed in Shopify; no FindEZ server credentials were configured.
 
 Amazon registration, Shopify distribution/webhook subscriptions, test installation,
-live sync, production schema approval, deployment, UI and FIND binding remain
+live sync, production schema approval, deployment and FIND binding remain
 pending. No production changes or outbound messages have occurred. All five CI
 jobs passed for backend 496c3cd1 in run 42955103759. No TestFlight build is required
 for this backend-only lane. Do not label integrations as available in clients.

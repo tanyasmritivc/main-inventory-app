@@ -1,4 +1,4 @@
-## November 10 - Commerce backend candidate (not deployed)
+## November 10 - Commerce backend and web candidate (not deployed)
 
 `feat/commerce-connectors` adds disabled-by-default Shopify merchant and Amazon
 seller adapters, Amazon consumer CSV imports, private source evidence, token
@@ -6,8 +6,15 @@ protection and Shopify lifecycle/privacy handling. No physical stock writes.
 1,671 backend/API-doc tests plus ten subtests and 46 focused commerce tests pass;
 disposable SQL migration replay/access/race/privacy assertions pass. All five CI
 jobs passed for 496c3cd1. Shopify FindEZ Connect app and sample-data dev store now
-exist under AI Robots INC; no app installation, server credentials, client
-callback/UI, production migration or deployment exists yet. Amazon setup pending.
+exist under AI Robots INC. The user assigned merchant web UI/callbacks to this
+lane: Connections, read-only sync, source pagination, disconnect and purge are
+implemented with account/inventory guards and single-exchange callbacks. No app
+installation, server credentials, production migration or deployment exists yet.
+Amazon setup pending. Consumer CSV is API-only; no mobile/FIND integration yet.
+Web validation: 353 tests/47 suites, TypeScript, changed-file lint, compile-only
+webpack build and callback header manifest checks pass. Safari fixtures inspected
+at desktop/390px in light/dark. Local HTTP bind denied by sandbox; no live OAuth
+acceptance claimed. Compile fixture output must not be deployed.
 See docs/plans/commerce-connectors.md and .agents/HANDOFFS/commerce-connectors.md.
 
 ## November 8 - Crowded scan recovery deployed (PR371)

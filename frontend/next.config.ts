@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/connect/:provider/callback",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+      {
         source: "/.well-known/apple-app-site-association",
         headers: [{ key: "Content-Type", value: "application/json" }],
       },

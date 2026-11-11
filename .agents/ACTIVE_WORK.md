@@ -3,8 +3,10 @@
 Owner: user-assigned commerce terminal; isolated `feat/commerce-connectors` in
 `projects/findez-command-center/findez-commerce`, based on backend barcode217.
 Owns commerce service/routes, private commerce migration and tests. Shared router
-change is one additive registration. No CAD, canonical inventory, chat, web or
-mobile changes. Shopify organization, FindEZ Connect app and development store
+change is one additive registration. User subsequently assigned the merchant web
+Connections screen and OAuth callbacks here; these are implemented in the isolated
+branch. No CAD, canonical inventory, chat or mobile changes. Shopify organization,
+FindEZ Connect app and development store
 exist; secret remains in Shopify, with server configuration and test connection
 pending. Amazon developer registration has not started.
 Backend candidate remains disabled and undeployed. Contract and pending client
