@@ -1,3 +1,33 @@
+# Crop-first follow-up — November 11
+
+The user requests only image presentation changes: close-up first, full source
+second. The whole-photo prompt, streaming/model settings, text conversion and
+quantity derivation are unchanged. Ordinary chat and attachments remain untouched.
+
+After the existing analysis finishes, explicit spatial area notes (top-left,
+center, bottom-right, etc.) select generous overlapping source windows. Crops use
+original EXIF-oriented pixels and strip metadata. These are regional close-ups,
+not object segmentation or exact outlines. Several items in one bin can share the
+same view. Missing/ambiguous spatial notes retain the full source with the existing
+fallback warning. The crop step cannot add, drop, merge or edit analyzed rows.
+
+No extra AI requests are added. The existing photo/save contract already stores
+`image_url` as the primary crop and `source_frame_url` as the original scan event,
+with primary first and original second. No client binary, schema or save-code
+change is needed. Existing saved records are not rewritten; this applies to new
+extractions. A separate AI coordinate experiment was rejected for latency and
+unreliable localization; no such inference is in the shipped implementation.
+
+Validation in progress: regional crop pixels, EXIF handling, image/source pairing,
+unchanged quantities, source fallback, shared-bin row preservation and existing
+save/retry/gallery ordering are covered by tests. AST comparison confirms
+`_read_photo`, `_stream_text` and `_prepare` remain identical to the prior release.
+The same frozen 29-row analysis yields 29 regional close-ups in 1.5 seconds including
+JPEG processing/contact-sheet rendering; this is not an end-to-end timing promise.
+Candidate/live HTTP save validation and deployment receipts follow below.
+
+---
+
 # Auto Extract with whole-photo vision
 
 User instruction: make Auto Extract use the successful attached-photo analysis;

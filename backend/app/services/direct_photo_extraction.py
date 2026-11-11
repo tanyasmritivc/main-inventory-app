@@ -181,6 +181,38 @@ def _prepare(image, row, source_url):
     return item, evidence._final_crop(image, box, identity)
 
 
+def _locate_crops(rows):
+    """Make context close-ups from the analysis's explicit source locations.
+
+    These are generous area crops, not inferred object boundaries. The original
+    stays available alongside each close-up. No second identification/counting
+    pass is needed and rows without clear spatial evidence keep the source.
+    """
+    located = []
+    for row in rows:
+        # Only use the formatter's area notes, never a quoted item name/count
+        # containing a direction (e.g. a right-angle bracket or top plate).
+        area = row.notes.split(" Source observation:", 1)[0].split(";", 1)[0].casefold()
+        location = re.match(r"^(?:(?:in|on|at|near|the|photo|image|area|located|positioned|shown|visible|toward|towards|of)\s+)*(?:top|bottom|upper|lower|center|centre|middle|central|left|right)\b", area)
+        if not location or re.match(r"^(?:right|left)[ -](?:angle|handed)\b", area):
+            located.append(row.model_copy(update={"box": None}))
+            continue
+        words = set(re.findall(r"[a-z]+", area))
+        left, right = "left" in words, "right" in words
+        top = bool(words & {"top", "upper"})
+        bottom = bool(words & {"bottom", "lower"})
+        center = bool(words & {"center", "centre", "middle", "central"})
+        box = None
+        if not (left and right or top and bottom) and (left or right or top or bottom or center):
+            # Broad overlapping windows retain neighboring context and reduce
+            # clipping when a described area spans the photo's midpoint.
+            x1, x2 = (0, 650) if left else (350, 1000) if right else (150, 850) if center else (0, 1000)
+            y1, y2 = (0, 650) if top else (350, 1000) if bottom else (150, 850) if center else (0, 1000)
+            box = [x1, y1, x2, y2]
+        located.append(row.model_copy(update={"box": box}))
+    return located
+
+
 def extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, on_regions=None):
     report = on_progress or (lambda message: None)
     regions = on_regions or (lambda event: None)
@@ -199,9 +231,15 @@ def extract(image_bytes, actor, source_url, *, upload=None, on_progress=None, on
         normalized.save(output, format="JPEG", quality=92)
         normalized.close()
         rows, partial = _read_photo(output.getvalue(), report)
+        report("Preparing close-up photos for your items…")
+        rows = _locate_crops(rows)
         regions({"regions": [{"id": i, "box": row.box, "state": "checked"}
                              for i, row in enumerate(rows) if row.box is not None]})
         prepared = [_prepare(image, row, source_url) for row in rows]
+        for row, (item, _) in zip(rows, prepared):
+            if row.box is not None:
+                item["scan_evidence"]["warnings"].append(
+                    "Close-up of the described photo area; nearby items may be included.")
     finally:
         image.close()
     if partial:

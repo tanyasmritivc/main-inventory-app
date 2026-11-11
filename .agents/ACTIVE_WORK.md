@@ -1,3 +1,12 @@
+## November 11 - Crop-first Auto Extract follow-up (in progress)
+
+Same branch/PR389. User requests images only: cropped item thumbnail first and
+retained full source second in the saved Space gallery. Whole-photo analysis,
+row conversion, quantities, chat attachments and AI chat must remain unchanged.
+Testing a separate optional localization step after the existing analysis; it
+cannot drop or rewrite rows. Existing capture_save/item_photos already retain
+and order both slides. No UI or database changes planned. Not deployed yet.
+
 ## November 11 - Auto Extract whole-photo vision (deployed)
 
 User explicitly requested the successful ordinary photo-chat approach for Auto
