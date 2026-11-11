@@ -2,7 +2,8 @@
 
 For the operator of the public Caddy proxy. Prepared November 10, 2026; not applied.
 
-The FindEZ application release is deployed. Both Next callback pages return
+The Shopify/Amazon foundation release is deployed; Gmail is a pending candidate.
+The deployed Next callback pages return
 `Referrer-Policy: no-referrer` and `Cache-Control: no-store` on the application VM.
 Public HTTPS preserves `no-store` but replaces the referrer policy with
 `same-origin`. OAuth remains disabled pending this correction and provider setup.
@@ -17,8 +18,8 @@ imported shared snippet or `header_down`, exclude these callback paths there too
 there must not be a second unconditional assignment that overwrites this one.
 
 ```caddyfile
-@findezCommerceCallback path /connect/shopify/callback /connect/amazon/callback
-@findezOtherPages not path /connect/shopify/callback /connect/amazon/callback
+@findezCommerceCallback path /connect/shopify/callback /connect/amazon/callback /connect/gmail/callback
+@findezOtherPages not path /connect/shopify/callback /connect/amazon/callback /connect/gmail/callback
 header @findezCommerceCallback >Referrer-Policy no-referrer
 header @findezOtherPages >Referrer-Policy same-origin
 ```
@@ -52,8 +53,11 @@ format filter {
 
 Keep Caddy's default credential-header redaction enabled. Reference:
 [Caddy log filters](https://caddyserver.com/docs/caddyfile/directives/log#filter).
-The application VM's nginx callback log already omits query strings and referrers,
-while retaining method, path, status, timestamp, size and user agent.
+The application VM's nginx callback log already omits query strings and referrers
+for Shopify/Amazon, retaining method, path, status, timestamp, size and user agent.
+Extend its existing `(shopify|amazon)` callback matcher to `(shopify|amazon|gmail)`
+before Gmail activation, preserving the same query-free log format. Validate
+`nginx -t` before reload and use synthetic callback parameters to verify logging.
 
 ## Validate and verify
 
@@ -64,6 +68,8 @@ method. Do not replace the whole configuration with the snippets above.
 ```sh
 curl -sSI https://www.findez.ai/connect/shopify/callback
 curl -sSI https://www.findez.ai/connect/amazon/callback
+# After the Gmail candidate is deployed:
+curl -sSI https://www.findez.ai/connect/gmail/callback
 ```
 
 Each must return `200`, `Referrer-Policy: no-referrer`, and `Cache-Control: no-store`.
@@ -75,3 +81,6 @@ available `ubuntu` and `vinodrex` logins were rejected. The alternate screenshot
 `vinodrex@openstack.ftctools.com:23223` also rejected authentication from the VM.
 Its identity as the proxy machine is unconfirmed. No private key was copied from
 the supplied screenshot, and no proxy configuration was changed.
+
+Public Shopify callback recheck on November 11 at 05:42 UTC still returned
+`Referrer-Policy: same-origin`; the edge override remains unresolved.

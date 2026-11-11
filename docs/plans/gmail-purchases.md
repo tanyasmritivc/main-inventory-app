@@ -89,7 +89,10 @@ Gmail read-only is a restricted scope. Google's documentation requires verificat
 and a security assessment for server-side storage/transmission of restricted data.
 Testing access is not public approval. Before activation, verify privacy disclosures,
 deletion behavior and the configured gateway's retention/no-general-model-training
-handling against Google's user-data requirements. Never claim review is complete.
+handling against Google's user-data requirements. The existing gateway client
+retains conversation state upstream; its transport must use validated HTTPS and
+its retention/deletion behavior must be verified before sending real Gmail data.
+Never claim review is complete.
 
 - [Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes)
 - [OAuth web-server flow](https://developers.google.com/identity/protocols/oauth2/web-server)
