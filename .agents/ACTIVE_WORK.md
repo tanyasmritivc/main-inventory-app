@@ -1697,3 +1697,17 @@ through the existing shared appearance system, including first paint. Deployed
 `findez-cad-guide-theme-20261111`; only route classification changed at runtime.
 Build, 12 appearance tests, and four mode checks against the live HTML script
 passed. Existing auth boundaries and marketing theme behavior preserved.
+
+
+## Homepage replacement, November 11, 2026
+
+Completed on `feat/landing-home`. Replaced only `/` with the supplied landing-v3
+prototype, retaining the live CAD section. Direct deployment to the existing
+self-hosted `findez-web` service passed the production webpack build, TypeScript
+and prerendering. Build `SQji7GlQpaBtfs45ePMyF` is live. No Vercel, Render, local
+preview or staging site. Safari desktop/390px layouts, header, tour controls,
+anchors and bidirectional pinned animation checked. Memory reached a stable
+197.42-201.60 MiB final-minute plateau after collection. Reduced-motion source
+reviewed but manual emulation and physical iPhone acceptance are not claimed.
+See `docs/releases/landing-home-20261111/README.md` for routes, file list and six
+live screenshots. Backend, mobile, auth, config and dependencies unchanged.

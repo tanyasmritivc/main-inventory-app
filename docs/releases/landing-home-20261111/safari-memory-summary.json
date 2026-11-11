@@ -1,0 +1,20 @@
+{
+  "url": "https://findez.ai/",
+  "browser": "Safari 26.3.1",
+  "viewport": [
+    1440,
+    900
+  ],
+  "recording_seconds": 221.22565608337754,
+  "peak_MiB": 417.7,
+  "final_minute": {
+    "from_seconds": 160,
+    "to_seconds": 220,
+    "samples": 119,
+    "min_MiB": 197.42,
+    "max_MiB": 201.6,
+    "first_MiB": 199.71,
+    "last_MiB": 200.29
+  },
+  "notes": "Live-page timeline exported through Safari Web Inspector. Initial allocation and garbage collection are visible. Final minute plateaus, not literally zero allocation. Recorded before final CSS isolation corrections; animation code unchanged."
+}

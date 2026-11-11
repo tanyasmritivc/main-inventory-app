@@ -1,3 +1,4 @@
+import {requestHomeFrame as requestAnimationFrame, cancelHomeFrame as cancelAnimationFrame} from './home-frame';
 // Static illustrative assembly only. No inventory, purchase, or CAD API calls.
 export const CAD_SAMPLE: readonly (readonly [string, string, number, number])[] = [
   ['5mm hex shaft, 96mm', 'Hardware wall, PN-F21', 4, 6],
