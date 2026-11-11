@@ -6,11 +6,15 @@
 .page ol, .page ul { padding-left: 24px; }
 .page ol { list-style: decimal; }
 .page ul { list-style: disc; }
-.page a { text-decoration: underline; text-underline-offset: 3px; }
+.page a { text-decoration: none; text-underline-offset: 3px; }
+.page a:hover, .page a:focus-visible { text-decoration: underline; }
 .eyebrow { font-size: 11px; letter-spacing: .14em; color: var(--cad-muted); }
 .card { background: var(--cad-panel); border: 1px solid var(--cad-line); border-radius: 20px; padding: 24px; box-shadow: 0 4px 18px #00000005; }
 .file { display: grid; gap: 12px; margin: 24px 0 16px; font-weight: 500; }
 .file input { max-width: 100%; font: inherit; font-size: 14px; }
+.file input::file-selector-button { cursor: pointer; text-underline-offset: 3px; }
+.file input::file-selector-button:hover, .file input:focus-visible::file-selector-button { text-decoration: underline; }
+.file input:disabled::file-selector-button { cursor: default; text-decoration: none; }
 .muted { color: var(--cad-muted); font-size: 13px; }
 .page button, .page select { border: 1px solid var(--cad-line); border-radius: 10px; padding: 11px 16px; background: var(--cad-panel); color: var(--cad-text); font: inherit; font-size: 14px; cursor: pointer; }
 .page button.primary { background: var(--cad-text); color: var(--cad-panel); }

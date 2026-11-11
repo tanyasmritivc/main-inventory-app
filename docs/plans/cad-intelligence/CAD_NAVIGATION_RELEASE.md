@@ -46,3 +46,15 @@ pull the production checkout. Recheck service working directory and HTTPS health
 
 Native Fusion execution remains a separate user acceptance test from the original
 preview release.
+
+## Hover styling follow-up
+
+Download links and the native Choose File control now underline on hover and
+keyboard focus. Filename status remains plain. Browser computed-style checks
+and the production build passed. Published CSS-only build
+`FbnIQsJwJlPGjJEf6lzk7`, preserving 590 other files, from
+`/home/ubuntu/findez-cad-hover-20261111/candidate-v2/frontend`.
+Rollback removes only `zzzzz-cad-hover.conf` from the web systemd overrides and
+reloads/restarts the web service to return to the navigation release.
+The BOM importer still accepts Fusion JSON only; CSV/XLSX column mapping and
+parsing have not been implemented.

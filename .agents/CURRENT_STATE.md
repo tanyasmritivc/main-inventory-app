@@ -1,3 +1,9 @@
+## November 10 — CAD hover styling published
+
+CSS-only build `FbnIQsJwJlPGjJEf6lzk7` adds hover/focus underlines to CAD
+links and Choose File. Browser style verification and production build pass.
+Fusion JSON remains the only supported BOM input. See CAD_NAVIGATION_RELEASE.md.
+
 ## November 10 — CAD navigation published
 
 CAD Intelligence links now appear in the profile menu, Profile and Settings,
