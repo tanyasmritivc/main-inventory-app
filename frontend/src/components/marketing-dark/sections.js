@@ -23,7 +23,7 @@ const NUMS=rows=>`<div class="nums">${rows.map((r,i)=>`<div class="nr2 rv"><span
 
 const PROB=(h,b,close,solution=false)=>`<section ${solution?'class="solution-intro"':'class="blk" style="padding-bottom:60px"'}><div class="wrap prob"><h2 class="h2 rv">${h}</h2><p class="rv">${b}${close?`<b>${close}</b>`:''}</p></div></section>`;
 const P={
- home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','',{home:true,cta:'<div style="margin-top:12px"><a class="btn s" href="/desktop" style="min-height:44px">Download for Mac</a></div>'})+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.','Join Founders Access',true)}),
+ home:()=>({k:'robotics',html:HERO('Your entire inventory.<br>One conversation away.','',{home:true})+RAIL()+WORDS(FA_TXT+' Founders Access is currently free.','Join Founders Access',true)}),
  solutions:()=>({k:null,html:solutionsSections()}),
  sol:k=>{const s=SOL[k];const extra=k==='home'?`<section class="blk"><div class="wrap"><h2 class="h2 rv">${s.uh?s.uh[0]:'How it helps'}</h2>${s.uh?`<p class="lead rv">${s.uh[1]}</p>`:''}${NUMS(s.uses)}</div></section>`+RAIL(k):'';return {k,labels:s.labels,html:(k==='home'?HERO(s.h,s.p,{eb:s.t}):`<div data-solution-hero="${k}"></div>`)+(s.prob?PROB(s.prob[0],s.prob[1],undefined,k!=='home'):'')+SCENE(k)+extra+WORDS(s.cta+' '+FA_TXT,'Get Free Founders Access')}},
  founders:()=>({k:null,html:foundersSections()}),
@@ -35,8 +35,8 @@ const P={
 export function pageContent(key){return key.startsWith('sol:')?P.sol(key.slice(4)):P[key]()}
 export const navigation=`<nav class="top" id="nav"><div class="wrap"><a class="logo" href="#/"><span id="lg"></span>FindEZ AI</a>
  <div class="nl"><a href="#/solutions" data-r="solutions">Solutions</a><a href="#/founders" data-r="founders">Founders Access</a><a onclick="ext('docs')">Developers</a><div data-community></div></div>
- <div class="nr"><a class="btn s" onclick="ext('signin')">Sign in</a><a class="btn p" onclick="ext('signup')">Get started free</a><button class="ib" onclick="mnav(1)" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></nav>
-<div class="mnav" id="mnav"><button class="ib" style="display:grid;align-self:flex-end" onclick="mnav(0)" aria-label="Close"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button><small>FindEZ</small><a href="#/" onclick="mnav(0)">Overview</a><a href="#/solutions" onclick="mnav(0)">Solutions</a><a href="#/founders" onclick="mnav(0)">Founders Access</a><div data-community></div><a onclick="ext('signin')">Sign in</a></div>
+ <div class="nr"><a class="btn s" href="/desktop">Download for Mac</a><a class="btn s" onclick="ext('signin')">Sign in</a><a class="btn p" onclick="ext('signup')">Get started free</a><button class="ib" onclick="mnav(1)" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></nav>
+<div class="mnav" id="mnav"><button class="ib" style="display:grid;align-self:flex-end" onclick="mnav(0)" aria-label="Close"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button><small>FindEZ</small><a href="#/" onclick="mnav(0)">Overview</a><a href="#/solutions" onclick="mnav(0)">Solutions</a><a href="#/founders" onclick="mnav(0)">Founders Access</a><div data-community></div><a href="/desktop" onclick="mnav(0)">Download for Mac</a><a onclick="ext('signin')">Sign in</a></div>
 `;
 export const footer=`<footer><div class="wrap"><div class="cols">
  <div><a class="logo" href="#/" style="display:flex"><span id="lg2"></span>FindEZ AI</a><p style="color:var(--tx2);margin-top:12px;max-width:300px">Know what you have. Find what you need. Instantly.</p></div>

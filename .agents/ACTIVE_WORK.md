@@ -1,3 +1,10 @@
+## November 11 - Mac download moved into navigation
+
+Download for Mac now sits beside Sign in on desktop and in the small-screen menu;
+removed from the hero. Production build and 1440/1120/1024/390px browser checks pass,
+including spacing, no overflow and the Mac-only destination. Live placement verified.
+Release: /home/ubuntu/findez-desktop-nav-20261111/frontend.
+
 ## November 11 — Plans & access moved to footer
 
 Removed from desktop/mobile marketing navigation; available under Product in the footer. Build and live desktop/mobile link checks passed.

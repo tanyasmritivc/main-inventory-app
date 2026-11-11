@@ -26,3 +26,14 @@ release with only sections.js replaced. No desktop download changes.
 Production build passed; live browser checks at 1440px and 390px confirmed no
 Plans & access link in either navigation and a working footer link to /pricing.
 Service override: zzzzzzzzz-footer-plans.conf; remove only that override to roll back.
+
+## Follow-up: Download in navigation
+
+Moved Download for Mac from the home hero into desktop navigation beside Sign in
+and into the small-screen menu. Existing outlined style and /desktop destination
+are preserved. Production build and browser checks at 1440, 1120, 1024 and 390px
+pass: placement, no navigation overlap/page overflow and two Mac download cards.
+Desktop/mobile screenshots reviewed. Live HTML verifies nav/menu placement and
+no hero download link. Only sections.js changed in the production overlay.
+Release: /home/ubuntu/findez-desktop-nav-20261111/frontend. Rollback: remove only
+zzzzzzzzzzzz-desktop-nav.conf, daemon-reload and restart findez-web.
