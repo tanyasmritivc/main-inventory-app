@@ -1,11 +1,44 @@
-# Commerce production rollout — prepared, not applied
+# Commerce production rollout — deployed, activation pending
 
 Implementation: `8d78f05c0884179b697b1a65019c9ce96475511b`, draft PR #388.
-Prepared November 10, 2026 (Pacific). No live service, environment or database
-changes have been made. Production database approval is still required by
-`AGENTS.md`.
+Prepared November 10, 2026 (Pacific). The user explicitly approved the reviewed
+migration and release. Deployment completed November 11 at 04:34:44 UTC
+(November 10, 20:34 Pacific). Commerce remains disabled pending provider setup
+and the edge-proxy correction described below.
 
-## Exact proposed change
+## Deployment receipt
+
+The exact reviewed migration was applied after a fresh private database backup.
+Production now has five commerce tables and three functions; RLS, denied client
+table/function access and allowed service-role execution were verified. The new
+backend files and router registration were deployed without replacing unrelated
+live source. The web service now uses the tested candidate through
+`/etc/systemd/system/findez-web.service.d/zz-commerce.conf`.
+
+API and database health returned 200; public commerce capabilities returned 401
+without authentication. Both callback pages returned 200; anonymous Connections
+redirected to sign-in with 307. Signed-in Safari acceptance showed the Connections
+screen for the user's selected inventory, both providers clearly disabled, and
+no connections. No inventory data was written. Callback-specific nginx access logging now omits
+query strings and referrers, verified with synthetic values after config validation
+and reload. The first immediate reload probe raced the worker handover, caused an
+automatic config rollback, and passed after retrying with handover-aware checking.
+
+Public Caddy still overrides callback `Referrer-Policy` to `same-origin`, although
+the app sends `no-referrer`. `Cache-Control: no-store` survives. The operator-managed
+proxy is reachable but available SSH authentication was rejected; no edge changes
+were made. Operator instructions: `commerce-edge-proxy.md`. Do not begin real
+OAuth until the public header and edge log filtering are verified.
+
+Private deployment receipts and backups remain in
+`/home/ubuntu/findez-commerce-20261110/deployment.json`, `callback-logging.json`,
+and `deployment-backup/`. No provider secret or encryption key was configured;
+no app installation or live sync occurred. Amazon developer registration remains
+pending. The live frontend's verified API origin is
+`https://findez.openstack.ftctools.com`; use its `/commerce/webhooks/shopify` route
+for subscriptions, not the previously proposed unverified `api.findez.ai` alias.
+
+## Exact reviewed change
 
 Apply `backend/supabase/migrations/20261110_commerce_connectors.sql` to the existing
 database. SHA-256:
@@ -57,7 +90,7 @@ Private receipts: `rehearsal.json`, `baseline-comparison.json`, `build.json`,
 `http-smoke.json`, and `release-manifest.private.json` in the server staging
 directory. Do not commit the private database dump, environments or raw logs.
 
-## Apply after explicit database authorization
+## Authorized rollout procedure (completed)
 
 1. Recheck service working directories and original/candidate hashes. Stop and
    rebuild the overlay if another terminal changed the live source. Capture a
@@ -99,3 +132,9 @@ Leave the additive commerce schema in place: dropping it could destroy newly
 imported evidence. Disable new connections while investigating and preserve
 encrypted data, its encryption key, and signed webhook handling. Never reset or
 pull the dirty production checkout as a rollback mechanism.
+The backend router backup is `deployment-backup/router.py`. To return the web
+service to its previous release, remove only `zz-commerce.conf`, daemon-reload and
+restart the web service. The earlier `web-rebuild.conf` remains intact. Nginx's
+previous site configuration is `deployment-backup/nginx-findez-web.before`; its
+commerce log format is `/etc/nginx/conf.d/findez-commerce-log.conf`. Retain the log
+redaction while callbacks are active.

@@ -1,4 +1,4 @@
-## November 10 - Commerce backend and web candidate (not deployed)
+## November 10 - Commerce deployed, provider activation pending
 
 `feat/commerce-connectors` adds disabled-by-default Shopify merchant and Amazon
 seller adapters, Amazon consumer CSV imports, private source evidence, token
@@ -8,8 +8,10 @@ disposable SQL migration replay/access/race/privacy assertions pass. All five CI
 jobs passed for 496c3cd1. Shopify FindEZ Connect app and sample-data dev store now
 exist under AI Robots INC. The user assigned merchant web UI/callbacks to this
 lane: Connections, read-only sync, source pagination, disconnect and purge are
-implemented with account/inventory guards and single-exchange callbacks. No app
-installation, server credentials, production migration or deployment exists yet.
+implemented with account/inventory guards and single-exchange callbacks. The user
+approved and deployed the five-table/three-function migration plus backend/web
+release at 04:34:44 UTC November 11. No provider app installation, server credentials
+or live store synchronization exists yet.
 Amazon setup pending. Consumer CSV is API-only; no mobile/FIND integration yet.
 Web validation: 353 tests/47 suites, TypeScript, changed-file lint, compile-only
 webpack build and callback header manifest checks pass. Safari fixtures inspected
@@ -20,9 +22,13 @@ Production preparation now passed: isolated full-database rehearsal preserved
 The actual live-source web overlay builds with real production configuration;
 both callback HTTP security headers and anonymous Connections protection pass.
 Staged web has the same 78 failures as the live baseline, with no new failures.
-All five CI gates passed for 8d78f05c (run 42957769542). Nothing is deployed.
-The reviewed rollout/rollback and remaining explicit database-approval gate are
-in docs/plans/commerce-production-rollout.md. See docs/plans/commerce-connectors.md
+All five CI gates passed for 8d78f05c (run 42957769542). Public API/database health
+200, anonymous commerce denial 401 and Connections sign-in redirect 307 pass.
+Nginx callback logs omit query strings and referrers. Public Caddy still overrides
+callback no-referrer to same-origin; available SSH logins were rejected. Commerce
+stays disabled. The deployment receipt and rollback are in
+docs/plans/commerce-production-rollout.md; proxy operator instructions are in
+docs/plans/commerce-edge-proxy.md. See docs/plans/commerce-connectors.md
 and .agents/HANDOFFS/commerce-connectors.md for provider setup and handoff.
 
 ## November 8 - Crowded scan recovery deployed (PR371)

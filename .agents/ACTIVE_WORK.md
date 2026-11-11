@@ -9,9 +9,11 @@ branch. No CAD, canonical inventory, chat or mobile changes. Shopify organizatio
 FindEZ Connect app and development store
 exist; secret remains in Shopify, with server configuration and test connection
 pending. Amazon developer registration has not started.
-Backend candidate remains disabled and undeployed. Actual production-source
-overlay, real web build, callback HTTP checks and isolated production database
-rehearsal are prepared; database approval and provider activation remain pending.
+User approved and deployed the private schema plus backend/web release. Commerce
+remains disabled pending provider setup and correction of the public proxy's
+callback Referrer-Policy override. Available SSH logins cannot access that proxy.
+Actual production-source overlay, real web build, loopback callback HTTP checks,
+isolated database rehearsal and live health/access checks passed.
 See `docs/plans/commerce-production-rollout.md`. Contract and pending client
 handoff: `docs/plans/commerce-connectors.md` and `.agents/HANDOFFS/commerce-connectors.md`.
 

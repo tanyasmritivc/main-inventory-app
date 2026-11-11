@@ -1,8 +1,11 @@
 # Amazon and Shopify integration lane
 
-Status: backend and merchant web candidate, disabled by default; Shopify development
-resources created, but no live connection, deployment, production migration,
-browser extension, mobile UI, or provider approval. Amazon registration is pending.
+Status: backend, merchant web UI and private schema deployed with explicit user
+authorization November 10, 2026. Commerce remains disabled pending the public
+callback header correction and provider credentials/configuration. Shopify dev
+resources exist; no live connection, browser extension, mobile UI or provider
+approval is claimed. Amazon registration is pending. Release and remaining work:
+`commerce-production-rollout.md` and `commerce-edge-proxy.md`.
 
 ## Shopify setup receipt - November 10, 2026
 
@@ -25,8 +28,9 @@ Organization: AI Robots INC (`246688821`), API contact `info@findez.ai`.
   copied, committed, or configured on a FindEZ server.
 
 No app installation or store synchronization has occurred. Distribution is not
-selected, privacy/uninstall subscriptions are not registered, and the implemented
-callback pages are not deployed. Complete those plus backend activation and
+selected and privacy/uninstall subscriptions are not registered. The implemented
+callback pages are deployed, but Caddy overrides their referrer policy. Complete
+the edge correction, provider credentials, backend activation and
 test-store authorization before treating this as an operational connection.
 All five CI jobs passed in run `42955103759` for backend commit `496c3cd1`.
 
@@ -236,7 +240,7 @@ Shopify: create a development store and app, register the client callback, confi
 `read_products,read_inventory,read_orders`, and install on the test store.
 Subscribe API version `2026-10` to `app/uninstalled` and compliance topics
 `customers/data_request`, `customers/redact`, `shop/redact`, all pointing at
-`https://api.findez.ai/commerce/webhooks/shopify` after backend activation.
+`https://findez.openstack.ftctools.com/commerce/webhooks/shopify` after backend activation.
 The receiver verifies the raw body, payload shop and event timestamp. A data
 request prepares a private export; the merchant/operator must deliver it through
 their established privacy-request process. This code does not email a requester.

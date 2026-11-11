@@ -20,7 +20,7 @@ an inventory-scoped navigation entry at `/inventory/connect`. Callback routes ar
 `/connect/shopify/callback` and `/connect/amazon/callback`. They preserve actor-bound
 connection identity in per-tab storage, reject duplicate callback keys, strip query
 credentials, and POST all parameters with the original account's JWT to `/complete`.
-Neither callbacks nor the backend are deployed. Match callback origin exactly to
+Callbacks and backend are deployed, with commerce disabled. Match callback origin exactly to
 the initiating web origin; cross-origin sessionStorage handoff is unsupported.
 Web consumer purchase CSV upload, mobile integration and FIND binding remain future
 work. Do not independently implement competing callback or connection screens.
@@ -37,18 +37,23 @@ setup receipt in the contract for dashboard URLs and exact settings. Client secr
 remains unrevealed in Shopify; no FindEZ server credentials were configured.
 
 Amazon registration, Shopify distribution/webhook subscriptions, test installation,
-live sync, production schema approval, deployment and FIND binding remain
-pending. No production changes or outbound messages have occurred. All five CI
+live sync, public proxy callback correction and FIND binding remain
+pending. The user approved the schema/backend/web deployment, completed at
+04:34:44 UTC November 11. No outbound messages have been sent. All five CI
 jobs passed for backend/web 8d78f05c in run 42957769542. No TestFlight build is
 required for this backend/web lane. Do not label integrations as available.
 
 Production preparation is complete; see `docs/plans/commerce-production-rollout.md`
-for exact migration digest, staged release path, live source preservation,
-verification, rollback and remaining authorization gate. The real staged build
+for exact migration digest, deployed release path, live source preservation,
+verification and rollback. The real staged build
 and callback HTTP checks passed. The web baseline has 78 existing failing tests;
 the candidate has those same failures, no new ones, and both commerce suites pass.
 The isolated production database rehearsal preserved all 107 original tables and
-checked schema objects after two migration applications. Live services/database
-remain unchanged. Recheck private release-manifest hashes before deployment;
-other terminals may have changed live source since preparation. Do not expose
+checked schema objects after two migration applications. Live schema permission
+checks and public health/anonymous-denial checks also pass. Nginx callback logs
+omit sensitive query/referrer values. Caddy still overwrites no-referrer with
+same-origin; two available SSH routes rejected authentication. See
+`docs/plans/commerce-edge-proxy.md` for operator instructions. No edge change was
+made, and no provider secret/encryption key was configured. Future changes must
+preserve other terminals' live source and the now-deployed commerce files. Do not expose
 the private server-only database backup, environment copies or raw logs.
