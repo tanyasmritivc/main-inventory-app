@@ -1,3 +1,13 @@
+## November 10 - Fusion first; one stock reservation ledger
+
+Tanya confirmed Fusion 360 for the first robotics team. CAD Phase 0 specifies a
+Python desktop add-in and the existing FindEZ backend/Auth/database; Onshape is
+the second adapter. Reuse Project Kit reservations, with `inventory_allocations`
+as a read projection, instead of creating competing stock reservations. Display
+recorded inventory coverage until physical-count/unit evidence is established.
+CAD implementation, migrations and production activation are not part of Phase 0.
+See `FINDEZ_CAD_INTELLIGENCE_TECHNICAL_PLAN.md` for source evidence and release gates.
+
 ## November 7 — Contextual questions bind to a persistent Space
 
 The Space Ask sheet must pass its Space ID and verify it server-side on every turn. Parent inventory context alone is insufficient. Image/file questions do not imply extraction or imports. Scoped history cannot be reused for another Space, and empty/deleted Spaces must never fall back to broader data. Main Chat remains separate.

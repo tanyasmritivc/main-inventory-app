@@ -1,3 +1,15 @@
+## November 10 - CAD Intelligence Phase 0 specification
+
+Documentation lane `docs/cad-intelligence-phase0`, based on `17632a92`. Tanya
+confirmed Fusion 360 as the first robotics team's CAD platform. Repository,
+read-only live schema/runtime and official CAD documentation audit complete.
+See `FINDEZ_CAD_INTELLIGENCE_TECHNICAL_PLAN.md` and
+`docs/plans/cad-intelligence/VALIDATION.md`. Guarded SQL drafts remain outside
+deployable migrations. No application/mobile/schema/deployment changes or CAD
+runtime tests. Next gate: a real Fusion assembly, independently counted and
+compared with an explicitly selected FindEZ inventory. Allocation writes require
+shared stock locking across legacy kits, checkouts and quantity writers first.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.
