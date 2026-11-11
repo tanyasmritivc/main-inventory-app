@@ -1673,3 +1673,17 @@ and manual reduced-motion emulation remain unverified because Safari was
 switched during inspection. See `docs/cad-section/RELEASE.md` and live screenshots.
 No backend, mobile, auth, navigation, dependency, or environment changes. No
 Vercel, Render, local preview, or staging website was used.
+
+
+## CAD Intelligence guided setup, November 11, 2026
+
+Completed on branch `design/cad-guided-setup`. Deployed five presentation/help files
+to self-hosted `findez-cad-guide-20261111`, preserving 598 unrelated frontend files
+and the parallel Connections release. Added Fusion/CSV source selection, numbered
+setup/upload cards, inline folder and Run-toggle instructions, public `/docs/cad`
+guide, sample instructions, troubleshooting, and support email links.
+Production webpack build, TypeScript, prerendering and source-handler audit passed.
+Authenticated desktop Safari rendering and inventory selection checked. Guide and
+both downloads return 200. Safari automation then timed out; phone layout and
+fresh file-upload interaction remain unverified. See `docs/cad-guide/RELEASE.md`.
+No backend/mobile/auth/dependency/environment changes. No inventory writes.

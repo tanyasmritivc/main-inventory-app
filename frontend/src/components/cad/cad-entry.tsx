@@ -50,8 +50,8 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
   }, [accountId, world, allowed, attempt]);
   const ready = allowed && directory?.world === world;
   return <AppShell><section className={styles.page}>
-    <header><p className={styles.eyebrow}>FUSION PREVIEW</p><h1>CAD Intelligence</h1>
-      <p>Choose the inventory to compare with your Fusion assembly.</p></header>
+    <header className={styles.hero}><div className={styles.topline}><span className={styles.preview}>CAD INTELLIGENCE / PREVIEW</span><a href="/docs/cad" target="_blank" rel="noreferrer">Setup guide ↗</a></div><h1>Start with your inventory.</h1>
+      <p>Choose where your parts are stored. Then bring in a Fusion assembly or spreadsheet to compare.</p></header>
     <div className={styles.card}>
       <label className={styles.file}>Organization
         <select value={world} onChange={event => { setWorld(event.target.value); setDirectory(null); setError(""); }}>
@@ -64,11 +64,11 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
       {error ? <><p role="alert">{error}</p><button onClick={() => { setError(""); setDirectory(null); setAttempt(attempt + 1); }}>Try again</button></>
         : organizations !== null && !allowed ? <p role="alert">You do not have access to this organization. Choose another organization.</p>
         : !ready ? <p role="status">Loading inventories...</p>
-        : directory.inventories.length ? <ul>{directory.inventories.map(inventory => <li key={inventory.inventory_id}>
-          <Link href={`/cad?inventory=${encodeURIComponent(inventory.inventory_id)}`}>{inventory.workspace_name} / {inventory.name}</Link>
+        : directory.inventories.length ? <ul className={styles.inventoryList}>{directory.inventories.map(inventory => <li key={inventory.inventory_id}>
+          <Link href={`/cad?inventory=${encodeURIComponent(inventory.inventory_id)}`}><span><small>{inventory.workspace_name}</small><strong>{inventory.name}</strong></span><span aria-hidden="true">→</span></Link>
         </li>)}</ul>
         : <p>No inventories are available here. <Link href="/workspaces">Open workspaces</Link> to create or join one.</p>}
     </div>
-    <p className={styles.muted}>You can also <a href="/downloads/findez-fusion-preview.zip" download>download the Fusion add-in</a> before choosing an inventory.</p>
+    <p className={styles.muted}>New to this? <a href="/docs/cad" target="_blank" rel="noreferrer">Follow the step-by-step setup guide</a> or <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">email support</a>. You can also <a href="/downloads/findez-fusion-preview.zip" download>download the Fusion add-in</a> before choosing an inventory.</p>
   </section></AppShell>;
 }

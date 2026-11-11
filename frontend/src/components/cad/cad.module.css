@@ -44,3 +44,94 @@
 .mapping label.confirm { display: flex; align-items: flex-start; line-height: 1.5; }
 .confirm input { margin-top: 4px; flex-shrink: 0; }
 .mapping td { overflow-wrap: anywhere; min-width: 100px; max-width: 300px; }
+
+/* Guided CAD setup, using the application's existing light and dark tokens. */
+.page { max-width:1280px; padding-top:36px; gap:28px; }
+.hero { padding:8px 0 2px; }
+.hero h1 { font-size:clamp(30px,3.5vw,46px); font-weight:500; line-height:1.12; margin:24px 0 12px; }
+.hero > p { color:var(--cad-muted); font-size:16px; max-width:650px; }
+.topline { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:13px; }
+.preview { font-size:10px; font-weight:500; letter-spacing:.16em; color:var(--cad-muted); }
+.guideLink { display:inline-flex; gap:8px; align-items:center; }
+.inventoryStrip { display:flex; justify-content:space-between; gap:16px; align-items:center; border-top:1px solid var(--cad-line); border-bottom:1px solid var(--cad-line); padding:16px 0; font-size:13px; }
+.inventoryStrip > span { display:flex; align-items:center; gap:10px; color:var(--cad-muted); }
+.inventoryStrip strong { color:var(--cad-text); font-weight:500; }
+.inventoryStrip a { white-space:nowrap; }
+.workspace { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:32px; align-items:start; }
+.flow { display:grid; gap:20px; min-width:0; }
+.sourceChoices { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.page .sourceChoices button { display:flex; align-items:center; gap:12px; text-align:left; border-radius:14px; padding:18px; }
+.sourceChoices button > span { flex:1; }
+.sourceChoices strong { font-weight:500; }
+.sourceChoices small { font-size:12px; margin-top:5px; }
+.page .sourceChoices button[aria-pressed=true] { border-color:var(--cad-text); background:color-mix(in srgb,var(--cad-text) 5%,var(--cad-panel)); }
+.preparation { padding:24px; border:1px solid var(--cad-line); border-radius:18px; }
+.stepHeading { display:flex; align-items:flex-start; gap:12px; margin-bottom:22px; }
+.stepHeading h2 { font-size:18px; letter-spacing:-.025em; font-weight:500; margin:2px 0 5px; }
+.stepHeading p { color:var(--cad-muted); font-size:13px; margin:0; }
+.stepNumber { display:flex; align-items:center; justify-content:center; flex-shrink:0; width:28px; height:28px; border:1px solid var(--cad-line); border-radius:50%; font-size:12px; }
+.prepColumns { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.prepColumns > div + div { border-left:1px solid var(--cad-line); padding-left:24px; }
+.preparation h3 { font-weight:500; font-size:14px; margin:0 0 7px; }
+.preparation p { font-size:13px; color:var(--cad-muted); margin:0 0 14px; }
+.preparation b { color:var(--cad-text); font-weight:500; }
+.preparation a { font-size:13px; }
+.downloadLink { display:inline-flex; gap:8px; align-items:center; font-weight:500; }
+.caption { display:block; margin-top:8px; font-size:11px; color:var(--cad-muted); }
+.page .installDetails { border-top:1px solid var(--cad-line); margin-top:22px; padding-top:16px; color:var(--cad-text); font-size:13px; }
+.installDetails summary { font-weight:500; }
+.instructions { font-size:14px; }
+.instructions li { margin:14px 0; }
+.instructions strong { color:var(--cad-text); font-weight:500; }
+.folderGuide { border:1px solid var(--cad-line); border-radius:12px; padding:16px; margin:20px 0; background:var(--cad-panel); }
+.folderGuide > span { font-size:12px; color:var(--cad-muted); }
+.folderGuide pre { font-size:12px; line-height:1.9; overflow-x:auto; margin:10px 0; color:var(--cad-text); }
+.folderGuide p { margin:0; font-size:12px; color:var(--cad-muted); }
+.runGuide { border:1px solid var(--cad-line); border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.runGuide > span + span { display:flex; gap:14px; align-items:center; font-size:12px; }
+.runGuide i { width:28px; height:16px; border-radius:10px; background:#2178c1; position:relative; }
+.runGuide i:after { content:''; position:absolute; width:12px; height:12px; border-radius:50%; background:white; right:2px; top:2px; }
+.uploadZone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:165px; padding:24px; border:1px dashed var(--cad-muted); border-radius:14px; text-align:center; position:relative; cursor:pointer; margin:0 0 20px; }
+.uploadZone:hover { background:color-mix(in srgb,var(--cad-text) 4%,transparent); }
+.uploadZone:focus-within { outline:2px solid var(--cad-text); outline-offset:4px; }
+.uploadZone strong { font-size:14px; font-weight:500; max-width:100%; overflow-wrap:anywhere; }
+.uploadZone span { color:var(--cad-muted); font-size:12px; }
+.uploadZone input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.uploadZone:has(input:disabled) { opacity:.5; cursor:default; }
+.hasFile { border-style:solid; border-color:var(--cad-line); }
+.page button.primary { width:100%; margin-top:16px; min-height:48px; border-radius:24px; font-weight:500; }
+.nextHint { color:var(--cad-muted); font-size:12px; margin:14px 0 0; }
+.helpRail { padding-top:8px; }
+.helpRail h2 { font-size:19px; line-height:1.4; font-weight:400; letter-spacing:-.025em; margin:14px 0 24px; }
+.helpItem { display:flex; gap:8px; justify-content:space-between; border-top:1px solid var(--cad-line); padding:18px 0; font-size:13px; }
+.helpItem svg { flex-shrink:0; }
+.helpItem small { font-size:12px; line-height:1.5; margin-top:6px; }
+.supportNote { border-top:1px solid var(--cad-line); padding-top:20px; margin-top:4px; font-size:13px; }
+.supportNote p { margin:0 0 6px; color:var(--cad-muted); }
+.supportNote small { line-height:1.5; margin-top:10px; font-size:12px; }
+.page .inventoryList { list-style:none; padding:0; margin:20px 0 0; display:grid; gap:10px; }
+.inventoryList a { display:flex; align-items:center; justify-content:space-between; padding:18px; border:1px solid var(--cad-line); border-radius:12px; }
+.inventoryList a:hover { background:color-mix(in srgb,var(--cad-text) 4%,transparent); text-decoration:none; }
+.inventoryList small { margin:0 0 5px; font-size:12px; }
+.inventoryList strong { font-size:16px; font-weight:500; }
+.guidePage { padding-top:32px; }
+.guidePage > .hero { padding:32px 0; }
+.guideLayout { display:grid; grid-template-columns:210px minmax(0,1fr); gap:64px; }
+.guideNav { display:flex; flex-direction:column; align-items:flex-start; gap:16px; position:sticky; top:28px; align-self:start; font-size:13px; }
+.helpSections { max-width:760px; min-width:0; }
+.helpSections > section { padding:0 0 40px; margin:0 0 40px; border-bottom:1px solid var(--cad-line); scroll-margin-top:32px; }
+.helpSections h2 { font-size:25px; font-weight:500; letter-spacing:-.03em; margin:12px 0 18px; }
+.helpSections p,.helpSections li { font-size:14px; color:var(--cad-muted); }
+.helpSections li { margin:12px 0; }
+.helpSections b { color:var(--cad-text); font-weight:500; }
+.helpSections a { text-decoration:underline; color:var(--cad-text); }
+.page a.primaryLink { display:inline-flex; padding:12px 20px; border-radius:24px; background:var(--cad-text); color:var(--cad-panel); text-decoration:none; font-size:14px; margin:12px 0; }
+.helpSections details { font-size:14px; border-top:1px solid var(--cad-line); padding:16px 0; margin:0; }
+.helpSections summary { color:var(--cad-text); }
+.helpSections details p { margin:12px 0 0; }
+.glossary > div { display:grid; grid-template-columns:120px 1fr; gap:16px; padding:14px 0; border-top:1px solid var(--cad-line); font-size:14px; }
+.glossary dt { font-weight:500; }
+.glossary dd { color:var(--cad-muted); margin:0; line-height:1.6; }
+.helpSections .supportCard { padding:24px; border:1px solid var(--cad-line); border-radius:18px; background:var(--cad-panel); }
+@media(max-width:1050px) { .workspace { grid-template-columns:minmax(0,1fr); } .helpRail { border-top:1px solid var(--cad-line); padding-top:24px; } .helpRail h2 br { display:none; } }
+@media(max-width:650px) { .page { padding:24px 16px 60px; gap:20px; } .hero h1 { margin-top:20px; font-size:32px; } .hero > p { font-size:14px; } .inventoryStrip { align-items:flex-start; font-size:12px; } .sourceChoices { gap:8px; } .page .sourceChoices button { padding:14px 10px; gap:8px; } .sourceChoices button > svg:first-child { display:none; } .sourceChoices small { font-size:11px; } .sourceChoices strong { font-size:13px; } .preparation { padding:20px; } .prepColumns { grid-template-columns:1fr; gap:20px; } .prepColumns > div + div { padding:20px 0 0; border-left:0; border-top:1px solid var(--cad-line); } .guideLayout { grid-template-columns:1fr; gap:36px; } .guideNav { position:static; gap:12px; } .guidePage > .hero { padding:0; } .glossary > div { grid-template-columns:1fr; gap:5px; } }
