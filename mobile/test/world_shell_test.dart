@@ -609,7 +609,10 @@ void main() {
         // empty, usable composer rather than a particular animation frame.
         final composer = tester.widget<TextField>(find.byType(TextField).first);
         expect(composer.controller!.text, isEmpty);
-        expect(composer.decoration!.hintText, isNotNull);
+        expect(
+          composer.decoration!.hint ?? composer.decoration!.hintText,
+          isNotNull,
+        );
         expect(find.byTooltip('Send message'), findsNothing);
         await worldAuditCapture?.call('conversation-clearance');
         await tester.enterText(

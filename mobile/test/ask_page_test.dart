@@ -777,13 +777,21 @@ void main() {
   testWidgets('conversation ID survives follow-ups and new chat clears it', (
     tester,
   ) async {
+    // This fixture injects editing state, so use one input owner. A live IME
+    // can send its older value back over the injected value after reset.
+    if (!tester.testTextInput.isRegistered) {
+      tester.testTextInput.register();
+      addTearDown(tester.testTextInput.unregister);
+    }
     final api = _AskApi();
     await tester.pumpWidget(
       _page(api, initialMessage: 'What do I need for loft shelving?'),
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'And the bolts?');
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
     expect(api.conversationIds, [null, 'conversation-1']);
@@ -802,10 +810,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AskQuestionCard), findsNothing);
     await tester.enterText(find.byType(TextField), 'A fresh question');
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'A fresh question',
+    );
+    await tester.ensureVisible(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
-    expect(api.conversationIds.last, isNull);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      isEmpty,
+      reason: 'Send must consume the fresh draft',
+    );
+    expect(api.commands.last, 'A fresh question');
+    expect(api.conversationIds, [null, 'conversation-1', null]);
   });
 
   testWidgets('new chat ignores late events from a reset request', (

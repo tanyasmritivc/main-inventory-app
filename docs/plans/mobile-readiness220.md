@@ -14,13 +14,17 @@ with physical iPhone acceptance deferred. Public review submission is not author
   unreachable in release mode; production networking is unchanged.
 - Normalize synthetic keyboard/safe-area coordinates, wait for onboarding scroll
   completion, and distinguish virtual-clock timing assertions from real frame timing.
+- Let the conversation-reset fixture own its injected text input instead of
+  racing the live IME, and accept the animated placeholder widget. The stronger
+  reset assertion verifies the fresh command and all three conversation IDs.
 - Retain release configuration validation and increment the candidate to build 220.
 
 ## Verified checks
 
 - Complete Flutter host suite: 1,384 passed, one existing opt-in configuration skip.
 - Explicit production configuration test: passed using private release definitions.
-- Flutter analysis: no issues.
+- Flutter analysis: no issues. Final chat/world follow-up: 82 host tests passed;
+  both corrected chat assertions also passed on the native simulator.
 - Backend mobile-branch snapshot: 845 passed. Current deployed backend source:
   1,625 passed. No backend source or customer inventory was changed.
 - PostgreSQL 17 isolation, concurrent writes, and account-memory suites: passed on
