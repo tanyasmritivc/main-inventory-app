@@ -248,3 +248,17 @@ not change; imports remain disabled.
 Signed-in Safari verified Connections navigation, workspace/inventory selection,
 inline controls, and the Profile Manage connections link returning to the regular
 Connections page. No mailbox was connected and no purchase data was imported.
+
+
+## November 11 - Sidebar Connections opens the page directly
+
+The world sidebar Connections link now targets `/settings/connections`, removing
+the Tools-card detour. Both the initial dashboard overlay and a guarded upgrade
+script carry the fix. Deployed 06:31:53 UTC from
+`/home/ubuntu/findez-connections-link-20261111/frontend`, build
+`skyU7PfRvStpn62l-xCxQ`. One navigation file changed; 589 other files from the
+latest CAD hover release were preserved. Changed-file ESLint and the production
+webpack build passed. Signed-in Safari verified the updated href and clicked it
+to the Connections page. Backend/schema/provider activation unchanged.
+Effective override: `/etc/systemd/system/findez-web.service.d/zzzzz-cad-hover.conf`;
+private release `deployment.json` and `zzzzz-cad-hover.before` record rollback.

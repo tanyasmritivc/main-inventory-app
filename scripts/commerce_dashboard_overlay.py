@@ -27,7 +27,7 @@ def patch(frontend: Path):
     new_navigation = original_navigation.replace('  Wrench,', '  Wrench,\n  Plug,', 1)
     new_navigation = new_navigation.replace(anchor, '''      {
         label: "Connections",
-        route: worldHref(world, "tools") + "#findez-connect",
+        route: "/settings/connections",
         icon: Plug,
         section: "Organization",
       },
