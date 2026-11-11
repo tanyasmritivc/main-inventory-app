@@ -25,7 +25,14 @@ metadata. Sales, merchant stock and consumer purchases are separate record kinds
 none is physically verified. No direct stock writes or auto-reconciliation here.
 Keep actor/inventory authorization and provider-grant scope through any adapter.
 
-User has no developer apps/accounts yet. Live setup/testing, production schema
-approval, deployment, UI and FIND binding remain pending. No production changes
-or outbound messages have occurred. No TestFlight build is required for this
-backend-only lane. Do not label the integrations as available in existing clients.
+Shopify signup and organization onboarding are complete. AI Robots INC organization
+246688821 now has FindEZ Integration Test (generated sample data, free dev store)
+and FindEZ Connect app 446104666113, active configuration commerce-dev-1. See the
+setup receipt in the contract for dashboard URLs and exact settings. Client secret
+remains unrevealed in Shopify; no FindEZ server credentials were configured.
+
+Amazon registration, Shopify distribution/webhook subscriptions, test installation,
+live sync, production schema approval, deployment, UI and FIND binding remain
+pending. No production changes or outbound messages have occurred. All five CI
+jobs passed for backend 496c3cd1 in run 42955103759. No TestFlight build is required
+for this backend-only lane. Do not label integrations as available in clients.

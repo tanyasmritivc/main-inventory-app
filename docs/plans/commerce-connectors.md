@@ -1,8 +1,34 @@
 # Amazon and Shopify integration lane
 
-Status: backend candidate, disabled by default; no live accounts, deployment,
-production migrations, browser extension, web/mobile UI, or provider approvals.
-The user confirmed no Shopify development store/app or Amazon developer app exists.
+Status: backend candidate, disabled by default; Shopify development resources
+created, but no live connection, deployment, production migration, browser
+extension, web/mobile UI, or provider approval. Amazon registration is pending.
+
+## Shopify setup receipt - November 10, 2026
+
+The user completed signup and Partner organization onboarding in Safari.
+Organization: AI Robots INC (`246688821`), API contact `info@findez.ai`.
+
+- Dev store: FindEZ Integration Test, created with generated sample data and
+  free Basic-plan testing features. Admin:
+  https://admin.shopify.com/store/findez-integration-test-hdjbsg6g
+- App: FindEZ Connect (`446104666113`). Dashboard:
+  https://dev.shopify.com/dashboard/246688821/apps/446104666113
+- Active configuration version: `commerce-dev-1` (`1203132465153`). This means
+  Shopify app configuration was saved; it is not a FindEZ production deployment.
+- App URL: `https://www.findez.ai/home`; embedded mode off.
+- Allowed callback: `https://www.findez.ai/connect/shopify/callback`.
+- Read-only scopes: `read_products,read_inventory,read_orders`.
+- Legacy installation flow enabled to match the implemented explicit
+  authorization-code flow. Webhooks API version: `2026-10`.
+- Client credentials exist in Shopify Settings. The secret was not revealed,
+  copied, committed, or configured on a FindEZ server.
+
+No app installation or store synchronization has occurred. Distribution is not
+selected, privacy/uninstall subscriptions are not registered, and the callback
+page remains a web-lane dependency. Complete those plus backend activation and
+test-store authorization before treating this as an operational connection.
+All five CI jobs passed in run `42955103759` for backend commit `496c3cd1`.
 
 Branch: `feat/commerce-connectors`, based on backend `17632a92024a986cb08dcfb795ba518fd9897ee9`
 (`fix/barcode-camera-lookup-217`). The mobile Android checkout carries different

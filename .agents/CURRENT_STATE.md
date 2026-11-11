@@ -4,8 +4,10 @@
 seller adapters, Amazon consumer CSV imports, private source evidence, token
 protection and Shopify lifecycle/privacy handling. No physical stock writes.
 1,671 backend/API-doc tests plus ten subtests and 46 focused commerce tests pass;
-disposable SQL migration replay/access/race/privacy assertions pass. No live apps,
-credentials, client callback/UI, production migration or deployment exist yet.
+disposable SQL migration replay/access/race/privacy assertions pass. All five CI
+jobs passed for 496c3cd1. Shopify FindEZ Connect app and sample-data dev store now
+exist under AI Robots INC; no app installation, server credentials, client
+callback/UI, production migration or deployment exists yet. Amazon setup pending.
 See docs/plans/commerce-connectors.md and .agents/HANDOFFS/commerce-connectors.md.
 
 ## November 8 - Crowded scan recovery deployed (PR371)
