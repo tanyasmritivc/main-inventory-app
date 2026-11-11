@@ -6,6 +6,14 @@ and prepare a signed production candidate. Physical-device checks remain separat
 from simulator results. No public App Review submission is authorized by this task.
 Evidence: `projects/findez-readiness220-private`.
 
+Completed automated audit and signed TestFlight delivery. Runtime `3e0cc9af`,
+PR #387, all five CI jobs passed. Apple acknowledged 1.1.3 (220), delivery
+`93e74361-5439-4bd8-bb94-d388a9d4166a`. Processing and tester availability pending,
+not polled. App Store draft retains all 14 screenshots with original hashes/order;
+no public submission. Physical acceptance deferred by user. Full results and
+explicit remaining web lint/live-service limitations: `docs/plans/mobile-readiness220.md`.
+Separate web dependency PR #386 also passed CI; not deployed.
+
 ## November 10: surface corrections and camera controls, build 219
 
 Active lane `fix/mobile-surfaces-camera-219`. Replace the unreliable organization
