@@ -1426,3 +1426,11 @@ shows reliable results. Do not infer model identity from the older gateway alias
 ## 2026-11-10 — Desktop preview
 
 Use a sandboxed Electron shell around the existing hosted web app. Keep Supabase PKCE verification in the originating desktop session; transfer only one-use authorization code plus random state through the app protocol. No second auth/database. Publish clearly labeled unsigned/unnotarized preview installers; stable distribution requires publisher signing and platform acceptance.
+
+## 2026-11-11 - Direct-download desktop signing and layout
+
+Mac releases use the user-approved Developer ID Application identity and Apple
+notarization, with a stapled ticket on each DMG. Never publish until accepted.
+Keep the web desktop sidebar with a 1000x640 minimum window; only onboarding
+retains 720x560. The user confirmed copyright belongs to AI Robots Inc.
+Windows remains unsigned pending publisher signing and hardware acceptance.

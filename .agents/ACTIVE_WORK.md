@@ -1,3 +1,13 @@
+## November 11 - Desktop 0.1.2 released
+
+Branch feat/findez-desktop. Developer ID signed Mac apps, Apple notarization Accepted
+and stapled DMGs for Apple silicon/Intel; both apps pass Gatekeeper. Desktop minimum
+window preserves web layout; onboarding remains responsive. Copyright corrected to
+2026 AI Robots Inc. Actual Electron layout, packaged About panel, policy tests, web
+build, hashes and public download checks pass. Disposable QA removed. Windows
+installer is still unsigned and requires hardware acceptance. See
+docs/releases/DESKTOP_0_1_2.md. Production overlay preserves newer website work.
+
 ## November 10 — FindEZ desktop preview
 
 Branch feat/findez-desktop. Mac Apple silicon/Intel DMGs and Windows x64 NSIS installer; hosted-web shell, system-browser PKCE callback and /desktop downloads. Focused automated checks, Mac runtime and synthetic CSV/XLSX comparison passed. Preview only: no Developer ID/notarization or Windows publisher signing; Windows/Intel runtime and provider/hardware acceptance pending. See docs/releases/DESKTOP_PREVIEW_0_1_0.md. Production overlay preserves newer work.
