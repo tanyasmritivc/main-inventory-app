@@ -84,8 +84,8 @@ def _native(raw):
         if not order or not title or not re.fullmatch(r'[0-9]+(?:\.0+)?', quantity):
             raise ValueError('missing identity or invalid quantity')
         amount = int(quantity.split('.')[0])
-        if amount <= 0:
-            raise ValueError('invalid quantity')
+        # Cancelled/closed exports can legitimately report zero units.
+        # Keep the row and its status; never infer a positive purchased count.
         stamp = get('ordered_at')
         try:
             ordered = datetime.fromisoformat(stamp.replace('Z', '+00:00').replace(' UTC', '+00:00'))
@@ -180,7 +180,7 @@ def preview(raw):
             raise ValueError('empty file')
         output = list(records.values())
     except (UnicodeError, ValueError, csv.Error, ValidationError, zipfile.BadZipFile, RuntimeError, NotImplementedError, EOFError):
-        raise HTTPException(422, 'Could not read this order history. Upload the Amazon order-history CSV (Order ID, Product Name or Title, Quantity, Order Date), its ZIP, or the FindEZ CSV template. Check dates, positive quantities and unique line IDs. Maximum 10,000 rows; no records were saved.') from None
+        raise HTTPException(422, 'Could not read this order history. Upload the Amazon order-history CSV (Order ID, Product Name or Title, Quantity, Order Date), its ZIP, or the FindEZ CSV template. Check dates, nonnegative integer quantities and unique line IDs. Maximum 10,000 rows; no records were saved.') from None
     return {'sha256': hashlib.sha256(raw).hexdigest(), 'records': output, 'count': len(output),
         'order_count': len({r['order_id'] for r in output}), 'duplicates_in_file': duplicates,
         'stock_effect': 'none', 'warning': 'Previously purchased, not confirmed as currently owned. Returned, cancelled, gifted or used items may no longer be available.'}

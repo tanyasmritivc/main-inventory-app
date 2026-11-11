@@ -1,0 +1,8 @@
+{
+  "changed_file": "app/services/commerce/purchase_import.py",
+  "change": "Preserve zero-quantity native Amazon export rows",
+  "sha256": "f97398fcea752f7f0c34beffae843587119a7bbd6cd4ee7cb22b2032892d5271",
+  "health": 200,
+  "database_health": 200,
+  "inventory_writes": false
+}

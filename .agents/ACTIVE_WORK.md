@@ -1719,3 +1719,14 @@ uploaded or saved; no inventory writes. Only local filenames and CSV headers
 were inspected. Receipts: `docs/plans/amazon-csv-help-deployment.json` and
 `docs/plans/amazon-quantity-alias-deployment.json`. Full user-file import remains
 for the user's preview and confirmation.
+
+Amazon zero-quantity follow-up: reproduced the user's 422 locally against the
+complete CSV, without uploading it. Four native rows report quantity zero
+(three cancelled, one closed), previously rejected by _native. Preserve those
+rows with zero units and the existing status mapping; do not infer quantities
+or ownership. The complete real CSV now parses locally to 26 records with all
+four zero-quantity records retained. No customer records were saved or uploaded.
+Five synthetic regression tests pass locally and against the deployed parser.
+Guarded one-file deployment `findez-amazon-zero-20261111` passed health/database
+200 and anonymous preview 401. No frontend changes. Receipt:
+`docs/plans/amazon-zero-quantity-deployment.json`.
