@@ -48,6 +48,8 @@ jobs:
           PGDATABASE=personalization_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/personalization.sql
           PGDATABASE=personalization_ci psql -X -v ON_ERROR_STOP=1 -f backend/supabase/migrations/081_personalization_engine.sql
           FINDEZ_DISPOSABLE_SQL_TESTS=1 PGDATABASE=personalization_ci python3 backend/tests/sql/personalization_concurrency.py
+          createdb commerce_ci
+          PGDATABASE=commerce_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/commerce.sql
 
   backend:
     name: Backend (Python)

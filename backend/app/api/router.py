@@ -93,3 +93,8 @@ api_router.include_router(world_chat_router)
 
 from app.api.routes.personalization import router as personalization_router
 api_router.include_router(personalization_router)
+
+# Commerce connections are actor-private and validate their explicit inventory.
+# They must not inherit legacy inventory-owner impersonation from scoped routers.
+from app.api.routes.commerce import router as commerce_router
+api_router.include_router(commerce_router)

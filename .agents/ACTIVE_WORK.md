@@ -1,3 +1,13 @@
+## November 10 - Amazon and Shopify integration lane
+
+Owner: user-assigned commerce terminal; isolated `feat/commerce-connectors` in
+`projects/findez-command-center/findez-commerce`, based on backend barcode217.
+Owns commerce service/routes, private commerce migration and tests. Shared router
+change is one additive registration. No CAD, canonical inventory, chat, web or
+mobile changes. Provider credentials/developer accounts do not exist yet.
+Backend candidate remains disabled and undeployed. Contract and pending client
+handoff: `docs/plans/commerce-connectors.md` and `.agents/HANDOFFS/commerce-connectors.md`.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.

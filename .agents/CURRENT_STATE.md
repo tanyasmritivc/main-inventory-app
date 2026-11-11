@@ -1,3 +1,13 @@
+## November 10 - Commerce backend candidate (not deployed)
+
+`feat/commerce-connectors` adds disabled-by-default Shopify merchant and Amazon
+seller adapters, Amazon consumer CSV imports, private source evidence, token
+protection and Shopify lifecycle/privacy handling. No physical stock writes.
+1,671 backend/API-doc tests plus ten subtests and 46 focused commerce tests pass;
+disposable SQL migration replay/access/race/privacy assertions pass. No live apps,
+credentials, client callback/UI, production migration or deployment exist yet.
+See docs/plans/commerce-connectors.md and .agents/HANDOFFS/commerce-connectors.md.
+
 ## November 8 - Crowded scan recovery deployed (PR371)
 
 Runtime `8a6851a4e0c84985167deafbbbb7ce1556956c2f` is live after all five CI gates in run42529356203. Large-photo overview timeouts/unavailable/invalid responses now use the existing smaller-section path within the unchanged budget; original errors remain if recovery produces no candidates. Main chat, regular successful scans, saves, scope, client UI and schema are unchanged. The one-file guarded deployment preserved 147 other Python files; API/database health and anonymous denial passed.

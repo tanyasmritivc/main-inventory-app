@@ -7,6 +7,7 @@ httpx==0.28.1
 h2==4.4.1
 requests==2.34.2
 PyJWT[crypto]==2.15.1
+cryptography==50.0.2
 supabase==2.11.0
 pypdf==6.21.1
 Pillow>=10.0.0
