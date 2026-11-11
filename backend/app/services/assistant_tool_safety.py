@@ -5,7 +5,10 @@ import re
 
 READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
                         'inventory_recall', 'documents_list', 'list_spaces',
-                        'inventory_query', 'project_kit_readiness'))
+                        'inventory_query', 'inventory_item_photos', 'project_kit_readiness',
+                        'world_directory', 'world_compare_item_photo', 'world_destination_options', 'world_search', 'world_inventory', 'world_spaces',
+                        'world_tracking', 'world_reorders', 'world_query', 'world_projects',
+                        'world_project_readiness', 'world_activity', 'world_recall', 'world_item_photos'))
 SAFE_EDIT_FIELDS = frozenset(('name', 'category', 'location', 'notes'))
 _ACTION = r'^\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:move|rename|change|set|update|edit|add|delete|remove|create|increase|decrease|restock|log)\b'
 
@@ -30,6 +33,8 @@ def _valid(value, schema):
                 and all(_valid(item, schema['items']) for item in value))
     if kind == 'string':
         return isinstance(value, str) and len(value) <= 2000 and ('enum' not in schema or value in schema['enum'])
+    if kind == 'boolean':
+        return isinstance(value, bool)
     if kind == 'integer':
         return isinstance(value, int) and not isinstance(value, bool) and abs(value) <= 1_000_000
     return False
@@ -50,20 +55,9 @@ def rejection(*, tool_name, args, definitions, enabled, message, trace):
         return 'You have view-only access to this inventory. No change was made.'
     if tool_name in ('inventory_propose_add', 'inventory_propose_delete'):
         return None  # A proposal is read-only; confirmation has a separate server transaction.
-    if tool_name == 'create_space':
-        if scope is None:
-            return 'Select an inventory before creating a Space. No change was made.'
-        name = args.get('name', '').strip()
-        prefix = r'\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:create|add|make)\s+(?:a\s+)?(?:new\s+)?space\s+(?:(?:called|named)\s+|:\s*)?'
-        pattern = prefix + r'["\']?' + re.escape(name) + r'["\']?(?:\s+in (?:this|the current|the selected) inventory)?[.!?]?\s*'
-        if not name or len(name) > 100 or not re.fullmatch(pattern, message, re.I):
-            return 'Please request one exact name, for example: Create a Space called Garage. It will be created in the selected inventory. No change was made.'
-        if any(entry.get('tool') not in READ_TOOLS for entry in trace):
-            return 'Only one Space creation is allowed per request. No further change was made.'
-        return None
     # These established write services do not have durable chat request receipts
     # or atomic quantity/event updates. A model cannot manufacture confirmation.
-    if tool_name in ('inventory_add_item', 'inventory_log_event'):
+    if tool_name in ('inventory_add_item', 'inventory_log_event', 'create_space'):
         return 'Use Capture or the item editor to confirm this change safely. Chat cannot safely retry this operation, so no change was made.'
     if tool_name in ('inventory_delete_item', 'inventory_delete_by_filter'):
         return 'Deletion needs a reviewed selection and confirmation. Open the item or inventory editor to confirm deletion. No items were deleted.'
@@ -122,9 +116,13 @@ def validate_model_answer(message, trace, text):
                     and isinstance(entry.get('result'), dict)
                     and entry['result'].get('item_id') and not entry['result'].get('error')
                     for entry in writes)
-    confirmed = confirmed or any(entry.get('tool') == 'create_space'
-        and isinstance(entry.get('result'), dict) and entry['result'].get('confirmed') is True
-        and entry['result'].get('id') and not entry['result'].get('error') for entry in writes)
+    confirmed = confirmed or any(
+        isinstance(entry.get('result'), dict)
+        and entry['result'].get('inventory_changed') is True
+        and (entry['result'].get('pending_action') or {}).get('status') == 'confirmed'
+        and isinstance(entry['result'].get('receipt'), dict)
+        and entry['result']['receipt'].get('count', 0) > 0
+        for entry in writes)
     if confirmed:
         return
     claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|attached|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)
