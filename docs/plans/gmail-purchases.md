@@ -1,6 +1,6 @@
 # Amazon purchases through Gmail
 
-Status: implementation candidate in `feat/commerce-connectors`, PR388. Not deployed
+Status: tested release candidate in `feat/commerce-connectors`, PR388. Not deployed
 or enabled. User chose Gmail instead of forwarding; there is no receiving address,
 Resend account, inbound webhook or company-mail integration in this change.
 
@@ -113,9 +113,10 @@ applies both migrations twice and passes 47 assertions, including state replay,
 cross-actor denial, duplicate intake, disconnect versus late refresh and RLS.
 Production database and customer data were not used in that fixture.
 
-Production-source overlay/rehearsal, real Google OAuth, worker scheduling, real-mail
-parsing quality and physical-inventory reconciliation remain unverified. Do not
-deploy a local compile fixture or call this available to customers yet.
+Production-source overlay and database rehearsal now passed; see the release
+receipt below. Real Google OAuth, worker scheduling, real-mail parsing quality and
+physical-inventory reconciliation remain unverified. Do not deploy a local compile
+fixture or call this available to customers yet.
 
 ## Google setup receipt
 
@@ -125,5 +126,53 @@ project dashboard. No billing trial, paid service or mailbox access was enabled.
 Gmail API activation was verified with Status: Enabled in the API details page.
 OAuth consent configuration was created after explicit user approval of Google's
 User Data Policy: FindEZ Connect, external/testing, support findezai@gmail.com,
-developer contact info@findez.ai. No OAuth client secret has been created or copied.
+developer contact info@findez.ai. The user then authorized continuing with the
+prepared credential creation and private backend storage. Created Web application
+client **FindEZ Gmail Purchases**, with the sole redirect URI
+`https://www.findez.ai/connect/gmail/callback`. Saved only `gmail.readonly` in Data
+Access and verified `findezai@gmail.com` in the test-user list. No mailbox grant
+was authorized. The client JSON was copied to server staging, verified by digest,
+and protected with mode 0600 inside a mode 0700 directory. A disabled pending
+environment file and a new encryption key are staged; no live environment changed.
+A duplicate downloaded JSON remains in the local Downloads folder: sandbox
+restrictions prevented tightening its permissions. Remove that duplicate manually
+after confirming the secure copies; never paste its contents into chat.
 Project: https://console.cloud.google.com/home/dashboard?project=findez-connect
+
+
+## Prepared server release — November 11, 2026
+
+Runtime commit `0da7747e`; private staging `/home/ubuntu/findez-gmail-20261111`.
+Migration `20261111_purchase_email.sql`, SHA-256
+`eb05ea9e5b7f2f872163ecc33a5d44e77f54c46f0b744e5926e7d5314f8e9eef`.
+It adds `commerce_gmail_accounts`, `commerce_purchase_emails`, and service-only
+`findez_gmail_manage`, `findez_gmail_job`, `findez_purchase_email_job`.
+
+A fresh production snapshot restored into a disposable, network-isolated database
+passed both migration applications. All 112 pre-existing tables retained their
+row counts/content hashes; existing functions, columns, policies and permissions
+were preserved. The two new tables have RLS and deny anonymous/authenticated
+access. Only the service role can execute the new functions. Production was not
+modified, and the rehearsal container was removed.
+
+The candidate overlays the actual running source, preserving 578 unrelated source
+files. Staged backend commerce/Gmail tests and the three focused web suites passed.
+A real production webpack build passed with the server environment and fonts;
+build ID `RcNBViqziH5UrZOXd8NAj`. Loopback checks returned 200/no-referrer/no-store
+for Shopify, Amazon and Gmail callbacks, plus 307 for anonymous Connections.
+The temporary HTTP process was stopped. An initial test collection failure was
+caused by the staging PYTHONPATH and was corrected before these passing checks.
+
+Private receipts: `rehearsal.json`, `validation.json`, `http-smoke.json`,
+`release-manifest.private.json`, `preserved-source.private.json`. Credentials and
+raw logs are excluded from source control. The configured gateway uses HTTPS;
+its upstream retention/deletion and training policy still require verification.
+
+Proposed deployment requires explicit production-database approval per AGENTS.md.
+Recheck live hashes, take a fresh backup, apply the exact migration, verify grants,
+then deploy the scoped backend overlay and switch the web service to this candidate.
+Install pending configuration with **Gmail disabled**; do not start polling workers.
+Keep previous source/service configuration for rollback; on failure restore those
+and retain the additive empty private schema instead of dropping user data.
+Public activation is a separate gate after proxy/log protection and data-handling
+checks; Google restricted-scope verification is required before broad release.

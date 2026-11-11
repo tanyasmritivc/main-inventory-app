@@ -1,3 +1,13 @@
+## November 11 - Gmail Google setup and server candidate ready
+
+Created FindEZ Gmail Purchases OAuth client after approval; read-only scope saved,
+findezai@gmail.com eligible for testing. Credentials staged privately, Gmail disabled.
+Fresh isolated production-copy migration rehearsal preserved all 112 existing tables;
+live-source overlay preserved 578 unrelated files, focused tests and production build
+passed, callback HTTP smoke passed. Migration/deployment require explicit approval;
+public proxy and gateway data-handling gates still prevent live mailbox activation.
+See docs/plans/gmail-purchases.md for exact migration digest and receipts.
+
 ## November 10 - Gmail purchase integration candidate
 
 User selected each shopper's Gmail instead of mail forwarding. Read-only Google
