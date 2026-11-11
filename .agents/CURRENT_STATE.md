@@ -15,7 +15,15 @@ Web validation: 353 tests/47 suites, TypeScript, changed-file lint, compile-only
 webpack build and callback header manifest checks pass. Safari fixtures inspected
 at desktop/390px in light/dark. Local HTTP bind denied by sandbox; no live OAuth
 acceptance claimed. Compile fixture output must not be deployed.
-See docs/plans/commerce-connectors.md and .agents/HANDOFFS/commerce-connectors.md.
+Production preparation now passed: isolated full-database rehearsal preserved
+107 existing tables and checked schema objects; all 46 staged backend tests pass.
+The actual live-source web overlay builds with real production configuration;
+both callback HTTP security headers and anonymous Connections protection pass.
+Staged web has the same 78 failures as the live baseline, with no new failures.
+All five CI gates passed for 8d78f05c (run 42957769542). Nothing is deployed.
+The reviewed rollout/rollback and remaining explicit database-approval gate are
+in docs/plans/commerce-production-rollout.md. See docs/plans/commerce-connectors.md
+and .agents/HANDOFFS/commerce-connectors.md for provider setup and handoff.
 
 ## November 8 - Crowded scan recovery deployed (PR371)
 

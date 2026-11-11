@@ -39,5 +39,16 @@ remains unrevealed in Shopify; no FindEZ server credentials were configured.
 Amazon registration, Shopify distribution/webhook subscriptions, test installation,
 live sync, production schema approval, deployment and FIND binding remain
 pending. No production changes or outbound messages have occurred. All five CI
-jobs passed for backend 496c3cd1 in run 42955103759. No TestFlight build is required
-for this backend-only lane. Do not label integrations as available in clients.
+jobs passed for backend/web 8d78f05c in run 42957769542. No TestFlight build is
+required for this backend/web lane. Do not label integrations as available.
+
+Production preparation is complete; see `docs/plans/commerce-production-rollout.md`
+for exact migration digest, staged release path, live source preservation,
+verification, rollback and remaining authorization gate. The real staged build
+and callback HTTP checks passed. The web baseline has 78 existing failing tests;
+the candidate has those same failures, no new ones, and both commerce suites pass.
+The isolated production database rehearsal preserved all 107 original tables and
+checked schema objects after two migration applications. Live services/database
+remain unchanged. Recheck private release-manifest hashes before deployment;
+other terminals may have changed live source since preparation. Do not expose
+the private server-only database backup, environment copies or raw logs.

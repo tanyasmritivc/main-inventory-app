@@ -9,7 +9,10 @@ branch. No CAD, canonical inventory, chat or mobile changes. Shopify organizatio
 FindEZ Connect app and development store
 exist; secret remains in Shopify, with server configuration and test connection
 pending. Amazon developer registration has not started.
-Backend candidate remains disabled and undeployed. Contract and pending client
+Backend candidate remains disabled and undeployed. Actual production-source
+overlay, real web build, callback HTTP checks and isolated production database
+rehearsal are prepared; database approval and provider activation remain pending.
+See `docs/plans/commerce-production-rollout.md`. Contract and pending client
 handoff: `docs/plans/commerce-connectors.md` and `.agents/HANDOFFS/commerce-connectors.md`.
 
 ## November 8 - Crowded scan recovery deployed (PR371)
