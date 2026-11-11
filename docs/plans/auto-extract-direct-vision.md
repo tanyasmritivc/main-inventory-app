@@ -38,3 +38,29 @@ The same original parts-bin image was recovered from earlier private scan fixtur
 Its natural photo answer completed in 14.53 seconds in a standalone probe. A first
 structured candidate completed in 48.37 seconds; table-count validation identified
 and fixed a conversion issue before activation. Final end-to-end receipts follow.
+
+## Live release — November 11, 07:57:52 UTC
+
+Runtime `d755769d573af0540fc71222987b96fe33d9c0bb`, PR389. All five CI jobs pass
+in run42982555391; backend CI reports 1,638 tests. One existing legacy grounding
+parallelism test initially observed three simultaneous workers instead of four
+in its 20ms sleep window; the unchanged job passed on rerun. No test or old
+extractor code was altered to bypass that check.
+
+The guarded four-file overlay preserved 168 unrelated Python files. Ordinary
+chat services/prompts, default legacy extraction dispatch, gateway configuration,
+mobile/web UI and database schema remain unchanged. The only world-chat route
+edit is the opt-in flag inside its already-existing explicit auto_extract branch.
+API/database health and anonymous extraction denial pass. Private server receipt,
+rollback and candidate sources: `/home/ubuntu/findez-auto-extract-direct-20261111`.
+New provider SHA256: `78e3026d848d9e59ca5468f0bc92691eb56e9cf494749690aef97c55ca36728f`.
+
+Final candidate HTTP: crowded image 29 rows in 31.0s (13 estimated), regular photo
+6 rows in 10.7s. Live public HTTPS: same crowded image 31 rows in 43.1s (13 estimated),
+regular photo 6 rows in 33.1s (one estimated, one unknown count). Both runs returned
+durable editable drafts and terminal completion, without automatic retries or
+inventory writes. Disposable accounts and all test uploads were removed. These
+are individual observations, not latency guarantees or validated exact counts.
+The original source photo is the row preview; tight per-item crops are not part
+of this path. Physical iPhone acceptance remains for the user; no new binary is
+needed because this is a backend-only change.

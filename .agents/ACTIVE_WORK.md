@@ -1,12 +1,13 @@
-## November 11 - Auto Extract whole-photo vision (in progress)
+## November 11 - Auto Extract whole-photo vision (deployed)
 
 User explicitly requested the successful ordinary photo-chat approach for Auto
 Extract and forbids changes to chat attachments or AI chat. Isolated branch
 fix/auto-extract-direct-vision owns only photo_extraction.py dispatch, the new
 direct_photo_extraction.py and extraction tests/docs. Chat services, gateway
 client, model configuration, mobile/web UI and database remain untouched.
-Candidate uses one full-photo tool-free streamed call and existing review/crop
-contracts. Validate real same-photo results before activation. Commerce is paused.
+Deployed d755769d after five CI gates and candidate/live same-photo API checks.
+Whole-photo vision plus text-only conversion preserves review/save contracts.
+See docs/plans/auto-extract-direct-vision.md for limits and rollback. Commerce is paused.
 
 ## November 8 - Crowded scan recovery deployed (PR371)
 

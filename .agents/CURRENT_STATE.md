@@ -1,3 +1,13 @@
+## November 11 - Auto Extract whole-photo path live
+
+Runtime d755769d deployed 07:57:52 UTC after five CI gates (1,638 backend tests).
+Same original parts-bin photo produced 31 editable rows in 43.1s over public HTTPS;
+13 counts are estimates. Ordinary chat/attachments and model configuration remain
+unchanged; only explicit Auto Extract opts in. Source-photo previews replace crop
+inference. 168 unrelated production files preserved; no schema or client changes.
+No automatic inventory writes; disposable QA accounts/uploads removed. Details and
+rollback: docs/plans/auto-extract-direct-vision.md. No mobile update required.
+
 ## November 11 - Auto Extract direct vision candidate
 
 User requests the photo-chat analysis for Auto Extract, while prohibiting changes
