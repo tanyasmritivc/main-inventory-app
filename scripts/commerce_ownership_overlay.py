@@ -18,6 +18,8 @@ def patch(frontend: Path):
                  'src/components/site/amazon-history-import.tsx', 'src/components/site/commerce-dashboard-card.tsx',
                  'src/lib/commerce.ts', 'src/app/(workspace)/inventory/connect/page.tsx']:
         shutil.copy2(source / name, frontend / name)
+    replace(frontend / 'src/lib/inventory-selection.ts', 'export function isInventoryPage(path: string) {',
+            'export function isInventoryPage(path: string) {\n  if (/^\\/inventory\\/connect\\/?$/.test(path.split("?")[0])) return false;')
     replace(frontend / 'src/components/site/app-sidebar.tsx', 'route: "/inventory/connect"', 'route: "/settings/connections"')
     replace(frontend / 'src/lib/world-navigation.ts', 'route: "/settings/connections",',
             'route: world === "personal" ? "/settings/connections" : `/settings/connections?organization=${encodeURIComponent(world)}`,')

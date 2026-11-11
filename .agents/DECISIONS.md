@@ -5,7 +5,7 @@ purchase evidence, never automatic inventory stock. Only current organization
 owners/admins manage that organization's connections; personal records do not
 become shared through membership or switching the UI owner. Existing records
 retain their IDs and stay private, with revoked inventory access preserved.
-Candidate migration pending explicit production authorization; see
+Production migration and website deployed after explicit user authorization; see
 `docs/plans/connection-ownership.md` and `docs/guides/connections.md`.
 
 ## November 11 - Amazon purchases start with a file import

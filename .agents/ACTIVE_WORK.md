@@ -1,11 +1,15 @@
-## November 11 - Connection ownership correction (candidate, approval pending)
+## November 11 - Connection ownership correction (deployed)
 
-Owner: feat/connection-ownership, findez-amazon-history worktree. Personal and
-Organization connections, no inventory gate; website entry points and exact
-instructions updated. Database ownership migration and service checks prepared;
-production remains unchanged until explicit migration authorization. Current live
-source overlay preserves newer CAD/auth/navigation work. See
-`docs/plans/connection-ownership.md` for tests, rollout and acceptance still needed.
+Owner: feat/connection-ownership, findez-amazon-history worktree. User explicitly
+approved the production ownership migration and deployment. Personal/Organization
+connections, no inventory gate, context-aware website links, exact instructions,
+and old-bookmark redirects are live. Final web runtime:
+/home/ubuntu/findez-connection-ownership-links-20261111/frontend.
+1,689 backend tests plus 10 subtests, 56 web tests, SQL permissions/data preservation,
+TypeScript/lint, production build and live API/browser acceptance passed.
+Three synthetic accounts and test organization/imports were removed. No inventory
+items created, provider flags or mobile code changed. See
+`docs/plans/connection-ownership.md` and `docs/guides/connections.md`.
 
 ## November 11 - Amazon order-history import (deployed)
 

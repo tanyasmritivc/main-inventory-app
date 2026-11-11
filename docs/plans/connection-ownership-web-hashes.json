@@ -52,6 +52,10 @@
     "src/lib/commerce.ts": {
       "before": "7e03b011aa7124795b3d11057d0ea724a4fcb7eebb3a6c3f5c8801373dba071f",
       "after": "73354303369561f5ef60f727ca922b499fbdd3c320895321c077d88344523ec8"
+    },
+    "src/lib/inventory-selection.ts": {
+      "before": "465e532496c4dd0b523e98f183a1c8f7367c4de981865d1d5608c0a6e14ce455",
+      "after": "c541796a188e8a1fb6e169beee46b6a735292d353db319ec4d92d3f6fd819bd3"
     }
   }
 }

@@ -1,6 +1,6 @@
 # Using Connections
 
-Release status: implemented candidate; production activation requires the ownership migration and matching backend/web deployment. The currently deployed website still requires inventory selection until that activation.
+Release status: live on November 11, 2026. Open https://www.findez.ai/settings/connections. The ownership migration, matching backend and website are deployed and verified.
 
 Connections belong to **Personal** or an **Organization**. An inventory is only selected when you add or update physical items, not when importing purchase history.
 

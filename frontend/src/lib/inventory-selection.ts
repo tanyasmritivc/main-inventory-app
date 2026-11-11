@@ -41,6 +41,7 @@ export function inventoryApiPath(path: string, selected = selection) {
   return selected && dataRoutes.test(path) ? `/inventories/${selected.inventory_id}${path}` : path;
 }
 export function isInventoryPage(path: string) {
+  if (/^\/inventory\/connect\/?$/.test(path.split("?")[0])) return false;
   return /^\/(?:home|scan|assist|inventory|inventory-access|spaces|documents|activity|review|restock|checkout|project-kits|collections|labels)(?:\/|$)/.test(path.split("?")[0]);
 }
 export function inventoryHref(href: string, selected = selection): string {
