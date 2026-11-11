@@ -1,0 +1,16 @@
+{
+  "deployed_at": "2026-11-11T19:37:41.006938+00:00",
+  "live": "/home/ubuntu/findez-cad-landing-20261111/frontend",
+  "build_id": "-IrVRvu4wDhFu7ua2dWf0",
+  "changed_files": [
+    "src/components/marketing-dark/cad-intelligence-motion.ts",
+    "src/components/marketing-dark/cad-intelligence-section.module.css",
+    "src/components/marketing-dark/cad-intelligence-section.tsx",
+    "src/components/marketing-dark/page.tsx"
+  ],
+  "preserved_files": 596,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

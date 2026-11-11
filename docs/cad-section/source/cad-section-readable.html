@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAD Intelligence section</title>
+<style>
+/* Fonts: use the site's existing Inter and Geist Mono. */
+:root{--bg:#000;--card:#0F0F10;--card2:#141415;--line:#232325;--line2:#323235;--tx:#F5F5F6;--tx2:#A3A3A8;--tx3:#6C6C71;--low:#E3B45C;--e:cubic-bezier(.32,.72,0,1)}
+*{margin:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--tx);font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+/* stand-in for the first screen so the section reads in context */
+.prev{height:46vh;min-height:300px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:56px;color:var(--tx3);font-size:13px;border-bottom:1px solid #111;background:linear-gradient(#000,#050505)}
+.cad{position:relative;overflow:hidden;padding:140px 0 140px}
+.wrap{position:relative;max-width:1240px;margin:0 auto;padding:0 40px}
+.dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1.3px);background-size:28px 28px;-webkit-mask-image:radial-gradient(60% 55% at 70% 40%,#000,transparent 75%);mask-image:radial-gradient(60% 55% at 70% 40%,#000,transparent 75%)}
+.top{position:relative;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:72px;align-items:center}
+h2{font:400 64px/1.02 Inter,sans-serif;letter-spacing:-.045em}
+.q{margin-top:22px;font:400 26px/1.25 Inter,sans-serif;letter-spacing:-.02em;color:var(--tx)}
+.body{margin-top:18px;font-size:17px;line-height:1.55;color:var(--tx2);max-width:470px}
+.ctas{margin-top:34px;display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.btn{display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 22px;border-radius:23px;background:var(--tx);color:#000;font:500 15px Inter,sans-serif;text-decoration:none;transition:transform .2s var(--e),background .2s}
+.btn:hover{background:#fff}.btn:hover .ar{transform:translateX(3px)}.ar{transition:transform .25s var(--e)}
+.avail{font-size:13px;color:var(--tx3)}
+.avail b{color:var(--tx2);font-weight:500}
+/* the window */
+.win{position:relative;border-radius:18px;background:var(--card);box-shadow:0 0 0 1px var(--line),0 40px 80px -30px rgba(0,0,0,.9);overflow:hidden}
+.bar{height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--tx2)}
+.bar i{width:10px;height:10px;border-radius:50%;background:#2A2A2C}
+.bar .ttl{margin-left:10px;color:var(--tx)}
+.bar .tag{margin-left:auto;height:24px;padding:0 10px;border-radius:12px;display:flex;align-items:center;font-size:12px;color:var(--tx2);box-shadow:inset 0 0 0 1px var(--line2)}
+.file{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.fic{width:38px;height:38px;border-radius:10px;background:var(--card2);box-shadow:inset 0 0 0 1px var(--line2);display:grid;place-items:center;flex:none}
+.fn{font-size:14px;color:var(--tx)}
+.fs{margin-top:3px;font-size:12.5px;color:var(--tx3)}
+.prog{margin-left:auto;width:150px;height:4px;border-radius:2px;background:#1E1E20;overflow:hidden;flex:none}
+.prog b{display:block;height:100%;width:0;background:var(--tx)}
+.done{margin-left:auto;font-size:12.5px;color:var(--tx2);display:none}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:400;font-size:12px;color:var(--tx3);text-align:left;padding:12px 20px 8px}
+th.n,td.n{text-align:right;width:96px;white-space:nowrap}
+th.s,td.s{text-align:right;width:118px}
+td{padding:0 20px;height:52px;border-top:1px solid var(--line);position:relative}
+tr.r{opacity:0;transform:translateY(6px);transition:opacity .45s var(--e),transform .55s var(--e)}
+tr.r.on{opacity:1;transform:none}
+.cn{color:var(--tx)}
+.cl{font-size:12px;color:var(--tx3);margin-top:2px}
+td.n{font-family:'Geist Mono',monospace;font-size:13.5px;color:var(--tx2)}
+td.have{color:var(--tx)}
+.st{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;opacity:0;transition:opacity .3s}
+.st.on{opacity:1}
+.st.ok{color:var(--tx2);box-shadow:inset 0 0 0 1px var(--line2)}
+.st.short{color:#1A1305;background:var(--low)}
+.st.miss{color:var(--low);box-shadow:inset 0 0 0 1px rgba(227,180,92,.55)}
+tr.flag td{background:rgba(227,180,92,.045)}
+.scan{position:absolute;left:0;right:0;height:52px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05) 30%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.05) 70%,transparent);pointer-events:none;opacity:0;transition:top .26s var(--e),opacity .3s}
+.sum{display:flex;align-items:center;gap:18px;padding:16px 20px;border-top:1px solid var(--line);font-size:13.5px;color:var(--tx2)}
+.sum .mt{flex:1;height:6px;border-radius:3px;background:#1E1E20;overflow:hidden;display:flex}
+.sum .mt b{height:100%;width:0;background:var(--tx);transition:width .8s var(--e)}
+.sum .mt u{height:100%;width:0;background:var(--low);transition:width .8s var(--e) .1s}
+.sum strong{color:var(--tx);font-weight:500}
+.tbody{position:relative}
+.model{position:relative;height:176px;border-bottom:1px solid var(--line);background:radial-gradient(60% 90% at 50% 50%,#151516,#0F0F10)}
+.model canvas{position:absolute;inset:0;width:100%;height:100%}
+.mlab{position:absolute;left:20px;bottom:14px;font-size:12px;color:var(--tx3)}
+.note{margin-top:12px;font-size:12.5px;color:var(--tx3);text-align:right}
+/* steps */
+.steps{position:relative;margin-top:110px}
+.track{position:relative;height:1px;background:var(--line2)}
+.track b{position:absolute;left:0;top:0;height:1px;width:0;background:var(--tx);transition:width .9s var(--e)}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:28px}
+.sp{transition:opacity .5s}
+.sp .k{font-size:13px;color:var(--tx3)}
+.sp h3{margin-top:14px;font:400 22px/1.25 Inter,sans-serif;letter-spacing:-.02em;color:var(--tx3);transition:color .5s}
+.sp p{margin-top:8px;font-size:15px;line-height:1.5;color:var(--tx3);max-width:320px;transition:color .5s}
+.sp.on h3{color:var(--tx)}.sp.on p{color:var(--tx2)}.sp.on .k{color:var(--tx)}
+.later{margin-top:56px;font-size:14px;color:var(--tx3);max-width:640px;line-height:1.55}
+@media (max-width:980px){
+ .cad{padding:96px 0 88px}.wrap{padding:0 16px}
+ .top{grid-template-columns:1fr;gap:44px}
+ h2{font-size:44px}.q{font-size:21px}.body{font-size:16px}
+ th.n,td.n{width:52px}th.s,td.s{width:92px}td,th{padding-left:12px;padding-right:12px}td{font-size:13.5px}.st{padding:0 8px}.done{display:none!important}
+ .cl{display:none}.prog{width:90px}.bar .ttl{display:none}
+ .steps{margin-top:72px}.track{display:none}
+ .sg{grid-template-columns:1fr;gap:28px}.sp{padding-left:16px;border-left:1px solid var(--line2)}.sp.on{border-left-color:var(--tx)}
+}
+@media (prefers-reduced-motion:reduce){tr.r,.st,.sum .mt b,.sum .mt u,.track b,.scan{transition:none}}
+</style></head>
+<body>
+<div class="prev">First screen above (hero with Download and Sign in)</div>
+<section class="cad" id="cad" aria-labelledby="cad-h">
+ <div class="dots" aria-hidden="true"></div>
+ <div class="wrap">
+  <div class="top">
+   <div>
+    <h2 id="cad-h">Design it.<br>Find it.<br>Build it.</h2>
+    <p class="q">Can you build it with what you already own?</p>
+    <p class="body">Bring your Autodesk Fusion assembly into FindEZ. Compare its parts with your inventory, see what&#8217;s available, and find what&#8217;s missing.</p>
+    <div class="ctas"><a class="btn" href="#">Explore CAD Intelligence <span class="ar">&rarr;</span></a>
+     <div class="avail">Available for <b>Autodesk Fusion</b> &middot; Preview</div></div>
+   </div>
+   <div>
+    <div class="win" id="win">
+     <div class="bar"><i></i><i></i><i></i><span class="ttl">CAD Intelligence</span><span class="tag">Sample data</span></div>
+     <div class="file"><div class="fic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg></div>
+      <div><div class="fn">drivetrain_v4</div><div class="fs" id="fs">Exported from Fusion with the FindEZ add-in</div></div>
+      <div class="prog" id="prog"><b></b></div><div class="done" id="done">Uploaded &middot; 8 components</div></div>
+     <div class="model"><canvas id="mdl"></canvas><div class="mlab" id="mlab">Reading assembly</div></div>
+     <div class="tbody"><div class="scan" id="scan"></div>
+     <table><thead><tr><th>Component</th><th class="n">Needed</th><th class="n">In stock</th><th class="s">Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+     <div class="sum"><span id="sumt"><strong>0</strong> of 8 ready</span><div class="mt"><b id="mb"></b><u id="mu"></u></div><span id="sums">Comparing&#8230;</span></div>
+    </div>
+    <p class="note">Sample data. Component names and counts are for illustration.</p>
+   </div>
+  </div>
+ </div>
+</section>
+<script>
+(()=>{
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const D=[['5mm hex shaft, 96mm','Hardware wall, PN-F21',4,6],['14T pinion gear','Gears bin, PN-F44',2,2],['96mm mecanum wheel','Drive shelf',4,2],['Pillow block bearing','Hardware wall, PN-F30',8,12],['M4 &times; 8mm screw','Hardware wall, PN-F83',64,120],['M4 nylock nut','Hardware wall, PN-F90',64,40],['U-channel, 288mm','Structure rack',2,3],['Servo, 25T spline','Not in inventory',1,0]];
+const tb=document.getElementById('rows');
+tb.innerHTML=D.map((d,i)=>`<tr class="r" id="r${i}"><td><div class="cn">${d[0]}</div><div class="cl">${d[1]}</div></td><td class="n">${d[2]}</td><td class="n have" id="h${i}">0</td><td class="s"><span class="st" id="t${i}"></span></td></tr>`).join('');
+const $=id=>document.getElementById(id);
+const steps=()=>{};
+let timers=[];const at=(ms,f)=>timers.push(setTimeout(f,ms));
+function reset(){timers.forEach(clearTimeout);timers=[];window.__model&&__model.reset();$('mlab').textContent='Reading assembly';D.forEach((d,i)=>{$('r'+i).className='r';$('h'+i).textContent='0';$('t'+i).className='st';$('t'+i).textContent=''});
+ $('prog').style.display='';$('prog').firstElementChild.style.transition='none';$('prog').firstElementChild.style.width='0';$('done').style.display='none';
+ $('mb').style.width='0';$('mu').style.width='0';$('sumt').innerHTML='<strong>0</strong> of 8 ready';$('sums').textContent='Waiting for upload';$('scan').style.opacity=0;steps(0)}
+function status(i){const [, ,n,h]=D[i],t=$('t'+i);window.__model&&__model.set(i,h>=n?1:2);if(h>=n){t.className='st ok on';t.textContent='Ready'}else if(h===0){t.className='st miss on';t.textContent='Missing';$('r'+i).classList.add('flag')}else{t.className='st short on';t.textContent='Short '+(n-h);$('r'+i).classList.add('flag')}}
+function count(i,ms){const el=$('h'+i),to=D[i][3],t0=performance.now();(function f(now){const k=Math.min(1,(now-t0)/ms);el.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)}
+function final(){D.forEach((d,i)=>{$('r'+i).classList.add('on');$('h'+i).textContent=d[3];status(i)});$('prog').style.display='none';$('done').style.display='block';summary();steps(3);$('mlab').textContent='Shortages shown in amber'}
+function summary(){const ok=D.filter(d=>d[3]>=d[2]).length,sh=D.length-ok;$('mb').style.width=(ok/D.length*100)+'%';$('mu').style.width=(sh/D.length*100)+'%';$('sumt').innerHTML=`<strong>${ok}</strong> of ${D.length} ready`;$('sums').textContent=`${sh} short or missing`}
+function play(){reset();steps(1);$('sums').textContent='Uploading';
+ at(60,()=>{const b=$('prog').firstElementChild;b.style.transition='width 1.5s cubic-bezier(.32,.72,0,1)';b.style.width='100%'});
+ at(1650,()=>{$('prog').style.display='none';$('done').style.display='block';steps(2);$('sums').textContent='Comparing'});
+ D.forEach((d,i)=>{const t=1900+i*340;at(t,()=>{$('r'+i).classList.add('on');const sc=$('scan'),row=$('r'+i);sc.style.opacity=1;sc.style.top=(row.offsetTop)+'px';count(i,420);__model.cur(i);$('mlab').textContent='Matching: '+D[i][0].replace('&times;','\u00d7')});at(t+430,()=>status(i))});
+ const end=1900+D.length*340+500;
+ at(end,()=>{$('scan').style.opacity=0;__model.cur(-1);$('mlab').textContent='Shortages shown in amber';summary();steps(3)});
+ at(end+6500,play)}
+let started=false;
+if(RM)setTimeout(final,0);else{const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&!started){started=true;play()}})},{threshold:.35});io.observe($('win'))}
+// assembly preview made of dots; parts light up as they are compared
+const cv=$('mdl'),g=cv.getContext('2d');let W=0,H=0;
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;g.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',size);size();
+const P=[];const add=(x,y,z,c)=>P.push([x,y,z,c]);const R=Math.random;
+for(const sx of [-1,1]){
+ for(let i=0;i<170;i++){const u=R()*2-1,v=R()*2-1,e=R();if(e<.35)add(sx*.82,Math.sign(v)*.3,u*1.2,6);else if(e<.7)add(sx*.82,v*.3,Math.sign(u)*1.2,6);else add(sx*(.82+(R()<.5?0:.08)),(R()<.5?-1:1)*.3,u*1.2,6)}
+ for(const wz of [-.82,.82]){
+  for(let i=0;i<120;i++){const a=R()*6.283,r=.4;add(sx*(1.02+R()*.18),Math.sin(a)*r,wz+Math.cos(a)*r,2)}
+  for(let k=0;k<8;k++){const a=k/8*6.283+.3;for(let j=1;j<7;j++){const r=j/7*.4;add(sx*1.11,Math.sin(a)*r,wz+Math.cos(a)*r,2)}}
+  for(let i=0;i<26;i++)add(sx*(.6+R()*.62),(R()-.5)*.04,wz+(R()-.5)*.04,0);
+  for(let i=0;i<34;i++){const a=R()*6.283;add(sx*.84,Math.sin(a)*.1,wz+Math.cos(a)*.1,3)}
+  for(let i=0;i<40;i++){const a=R()*6.283,r=.16+R()*.03;add(sx*.66,Math.sin(a)*r,wz+Math.cos(a)*r,1)}}
+ for(let i=0;i<46;i++)add(sx*.82,(R()<.5?-1:1)*(.22+R()*.04),(R()*2-1)*1.1,4);
+ for(let i=0;i<40;i++)add(sx*.9,(R()<.5?-1:1)*(.22+R()*.04),(R()*2-1)*1.1,5);}
+for(let i=0;i<90;i++)add((R()*2-1)*.82,(R()<.5?-1:1)*.06,(R()<.5?-1:1)*1.2,6);
+for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1)*.16;add(f==0?Math.sign(x)*.22:x,f==1?Math.sign(y)*.12:y,f==2?Math.sign(z)*.16:z,7)}
+const ST=Array(8).fill(0);let CUR=-1;window.__model={set:(i,v)=>{ST[i]=v},cur:i=>{CUR=i},reset:()=>{ST.fill(0);CUR=-1}};
+const t0=performance.now();let vis=true;
+new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis&&!RM)requestAnimationFrame(frame)}).observe(cv);
+function frame(now){if(!vis&&!RM)return;const t=RM?1.1:(now-t0)/1000;g.clearRect(0,0,W,H);
+ const cx=W*.5,cy=H*.47,S=Math.min(W*.15,H*.29),ay=t*.35+.7,ax=-.42;const ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.cos(ax),sb=Math.sin(ax);
+ const pul=.5+.5*Math.sin(t*8);
+ for(const p of P){let x=p[0]*ca+p[2]*sa,z=-p[0]*sa+p[2]*ca,y=p[1]*cb-z*sb;z=p[1]*sb+z*cb;const f=3/(3+z),px=cx+x*S*f,py=cy+y*S*f,dep=(1-z)/2;
+  const st=ST[p[3]],cur=CUR===p[3];let c;
+  if(cur)c=`rgba(255,255,255,${.55+.45*pul})`;else if(st===1)c=`rgba(245,245,246,${.45+.45*dep})`;else if(st===2)c=`rgba(227,180,92,${.55+.45*dep})`;else c=`rgba(245,245,246,${.08+.16*dep})`;
+  g.fillStyle=c;const s=(cur?1.5:1)*(1+1.1*dep);g.fillRect(px-s/2,py-s/2,s,s)}
+ if(!RM)requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+})();
+</script></body></html>

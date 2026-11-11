@@ -1658,3 +1658,18 @@ gray in the scoped auth stylesheet. Deployed `findez-neutral-auth-focus-20261111
 production build passed and the public CSS contains the new ring with no old
 rose focus color. Preserved 596 other frontend files. Removed only regenerable
 build caches from this lane's inactive releases to recover deployment disk space.
+
+
+## CAD Intelligence landing section, November 11, 2026
+
+Completed and deployed on `design/auth-split-production` to the existing
+self-hosted `findez-web` service at `findez-cad-landing-20261111`. Added the supplied
+section directly after the home hero. Four runtime files changed; 596 unrelated
+frontend files preserved. CTA uses the existing `/cad` route. Static sample data
+only, with both disclosures and no API calls. Production webpack build passed,
+including TypeScript and prerendering. Live Safari desktop/phone layout and
+animation replay inspected. Full continuously visible one-minute memory capture
+and manual reduced-motion emulation remain unverified because Safari was
+switched during inspection. See `docs/cad-section/RELEASE.md` and live screenshots.
+No backend, mobile, auth, navigation, dependency, or environment changes. No
+Vercel, Render, local preview, or staging website was used.
