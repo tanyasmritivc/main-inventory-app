@@ -1,3 +1,15 @@
+## November 10: web dependency security audit
+
+Lane `fix/web-dependencies-readiness-220`, based on the build219 source snapshot.
+Next.js and its ESLint config are raised to16.4.1; compatible lockfile security
+updates remove all reported high and critical advisories. All324 Jest tests,
+TypeScript and the production webpack build pass. The full legacy lint sweep
+still reports38 errors and55 warnings outside the changed dependency files;
+no lint rules were disabled.27 low/moderate development-tool advisories remain.
+This branch is prepared for review, not deployed. Preserve newer production web
+changes when applying this dependency-only patch. Evidence is in
+`projects/findez-readiness220-private`.
+
 ## November 10: surface corrections and camera controls, build 219
 
 Active lane `fix/mobile-surfaces-camera-219`. Replace the unreliable organization
