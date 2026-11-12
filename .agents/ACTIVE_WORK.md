@@ -1753,3 +1753,11 @@ All nodes, labels, background lines and other elements remain unchanged. Deploye
 one runtime file to the current self-hosted findez-connections-ui-20261111 release
 with matching prior source hash. Production build ezULwQtTKmyHNBlEq1Q9E passed;
 public /solutions returns 200 and the compiled route contains the amber stroke.
+
+## Solutions plain black background, November 11, 2026
+
+Removed BackgroundMarkup and BackgroundMotion only from SolutionsPage. Existing
+black page base now shows without the decorative animated mark. Homepage shared
+components remain intact. Deployed the single route component to self-hosted
+findez-connections-ui-20261111. Production build km7R8zBG8MaqRcv6DjUCI passed;
+public HTML verified: background canvas absent and audience cards present.
