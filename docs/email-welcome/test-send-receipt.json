@@ -1,0 +1,13 @@
+{
+  "status": "smtp_accepted",
+  "started_at": "2026-11-12T04:26:55.830329+00:00",
+  "message_id": "<179445761583.4169363.10909557426747807539@findez.ai>",
+  "recipient_count": 1,
+  "subject": "Welcome to FindEZ",
+  "automatic_sending_enabled": false,
+  "template_sha256": {
+    "welcome.html": "a02419b739d84d4cc08d0c11804bfbcb3af5ae0eaef70427e0eddae57991330a",
+    "welcome.txt": "44844c5bee7fb920f4f496abc9cc18c34a126ccb5ef93d5817e6313c567168fa"
+  },
+  "completed_at": "2026-11-12T04:26:56.972355+00:00"
+}

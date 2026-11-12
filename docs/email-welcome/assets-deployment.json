@@ -1,0 +1,19 @@
+{
+  "deployed_at": "2026-11-12T04:25:46.025907+00:00",
+  "live": "/home/ubuntu/findez-welcome-assets-20261111/frontend",
+  "build_id": "lmCbgUsQcAOlJCuObpe3c",
+  "changed_files": [
+    "public/email/welcome/logo-dark.png",
+    "public/email/welcome/logo-light.png",
+    "public/email/welcome/mark.png",
+    "public/email/welcome/start-ask.png",
+    "public/email/welcome/start-cad.png",
+    "public/email/welcome/start-snap.png",
+    "public/email/welcome/welcome-hero.gif"
+  ],
+  "preserved_files": 632,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

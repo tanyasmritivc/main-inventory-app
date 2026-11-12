@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 
@@ -125,6 +125,7 @@ def _select_jwk(*, jwks: dict, token: str) -> dict:
 
 async def get_current_user(
     request: Request,
+    background_tasks: BackgroundTasks,
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> AuthenticatedUser:
     ip = _client_ip(request)
@@ -243,4 +244,6 @@ async def get_current_user(
 
     from app.services.resource_access import begin_actor
     begin_actor(str(user_id))
+    from app.services.welcome_email import schedule_welcome
+    schedule_welcome(background_tasks, str(user_id))
     return AuthenticatedUser(user_id=str(user_id), first_name=first_name)

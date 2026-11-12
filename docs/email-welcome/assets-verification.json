@@ -1,0 +1,37 @@
+[
+  {
+    "url": "https://www.findez.ai/email/welcome/start-ask.png",
+    "bytes": 24248,
+    "sha256": "8a06761c7b9db765308d5cea60d7e9f95492afd4c56af536fbea68796676bea1"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/logo-dark.png",
+    "bytes": 9775,
+    "sha256": "9293bc17ba13f678c71e6f039a44b278ba4831740fe59913ee17a609829ad7c9"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/start-cad.png",
+    "bytes": 27217,
+    "sha256": "b8993d4115e0e57521d968e2be0db4a8904bb56ef77e4f3168b572d558fb32f2"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/welcome-hero.gif",
+    "bytes": 971830,
+    "sha256": "8b9ee3c4dd005cbab1a1a4d41b8f41e905dc3cfe03ccdfb018368741d0df8bb7"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/start-snap.png",
+    "bytes": 188306,
+    "sha256": "e1d0b0c092df29b791fdbfd03e88cbdf2f3ca1f6334590b5377a261a91d34b60"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/mark.png",
+    "bytes": 8261,
+    "sha256": "ef4359bf37725d58dc4649404033ca955fbd7f3b3f0fb23d387fa9ba62583eab"
+  },
+  {
+    "url": "https://www.findez.ai/email/welcome/logo-light.png",
+    "bytes": 9854,
+    "sha256": "a86b35bb1dc5dcc927750270f11d59d2f3c95d0cb3d96466e1079b1bd8a11526"
+  }
+]
