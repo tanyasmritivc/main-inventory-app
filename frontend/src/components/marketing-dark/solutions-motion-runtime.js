@@ -39,10 +39,6 @@ life.on(document,'visibilitychange',()=>{if(active())resume();else pause()});
 if(RM){started=true;play(0,false)}
 life.dispose(()=>{clr();gc.width=gc.height=0});
 return ()=>life.close();}
-export function mountAudience(){const life=homeLife(),RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const qio=life.observer(es=>es.forEach(e=>{if(!e.isIntersecting||e.intersectionRatio<.6)return;qio.unobserve(e.target);const u=e.target.querySelector('.u'),txt=u.dataset.q;let n=0;(function ty(){n++;u.textContent=txt.slice(0,n);if(n<txt.length)life.timeout(ty,32);else life.timeout(()=>e.target.classList.add('done'),280)})()}),{threshold:.6});
-document.querySelectorAll('.solutions-page .s-qa').forEach(q=>{if(RM){q.querySelector('.u').textContent=q.querySelector('.u').dataset.q;q.classList.add('done')}else qio.observe(q)});
-return ()=>life.close();}
 export function mountInventoryMorph(){const life=homeLife(),RM=matchMedia("(prefers-reduced-motion: reduce)").matches,F=fonts();const ROWS=[["5mm HTD pulley, 24 tooth", 18, "PN-F260"], ["M3x16 screw", 140, "PN-F84"], ["Gear 30T M0.8", 6, "PN-F66"], ["Extension springs", 22, "Box 3"], ["GT2 pinion pulley, 20T", 6, "Pulley box"], ["M4 nylock nut", 60, "PN-F90"], ["Servo hub", 1, "Tote E"], ["Hex shaft 5mm, 96mm", 8, "PN-F21"], ["Bearing, 8mm bore", 24, "PN-F30"], ["Zip ties", 200, "Bench 1"], ["Super glue", 4, "Bench 1"], ["Mecanum wheel", 4, "Drive shelf"]];
 const smS=$('sm'),sc=$('smc'),sg=sc.getContext('2d'),sr=[...document.querySelectorAll('.sm-r')];let SW=0,SH=0;
 function ssize(){const d=Math.min(1.5,devicePixelRatio||1);SW=sc.clientWidth;SH=sc.clientHeight;sc.width=SW*d;sc.height=SH*d;sg.setTransform(d,0,0,d,0,0)}life.on(window,'resize',ssize);ssize();

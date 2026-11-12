@@ -1736,3 +1736,12 @@ passed. Safari 1440×900 and 390×844 verified; map cycling, destinations, heade
 anchor and bidirectional pinned morph inspected. All 19 HTTP destinations return
 200. Final minute memory 134.94–135.50 MiB. No local preview or external hosting.
 Report, file list, routes and six screenshots: docs/releases/solutions-20261111/README.md.
+
+## Solutions audience cards, November 11, 2026
+
+Completed: replaced audience rows and chat mockups with a two-column card grid,
+stacked on phones. Preserved descriptions and all four Explore destinations;
+removed unused audience typing effects and styles. Deployed to the active
+self-hosted findez-purchase-intelligence-20261111 release after verifying all
+five affected source hashes. Production build q9eYIjtpPUutXtHXkZlJK passed.
+Verified live cards in Safari at desktop and 390px phone widths.
