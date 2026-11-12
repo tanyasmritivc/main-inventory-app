@@ -1790,3 +1790,19 @@ Both self-hosted releases passed health/auth guards. Safari UI validation was
 unavailable (cgWindowNotFound), so no live visual acceptance is claimed. No mobile,
 schema, dependency, configuration, import or stock writes. See
 `docs/plans/purchase-intelligence.md` and purchase-scale deployment receipts.
+
+Homepage entrance, November 11: added home-entry.css through the existing
+marketing layout. Selectors target the deployed .landing-home/.x-hero surface,
+not the older marketing-dark Motion wrapper. Hero fades and lifts 10px over
+620ms after 60ms; navigation fades over 420ms and the background over 800ms.
+CSS runs from SSR without a loader, hydration gate, blur or extra animation loop.
+No-preference media query skips the entrance for Reduce Motion. Inner wrappers
+preserve fixed navigation and the demo's existing scroll/3D transforms.
+
+Production build/TypeScript and changed-file lint passed. The first target check
+caught the older wrapper and rolled back automatically; corrected release
+findez-home-entry-20261111 preserves 627 unrelated source files. Public homepage
+and its entrance stylesheet return 200; live Chrome reload and final layout
+inspected. Safari-specific timing and memory were not profiled. No backend,
+authentication, content, dependency or mobile changes. Receipt:
+docs/plans/home-entry-deployment.json.
