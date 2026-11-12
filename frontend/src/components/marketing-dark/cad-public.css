@@ -1,4 +1,6 @@
 /* All prototype styles are scoped to this public route. */
+@keyframes cad-page-enter{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:no-preference){.cad-public-page{animation:cad-page-enter 500ms ease-out}}
 .cad-public-page{--bk:#000;--w:#F5F5F6;--g1:#A1A1A6;--g2:#6E6E73;--g3:#3A3A3D;--ln:#1F1F21;--ln2:#2C2C2E;--amb:#E3B45C;--e:cubic-bezier(.32,.72,0,1);background:#000;color:var(--w);font-family:var(--font-app-inter),sans-serif;min-height:100vh;line-height:normal;overflow-x:clip;-webkit-font-smoothing:antialiased}
 html:has(.cad-public-page){background:#000;scroll-behavior:auto}
 .cad-public-page main{margin:8px}

@@ -1814,3 +1814,11 @@ and downloads remain unchanged. Safari desktop/phone layout, bidirectional
 comparison, tabs, destinations and ZIP verified. Observed renderer RSS remained
 39.75–39.86 MiB. Report, exact files/link changes, copy clarification and six live
 screenshots: docs/releases/cad-public-20261111/README.md.
+
+## CAD page entrance fade, November 11, 2026
+
+Added a route-scoped 500ms opacity entrance animation to /cad-intelligence.
+Reduced-motion users receive immediate rendering. No transforms, new timers,
+packages or other route changes. Single stylesheet deployed directly to the
+existing self-hosted frontend after source/build guards. Production build
+6vI4apCainQPXroGxwXyv and TypeScript passed; public page and delivered CSS verified.
