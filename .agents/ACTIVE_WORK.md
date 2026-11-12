@@ -1822,3 +1822,12 @@ Reduced-motion users receive immediate rendering. No transforms, new timers,
 packages or other route changes. Single stylesheet deployed directly to the
 existing self-hosted frontend after source/build guards. Production build
 6vI4apCainQPXroGxwXyv and TypeScript passed; public page and delivered CSS verified.
+
+## CAD entrance scope correction, November 11, 2026
+
+Removed the full-page fade following user feedback. Only the hero headline,
+buttons and supporting line now ease in with a slight 8px rise and brief stagger.
+Header/background render immediately. Reduced-motion support retained. One CSS
+file deployed to the existing self-hosted frontend; build OvwsvSqgPjt7CStxo9321
+and TypeScript passed. Public delivered CSS confirms no cad-page-enter animation
+and hero-only selectors. No other route or runtime code changed.
