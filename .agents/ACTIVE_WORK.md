@@ -1745,3 +1745,11 @@ removed unused audience typing effects and styles. Deployed to the active
 self-hosted findez-purchase-intelligence-20261111 release after verifying all
 five affected source hashes. Production build q9eYIjtpPUutXtHXkZlJK passed.
 Verified live cards in Safari at desktop and 390px phone widths.
+
+## Solutions animated path amber, November 11, 2026
+
+Changed only the inventory map animated connecting stroke from white to #E3B45C.
+All nodes, labels, background lines and other elements remain unchanged. Deployed
+one runtime file to the current self-hosted findez-connections-ui-20261111 release
+with matching prior source hash. Production build ezULwQtTKmyHNBlEq1Q9E passed;
+public /solutions returns 200 and the compiled route contains the amber stroke.

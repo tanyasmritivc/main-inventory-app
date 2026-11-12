@@ -14,7 +14,7 @@ function drawGraph(now){if((!insVis||document.hidden)&&!RM)return;const t=(now-t
  for(let l=0;l<3;l++)N[l+1].forEach((c,i)=>{const p=N[l][Math.floor(i/(LV[l+1]/LV[l]))];const on=phase>=1&&P[l]===Math.floor(i/(LV[l+1]/LV[l]))&&P[l+1]===i;
   g2.strokeStyle=on?'rgba(255,255,255,0)':'rgba(255,255,255,.07)';g2.lineWidth=1;g2.beginPath();g2.moveTo(p.x,p.y);const mx=(p.x+c.x)/2;g2.bezierCurveTo(mx,p.y,mx,c.y,c.x,c.y);g2.stroke()});
  N.forEach((lv,l)=>lv.forEach((n,i)=>{const tw=.5+.5*Math.sin(t*1.3+i*1.7+l);g2.fillStyle=`rgba(255,255,255,${.18+.12*tw})`;const s=l===3?2:3;g2.fillRect(n.x-s/2,n.y-s/2,s,s)}));
- if(phase>=1){const seg=k*3;g2.strokeStyle='#fff';g2.lineWidth=1.6;
+ if(phase>=1){const seg=k*3;g2.strokeStyle='#E3B45C';g2.lineWidth=1.6;
   for(let l=0;l<3;l++){const a=N[l][P[l]],b=N[l+1][P[l+1]],f=cl(seg-l);if(f<=0)break;g2.beginPath();const mx=(a.x+b.x)/2;const steps=24;for(let s=0;s<=steps*f;s++){const u=s/steps,x=(1-u)**3*a.x+3*(1-u)**2*u*mx+3*(1-u)*u*u*mx+u**3*b.x,y=(1-u)**3*a.y+3*(1-u)**2*u*a.y+3*(1-u)*u*u*b.y+u**3*b.y;s?g2.lineTo(x,y):g2.moveTo(x,y)}g2.stroke()}
   for(let l=0;l<4;l++){if(seg<l-.05)break;const n=N[l][P[l]];const pulse=l===3&&k>=1?.5+.5*Math.sin(t*4):0;g2.fillStyle='#fff';g2.beginPath();g2.arc(n.x,n.y,l===3?5+pulse*2:4,0,7);g2.fill();
    if(l===3){g2.strokeStyle=`rgba(255,255,255,${.35-pulse*.25})`;g2.beginPath();g2.arc(n.x,n.y,12+pulse*6,0,7);g2.stroke()}
