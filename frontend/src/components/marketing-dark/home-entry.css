@@ -23,10 +23,3 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
-
-/* Keep the homepage navigation available throughout the landing page. */
-.landing-home:has(> main > .x-hero) > .x-nav.hid {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}

@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T01:24:56.042447+00:00",
+  "live": "/home/ubuntu/findez-public-chrome-bg-20261111/frontend",
+  "build_id": "xRjhFF8JO4jOPw-p3Ar7C",
+  "changed_files": [
+    "src/components/marketing-dark/public-chrome.css"
+  ],
+  "preserved_files": 631,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

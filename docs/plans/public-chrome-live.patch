@@ -1,0 +1,39 @@
+--- a/frontend/src/app/research/page.tsx
++++ b/frontend/src/app/research/page.tsx
+@@ -2,2 +2 @@
+-import { Header } from "@/components/landing-v5/Header";
+-import { Footer } from "@/components/landing-v5/Footer";
++import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
+@@ -19 +18 @@
+-  <div className="pages-ui" data-page="research"><div className="landing-v5 pages-header"><Header prefetch={false} /></div></div>
++  <HeaderMarkup/>
+@@ -21 +20 @@
+-  <div className="pages-ui" data-page="research"><div className="landing-v5 pages-footer"><Footer prefetch={false} /></div></div>
++  <FooterMarkup/>
+--- a/frontend/src/components/site/api-docs.tsx
++++ b/frontend/src/components/site/api-docs.tsx
+@@ -0,0 +1 @@
++import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
+@@ -55 +56 @@
+-  return <AppThemeProvider><div className={styles.page}>
++  return <AppThemeProvider><HeaderMarkup reserveSpace/><div className={styles.page}>
+@@ -57 +58 @@
+-    <header className={styles.header}><Link href="/" className={styles.brand}>FindEZ <span>/ Developers</span></Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
++    <header className={styles.header} style={{top:52}}><Link href="/docs/api" className={styles.brand}>API documentation</Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
+@@ -171 +172 @@
+-  </div></AppThemeProvider>;
++  </div><FooterMarkup/></AppThemeProvider>;
+--- a/frontend/src/components/marketing-dark/page.tsx
++++ b/frontend/src/components/marketing-dark/page.tsx
+@@ -3 +3,2 @@
+-import { pageContent, navigation, footer } from './sections';
++import { pageContent } from './sections';
++import {HeaderMarkup, FooterMarkup} from './public-chrome';
+@@ -13,2 +14 @@
+-  return <Motion key={page} page={page}>
+-    <Markup html={navigation}/>
++  return <><HeaderMarkup currentPage={page}/><Motion key={page} page={page}>
+@@ -16,2 +16 @@
+-    <Markup html={footer}/>
+-  </Motion>;
++  </Motion><FooterMarkup/></>;

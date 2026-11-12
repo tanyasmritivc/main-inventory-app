@@ -1,0 +1,27 @@
+{
+  "deployed_at": "2026-11-12T01:20:40.015851+00:00",
+  "live": "/home/ubuntu/findez-public-chrome-20261111/frontend",
+  "build_id": "aIZuoT41GacH0C4jo4ydV",
+  "changed_files": [
+    "src/app/desktop/page.tsx",
+    "src/app/docs/cad/page.tsx",
+    "src/app/mobile-app/page.tsx",
+    "src/app/research/page.tsx",
+    "src/components/marketing-dark/home-content.tsx",
+    "src/components/marketing-dark/home-entry.css",
+    "src/components/marketing-dark/motion-runtime.js",
+    "src/components/marketing-dark/page.tsx",
+    "src/components/marketing-dark/public-chrome.css",
+    "src/components/marketing-dark/public-chrome.tsx",
+    "src/components/pages-ui/PagesShell.tsx",
+    "src/components/site/api-docs.tsx",
+    "src/components/site/legal-document.tsx",
+    "src/components/site/marketing-nav.tsx",
+    "src/components/site/product-marketing.tsx"
+  ],
+  "preserved_files": 615,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

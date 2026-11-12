@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { MarketingNav } from "@/components/site/marketing-nav";
-import { FindEZWordmark } from "@/components/site/findez-brand";
+import { FooterMarkup } from "@/components/marketing-dark/public-chrome";
 
 export const PRODUCT_LINKS = [
   { label: "Capture Items", href: "/product/capture" },
@@ -20,38 +20,9 @@ export function ProductMarketingShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }) {
-  return (
-    <>
-      <footer className={`product-footer ${theme === "light" ? "is-light" : ""}`}>
-        <div className="product-footer__inner">
-          <Link href="/" className="product-footer__brand"><FindEZWordmark width={112} height={30}/></Link>
-          <nav aria-label="Footer navigation">
-            <Link href="/pricing">Plans</Link>
-            <Link href="/docs/api">Developers</Link>
-            <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-            <a href="mailto:info@findez.ai">Contact</a>
-          </nav>
-          <span>© 2026 AI Robots Inc.</span>
-        </div>
-      </footer>
-      <style>{`
-        .product-footer { --footer-bg:#000000; --footer-line:#212121; --footer-text:#929292; --footer-strong:#ffffff; border-top:1px solid var(--footer-line); background:var(--footer-bg); }
-        .product-footer.is-light { --footer-bg:#ffffff; --footer-line:#eaeaea; --footer-text:#575757; --footer-strong:#000000; }
-        .product-footer__inner { width:min(1180px,calc(100% - 40px)); min-height:112px; margin:0 auto; display:flex; align-items:center; gap:28px; color:var(--footer-text); font-family:var(--font-inter,Arial,sans-serif); font-size:11px; }
-        .product-footer__brand { display:inline-flex; align-items:center; gap:8px; color:var(--footer-strong); font-family:var(--font-inter,Arial,sans-serif); font-size:16px; font-weight:650; letter-spacing:-.03em; text-decoration:none; }
-        .product-footer nav { display:flex; flex:1; gap:18px; flex-wrap:wrap; }
-        .product-footer nav a { color:var(--footer-text); text-decoration:none; }
-        .product-footer nav a:hover { color:var(--footer-strong); }
-        @media (max-width:760px) {
-          .product-footer__inner { width:min(100% - 28px,1180px); padding:30px 0; align-items:flex-start; flex-direction:column; }
-          .product-footer nav { flex:none; }
-        }
-      `}</style>
-    </>
-  );
+export function MarketingFooter(_props: {theme?: "light" | "dark"} = {}) {
+  void _props; // Legacy callers may pass a theme; public chrome matches the homepage.
+  return <FooterMarkup/>;
 }
 
 export function ProductHero({ eyebrow, title, description, children }: { eyebrow: string; title: ReactNode; description: string; children?: ReactNode }) {

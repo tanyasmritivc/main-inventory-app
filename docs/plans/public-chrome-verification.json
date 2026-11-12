@@ -1,0 +1,87 @@
+[
+  {
+    "route": "/",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/founders",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/pricing",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions/robotics",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions/workshops",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions/makerspaces",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions/engineering-labs",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/solutions/everyday",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/desktop",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/research",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/product",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/privacy",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/terms",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/docs/api",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/docs/cad",
+    "status": 200,
+    "matching_header_footer": true
+  },
+  {
+    "route": "/mobile-app",
+    "status": 200,
+    "matching_header_footer": true
+  }
+]

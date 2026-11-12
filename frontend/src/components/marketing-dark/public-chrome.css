@@ -1,0 +1,56 @@
+.findez-public-chrome.findez-public-chrome { --w:#F5F5F6; --g1:#A1A1A6; --g2:#6E6E73; --ln:#1F1F21; --e:cubic-bezier(.32,.72,0,1); color:var(--w); background:#000; font-family:var(--font-app-inter),Inter,Arial,sans-serif; line-height:normal; text-align:left; }
+.findez-public-chrome.findez-public-chrome *, .findez-public-chrome.findez-public-chrome *::before, .findez-public-chrome.findez-public-chrome *::after { box-sizing:border-box; }
+.findez-public-chrome.findez-public-chrome p, .findez-public-chrome.findez-public-chrome h4 { margin:0; padding:0; }
+.findez-public-chrome.findez-public-chrome .x-in { max-width:1240px; margin:0 auto; padding:0 40px; }
+.findez-public-chrome.findez-public-chrome a:focus-visible, .findez-public-chrome.findez-public-chrome button:focus-visible { outline:2px solid #A1A1A6; outline-offset:5px; }
+.findez-public-chrome.findez-public-chrome.x-nav:focus-within { opacity:1; transform:none; pointer-events:auto; }
+.findez-public-header-space { height:52px; background:#000; }
+/* nav */
+.findez-public-chrome.findez-public-chrome.x-nav{position:fixed;top:0;left:0;right:0;z-index:60;height:52px;background:linear-gradient(#000 40%,rgba(0,0,0,0));transition:background .3s,opacity .35s ease,transform .45s cubic-bezier(.32,.72,0,1)}
+.findez-public-chrome.findez-public-chrome.x-nav.hid{opacity:0;transform:translateY(-14px);pointer-events:none}
+.findez-public-chrome.findez-public-chrome.x-nav.sc{background:#000;box-shadow:0 1px 0 var(--ln)}
+.findez-public-chrome.findez-public-chrome.x-nav .x-in{max-width:none;height:100%;display:flex;align-items:center;padding:0 24px}
+.findez-public-chrome.findez-public-chrome .x-logo{display:flex;align-items:center;gap:7px;font:500 15px var(--font-app-inter);letter-spacing:-.01em;color:var(--w);text-decoration:none}
+.findez-public-chrome.findez-public-chrome .x-links{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:22px;font-size:13px}
+.findez-public-chrome.findez-public-chrome .x-links a{color:var(--g1);text-decoration:none}.findez-public-chrome.findez-public-chrome .x-links a:hover{color:var(--w)}
+.findez-public-chrome.findez-public-chrome .x-act{margin-left:auto;display:flex;align-items:center;gap:14px}
+.findez-public-chrome.findez-public-chrome .x-act .si{font-size:13px;color:var(--g1);text-decoration:none}.findez-public-chrome.findez-public-chrome .x-act .si:hover{color:var(--w)}
+.findez-public-chrome.findez-public-chrome .x-p{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:17px;font:500 14px var(--font-app-inter);text-decoration:none;white-space:nowrap;transition:background .2s}
+.findez-public-chrome.findez-public-chrome .x-p.w{background:var(--w);color:#000}.findez-public-chrome.findez-public-chrome .x-p.w:hover{background:#fff}
+.findez-public-chrome.findez-public-chrome .x-p.d{background:#1C1C1E;color:var(--w)}.findez-public-chrome.findez-public-chrome .x-p.d:hover{background:#262628}
+.findez-public-chrome.findez-public-chrome .x-p.lg{height:44px;padding:0 20px;border-radius:22px;font-size:15px}
+
+/* footer */
+.findez-public-chrome.findez-public-chrome.x-foot{border-top:1px solid var(--ln);padding:64px 0 40px}
+.findez-public-chrome.findez-public-chrome .x-fg{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px}
+.findez-public-chrome.findez-public-chrome .x-fg h4{font:400 13px var(--font-app-inter);color:var(--g2);margin-bottom:12px}
+.findez-public-chrome.findez-public-chrome .x-fg a{display:block;color:var(--g1);text-decoration:none;font-size:14px;line-height:2.1}.findez-public-chrome.findez-public-chrome .x-fg a:hover{color:var(--w)}
+.findez-public-chrome.findez-public-chrome .x-fg .x-logo{display:flex;line-height:1}
+.findez-public-chrome.findez-public-chrome .x-tag{margin-top:12px;font-size:14px;color:var(--g1);line-height:1.5}
+.findez-public-chrome.findez-public-chrome .x-fb{margin-top:56px;display:flex;justify-content:space-between;gap:20px;font-size:12.5px;color:var(--g2)}
+
+.findez-public-chrome.findez-public-chrome .x-dd{position:relative}
+.findez-public-chrome.findez-public-chrome .x-ddb{display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--g1);cursor:pointer}
+.findez-public-chrome.findez-public-chrome .x-ddb:hover,.findez-public-chrome.findez-public-chrome .x-dd:focus-within .x-ddb{color:var(--w)}
+.findez-public-chrome.findez-public-chrome .x-ddm{position:absolute;left:50%;top:100%;margin-top:14px;transform:translate(-50%,-4px);min-width:160px;padding:6px;border-radius:12px;background:#111113;box-shadow:inset 0 0 0 1px #2C2C2E,0 20px 40px -12px #000;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--e)}
+.findez-public-chrome.findez-public-chrome .x-ddm:before{content:'';position:absolute;left:0;right:0;top:-16px;height:16px}
+.findez-public-chrome.findez-public-chrome .x-dd:hover .x-ddm,.findez-public-chrome.findez-public-chrome .x-dd:focus-within .x-ddm{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.findez-public-chrome.findez-public-chrome .x-ddm a{display:block;padding:8px 12px;border-radius:8px;color:var(--g1);text-decoration:none;font-size:14px}
+.findez-public-chrome.findez-public-chrome .x-ddm a:hover{background:#1C1C1F;color:var(--w)}
+
+.findez-public-chrome.findez-public-chrome.x-nav .x-logo svg{width:18px;height:18px}
+.findez-public-chrome.findez-public-chrome.x-nav .x-p{height:30px;padding:0 13px;font-size:13px}
+
+@media(max-width:980px) {
+ .findez-public-chrome.findez-public-chrome .x-in, .findez-public-chrome.findez-public-chrome.x-nav .x-in { padding:0 16px; }
+ .findez-public-chrome.findez-public-chrome .x-links, .findez-public-chrome.findez-public-chrome .x-act .si { display:none; }
+ .findez-public-chrome.findez-public-chrome .x-fg { grid-template-columns:1fr 1fr; }
+ .findez-public-chrome.findez-public-chrome .x-fg>div:first-child { grid-column:1/-1; }
+ .findez-public-chrome.findez-public-chrome .x-fb { flex-direction:column; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .findez-public-chrome.findez-public-chrome, .findez-public-chrome.findez-public-chrome * { transition:none!important; animation:none!important; }
+}
+
+.findez-public-chrome.findez-public-chrome .x-tag { margin-top:12px; }
+.findez-public-chrome.findez-public-chrome .x-fg h4 { margin-bottom:12px; }

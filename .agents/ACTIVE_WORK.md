@@ -1844,3 +1844,28 @@ on self-hosted findez-landing-consistency-20261111, preserving 627 other files.
 Live Chrome verified header remains visible after scrolling down into CAD.
 Signed-in Connections visual acceptance was not performed. Receipt:
 docs/plans/landing-consistency-deployment.json.
+
+Public-site consistency correction, November 11: user clarified that consistency
+means matching design across public landing-site pages, with the header fading
+out on downward scroll and returning on upward scroll. Removed the prior
+always-visible homepage override. All 17 checked public routes now render one
+shared homepage header and footer through public-chrome.tsx and scoped CSS.
+Dashboard, sign-in and sign-up layouts are unchanged. The footer remains in
+normal document flow. Existing homepage entrance and CAD timing are retained.
+
+Production build/TypeScript and changed-file ESLint passed. HTTP checks confirm
+200 responses and identical header/footer links and text on all 17 routes. Live
+Chrome confirmed the Founders header hides/returns and the footer layout matches.
+A visual check caught a white header spacer on the desktop download page; its
+background is now explicitly black. Safari memory was not profiled.
+
+The self-hosted release preserves newer live homepage, research, documentation
+and desktop work from parallel tasks. The deployment guard detected concurrent
+app-resume changes; these were retained and the build repeated before activation.
+Local research already uses the shared PagesShell. Local API and legacy landing
+files retain their existing content with equivalent shared components; the exact
+three-file production patch is docs/plans/public-chrome-live.patch. Production
+receipts and 17-route results are docs/plans/public-chrome-deployment.json,
+docs/plans/public-chrome-background-deployment.json and
+docs/plans/public-chrome-verification.json. No Vercel/Render deployment or backend,
+auth, mobile, dependency or environment changes.
