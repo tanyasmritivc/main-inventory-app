@@ -6,6 +6,17 @@
 .solutions-page :where(main h3){margin:1em 0}
 .solutions-page :where(main p){margin:1em 0}
 .solutions-page .x-links a.here{color:var(--w)}
+/* Compact header for the Solutions page. */
+.solutions-page .x-nav{height:52px}
+.solutions-page .x-nav .x-in{padding:0 24px}
+.solutions-page .x-logo{font-size:15px;gap:7px}
+.solutions-page .x-logo svg{width:18px;height:18px}
+.solutions-page .x-links{gap:22px;font-size:13px}
+.solutions-page .x-ddb{font-size:13px}
+.solutions-page .x-act{gap:14px}
+.solutions-page .x-act .si{font-size:13px}
+.solutions-page .x-nav .x-p{height:30px;padding:0 13px;font-size:13px}
+@media(max-width:700px){.solutions-page .x-nav .x-in{padding:0 16px}}
 /* hero */
 .solutions-page .s-hero{padding:150px 0 0}
 .solutions-page .s-h1{font:500 56px/1.02 var(--font-app-tight),var(--font-app-inter);letter-spacing:-.045em;max-width:1000px}

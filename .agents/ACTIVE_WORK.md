@@ -1761,3 +1761,12 @@ black page base now shows without the decorative animated mark. Homepage shared
 components remain intact. Deployed the single route component to self-hosted
 findez-connections-ui-20261111. Production build km7R8zBG8MaqRcv6DjUCI passed;
 public HTML verified: background canvas absent and audience cards present.
+
+## Compact Solutions header, November 11, 2026
+
+Scoped header styling to Solutions: 52px height, 13px navigation/actions, smaller
+logo and download pill, tighter horizontal spacing. Shared homepage styling is
+unchanged. Deployed to self-hosted findez-connections-ui-20261111; build
+VGfvTcwW2l7s4YEF2AFOt passed and public /solutions returns 200. Initial deployment
+check exhausted disk space and automatically restored the previous release.
+Retry clears the regenerable webpack cache after building and succeeded.
