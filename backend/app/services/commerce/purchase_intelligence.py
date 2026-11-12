@@ -1,20 +1,39 @@
 """Read-only, owner-scoped purchase library and before-buying evidence."""
 from urllib.parse import urlparse
 import re
+from datetime import date, datetime, timezone
+from typing import Literal
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.services.commerce import repository as repo
 
 MAX_RECORDS = 10000
-PAGE_SIZE = 30
+PAGE_SIZE = 25
 FIELDS = ('order_id', 'title', 'asin', 'quantity', 'ordered_at', 'source_status')
 
 
 class PurchaseQuery(BaseModel):
     model_config = ConfigDict(extra='forbid')
     query: str = Field(default='', max_length=1000)
-    status: str = Field(default='all', pattern='^(all|active|cancelled|returned|unknown)$')
+    status: str = Field(default='all', pattern='^(all|active|purchased|shipped|delivered|cancelled|returned|unknown)$')
     offset: int = Field(default=0, ge=0, le=10000)
+    category: str = Field(default='all', max_length=60)
+    date_from: str | None = Field(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')
+    date_to: str | None = Field(default=None, pattern=r'^\d{4}-\d{2}-\d{2}$')
+    sort: Literal['newest', 'oldest', 'frequent', 'name'] = 'newest'
+    inventory: Literal['all', 'matched', 'unmatched'] = 'all'
+    repeated: bool = False
+
+    @model_validator(mode='after')
+    def valid_filters(self):
+        if self.category != 'all' and self.category not in CATEGORIES:
+            raise ValueError('Choose a listed purchase category.')
+        for value in (self.date_from, self.date_to):
+            if value:
+                date.fromisoformat(value)
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError('Start date must be on or before end date.')
+        return self
 
 
 class PurchaseCheck(BaseModel):
@@ -100,7 +119,7 @@ def organize(rows):
     groups = {}
     for row in rows:
         asin = (row.get('asin') or '').upper()
-        key = 'asin:' + asin if asin else 'title:' + (row.get('title') or '').strip().casefold()
+        key = 'asin:' + asin if asin else 'title:' + _name(row.get('title'))
         product = groups.setdefault(key, {'key': key, 'title': row.get('title') or 'Unnamed purchase',
             'asin': asin or None, 'ordered_units': 0, 'excluded_units': 0, 'orders': [],
             'last_ordered_at': '', 'statuses': set(), 'providers': set(), 'ownership': 'unconfirmed'})
@@ -115,35 +134,149 @@ def organize(rows):
         product['providers'] = sorted(product['providers'])
         product['orders'].sort(key=lambda r: r.get('ordered_at') or '', reverse=True)
         product['order_count'] = len({(r['provider'], r.get('order_id')) for r in product['orders']})
+        product['active_order_count'] = len({(r['provider'], r.get('order_id')) for r in product['orders'] if _active(r)})
         product['history_truncated'] = len(product['orders']) > 20
         product['orders'] = product['orders'][:20]
     return sorted(groups.values(), key=lambda p: p['last_ordered_at'], reverse=True)
 
 
-def library(actor, world, query='', status='all', offset=0):
-    args = PurchaseQuery(query=query, status=status, offset=offset)
+# Suggested groupings are derived locally from names, never from an AI provider.
+CATEGORIES = {
+    'Tools & hardware': r'\b(screws?|bolts?|nuts?|bearings?|drills?|wrenches?|screwdrivers?|saws?|pliers?|fasteners?|gears?|washers?|clamps?)\b',
+    'Electronics': r'\b(motors?|arduino|raspberry pi|usb|cables?|chargers?|batter(?:y|ies)|sensors?|circuits?|headphones?|keyboards?|monitors?|adapters?)\b',
+    'Home & kitchen': r'\b(kitchen|cookware|pans?|plates?|mugs?|towels?|pillows?|sheets?|lamps?|curtains?|storage|organizers?)\b',
+    'Office & stationery': r'\b(notebooks?|pens?|pencils?|paper|stationery|staplers?|markers?|envelopes?|binders?)\b',
+    'Clothing & accessories': r'\b(shirts?|pants?|socks?|shoes?|jackets?|hoodies?|dresses?|belts?|hats?|sunglasses?)\b',
+    'Health & personal care': r'\b(shampoo|soap|toothpaste|toothbrush|vitamins?|lotion|skincare|deodorant|bandages?)\b',
+    'Food & drink': r'\b(coffee|tea|snacks?|chocolate|cereal|pasta|rice|cookies?|protein powder)\b',
+    'Books': r'\b(paperback|hardcover|textbook|workbook|novel)\b',
+    'Other': r'(?!)',
+}
+
+def _category(title):
+    return next((name for name, pattern in CATEGORIES.items() if re.search(pattern, title, re.I)), 'Other')
+
+
+def _day(value):
+    try:
+        stamp = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        return (stamp.astimezone(timezone.utc) if stamp.tzinfo else stamp).date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _name(value):
+    return ' '.join(str(value or '').casefold().split())
+
+
+def _inventory_evidence(actor, world):
+    """One scoped scan, not one inventory request for every purchase product."""
+    from app.services import world_chat as w
+    from app.services.supabase_client import get_supabase_admin
+    choices = w.directory(actor, world)['inventories']
+    names, asins = set(), set()
+    complete, count = len(choices) <= 100, 0
+    for choice in choices[:100]:
+        with w.in_inventory(actor, world, choice['inventory_id']) as inv:
+            rows = []
+            client = get_supabase_admin()
+            while len(rows) + count < MAX_RECORDS:
+                size = min(500, MAX_RECORDS - count - len(rows))
+                page = repo.execute(client.table('items').select('name,barcode,purchase_source')
+                    .eq('user_id', inv['owner_user_id']).order('item_id')
+                    .range(len(rows), len(rows) + size - 1)) or []
+                rows.extend(page)
+                if len(page) < size:
+                    break
+            # A revoked inventory cannot contribute even a candidate-match flag.
+            w.inventory_scope(actor, world, choice['inventory_id'])
+            for row in rows[:max(0, MAX_RECORDS - count)]:
+                if row.get('name'):
+                    names.add(_name(row['name']))
+                # Only explicit identifiers, never an arbitrary ten-character name.
+                barcode = str(row.get('barcode') or '').upper()
+                if re.fullmatch(r'[A-Z0-9]{10}', barcode):
+                    asins.add(barcode)
+                source = str(row.get('purchase_source') or '')
+                if source.startswith(('https://', 'http://')):
+                    try:
+                        asins.add(search_term(source))
+                    except (HTTPException, ValueError):
+                        pass
+            count += len(rows)
+        if count >= MAX_RECORDS:
+            complete = False
+            break
+    return names, asins, complete
+
+
+def library(actor, world, query='', status='all', offset=0, category='all', date_from=None,
+            date_to=None, sort='newest', inventory='all', repeated=False):
+    args = PurchaseQuery(query=query, status=status, offset=offset, category=category,
+                         date_from=date_from, date_to=date_to, sort=sort, inventory=inventory, repeated=repeated)
     query = search_term(args.query)
     rows, complete, connections = _load(actor, world)
     all_products = organize(rows)
-    filtered = [r for r in rows if _matches(r, query) and (status == 'all'
-        or status == 'active' and _active(r) or status == r.get('source_status'))]
+    names, asins, inventory_complete = _inventory_evidence(actor, world) if all_products else (set(), set(), True)
+    inventory_keys = {p['key'] for p in all_products if (p['asin'] and p['asin'] in asins) or _name(p['title']) in names}
+    categories = {p['key']: _category(p['title']) for p in all_products}
+    counts = {name: sum(categories[p['key']] == name for p in all_products) for name in CATEGORIES}
+    repeat_keys = {p['key'] for p in all_products if p['active_order_count'] > 1}
+    filtered = []
+    for row in rows:
+        day = _day(row.get('ordered_at'))
+        if (not _matches(row, query) or not (status == 'all' or status == 'active' and _active(row) or status == row.get('source_status'))
+                or args.date_from and (day is None or day < date.fromisoformat(args.date_from))
+                or args.date_to and (day is None or day > date.fromisoformat(args.date_to))):
+            continue
+        filtered.append(row)
     products = organize(filtered)
+    for product in products:
+        product['category'] = categories[product['key']]
+        product['inventory_match'] = product['key'] in inventory_keys
+    products = [p for p in products if (category == 'all' or p['category'] == category)
+                and (inventory == 'all' or p['inventory_match'] == (inventory == 'matched'))
+                and (not repeated or p['active_order_count'] > 1)]
+    # Stable secondary key prevents products moving between pages on tied dates.
+    if sort == 'name':
+        products.sort(key=lambda p: (_name(p['title']), p['key']))
+    elif sort == 'frequent':
+        products.sort(key=lambda p: (-p['active_order_count'], p['key']))
+    else:
+        products.sort(key=lambda p: (p['last_ordered_at'], p['key']), reverse=sort == 'newest')
     return {'summary': {'products': len(all_products), 'orders': len({(r['provider'], r.get('order_id')) for r in rows}),
-                       'records': len(rows), 'cancelled_or_returned_records': sum(r.get('source_status') in ('cancelled', 'returned') for r in rows)},
-            'matched_products': len(products),
+                       'records': len(rows), 'repeat_products': len(repeat_keys),
+                       'inventory_matched_products': len(inventory_keys), 'not_matched_products': len(all_products) - len(inventory_keys),
+                       'cancelled_or_returned_records': sum(r.get('source_status') in ('cancelled', 'returned') for r in rows)},
+            'categories': [{'name': name, 'products': count} for name, count in counts.items() if count],
+            'category_basis': 'suggested_from_product_name', 'inventory_complete': inventory_complete,
+            'matched_products': len(products), 'page_size': PAGE_SIZE, 'offset': offset,
             'next_offset': offset + PAGE_SIZE if offset + PAGE_SIZE < len(products) else None,
             'complete': complete, 'rows_truncated': not complete, 'connections': connections,
             'scope': world, 'source': 'saved_purchase_imports', 'live_amazon_access': False,
             'ownership': 'unconfirmed', 'stock_effect': 'none',
-            'note': 'Ordered units exclude cancelled/returned rows and zero quantities. They are not current owned stock. Results cover saved imports only. Older order details may be truncated.',
+            'note': 'Ordered units are not current stock. Inventory matches use exact identifiers or names, not confirmed ownership. Categories are suggested from names. Search covers saved imports up to the reported limit.',
             'products': products[offset:offset + PAGE_SIZE]}
+
+
+def chat_library(actor, world, **args):
+    """Keep a large library out of model context; subsequent pages remain searchable."""
+    result = library(actor, world, **args)
+    result['products'] = result['products'][:10]
+    for product in result['products']:
+        product['history_truncated'] = product['history_truncated'] or len(product['orders']) > 3
+        product['orders'] = product['orders'][:3]
+    offset = args.get('offset', 0)
+    result['page_size'] = 10
+    result['next_offset'] = offset + 10 if offset + 10 < result['matched_products'] else None
+    return result
 
 
 def check(actor, world, query):
     query = search_term(PurchaseCheck(query=query).query)
     if len(query) < 2:
         raise HTTPException(422, 'Enter a product name or ASIN.')
-    purchases = library(actor, world, query=query)
+    purchases = chat_library(actor, world, query=query)
     from app.services import world_chat
     inventory = world_chat.execute(actor, world, 'world_search', {'query': query})
     # Imports can identify a product by ASIN when inventory only has its name.

@@ -239,7 +239,7 @@ def execute(actor, world, name, args):
         raise ValueError('Unsupported action.')
     ARGUMENTS[name].model_validate(args, strict=True)
     if name in ('world_purchases', 'world_purchase_check'):
-        from app.services.commerce.purchase_intelligence import library, check
+        from app.services.commerce.purchase_intelligence import chat_library as library, check
         return (library if name == 'world_purchases' else check)(actor, world, **args)
     if name == 'world_recall':
         from app.services.world_recall import recall

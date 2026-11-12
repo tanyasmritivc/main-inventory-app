@@ -1774,3 +1774,19 @@ files with extensions. Fonts, dependencies and app configuration are unchanged.
 Removed disposable webpack caches from old Connections releases to free build
 space. Receipts: docs/plans/connections-ui-deployment.json (initial redesign)
 and connections-ui-revert-deployment.json (restored layout).
+
+Purchase library scale follow-up, November 11: retained the reverted page layout
+and deployed 25-product replacement pagination, server-side search/date/status/
+suggested-category/inventory-evidence/repeat-order filters, sort controls and
+repeat/unmatched summaries. FIND receives ten products with three evidence lines
+per tool page, with continuation offsets. Inventory candidates remain ownership
+unconfirmed; no physical stock or durable confirmation data is written. Source
+reads retain the 10,000-line limit and disclose incomplete results. Inventory
+matching uses authorized scoped pages, with a 10,000-item/100-inventory bound.
+
+Sixteen focused backend and five web tests, changed-file lint and production
+build/TypeScript passed. Synthetic histories cover 1,500 products and 2,000 lines.
+Both self-hosted releases passed health/auth guards. Safari UI validation was
+unavailable (cgWindowNotFound), so no live visual acceptance is claimed. No mobile,
+schema, dependency, configuration, import or stock writes. See
+`docs/plans/purchase-intelligence.md` and purchase-scale deployment receipts.

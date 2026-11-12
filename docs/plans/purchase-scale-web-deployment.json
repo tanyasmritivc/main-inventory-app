@@ -1,0 +1,14 @@
+{
+  "deployed_at": "2026-11-12T00:34:34.272005+00:00",
+  "live": "/home/ubuntu/findez-purchase-scale-20261111/frontend",
+  "build_id": "7nLvN4_ObNXOKzJ89SdSH",
+  "changed_files": [
+    "src/components/site/purchase-library.module.css",
+    "src/components/site/purchase-library.tsx"
+  ],
+  "preserved_files": 627,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

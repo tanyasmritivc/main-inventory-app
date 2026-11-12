@@ -44,3 +44,21 @@
   .stats strong { font-size: 24px; }
   .orders > div { padding-inline: 0; }
 }
+
+.history { scroll-margin-top: 100px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.library .category { margin: 10px 0 0; font-size: 12px; }
+.library .pagination { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.library .pagination button { margin: 0; }
+.pagination span { font-size: 13px; color: var(--text-secondary); }
+.library .moreFilters { padding: 16px 0; border: 0; border-bottom: 1px solid var(--light-line); border-radius: 0; background: transparent; }
+.moreFilters summary { cursor: pointer; font-size: 14px; width: fit-content; }
+.filterGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.filterGrid > div { min-width: 0; }
+.filterActions, .quickFilters { display: flex; gap: 10px; flex-wrap: wrap; }
+.library .quickFilters { margin-bottom: 20px; }
+.library .quickFilters button { margin: 0; font-size: 13px; padding: 9px 12px; background: transparent; }
+@media (max-width: 650px) {
+  .filterGrid { grid-template-columns: minmax(0, 1fr); }
+  .badges { justify-content: flex-start; }
+}

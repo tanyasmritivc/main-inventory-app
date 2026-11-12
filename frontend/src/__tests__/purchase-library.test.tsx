@@ -40,3 +40,38 @@ test("failed checks show an error instead of claiming there are no duplicates", 
   await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Connection changed"));
   expect(screen.queryByText("No match in the checked records")).toBeNull();
 });
+test("paging replaces products and searches all purchases with applied filters", async () => {
+  const user = userEvent.setup();
+  const first = {...product, title:"First page motor"};
+  const second = {...product, key:"second", title:"Second page motor"};
+  const page = {...empty, summary:{products:1500,orders:2000,records:3000}, page_size:25, matched_products:1500, next_offset:25, products:[first]};
+  const request = jest.fn().mockResolvedValueOnce(page).mockResolvedValueOnce({...page, offset:25, next_offset:50,products:[second]}).mockResolvedValueOnce({...empty, products:[product],matched_products:1,page_size:25});
+  render(<PurchaseLibrary scope={{scope_type:"personal"}} request={request} />);
+  await screen.findByText("First page motor");
+  await user.click(screen.getAllByRole("button", {name:"Next"})[0]);
+  await screen.findByText("Second page motor");
+  expect(screen.queryByText("First page motor")).toBeNull();
+  expect(screen.getAllByText("Page 2 of 60")).toHaveLength(2);
+  expect(request.mock.calls[1][0]).toContain("offset=25");
+  await user.type(screen.getByLabelText("Search all purchases"), "B000000001");
+  await user.click(screen.getByText("Filters", {selector:"summary"}));
+  await user.selectOptions(screen.getByLabelText("Order status"),"returned");
+  await user.selectOptions(screen.getByLabelText("Inventory evidence"),"unmatched");
+  await user.click(screen.getByRole("button",{name:"Apply filters"}));
+  await screen.findByText("Sample motor");
+  expect(request.mock.calls[2][0]).toContain("offset=0");
+  expect(request.mock.calls[2][0]).toContain("status=returned");
+  expect(request.mock.calls[2][0]).toContain("inventory=unmatched");
+  expect(request.mock.calls[2][0]).toContain("query=B000000001");
+});
+test("a failed page request preserves the current page and allows retry", async () => {
+  const user = userEvent.setup();
+  const request = jest.fn().mockResolvedValueOnce({...empty,products:[product],matched_products:100,next_offset:25}).mockRejectedValueOnce(new Error("Please retry"));
+  render(<PurchaseLibrary scope={{scope_type:"personal"}} request={request} />);
+  await screen.findByText("Sample motor");
+  await user.click(screen.getAllByRole("button",{name:"Next"})[0]);
+  expect((await screen.findByRole("alert")).textContent).toContain("Please retry");
+  expect(screen.getByText("Sample motor")).toBeTruthy();
+  expect(screen.getAllByText("Page 1 of 4")).toHaveLength(2);
+  expect((screen.getAllByRole("button",{name:"Previous"})[0] as HTMLButtonElement).disabled).toBe(true);
+});

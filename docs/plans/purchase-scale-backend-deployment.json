@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T00:34:18.020135+00:00",
+  "files": {
+    "app/services/world_chat.py": "d957b993e6d43748adbd76056c2ddb0510afe9b74eab4222ab1f437778bf1c7b",
+    "app/services/commerce/purchase_intelligence.py": "f33c50ad6bcbf165647df7d98982b47f4f456721dae910d9fefffe9ab423f1db",
+    "app/api/routes/commerce.py": "fa5dbe3809abfeb4030758425c73d5049676e3665cfd3e5ede4f43456d78ffbb"
+  },
+  "health": 200,
+  "database_health": 200,
+  "anonymous_purchase_endpoints": 401,
+  "database_migrations": false,
+  "inventory_writes": false
+}

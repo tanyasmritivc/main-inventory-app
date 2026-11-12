@@ -3,7 +3,7 @@ import hmac
 import re
 import secrets
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from typing import Literal
 from uuid import UUID
 
@@ -302,10 +302,19 @@ def purchase_world(scope_type, organization_id):
 @router.get('/purchases')
 def purchase_library(scope_type: Literal['personal', 'organization'] = 'personal',
                      organization_id: UUID | None = None, query: str = Query('', max_length=1000),
-                     status: Literal['all', 'active', 'cancelled', 'returned', 'unknown'] = 'all',
-                     offset: int = Query(0, ge=0, le=10000), user: AuthenticatedUser = Depends(get_current_user)):
+                     status: Literal['all', 'active', 'purchased', 'shipped', 'delivered', 'cancelled', 'returned', 'unknown'] = 'all',
+                     offset: int = Query(0, ge=0, le=10000), category: str = Query('all', max_length=60),
+                     date_from: date | None = None, date_to: date | None = None,
+                     sort: Literal['newest', 'oldest', 'frequent', 'name'] = 'newest',
+                     inventory: Literal['all', 'matched', 'unmatched'] = 'all', repeated: bool = False,
+                     user: AuthenticatedUser = Depends(get_current_user)):
     from app.services.commerce.purchase_intelligence import library
-    return library(user.user_id, purchase_world(scope_type, organization_id), query, status, offset)
+    try:
+        return library(user.user_id, purchase_world(scope_type, organization_id), query, status, offset,
+                       category=category, date_from=date_from.isoformat() if date_from else None,
+                       date_to=date_to.isoformat() if date_to else None, sort=sort, inventory=inventory, repeated=repeated)
+    except ValueError:
+        raise HTTPException(422, 'Choose valid filters and a start date on or before the end date.') from None
 
 
 @router.post('/purchase-check')

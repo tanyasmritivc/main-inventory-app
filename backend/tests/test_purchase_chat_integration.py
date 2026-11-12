@@ -13,7 +13,7 @@ from app.core.auth import AuthenticatedUser, get_current_user
 
 class PurchaseChatIntegrationTest(unittest.TestCase):
     def test_real_dispatch_binds_owner_and_rejects_extra_arguments(self):
-        for name, target in [('world_purchases','library'),('world_purchase_check','check')]:
+        for name, target in [('world_purchases','chat_library'),('world_purchase_check','check')]:
             with patch.object(service,target,return_value={'stock_effect':'none'}) as read:
                 self.assertEqual(world_chat.execute('alice','personal',name,{'query':'motor'})['stock_effect'],'none')
                 read.assert_called_once_with('alice','personal',query='motor')
@@ -28,7 +28,7 @@ class PurchaseChatIntegrationTest(unittest.TestCase):
         with patch('app.core.config.get_settings',return_value=SimpleNamespace(findez_chat_vision_model='synthetic-model')), \
              patch('app.services.agent_gateway_client.gateway_completion') as gateway, \
              patch('app.services.completion_stream.completion_events',side_effect=lambda *a,**k:next(events)), \
-             patch.object(service,'library',return_value=evidence) as read:
+             patch.object(service,'chat_library',return_value=evidence) as read:
             result=list(world_chat.stream_turn('alice','personal','Did I buy a motor before?',[], 'synthetic-conversation'))
         read.assert_called_once_with('alice','personal',query='motor')
         self.assertEqual(result[-1]['type'],'done')
@@ -46,8 +46,11 @@ class PurchaseChatIntegrationTest(unittest.TestCase):
         client=TestClient(app)
         with patch.object(service,'library',return_value={'products':[]}) as read:
             self.assertEqual(client.get('/commerce/purchases').status_code,200)
-            read.assert_called_once_with('alice','personal','', 'all',0)
-            for query in ('scope_type=organization','scope_type=personal&organization_id=11111111-1111-4111-8111-111111111111','offset=-1','status=invalid'):
+            read.assert_called_once_with('alice','personal','', 'all',0, category='all', date_from=None, date_to=None, sort='newest', inventory='all', repeated=False)
+            for query in ('scope_type=organization','scope_type=personal&organization_id=11111111-1111-4111-8111-111111111111','offset=-1','status=invalid','sort=invalid','inventory=other','date_from=not-a-date'):
+                self.assertEqual(client.get('/commerce/purchases?'+query).status_code,422)
+        with patch.object(service, '_load', return_value=([], True, 0)):
+            for query in ('date_from=2026-11-02&date_to=2026-11-01', 'category=not-a-category'):
                 self.assertEqual(client.get('/commerce/purchases?'+query).status_code,422)
         with patch.object(service,'check',return_value={'stock_effect':'none'}) as check:
             response=client.post('/commerce/purchase-check',json={'query':'motor'})
