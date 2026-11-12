@@ -8,7 +8,7 @@ import { useApiSession } from '@/lib/use-api-session';
 
 jest.mock('@/lib/integration-api', () => ({
   ...jest.requireActual('@/lib/integration-api'),
-  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(), listKeyOrganizations: jest.fn(),
+  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(),
   createIntegrationKey: jest.fn(), revokeIntegrationKey: jest.fn(), testIntegrationKey: jest.fn(),
 }));
 jest.mock('@/lib/use-api-session');
@@ -25,10 +25,9 @@ const getSession = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session', user: {id: 'fixture-user'} } } });
-  jest.mocked(useApiSession).mockReturnValue({ accountId: 'fixture-user', token: 'web-session', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
+  getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session' } } });
+  jest.mocked(useApiSession).mockReturnValue({ token: 'web-session', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
   jest.mocked(api.listIntegrationKeys).mockResolvedValue({ keys: [] });
-  jest.mocked(api.listKeyOrganizations).mockResolvedValue({organizations: []});
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [{ team_id: 'team-1', name: 'Robotics team' }] });
   jest.mocked(api.createIntegrationKey).mockResolvedValue({ ...metadata, key: rawKey });
   confirmAction.mockResolvedValue(true);
@@ -105,8 +104,8 @@ test('successful revocation updates the key status', async () => {
 test('owners with no teams receive an actionable setup path', async () => {
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [] });
   render(<ApiKeysClient />);
-  expect(await screen.findByText('Create a workspace or organization to use integrations')).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'Open your workspaces →' }).getAttribute('href')).toBe('/home');
+  expect(await screen.findByText('Create a team to use integrations')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Open Teams →' }).getAttribute('href')).toBe('/teams');
   expect(screen.queryByRole('button', { name: 'Create key' })).toBeNull();
 });
 

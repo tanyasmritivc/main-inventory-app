@@ -369,7 +369,7 @@ function WorldContent({
               ))}
             </div>
           )}
-          {chosen === "tools" && <WorldTools accountId={accountId} inventories={inventories} />}
+          {chosen === "tools" && <WorldTools accountId={accountId} inventories={inventories} organizationId={worldId === "personal" ? undefined : worldId} />}
         </section>
       )}
       <Dialog

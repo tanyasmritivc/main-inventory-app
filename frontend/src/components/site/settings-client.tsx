@@ -1,4 +1,5 @@
 "use client";
+import { SettingsConnections } from "./settings-connections";
 import { AVATAR_PALETTE, avatarPresentationColor } from "./app-theme-ui";
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
@@ -260,7 +261,9 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
 
   return (
     <div className="settings-content">
+      {section === "connections" && <SettingsConnections />}
       {pendingPhoto && <ProfilePhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={changePhoto} />}
+      {section === "profile" && <section className="settings-panel"><header><h2>CAD Intelligence</h2><p>Compare a Fusion assembly with your inventory.</p></header><Link className="workspace-button" href="/cad">Open CAD Intelligence <ChevronRight size={16} aria-hidden="true" /></Link></section>}
       {section === "profile" && <section className="settings-panel" id="profile">
         <header>
           <h2>Personal details</h2>
@@ -388,6 +391,8 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
           </button>
         </footer>
       </section>}
+
+      {section === "profile" && <section className="settings-panel"><header><h2>Connections</h2></header><div className="settings-row"><div><strong>Amazon &amp; Shopify</strong><small>Manage private Personal purchases or organization connections. Choose an inventory only when adding items you still own.</small></div><Link href="/settings/connections" className="workspace-button">Manage connections</Link></div></section>}
 
       {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Theme</h2></header>
         <div className="settings-static-row">

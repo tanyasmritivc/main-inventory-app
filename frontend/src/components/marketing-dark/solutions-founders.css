@@ -102,18 +102,15 @@
 .landing-dark .solutions-founders .pass .card .top{display:flex;justify-content:space-between;align-items:center;position:relative}
 .landing-dark .solutions-founders .pass .card .top b{font-size:22px;font-weight:600;color:#fff;letter-spacing:-.02em}
 .landing-dark .solutions-founders .pass .refl{position:absolute;left:0;right:0;top:100%;height:470px;margin-top:18px;border-radius:30px;transform:scaleY(-1);opacity:.14;-webkit-mask-image:linear-gradient(0deg,#000 0%,transparent 40%);mask-image:linear-gradient(0deg,#000 0%,transparent 40%);pointer-events:none}
-.landing-dark .solutions-founders .fab .hd{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:end}
-.landing-dark .solutions-founders .fab h2{font-size:56px;letter-spacing:-.045em;line-height:1.03}
-.landing-dark .solutions-founders .fab .hd p{color:var(--tx2);font-size:17px}
-.landing-dark .solutions-founders .fab .hd p+p{margin-top:12px}
-.landing-dark .solutions-founders .fan{position:relative;height:340px;margin-top:64px}
-.landing-dark .solutions-founders .fc{position:absolute;left:50%;top:0;width:min(370px,31%);height:300px;margin-left:calc(min(370px,31%)/-2);border-radius:26px;background:#0F0F11;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 30px 70px rgba(0,0,0,.5);padding:28px;display:flex;flex-direction:column;transition:transform 1.1s var(--e),opacity .8s var(--e);transform:translate3d(0,40px,0) rotate(var(--r0));opacity:0}
-.landing-dark .solutions-founders .fc:nth-child(1){--r0:-7deg;--x:-104%;z-index:1}.landing-dark .solutions-founders .fc:nth-child(2){--r0:2deg;--x:0%;z-index:3}.landing-dark .solutions-founders .fc:nth-child(3){--r0:9deg;--x:104%;z-index:2}
-.landing-dark .solutions-founders .fan.in .fc{opacity:1;transform:translate3d(var(--x),0,0) rotate(0)}
-.landing-dark .solutions-founders .fan.in .fc:nth-child(1){transition-delay:.05s}.landing-dark .solutions-founders .fan.in .fc:nth-child(3){transition-delay:.12s}
-.landing-dark .solutions-founders .fc .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff}
-.landing-dark .solutions-founders .fc h3{font-size:26px;letter-spacing:-.03em;margin-top:auto}
-.landing-dark .solutions-founders .fc p{color:var(--tx2);font-size:15.5px;margin-top:10px}
+.landing-dark .solutions-founders .fab .wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:clamp(48px,7vw,96px);align-items:start}
+.landing-dark .solutions-founders .fab .hd{display:block}
+.landing-dark .solutions-founders .fab h2{font-size:44px;letter-spacing:-.04em;line-height:1.1;text-wrap:balance;max-width:420px;margin:0 0 24px}
+.landing-dark .solutions-founders .fab .hd p{color:var(--tx2);font-size:16px;line-height:1.65;max-width:44ch}
+.landing-dark .solutions-founders .fab .hd p+p{margin-top:14px}
+.landing-dark .solutions-founders .fa-benefits{display:grid;gap:30px;margin:0}
+.landing-dark .solutions-founders .fa-benefit{margin:0}
+.landing-dark .solutions-founders .fa-benefit h3{font-size:24px;line-height:1.25;letter-spacing:-.025em;font-weight:400;margin:0}
+.landing-dark .solutions-founders .fa-benefit dd{margin:10px 0 0;color:var(--tx2);font-size:16px;line-height:1.65;max-width:44ch}
 .landing-dark .solutions-founders .fat h2{font-size:56px;letter-spacing:-.045em;line-height:1.03;max-width:760px}
 .landing-dark .solutions-founders .tabsx{display:grid;grid-template-columns:.8fr 1.2fr;gap:28px;margin-top:52px;align-items:stretch}
 .landing-dark .solutions-founders .tl3{display:flex;flex-direction:column;gap:6px}
@@ -200,12 +197,11 @@
 .landing-dark .solutions-founders .faf small{display:block;color:var(--tx3);font-size:13.5px;margin-top:16px}
 @media (max-width:900px){.landing-dark .solutions-founders .fah{padding-top:96px;min-height:auto}.landing-dark .solutions-founders .fah .wrap{grid-template-columns:1fr;gap:0}.landing-dark .solutions-founders .fah h1{font-size:50px}.landing-dark .solutions-founders .fah .tag{font-size:19px}.landing-dark .solutions-founders .stage3d{height:440px;order:-1}.landing-dark .solutions-founders .pass{width:250px;height:340px}.landing-dark .solutions-founders .pass .refl{display:none}.landing-dark .solutions-founders .stage3d{height:400px}
  .landing-dark .solutions-founders .fab .hd{grid-template-columns:1fr;gap:16px}.landing-dark .solutions-founders .fab h2,.landing-dark .solutions-founders .fat h2,.landing-dark .solutions-founders .faw h2,.landing-dark .solutions-founders .fap h2,.landing-dark .solutions-founders .faq2 h2{font-size:34px}
- .landing-dark .solutions-founders .fan{height:auto;display:flex;flex-direction:column;gap:12px}.landing-dark .solutions-founders .fc{position:relative;left:auto;width:auto;margin:0;height:auto;min-height:200px;transform:translate3d(0,30px,0)}.landing-dark .solutions-founders .fan.in .fc{transform:none}
  .landing-dark .solutions-founders .tabsx{grid-template-columns:1fr}.landing-dark .solutions-founders .appw{min-height:420px}.landing-dark .solutions-founders .sh2 .r{grid-template-columns:1.5fr .5fr 1fr}.landing-dark .solutions-founders .sh2 .r span:nth-child(4){display:none}
  .landing-dark .solutions-founders .wg{grid-template-columns:1fr}.landing-dark .solutions-founders .wt{min-height:220px}.landing-dark .solutions-founders .wt h3{font-size:24px}
  .landing-dark .solutions-founders .plan2{grid-template-columns:1fr}.landing-dark .solutions-founders .plan2 .tile{min-height:300px}.landing-dark .solutions-founders .plan2 .rt{padding:20px 10px 12px}.landing-dark .solutions-founders .ptab .r{grid-template-columns:1fr 60px 80px;padding:11px 12px;font-size:13.5px}
  .landing-dark .solutions-founders .faq2{grid-template-columns:1fr;gap:20px}.landing-dark .solutions-founders .faf h2{font-size:44px}.landing-dark .solutions-founders .faf{padding:110px 0}}
-@media (prefers-reduced-motion:reduce){.landing-dark .solutions-founders .pass .card,.landing-dark .solutions-founders .faf .icon,.landing-dark .solutions-founders .faf .icon .sw{animation:none}.landing-dark .solutions-founders .fc,.landing-dark .solutions-founders .pane,.landing-dark .solutions-founders .wt .ph{transition:none}.landing-dark .solutions-founders .ptab svg{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.landing-dark .solutions-founders .pass .card,.landing-dark .solutions-founders .faf .icon,.landing-dark .solutions-founders .faf .icon .sw{animation:none}.landing-dark .solutions-founders .pane,.landing-dark .solutions-founders .wt .ph{transition:none}.landing-dark .solutions-founders .ptab svg{stroke-dashoffset:0}}
 .landing-dark .solutions-founders .g-aurora{background:radial-gradient(70% 60% at 18% 12%,rgba(226,134,79,.85) 0%,transparent 60%),radial-gradient(70% 60% at 86% 92%,rgba(94,127,184,.8) 0%,transparent 62%),linear-gradient(160deg,#2A2023,#141418 55%,#151A24)}
 .landing-dark .solutions-founders .g-slate{background:radial-gradient(80% 70% at 20% 10%,#8C9AAE 0%,transparent 58%),radial-gradient(80% 80% at 85% 100%,#161B2A 0%,transparent 70%),linear-gradient(165deg,#5E6B80 0%,#36405A 48%,#1A1F2E 100%)}
 .landing-dark .solutions-founders .g-moss{background:radial-gradient(80% 70% at 20% 10%,#9DB096 0%,transparent 58%),radial-gradient(80% 80% at 85% 100%,#15201A 0%,transparent 70%),linear-gradient(165deg,#6F836C 0%,#3E5040 48%,#1B251E 100%)}
@@ -283,7 +279,7 @@
 @media(prefers-reduced-motion:reduce){
  .landing-dark .solutions-founders .v4p{height:auto!important}
  .landing-dark .solutions-founders .v4p .st{position:relative;min-height:650px;height:auto;padding-top:90px;padding-bottom:90px}
- .landing-dark .solutions-founders .fc,.landing-dark .solutions-founders .ptab svg{opacity:1}
+ .landing-dark .solutions-founders .ptab svg{opacity:1}
  .landing-dark .solutions-founders .ptab svg{transform:none}
 }
 .landing-dark .solutions-founders .k .brand-slot svg image:first-child{display:block}
@@ -295,3 +291,11 @@
 .landing-dark .solutions-founders .check-reveal::after{content:'';position:absolute;inset:0;background:#0D0D0E;transform:translateX(0);transition:transform .6s var(--e);transition-delay:var(--delay,0s)}
 .landing-dark .solutions-founders .ptab.in .check-reveal::after{transform:translateX(100%)}
 .landing-dark .solutions-founders .ptab .check-reveal svg{opacity:1;transform:none;transition:none}
+
+@media(max-width:900px){
+ .landing-dark .solutions-founders .fab .wrap{grid-template-columns:1fr;gap:40px}
+ .landing-dark .solutions-founders .fab h2{font-size:34px;max-width:420px;text-wrap:balance}
+ .landing-dark .solutions-founders .fa-benefits{gap:28px}
+ .landing-dark .solutions-founders .fa-benefit h3{font-size:22px}
+ .landing-dark .solutions-founders .fa-benefit dd{font-size:15.5px}
+}

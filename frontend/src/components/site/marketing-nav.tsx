@@ -1,9 +1,5 @@
-import { SiteNav } from "@/components/site/nav";
-
-export function MarketingNav({ theme = "dark" }: { theme?: "light" | "dark" }) {
-  return (
-    <div className="marketing-nav-wrap sticky top-0 z-50">
-      <SiteNav variant="marketing" theme={theme} />
-    </div>
-  );
+import { HeaderMarkup } from "@/components/marketing-dark/public-chrome";
+export function MarketingNav(_props: {theme?: "light" | "dark"} = {}) {
+  void _props; // Legacy callers may pass a theme; public chrome matches the homepage.
+  return <HeaderMarkup reserveSpace/>;
 }

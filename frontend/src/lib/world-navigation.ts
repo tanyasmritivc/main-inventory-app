@@ -2,6 +2,8 @@ import {
   MessageSquarePlus,
   MapPin,
   Wrench,
+  Boxes,
+  Plug,
   FolderKanban,
   Users,
   Settings,
@@ -20,7 +22,7 @@ export function worldNavigation(
     organization: world === "personal" ? undefined : { id: world, name },
     personal: world === "personal",
     homeHref: home,
-    activeRoute: worldHref(world, view),
+    activeRoute: view === "cad" ? `/cad?world=${encodeURIComponent(world)}` : worldHref(world, view),
     breadcrumbs: [{ label: name, href: home }],
     items: [
       {
@@ -39,6 +41,18 @@ export function worldNavigation(
         label: "Tools",
         route: worldHref(world, "tools"),
         icon: Wrench,
+        section: "Organization",
+      },
+      {
+        label: "CAD Intelligence",
+        route: `/cad?world=${encodeURIComponent(world)}`,
+        icon: Boxes,
+        section: "Organization",
+      },
+      {
+        label: "Connections",
+        route: world === "personal" ? "/settings/connections" : `/settings/connections?organization=${encodeURIComponent(world)}`,
+        icon: Plug,
         section: "Organization",
       },
       {

@@ -1,0 +1,25 @@
+/* Runs from the server-rendered page, without a loading overlay or JS gate. */
+@media (prefers-reduced-motion: no-preference) {
+  .landing-home:has(> main > .x-hero) > .x-nav > .x-in {
+    animation: findez-home-fade 420ms ease-out backwards;
+  }
+
+  .landing-home > main > .x-hero > .x-in {
+    animation: findez-home-enter 620ms cubic-bezier(.22, 1, .36, 1) 60ms backwards;
+  }
+
+  /* Animate outside the demo so its existing 3D and scroll transforms survive. */
+  .landing-home:has(> main > .x-hero) > #x-bg {
+    animation: findez-home-fade 800ms ease-out backwards;
+  }
+}
+
+@keyframes findez-home-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes findez-home-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}

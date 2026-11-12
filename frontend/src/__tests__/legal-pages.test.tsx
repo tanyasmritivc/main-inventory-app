@@ -6,7 +6,7 @@ import { CookieNotice } from "@/components/site/cookie-notice";
 import { LEGAL_VERSION } from "@/lib/legal-content";
 jest.mock("@/lib/use-marketing-session", () => ({ useMarketingSession: () => false }));
 
-test.each([[PrivacyPage, "November 11, 2026"], [TermsPage, "November 11, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
+test.each([[PrivacyPage, "October 12, 2026"], [TermsPage, "October 11, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
   const { container } = render(<Page />);
   expect(screen.getByText(`Effective ${effectiveDate}`)).toBeTruthy();
   expect(screen.getByText(/887 Poppy Ct, Sunnyvale, CA 94086/)).toBeTruthy();
@@ -19,12 +19,11 @@ test.each([[PrivacyPage, "November 11, 2026"], [TermsPage, "November 11, 2026"]]
 test("the privacy page describes actual storage and photo limitations without claiming optional consent", () => {
   render(<PrivacyPage />);
   expect(screen.getByText(/No optional analytics or advertising cookies/)).toBeTruthy();
-  expect(screen.getByText(/photos require authenticated requests/)).toBeTruthy();
+  expect(screen.getByText(/accessible to anyone who has the URL/)).toBeTruthy();
   expect(screen.getByText(/display window, not a promise/)).toBeTruthy();
   expect(screen.getByText(/not agreement to Terms/)).toBeTruthy();
 });
 test("the storage notice can be dismissed without enabling tracking or accepting Terms", () => {
-  global.ResizeObserver = class {observe() {} unobserve() {} disconnect() {}};
   localStorage.removeItem("findez-cookie-notice");
   render(<CookieNotice />);
   expect(screen.getByRole("link", { name: "Details" }).getAttribute("href")).toBe("/privacy#cookies");

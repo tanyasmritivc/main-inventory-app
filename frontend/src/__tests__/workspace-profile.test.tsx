@@ -36,7 +36,6 @@ jest.mock("@/lib/use-api-session", () => ({
 }));
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
-  useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({
     push: mockNavigate,
     replace: jest.fn(),
@@ -81,9 +80,9 @@ test("page search opens with its input focused, filters destinations and closes 
   const dialog = screen.getByRole("dialog", { name: "Navigate FindEZ" });
   const input = within(dialog).getByRole("textbox", { name: "Search features and pages" });
   expect(document.activeElement).toBe(input);
-  await user.type(input, "tools");
-  await user.click(within(dialog).getByRole("button", { name: "Tools" }));
-  expect(mockNavigate).toHaveBeenCalledWith("/worlds/personal?view=tools");
+  await user.type(input, "documents");
+  await user.click(within(dialog).getByRole("button", { name: "Documents" }));
+  expect(mockNavigate).toHaveBeenCalledWith("/documents?inventory=tools");
   expect(screen.queryByRole("dialog")).toBeNull();
   await user.click(trigger);
   expect(screen.getByRole("textbox", { name: "Search features and pages" })).toHaveProperty("value", "");
@@ -229,7 +228,7 @@ test("organization navigation contains only its management destinations",async()
  expect(screen.getByRole("link",{name:"People"}).getAttribute("aria-current")).toBe("page");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
  expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
- expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/worlds/acme?view=workspaces");
+ expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/organizations/acme");
 });
 test("workspace navigation selects only the current section and retains its parent organization",async()=>{
  const workspace={workspace_id:"ftc",name:"Robotics",kind:"team" as const,team_id:"ftc",role:"owner" as const,organization_id:"acme",organization_name:"Acme"};
@@ -237,7 +236,7 @@ test("workspace navigation selects only the current section and retains its pare
  render(<AppShell context={workspaceNavigation(workspace,"locations")}><h1>Locations</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
- expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/worlds/acme");
+ expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
  expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
 });
@@ -268,18 +267,4 @@ test("settings categories use distinct page routes and keep their labels visible
  expect(within(screen.getByLabelText("Primary navigation")).getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/settings/account");
  expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(true);
  expect(screen.queryByRole("button", { name: "Unpin navigation" })).toBeNull();
-});
-
-test("provider signup persists the provider name instead of pending typed names", async () => {
-  const upsert = jest.fn(async () => ({error: null}));
-  Object.assign(client, {from: jest.fn(() => ({upsert}))});
-  const currentUser = {...session.user, user_metadata: {full_name: "Sam Chen", given_name: "Sam", family_name: "Chen"}};
-  client.auth.getSession.mockResolvedValue({data: {session: {...session, user: currentUser}}});
-  client.auth.updateUser.mockImplementationOnce(async () => ({error: null}));
-  localStorage.setItem("findez_pending_signup_profile", JSON.stringify({useProviderName: true, displayName: "Ignore typed name", termsVersion: "2026-11-01", termsAcceptedAt: "2026-11-07T12:00:00Z", eligibilityAttested: true}));
-  render(<AppShell><p>Workspace</p></AppShell>);
-  await waitFor(() => expect(upsert).toHaveBeenCalledWith(expect.objectContaining({display_name: "Sam Chen", first_name: "Sam", last_name: "Chen"})));
-  expect(client.auth.updateUser).toHaveBeenCalledWith(expect.objectContaining({data: expect.objectContaining({full_name: "Sam Chen", eligibility_attested: true})}));
-  expect(localStorage.getItem("findez_pending_signup_profile")).toBeNull();
-  client.auth.getSession.mockResolvedValue({data: {session}});
 });

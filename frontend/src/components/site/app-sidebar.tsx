@@ -12,6 +12,7 @@ import {
   FileStack,
   Home,
   KeyRound,
+  Plug,
   ListChecks,
   LogOut,
   MapPin,
@@ -84,6 +85,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     icon: FileStack,
     section: "Your world",
   },
+  { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Your world", keywords: ["Fusion", "assembly", "BOM", "shortages"] },
   {
     label: "Review",
     route: "/review",
@@ -91,6 +93,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     section: "Your world",
     keywords: ["uncertain", "confirm", "correct"],
   },
+  { label: "Connections", route: "/settings/connections", icon: Plug, section: "Your world", keywords: ["Shopify", "Amazon", "commerce", "imports"] },
   { label: "Activity", route: "/activity", icon: History, section: "You" },
   {
     label: "Notifications",

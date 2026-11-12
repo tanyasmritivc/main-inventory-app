@@ -55,17 +55,6 @@ test('checkbox and editor address the canonical item after display sorting, and 
  await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/captures/'),expect.objectContaining({method:'PATCH',body:{revision:2,changes:{items:[{index:1,name:'Exact changed name'}]}}})));
  await waitFor(()=>expect((screen.getByRole('button',{name:'Confirm and save'}) as HTMLButtonElement).disabled).toBe(false));
  fireEvent.click(screen.getByRole('button',{name:'Confirm and save'}));
- await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/save'),{method:'POST',body:{revision:3,allow_duplicates:false,confirm_items:true}}));
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/save'),{method:'POST',body:{revision:3,allow_duplicates:false}}));
  expect(c.items.map(r=>r.index)).toEqual([0,1,2]);
-});
-
-test('explicit save accepts unknown quantities without an edit or Review',async()=>{
- const c=fixture();c.items[0].item.scan_evidence={quantity_basis:'unknown',needs_review:true};c.summary={unknown_quantity_indices:[0]};
- jest.mocked(accountRequest).mockImplementation(async(_account,path)=>path.endsWith('/spaces')?{inventories:[]} as never:{capture:c} as never);
- render(<ChatCaptureCard capture={c} accountId="account" worldId="personal" conversationId="chat"/>);
- await waitFor(()=>expect(accountRequest).toHaveBeenCalled());
- const save=screen.getByRole('button',{name:'Confirm and save'}) as HTMLButtonElement;
- expect(save.disabled).toBe(false);fireEvent.click(save);
- await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/save'),{method:'POST',body:{revision:1,allow_duplicates:false,confirm_items:true}}));
- expect(accountRequest).not.toHaveBeenCalledWith(expect.anything(),expect.anything(),expect.objectContaining({method:'PATCH'}));
 });

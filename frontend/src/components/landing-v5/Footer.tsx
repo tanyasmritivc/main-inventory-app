@@ -1,32 +1,32 @@
 import Link from "next/link";
 import { FindEZWordmark } from "@/components/site/findez-brand";
 
-export function Footer() {
+export function Footer({ prefetch }: { prefetch?: false } = {}) {
  return (<footer >
 <div className="wrap">
-<Link className="brand" href="/" style={{"fontSize":"17px"}}>
+<Link prefetch={prefetch} className="brand" href="/" style={{"fontSize":"17px"}}>
 <FindEZWordmark width={96} height={27} />
 </Link>
 
 <nav aria-label="Footer navigation">
-<Link href="/solutions">Solutions</Link>
-<Link href="/research">Research</Link>
-<Link href="/pricing">
+<Link prefetch={prefetch} href="/solutions">Solutions</Link>
+<Link prefetch={prefetch} href="/research">Research</Link>
+<Link prefetch={prefetch} href="/pricing">
 {"Plans"}
 </Link>
-<Link href="/docs/api">
+<Link prefetch={prefetch} href="/docs/api">
 {"Developers"}
 </Link>
-<Link href="https://apps.apple.com/us/app/findez-ai/id6760401697">
+<Link prefetch={prefetch} href="https://apps.apple.com/us/app/findez-ai/id6760401697">
 {"iOS App"}
 </Link>
-<Link href="/privacy">
+<Link prefetch={prefetch} href="/privacy">
 {"Privacy"}
 </Link>
-<Link href="/terms">
+<Link prefetch={prefetch} href="/terms">
 {"Terms"}
 </Link>
-<Link href="mailto:info@findez.ai">
+<Link prefetch={prefetch} href="mailto:info@findez.ai">
 {"Contact"}
 </Link>
 </nav>

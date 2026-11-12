@@ -6,11 +6,11 @@ describe("OAuth callback", () => {
   });
 
   it("defaults missing and external destinations to home", () => {
-    expect(normalizeAuthNext(null)).toBe("/worlds");
-    expect(normalizeAuthNext("https://attacker.example")).toBe("/worlds");
-    expect(normalizeAuthNext("//attacker.example")).toBe("/worlds");
-    expect(normalizeAuthNext("/\\attacker.example")).toBe("/worlds");
-    expect(normalizeAuthNext("/\nattacker.example")).toBe("/worlds");
+    expect(normalizeAuthNext(null)).toBe("/home");
+    expect(normalizeAuthNext("https://attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("//attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("/\\attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("/\nattacker.example")).toBe("/home");
   });
 });
 
@@ -18,7 +18,7 @@ describe("email link completion",()=>{
  it("accepts only a confirmed session and normalizes the destination",async()=>{
   const auth={exchangeCodeForSession:jest.fn().mockResolvedValue({data:{session:{user:{id:"synthetic"}}},error:null})};
   expect(await resolveAuthCallback(auth,"synthetic-code","/reset-password")).toEqual({destination:"/reset-password"});
-  expect(await resolveAuthCallback(auth,"synthetic-code","https://attacker.example")).toEqual({destination:"/worlds"});
+  expect(await resolveAuthCallback(auth,"synthetic-code","https://attacker.example")).toEqual({destination:"/home"});
  });
  it("explains a rejected or consumed token without using another existing session",async()=>{
   const auth={exchangeCodeForSession:jest.fn()};

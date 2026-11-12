@@ -1,3 +1,4 @@
+import {FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import type { ReactNode } from "react";
 import styles from "./legal-document.module.css";
 
@@ -5,7 +6,7 @@ export type LegalSection = { id?: string; heading: string; body: string[]; bulle
 export function LegalDocument({ title, effective, intro, sections, footer }: {
   title: string; effective: string; intro: string; sections: LegalSection[]; footer: ReactNode;
 }) {
-  return <main className={styles.document}>
+  return <><main className={styles.document}>
     <article>
       <header className={styles.intro}><h1>{title}</h1><p className={styles.date}>Effective {effective}</p><p>{intro}</p></header>
       <nav className={styles.contents} aria-label={`${title} contents`}>
@@ -17,6 +18,6 @@ export function LegalDocument({ title, effective, intro, sections, footer }: {
         {section.bullets && <ul>{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
       </section>)}
     </article>
-    <footer className={styles.footer}>{footer}</footer>
-  </main>;
+    <nav className={styles.footer} aria-label="Related legal links">{footer}</nav>
+  </main><FooterMarkup/></>;
 }

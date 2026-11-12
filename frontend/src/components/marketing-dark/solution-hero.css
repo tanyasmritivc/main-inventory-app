@@ -1,0 +1,70 @@
+.landing-dark .solution-hero{position:relative;min-height:max(760px,100svh);display:grid;grid-template-rows:minmax(380px,1fr) auto;padding-top:72px}
+.landing-dark .sh-scene{position:relative;flex:1;min-height:380px;background:radial-gradient(55% 75% at 12% 0%,rgba(180,106,112,.38),transparent 70%),radial-gradient(45% 60% at 92% 100%,rgba(106,52,60,.5),transparent 70%),#000}
+.sh-scene canvas{position:absolute;inset:0;width:100%;height:100%}
+.sh-overlays{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.sh-name{position:absolute;left:0;top:0;height:26px;padding:0 10px;border-radius:13px;background:rgba(245,245,246,.95);color:#000;font-size:12px;font-weight:600;display:flex;align-items:center;white-space:nowrap;opacity:0;will-change:transform,opacity}
+.sh-bin{position:absolute;left:0;top:0;display:flex;gap:8px;align-items:center;font:500 11.5px ui-monospace,monospace;letter-spacing:.06em;color:rgba(245,245,246,.55);text-transform:uppercase;white-space:nowrap}
+.sh-bin i{font-style:normal;color:rgba(245,245,246,.35)}
+.sh-bin.hot,.sh-bin.hot i{color:#F58AAE}
+.sh-fade{position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(transparent,#000);pointer-events:none}
+.sh-question{position:absolute;left:50%;top:8%;transform:translate(-50%,10px);opacity:0;display:flex;align-items:center;gap:10px;height:46px;padding:0 8px 0 18px;border-radius:23px;background:#141416;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 20px 50px rgba(0,0,0,.6);font-size:15px;white-space:nowrap;transition:opacity .5s var(--e),transform .7s var(--e);pointer-events:none}
+.sh-question.on{opacity:1;transform:translate(-50%,0)}
+.sh-send{width:30px;height:30px;border-radius:50%;background:#F5F5F6;color:#000;display:grid;place-items:center}
+.sh-answer{position:absolute;left:0;top:0;opacity:0;transition:opacity .5s var(--e),transform .6s var(--e);height:34px;padding:0 13px;border-radius:17px;background:#F5F5F6;color:#000;font-size:13.5px;font-weight:600;display:flex;align-items:center;white-space:nowrap;pointer-events:none}
+.sh-answer.on{opacity:1}
+.sh-bottom{position:relative;z-index:2;min-width:0;padding:40px 0 72px}
+.sh-wrap{max-width:1240px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
+.landing-dark .solution-hero h1{font-size:clamp(36px,3vw,44px);font-weight:400;letter-spacing:-.04em;line-height:1.12;margin:0;text-align:left;max-width:none;text-wrap:balance}
+.solution-hero h1 span{color:#A3A3A8}
+.sh-controls{min-width:0;width:100%}
+.landing-dark .solution-hero .fz{max-width:none;margin:0}
+.landing-dark .solution-hero .fz-box{padding:6px 7px;gap:6px;background:#111112;min-height:50px}
+.landing-dark .solution-hero .fz textarea{font-size:15.5px;min-height:36px;height:36px;padding:8px 0;line-height:20px}
+.landing-dark .solution-hero .fz-b{width:36px;height:36px;flex:none}
+.landing-dark .solution-hero .fz-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;padding-top:10px;gap:8px}
+.landing-dark .solution-hero .fz-chip{min-width:0;max-width:100%;min-height:44px;height:auto;padding:7px 10px;font-size:12px;line-height:1.35;white-space:normal;text-align:center;text-wrap:balance}
+.landing-dark .solution-hero .fz.open .fz-chips{display:none}
+.landing-dark .solution-hero .sh-note{font-size:13.5px;color:#6C6C71;margin:12px 0 0;line-height:1.5;text-align:left}
+.sh-note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+/* Reserve the scene while its bundle loads, then reveal its first rendered frame. */
+.landing-dark .solution-hero .sh-scene{opacity:0}
+.landing-dark .solution-hero .sh-scene[data-ready="true"]{opacity:1;animation:sh-scene-enter .85s cubic-bezier(.22,1,.36,1) backwards}
+.landing-dark .solution-hero h1{animation:sh-content-enter .75s cubic-bezier(.22,1,.36,1) .08s backwards}
+.landing-dark .solution-hero .sh-controls{animation:sh-content-enter .75s cubic-bezier(.22,1,.36,1) .18s backwards}
+@keyframes sh-scene-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sh-content-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+ .landing-dark .solution-hero .sh-scene,
+ .landing-dark .solution-hero .sh-scene[data-ready="true"],
+ .landing-dark .solution-hero h1,
+ .landing-dark .solution-hero .sh-controls{animation:none;opacity:1;transform:none}
+}
+@media(max-width:900px){
+ .landing-dark .solution-hero{min-height:100svh;grid-template-rows:auto auto;align-content:start}
+ .landing-dark .sh-scene{flex:none;height:52svh;min-height:340px}
+ .sh-wrap{grid-template-columns:minmax(0,1fr);gap:18px}
+ .landing-dark .solution-hero h1{font-size:36px}
+ .landing-dark .solution-hero .fz-chips{display:flex;flex-wrap:wrap;justify-content:flex-start}
+ .landing-dark .solution-hero .fz-chip{min-height:32px;flex:0 1 auto;font-size:13px;text-align:left}
+ .sh-question{font-size:13px;height:40px}
+ .sh-bin,.sh-name{display:none}
+}
+@media(prefers-reduced-motion:reduce){.sh-question,.sh-answer{transition:none}}
+
+/* Keep the hero, introduction and demonstration visually distinct. */
+.landing-dark:has(.solution-hero) nav.top.sc{background:#09090a;border-radius:18px;box-shadow:0 0 0 1px #272729,0 10px 30px rgba(0,0,0,.35)}
+.landing-dark .solution-intro{padding:80px 0 88px;background:#080809;border-top:1px solid #202023;border-bottom:1px solid #202023}
+.landing-dark .solution-intro .prob{max-width:1240px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
+.landing-dark .solution-intro .h2{font-size:34px;line-height:1.16;max-width:440px;letter-spacing:-.035em}
+.landing-dark .solution-intro .prob p{font-size:17px;line-height:1.7;max-width:54ch;color:#a3a3a8}
+.landing-dark .solution-intro + .scene .zcap{top:max(104px,11vh)}
+.landing-dark .solution-intro + .scene .zt h3{font-size:32px;line-height:1.15}
+@media(max-width:900px){
+ .sh-bottom{padding:28px 0 48px}
+ .sh-wrap{gap:24px}
+ .landing-dark .solution-intro{padding:48px 0 56px}
+ .landing-dark .solution-intro .prob{grid-template-columns:minmax(0,1fr);gap:24px}
+ .landing-dark .solution-intro .h2{font-size:28px;max-width:24ch}
+ .landing-dark .solution-intro .prob p{font-size:16px;line-height:1.65}
+ .landing-dark .solution-intro + .scene .zt h3{font-size:26px}
+}

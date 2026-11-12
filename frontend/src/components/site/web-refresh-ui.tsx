@@ -38,16 +38,16 @@ export function QuickStart({ disabled, onPhoto, onImport, onFind, onLow }: {
   disabled: boolean; onPhoto: () => void; onImport: () => void; onFind: () => void; onLow: () => void;
 }) {
   const cards = [
-    { title: "Scan a photo", hint: PHOTO_SCAN_TIMING, palette: "dusk", Icon: ScanLine, action: onPhoto },
+    { title: "Scan a photo", hint: "", palette: "dusk", Icon: ScanLine, action: onPhoto },
     { title: "Import a sheet", hint: "CSV or Excel", palette: "slate", Icon: Table2, action: onImport },
     { title: "Find an item", hint: "Where and how many", palette: "moss", Icon: Search, action: onFind },
     { title: "Running low", hint: "What to restock", palette: "plum", Icon: ChartNoAxesColumnIncreasing, action: onLow },
   ];
   return <section className="refresh-quick-start" aria-label="Quick start">
     <p>Quick start</p><div>{cards.map(({ title, hint, palette, Icon, action }) =>
-      <button key={title} type="button" className="theme-card" disabled={disabled} onClick={action}>
+      <button key={title} type="button" className="theme-card" title={title === "Scan a photo" ? `${PHOTO_SCAN_TIMING} ${PHOTO_SCAN_TIP}` : undefined} disabled={disabled} onClick={action}>
         <span className={`resource-art resource-tile g-${palette}`}><Icon size={18} aria-hidden="true" /></span>
-        <strong>{title}</strong><small>{hint}</small>{title === "Scan a photo" && <small>{PHOTO_SCAN_TIP}</small>}
+        <strong>{title}</strong>{hint && <small>{hint}</small>}
       </button>)}
     </div>
   </section>;

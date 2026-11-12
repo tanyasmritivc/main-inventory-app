@@ -7,7 +7,7 @@ const life=lifecycle();
 const setTimeout=(fn,ms)=>life.timeout(fn,matchMedia('(prefers-reduced-motion: reduce)').matches?0:ms);
 const setInterval=life.interval,requestAnimationFrame=life.raf;
 const ic=(n,s)=>`<svg class="i" viewBox="0 0 24 24"${s?` style="width:${s}px;height:${s}px"`:''}>${IC[n]}</svg>`;
-const FZ_MARK=size=>{const mark=root.querySelector('#lg .brand-slot').cloneNode(true);const svg=mark.querySelector('svg');svg.setAttribute('width',size);svg.setAttribute('height',size);return mark.outerHTML};
+const FZ_MARK=size=>{const svg=document.querySelector('[data-marketing-brand]').cloneNode(true);const mark=document.createElement('span');mark.className='brand-slot dark';mark.appendChild(svg);svg.setAttribute('width',size);svg.setAttribute('height',size);return mark.outerHTML};
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const moveLayout=layoutMotion(life,reduce);
 const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),ease=t=>1-Math.pow(1-t,3);
@@ -66,7 +66,7 @@ function chapSet(c,i,first){const k=ORDER[i],S=SOL[k],sc=S.scene;c.style.setProp
  const rq=c.querySelector('[data-rq]');rq.innerHTML=`<div class="u">${sc.q[0]}</div><div class="a"><span class="k">${FZ_MARK(13)}</span><div>${sc.a[0]}</div></div>`;
  (c._tm||[]).forEach(clearTimeout);const d=first?150:520;c._tm=[setTimeout(()=>rq.children[0].classList.add('on'),d),setTimeout(()=>rq.children[1].classList.add('on'),d+550),
   setTimeout(()=>{const hi=names.findIndex(x=>x.n===sc.hit);if(hi>=0){bins[hi].classList.add('hit');bx.classList.add('hl')}},d+800)]}
-function frame(){pageFrame();root.querySelector('#nav').classList.toggle('sc',scrollY>20);
+function frame(){pageFrame();root.querySelector('#nav')?.classList.toggle('sc',scrollY>20);
  root.querySelectorAll('[data-scene]').forEach(sc=>{const p=reduce?1:prog(sc);const S=SOL[sc.dataset.scene].scene;const win=sc.querySelector('.win');const vis=reduce||sc.getBoundingClientRect().top<innerHeight*.8;win.classList.toggle('in',vis);
   const T=[.22,.3,.44,.52,.66,.74];const messages=[...sc.querySelectorAll('.wth .mw')];if(messages.some(m=>m.classList.contains('on')!==(p>=T[+m.dataset.s-1])))moveLayout(messages,()=>messages.forEach(m=>m.classList.toggle('on',p>=T[+m.dataset.s-1])),600);
   sc.querySelector('.wchat').classList.toggle('started',p>=T[0]);
@@ -88,12 +88,12 @@ root.querySelectorAll('[data-rail]').forEach(railSize);
 root.querySelectorAll('.nl>a').forEach(a=>a.classList.toggle('on',a.dataset.r===key||(a.dataset.r==='solutions'&&key.startsWith('sol:'))));
 life.listen(root,'landing-chat-open',()=>{if(!reduce)wave(hero)});
 life.listen(root,'click',e=>{const a=e.target.closest('a,button');if(!a)return;
- if(a.dataset.menu){root.querySelector('#mnav').classList.toggle('on',a.dataset.menu==='open');}
+ if(a.dataset.menu){root.querySelector('#mnav')?.classList.toggle('on',a.dataset.menu==='open');}
  if(a.hasAttribute('data-faq')){const open=a.parentNode.classList.toggle('open');a.setAttribute('aria-expanded',String(open));}
  if(a.hasAttribute('data-chapter-start')){e.preventDefault();root.querySelector('[data-chap]').scrollIntoView({behavior:reduce?'auto':'smooth'});}
  if(a.dataset.ck){e.preventDefault();const j=ORDER.indexOf(a.dataset.ck),c=root.querySelector('[data-chap]');if(reduce){chapSet(c,j,true)}else window.scrollTo({top:c.offsetTop+(c.offsetHeight-innerHeight)*(j+.5)/ORDER.length,behavior:'smooth'});}
 });
-life.listen(window,'keydown',e=>{if(e.key==='Escape')root.querySelector('#mnav').classList.remove('on')});
+life.listen(window,'keydown',e=>{if(e.key==='Escape')root.querySelector('#mnav')?.classList.remove('on')});
 io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:newPages?0:.12});root.querySelectorAll('.rv').forEach(e=>reduce?e.classList.add('in'):io.observe(e));splitAll();frame();
 life.dispose(()=>{io?.disconnect();tio?.disconnect()});
 let lastY=-1;function frameNow(){if(scrollY===lastY)return;lastY=scrollY;frame()}life.listen(window,'scroll',frameNow,{passive:true});
@@ -101,7 +101,7 @@ let rz;life.listen(window,'resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{clea
 (function(){if(reduce)return;let target=scrollY,cur=scrollY,running=false,lastT=0,own=0;
  const maxY=()=>document.documentElement.scrollHeight-innerHeight;
  const canScroll=(el,dy)=>{for(;el&&el!==document.body&&el!==document.documentElement;el=el.parentElement){const s=getComputedStyle(el);if(/(auto|scroll)/.test(s.overflowY)&&el.scrollHeight>el.clientHeight+1){if(dy>0&&el.scrollTop+el.clientHeight<el.scrollHeight-1)return true;if(dy<0&&el.scrollTop>0)return true}}return false};
- life.listen(window,'wheel',e=>{if(e.ctrlKey||root.querySelector('#mnav').classList.contains('on'))return;
+ life.listen(window,'wheel',e=>{if(e.ctrlKey||root.querySelector('#mnav')?.classList.contains('on'))return;
   let dy=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1);if(Math.abs(e.deltaX)>Math.abs(dy))return;if(canScroll(e.target,dy))return;e.preventDefault();
   if(!running){target=cur=scrollY}
   // keep a small amount of lag so a new scroll always moves the page right away

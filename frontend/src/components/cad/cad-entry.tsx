@@ -50,9 +50,9 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
   }, [accountId, world, allowed, attempt]);
   const ready = allowed && directory?.world === world;
   return <AppShell><section className={styles.page}>
-    <header className={styles.hero}><div className={styles.topline}><span className={styles.preview}>CAD INTELLIGENCE / PREVIEW</span><a href="/docs/cad" target="_blank" rel="noreferrer">Setup guide ↗</a></div><h1>Start with your inventory.</h1>
+    <header className={styles.hero}><div className={styles.topline}><a href="/docs/cad" target="_blank" rel="noreferrer">Setup guide ↗</a></div><h1>Start with your inventory.</h1>
       <p>Choose where your parts are stored. Then bring in a Fusion assembly or spreadsheet to compare.</p></header>
-    <div className={styles.card}>
+    <div className={`${styles.card} ${styles.inventoryPicker}`}>
       <label className={styles.file}>Organization
         <select value={world} onChange={event => { setWorld(event.target.value); setDirectory(null); setError(""); }}>
           <option value="personal">Personal</option>
@@ -65,7 +65,7 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
         : organizations !== null && !allowed ? <p role="alert">You do not have access to this organization. Choose another organization.</p>
         : !ready ? <p role="status">Loading inventories...</p>
         : directory.inventories.length ? <ul className={styles.inventoryList}>{directory.inventories.map(inventory => <li key={inventory.inventory_id}>
-          <Link href={`/cad?inventory=${encodeURIComponent(inventory.inventory_id)}`}><span><small>{inventory.workspace_name}</small><strong>{inventory.name}</strong></span><span aria-hidden="true">→</span></Link>
+          <Link href={`/cad?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><small>{inventory.workspace_name}</small><span aria-hidden="true">→</span></Link>
         </li>)}</ul>
         : <p>No inventories are available here. <Link href="/workspaces">Open workspaces</Link> to create or join one.</p>}
     </div>

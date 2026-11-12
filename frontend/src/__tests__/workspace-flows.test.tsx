@@ -208,8 +208,8 @@ test("retrying a question leaves an older empty failed reply separate from the p
   await screen.findByText("The answer did not finish.");
   await user.click(screen.getByRole("button", { name: "Ask" }));
   expect(screen.getByText("The answer did not finish.")).toBeTruthy();
-  expect(screen.getAllByLabelText("Checking your inventory... Show progress")).toHaveLength(1);
-  expect(screen.getAllByRole("timer")).toHaveLength(1);
+  expect(screen.getAllByText("Checking your inventory…")).toHaveLength(1);
+  expect(screen.getByText("Checking your inventory…").getAttribute("role")).toBe("status");
 });
 test.each([0, 3])("Home shows attention only for actual pending work (%i captures)", async (pending) => {
   const original = jest.mocked(accountRequest).getMockImplementation()!;

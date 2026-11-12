@@ -1,7 +1,7 @@
+import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
-import { FindEZMark, FindEZWordmark } from "@/components/site/findez-brand";
+import { FindEZMark } from "@/components/site/findez-brand";
 
 export const metadata: Metadata = {
   title: "Get the FindEZ AI app",
@@ -13,11 +13,7 @@ const APP_STORE_URL = "https://apps.apple.com/us/app/findez-ai/id6760401697";
 
 export default function MobileAppPage() {
   return (
-    <main className="mobile-app-page">
-      <nav>
-        <Link href="/" className="landing-wordmark"><FindEZWordmark width={112} height={30}/></Link>
-        <Link href="/docs/api">Developers</Link>
-      </nav>
+    <><HeaderMarkup reserveSpace/><main className="mobile-app-page">
       <section className="mobile-app-content">
         <div className="mobile-app-copy">
           <span className="landing-kicker">FindEZ for iPhone</span>
@@ -39,7 +35,6 @@ export default function MobileAppPage() {
           </div>
         </div>
       </section>
-      <footer><span>© 2026 AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
-    </main>
+    </main><FooterMarkup/></>
   );
 }

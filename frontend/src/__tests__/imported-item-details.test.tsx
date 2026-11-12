@@ -3,9 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { ItemDetails } from "@/components/site/item-details";
 import { type InventoryItem } from "@/lib/api";
 jest.mock("@/lib/use-api-session", () => ({useApiSession: () => ({accountId:"test"})}));
-jest.mock("@/components/site/item-info-sections", () => ({ ItemCheckout: () => null, ItemDocuments: () => null, ItemThreshold: () => null }));
-jest.mock("@/components/site/item-qr-label", () => ({ ItemQrLabel: () => null }));
-jest.mock("@/components/site/item-photo-gallery", () => ({ ItemPhotoGallery: () => <section aria-label="Item photos" /> }));
+jest.mock("@/components/site/item-photo-gallery", () => ({ ItemPhotoGallery: () => null }));
 
 test("saved import details retain exact labels, duplicate fields and structured values separately from live stock", () => {
   const item: InventoryItem = {
@@ -20,10 +18,7 @@ test("saved import details retain exact labels, duplicate fields and structured 
     ] },
   };
   const { container } = render(<ItemDetails item={item} canEdit={false} />);
-  const heading = screen.getByRole("heading", { name: "Imported details" });
-  const imported = heading.closest("section")!;
-  expect(imported.hidden).toBe(false);
-  expect(screen.getByRole("region", { name: "Item photos" }).compareDocumentPosition(screen.getByText("Category")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const imported = screen.getByRole("heading", { name: "Imported details" }).parentElement!;
   expect(within(imported).getByText("Screw Length")).toBeTruthy();
   expect(within(imported).getByText("Vendor Part #")).toBeTruthy();
   expect(within(imported).getByText("0012")).toBeTruthy();

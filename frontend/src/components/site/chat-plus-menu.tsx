@@ -1,5 +1,5 @@
 "use client";
-import { PhotoScanHint } from "./photo-scan-hint";
+import { PHOTO_SCAN_TIMING, PHOTO_SCAN_TIP } from "./photo-scan-hint";
 import Link from "next/link";
 import {
   Plus,
@@ -63,11 +63,10 @@ export function ChatPlusMenu({
         collisionPadding={12}
         className={styles.menu}
       >
-        <DropdownMenuItem onSelect={() => onSelect("auto_extract")}>
+        <DropdownMenuItem title={`${PHOTO_SCAN_TIMING} ${PHOTO_SCAN_TIP}`} onSelect={() => onSelect("auto_extract")}>
           <Sparkles />
           Auto Extract
         </DropdownMenuItem>
-        <div style={{ padding: "0 10px" }}><PhotoScanHint /></div>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Paperclip />
@@ -129,7 +128,7 @@ export function ChatPlusMenu({
             <DropdownMenuItem asChild>
               <Link href="/docs/api#ai-assistants">
                 <LinkIcon />
-                Connections
+                AI assistant integrations
               </Link>
             </DropdownMenuItem>
           </DropdownMenuSubContent>

@@ -1,7 +1,7 @@
 export type Audience = 'robotics' | 'workshops' | 'makers' | 'labs' | 'home';
 export type PageKey = 'home' | 'solutions' | 'founders' | 'plans' | `sol:${Audience}`;
 export interface DemoItem { n: string; q: number; loc: string; img?: string; low: number }
-export interface Solution { t:string; d:string; h:string; p:string; win:string; blurb:string; prob:[string,string]; note?:[string,string,string]; uh?:[string,string]; items:DemoItem[]; sheet?:string[][]; asks:string[]; scene:{q:string[]; a:string[]; hit:string; add:[string,string,string]}; labels:string[]; card:[string,string]; uses:[string,string][]; cta:string }
+export interface Solution { t:string; d:string; h:string; p:string; win:string; blurb:string; prob:[string,string]; uh?:[string,string]; items:DemoItem[]; sheet?:string[][]; asks:string[]; scene:{q:string[]; a:string[]; hit:string; add:[string,string,string]}; labels:string[]; card:[string,string]; uses:[string,string][]; cta:string }
 export const FZ_ITEMS: DemoItem[] = [
   {
     "n": "M3 x 10mm screws",
@@ -98,11 +98,6 @@ export const SOL: Record<Audience, Solution> = {
     "prob": [
       "Tournament day is not the time to search every bin.",
       "Your team has parts, tools, spare components, and equipment spread across bins, drawers, and storage. Someone remembers seeing the part, but nobody remembers exactly where. FindEZ helps your team search what you've recorded instead of relying only on memory."
-    ],
-    "note": [
-      "As a robotics mentor and FindEZ user, I know how much time teams can lose tracking down parts during tournament season. We built FindEZ to make our existing inventory easier to access: bring in the spreadsheet, capture parts, and ask what we have when we need it. The goal is simple. Less searching, more building.",
-      "Tanya",
-      "Founder of FindEZ AI and FTC robotics mentor"
     ],
     "items": [
       {

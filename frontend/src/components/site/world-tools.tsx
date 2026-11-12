@@ -1,12 +1,14 @@
 "use client";
-import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
+import { Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { InventoryChatArchive } from "./inventory-chat-archive";
 import styles from "./world-tools.module.css";
+import { CommerceDashboardCard } from "./commerce-dashboard-card";
 
 const tools = [
   ["Capture / Import", "Photos, barcodes and spreadsheets", "/scan"],
+  ["CAD Intelligence", "Compare a Fusion assembly with your inventory", "/cad"],
   ["Documents", "Files for your inventory", "/documents"],
   ["Review", "Check items before saving", "/review"],
   ["Activity", "Recent inventory changes", "/activity"],
@@ -15,12 +17,12 @@ const tools = [
   ["Labels", "Print and identify items", "/labels"],
   ["Inventory settings", "Access and preferences", "/inventory-access"],
 ] as const;
-const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
+const toolIcons = [Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
 type Inventory = { inventory_id: string; name: string; workspace_name: string; can_edit: boolean };
-export function WorldTools({accountId, inventories}: {accountId: string; inventories: Inventory[]}) {
+export function WorldTools({accountId, inventories, organizationId}: {accountId: string; inventories: Inventory[]; organizationId?: string}) {
   const [selected, setSelected] = useState("");
   const inventory = inventories.find(i => i.inventory_id === selected) || inventories[0];
-  if (!inventory) return <p className={styles.empty}>Create an inventory to use these tools.</p>;
+  if (!inventory) return <div className={styles.page}><CommerceDashboardCard organizationId={organizationId} /><p className={styles.empty}>Create an inventory to use the inventory tools below.</p></div>;
   return <div className={styles.page}>
     <div className={styles.toolbar}>
       <label className={styles.selector}>Inventory
@@ -31,6 +33,7 @@ export function WorldTools({accountId, inventories}: {accountId: string; invento
       {!inventory.can_edit && <small>View only</small>}
       <InventoryChatArchive key={inventory.inventory_id} accountId={accountId} inventoryId={inventory.inventory_id} name={inventory.name} />
     </div>
+    <CommerceDashboardCard inventoryId={inventory.inventory_id} />
     <div className={styles.grid}>
       {tools.map(([label, detail, path], index) => { const Icon = toolIcons[index]; return <Link key={path} className={`${styles.card} theme-card`} href={`${path}?inventory=${encodeURIComponent(inventory.inventory_id)}`}>
         <span className="theme-tool-icon"><Icon size={18} aria-hidden="true" /></span><span><strong>{label}</strong><small>{detail}</small></span>

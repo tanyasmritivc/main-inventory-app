@@ -1,11 +1,12 @@
+import {HeaderMarkup as SharedHeader} from "./public-chrome";
+export {FooterMarkup} from "./public-chrome";
+// Homepage and Solutions already mount the same scroll behavior via HeaderMotion.
+export function HeaderMarkup(props: {cadHref?:string;currentPage?:string} = {}) {
+  return <SharedHeader {...props} manageScroll={false}/>;
+}
 import Image from 'next/image';
 // Literal server-rendered copy and sample data from the supplied landing design.
 export function BackgroundMarkup(){return (<canvas id={"x-bg"} aria-hidden={"true"}></canvas>);}
-export function HeaderMarkup({cadHref="/cad-intelligence",currentPage}:{cadHref?:string;currentPage?:string}={}){return (<header className={"x-nav"} id={"x-nav"}><div className={"x-in"}>
-<a className={"x-logo"} href={"/"}><svg width={"20"} height={"20"} viewBox={"0 0 100 100"} fill={"#F5F5F6"}><path d={"M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z"}></path></svg>{"FindEZ AI"}</a>
-<nav className={"x-links"}><a href={"/solutions"} className={currentPage==="solutions"?"here":undefined} aria-current={currentPage==="solutions"?"page":undefined}>{"Solutions"}</a><a href={cadHref}>{"CAD Intelligence"}</a><a href={"/founders"}>{"Founders Access"}</a><a href={"/docs/api"}>{"Developers"}</a><div className="x-dd"><button className="x-ddb" type="button" aria-haspopup="true">Community<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="m6 9 6 6 6-6"/></svg></button><div className="x-ddm"><a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener">Discord</a><a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener">Instagram</a></div></div></nav>
-<div className={"x-act"}><a className={"si"} href={"/signin"}>{"Sign in"}</a><a className={"x-p w"} href={"/desktop"}>{"Download"}</a></div>
-</div></header>);}
 export function HeroMarkup(){return (<section className={"x-hero"}><div className={"x-in"}>
 <h1 className={"x-h1"}>{"The AI inventory for people who build things."}<span >{"Snap a shelf. Ask where anything is. Get the exact bin."}</span></h1>
 <div className={"x-ctas"}><a className={"x-p w lg"} href={"https://apps.apple.com/us/app/findez-ai/id6760401697"}><svg width={"14"} height={"16"} viewBox={"0 0 814 1000"} fill={"currentColor"}><path d={"M788 341c-6 4-108 62-108 190 0 148 130 200 134 201-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-166 41s-106-57-156-127C44 789 0 668 0 553c0-184 120-282 238-282 63 0 115 41 155 41 38 0 97-44 168-44 27 0 124 3 188 95zM554 169c29-35 50-83 50-131 0-7-1-13-2-19-47 2-104 32-138 72-27 30-52 79-52 128 0 7 1 15 2 17 3 1 8 1 13 1 43 0 97-29 127-68z"}></path></svg>{"Download for iPhone"}</a><a className={"x-p d lg"} href={"/signin"}>{"Open the web app"}</a></div>
@@ -70,9 +71,3 @@ export function FoundersMarkup(){return (<section className={"x-sec fa2"} id={"x
 <div className={"fa-grid"}></div></div><div className={"fa-shadow"}></div></div>
 </div>
 </div></section>);}
-export function FooterMarkup({cadHref="/cad-intelligence"}:{cadHref?:string}={}){return (<footer className={"x-foot"}><div className={"x-in"}>
-<div className={"x-fg"}><div ><a className={"x-logo"} href={"/"}><svg width={"20"} height={"20"} viewBox={"0 0 100 100"} fill={"#F5F5F6"}><path d={"M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z"}></path></svg>{"FindEZ AI"}</a><p className={"x-tag"}>{"Know what you have. Find what you need. Instantly."}</p></div>
-<div ><h4 >{"Product"}</h4><a href={"/founders"}>{"Founders Access"}</a><a href={cadHref}>{"CAD Intelligence"}</a><a href={"/solutions"}>{"Solutions"}</a><a href={"/pricing"}>{"Plans & access"}</a><a href={"https://apps.apple.com/us/app/findez-ai/id6760401697"}>{"iPhone app"}</a><a href={"/docs/api"}>{"Developers"}</a></div>
-<div ><h4 >{"Company"}</h4><a href={"/research"}>{"Research"}</a><a href={"mailto:info@findez.ai"}>{"Contact"}</a><a href={"/privacy"}>{"Privacy"}</a><a href={"/terms"}>{"Terms"}</a></div><div><h4>Community</h4><a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener">Discord</a><a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener">Instagram</a></div></div>
-<div className={"x-fb"}><span >{"© 2026 AI Robots Inc."}</span><span >{"FindEZ AI answers from what’s recorded in your inventory."}</span></div>
-</div></footer>);}

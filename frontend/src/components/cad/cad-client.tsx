@@ -66,7 +66,7 @@ export function CadClient() {
   const visibleRows = rows.slice(page * 100, (page + 1) * 100);
   return <section className={styles.page}>
     <header className={styles.hero}>
-      <div className={styles.topline}><span className={styles.preview}>CAD INTELLIGENCE / PREVIEW</span><a className={styles.guideLink} href="/docs/cad" target="_blank" rel="noreferrer"><BookOpen size={16} /> Setup guide <ArrowUpRight size={14} /></a></div>
+      <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad" target="_blank" rel="noreferrer"><BookOpen size={16} /> Setup guide <ArrowUpRight size={14} /></a></div>
       <h1>Know what you can build.</h1>
       <p>Bring a parts list. Find out what you have and what you still need.</p>
     </header>

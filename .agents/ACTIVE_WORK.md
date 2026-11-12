@@ -1840,3 +1840,11 @@ on phones. Removed excess heading margin above the buttons. Only cad-public.css
 changed live. Preserved concurrent production release findez-welcome-assets-20261111
 with matching source hash. Build 1OYtWPFTTHqBSE_qpy4V6 and TypeScript passed;
 updated heading wrapping and smaller description visually verified in Safari.
+
+## Web launch audit, November 11, 2026 (active)
+
+Owner: current Codex task, fix/web-launch-readiness-20261111. Audit and fix the
+complete web surface against actual deployed source from findez-welcome-assets-20261111.
+Production frontend snapshot synchronized locally without secrets. No production
+write tests or customer account deletion. Full Jest, type/lint/build, API contract
+and user-flow checks pending. Preserve other active production work with source guards.

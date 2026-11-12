@@ -1,0 +1,12 @@
+.page { max-width: 1040px; }
+.intro { color: var(--text-secondary); line-height: 1.6; margin: 0 0 24px; }
+.selector { display: grid; gap: 8px; max-width: 520px; margin: 0 0 20px; font-size: 14px; }
+.selector select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--light-line); border-radius: 8px; color: var(--ink); background: var(--light-panel); }
+.selector select:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.paging { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.page details { margin: 24px 0; padding: 16px 20px; border: 1px solid var(--light-line); border-radius: 12px; }
+.page summary { cursor: pointer; font-weight: 600; }
+.page details ol { list-style: decimal; padding-left: 24px; margin: 16px 0; }
+.page details li { padding-left: 4px; margin: 12px 0; line-height: 1.65; }
+.page details p { line-height: 1.65; color: var(--text-secondary); }
+.page details a { text-decoration: underline; text-underline-offset: 3px; }

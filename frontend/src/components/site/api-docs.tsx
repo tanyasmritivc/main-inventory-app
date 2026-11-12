@@ -1,6 +1,8 @@
+import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import Link from "next/link";
 import { apiOrigin, apiReference, endpoints, requestExamples, resolveSchema, schemaConstraints, schemaType, type Schema, type Endpoint } from "@/lib/api-reference";
-import { CodeExample, DocsNavigation } from "./api-docs-controls";
+import { CodeExample, DocsNavigation, DocsAppearance } from "./api-docs-controls";
+import { AppThemeProvider } from "./use-app-theme";
 import { AiAssistantSetup } from "./ai-assistant-setup";
 import styles from "./api-docs.module.css";
 
@@ -51,18 +53,18 @@ const permissionRows = [
 export function ApiDocs() {
   const limits = apiReference["x-limits"];
   const queryEndpoint = endpoints.find((entry) => entry.path === "/api/v1/query")!;
-  return <div className={styles.page}>
+  return <AppThemeProvider><HeaderMarkup reserveSpace/><div className={styles.page}>
     <a href="#api-docs-content" className={styles.skipLink}>Skip to documentation</a>
-    <header className={styles.header}><Link href="/" className={styles.brand}>FindEZ <span>/ Developers</span></Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link></div></header>
+    <header className={styles.header} style={{top:52}}><Link href="/docs/api" className={styles.brand}>API documentation</Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
     <div className={styles.layout}>
       <aside className={styles.sidebar}><DocsNavigation /></aside>
       <main id="api-docs-content" className={styles.content}>
-        <div className={styles.hero}><p className={styles.eyebrow}>Integration API · v1</p><h1>Build with your inventory.</h1><p>Connect FindEZ workspace inventory to reports, scripts, and external tools. Start with a read-only request, then explore the complete endpoint reference.</p><div className={styles.baseUrl}><span>Base URL</span><code>{apiOrigin}/api/v1</code></div><p className={styles.muted}>Public documentation · No sign-in needed · Examples use fictional data</p></div>
+        <div className={styles.hero}><p className={styles.eyebrow}>Integration API · v1</p><h1>Build with your inventory.</h1><p>Connect FindEZ workspace inventory to reports, scripts, and external tools. Issue a scoped key, verify its access, and connect inventory or organization tools using the complete endpoint reference.</p><div className={styles.baseUrl}><span>Base URL</span><code>{apiOrigin}/api/v1</code></div><p className={styles.muted}>Public documentation · Reviewed November 11, 2026 · Examples use fictional data</p></div>
 
         <section id="quickstart"><h2>Your first connection</h2><ol>
           <li>Sign in to FindEZ and open <Link href="/home">your workspaces</Link>. Create or use a workspace you own, open an inventory, and add a Space containing items. Workspace keys require ownership. Organization owners and admins can choose their organization for management keys, even before it has workspaces.</li>
           <li>Open <Link href="/settings/api-keys">Settings → API keys</Link>. Name the integration, choose the workspace, keep the default read permissions, and choose an expiration. The web form defaults to 90 days.</li>
-          <li>Create the key and copy it to your integration’s private credential settings. The full value is shown once. Use <strong>Test connection</strong> before dismissing it: read keys run an inventory count; workspace-only keys check the summary; write-only keys check authentication without writing.</li>
+          <li>Create the key and copy it to your integration’s private credential settings. The full value is shown once. Use <strong>Test connection</strong> before dismissing it: read keys run an inventory count; workspace-only keys check the summary; directory-read keys check organization access; write-only keys check authentication without writing.</li>
           <li>For the examples below, use macOS Terminal (zsh or bash). Run this command on its own, paste the key at the hidden prompt, then press Return:</li>
         </ol>
         <CodeExample label="Enter your API key" examples={{ Shell: "read -rs FINDEZ_API_KEY" }} />
@@ -71,6 +73,20 @@ export function ApiDocs() {
         <CodeExample label="First inventory request" examples={requestExamples(endpoints.find((entry) => entry.path === "/api/v1/items" && entry.method === "GET")!)} />
         <p>A successful response contains <code>items</code>, <code>page</code>, <code>page_size</code>, and <code>total</code>. An empty array is a valid result: check that the selected workspace has a linked Space with items. Response examples below are illustrative; your IDs, dates, and values will differ.</p>
         <p>When finished, run <code>unset FINDEZ_API_KEY</code>. The cURL examples use <code>--fail-with-body</code> (cURL 7.76+); Python uses the standard library, and JavaScript runs in Node.js 18+ with no packages. On Windows, use your tool’s private credential settings or run the shell instructions in WSL.</p>
+        </section>
+
+        <section id="verify-key"><h2>Verify an API key</h2>
+          <p>Start with a key you just created in <Link href="/settings/api-keys">Settings → API keys</Link>. The built-in Test connection uses read requests only. To check a key already stored in your integration, load it privately as described above and run this identity request.</p>
+          <CodeExample label="Verify key identity" examples={requestExamples(endpoints.find((entry) => entry.path === "/api/v1/whoami")!)} />
+          <p>HTTP 200 confirms the key is recognized and currently accepted. Check its returned boundary and scopes. It does not prove access to a particular inventory, permission to write, or successful configuration of an external assistant.</p>
+          <div className={styles.tableWrap}><table><caption>Check the access your integration needs</caption><thead><tr><th>Permission on the key</th><th>Read-only verification</th><th>Expected result</th></tr></thead><tbody>
+            <tr><td><code>items:read</code> or <code>org:read</code></td><td><code>GET /items?page=1&amp;page_size=1</code>, then <code>POST /query</code> with <code>{'{"resource":"items","aggregate":"count"}'}</code></td><td>HTTP 200 with an items array and a numeric count. Zero is valid; check linked Spaces and current content access.</td></tr>
+            <tr><td><code>workspace:read</code> or <code>org:read</code></td><td><code>GET /workspaces/summary</code></td><td>HTTP 200 with summaries for visible workspaces.</td></tr>
+            <tr><td><code>structure:read</code></td><td><code>GET /organization/directory?kind=workspace&amp;page_size=1</code></td><td>HTTP 200 for the bound organization, including an empty directory.</td></tr>
+            <tr><td>Write or deletion permissions only</td><td><code>GET /whoami</code></td><td>Authentication only. Test writes separately with disposable records you own; deletion still requires human confirmation.</td></tr>
+          </tbody></table></div>
+          <h3>Rotate or revoke, then verify</h3><p>Create and test a replacement, update the integration&apos;s credential, and revoke the old key in Settings. Repeat <code>GET /whoami</code> with the old key: it should return HTTP 401 with <code>revoked_api_key</code>. An expired key returns <code>expired_api_key</code>; an unrecognized key returns <code>invalid_api_key</code>. Signing out, closing a browser, or uninstalling a connector does not revoke its key. Requests already completed and data already exported are not undone.</p>
+          <p>Never paste keys into support messages or screenshots. Report only the key name or prefix, HTTP status, error code, correlation ID, and request time. If an issued key cannot be copied or its creation response is lost, refresh the key list, revoke the unused entry, and create a replacement.</p>
         </section>
 
         <section id="authentication"><h2>Authentication & permissions</h2><p>The app calls these shared containers workspaces. This version of the API retains legacy Team names and <code>team_id</code> fields for compatibility. A key created with organization_id is limited to that named organization and the issuer’s current permissions. The legacy “All workspaces I own” option retains its original inventory-only behavior. Personal inventories are not exposed by these integration keys.</p><p>Send <code>Authorization: Bearer &lt;credential&gt;</code> on every API request over HTTPS. Use the API host above; <code>findez.ai</code> serves the web app. Credentials belong in the header, never the URL. Production keys start with <code>findez_live_sk_</code>, followed by 32 URL-safe characters; development keys start with <code>findez_test_sk_</code>. Each environment only accepts its own keys. A test prefix does not create a production sandbox, and the public service does not offer a documented test-data environment.</p>
@@ -150,8 +166,8 @@ export function ApiDocs() {
         <p>Shopify and Amazon seller authorization, where enabled, are separate from consumer order-history uploads. Use the available setup in Connections. A built-in provider integration does not add provider webhook subscriptions or scheduled jobs to the public FindEZ API.</p>
         <p>The request contract is generated from the current router and validated by the test suite. The route version is <code>v1</code>; no deprecation timetable or compatibility guarantee beyond the documented behavior has been announced. Keep clients tolerant of additional response fields and unexpected errors.</p>
         <p>Contact <a href="mailto:info@findez.ai">info@findez.ai</a> with the method, path, HTTP status, error code, correlation ID, approximate UTC request time, and a redacted example. Never send the key, user token, Authorization header, or private inventory data.</p>
-        <div className={styles.footerLinks}><Link href="/settings/api-keys">Manage API keys ↗</Link><Link href="/docs/api/openapi.json" download="findez-openapi.json">Download OpenAPI JSON ↓</Link><a href="#quickstart">Back to start ↑</a></div></section>
+        <div className={styles.footerLinks}><Link href="/settings/api-keys">Manage API keys ↗</Link><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms of Service</Link><Link href="/docs/api/openapi.json" download="findez-openapi.json">Download OpenAPI JSON ↓</Link><a href="#quickstart">Back to start ↑</a></div></section>
       </main>
     </div>
-  </div>;
+  </div><FooterMarkup/></AppThemeProvider>;
 }

@@ -52,12 +52,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/findez-petals-96.png", sizes: "96x96", type: "image/png" },
-      { url: "/brand/findez-favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/brand/findez-favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/findez-favicon.svg", sizes: "any", type: "image/svg+xml" },
+      { url: "/brand/findez-tab-20261111-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/brand/findez-tab-20261111-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/brand/findez-tab-20261111-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/findez-tab-20261111.svg", sizes: "any", type: "image/svg+xml" },
     ],
-    shortcut: "/brand/findez-petals-96.png",
+    shortcut: "/brand/findez-tab-20261111-96.png",
     apple: [{ url: "/brand/findez-app-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
