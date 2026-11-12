@@ -1770,3 +1770,12 @@ unchanged. Deployed to self-hosted findez-connections-ui-20261111; build
 VGfvTcwW2l7s4YEF2AFOt passed and public /solutions returns 200. Initial deployment
 check exhausted disk space and automatically restored the previous release.
 Retry clears the regenerable webpack cache after building and succeeded.
+
+## Compact landing header, November 11, 2026
+
+Applied the same compact header sizing to the homepage through the shared header
+CSS: 52px height, 13px nav/actions, tighter spacing and smaller logo/button.
+Hero buttons and page content untouched. Single stylesheet deployed to the active
+self-hosted findez-connections-ui-revert-20261111 release after matching its prior
+hash. Production build mezOlTvRqwnapNaKzvA8p passed; homepage returns 200 and
+compiled CSS includes the compact header.
