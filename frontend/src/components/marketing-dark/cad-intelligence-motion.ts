@@ -160,10 +160,9 @@ for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1
     else if (replayPending) play();
   }
   const trigger = new IntersectionObserver(entries => {
-    // Start at the viewport edge rather than waiting for 35% of the tall card.
-    windowVisible = entries[0].isIntersecting;
+    windowVisible = entries[0].isIntersecting && entries[0].intersectionRatio >= .35;
     if (windowVisible && !motion.matches && (!started || replayPending)) { started = true; play(); }
-  }, { threshold: 0 });
+  }, { threshold: [0,.35] });
   const canvasObserver = new IntersectionObserver(entries => { canvasVisible = entries[0].isIntersecting; refreshCanvas(); });
   const resizeObserver = new ResizeObserver(size);
   trigger.observe(element('win')); canvasObserver.observe(cv); resizeObserver.observe(cv);

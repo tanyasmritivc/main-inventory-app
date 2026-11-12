@@ -12,6 +12,9 @@ import { AmazonHistoryImport } from "./amazon-history-import";
 import { PurchaseLibrary } from "./purchase-library";
 import { PurchaseEmailClient } from "./purchase-email-client";
 
+// Keep merchant setup out of Connections until these integrations are ready.
+const showMerchantSetup = false;
+
 const marketplaces = [
   ["na", "ATVPDKIKX0DER", "United States"], ["na", "A2EUQ1WTGCTBG2", "Canada"], ["na", "A1AM78C64UM0Y8", "Mexico"],
   ["eu", "A1F83G8C2ARO7P", "United Kingdom"], ["eu", "A1PA6795UKMFR9", "Germany"], ["eu", "A13V1IB3VIYZZH", "France"],
@@ -149,7 +152,7 @@ export function ScopedCommerce({ accountId, ownerName, scope, inventory, invento
       onSaved={async connection => { await reload(); if (!scope) await readRecords(connection); else setNotice("Purchase history saved. Your purchase library is updated below Check before buying."); }} />
     {inventory && capabilities?.amazon_gmail?.configured && <details><summary>Optional Gmail purchase updates</summary><PurchaseEmailClient accountId={accountId} inventoryId={inventory.inventory_id} configured={capabilities?.amazon_gmail?.configured ?? false}
       available={!!capabilities?.amazon_gmail} request={request} /></details>}
-    <div className={styles.grid}>
+    {showMerchantSetup && <div className={styles.grid}>
       <section className={styles.card}><h2>Shopify store</h2><p>Read your store&apos;s product catalog, available stock, and recent sales.</p>
         {!loading && !configured("shopify") && <p className={styles.hint}>Shopify connections are not enabled yet.</p>}
         <form onSubmit={(event) => connect(event, "shopify")}><label htmlFor="commerce-shop">Store domain</label>
@@ -163,7 +166,7 @@ export function ScopedCommerce({ accountId, ownerName, scope, inventory, invento
           <label htmlFor="commerce-market">Marketplace</label><select id="commerce-market" value={marketplace} onChange={(event) => setMarketplace(event.target.value)} disabled={busy || loading || !configured("amazon_seller")}>{marketplaces.map((entry) => <option key={entry[1]} value={entry[1]}>{entry[2]}</option>)}</select>
           <button className={styles.primary} disabled={busy || loading || !configured("amazon_seller")}>Connect Amazon seller</button>
         </form></section>
-    </div>
+    </div>}
     <section className={styles.card}><div className={styles.heading}><h2>Your connections</h2><button disabled={busy || loading} onClick={() => void perform(reload)}>Refresh</button></div>
       {!loading && !connections.length && <p>No connections for this owner yet.</p>}
       {connections.map((connection) => <article key={connection.id} className={styles.connection}>

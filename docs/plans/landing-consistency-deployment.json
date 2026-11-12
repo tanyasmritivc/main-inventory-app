@@ -1,0 +1,15 @@
+{
+  "deployed_at": "2026-11-12T01:09:37.855827+00:00",
+  "live": "/home/ubuntu/findez-landing-consistency-20261111/frontend",
+  "build_id": "zGaMXbw-c2VgTKdGxLlYG",
+  "changed_files": [
+    "src/components/marketing-dark/cad-intelligence-motion.ts",
+    "src/components/marketing-dark/home-entry.css",
+    "src/components/site/commerce-client.tsx"
+  ],
+  "preserved_files": 627,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

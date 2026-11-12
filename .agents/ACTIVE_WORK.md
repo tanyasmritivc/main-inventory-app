@@ -1830,3 +1830,17 @@ Changed-file ESLint and the production build/TypeScript passed. Activated the
 self-hosted findez-cad-immediate-20261111 release with one source-file change,
 preserving 629 other files. Live Chrome scroll showed the upload animation
 running when the card entered view. Receipt: docs/plans/cad-immediate-deployment.json.
+
+Landing-page follow-up, November 11: user clarified header/footer scope is the
+landing page, not dashboard or auth. Homepage header remains visible on scroll
+through a homepage-only override; its existing footer stays at the page bottom.
+Restored the CAD demo's prior 35% visibility trigger per explicit revert request.
+Shopify and Amazon seller setup forms are temporarily omitted from Connections;
+Amazon consumer imports, purchase library and existing connection management stay
+available. No provider/backend/auth data changes.
+
+Changed-file ESLint and production build/TypeScript passed. Deployed three files
+on self-hosted findez-landing-consistency-20261111, preserving 627 other files.
+Live Chrome verified header remains visible after scrolling down into CAD.
+Signed-in Connections visual acceptance was not performed. Receipt:
+docs/plans/landing-consistency-deployment.json.
