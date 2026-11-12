@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAD Intelligence | FindEZ AI</title>
+<style>
+/* Fonts: Inter, Inter Tight and Geist Mono from the site's existing setup. */
+
+/* Fonts: Inter, Inter Tight and Geist Mono from the site's existing setup. */
+
+:root{--bk:#000;--w:#F5F5F6;--g1:#A1A1A6;--g2:#6E6E73;--g3:#3A3A3D;--ln:#1F1F21;--ln2:#2C2C2E;--pn:#0E0E0F;--pn2:#161618;--amb:#E3B45C;--e:cubic-bezier(.32,.72,0,1)}
+html,body{background:#000!important;color:var(--w)}
+body{overflow-x:hidden}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.x-in{max-width:1240px;margin:0 auto;padding:0 40px}
+/* nav */
+.x-nav{position:fixed;top:0;left:0;right:0;z-index:60;height:60px;background:linear-gradient(#000 40%,rgba(0,0,0,0));transition:background .3s,opacity .35s ease,transform .45s cubic-bezier(.32,.72,0,1)}
+.x-nav.hid{opacity:0;transform:translateY(-14px);pointer-events:none}
+.x-nav.sc{background:#000;box-shadow:0 1px 0 var(--ln)}
+.x-nav .x-in{max-width:none;height:100%;display:flex;align-items:center;padding:0 32px}
+.x-logo{display:flex;align-items:center;gap:9px;font:500 16px Inter;letter-spacing:-.01em;color:var(--w);text-decoration:none}
+.x-links{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:30px;font-size:14px}
+.x-links a{color:var(--g1);text-decoration:none}.x-links a:hover{color:var(--w)}
+.x-act{margin-left:auto;display:flex;align-items:center;gap:18px}
+.x-act .si{font-size:14px;color:var(--g1);text-decoration:none}.x-act .si:hover{color:var(--w)}
+.x-p{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:17px;font:500 14px Inter;text-decoration:none;white-space:nowrap;transition:background .2s}
+.x-p.w{background:var(--w);color:#000}.x-p.w:hover{background:#fff}
+.x-p.d{background:#1C1C1E;color:var(--w)}.x-p.d:hover{background:#262628}
+.x-p.lg{height:44px;padding:0 20px;border-radius:22px;font-size:15px}
+/* hero */
+.x-hero{padding:150px 0 0}
+.x-h1{font:500 34px/1.2 'Inter Tight',Inter;letter-spacing:-.025em;color:var(--w)}
+.x-h1 span{display:block;color:var(--g2)}
+.x-ctas{margin-top:28px;display:flex;gap:10px;flex-wrap:wrap}
+.x-small{margin-top:14px;font-size:13px;color:var(--g2)}
+.x-stagew{margin-top:64px;position:relative}
+.x-stage{position:relative;width:100%;aspect-ratio:1160/720}
+.x-scale{position:absolute;left:0;top:0;width:1160px;height:720px;transform-origin:0 0}
+.x-under{margin-top:14px;display:flex;justify-content:space-between;gap:10px}
+.x-chipb{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:17px;background:#111113;box-shadow:inset 0 0 0 1px var(--ln2);color:var(--g1);font:500 13px Inter;border:0;cursor:pointer}
+.x-chipb:hover{color:var(--w)}
+/* ---------- app window ---------- */
+.app{position:absolute;inset:0;border-radius:14px;overflow:hidden;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D,0 40px 120px -20px rgba(0,0,0,.9);display:flex;font-family:Inter;color:#EDEDEF;font-size:13px}
+.sb{width:236px;flex:none;border-right:1px solid #1C1C1E;display:flex;flex-direction:column;padding:16px 12px}
+.sb .lg{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 14px}
+.sb .lg b{display:flex;align-items:center;gap:8px;font:500 18px Inter;letter-spacing:-.02em}
+.sb .ic{width:30px;height:30px;border-radius:8px;box-shadow:inset 0 0 0 1px #2A2A2D;display:grid;place-items:center}
+.org{display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border-radius:10px;box-shadow:inset 0 0 0 1px #242427;margin-bottom:18px}
+.av{width:26px;height:26px;border-radius:8px;background:#232326;display:grid;place-items:center;font-size:12px;font-weight:500}
+.org>span:nth-child(2){flex:1}
+.sl{font-size:12px;color:#8E8E93;padding:0 10px 8px}
+.ni{display:flex;align-items:center;gap:11px;height:34px;padding:0 10px;border-radius:8px;color:#C9C9CE;font-size:13.5px}
+.ni.on{background:#1C1C1F;color:#fff}
+.ni svg{flex:none}
+.sb .gap{height:18px}
+.fa{margin-top:auto;display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:10px;box-shadow:inset 0 0 0 1px #3A3A3D;font-size:13.5px}
+.fa span{flex:1}
+.me{display:flex;align-items:center;gap:10px;padding:14px 6px 4px}
+.me .av{border-radius:13px;background:#2A2A2D}
+.me small{display:block;color:#8E8E93;font-size:11.5px;margin-top:1px}
+.mn{flex:1;display:flex;flex-direction:column;position:relative}
+.tb{height:56px;display:flex;align-items:center;padding:0 22px;border-bottom:1px solid #161618;font-size:14px}
+.tb .rt{margin-left:auto;display:flex;align-items:center;gap:14px}
+.goto{height:32px;display:flex;align-items:center;gap:10px;padding:0 10px 0 12px;border-radius:9px;box-shadow:inset 0 0 0 1px #242427;color:#8E8E93}
+.goto i{font-style:normal;font-size:11px;padding:2px 6px;border-radius:5px;box-shadow:inset 0 0 0 1px #2E2E31}
+.tb .av{border-radius:14px;width:28px;height:28px;background:#2A2A2D}
+.cv{flex:1;position:relative;overflow:hidden}
+.col{position:absolute;left:50%;width:660px;margin-left:-330px;top:0;bottom:0}
+.msg{position:absolute;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .5s var(--e)}
+.msg.on{opacity:1;transform:none}
+.mu{right:0;max-width:420px;padding:11px 15px;border-radius:16px;background:#1C1C1F;font-size:14px;display:flex;align-items:center;gap:10px}
+.mu img{width:34px;height:34px;border-radius:7px;object-fit:cover}
+.ma{left:0;max-width:560px;font-size:14px;line-height:1.5;color:#C9C9CE}
+.ma b{color:#fff;font-weight:500}
+.icard{margin-top:10px;display:flex;align-items:center;gap:12px;padding:9px 14px 9px 9px;border-radius:12px;background:#141416;box-shadow:inset 0 0 0 1px #232326;width:max-content}
+.icard img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+.icard small{display:block;color:#8E8E93;font-size:12px;margin-top:2px}
+/* review panel */
+.rv{position:absolute;left:0;right:0;top:80px;height:420px;border-radius:16px;background:#121214;box-shadow:inset 0 0 0 1px #232326;opacity:0;transform:translateY(14px) scale(.985);transition:opacity .45s,transform .6s var(--e);display:flex;flex-direction:column}
+.rv.on{opacity:1;transform:none}
+.rvh{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;font-size:15px}
+.rvh .x{margin-left:auto;width:28px;height:28px;border-radius:14px;background:#1E1E21;display:grid;place-items:center}
+.rvb{flex:1;display:flex;gap:16px;padding:0 18px;min-height:0}
+.pic{position:relative;width:238px;flex:none;border-radius:12px;overflow:hidden;background:#000}
+.pic img{position:absolute;left:0;top:50%;width:100%;transform:translateY(-50%)}
+.pic .scan{position:absolute;left:0;right:0;height:60px;top:-60px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.07) 70%,rgba(255,255,255,.5) 99%,transparent)}
+.pin{position:absolute;width:18px;height:18px;border-radius:9px;background:#fff;color:#000;font:600 10px Inter;display:grid;place-items:center;opacity:0;transform:scale(.5);transition:opacity .25s,transform .35s var(--e);box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.pin.on{opacity:1;transform:none}
+.lst{flex:1;display:flex;flex-direction:column;min-width:0}
+.lh{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:#8E8E93;padding:2px 0 8px}
+.its{flex:1;overflow:hidden;position:relative}
+.it{display:flex;gap:12px;padding:9px 0;align-items:flex-start;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .45s var(--e)}
+.it.on{opacity:1;transform:none}
+.ck{width:20px;height:20px;border-radius:6px;background:#F2F2F3;display:grid;place-items:center;flex:none;margin-top:10px}
+.th{position:relative;flex:none}
+.th img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+.th b{position:absolute;left:-6px;top:-6px;width:16px;height:16px;border-radius:8px;background:#F2F2F3;color:#000;font:600 9.5px Inter;display:grid;place-items:center}
+.it .t{font-size:14px;color:#fff}
+.it .d{font-size:12px;color:#8E8E93;margin-top:2px}
+.nr{display:inline-flex;margin-left:8px;height:18px;align-items:center;padding:0 7px;border-radius:5px;background:rgba(227,180,92,.14);color:var(--amb);font-size:11px;vertical-align:1px}
+.rvf{display:flex;align-items:center;gap:14px;padding:12px 18px;margin-top:10px;border-top:1px solid #1E1E21}
+.rvf p{flex:1;font-size:12px;color:#8E8E93;line-height:1.45}
+.sp{position:relative}
+.spb{height:36px;padding:0 14px;border-radius:18px;background:#F2F2F3;color:#000;font:500 13.5px Inter;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:transform .15s}
+.spb.pr{transform:scale(.96)}
+.dd{position:absolute;right:0;bottom:44px;width:210px;padding:6px;border-radius:12px;background:#1A1A1D;box-shadow:inset 0 0 0 1px #2C2C2F,0 20px 40px -10px #000;opacity:0;transform:translateY(6px);transition:opacity .25s,transform .35s var(--e);pointer-events:none}
+.dd.on{opacity:1;transform:none}
+.dd div{height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:8px;color:#D6D6DA;font-size:13px}
+.dd div.hl{background:#28282B;color:#fff}
+.toast{position:absolute;left:50%;top:18px;transform:translate(-50%,-12px);height:38px;padding:0 16px;border-radius:19px;background:#F2F2F3;color:#000;display:flex;align-items:center;gap:8px;font:500 13px Inter;opacity:0;transition:opacity .3s,transform .5s var(--e);z-index:5}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ask{margin:0 auto 10px;width:660px;height:96px;border-radius:16px;background:#121214;box-shadow:inset 0 0 0 1px #232326;position:relative;padding:14px 16px}
+.ask .ph{font-size:14px;color:#8E8E93}
+.ask .ph.ty{color:#fff}
+.ask .ph i{display:inline-block;width:1.5px;height:15px;background:#fff;vertical-align:-2px;animation:xb 1s steps(1) infinite}
+@keyframes xb{50%{opacity:0}}
+.ask .att{position:absolute;left:52px;bottom:12px;display:flex;align-items:center;gap:8px;height:30px;padding:0 10px 0 4px;border-radius:8px;background:#1C1C1F;font-size:12px;color:#C9C9CE;opacity:0;transition:opacity .3s}
+.ask .att.on{opacity:1}
+.ask .att img{width:22px;height:22px;border-radius:5px;object-fit:cover}
+.ask .pl{position:absolute;left:14px;bottom:12px;width:30px;height:30px;display:grid;place-items:center;border-radius:15px}
+.ask .snd{position:absolute;right:12px;bottom:12px;width:32px;height:32px;border-radius:16px;box-shadow:inset 0 0 0 1px #2A2A2D;display:grid;place-items:center;transition:background .2s}
+.ask .snd.on{background:#F2F2F3}
+.ask .snd.on path{stroke:#000}
+.disc{text-align:center;font-size:11.5px;color:#6E6E73;padding-bottom:12px}
+.cur{position:absolute;left:600px;top:640px;z-index:20;pointer-events:none;transition:left .9s cubic-bezier(.45,0,.2,1),top .9s cubic-bezier(.45,0,.2,1)}
+.cur svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));transition:transform .12s}
+.cur.dn svg{transform:scale(.85)}
+/* ---------- sections ---------- */
+.x-sec{padding:160px 0}
+.x-h2{font:500 30px/1.22 'Inter Tight',Inter;letter-spacing:-.022em}
+.x-h2 span{display:block;color:var(--g2)}
+.cad{padding-top:160px!important}
+/* how it works */
+.hw{margin-top:54px;display:grid;grid-template-columns:.85fr 1.15fr;gap:48px;align-items:stretch}
+.hs{border-top:1px dashed #2E2E31;padding:18px 0 18px;cursor:pointer;position:relative}
+.hs:last-child{border-bottom:1px dashed #2E2E31}
+.hs .h{display:flex;gap:28px;font-size:16px;color:var(--g2);transition:color .3s}
+.hs .h b{font-weight:400;width:14px}
+.hs p{margin:8px 0 0 42px;font-size:14px;line-height:1.5;color:var(--g1);max-height:0;overflow:hidden;opacity:0;transition:max-height .5s var(--e),opacity .4s}
+.hs.on .h{color:var(--w)}.hs.on p{max-height:80px;opacity:1}
+.hs i{display:none}
+.hv{position:relative;border:1px dashed #2E2E31;border-radius:14px;overflow:hidden;min-height:440px;background:radial-gradient(60% 60% at 50% 40%,#121214,#000)}
+.vs{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .6s}
+.vs.on{opacity:1}
+.v1{width:78%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 0 0 1px #2A2A2D}
+.v1 img{width:100%;height:100%;object-fit:cover}
+.v1 .scan{position:absolute;left:0;right:0;height:80px;top:-80px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.08) 70%,rgba(255,255,255,.55) 99%,transparent)}
+.vs.on .v1 .scan{animation:xs 2.6s cubic-bezier(.45,0,.2,1) infinite}
+@keyframes xs{to{top:100%}}
+.vcard{width:76%;border-radius:14px;background:#121214;box-shadow:inset 0 0 0 1px #232326;padding:12px 16px}
+.vcard .r{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid #1E1E21;font-size:14px}
+.vcard .r:first-child{border-top:0}
+.vcard img{width:36px;height:36px;border-radius:7px;object-fit:cover}
+.vcard .q{margin-top:0;margin-left:auto;font:500 13px 'Geist Mono',monospace;color:var(--g1)}
+.vsp{width:62%}
+.vsp .dd{position:static;opacity:1;transform:none;width:100%}
+.vsp .spb{margin-top:12px;justify-content:center}
+.vchat{width:76%;display:flex;flex-direction:column;gap:12px}
+.vchat .mu,.vchat .ma{position:static;opacity:1;transform:none}
+.vchat .mu{align-self:flex-end}
+/* examples */
+.mq{margin-top:54px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.mqr{display:flex;gap:14px;width:max-content;animation:xm 70s linear infinite}
+@keyframes xm{to{transform:translateX(-50%)}}
+.ex{width:420px;flex:none;border:1px dashed #2E2E31;border-radius:12px;padding:26px 26px 22px;display:flex;flex-direction:column;justify-content:space-between;min-height:200px}
+.ex .q{margin-top:0;font-size:19px;line-height:1.35;letter-spacing:-.01em}
+.ex .a{margin-top:10px;font-size:15px;color:var(--g1)}
+.ex .w{margin-top:26px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--g2)}
+.ex .w b{width:26px;height:26px;border-radius:13px;background:#1C1C1F;display:grid;place-items:center;font-weight:500;color:var(--g1);font-size:11px}
+.x-note{margin-top:14px;font-size:12.5px;color:var(--g2)}
+/* founders */
+.fa2 .x-ctas{margin-top:26px}
+.fa2 .fine{margin-top:14px;font-size:13px;color:var(--g2);max-width:480px;line-height:1.5}
+/* footer */
+.x-foot{border-top:1px solid var(--ln);padding:64px 0 40px}
+.x-fg{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px}
+.x-fg h4{font:400 13px Inter;color:var(--g2);margin-bottom:12px}
+.x-fg a{display:block;color:var(--g1);text-decoration:none;font-size:14px;line-height:2.1}.x-fg a:hover{color:var(--w)}
+.x-fg .x-logo{display:flex;line-height:1}
+.x-tag{margin-top:12px;font-size:14px;color:var(--g1);line-height:1.5}
+.x-fb{margin-top:56px;display:flex;justify-content:space-between;gap:20px;font-size:12.5px;color:var(--g2)}
+@media (max-width:980px){
+ .x-in{padding:0 16px}.x-nav .x-in{padding:0 16px}.x-links{display:none}.x-act .si{display:none}
+ .x-hero{padding-top:110px}.x-h1{font-size:28px}
+ .x-stagew{margin-top:40px}
+ .x-sec{padding:110px 0}.x-h2{font-size:25px}
+ .hw{grid-template-columns:1fr;gap:28px}.hv{min-height:340px}
+ .ex{width:300px;min-height:180px}.ex .q{font-size:17px}
+ .x-fg{grid-template-columns:1fr 1fr}.x-fg>div:first-child{grid-column:1/-1}.x-fb{flex-direction:column}
+}
+@media (prefers-reduced-motion:reduce){.mqr{animation:none}.vs.on .v1 .scan{animation:none}}
+
+/* ---------- v2: smooth scroll, tilt, morph ---------- */
+#x-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;transition:opacity .7s}
+body>section,body>footer,body>header{position:relative;z-index:1}
+body>header{z-index:60;position:fixed}
+.x-stagew{perspective:2000px}
+.x-stage{transform-origin:50% 0;will-change:transform}
+.x-hgrid{position:absolute;left:0;right:0;top:0;height:900px;pointer-events:none;z-index:0}
+.x-h2 span.wd,.wd{display:inline-block;opacity:0;transform:translateY(.45em);transition:opacity .6s,transform .8s var(--e)}
+.x-h2.on span.wd{opacity:1;transform:none}
+.x-h2>span.wd{color:var(--w)}
+.pm{position:relative;height:320vh}
+.x-afterpm{padding-top:0!important;margin-top:-6vh}
+@media (max-width:980px){.x-afterpm{margin-top:56px}}
+.pm-st{position:sticky;top:0;height:100vh;overflow:hidden}
+.pm-st canvas{position:absolute;inset:0;width:100%;height:100%}
+.pm-cp{position:absolute;left:max(40px,calc((100vw - 1160px)/2));top:50%;transform:translateY(-50%);width:340px;z-index:2}
+.pm-ph{margin-top:40px;display:flex;flex-direction:column}
+.pm-r{position:relative;padding:16px 0 16px 0;border-top:1px dashed #2E2E31}
+.pm-r:last-child{border-bottom:1px dashed #2E2E31}
+.pm-r .k{font:500 12px 'Geist Mono',monospace;color:var(--g3);transition:color .3s}
+.pm-r .t{margin-top:6px;font-size:16px;color:var(--g2);transition:color .3s}
+.pm-r .d{margin-top:6px;font-size:13.5px;line-height:1.5;color:var(--g2);max-height:0;opacity:0;overflow:hidden;transition:max-height .5s var(--e),opacity .4s}
+.pm-r.on .k{color:var(--g1)}.pm-r.on .t{color:var(--w)}.pm-r.on .d{max-height:60px;opacity:1}
+.pm-r i{display:none}
+@media (max-width:980px){.pm{height:300vh}.pm-cp{left:16px;right:16px;width:auto;top:84px;transform:none}.pm-ph{margin-top:18px;flex-direction:row;gap:10px}.pm-r{flex:1;border:0;border-top:1px dashed #2E2E31;padding:10px 0}.pm-r:last-child{border-bottom:0}.pm-r .d{display:none}.pm-r .t{font-size:13px}}
+
+/* founders access card */
+.fa-card{position:relative;overflow:hidden;border-radius:28px;background:radial-gradient(70% 90% at 78% 40%,#1E1E21 0%,#0E0E0F 55%,#070708 100%);box-shadow:inset 0 0 0 1px #2A2A2D,0 0 0 1px #000;display:grid;grid-template-columns:1fr 1fr;align-items:center;min-height:620px;padding:72px}
+#fa-dots{position:absolute;inset:0;width:100%;height:100%}
+.fa-copy{position:relative;z-index:2}
+.fa-tag{font-size:12px;letter-spacing:.14em;color:var(--g1);display:inline-flex;align-items:center;gap:10px}
+.fa-tag:before{content:'';width:22px;height:1px;background:var(--g1)}
+.fa-h{margin-top:22px;font:500 56px/1.02 'Inter Tight',Inter;letter-spacing:-.045em;color:#fff}
+.fa-h span{display:block;margin-top:14px;font:400 20px/1.4 Inter;letter-spacing:-.01em;color:var(--g1);max-width:420px}
+.fa-list{list-style:none;padding:0;margin:28px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;max-width:480px}
+.fa-list li{display:flex;align-items:center;gap:10px;font-size:14.5px;color:#DADADD}
+.fa-stage{position:relative;z-index:1;height:440px;perspective:1600px;display:grid;place-items:center}
+.fa-pass{-webkit-font-smoothing:antialiased;backface-visibility:hidden;will-change:transform;position:relative;width:420px;height:264px;border-radius:24px;transform-style:preserve-3d;transform:rotateX(14deg) rotateY(-20deg) rotateZ(4deg);overflow:hidden;
+ background:linear-gradient(135deg,#F4F4F6 0%,#C9C9CE 28%,#8E8E93 52%,#D9D9DE 74%,#7A7A80 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(255,255,255,.35),0 50px 80px -30px rgba(0,0,0,.9);color:#0B0B0C;padding:26px 28px}
+.fa-sheen{position:absolute;inset:-40%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.75) 50%,transparent 60%);transform:translateX(-60%)}
+.fa-grid{position:absolute;inset:0;background-image:radial-gradient(rgba(0,0,0,.14) 1px,transparent 1.2px);background-size:12px 12px;-webkit-mask-image:linear-gradient(115deg,transparent 45%,#000);mask-image:linear-gradient(115deg,transparent 45%,#000);pointer-events:none}
+.fa-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between}
+.fa-top span{font-size:11px;letter-spacing:.2em;color:rgba(11,11,12,.6)}
+.fa-name{position:relative;z-index:1;margin-top:58px;font:600 34px 'Inter Tight',Inter;letter-spacing:-.035em}
+.fa-bot{position:relative;z-index:1;margin-top:16px;display:flex;gap:40px;font-size:14px;font-weight:500}
+.fa-bot small{display:block;font-size:10px;letter-spacing:.16em;color:rgba(11,11,12,.55);margin-bottom:3px;font-weight:500}
+.fa-shadow{position:absolute;left:50%;bottom:38px;width:340px;height:40px;margin-left:-170px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.85),transparent)}
+@media (max-width:980px){.fa-card{grid-template-columns:1fr;padding:40px 22px 10px;min-height:0;border-radius:22px}.fa-h{font-size:38px}.fa-h span{font-size:17px}.fa-list{grid-template-columns:1fr}.fa-stage{height:300px}.fa-pass{width:300px;height:190px;padding:18px 20px;border-radius:18px}.fa-name{margin-top:30px;font-size:25px}.fa-bot{gap:24px;font-size:12.5px}.fa-shadow{width:240px;margin-left:-120px;bottom:30px}}
+
+.x-dd{position:relative}
+.x-ddb{display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;font-size:14px;color:var(--g1);cursor:pointer}
+.x-ddb:hover,.x-dd:focus-within .x-ddb{color:var(--w)}
+.x-ddm{position:absolute;left:50%;top:100%;margin-top:14px;transform:translate(-50%,-4px);min-width:160px;padding:6px;border-radius:12px;background:#111113;box-shadow:inset 0 0 0 1px #2C2C2E,0 20px 40px -12px #000;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--e)}
+.x-ddm:before{content:'';position:absolute;left:0;right:0;top:-16px;height:16px}
+.x-dd:hover .x-ddm,.x-dd:focus-within .x-ddm{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.x-ddm a{display:block;padding:8px 12px;border-radius:8px;color:var(--g1);text-decoration:none;font-size:14px}
+.x-ddm a:hover{background:#1C1C1F;color:var(--w)}
+
+html,body{font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#x-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;transition:opacity .7s}
+body>section,body>footer{position:relative;z-index:1}
+.x-h2 span.wd,.wd{display:inline-block;opacity:0;transform:translateY(.45em);transition:opacity .6s,transform .8s var(--e)}
+.x-h2.on span.wd{opacity:1;transform:none}
+.x-h2>span.wd{color:var(--w)}
+.x-links a.here{color:var(--w)}
+:root{--amb:#E3B45C}
+.c-sec{padding:150px 0}
+.c-lead{margin-top:18px;font-size:17px;line-height:1.55;color:var(--g1);max-width:560px}
+.chip-pv{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:14px;box-shadow:inset 0 0 0 1px #2C2C2E;font:500 12px 'Geist Mono',monospace;color:var(--g1);letter-spacing:.04em}
+/* hero */
+.c-hero{padding:150px 0 30px}
+.c-h1{margin-top:0;font:500 60px/1.02 'Inter Tight',Inter;letter-spacing:-.045em;max-width:920px}
+.c-h1 span{display:block;color:var(--g2)}
+/* pinned */
+.cm{position:relative;height:340vh}
+.cm-st{position:sticky;top:0;height:100vh;overflow:hidden}
+#cmc{position:absolute;inset:0;width:100%;height:100%}
+.cm-cp{position:absolute;left:max(40px,calc((100vw - 1160px)/2));top:50%;transform:translateY(-50%);width:300px;z-index:2}
+.cm-ph{margin-top:36px}
+.cm-r{padding:15px 0;border-top:1px dashed #2E2E31}
+.cm-r:last-child{border-bottom:1px dashed #2E2E31}
+.cm-r .t{font-size:16px;color:var(--g2);transition:color .3s}
+.cm-r .d{margin-top:6px;font-size:13.5px;line-height:1.5;color:var(--g2);max-height:0;opacity:0;overflow:hidden;transition:max-height .5s var(--e),opacity .4s}
+.cm-r.on .t{color:var(--w)}.cm-r.on .d{max-height:70px;opacity:1}
+/* results */
+.rs{margin-top:54px;border-radius:16px;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D,0 40px 100px -30px #000;overflow:hidden}
+.rs-top{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid #1C1C1E}
+.rs-top .f{font-size:14px}.rs-top .f small{display:block;margin-top:2px;color:var(--g2);font-size:12.5px}
+.rs-top .sp{margin-left:auto;display:flex;align-items:center;gap:12px}
+.rs-ex{height:32px;padding:0 14px;border-radius:16px;background:#F2F2F3;color:#0B0B0C;font:500 13px Inter;display:flex;align-items:center;gap:8px;text-decoration:none}
+.rs-tabs{display:flex;border-bottom:1px solid #1C1C1E}
+.rs-tab{flex:1;border:0;background:none;text-align:left;padding:16px 20px;cursor:pointer;border-right:1px solid #1C1C1E;color:var(--g2);transition:background .3s,color .3s}
+.rs-tab:last-child{border-right:0}
+.rs-tab b{display:block;font:500 28px 'Inter Tight',Inter;letter-spacing:-.03em;color:inherit}
+.rs-tab span{font-size:13px}
+.rs-tab.on{background:#111113;color:var(--w)}
+.rs-tab.on.am b{color:var(--amb)}
+.rs-body{display:grid;grid-template-columns:1fr 320px;min-height:300px}
+.rs-list{padding:8px 20px}
+.rs-row{display:flex;align-items:center;gap:14px;height:56px;border-bottom:1px solid #18181A;font-size:14px;opacity:0;transform:translateY(6px);transition:opacity .35s,transform .45s var(--e)}
+.rs-row.on{opacity:1;transform:none}
+.rs-row .nm{flex:1}.rs-row .nm small{display:block;margin-top:2px;font:500 11px 'Geist Mono',monospace;color:var(--g2)}
+.rs-row .q{font:500 13px 'Geist Mono',monospace;color:var(--g1);width:110px;text-align:right}
+.st{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;white-space:nowrap}
+.st.ok{color:var(--g1);box-shadow:inset 0 0 0 1px #3A3A3D}
+.st.sh{color:#1A1305;background:var(--amb)}
+.st.ms{color:var(--amb);box-shadow:inset 0 0 0 1px rgba(227,180,92,.55)}
+.st.rv{color:var(--w);box-shadow:inset 0 0 0 1px #6E6E73;background:#1C1C1F}
+.rs-def{border-left:1px solid #1C1C1E;padding:22px 22px}
+.rs-def .k{font:500 11px 'Geist Mono',monospace;letter-spacing:.08em;color:var(--g2)}
+.rs-def p{margin-top:10px;font-size:15px;line-height:1.55;color:var(--g1)}
+.rs-def p b{color:var(--w);font-weight:500}
+/* pipeline */
+.pl{position:relative;margin-top:70px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.pl-line{position:absolute;left:12px;right:12px;top:23px;height:1px;background:#2C2C2E}
+.pl-run{position:absolute;left:12px;top:20px;width:7px;height:7px;border-radius:4px;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.08);animation:plr 8s cubic-bezier(.6,0,.4,1) infinite}
+@keyframes plr{0%{left:12px}22%{left:12px}25%{left:calc(25% + 6px)}47%{left:calc(25% + 6px)}50%{left:calc(50% + 6px)}72%{left:calc(50% + 6px)}75%{left:calc(75% + 6px)}97%{left:calc(75% + 6px)}100%{left:calc(100% - 19px)}}
+.pl-n{position:relative}
+.pl-ic{width:48px;height:48px;border-radius:14px;background:#0E0E0F;box-shadow:inset 0 0 0 1px #2C2C2E;display:grid;place-items:center;position:relative;z-index:1;transition:box-shadow .3s,background .3s}
+.pl-n.on .pl-ic{background:#F2F2F3;box-shadow:none}
+.pl-n.on .pl-ic svg{stroke:#0B0B0C}
+.pl-n h3{margin-top:20px;font:500 19px 'Inter Tight',Inter;letter-spacing:-.02em}
+.pl-n p{margin-top:8px;font-size:14px;line-height:1.55;color:var(--g1);max-width:250px}
+.pl-n code{font:500 12.5px 'Geist Mono',monospace;color:var(--w);background:#161618;padding:2px 6px;border-radius:5px}
+/* files */
+.fl{margin-top:54px;display:grid;grid-template-columns:1fr 1.25fr;gap:56px;align-items:center}
+.fl-tabs{display:flex;flex-direction:column}
+.fl-tab{display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:none;text-align:left;padding:18px 0;border-top:1px dashed #2E2E31;cursor:pointer;color:var(--g2);font:400 18px Inter;transition:color .3s}
+.fl-tab:last-child{border-bottom:1px dashed #2E2E31}
+.fl-tab small{font:500 12px 'Geist Mono',monospace;color:var(--g3)}
+.fl-tab.on{color:var(--w)}.fl-tab.on small{color:var(--g1)}
+.fl-note{margin-top:22px;font-size:13.5px;line-height:1.6;color:var(--g2)}
+.fl-note a{color:var(--g1)}
+.fl-win{border-radius:14px;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D;overflow:hidden}
+.fl-bar{height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid #1C1C1E;font:500 12px 'Geist Mono',monospace;color:var(--g1)}
+.fl-bar i{width:9px;height:9px;border-radius:5px;background:#2A2A2D}
+.fl-bar span{margin-left:8px}
+.fl-pre{margin:0;padding:18px 20px;min-height:320px;font:500 12.5px/1.75 'Geist Mono',monospace;color:var(--g1);white-space:pre;overflow:hidden}
+.fl-pre .k{color:var(--w)}.fl-pre .s{color:#C9C9CE}.fl-pre .n{color:var(--amb)}.fl-pre .c{color:var(--g3)}
+.fl-grid{width:100%;border-collapse:collapse;font:500 12.5px 'Geist Mono',monospace}
+.fl-grid td{border:1px solid #1E1E21;padding:8px 10px;color:var(--g1);white-space:nowrap}
+.fl-grid tr:first-child td{background:#141416;color:var(--w)}
+.fl-grid td:first-child{width:34px;color:var(--g3);text-align:center;background:#101012}
+/* evidence */
+.ev{margin-top:54px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.ev-card{border-radius:16px;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D;padding:24px}
+.ev-h{display:flex;align-items:center;gap:14px}
+.ev-h .ic{width:44px;height:44px;border-radius:11px;background:#161618;display:grid;place-items:center}
+.ev-h b{font-weight:500;font-size:15px}.ev-h small{display:block;margin-top:2px;font:500 11.5px 'Geist Mono',monospace;color:var(--g2)}
+.ev-r{margin-top:20px}
+.ev-r .top{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.ev-r .top span:last-child{font:500 11.5px 'Geist Mono',monospace;color:var(--g1)}
+.ev-r .v{margin-top:4px;font:500 12px 'Geist Mono',monospace;color:var(--g2)}
+.ev-bar{margin-top:10px;height:6px;border-radius:3px;background:#18181A;overflow:hidden}
+.ev-bar i{display:block;height:100%;width:0;background:#F2F2F3;transition:width 1.4s var(--e)}
+.ev-bar i.weak{background:#6E6E73}
+.ev.on .ev-bar i{width:var(--w2)}
+.ev-res{margin-top:22px;padding-top:18px;border-top:1px solid #1C1C1E;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--g1)}
+/* privacy */
+.pv{margin-top:54px;border-radius:16px;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D;overflow:hidden}
+.pv svg{display:block;width:100%;height:auto}
+.pv-txt{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1C1C1E}
+.pv-txt div{padding:22px 24px;font-size:14.5px;line-height:1.55;color:var(--g1)}
+.pv-txt div+div{border-left:1px solid #1C1C1E}
+.pv-txt b{display:block;margin-bottom:6px;color:var(--w);font-weight:500}
+/* limits */
+.lm{margin-top:48px;border-top:1px dashed #2E2E31}
+.lm-r{display:grid;grid-template-columns:44px 1fr 1.2fr;gap:20px;align-items:center;padding:24px 0;border-bottom:1px dashed #2E2E31}
+.lm-r h3{font:500 20px 'Inter Tight',Inter;letter-spacing:-.02em}
+.lm-r p{font-size:14.5px;color:var(--g1);line-height:1.55}
+.lm-r .ic{width:36px;height:36px;border-radius:18px;box-shadow:inset 0 0 0 1px #3A3A3D;display:grid;place-items:center}
+/* start */
+.gs{margin-top:54px;display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:start}
+.gs-r{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0;border-top:1px dashed #2E2E31}
+.gs-r:last-child{border-bottom:1px dashed #2E2E31}
+.gs-r h3{font:500 21px 'Inter Tight',Inter;letter-spacing:-.02em}
+.gs-r p{margin-top:6px;font-size:14.5px;line-height:1.5;color:var(--g1);max-width:400px}
+.gs-tree{border-radius:14px;background:#0B0B0C;box-shadow:0 0 0 1px #2A2A2D;overflow:hidden}
+.gs-tree pre{margin:0;padding:20px 22px;font:500 13px/1.9 'Geist Mono',monospace;color:var(--g1)}
+.gs-tree pre b{color:#0B0B0C;background:#F2F2F3;font-weight:500;padding:1px 6px;border-radius:4px}
+.gs-tree pre i{font-style:normal;color:var(--w)}
+.gs-tree .cap{padding:14px 22px;border-top:1px solid #1C1C1E;font-size:13px;color:var(--g2);line-height:1.5}
+@media (max-width:980px){
+ .c-sec{padding:100px 0}.c-hero{padding-top:110px}.c-h1{font-size:36px}
+ .cm{height:320vh}.cm-cp{left:16px;right:16px;width:auto;top:80px;transform:none}.cm-ph{margin-top:14px;display:flex;gap:10px}.cm-r{flex:1;border-bottom:0!important;padding:10px 0}.cm-r .d{display:none}.cm-r .t{font-size:13px}
+ .rs-tabs{flex-wrap:wrap}.rs-tab{flex:1 1 50%;padding:12px 16px;border-bottom:1px solid #1C1C1E}.rs-tab b{font-size:22px}
+ .rs-body{grid-template-columns:1fr}.rs-def{border-left:0;border-top:1px solid #1C1C1E}.rs-row .q{width:70px}.rs-top .f small{display:none}
+ .pl{grid-template-columns:1fr;gap:30px}.pl-line,.pl-run{display:none}
+ .fl,.ev,.gs{grid-template-columns:1fr;gap:28px}.fl-pre{min-height:260px;font-size:11.5px}
+ .pv svg{display:none}.rs-top .chip-pv{display:none}
+ .pv-txt{grid-template-columns:1fr}.pv-txt div+div{border-left:0;border-top:1px solid #1C1C1E}
+ .lm-r{grid-template-columns:36px 1fr;gap:14px}.lm-r p{grid-column:2}
+ .gs-r{flex-direction:column;align-items:flex-start}
+}
+</style></head>
+<body>
+<canvas id="x-bg" aria-hidden="true"></canvas>
+<header class="x-nav" id="x-nav"><div class="x-in">
+ <a class="x-logo" href="/"><svg width="20" height="20" viewBox="0 0 100 100" fill="#F5F5F6"><path d="M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z"/></svg>FindEZ AI</a>
+ <nav class="x-links"><a href="/solutions">Solutions</a><a href="/#cad">CAD Intelligence</a><a href="/founders">Founders Access</a><a href="/docs/api">Developers</a><div class="x-dd"><button class="x-ddb" type="button" aria-haspopup="true">Community<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button><div class="x-ddm"><a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener">Discord</a><a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener">Instagram</a></div></div></nav>
+ <div class="x-act"><a class="si" href="/signin">Sign in</a><a class="x-p w" href="/desktop">Download</a></div>
+</div></header>
+
+<section class="c-hero"><div class="x-in">
+ <h1 class="c-h1">Can you build it with what you already own?<span>CAD Intelligence compares a Fusion assembly&#8217;s parts list with your FindEZ inventory.</span></h1>
+ <div class="x-ctas"><a class="x-p w lg" href="/downloads/findez-fusion-preview.zip"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download the Fusion add-in</a><a class="x-p d lg" href="/cad">Open CAD Intelligence</a></div>
+ <p class="x-small">Free through Founders Access. Setup takes a few minutes.</p>
+</div></section>
+
+<section class="cm" id="cm"><div class="cm-st"><canvas id="cmc" aria-hidden="true"></canvas>
+ <div class="cm-cp"><h2 class="x-h2">What it does.<span>Scroll to watch an assembly get compared.</span></h2>
+  <div class="cm-ph"><div class="cm-r on"><div class="t">Read the parts list</div><div class="d">The add-in exports each component and the quantity your design needs.</div></div>
+   <div class="cm-r"><div class="t">Match it to your inventory</div><div class="d">Each component is matched to what&#8217;s recorded, by part number, barcode or name.</div></div>
+   <div class="cm-r"><div class="t">See what to buy</div><div class="d">Covered, short, missing or needs review, for every part.</div></div></div></div>
+</div></section>
+
+<section class="c-sec" style="padding-top:80px"><div class="x-in">
+ <h2 class="x-h2">What you learn.<span>Which parts you have, how many you&#8217;re short, and what needs buying.</span></h2>
+ <div class="rs" id="rs">
+  <div class="rs-top"><div class="f">drivetrain_v4 &middot; Robotics Lab inventory<small>8 components &middot; compared just now</small></div><div class="sp"><span class="chip-pv">SAMPLE DATA</span><a class="rs-ex" href="/cad"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Export shortages</a></div></div>
+  <div class="rs-tabs"><button class="rs-tab on"><b>4</b><span>Covered</span></button><button class="rs-tab am"><b>2</b><span>Short</span></button><button class="rs-tab am"><b>1</b><span>Missing</span></button><button class="rs-tab"><b>1</b><span>Needs review</span></button></div>
+  <div class="rs-body"><div class="rs-list" id="rs-list"></div><div class="rs-def"><div class="k" id="rs-k">COVERED</div><p id="rs-p"></p></div></div>
+ </div>
+</div></section>
+
+<section class="c-sec" style="padding-top:40px"><div class="x-in">
+ <h2 class="x-h2">How to use it.<span>Export, upload, choose an inventory, compare.</span></h2>
+ <div class="pl" id="pl"><div class="pl-line"></div><div class="pl-run"></div>
+  <div class="pl-n"><div class="pl-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg></div><h3>Export from Fusion</h3><p>Open your assembly and run <code>Export FindEZ BOM</code> from Utilities &rarr; Add-Ins.</p></div>
+  <div class="pl-n"><div class="pl-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div><h3>Upload the BOM</h3><p>Choose the <code>findez-bom.json</code> file, or a CSV or Excel parts list.</p></div>
+  <div class="pl-n"><div class="pl-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M10 4v16"/></svg></div><h3>Select an inventory</h3><p>Pick the organization and inventory you want to check against.</p></div>
+  <div class="pl-n"><div class="pl-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg></div><h3>Compare</h3><p>Review matches and quantities, then export the shortages as a CSV.</p></div>
+ </div>
+</div></section>
+
+<section class="c-sec" style="padding-top:40px"><div class="x-in">
+ <h2 class="x-h2">Supported files.<span>Straight from Fusion, or a parts list you already have.</span></h2>
+ <div class="fl"><div><div class="fl-tabs">
+   <button class="fl-tab on" data-i="0">Fusion JSON<small>.json</small></button><button class="fl-tab" data-i="1">CSV<small>.csv</small></button><button class="fl-tab" data-i="2">Excel<small>.xlsx</small></button></div>
+   <p class="fl-note">Files up to 5 MiB. Spreadsheets can have up to 5,000 rows, 200 columns and 20 sheets, and only the selected sheet is compared. Map Component name and Required quantity, and add identifiers if you have them. <a href="/downloads/findez-bom-template.csv">Download the CSV template</a></p></div>
+  <div class="fl-win"><div class="fl-bar"><i></i><i></i><i></i><span id="fl-name">findez-bom.json</span></div><div id="fl-body"></div></div>
+ </div>
+</div></section>
+
+<section class="c-sec" style="padding-top:40px"><div class="x-in">
+ <div class="ev" id="ev"><div><h2 class="x-h2">Matching accuracy.<span>Part numbers and barcodes are stronger evidence than names alone.</span></h2>
+   <p class="c-lead">An exact barcode, or a manufacturer plus part number, confirms a match. When only the name lines up, FindEZ marks the part as Needs review, so you can check it before buying or building.</p></div>
+  <div class="ev-card"><div class="ev-h"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="3.2"/></svg></span><div><b>M4 nylock nut</b><small>FROM drivetrain_v4 &middot; NEEDED 64</small></div></div>
+   <div class="ev-r"><div class="top"><span>Exact barcode</span><span>STRONG</span></div><div class="v">0 4 5 2 3 6 7 1 8 0 0 4</div><div class="ev-bar"><i style="--w2:96%"></i></div></div>
+   <div class="ev-r"><div class="top"><span>Manufacturer + part number</span><span>STRONG</span></div><div class="v">Supplier part no. &middot; 90576A102</div><div class="ev-bar"><i style="--w2:92%"></i></div></div>
+   <div class="ev-r"><div class="top"><span>Name only</span><span>WEAK</span></div><div class="v">&#8220;nylock nut m4&#8221;</div><div class="ev-bar"><i class="weak" style="--w2:38%"></i></div></div>
+   <div class="ev-res"><span>Match result</span><span class="st ok">Matched by barcode</span></div></div></div>
+</div></section>
+
+<section class="c-sec" style="padding-top:40px"><div class="x-in">
+ <h2 class="x-h2">Privacy.<span>Component metadata goes to FindEZ. Your geometry stays in Fusion.</span></h2>
+ <div class="pv"><svg viewBox="0 0 1160 300" aria-hidden="true" font-family="Inter,sans-serif">
+<defs><path id="pvp" d="M380 150 C 520 150, 640 150, 780 150"/></defs>
+<g transform="translate(60,40)"><rect width="320" height="220" rx="14" fill="#111113" stroke="#2C2C2E"/>
+<text x="20" y="32" fill="#A1A1A6" font-size="12" font-family="Geist Mono,monospace" letter-spacing="1">AUTODESK FUSION</text>
+<g stroke="#F5F5F6" stroke-width="1.2" fill="none" opacity=".8"><g><animateTransform attributeName="transform" type="rotate" from="0 150 125" to="360 150 125" dur="24s" repeatCount="indefinite"/>
+<path d="M150 70 L215 105 L215 160 L150 195 L85 160 L85 105 Z"/><path d="M85 105 L150 140 L215 105 M150 140 L150 195"/><circle cx="118" cy="122" r="12"/><circle cx="182" cy="122" r="12"/><path d="M110 168 L150 188 L190 168" stroke-dasharray="3 4"/></g></g>
+<text x="20" y="204" fill="#F5F5F6" font-size="13">Assembly geometry stays here</text></g>
+<g stroke="#2C2C2E" stroke-width="1.2"><use href="#pvp"/></g>
+<g font-size="11" font-family="Geist Mono,monospace">
+<g><rect x="-34" y="-11" width="68" height="22" rx="11" fill="#F2F2F3"/><text x="0" y="4" text-anchor="middle" fill="#0B0B0C">name</text><animateMotion dur="3.6s" repeatCount="indefinite" begin="0s"><mpath href="#pvp"/></animateMotion></g>
+<g><rect x="-44" y="-11" width="88" height="22" rx="11" fill="#F2F2F3"/><text x="0" y="4" text-anchor="middle" fill="#0B0B0C">part no.</text><animateMotion dur="3.6s" repeatCount="indefinite" begin="1.2s"><mpath href="#pvp"/></animateMotion></g>
+<g><rect x="-30" y="-11" width="60" height="22" rx="11" fill="#F2F2F3"/><text x="0" y="4" text-anchor="middle" fill="#0B0B0C">qty</text><animateMotion dur="3.6s" repeatCount="indefinite" begin="2.4s"><mpath href="#pvp"/></animateMotion></g></g>
+<g transform="translate(470,196)"><rect x="0" y="0" width="220" height="32" rx="16" fill="none" stroke="#3A3A3D" stroke-dasharray="4 4"/><text x="110" y="21" text-anchor="middle" fill="#A1A1A6" font-size="12.5">geometry is never uploaded</text></g>
+<g transform="translate(780,40)"><rect width="320" height="220" rx="14" fill="#111113" stroke="#2C2C2E"/>
+<text x="20" y="32" fill="#A1A1A6" font-size="12" font-family="Geist Mono,monospace" letter-spacing="1">FINDEZ &#183; ROBOTICS LAB</text>
+<g font-size="12.5"><g fill="#F5F5F6"><text x="20" y="74">96mm mecanum wheel</text><text x="20" y="108">M4 nylock nut</text><text x="20" y="142">Servo, 25T spline</text><text x="20" y="176">+ 5 more components</text></g>
+<g fill="#8E8E93" font-family="Geist Mono,monospace" text-anchor="end"><text x="300" y="74">&#215; 4</text><text x="300" y="108">&#215; 64</text><text x="300" y="142">&#215; 1</text></g>
+<g stroke="#1E1E21"><path d="M20 86h280M20 120h280M20 154h280"/></g></g>
+<text x="20" y="204" fill="#F5F5F6" font-size="13">Metadata only, for comparison</text></g></svg>
+  <div class="pv-txt"><div><b>What&#8217;s uploaded</b>Choosing Compare sends the parts metadata, like names, part numbers and quantities, to FindEZ for the inventory you select.</div><div><b>What stays in Fusion</b>The add-in saves metadata to a local JSON file. It doesn&#8217;t upload your assembly geometry or ask for your password.</div></div></div>
+</div></section>
+
+<section class="c-sec" style="padding-top:40px"><div class="x-in">
+ <h2 class="x-h2">Current limitations.<span>It tells you what you have. Decisions stay with you.</span></h2>
+ <div class="lm"><div class="lm-r"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg></span><h3>No automatic purchases</h3><p>It shows what to buy and exports a shortages CSV. Ordering stays with you.</p></div><div class="lm-r"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg></span><h3>No stock reservations</h3><p>Comparing doesn&#8217;t hold or check out any parts. Existing reservations do reduce what counts as available.</p></div><div class="lm-r"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg></span><h3>No design changes</h3><p>Checking an assembly never edits the design or saves its parts into your inventory.</p></div><div class="lm-r"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg></span><h3>No guaranteed engineering compatibility</h3><p>It doesn&#8217;t verify fit, electrical ratings or physical stock counts.</p></div></div>
+</div></section>
+
+<section class="c-sec" id="start" style="padding-top:40px"><div class="x-in">
+ <h2 class="x-h2">Get started.<span>Install once, then compare any assembly.</span></h2>
+ <div class="gs"><div>
+   <div class="gs-r"><div><h3>Fusion add-in</h3><p>The preview add-in for Autodesk Fusion. Works on Mac and Windows.</p></div><a class="x-p w lg" href="/downloads/findez-fusion-preview.zip"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download add-in</a></div>
+   <div class="gs-r"><div><h3>Installation guide</h3><p>Step-by-step setup, a sample design to try, and troubleshooting.</p></div><a class="x-p d lg" href="/docs/cad">Read the setup guide</a></div>
+   <div class="gs-r"><div><h3>Comparison tool</h3><p>Upload a BOM, choose an inventory and compare. Sign in with your FindEZ account.</p></div><a class="x-p d lg" href="/cad">Open CAD Intelligence</a></div></div>
+  <div class="gs-tree"><pre id="gs-pre"></pre><div class="cap">In Fusion: Utilities &rarr; Add-Ins &rarr; Scripts and Add-Ins &rarr; + &rarr; select the inner <b style="background:none;color:var(--w);padding:0">FindEZ</b> folder, not the ZIP.</div></div></div>
+</div></section>
+
+<footer class="x-foot"><div class="x-in">
+ <div class="x-fg"><div><a class="x-logo" href="/"><svg width="20" height="20" viewBox="0 0 100 100" fill="#F5F5F6"><path d="M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z"/></svg>FindEZ AI</a><p class="x-tag">Know what you have. Find what you need. Instantly.</p></div>
+  <div><h4>Product</h4><a href="/founders">Founders Access</a><a href="/#cad">CAD Intelligence</a><a href="/solutions">Solutions</a><a href="/pricing">Plans &amp; access</a><a href="https://apps.apple.com/us/app/findez-ai/id6760401697">iPhone app</a><a href="/docs/api">Developers</a></div>
+  <div><h4>Company</h4><a href="/research">Research</a><a href="mailto:info@findez.ai">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div><div><h4>Community</h4><a href="https://discord.gg/sKRrWA5wbf" target="_blank" rel="noopener">Discord</a><a href="https://www.instagram.com/findezai/" target="_blank" rel="noopener">Instagram</a></div></div>
+ <div class="x-fb"><span>&copy; 2026 AI Robots Inc.</span><span>FindEZ AI answers from what&#8217;s recorded in your inventory.</span></div>
+</div></footer>
+
+<script>
+(()=>{
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches,$=id=>document.getElementById(id);
+const nav=$('x-nav');let pY=scrollY,acc=0;const onS=()=>{const y=scrollY,d=y-pY;pY=y;nav.classList.toggle('sc',y>10);if(y<80){nav.classList.remove('hid');acc=0;return}acc=(Math.sign(d)===Math.sign(acc)?acc:0)+d;if(acc>24)nav.classList.add('hid');else if(acc<-12)nav.classList.remove('hid')};addEventListener('scroll',onS,{passive:true});onS();nav.addEventListener('focusin',()=>nav.classList.remove('hid'));
+document.querySelectorAll('.x-links a').forEach(a=>{if(/cad intelligence/i.test(a.textContent)){a.classList.add('here');a.href='/cad-intelligence'}});
+})();
+(()=>{
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches,fine=matchMedia('(pointer:fine)').matches,$=id=>document.getElementById(id);
+const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),L=(a,b,t)=>a+(b-a)*t,ss=(a,b,x)=>{const t=cl((x-a)/(b-a));return t*t*(3-2*t)},eo=t=>1-Math.pow(1-t,3);
+// ---- smooth, eased scrolling (wheel and trackpad on desktop) ----
+let tgt=scrollY,cur=scrollY;const maxY=()=>document.documentElement.scrollHeight-innerHeight;
+if(!RM&&fine){
+ addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1);tgt=cl(tgt+d,0,maxY())},{passive:false});
+ addEventListener('scroll',()=>{if(Math.abs(scrollY-cur)>3){tgt=cur=scrollY}},{passive:true});
+ addEventListener('keydown',e=>{const k={ArrowDown:80,ArrowUp:-80,PageDown:innerHeight*.9,PageUp:-innerHeight*.9,' ':e.shiftKey?-innerHeight*.9:innerHeight*.9,Home:-1e9,End:1e9}[e.key];if(k===undefined||/input|textarea/i.test(e.target.tagName))return;e.preventDefault();tgt=cl(tgt+k,0,maxY())});
+ document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const el=document.querySelector(a.getAttribute('href'));if(!el)return;e.preventDefault();tgt=cl(el.getBoundingClientRect().top+scrollY-60,0,maxY())}));
+}
+
+// ---- headline word reveal ----
+document.querySelectorAll('.x-h2').forEach(h=>{const sp=h.querySelector('span');const wrap=n=>{n.childNodes.forEach(c=>{if(c.nodeType===3){const f=document.createDocumentFragment();c.textContent.split(/(\s+)/).forEach((w,i)=>{if(/^\s+$/.test(w)||!w){f.appendChild(document.createTextNode(w));return}const e=document.createElement('span');e.className='wd';e.textContent=w;f.appendChild(e)});n.replaceChild(f,c)}})};wrap(h);if(sp)wrap(sp);
+ [...h.querySelectorAll('.wd')].forEach((w,i)=>w.style.transitionDelay=(i*35)+'ms')});
+const rio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');rio.unobserve(e.target)}}),{threshold:.4});document.querySelectorAll('.x-h2').forEach(h=>rio.observe(h));
+if(RM)document.querySelectorAll('.x-h2').forEach(h=>h.classList.add('on'));
+
+// ---- background: the mark's petals drift apart into bins and come back ----
+const bg=$('x-bg'),g=bg.getContext('2d'),MK=new Path2D('M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z');let W=0,H=0;
+function bsize(){const d=1;W=innerWidth;H=innerHeight;bg.width=W*d;bg.height=H*d;g.setTransform(d,0,0,d,0,0)}addEventListener('resize',bsize);bsize();
+const QD=[[0,0,-1,-1],[50,0,1,-1],[0,50,-1,1],[50,50,1,1]];
+function drawBg(p,t){g.clearRect(0,0,W,H);const mob=W<700,apart=ss(.1,.32,p)*(1-ss(.7,.9,p)),grid=ss(.32,.55,p)*(1-ss(.7,.9,p));
+ const sz=L(mob?W*1.1:Math.min(W*.6,H*1.05),mob?W*.8:Math.min(W*.4,H*.68),ss(.1,.5,p)),cx=L(W*.82,W*.74,ss(.1,.5,p)),cy=L(H*.55,H*.5,ss(.1,.5,p)),rot=L(-.22,0,ss(.05,.55,p))+L(0,-.18,ss(.7,.95,p))+.02*Math.sin(t*.3);
+ g.save();g.globalAlpha=mob?.1:.13;g.translate(cx,cy);g.rotate(rot);g.scale(sz/100,sz/100);g.translate(-50,-50);
+ for(const [qx,qy,dx,dy] of QD){const gap=apart*14+grid*10,sp=dx*dy*apart*.35*(1-grid);g.save();g.translate(dx*gap,dy*gap);g.translate(qx+25,qy+25);g.rotate(sp);g.translate(-qx-25,-qy-25);g.beginPath();g.rect(qx-1,qy-1,52,52);g.clip();
+  const lg=g.createLinearGradient(qx,qy,qx+50,qy+50);lg.addColorStop(0,'#E5E5E8');lg.addColorStop(.5,'#6E6E73');lg.addColorStop(1,'#1A1A1C');g.fillStyle=lg;g.fill(MK);g.lineWidth=.35;g.strokeStyle='rgba(255,255,255,.6)';g.stroke(MK);g.restore()}
+ g.restore()}
+
+// ---------- pinned comparison ----------
+const BOM=[{"n": "5mm hex shaft, 96mm", "q": 4, "have": 6, "s": "ok", "e": "PART NO", "inv": "Hex shaft 5mm, 96mm"}, {"n": "14T pinion gear", "q": 2, "have": 2, "s": "ok", "e": "BARCODE", "inv": "Pinion gear, 14 tooth"}, {"n": "96mm mecanum wheel", "q": 4, "have": 2, "s": "sh", "e": "PART NO", "inv": "Mecanum wheel 96mm"}, {"n": "Pillow block bearing", "q": 8, "have": 12, "s": "ok", "e": "PART NO", "inv": "Pillow block bearing"}, {"n": "M4 × 8mm screw", "q": 64, "have": 120, "s": "ok", "e": "BARCODE", "inv": "M4 × 8mm socket head"}, {"n": "M4 nylock nut", "q": 64, "have": 40, "s": "sh", "e": "BARCODE", "inv": "M4 nylock nut"}, {"n": "U-channel, 288mm", "q": 2, "have": 3, "s": "rv", "e": "NAME", "inv": "U channel 288"}, {"n": "Servo, 25T spline", "q": 1, "have": 0, "s": "ms", "e": "", "inv": ""}];
+const cmS=$('cm'),cc=$('cmc'),cg=cc.getContext('2d'),cr=[...document.querySelectorAll('.cm-r')];let CW=0,CH=0;
+function csize(){const d=Math.min(1.5,devicePixelRatio||1);CW=cc.clientWidth;CH=cc.clientHeight;cc.width=CW*d;cc.height=CH*d;cg.setTransform(d,0,0,d,0,0)}addEventListener('resize',csize);csize();
+// point cloud, one group per BOM row
+const PT=[],R=(()=>{let s=11;return()=>{s=(s*16807)%2147483647;return s/2147483647}})();const add=(x,y,z,g)=>PT.push([x,y,z,g]);
+for(const sx of [-1,1])for(const sz of [-1,1]){
+ for(let i=0;i<40;i++)add(L(-1.05,1.05,R())*1,(R()-.5)*.03,sz*.82+(R()-.5)*.03,0);
+ for(let i=0;i<70;i++){const a=R()*6.283;add(sx*(1.12+R()*.12),Math.sin(a)*.38,sz*.82+Math.cos(a)*.38,2)}
+ for(let i=0;i<26;i++){const a=R()*6.283,r=.13+R()*.03;add(sx*.62,Math.sin(a)*r,sz*.82+Math.cos(a)*r,1)}
+ for(let i=0;i<16;i++){const a=R()*6.283;add(sx*.86,Math.sin(a)*.08,sz*.82+Math.cos(a)*.08,3)}}
+for(const sx of [-1,1]){for(let i=0;i<150;i++){const u=R()*2-1,e=R();if(e<.4)add(sx*.82,(R()<.5?-1:1)*.26,u*1.15,6);else if(e<.8)add(sx*.82,(R()-.5)*.52,(R()<.5?-1:1)*1.15,6);else add(sx*.9,(R()<.5?-1:1)*.26,u*1.15,6)}
+ for(let i=0;i<22;i++)add(sx*.82,-.3,(R()*2-1)*1.05,4);for(let i=0;i<22;i++)add(sx*.82,.3,(R()*2-1)*1.05,5)}
+for(let i=0;i<70;i++){const f=R()*3|0,x=(R()*2-1)*.2,y=(R()*2-1)*.12,z=(R()*2-1)*.16;add(f==0?Math.sign(x)*.2:x,f==1?Math.sign(y)*.12:y,f==2?Math.sign(z)*.16:z,7)}
+const EX=[[0,-.35,0],[0,.32,0],[.55,0,0],[0,0,.35],[0,-.7,0],[0,.7,0],[0,0,0],[0,-.95,0]];
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+const STC={ok:['Covered','#F5F5F6',0],sh:['Short','#E3B45C',1],ms:['Missing','#E3B45C',0],rv:['Needs review','#A1A1A6',0]};
+function drawCm(p){cg.clearRect(0,0,CW,CH);const mob=CW<700;
+ const left=mob?16:Math.max(40,(CW-1160)/2)+330,right=mob?CW-16:CW-Math.max(40,(CW-1160)/2),W=right-left;
+ const top=mob?CH*.33:CH*.16,Hh=mob?CH*.66:CH*.7;
+ const ax=mob?left+W*.5:left+W*.155,ay=mob?top+Hh*.21:top+Hh*.5,S=mob?Math.min(W*.16,50):Math.min(W*.085,80);
+ const bx=mob?left:left+W*.3,bw=mob?W:W*.38,ix=left+W*.79,iw=W*.21,rowH=mob?Math.min(34,Hh*.085):Math.min(46,Hh/9.5),by0=mob?top+Hh*.38:top+(Hh-rowH*8)/2;
+ const ex=ss(.06,.26,p),bomIn=ss(.2,.44,p),inv=ss(.44,.66,p),st=ss(.68,.9,p),fade=1-.6*ss(.44,.6,p);
+ const ang=.7+p*1.6,ca=Math.cos(ang),sa=Math.sin(ang),xa=-.42,cb=Math.cos(xa),sb=Math.sin(xa);const cen=BOM.map(()=>[0,0,0]);
+ for(const q of PT){const g=q[3],o=EX[g];let X=q[0]+o[0]*ex*(q[0]<0?-1:1)*(g===2?1:1),Y=q[1]+o[1]*ex,Z=q[2]+o[2]*ex*(q[2]<0?-1:1);if(g===2)X=q[0]+Math.sign(q[0])*.55*ex;
+  let x=X*ca+Z*sa,z=-X*sa+Z*ca,y=Y*cb-z*sb;z=Y*sb+z*cb;const f=3/(3+z),px=ax+x*S*f,py=ay+y*S*f,dep=(1-z)/2;cen[g][0]+=px;cen[g][1]+=py;cen[g][2]++;
+  let col=`rgba(245,245,246,${(.2+.6*dep)*fade})`;if(st>0){const s=BOM[g].s;const c=s==='ok'?'245,245,246':s==='rv'?'161,161,166':'227,180,92';col=`rgba(${c},${(.25+.7*dep)*L(fade,1,st)})`}
+  cg.fillStyle=col;const sz=1+1.2*dep;cg.fillRect(px-sz/2,py-sz/2,sz,sz)}
+ cen.forEach(c=>{c[0]/=c[2]||1;c[1]/=c[2]||1});
+ // BOM rows
+ cg.font="500 10.5px 'Geist Mono',monospace";if(bomIn>0){cg.globalAlpha=bomIn;cg.fillStyle='#6E6E73';cg.fillText('BOM · drivetrain_v4',bx,by0-14);if(!mob&&inv>0){cg.globalAlpha=inv;cg.fillText('INVENTORY · Robotics Lab',ix,by0-14)}cg.globalAlpha=1}
+ BOM.forEach((r,i)=>{const k=eo(cl(bomIn*1.6-i*.08));if(k<=0)return;const y=by0+i*rowH;
+  // link from part group to row
+  if(!mob){const c=cen[i],lk=cl(bomIn*1.4-i*.05);cg.strokeStyle=`rgba(255,255,255,${.22*lk*(1-.7*inv)})`;cg.lineWidth=1;cg.beginPath();cg.moveTo(c[0],c[1]);const mx=(c[0]+bx)/2;cg.bezierCurveTo(mx,c[1],mx,y+rowH/2,L(c[0],bx,lk),y+rowH/2);cg.stroke();cg.fillStyle='rgba(255,255,255,.7)';cg.fillRect(c[0]-2,c[1]-2,4,4)}
+  cg.globalAlpha=k;rr(cg,bx,y+3,bw,rowH-6,8);cg.fillStyle='#111113';cg.fill();cg.strokeStyle='rgba(255,255,255,.08)';cg.stroke();
+  cg.font=(mob?"400 12px":"400 13px")+" Inter,sans-serif";cg.fillStyle='#E5E5E8';cg.fillText(r.n,bx+12,y+rowH/2+4);
+  const sk0=st>0?cl(st*1.6-i*.08):0;cg.font="500 11px Inter,sans-serif";const s0=STC[r.s],lab0=r.s==='sh'?'Short '+(r.q-r.have):s0[0],cw0=cg.measureText(lab0).width+16;cg.font="500 11.5px 'Geist Mono',monospace";cg.fillStyle='#8E8E93';const need='× '+r.q;cg.fillText(need,bx+bw-12-cg.measureText(need).width-(cw0+12)*eo(sk0),y+rowH/2+4);
+  if(st>0){const sk=cl(st*1.6-i*.08);if(sk>0){const s=STC[r.s],lab=r.s==='sh'?'Short '+(r.q-r.have):s[0];cg.globalAlpha=k*sk;cg.font="500 11px Inter,sans-serif";const w=cg.measureText(lab).width+16,cx=bx+bw-w-10,cy=y+rowH/2-10;rr(cg,cx,cy,w,20,10);
+   if(r.s==='sh'){cg.fillStyle='#E3B45C';cg.fill();cg.fillStyle='#1A1305'}else{cg.strokeStyle=r.s==='ms'?'rgba(227,180,92,.6)':r.s==='rv'?'rgba(161,161,166,.7)':'rgba(255,255,255,.25)';cg.stroke();cg.fillStyle=s[1]}cg.fillText(lab,cx+8,cy+14)}}
+  cg.globalAlpha=1;
+  // inventory side
+  if(!mob&&inv>0){const ik=cl(inv*1.5-i*.07);if(ik<=0)return;const iy=y;
+   if(r.inv){cg.globalAlpha=ik;rr(cg,ix,iy+3,iw,rowH-6,8);cg.fillStyle='#0F0F10';cg.fill();cg.strokeStyle='rgba(255,255,255,.08)';cg.stroke();cg.font="400 12.5px Inter,sans-serif";cg.fillStyle='#C9C9CE';let t=r.inv;while(cg.measureText(t).width>iw-60&&t.length>3)t=t.slice(0,-2);cg.fillText(t===r.inv?t:t+'…',ix+12,iy+rowH/2+4);
+    cg.font="500 11.5px 'Geist Mono',monospace";cg.fillStyle='#8E8E93';const h=String(r.have);cg.fillText(h,ix+iw-12-cg.measureText(h).width,iy+rowH/2+4);
+    const lk=cl(inv*1.8-i*.1),x1=bx+bw,x2=ix,yy=iy+rowH/2;cg.strokeStyle=r.e==='NAME'?'rgba(161,161,166,.7)':'rgba(255,255,255,.75)';cg.setLineDash(r.e==='NAME'?[4,4]:[]);cg.beginPath();cg.moveTo(x1,yy);cg.lineTo(L(x1,x2,lk),yy);cg.stroke();cg.setLineDash([]);
+    if(lk>.6){cg.font="500 9.5px 'Geist Mono',monospace";const tw=cg.measureText(r.e).width+10,mx=(x1+x2)/2-tw/2;cg.fillStyle='#0B0B0C';cg.fillRect(mx,yy-8,tw,16);cg.strokeStyle='rgba(255,255,255,.2)';cg.strokeRect(mx+.5,yy-7.5,tw-1,15);cg.fillStyle=r.e==='NAME'?'#A1A1A6':'#F5F5F6';cg.fillText(r.e,mx+5,yy+3.5)}}
+   else{cg.globalAlpha=ik*.8;cg.strokeStyle='rgba(227,180,92,.5)';cg.setLineDash([3,4]);rr(cg,ix,iy+3,iw,rowH-6,8);cg.stroke();cg.setLineDash([]);cg.font="500 11px 'Geist Mono',monospace";cg.fillStyle='#E3B45C';cg.fillText('NO MATCH',ix+12,iy+rowH/2+4)}
+   cg.globalAlpha=1}});
+ // summary
+ if(st>.6){const a=cl((st-.6)/.4),y=by0+8*rowH+16;cg.globalAlpha=a;const c={ok:0,sh:0,ms:0,rv:0};BOM.forEach(r=>c[r.s]++);
+  cg.font="500 12.5px Inter,sans-serif";cg.fillStyle='#F5F5F6';const t=`${c.ok} covered · ${c.sh} short · ${c.ms} missing · ${c.rv} needs review`;cg.fillText(t,bx,y+14);
+  const tw=W*(mob?1:.6),x0=bx;const bw2=mob?W:bw+(ix+iw-bx-bw);let xx=x0;const tot=BOM.length;[['ok','#F5F5F6'],['rv','#6E6E73'],['sh','#E3B45C'],['ms','rgba(227,180,92,.45)']].forEach(([k,col])=>{const w=bw2*c[k]/tot;cg.fillStyle=col;cg.fillRect(xx,y+26,Math.max(0,w-3),5);xx+=w});cg.globalAlpha=1}
+ const ph=p<.3?0:p<.66?1:2;cr.forEach((r,i)=>r.classList.toggle('on',i===ph))}
+// ---------- results panel ----------
+const RS=[{"t": "Covered", "c": "ok", "k": "COVERED", "d": "<b>An exact identity match has enough available recorded stock.</b> Existing reservations and checkouts reduce what counts as available.", "rows": [["5mm hex shaft, 96mm", "PART NO · PN-F21", "6 of 4", "Covered"], ["14T pinion gear", "BARCODE · Gears bin", "2 of 2", "Covered"], ["Pillow block bearing", "PART NO · PN-F30", "12 of 8", "Covered"], ["M4 × 8mm screw", "BARCODE · PN-F83", "120 of 64", "Covered"]]}, {"t": "Short", "c": "sh", "k": "SHORT", "d": "<b>Some units are covered, but more are required.</b> Export shortages to get a CSV of exactly how many to buy.", "rows": [["96mm mecanum wheel", "PART NO · Drive shelf", "2 of 4", "Short 2"], ["M4 nylock nut", "BARCODE · PN-F90", "40 of 64", "Short 24"]]}, {"t": "Missing", "c": "ms", "k": "MISSING", "d": "<b>No units are covered by exact inventory matches.</b> Either it was never recorded, or nothing in the inventory matches it closely enough.", "rows": [["Servo, 25T spline", "No match in Robotics Lab", "0 of 1", "Missing"]]}, {"t": "Needs review", "c": "rv", "k": "NEEDS REVIEW", "d": "<b>The identity or requirement is uncertain.</b> Here only the name lines up. Check the evidence before buying or building.", "rows": [["U-channel, 288mm", "NAME ONLY · “U channel 288”", "3 of 2", "Needs review"]]}],rtabs=[...document.querySelectorAll('.rs-tab')];let ri=0,rtm=null,rvis=false;
+function showR(i,auto){ri=i;rtabs.forEach((t,k)=>t.classList.toggle('on',k===i));const g=RS[i];$('rs-k').textContent=g.k;$('rs-p').innerHTML=g.d;const L2=$('rs-list');
+ L2.innerHTML=g.rows.map(r=>`<div class="rs-row"><div class="nm">${r[0]}<small>${r[1]}</small></div><span class="q">${r[2]}</span><span class="st ${g.c}">${r[3]}</span></div>`).join('');
+ [...L2.children].forEach((e,k)=>setTimeout(()=>e.classList.add('on'),RM?0:80+k*110));clearTimeout(rtm);if(auto&&!RM&&rvis)rtm=setTimeout(()=>showR((i+1)%RS.length,true),4600)}
+rtabs.forEach((t,k)=>t.addEventListener('click',()=>showR(k,true)));
+new IntersectionObserver(es=>{rvis=es[0].isIntersecting;if(rvis)showR(ri,true);else clearTimeout(rtm)},{threshold:.3}).observe($('rs'));
+// ---------- pipeline ----------
+const pn=[...document.querySelectorAll('.pl-n')];let pli=0;function plStep(){pn.forEach((n,k)=>n.classList.toggle('on',k===pli));pli=(pli+1)%4}
+if(RM){pn.forEach(n=>n.classList.add('on'))}else{setTimeout(()=>{plStep();setInterval(plStep,2000)},350)}
+// ---------- files ----------
+const FL=[{"name": "findez-bom.json", "lines": ["<span class=\"c\">// exported by the FindEZ add-in</span>", "{", "  <span class=\"k\">\"assembly\"</span>: <span class=\"s\">\"drivetrain_v4\"</span>,", "  <span class=\"k\">\"components\"</span>: [", "    { <span class=\"k\">\"name\"</span>: <span class=\"s\">\"96mm mecanum wheel\"</span>,", "      <span class=\"k\">\"partNumber\"</span>: <span class=\"s\">\"3213-3606-0096\"</span>,", "      <span class=\"k\">\"quantity\"</span>: <span class=\"n\">4</span> },", "    { <span class=\"k\">\"name\"</span>: <span class=\"s\">\"M4 nylock nut\"</span>,", "      <span class=\"k\">\"barcode\"</span>: <span class=\"s\">\"045236718004\"</span>,", "      <span class=\"k\">\"quantity\"</span>: <span class=\"n\">64</span> },", "    <span class=\"c\">... 6 more</span>", "  ]", "}"]}, {"name": "parts-list.csv", "lines": ["<span class=\"k\">Component name,Required quantity,Part number,Barcode</span>", "<span class=\"s\">96mm mecanum wheel</span>,<span class=\"n\">4</span>,<span class=\"s\">3213-3606-0096</span>,", "<span class=\"s\">M4 nylock nut</span>,<span class=\"n\">64</span>,,<span class=\"s\">045236718004</span>", "<span class=\"s\">5mm hex shaft 96mm</span>,<span class=\"n\">4</span>,<span class=\"s\">2100-0005-0096</span>,", "<span class=\"s\">Pillow block bearing</span>,<span class=\"n\">8</span>,<span class=\"s\">1611-0517-0008</span>,", "<span class=\"s\">Servo 25T spline</span>,<span class=\"n\">1</span>,,", "<span class=\"c\"># total individual units, no subtotal rows</span>"]}, {"name": "drivetrain.xlsx · Sheet1", "grid": [["Component name", "Required qty", "Part number"], ["96mm mecanum wheel", "4", "3213-3606-0096"], ["M4 nylock nut", "64", ""], ["5mm hex shaft, 96mm", "4", "2100-0005-0096"], ["Pillow block bearing", "8", "1611-0517-0008"], ["Servo, 25T spline", "1", ""], ["U-channel, 288mm", "2", ""]]}],ftabs=[...document.querySelectorAll('.fl-tab')];let fi=0,ftm=null,ftt=[];
+function showF(i,auto){fi=i;ftabs.forEach((t,k)=>t.classList.toggle('on',k===i));$('fl-name').textContent=FL[i].name;ftt.forEach(clearTimeout);ftt=[];const b=$('fl-body');
+ if(FL[i].grid){b.innerHTML='<div style="padding:16px 18px;min-height:320px"><table class="fl-grid">'+FL[i].grid.map((r,k)=>'<tr style="opacity:0;transition:opacity .3s"><td>'+(k?k:'')+'</td>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</table></div>';[...b.querySelectorAll('tr')].forEach((tr,k)=>ftt.push(setTimeout(()=>tr.style.opacity=1,RM?0:k*120)))}
+ else{const lines=FL[i].lines;b.innerHTML='<pre class="fl-pre"></pre>';const pre=b.firstChild;lines.forEach((ln,k)=>ftt.push(setTimeout(()=>{pre.innerHTML+=ln+'\n'},RM?0:k*90)))}
+ clearTimeout(ftm);if(auto&&!RM)ftm=setTimeout(()=>showF((i+1)%FL.length,true),5200)}
+ftabs.forEach(t=>t.addEventListener('click',()=>showF(+t.dataset.i,true)));
+let fs=false;new IntersectionObserver(es=>{if(es[0].isIntersecting&&!fs){fs=true;showF(0,true)}},{threshold:.3}).observe($('fl-body'));
+// ---------- evidence bars ----------
+new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){$('ev').classList.add('on');o.disconnect()}},{threshold:.4}).observe($('ev'));
+// ---------- getting started tree ----------
+const TREE=['Downloads/','└─ findez-fusion-preview/','   └─ <b>FindEZ/</b>   <i>&larr; select this</i>','      ├─ FindEZ.py','      ├─ FindEZ.manifest','      └─ exporter.py'];
+let ts=false;new IntersectionObserver(es=>{if(es[0].isIntersecting&&!ts){ts=true;const pre=$('gs-pre');TREE.forEach((l,k)=>setTimeout(()=>{pre.innerHTML+=l+'\n'},RM?0:k*160))}},{threshold:.4}).observe($('gs-pre'));
+// ---------- loop ----------
+let lastY=-1,dirty=true;addEventListener('resize',()=>{dirty=true});document.fonts&&document.fonts.ready.then(()=>{dirty=true});
+function loop(){
+ if(!RM&&fine){const d=tgt-cur;if(Math.abs(d)>.5){cur+=d*.16;window.scrollTo(0,cur)}else if(cur!==tgt){cur=tgt;window.scrollTo(0,cur)}}
+ const y=RM||!fine?scrollY:cur,m=maxY();
+ if(Math.abs(y-lastY)>.3||dirty){lastY=y;dirty=false;drawBg(m>0?y/m:0,0);
+  const r=cmS.getBoundingClientRect(),pp=cl(-r.top/(r.height-innerHeight));if(r.top<innerHeight&&r.bottom>0)drawCm(RM?1:pp);
+  bg.style.opacity=(r.top<innerHeight*.6&&r.bottom>innerHeight*.4)?0:(y<innerHeight*.8?1:.5)}
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+})();
+</script>
+</body></html>

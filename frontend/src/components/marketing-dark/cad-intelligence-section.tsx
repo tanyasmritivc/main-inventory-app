@@ -19,7 +19,7 @@ export function CadIntelligenceSection() {
           <p className={styles.q}>Can you build it with what you already own?</p>
           <p className={styles.body}>Bring your Autodesk Fusion assembly into FindEZ. Compare its parts with your inventory, see what’s available, and find what’s missing.</p>
           <div className={styles.ctas}>
-            <a className={styles.btn} href="/cad">Explore CAD Intelligence <span className={styles.ar}>→</span></a>
+            <a className={styles.btn} href="/cad-intelligence">Explore CAD Intelligence <span className={styles.ar}>→</span></a>
             <div className={styles.avail}>Available for <b>Autodesk Fusion</b> · Preview</div>
           </div>
         </div>

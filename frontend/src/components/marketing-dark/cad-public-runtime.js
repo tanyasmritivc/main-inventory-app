@@ -1,0 +1,88 @@
+import {homeLife} from './home-life';
+import {mountBackground} from './home-motion-runtime';
+const $=id=>document.getElementById(id),cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),L=(a,b,t)=>a+(b-a)*t,ss=(a,b,x)=>{const t=cl((x-a)/(b-a));return t*t*(3-2*t)},eo=t=>1-Math.pow(1-t,3);
+const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fonts=()=>{const css=getComputedStyle(document.documentElement);return {sans:css.getPropertyValue('--font-app-inter')||'sans-serif',mono:css.getPropertyValue('--font-geist-mono')||'monospace'}};
+// Pause each timed sequence while off screen or in a background tab, including partially written previews.
+function sequence(life,node,threshold,begin){let visible=false,active=false,jobs=new Set();
+ function run(j){j.start=performance.now();j.id=life.timeout(()=>{jobs.delete(j);j.fn()},j.remaining)}
+ const timer={after(ms,fn){const j={remaining:ms,fn,start:0,id:0};jobs.add(j);if(active)run(j);return j},clear(){jobs.forEach(j=>life.clear(j.id));jobs.clear()},active:()=>active};
+ function sync(){const next=visible&&!document.hidden;if(next===active)return;active=next;node.classList.toggle('in-view',active);if(active){if(!jobs.size)begin(timer);else jobs.forEach(run)}else jobs.forEach(j=>{life.clear(j.id);j.remaining=Math.max(0,j.remaining-(performance.now()-j.start))})}
+ life.observer(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>=threshold;sync()},{threshold:[0,threshold]}).observe(node);
+ life.on(document,'visibilitychange',sync);life.dispose(()=>timer.clear());return timer;
+}
+function tabKeys(life,tabs,show){tabs.forEach((tab,i)=>life.on(tab,'keydown',e=>{let next;if(e.key==='ArrowRight'||e.key==='ArrowDown')next=(i+1)%tabs.length;else if(e.key==='ArrowLeft'||e.key==='ArrowUp')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();tabs[next].focus();show(next)}))}
+export function mountCadBackground(){const stop=mountBackground([['cm',.6,.4]]),life=homeLife(),wrap=document.querySelector('.cad-bg-wrap');const update=()=>{wrap.style.opacity=scrollY<innerHeight*.8?'1':'.5'};life.on(window,'scroll',update,{passive:true});life.on(window,'resize',update);update();const a=document.querySelector('.x-links a[href="/cad-intelligence"]');a?.setAttribute('aria-current','page');return()=>{stop();life.close()};}
+export function mountCadComparison(){const life=homeLife(),RM=reduced(),F=fonts();let dirty=true,last=-1,alive=true;
+const BOM=[{"n": "5mm hex shaft, 96mm", "q": 4, "have": 6, "s": "ok", "e": "PART NO", "inv": "Hex shaft 5mm, 96mm"}, {"n": "14T pinion gear", "q": 2, "have": 2, "s": "ok", "e": "BARCODE", "inv": "Pinion gear, 14 tooth"}, {"n": "96mm mecanum wheel", "q": 4, "have": 2, "s": "sh", "e": "PART NO", "inv": "Mecanum wheel 96mm"}, {"n": "Pillow block bearing", "q": 8, "have": 12, "s": "ok", "e": "PART NO", "inv": "Pillow block bearing"}, {"n": "M4 × 8mm screw", "q": 64, "have": 120, "s": "ok", "e": "BARCODE", "inv": "M4 × 8mm socket head"}, {"n": "M4 nylock nut", "q": 64, "have": 40, "s": "sh", "e": "BARCODE", "inv": "M4 nylock nut"}, {"n": "U-channel, 288mm", "q": 2, "have": 3, "s": "rv", "e": "NAME", "inv": "U channel 288"}, {"n": "Servo, 25T spline", "q": 1, "have": 0, "s": "ms", "e": "", "inv": ""}];
+const cmS=$('cm'),cc=$('cmc'),cg=cc.getContext('2d'),cr=[...document.querySelectorAll('.cm-r')];let CW=0,CH=0;
+function csize(){const d=Math.min(1.5,devicePixelRatio||1);CW=cc.clientWidth;CH=cc.clientHeight;cc.width=CW*d;cc.height=CH*d;cg.setTransform(d,0,0,d,0,0)}life.on(window,'resize',()=>{csize();dirty=true;life.raf(frame)});csize();
+// point cloud, one group per BOM row
+const PT=[],R=(()=>{let s=11;return()=>{s=(s*16807)%2147483647;return s/2147483647}})();const add=(x,y,z,g)=>PT.push([x,y,z,g]);
+for(const sx of [-1,1])for(const sz of [-1,1]){
+ for(let i=0;i<40;i++)add(L(-1.05,1.05,R())*1,(R()-.5)*.03,sz*.82+(R()-.5)*.03,0);
+ for(let i=0;i<70;i++){const a=R()*6.283;add(sx*(1.12+R()*.12),Math.sin(a)*.38,sz*.82+Math.cos(a)*.38,2)}
+ for(let i=0;i<26;i++){const a=R()*6.283,r=.13+R()*.03;add(sx*.62,Math.sin(a)*r,sz*.82+Math.cos(a)*r,1)}
+ for(let i=0;i<16;i++){const a=R()*6.283;add(sx*.86,Math.sin(a)*.08,sz*.82+Math.cos(a)*.08,3)}}
+for(const sx of [-1,1]){for(let i=0;i<150;i++){const u=R()*2-1,e=R();if(e<.4)add(sx*.82,(R()<.5?-1:1)*.26,u*1.15,6);else if(e<.8)add(sx*.82,(R()-.5)*.52,(R()<.5?-1:1)*1.15,6);else add(sx*.9,(R()<.5?-1:1)*.26,u*1.15,6)}
+ for(let i=0;i<22;i++)add(sx*.82,-.3,(R()*2-1)*1.05,4);for(let i=0;i<22;i++)add(sx*.82,.3,(R()*2-1)*1.05,5)}
+for(let i=0;i<70;i++){const f=R()*3|0,x=(R()*2-1)*.2,y=(R()*2-1)*.12,z=(R()*2-1)*.16;add(f==0?Math.sign(x)*.2:x,f==1?Math.sign(y)*.12:y,f==2?Math.sign(z)*.16:z,7)}
+const EX=[[0,-.35,0],[0,.32,0],[.55,0,0],[0,0,.35],[0,-.7,0],[0,.7,0],[0,0,0],[0,-.95,0]];
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+const STC={ok:['Covered','#F5F5F6',0],sh:['Short','#E3B45C',1],ms:['Missing','#E3B45C',0],rv:['Needs review','#A1A1A6',0]};
+function drawCm(p){cg.clearRect(0,0,CW,CH);const mob=CW<700;
+ const left=mob?16:Math.max(40,(CW-1160)/2)+330,right=mob?CW-16:CW-Math.max(40,(CW-1160)/2),W=right-left;
+ const top=mob?CH*.33:CH*.16,Hh=mob?CH*.66:CH*.7;
+ const ax=mob?left+W*.5:left+W*.155,ay=mob?top+Hh*.21:top+Hh*.5,S=mob?Math.min(W*.16,50):Math.min(W*.085,80);
+ const bx=mob?left:left+W*.3,bw=mob?W:W*.38,ix=left+W*.79,iw=W*.21,rowH=mob?Math.min(34,Hh*.085):Math.min(46,Hh/9.5),by0=mob?top+Hh*.38:top+(Hh-rowH*8)/2;
+ const ex=ss(.06,.26,p),bomIn=ss(.2,.44,p),inv=ss(.44,.66,p),st=ss(.68,.9,p),fade=1-.6*ss(.44,.6,p);
+ const ang=.7+p*1.6,ca=Math.cos(ang),sa=Math.sin(ang),xa=-.42,cb=Math.cos(xa),sb=Math.sin(xa);const cen=BOM.map(()=>[0,0,0]);
+ for(const q of PT){const g=q[3],o=EX[g];let X=q[0]+o[0]*ex*(q[0]<0?-1:1)*(g===2?1:1),Y=q[1]+o[1]*ex,Z=q[2]+o[2]*ex*(q[2]<0?-1:1);if(g===2)X=q[0]+Math.sign(q[0])*.55*ex;
+  let x=X*ca+Z*sa,z=-X*sa+Z*ca,y=Y*cb-z*sb;z=Y*sb+z*cb;const f=3/(3+z),px=ax+x*S*f,py=ay+y*S*f,dep=(1-z)/2;cen[g][0]+=px;cen[g][1]+=py;cen[g][2]++;
+  let col=`rgba(245,245,246,${(.2+.6*dep)*fade})`;if(st>0){const s=BOM[g].s;const c=s==='ok'?'245,245,246':s==='rv'?'161,161,166':'227,180,92';col=`rgba(${c},${(.25+.7*dep)*L(fade,1,st)})`}
+  cg.fillStyle=col;const sz=1+1.2*dep;cg.fillRect(px-sz/2,py-sz/2,sz,sz)}
+ cen.forEach(c=>{c[0]/=c[2]||1;c[1]/=c[2]||1});
+ // BOM rows
+ cg.font=`500 10.5px ${F.mono},monospace`;if(bomIn>0){cg.globalAlpha=bomIn;cg.fillStyle='#6E6E73';cg.fillText('BOM · drivetrain_v4',bx,by0-14);if(!mob&&inv>0){cg.globalAlpha=inv;cg.fillText('INVENTORY · Robotics Lab',ix,by0-14)}cg.globalAlpha=1}
+ BOM.forEach((r,i)=>{const k=eo(cl(bomIn*1.6-i*.08));if(k<=0)return;const y=by0+i*rowH;
+  // link from part group to row
+  if(!mob){const c=cen[i],lk=cl(bomIn*1.4-i*.05);cg.strokeStyle=`rgba(255,255,255,${.22*lk*(1-.7*inv)})`;cg.lineWidth=1;cg.beginPath();cg.moveTo(c[0],c[1]);const mx=(c[0]+bx)/2;cg.bezierCurveTo(mx,c[1],mx,y+rowH/2,L(c[0],bx,lk),y+rowH/2);cg.stroke();cg.fillStyle='rgba(255,255,255,.7)';cg.fillRect(c[0]-2,c[1]-2,4,4)}
+  cg.globalAlpha=k;rr(cg,bx,y+3,bw,rowH-6,8);cg.fillStyle='#111113';cg.fill();cg.strokeStyle='rgba(255,255,255,.08)';cg.stroke();
+  cg.font=(mob?"400 12px":"400 13px")+` ${F.sans},sans-serif`;cg.fillStyle='#E5E5E8';cg.fillText(r.n,bx+12,y+rowH/2+4);
+  const sk0=st>0?cl(st*1.6-i*.08):0;cg.font=`500 11px ${F.sans},sans-serif`;const s0=STC[r.s],lab0=r.s==='sh'?'Short '+(r.q-r.have):s0[0],cw0=cg.measureText(lab0).width+16;cg.font=`500 11.5px ${F.mono},monospace`;cg.fillStyle='#8E8E93';const need='× '+r.q;cg.fillText(need,bx+bw-12-cg.measureText(need).width-(cw0+12)*eo(sk0),y+rowH/2+4);
+  if(st>0){const sk=cl(st*1.6-i*.08);if(sk>0){const s=STC[r.s],lab=r.s==='sh'?'Short '+(r.q-r.have):s[0];cg.globalAlpha=k*sk;cg.font=`500 11px ${F.sans},sans-serif`;const w=cg.measureText(lab).width+16,cx=bx+bw-w-10,cy=y+rowH/2-10;rr(cg,cx,cy,w,20,10);
+   if(r.s==='sh'){cg.fillStyle='#E3B45C';cg.fill();cg.fillStyle='#1A1305'}else{cg.strokeStyle=r.s==='ms'?'rgba(227,180,92,.6)':r.s==='rv'?'rgba(161,161,166,.7)':'rgba(255,255,255,.25)';cg.stroke();cg.fillStyle=s[1]}cg.fillText(lab,cx+8,cy+14)}}
+  cg.globalAlpha=1;
+  // inventory side
+  if(!mob&&inv>0){const ik=cl(inv*1.5-i*.07);if(ik<=0)return;const iy=y;
+   if(r.inv){cg.globalAlpha=ik;rr(cg,ix,iy+3,iw,rowH-6,8);cg.fillStyle='#0F0F10';cg.fill();cg.strokeStyle='rgba(255,255,255,.08)';cg.stroke();cg.font=`400 12.5px ${F.sans},sans-serif`;cg.fillStyle='#C9C9CE';let t=r.inv;while(cg.measureText(t).width>iw-60&&t.length>3)t=t.slice(0,-2);cg.fillText(t===r.inv?t:t+'…',ix+12,iy+rowH/2+4);
+    cg.font=`500 11.5px ${F.mono},monospace`;cg.fillStyle='#8E8E93';const h=String(r.have);cg.fillText(h,ix+iw-12-cg.measureText(h).width,iy+rowH/2+4);
+    const lk=cl(inv*1.8-i*.1),x1=bx+bw,x2=ix,yy=iy+rowH/2;cg.strokeStyle=r.e==='NAME'?'rgba(161,161,166,.7)':'rgba(255,255,255,.75)';cg.setLineDash(r.e==='NAME'?[4,4]:[]);cg.beginPath();cg.moveTo(x1,yy);cg.lineTo(L(x1,x2,lk),yy);cg.stroke();cg.setLineDash([]);
+    if(lk>.6){cg.font=`500 9.5px ${F.mono},monospace`;const tw=cg.measureText(r.e).width+10,mx=(x1+x2)/2-tw/2;cg.fillStyle='#0B0B0C';cg.fillRect(mx,yy-8,tw,16);cg.strokeStyle='rgba(255,255,255,.2)';cg.strokeRect(mx+.5,yy-7.5,tw-1,15);cg.fillStyle=r.e==='NAME'?'#A1A1A6':'#F5F5F6';cg.fillText(r.e,mx+5,yy+3.5)}}
+   else{cg.globalAlpha=ik*.8;cg.strokeStyle='rgba(227,180,92,.5)';cg.setLineDash([3,4]);rr(cg,ix,iy+3,iw,rowH-6,8);cg.stroke();cg.setLineDash([]);cg.font=`500 11px ${F.mono},monospace`;cg.fillStyle='#E3B45C';cg.fillText('NO MATCH',ix+12,iy+rowH/2+4)}
+   cg.globalAlpha=1}});
+ // summary
+ if(st>.6){const a=cl((st-.6)/.4),y=by0+8*rowH+16;cg.globalAlpha=a;const c={ok:0,sh:0,ms:0,rv:0};BOM.forEach(r=>c[r.s]++);
+  cg.font=`500 12.5px ${F.sans},sans-serif`;cg.fillStyle='#F5F5F6';const t=`${c.ok} covered · ${c.sh} short · ${c.ms} missing · ${c.rv} needs review`;cg.fillText(t,bx,y+14);
+  const tw=W*(mob?1:.6),x0=bx;const bw2=mob?W:bw+(ix+iw-bx-bw);let xx=x0;const tot=BOM.length;[['ok','#F5F5F6'],['rv','#6E6E73'],['sh','#E3B45C'],['ms','rgba(227,180,92,.45)']].forEach(([k,col])=>{const w=bw2*c[k]/tot;cg.fillStyle=col;cg.fillRect(xx,y+26,Math.max(0,w-3),5);xx+=w});cg.globalAlpha=1}
+ const ph=p<.3?0:p<.66?1:2;cr.forEach((r,i)=>r.classList.toggle('on',i===ph))}
+
+function frame(){if(document.hidden)return;const r=cmS.getBoundingClientRect(),y=scrollY;if((last!==y||dirty)&&r.top<innerHeight&&r.bottom>0){drawCm(RM?1:cl(-r.top/(r.height-innerHeight)));dirty=false;last=y}}
+life.on(window,'scroll',()=>life.raf(frame),{passive:true});life.on(document,'visibilitychange',()=>{dirty=true;life.raf(frame)});document.fonts.ready.then(()=>{if(alive){dirty=true;life.raf(frame)}});life.raf(frame);life.dispose(()=>{alive=false;cc.width=cc.height=0});return()=>life.close();}
+const RS=[{"t": "Covered", "c": "ok", "k": "COVERED", "d": "<b>An exact identity match has enough available recorded stock.</b> Existing reservations and checkouts reduce what counts as available.", "rows": [["5mm hex shaft, 96mm", "PART NO · PN-F21", "6 of 4", "Covered"], ["14T pinion gear", "BARCODE · Gears bin", "2 of 2", "Covered"], ["Pillow block bearing", "PART NO · PN-F30", "12 of 8", "Covered"], ["M4 × 8mm screw", "BARCODE · PN-F83", "120 of 64", "Covered"]]}, {"t": "Short", "c": "sh", "k": "SHORT", "d": "<b>Some units are covered, but more are required.</b> Export shortages to get a CSV of exactly how many to buy.", "rows": [["96mm mecanum wheel", "PART NO · Drive shelf", "2 of 4", "Short 2"], ["M4 nylock nut", "BARCODE · PN-F90", "40 of 64", "Short 24"]]}, {"t": "Missing", "c": "ms", "k": "MISSING", "d": "<b>No units are covered by exact inventory matches.</b> Either it was never recorded, or nothing in the inventory matches it closely enough.", "rows": [["Servo, 25T spline", "No match in Robotics Lab", "0 of 1", "Missing"]]}, {"t": "Needs review", "c": "rv", "k": "NEEDS REVIEW", "d": "<b>The identity or requirement is uncertain.</b> Here only the name lines up. Check the evidence before buying or building.", "rows": [["U-channel, 288mm", "NAME ONLY · “U channel 288”", "3 of 2", "Needs review"]]}];
+const FL=[{"name": "findez-bom.json", "lines": ["<span class=\"c\">// exported by the FindEZ add-in</span>", "{", "  <span class=\"k\">\"assembly\"</span>: <span class=\"s\">\"drivetrain_v4\"</span>,", "  <span class=\"k\">\"components\"</span>: [", "    { <span class=\"k\">\"name\"</span>: <span class=\"s\">\"96mm mecanum wheel\"</span>,", "      <span class=\"k\">\"partNumber\"</span>: <span class=\"s\">\"3213-3606-0096\"</span>,", "      <span class=\"k\">\"quantity\"</span>: <span class=\"n\">4</span> },", "    { <span class=\"k\">\"name\"</span>: <span class=\"s\">\"M4 nylock nut\"</span>,", "      <span class=\"k\">\"barcode\"</span>: <span class=\"s\">\"045236718004\"</span>,", "      <span class=\"k\">\"quantity\"</span>: <span class=\"n\">64</span> },", "    <span class=\"c\">... 6 more</span>", "  ]", "}"]}, {"name": "parts-list.csv", "lines": ["<span class=\"k\">Component name,Required quantity,Part number,Barcode</span>", "<span class=\"s\">96mm mecanum wheel</span>,<span class=\"n\">4</span>,<span class=\"s\">3213-3606-0096</span>,", "<span class=\"s\">M4 nylock nut</span>,<span class=\"n\">64</span>,,<span class=\"s\">045236718004</span>", "<span class=\"s\">5mm hex shaft 96mm</span>,<span class=\"n\">4</span>,<span class=\"s\">2100-0005-0096</span>,", "<span class=\"s\">Pillow block bearing</span>,<span class=\"n\">8</span>,<span class=\"s\">1611-0517-0008</span>,", "<span class=\"s\">Servo 25T spline</span>,<span class=\"n\">1</span>,,", "<span class=\"c\"># total individual units, no subtotal rows</span>"]}, {"name": "drivetrain.xlsx · Sheet1", "grid": [["Component name", "Required qty", "Part number"], ["96mm mecanum wheel", "4", "3213-3606-0096"], ["M4 nylock nut", "64", ""], ["5mm hex shaft, 96mm", "4", "2100-0005-0096"], ["Pillow block bearing", "8", "1611-0517-0008"], ["Servo, 25T spline", "1", ""], ["U-channel, 288mm", "2", ""]]}];
+export function mountCadResults(){const life=homeLife(),RM=reduced(),tabs=[...document.querySelectorAll('.rs-tab')];let selected=0,timer;
+function show(i){selected=i;timer?.clear();tabs.forEach((t,k)=>{t.classList.toggle('on',k===i);t.setAttribute('aria-selected',String(k===i))});const g=RS[i];$('rs-k').textContent=g.k;$('rs-p').innerHTML=g.d;const list=$('rs-list');list.innerHTML=g.rows.map(r=>`<div class="rs-row${RM?' on':''}"><div class="nm">${r[0]}<small>${r[1]}</small></div><span class="q">${r[2]}</span><span class="st ${g.c}">${r[3]}</span></div>`).join('');if(!RM&&timer){[...list.children].forEach((e,k)=>timer.after(80+k*110,()=>e.classList.add('on')));timer.after(4600,()=>show((i+1)%RS.length))}}
+timer=sequence(life,$('rs'),.3,()=>show(selected));tabs.forEach((t,k)=>life.on(t,'click',()=>show(k)));tabKeys(life,tabs,show);if(RM)show(0);return()=>life.close();}
+export function mountCadFiles(){const life=homeLife(),RM=reduced(),tabs=[...document.querySelectorAll('.fl-tab')];let selected=0,timer;
+function show(i){selected=i;timer?.clear();tabs.forEach((t,k)=>{t.classList.toggle('on',k===i);t.setAttribute('aria-selected',String(k===i))});$('fl-name').textContent=FL[i].name;const b=$('fl-body'),data=FL[i];
+if(data.grid){b.innerHTML='<div style="padding:16px 18px;min-height:320px"><table class="fl-grid"><tbody>'+data.grid.map((r,k)=>'<tr style="opacity:'+ (RM?1:0) +';transition:opacity .3s"><td>'+(k?k:'')+'</td>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';if(!RM)[...b.querySelectorAll('tr')].forEach((tr,k)=>timer.after(k*120,()=>tr.style.opacity=1))}
+else{b.innerHTML='<pre class="fl-pre"></pre>';const pre=b.firstChild;if(RM)pre.innerHTML=data.lines.join('\n');else data.lines.forEach((ln,k)=>timer.after(k*90,()=>pre.innerHTML+=ln+'\n'))}
+if(!RM)timer.after(5200,()=>show((i+1)%FL.length))}
+timer=sequence(life,document.querySelector('.fl'),.3,()=>show(selected));tabs.forEach((t,k)=>life.on(t,'click',()=>show(k)));tabKeys(life,tabs,show);if(RM)show(0);return()=>life.close();}
+export function mountCadPipeline(){const life=homeLife(),RM=reduced(),nodes=[...document.querySelectorAll('.pl-n')];let i=0;
+if(RM)nodes.forEach(n=>n.classList.add('on'));else sequence(life,$('pl'),.2,t=>{const step=()=>{nodes.forEach((n,k)=>n.classList.toggle('on',k===i));i=(i+1)%4;t.after(2000,step)};t.after(350,step)});return()=>life.close();}
+export function mountCadEvidence(){const life=homeLife(),node=$('ev');if(reduced())node.classList.add('on');else{const io=life.observer(es=>{if(es[0].isIntersecting&&es[0].intersectionRatio>=.4){node.classList.add('on');io.disconnect()}},{threshold:.4});io.observe(node)}return()=>life.close();}
+export function mountCadPrivacy(){const life=homeLife(),svg=document.querySelector('.pv svg'),RM=reduced();svg.pauseAnimations();let visible=false;const sync=()=>{if(RM||!visible||document.hidden)svg.pauseAnimations();else svg.unpauseAnimations()};life.observer(es=>{visible=es[0].isIntersecting;sync()}).observe(svg);life.on(document,'visibilitychange',sync);life.dispose(()=>svg.pauseAnimations());return()=>life.close();}
+const TREE=['Downloads/','└─ findez-fusion-preview/','   └─ <b>FindEZ/</b>   <i>&larr; select this</i>','      ├─ FindEZ.py','      ├─ FindEZ.manifest','      └─ exporter.py'];
+export function mountCadFolder(){const life=homeLife(),pre=$('gs-pre');let started=false;if(!reduced())sequence(life,document.querySelector('.gs-tree'),.4,t=>{if(started)return;started=true;pre.innerHTML='';TREE.forEach((line,k)=>t.after(k*160,()=>pre.innerHTML+=line+'\n'))});return()=>life.close();}

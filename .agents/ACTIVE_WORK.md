@@ -1802,3 +1802,15 @@ deployed to self-hosted findez-landing-consistency-20261111. Production build
 lee60OcGN_hEj8GxNLEou passed. 56 targeted tests pass; local protected route list
 was synchronized with production's existing /cad entry for the route inventory test.
 Report: docs/releases/signin-resume-20261111/README.md.
+
+## Public CAD Intelligence page, November 11, 2026
+
+Created /cad-intelligence from the supplied prototype and deployed directly to
+self-hosted findez-back-chat-20261111. Final production build
+UOIn6365V3p9Vu-e-t0ON passed, including TypeScript. Reused live shared chrome,
+scroll/background controllers and frame scheduler. Other production edits are
+only CAD marketing href targets. /cad, /docs/cad, backend, auth, config, mobile
+and downloads remain unchanged. Safari desktop/phone layout, bidirectional
+comparison, tabs, destinations and ZIP verified. Observed renderer RSS remained
+39.75–39.86 MiB. Report, exact files/link changes, copy clarification and six live
+screenshots: docs/releases/cad-public-20261111/README.md.
