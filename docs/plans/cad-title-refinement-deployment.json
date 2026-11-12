@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T05:23:27.323641+00:00",
+  "live": "/home/ubuntu/findez-cad-title-refine-20261111/frontend",
+  "build_id": "eoX95HTt40_0dqtukFTWG",
+  "changed_files": [
+    "src/components/marketing-dark/cad-public.css"
+  ],
+  "preserved_files": 645,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

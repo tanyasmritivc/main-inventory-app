@@ -33,7 +33,7 @@ html:has(.cad-public-page){background:#000;scroll-behavior:auto}
 .cad-public-page .c-lead{margin-top:18px;font-size:17px;line-height:1.55;color:var(--g1);max-width:560px}
 .cad-public-page .chip-pv{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:14px;box-shadow:inset 0 0 0 1px #2C2C2E;font:500 12px var(--font-geist-mono),monospace;color:var(--g1);letter-spacing:.04em}
 .cad-public-page .c-hero{padding:150px 0 30px}
-.cad-public-page .c-h1{margin:0;font:400 56px/1.08 var(--font-app-inter),sans-serif;letter-spacing:-.035em;max-width:840px;text-wrap:balance}
+.cad-public-page .c-h1{margin:0;font:500 52px/1.12 var(--font-app-tight),var(--font-app-inter),sans-serif;letter-spacing:-.025em;max-width:760px;text-wrap:balance}
 .cad-public-page .c-h1 span{display:block;margin-top:20px;max-width:620px;font:400 22px/1.45 var(--font-app-inter),sans-serif;letter-spacing:-.015em;text-wrap:pretty;color:var(--g1)}
 .cad-public-page .cm{position:relative;height:340vh}
 .cad-public-page .cm-st{position:sticky;top:0;height:100vh;overflow:hidden}

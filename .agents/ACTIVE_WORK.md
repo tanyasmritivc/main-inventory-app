@@ -1,3 +1,14 @@
+## November 11: CAD title refinement
+
+Owner requested restoring the previous title font after reviewing regular Inter.
+The public CAD hero now uses Inter Tight 500 again, with desktop size 52px,
+line height 1.12, tracking -0.025em and a 760px maximum width for balanced wrapping.
+The mobile 36px size, copy, subtitle, buttons and remaining page are preserved.
+This supersedes the regular-Inter change below. Production webpack/TypeScript
+build passed. Guarded self-hosted release changed one CSS file, preserving 645
+other files. Live result verified in Safari. Receipt:
+docs/plans/cad-title-refinement-deployment.json.
+
 ## November 11: CAD public title font
 
 Changed only the CAD public hero title from Inter Tight 500 to the existing
