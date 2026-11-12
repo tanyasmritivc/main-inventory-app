@@ -1779,3 +1779,16 @@ Hero buttons and page content untouched. Single stylesheet deployed to the activ
 self-hosted findez-connections-ui-revert-20261111 release after matching its prior
 hash. Production build mezOlTvRqwnapNaKzvA8p passed; homepage returns 200 and
 compiled CSS includes the compact header.
+
+## Public legal/API refresh, November 11, 2026
+
+Updated legal disclosures for Amazon CSV/ZIP imports, personal/organization scopes,
+provider/Gmail processing, CAD metadata and stateless comparison, desktop storage,
+and disconnect/deletion distinctions. Terms clarify purchase evidence versus
+physical stock and CAD coverage limitations. Dates/version are November 11.
+Added built-in setup guidance to API docs without inventing public endpoints or
+changing OpenAPI. Preserved newer live legal/API content during deployment.
+25 targeted tests and changed-file lint pass; production build
+9B4zBugQdeRc9W4i195a8 is live on self-hosted findez-cad-immediate-20261111.
+Only two production content modules changed. Report:
+docs/releases/public-docs-20261111/README.md.

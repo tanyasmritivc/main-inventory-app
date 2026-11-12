@@ -39,6 +39,9 @@ async function submitSignup() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  Object.defineProperty(window, "matchMedia", { configurable: true, value: jest.fn((query: string) => ({
+    matches: false, media: query, addEventListener: jest.fn(), removeEventListener: jest.fn(),
+  })) });
   mockRedirect = "/inventory";
   window.localStorage.clear();
 });
@@ -55,7 +58,7 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   expect(redirect.pathname).toBe("/auth/callback");
   expect(redirect.searchParams.get("next")).toBe("/worlds");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
-  expect(args.options.data.terms_version).toBe("2026-11-01");
+  expect(args.options.data.terms_version).toBe("2026-11-11");
   expect(args.options.data.eligibility_attested).toBe(true);
   expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(false);
 });
