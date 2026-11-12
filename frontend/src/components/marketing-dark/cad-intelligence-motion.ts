@@ -125,7 +125,7 @@ for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1
     g.clearRect(0,0,W,H);
  const cx=W*.5,cy=H*.47,S=Math.min(W*.15,H*.29),ay=t*.35+.7,ax=-.42;const ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.cos(ax),sb=Math.sin(ax);
  const pul=.5+.5*Math.sin(t*8);
- for(const p of P){let x=p[0]*ca+p[2]*sa,z=-p[0]*sa+p[2]*ca,y=p[1]*cb-z*sb;z=p[1]*sb+z*cb;const f=3/(3+z),px=cx+x*S*f,py=cy+y*S*f,dep=(1-z)/2;
+ for(const p of P){const x=p[0]*ca+p[2]*sa;let z=-p[0]*sa+p[2]*ca;const y=p[1]*cb-z*sb;z=p[1]*sb+z*cb;const f=3/(3+z),px=cx+x*S*f,py=cy+y*S*f,dep=(1-z)/2;
   const st=ST[p[3]],cur=CUR===p[3];let c;
   if(cur)c=`rgba(255,255,255,${.55+.45*pul})`;else if(st===1)c=`rgba(245,245,246,${.45+.45*dep})`;else if(st===2)c=`rgba(227,180,92,${.55+.45*dep})`;else c=`rgba(245,245,246,${.08+.16*dep})`;
   g.fillStyle=c;const s=(cur?1.5:1)*(1+1.1*dep);g.fillRect(px-s/2,py-s/2,s,s)}
@@ -160,9 +160,10 @@ for(let i=0;i<80;i++){const f=R()*3|0,x=(R()*2-1)*.22,y=(R()*2-1)*.12,z=(R()*2-1
     else if (replayPending) play();
   }
   const trigger = new IntersectionObserver(entries => {
-    windowVisible = entries[0].isIntersecting && entries[0].intersectionRatio >= .35;
+    // Start at the viewport edge rather than waiting for 35% of the tall card.
+    windowVisible = entries[0].isIntersecting;
     if (windowVisible && !motion.matches && (!started || replayPending)) { started = true; play(); }
-  }, { threshold: [0,.35] });
+  }, { threshold: 0 });
   const canvasObserver = new IntersectionObserver(entries => { canvasVisible = entries[0].isIntersecting; refreshCanvas(); });
   const resizeObserver = new ResizeObserver(size);
   trigger.observe(element('win')); canvasObserver.observe(cv); resizeObserver.observe(cv);

@@ -1819,3 +1819,14 @@ preserving 625 other files. Changed-file ESLint and production build/TypeScript
 passed. Live public guide inspected in Chrome; public CSS confirms compact rows.
 Signed-in selector visual acceptance was not performed. No backend, mobile,
 dependencies or environment changes. Receipt: docs/plans/cad-compact-deployment.json.
+
+CAD demo entry timing, November 11: the homepage comparison animation now
+starts at first viewport intersection (threshold 0), replacing the 35% visibility
+requirement. Upload/matching timings, replay, offscreen canvas pause and Reduce
+Motion behavior are preserved. Deployment retains the live home-frame scheduler
+import from concurrent homepage work, which is absent from this local branch.
+
+Changed-file ESLint and the production build/TypeScript passed. Activated the
+self-hosted findez-cad-immediate-20261111 release with one source-file change,
+preserving 629 other files. Live Chrome scroll showed the upload animation
+running when the card entered view. Receipt: docs/plans/cad-immediate-deployment.json.

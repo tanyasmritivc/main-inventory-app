@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T01:04:39.523991+00:00",
+  "live": "/home/ubuntu/findez-cad-immediate-20261111/frontend",
+  "build_id": "zPFHaJB8NfyEkSr57cPUR",
+  "changed_files": [
+    "src/components/marketing-dark/cad-intelligence-motion.ts"
+  ],
+  "preserved_files": 629,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}
