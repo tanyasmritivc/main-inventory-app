@@ -1,0 +1,19 @@
+{
+  "deployed_at": "2026-11-12T00:12:55.368228+00:00",
+  "live": "/home/ubuntu/findez-connections-ui-revert-20261111/frontend",
+  "build_id": "_xOgYMPhtCbb1XI3joA8i",
+  "changed_files": [
+    "src/components/site/amazon-history-import.tsx",
+    "src/components/site/commerce-client.module.css",
+    "src/components/site/commerce-client.tsx",
+    "src/components/site/purchase-library.module.css",
+    "src/components/site/purchase-library.tsx",
+    "src/components/site/settings-connections.module.css",
+    "src/components/site/settings-connections.tsx"
+  ],
+  "preserved_files": 622,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

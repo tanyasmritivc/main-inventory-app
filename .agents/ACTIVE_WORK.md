@@ -1759,3 +1759,18 @@ No user export was uploaded or saved by this work. Positive purchase matches
 and organization isolation were tested with synthetic fixtures; no live customer
 purchase fixture was created. Existing imports in other scopes were not inspected.
 Receipts: docs/plans/purchase-intelligence-{backend,web}-deployment.json.
+
+Connections UI redesign reverted at the user's request, November 11. Restored
+all seven Connections presentation files and the purchase-library test to the
+pre-redesign baseline 4f8476ac. Purchase intelligence, imports, owner scoping,
+chat, backend and stored data are unchanged. The replacement production build
+starts from the latest live source and preserves concurrent homepage/solutions
+changes. No Vercel or Render deployment.
+
+Production build/TypeScript passed. Google font responses containing font URLs
+without extensions broke the existing Next font loader; a build-only cache
+outside the frontend stores the original provider CSS and validated binary font
+files with extensions. Fonts, dependencies and app configuration are unchanged.
+Removed disposable webpack caches from old Connections releases to free build
+space. Receipts: docs/plans/connections-ui-deployment.json (initial redesign)
+and connections-ui-revert-deployment.json (restored layout).
