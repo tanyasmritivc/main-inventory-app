@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T01:30:53.416237+00:00",
+  "live": "/home/ubuntu/findez-back-chat-20261111/frontend",
+  "build_id": "b5Dny1yKfle42rUgxk7t4",
+  "changed_files": [
+    "src/components/site/app-shell.tsx"
+  ],
+  "preserved_files": 631,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

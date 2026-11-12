@@ -6,6 +6,7 @@ import { organizationNavigation, workspaceNavigation } from "@/lib/context-navig
 import { AppShell } from "@/components/site/app-shell";
 import { SettingsClient } from "@/components/site/settings-client";
 import { accountRequest } from "@/lib/account-request";
+import { worldPreferenceKey } from "@/lib/world-entry";
 import { publishNotificationSnapshot } from "@/lib/notification-state";
 
 afterEach(()=>selectInventory(null));
@@ -282,4 +283,24 @@ test("provider signup persists the provider name instead of pending typed names"
   expect(client.auth.updateUser).toHaveBeenCalledWith(expect.objectContaining({data: expect.objectContaining({full_name: "Sam Chen", eligibility_attested: true})}));
   expect(localStorage.getItem("findez_pending_signup_profile")).toBeNull();
   client.auth.getSession.mockResolvedValue({data: {session}});
+});
+
+
+test.each(["robotics-team", "other-organization", "personal"])("Back to chat opens the current account's %s chat directly", async world => {
+ localStorage.setItem(worldPreferenceKey("a"), world);
+ localStorage.setItem(worldPreferenceKey("another-account"), "unrelated-team");
+ document.cookie = `findez-resume=${encodeURIComponent(JSON.stringify({accountId:"a",path:"/settings/profile"}))}; Path=/`;
+ mockPathname="/settings/profile";
+ const view=render(<AppShell><h1>Profile</h1></AppShell>);
+ await waitFor(() => expect(screen.getByRole("link",{name:"Back to chat"}).getAttribute("href")).toBe(`/worlds/${world}`));
+ mockPathname="/settings/appearance";
+ view.rerender(<AppShell><h1>Appearance</h1></AppShell>);
+ expect(screen.getByRole("link",{name:"Back to chat"}).getAttribute("href")).toBe(`/worlds/${world}`);
+});
+
+test("Back to chat never uses another account's saved organization", async () => {
+ localStorage.setItem(worldPreferenceKey("another-account"), "unrelated-team");
+ render(<AppShell><h1>Profile</h1></AppShell>);
+ await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
+ expect(screen.getByRole("link",{name:"Back to chat"}).getAttribute("href")).toBe("/worlds/personal");
 });

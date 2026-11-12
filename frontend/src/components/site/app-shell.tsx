@@ -36,6 +36,7 @@ import {
   type NavigationContext,
 } from "@/lib/context-navigation";
 import { worldHref, worldNavigation } from "@/lib/world-navigation";
+import { worldPreferenceKey } from "@/lib/world-entry";
 import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -91,6 +92,7 @@ export function AppShell({
   const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [chatWorld, setChatWorld] = useState("personal");
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -113,6 +115,11 @@ export function AppShell({
       if (!current()) return;
       const user = data.session?.user;
       setUserId(user?.id || null);
+      let rememberedWorld = "personal";
+      try {
+        if (user) rememberedWorld = localStorage.getItem(worldPreferenceKey(user.id)) || "personal";
+      } catch { /* Personal chat remains available when storage is disabled. */ }
+      setChatWorld(rememberedWorld);
       setUserCreatedAt(user?.created_at || null);
       if (notificationAccount !== user?.id) {
         notificationAccount = user?.id;
@@ -225,6 +232,7 @@ export function AppShell({
       if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) return;
       generation++;
       setUserId(null);
+      setChatWorld("personal");
       setUserName("Your account");
       setUserInitial("");
       setAvatarUrl(undefined);
@@ -277,7 +285,7 @@ export function AppShell({
   const accountItems: AppNavItem[] = [
     {
       label: "Back to chat",
-      route: "/worlds",
+      route: worldHref(chatWorld),
       icon: ArrowLeft,
       section: "Account",
     },

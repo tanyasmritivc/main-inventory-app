@@ -1869,3 +1869,19 @@ receipts and 17-route results are docs/plans/public-chrome-deployment.json,
 docs/plans/public-chrome-background-deployment.json and
 docs/plans/public-chrome-verification.json. No Vercel/Render deployment or backend,
 auth, mobile, dependency or environment changes.
+
+Back to organization chat, November 11: Account sidebar now links directly to
+/worlds/{last selected organization}, using the existing account-scoped world
+preference. Personal is the fallback for accounts without a selection or blocked
+storage. Authentication changes reset the destination; other accounts' saved
+organizations are not read. This bypasses the generic /worlds resume route so
+Back to chat cannot reopen a saved settings or tools screen.
+
+Twenty workspace/profile tests pass, including two organization destinations,
+Personal, settings-category navigation and another account's saved preference.
+Changed-file lint and production webpack/TypeScript build passed. One live source
+file deployed on the self-hosted findez-back-chat-20261111 release, preserving 631
+other files and the newer live CAD/Connections sidebar entries. Signed-in Safari
+click acceptance was not completed because the active browser changed during
+inspection. No chat implementation, backend, auth handler or mobile changes.
+Receipt: docs/plans/back-to-organization-chat-deployment.json.
