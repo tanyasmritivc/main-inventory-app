@@ -1792,3 +1792,13 @@ changing OpenAPI. Preserved newer live legal/API content during deployment.
 9B4zBugQdeRc9W4i195a8 is live on self-hosted findez-cad-immediate-20261111.
 Only two production content modules changed. Report:
 docs/releases/public-docs-20261111/README.md.
+
+## Sign-in Connections redirect fix, November 11, 2026
+
+Excluded settings and legacy inventory connection screens from automatic page
+resume. Existing saved Connections cookies are rejected on read; explicit return
+links and account-scoped workspace resume remain supported. Only app-resume.ts
+deployed to self-hosted findez-landing-consistency-20261111. Production build
+lee60OcGN_hEj8GxNLEou passed. 56 targeted tests pass; local protected route list
+was synchronized with production's existing /cad entry for the route inventory test.
+Report: docs/releases/signin-resume-20261111/README.md.

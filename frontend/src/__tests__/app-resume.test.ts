@@ -19,3 +19,11 @@ test('conversation storage is isolated by account and inventory or organization'
   expect(conversationResumeKey('a',':world:personal')).not.toBe(conversationResumeKey('b',':world:personal'));
   expect(conversationResumeKey('a',':world:personal')).not.toBe(conversationResumeKey('a',':inventory:one'));
 });
+
+test.each(['/settings/connections', '/settings/connections?organization=team-a', '/settings', '/settings/api-keys', '/inventory/connect?inventory=one', '/%73ettings/connections'])('ignores old utility-page cookies without overwriting the last workspace: %s', path => {
+  const oldCookie = encodeURIComponent(JSON.stringify({ accountId: 'account-a', path }));
+  expect(readResume(oldCookie, 'account-a')).toBeNull();
+  rememberPage('account-a', '/worlds/personal?view=spaces');
+  rememberPage('account-a', path);
+  expect(rememberedPage('account-a')).toBe('/worlds/personal?view=spaces');
+});

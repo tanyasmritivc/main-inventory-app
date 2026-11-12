@@ -107,6 +107,20 @@ describe("middleware", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 
+  test.each(["/", "/signin", "/signup"])("ignores stale Connections resume cookies at %s", async (path) => {
+    sessionUser({ id: "u1" });
+    const request = new NextRequest(`https://findez.ai${path}`);
+    request.cookies.set("findez-resume", encodeURIComponent(JSON.stringify({ accountId: "u1", path: "/settings/connections?organization=team-a" })));
+    const response = await middleware(request);
+    expect(response.headers.get("location")).toBe("https://findez.ai/worlds");
+  });
+
+  test("preserves an explicitly requested Connections destination", async () => {
+    sessionUser({ id: "u1" });
+    const response = await middleware(new NextRequest("https://findez.ai/signin?redirect=%2Fsettings%2Fconnections"));
+    expect(response.headers.get("location")).toBe("https://findez.ai/settings/connections");
+  });
+
   test("retains a landing prompt and invitation destinations for returning users", async () => {
     sessionUser({ id: "u1" });
     const response = await middleware(new NextRequest("https://findez.ai/signup?prompt=Find+my+drill"));
