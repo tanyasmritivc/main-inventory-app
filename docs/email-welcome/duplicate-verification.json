@@ -1,0 +1,5 @@
+{
+  "repeat_triggers": 2,
+  "duplicate_smtp_attempts": 0,
+  "duplicate_guard_verified": true
+}

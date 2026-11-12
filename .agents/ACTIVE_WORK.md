@@ -1886,18 +1886,19 @@ click acceptance was not completed because the active browser changed during
 inspection. No chat implementation, backend, auth handler or mobile changes.
 Receipt: docs/plans/back-to-organization-chat-deployment.json.
 
-Welcome email, November 11: exact supplied HTML/plain-text design prepared under
-emails/ and seven unchanged assets published on the self-hosted site. One owner
-test was accepted by the existing Brevo SMTP relay as FindEZ <noreply@findez.ai>,
-Reply-To info@findez.ai. No automated user sends enabled. User must say "turn it
-on" before backend activation. See docs/email-welcome/IMPLEMENTATION.md and
-test-send-receipt.json. Owner approved Founders Access wording; live pilot mode
-is enabled. Account settings is the allowed email-preferences fallback.
+Welcome email, November 11: owner approved the supplied design and authorized
+automatic sending. Enabled at 2026-11-12T04:42:44.512434+00:00 for newly created,
+confirmed users on their first authenticated backend request. Existing accounts
+are excluded. Unique email_deliveries claim prevents repeated sends; ambiguous
+SMTP failures are not retried. All 80 focused tests pass. Backend health/database
+checks pass and anonymous profile access is rejected. Existing live security
+patch preserved. No configuration or schema changes. Self-hosted only.
+See docs/email-welcome/IMPLEMENTATION.md and activation-receipt.json.
 
-A disabled backend hook schedules a post-response helper for new confirmed users
-on their first authenticated request across web/iPhone. WELCOME_LAUNCH_AT=None
-until approval; use actual activation time to exclude every existing account.
-Existing email_deliveries RLS/unique constraint verified, no migration needed.
-Durable claim prevents repeats; uncertain SMTP failures are not automatically
-retried. 47 welcome/JWT tests and production web build passed. Only assets were
-deployed; backend, auth settings, env and mobile runtime remain unchanged.
+Real signup confirmed with one welcome sent record after app entry. Two repeat
+helper triggers made zero SMTP attempts. Before confirmation there was no welcome
+claim. Inbox placement of the automatic message is not independently verified.
+Signup confirmation email restyled
+to monochrome at owner request, preserving copy, action URLs and GoTrue variables.
+Public template hashes verified and Auth healthy; fresh confirmation requested.
+Receipt: docs/email-welcome/confirmation-style-receipt.json.

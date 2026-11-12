@@ -1,0 +1,9 @@
+{
+  "deployed_at": "2026-11-12T04:47:51.845984+00:00",
+  "file": "frontend/public/auth-email/signup.html",
+  "sha256": "6ed6d678101dcab64a89d92f6613242c12390dc5d4dacc87817e1eeadab605d8",
+  "public_template_verified": true,
+  "auth_healthy": true,
+  "auth_configuration_changed": false,
+  "action_urls_and_variables_changed": false
+}

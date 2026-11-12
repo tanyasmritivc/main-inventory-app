@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Set to the actual rollout instant only after the owner approves the test email.
 # None disables both scheduling and sending. Older accounts are never backfilled.
-WELCOME_LAUNCH_AT: datetime | None = None
+WELCOME_LAUNCH_AT: datetime | None = datetime.fromisoformat('2026-11-12T04:42:44.512434+00:00')
 WELCOME_KEY = "findez-welcome-v1"
 TEMPLATE_DIRECTORY = Path(__file__).resolve().parents[3] / "emails"
 

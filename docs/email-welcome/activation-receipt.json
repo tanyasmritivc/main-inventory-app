@@ -1,0 +1,16 @@
+{
+  "deployed_at": "2026-11-12T04:42:46.909272+00:00",
+  "new_accounts_from": "2026-11-12T04:42:44.512434+00:00",
+  "files": {
+    "backend/app/core/auth.py": "8f6b45583abab01dab33dcc948ea1bb539edca42ef5a080db75ec2e2fa6b81f7",
+    "backend/app/services/welcome_email.py": "fe3c8c7bca049502199651a4c14c8ff1970001487a4ba0a18b2fc938b5b3b42f",
+    "emails/welcome.html": "a02419b739d84d4cc08d0c11804bfbcb3af5ae0eaef70427e0eddae57991330a",
+    "emails/welcome.txt": "44844c5bee7fb920f4f496abc9cc18c34a126ccb5ef93d5817e6313c567168fa"
+  },
+  "health": 200,
+  "database_health": 200,
+  "anonymous_profile": 401,
+  "migration": false,
+  "configuration_changed": false,
+  "automatic_welcome_enabled": true
+}
