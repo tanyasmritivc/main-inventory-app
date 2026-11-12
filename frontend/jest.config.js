@@ -1,6 +1,7 @@
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/browser-setup.ts'],
   transform: {
     '^.+\\.[tj]sx?$': ['ts-jest', { tsconfig: './tsconfig.jest.json' }],
   },

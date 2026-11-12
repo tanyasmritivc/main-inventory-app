@@ -16,13 +16,13 @@ beforeEach(() => request.mockReset());
 test("profile entry chooses an authorized inventory without redirecting to home", async () => {
   request.mockImplementation(async (_actor, path) => path === "/organizations" ? orgs : directory("personal"));
   render(<CadEntry />);
-  expect((await screen.findByRole("link", { name: "personal / Parts" })).getAttribute("href")).toBe("/cad?inventory=personal-inventory");
+  expect((await screen.findByRole("link", { name: "Parts personal" })).getAttribute("href")).toBe("/cad?inventory=personal-inventory");
 });
 
 test("organization shortcut requests only its authorized directory", async () => {
   request.mockImplementation(async (_actor, path) => path === "/organizations" ? orgs : directory("team"));
   render(<CadEntry worldId="team" />);
-  expect((await screen.findByRole("link", { name: "team / Parts" })).getAttribute("href")).toBe("/cad?inventory=team-inventory");
+  expect((await screen.findByRole("link", { name: "Parts team" })).getAttribute("href")).toBe("/cad?inventory=team-inventory");
   expect(request).toHaveBeenCalledWith("qa-user", "/worlds/team/directory");
   expect(request).not.toHaveBeenCalledWith("qa-user", "/worlds/personal/directory");
 });
@@ -40,14 +40,14 @@ test("switching organizations ignores a late response from the previous director
   render(<CadEntry />);
   await screen.findByRole("option", { name: "Robotics" });
   fireEvent.change(screen.getByRole("combobox"), { target: { value: "team" } });
-  await screen.findByRole("link", { name: "team / Parts" });
+  await screen.findByRole("link", { name: "Parts team" });
   await act(async () => finish(directory("personal")));
-  expect(screen.queryByRole("link", { name: "personal / Parts" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Parts personal" })).toBeNull();
 });
 
 test("a mismatched directory is rejected", async () => {
   request.mockImplementation(async (_actor, path) => path === "/organizations" ? orgs : directory("other"));
   render(<CadEntry worldId="team" />);
   expect(await screen.findByRole("alert")).toBeTruthy();
-  expect(screen.queryByRole("link", { name: "other / Parts" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Parts other" })).toBeNull();
 });

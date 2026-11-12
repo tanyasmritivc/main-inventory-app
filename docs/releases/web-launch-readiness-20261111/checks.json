@@ -1,0 +1,31 @@
+{
+  "web": {
+    "numPassedTests": 677,
+    "numFailedTests": 0,
+    "numPassedTestSuites": 88,
+    "numFailedTestSuites": 0,
+    "numPendingTests": 0
+  },
+  "backend": {
+    "passed": 1146,
+    "failed": 0,
+    "warnings": 206,
+    "scope": "Repository regression suite; external I/O mocked, production database not exercised"
+  },
+  "connectors": {
+    "passed": 36,
+    "bundle_check": "passed",
+    "standalone_bundle_tests_passed": 1
+  },
+  "typescript": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 71
+  },
+  "production_build": "pS9L5T2qUaiLpKJGxnlQF",
+  "production_release": "/home/ubuntu/findez-launch-readiness-20261111/frontend",
+  "previous_release": "/home/ubuntu/findez-cad-title-refine-20261111/frontend",
+  "public_http_checks": 34,
+  "production_vulnerabilities": 0,
+  "free_disk_after_cache_cleanup": "4.2 GiB"
+}

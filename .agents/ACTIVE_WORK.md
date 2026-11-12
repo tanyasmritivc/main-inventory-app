@@ -1,3 +1,16 @@
+## November 11 - web launch readiness audit
+
+Owner: Codex, branch `fix/web-launch-readiness-20261111`. Audited the actual
+self-hosted frontend source, preserving concurrent CAD typography refinements.
+677 web tests pass across 88 suites, with no skipped tests. TypeScript and lint
+pass (71 non-blocking warnings); backend regression suite: 1,146 passed. Connector
+suite: 36 passed, bundle check passed, standalone bundle test passed. Next.js
+16.4.6 addresses the production dependency advisories; production audit is clean.
+Fixed removal-dialog account/resource races and action-specific receipts, review
+queue account isolation, missing sitemap routes, and inaccurate Claude extension
+capability wording. The release is deployed; 34 HTTPS checks and signed-in Safari smoke checks
+passed. Receipt: `docs/releases/web-launch-readiness-20261111/README.md`. No mobile, backend, database or customer-account changes.
+
 ## November 8 — Overly crowded wording deployed (PR368)
 
 The shared photo-scan notice now reads “Overly crowded photos can take around 4

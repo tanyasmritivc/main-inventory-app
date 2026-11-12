@@ -10,7 +10,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { activeInventory, requireInventoryContext, selectInventory } from "@/lib/inventory-selection";
 
 const router={push:jest.fn(),replace:jest.fn()};
-let pathname="/home", query="inventory=a";
+let pathname="/inventory", query="inventory=a";
 jest.mock("next/navigation",()=>({useRouter:()=>router,usePathname:()=>pathname,useSearchParams:()=>new URLSearchParams(query)}));
 jest.mock("@/lib/account-request",()=>({accountRequest:jest.fn()}));
 jest.mock("@/lib/use-api-session",()=>({useApiSession:jest.fn()}));
@@ -19,7 +19,7 @@ jest.mock("@/components/site/app-shell",()=>({AppShell:({children}:{children:Rea
 const personal={workspace_id:"personal",name:"Personal",kind:"personal",team_id:null,role:"owner"};
 const inventory={inventory_id:"a",name:"Workshop parts",owner_user_id:"actor",team_id:null,is_default:true,item_count:1105};
 beforeEach(()=>{
-  jest.clearAllMocks();selectInventory(null);requireInventoryContext(false);pathname="/home";query="inventory=a";
+  jest.clearAllMocks();selectInventory(null);requireInventoryContext(false);pathname="/inventory";query="inventory=a";
   jest.mocked(useApiSession).mockReturnValue({accountId:"actor",loading:false,error:null} as ReturnType<typeof useApiSession>);
   jest.mocked(accountRequest).mockImplementation(async(_account,path,options)=>{
     if(path==="/inventory-workspaces") return {workspaces:[personal,{...personal,workspace_id:"team",name:"Shared workshop",kind:"team",team_id:"team"}]} as never;
@@ -41,10 +41,10 @@ test("the first screen chooses a workspace and the second opens an explicit inve
   expect(screen.getByRole("link",{name:/Personal Private/}).getAttribute("href")).toBe("/workspaces/personal");
   expect(router.push).not.toHaveBeenCalled();
   unmount();render(<WorkspaceDirectory workspaceId="personal"/>);
-  const selected=await screen.findByRole("link",{name:/Workshop parts 1,105 items/});
-  expect(selected.getAttribute("href")).toBe("/home?inventory=a");
+  const selected=await screen.findByRole("link",{name:/Workshop parts/});
+  expect(selected.getAttribute("href")).toBe("/inventory?inventory=a");
   expect(activeInventory()).toBeNull();
-  expect(screen.getAllByRole("heading",{name:"Inventories"})).toHaveLength(1);
+  expect(screen.getAllByRole("heading",{name:"Personal"})).toHaveLength(1);
 });
 
 test("creating another inventory refreshes its workspace and keeps the creation action visible",async()=>{
@@ -69,7 +69,7 @@ test("viewer workspaces can be opened without showing inventory creation or rena
 
 test("missing context returns to the chooser before an inventory page can load",async()=>{
   query="";render(<InventoryBoundary><p>Private page</p></InventoryBoundary>);
-  await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/organizations"));
+  await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/worlds"));
   expect(screen.queryByText("Private page")).toBeNull();
   expect(accountRequest).not.toHaveBeenCalled();
 });

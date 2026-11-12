@@ -16,13 +16,13 @@ Organization management needs a new organization-bound key with the matching opt
 export function AiAssistantSetup() {
   return <section id="ai-assistants" aria-labelledby="ai-assistants-title">
     <h2 id="ai-assistants-title">Connect Claude or ChatGPT</h2>
-    <p>Ask about your inventory, add items, correct quantities and details, move items between linked Spaces in the same Team, or import a batch. With an organization-bound key, both connections can also create inventories and Spaces, manage roles and invitations, and prepare deletions for your confirmation in FindEZ.</p>
+    <p>Ask about your inventory, add items, correct quantities and details, move items between linked Spaces in the same Team, or import a batch. With an organization-bound key, ChatGPT Actions can also create inventories and Spaces, manage roles and invitations, and prepare deletions for your confirmation in FindEZ.</p>
     <h3>1. Create a key for your assistant</h3>
     <p>In <Link href="/settings/api-keys">Settings → API keys</Link>, choose a Team you own and enable <strong>Read inventory</strong>, <strong>Read workspace summary</strong>, <strong>Create and update items</strong>, and <strong>Bulk import</strong>. For organization management, select an organization and enable directory, structure and member permissions as needed. Deletion permissions are separate and start disabled. Use a separate key for each assistant.</p>
     <p>Read-only keys continue to work for reads. Existing keys cannot gain permissions; create a replacement if yours needs writes. Inventory must be in Spaces linked to your selected Team. An organization agent can create the destination Space first. For identical Space names in different inventories, include the inventory ID when adding items.</p>
 
     <h3>2a. Claude Desktop</h3>
-    <p><strong>Connection update — version 1.1.0:</strong> Reinstall the download below to add organization tools. Existing keys keep their original permissions; issue an organization key to enable management. Keep your key in the extension’s private settings.</p>
+    <p><strong>Connection update — version 1.1.0:</strong> This download supports inventory reads, item updates and imports. Use ChatGPT Actions below for organization management and deletion requests. Keep your key in the extension’s private settings.</p>
     <ol>
       <li><a href="/docs/api/findez-inventory.mcpb" download="findez-inventory.mcpb">Download the FindEZ Desktop extension</a>.</li>
       <li>Open Claude Desktop → Settings → Extensions → Advanced settings → Install Extension. Select the downloaded <code>.mcpb</code> file.</li>

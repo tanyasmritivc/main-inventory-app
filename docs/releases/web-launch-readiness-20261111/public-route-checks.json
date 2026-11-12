@@ -1,0 +1,308 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "location": "",
+    "bytes": 83252,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/solutions",
+    "status": 200,
+    "location": "",
+    "bytes": 37065,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/solutions/robotics",
+    "status": 200,
+    "location": "",
+    "bytes": 51951,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/solutions/workshops",
+    "status": 200,
+    "location": "",
+    "bytes": 52424,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/solutions/makerspaces",
+    "status": 200,
+    "location": "",
+    "bytes": 52222,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/solutions/engineering-labs",
+    "status": 200,
+    "location": "",
+    "bytes": 52206,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/cad-intelligence",
+    "status": 200,
+    "location": "",
+    "bytes": 80872,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/founders",
+    "status": 200,
+    "location": "",
+    "bytes": 54775,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/desktop",
+    "status": 200,
+    "location": "",
+    "bytes": 23187,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/pricing",
+    "status": 200,
+    "location": "",
+    "bytes": 34160,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/research",
+    "status": 200,
+    "location": "",
+    "bytes": 99385,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/privacy",
+    "status": 200,
+    "location": "",
+    "bytes": 79851,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/terms",
+    "status": 200,
+    "location": "",
+    "bytes": 58354,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/docs/api",
+    "status": 200,
+    "location": "",
+    "bytes": 459822,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/docs/cad",
+    "status": 200,
+    "location": "",
+    "bytes": 41332,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/signin",
+    "status": 200,
+    "location": "",
+    "bytes": 16647,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/signup",
+    "status": 200,
+    "location": "",
+    "bytes": 16646,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/reset-password",
+    "status": 200,
+    "location": "",
+    "bytes": 15413,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/sitemap.xml",
+    "status": 200,
+    "location": "",
+    "bytes": 1001,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/robots.txt",
+    "status": 200,
+    "location": "",
+    "bytes": 446,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/downloads/findez-fusion-preview.zip",
+    "status": 200,
+    "location": "",
+    "bytes": 7094,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/downloads/findez-bom-template.csv",
+    "status": 200,
+    "location": "",
+    "bytes": 120,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/docs/api/chatgpt-actions.json",
+    "status": 200,
+    "location": "",
+    "bytes": 68411,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/docs/api/findez-inventory.mcpb",
+    "status": 200,
+    "location": "",
+    "bytes": 115775,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/worlds",
+    "status": 307,
+    "location": "/signin?redirect=%2Fworlds",
+    "bytes": 26,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/inventory",
+    "status": 307,
+    "location": "/signin?redirect=%2Finventory",
+    "bytes": 29,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/assist",
+    "status": 307,
+    "location": "/signin?redirect=%2Fassist",
+    "bytes": 26,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/cad",
+    "status": 307,
+    "location": "/signin?redirect=%2Fcad",
+    "bytes": 23,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/review",
+    "status": 307,
+    "location": "/signin?redirect=%2Freview",
+    "bytes": 26,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/settings/profile",
+    "status": 307,
+    "location": "/signin?redirect=%2Fsettings%2Fprofile",
+    "bytes": 38,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/settings/connections",
+    "status": 307,
+    "location": "/signin?redirect=%2Fsettings%2Fconnections",
+    "bytes": 42,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/settings/api-keys",
+    "status": 307,
+    "location": "/signin?redirect=%2Fsettings%2Fapi-keys",
+    "bytes": 39,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/organizations",
+    "status": 307,
+    "location": "/signin?redirect=%2Forganizations",
+    "bytes": 33,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  },
+  {
+    "path": "/workspaces",
+    "status": 307,
+    "location": "/signin?redirect=%2Fworkspaces",
+    "bytes": 30,
+    "pass": true,
+    "nosniff": "nosniff",
+    "frame_options": "DENY"
+  }
+]

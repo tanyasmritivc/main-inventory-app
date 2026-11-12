@@ -32,7 +32,7 @@ test('failed edits keep the labelled form and draft open until a confirmed save'
   await userEvent.type(within(dialog).getByLabelText('Part number'), '001-QA');
   jest.mocked(accountRequest).mockRejectedValueOnce(new Error('The save is unavailable.'));
   await userEvent.click(within(dialog).getByRole('button', { name: /^Save$/ }));
-  await waitFor(() => expect(within(dialog).getByRole('alert').textContent).toBeTruthy());
+  await waitFor(() => expect(within(dialog).getByText('Could not save. Your changes are still here.').textContent).toBeTruthy());
   expect(within(dialog).getByLabelText('Part number')).toHaveProperty('value', '001-QA');
   jest.mocked(accountRequest).mockResolvedValueOnce({ item: { ...item, part_number: '001-QA' } });
   await userEvent.click(within(dialog).getByRole('button', { name: /^Save$/ }));

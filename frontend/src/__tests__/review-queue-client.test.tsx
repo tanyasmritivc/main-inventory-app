@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { ReviewQueueClient } from "@/components/site/review-queue-client";
@@ -53,6 +53,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(useApiSession).mockReturnValue({
     token: "web-token",
+    accountId: "actor",
     loading: false,
     error: null,
   } as ReturnType<typeof useApiSession>);
@@ -76,9 +77,10 @@ beforeEach(() => {
 test("shows the capture image and every user-facing evidence group", async () => {
   render(<ReviewQueueClient />);
 
-  expect(await screen.findByRole("heading", { name: review.name })).toBeTruthy();
+  await userEvent.click(await screen.findByRole("button", { name: `Review ${review.name}` }));
+  await userEvent.click(screen.getByText("Capture information"));
   expect(screen.getByRole("img", { name: `Captured ${review.name}` }).getAttribute("src")).toBe(review.image_url);
-  expect(screen.getByText("The identification confidence is low.")).toBeTruthy();
+  expect(screen.getAllByText("The identification confidence is low.")[0]).toBeTruthy();
   expect(screen.getByText("Visible shape and markings suggest a fastener.")).toBeTruthy();
   expect(screen.getByText("M4")).toBeTruthy();
   expect(screen.getByText("CODE_128")).toBeTruthy();
@@ -90,13 +92,27 @@ test("confirms a reviewed item and removes it from the queue", async () => {
   const user = userEvent.setup();
   render(<ReviewQueueClient />);
 
-  await user.click(await screen.findByRole("button", { name: "Confirm and add to Find" }));
+  await user.click(await screen.findByRole("button",{name:`Review ${review.name}`}));
+  await user.click(screen.getByRole("button", { name: "Confirm and save" }));
 
   await waitFor(() => expect(api.resolveReviewItem).toHaveBeenCalledWith({
     token: "web-token",
     reviewId: "review-1",
     item: expect.objectContaining({ location: "Drawer A", name: review.name }),
   }));
-  expect(await screen.findByText(`${review.name} was confirmed and added to Find.`)).toBeTruthy();
+  expect(await screen.findByText(`${review.name} was saved to your inventory.`)).toBeTruthy();
   expect(screen.queryByRole("heading", { name: review.name })).toBeNull();
+});
+
+
+test("a late response from a previous account cannot repopulate Review", async () => {
+ let finish!: (value: {items: api.ReviewItem[];pending_count:number})=>void;
+ jest.mocked(api.getReviewItems).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;})).mockResolvedValue({items:[],pending_count:0});
+ const view=render(<ReviewQueueClient/>);
+ jest.mocked(useApiSession).mockReturnValue({token:"other-token",accountId:"other",loading:false,error:null} as ReturnType<typeof useApiSession>);
+ view.rerender(<ReviewQueueClient/>);
+ await screen.findByText("Nothing needs review");
+ await act(async()=>finish({items:[review],pending_count:1}));
+ expect(screen.queryByRole("button",{name:`Review ${review.name}`})).toBeNull();
+ expect(api.getReviewItems).toHaveBeenLastCalledWith({token:"other-token"});
 });

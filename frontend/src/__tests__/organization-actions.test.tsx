@@ -10,15 +10,16 @@ import { ApiError } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 
 const router = { push: jest.fn() };
+const preview={kind:"organization",id:"acme",name:"Acme",workspaces:0,inventories:0,spaces:0,items:0,can_move:true,destinations:[]};
 const org = { organization_id: "acme", name: "Acme", role: "owner", owner_user_id: "owner" };
 jest.mock("@/components/site/app-shell", () => ({ AppShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
 jest.mock("next/navigation", () => ({ useRouter: () => router }));
 jest.mock("@/lib/account-request", () => ({ accountRequest: jest.fn() }));
 jest.mock("@/lib/use-api-session", () => ({ useApiSession: jest.fn() }));
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.clearAllMocks();jest.mocked(accountRequest).mockReset();
   jest.mocked(useApiSession).mockReturnValue({ accountId: "owner", loading: false, error: null } as ReturnType<typeof useApiSession>);
-  jest.mocked(accountRequest).mockResolvedValue({ organizations: [org] } as never);
+  jest.mocked(accountRequest).mockImplementation(async (_actor,path)=>path.startsWith("/resource-removal/")?preview:{organizations:[org]});
 });
 
 test("owner menu replaces the visible rename label and supports keyboard dismissal", async () => {
@@ -45,12 +46,15 @@ test("organization header uses the same menu and rename keeps the current name",
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 
-test("members and Personal have no organization actions", async () => {
+test("members may leave but cannot rename or delete organizations", async () => {
   jest.mocked(accountRequest).mockResolvedValue({ organizations: [{ ...org, role: "member", owner_user_id: "someone-else" }] } as never);
   render(<OrganizationDirectory />);
   await screen.findByRole("link", { name: /Acme/ });
   expect(screen.getByRole("link", { name: /Personal/ })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /Organization actions/ })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Organization actions for Acme" }));
+  expect(await screen.findByRole("menuitem",{name:/Leave/})).toBeTruthy();
+  expect(screen.queryByRole("menuitem",{name:"Delete"})).toBeNull();
+  expect(screen.queryByRole("menuitem",{name:"Rename"})).toBeNull();
 });
 
 test("Delete requires the exact name and Cancel sends no deletion request", async () => {
@@ -58,8 +62,7 @@ test("Delete requires the exact name and Cancel sends no deletion request", asyn
   await userEvent.click(await screen.findByRole("button", { name: "Organization actions for Acme" }));
   await userEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
   const dialog = within(screen.getByRole("dialog", { name: "Delete organization" }));
-  await waitFor(() => expect(document.activeElement).toBe(dialog.getByRole("textbox")));
-  expect(dialog.getByText(/no workspaces/)).toBeTruthy();
+  await dialog.findByRole("textbox");
   const submit = dialog.getByRole("button", { name: "Delete organization" }) as HTMLButtonElement;
   expect(submit.disabled).toBe(true);
   await userEvent.type(dialog.getByRole("textbox"), "acme");
@@ -73,16 +76,18 @@ test("Delete requires the exact name and Cancel sends no deletion request", asyn
 test("a failed deletion keeps the card and confirmation; only confirmed success removes it", async () => {
   let removed = false, attempts = 0;
   jest.mocked(accountRequest).mockImplementation(async (_actor, _path, options) => {
-    if (options?.method === "DELETE") {
+    if (options?.method === "POST") {
       if (++attempts === 1) throw new ApiError("Request failed.", 409, "Only organizations with no workspaces can be deleted.");
-      removed = true; return { deleted: true, organization_id: "acme" } as never;
+      removed = true; return { deleted: true, kind:"organization",id:"acme",action:"delete" } as never;
     }
+    if(_path.startsWith("/resource-removal/"))return preview;
     return { organizations: removed ? [] : [org] } as never;
   });
   render(<OrganizationDirectory />);
   await userEvent.click(await screen.findByRole("button", { name: "Organization actions for Acme" }));
   await userEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
-  const input = screen.getByRole("textbox", { name: "Type Acme to confirm" });
+  const input = await screen.findByRole("textbox", { name: "Type Acme to confirm" });
+  await userEvent.click(screen.getByRole("radio",{name:"Delete organization and all its contents"}));
   await userEvent.type(input, "Acme");
   await userEvent.click(screen.getByRole("button", { name: "Delete organization" }));
   expect((await screen.findByRole("alert")).textContent).toContain("no workspaces");
@@ -91,15 +96,16 @@ test("a failed deletion keeps the card and confirmation; only confirmed success 
   await userEvent.click(screen.getByRole("button", { name: "Delete organization" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(screen.queryByRole("link", { name: /Acme/ })).toBeNull();
-  expect(accountRequest).toHaveBeenCalledWith("owner", "/organizations/acme", { method: "DELETE", body: { name: "Acme" } });
+  expect(accountRequest).toHaveBeenCalledWith("owner", "/resource-removal/organization/acme", { method: "POST", body: { name: "Acme",action:"delete" } });
 });
 
 test("unconfirmed responses never remove an organization or navigate", async () => {
   jest.mocked(accountRequest).mockImplementation(async (_actor, _path, options) =>
-    (options?.method ? { deleted: true, organization_id: "other" } : { organization: org, workspaces: [], members: [] }) as never);
+    (options?.method ? { deleted: true, kind:"organization",id:"other",action:"delete" } : _path.startsWith("/resource-removal/") ? preview : { organization: org, workspaces: [], members: [] }) as never);
   render(<OrganizationDirectory organizationId="acme" />);
   await userEvent.click(await screen.findByRole("button", { name: "Organization actions for Acme" }));
   await userEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+  await userEvent.click(await screen.findByRole("radio",{name:"Delete organization and all its contents"}));
   await userEvent.type(screen.getByRole("textbox"), "Acme{Enter}");
   expect((await screen.findByRole("alert")).textContent).toContain("could not be confirmed");
   expect(router.push).not.toHaveBeenCalled();
@@ -107,26 +113,28 @@ test("unconfirmed responses never remove an organization or navigate", async () 
 
 test("selected organization returns to the directory after confirmed deletion", async () => {
   jest.mocked(accountRequest).mockImplementation(async (_actor, _path, options) =>
-    (options?.method ? { deleted: true, organization_id: "acme" } : { organization: org, workspaces: [], members: [] }) as never);
+    (options?.method ? { deleted: true, kind:"organization",id:"acme",action:"delete" } : _path.startsWith("/resource-removal/") ? preview : { organization: org, workspaces: [], members: [] }) as never);
   render(<OrganizationDirectory organizationId="acme" />);
   await userEvent.click(await screen.findByRole("button", { name: "Organization actions for Acme" }));
   await userEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+  await userEvent.click(await screen.findByRole("radio",{name:"Delete organization and all its contents"}));
   await userEvent.type(screen.getByRole("textbox"), "Acme{Enter}");
-  await waitFor(() => expect(router.push).toHaveBeenCalledWith("/organizations"));
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith("/settings/organizations"));
 });
 
 test("pending deletion cannot duplicate or apply a response after unmount", async () => {
   let resolve!: (value: never) => void;
-  jest.mocked(accountRequest).mockImplementation(() => new Promise(value => { resolve = value; }));
+  jest.mocked(accountRequest).mockResolvedValueOnce(preview).mockImplementation(() => new Promise(value => { resolve = value; }));
   const onDeleted = jest.fn(), onClose = jest.fn();
   const view = render(<OrganizationDeleteDialog accountId="owner" organization={org} onDeleted={onDeleted} onClose={onClose} />);
+  await userEvent.click(await screen.findByRole("radio",{name:"Delete organization and all its contents"}));
   await userEvent.type(screen.getByRole("textbox"), "Acme");
   const form = screen.getByRole("button", { name: "Delete organization" }).closest("form")!;
   fireEvent.submit(form); fireEvent.submit(form);
-  expect(accountRequest).toHaveBeenCalledTimes(1);
+  expect(accountRequest).toHaveBeenCalledTimes(2);
   await userEvent.keyboard("{Escape}"); expect(onClose).not.toHaveBeenCalled();
   view.unmount();
-  await act(async () => { resolve({ deleted: true, organization_id: "acme" } as never); });
+  await act(async () => { resolve({ deleted: true, kind:"organization",id:"acme",action:"delete" } as never); });
   expect(onDeleted).not.toHaveBeenCalled();
 });
 

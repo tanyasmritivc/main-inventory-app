@@ -55,6 +55,6 @@ test('checkbox and editor address the canonical item after display sorting, and 
  await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/captures/'),expect.objectContaining({method:'PATCH',body:{revision:2,changes:{items:[{index:1,name:'Exact changed name'}]}}})));
  await waitFor(()=>expect((screen.getByRole('button',{name:'Confirm and save'}) as HTMLButtonElement).disabled).toBe(false));
  fireEvent.click(screen.getByRole('button',{name:'Confirm and save'}));
- await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/save'),{method:'POST',body:{revision:3,allow_duplicates:false}}));
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('account',expect.stringContaining('/save'),{method:'POST',body:{revision:3,allow_duplicates:false,confirm_items:true}}));
  expect(c.items.map(r=>r.index)).toEqual([0,1,2]);
 });

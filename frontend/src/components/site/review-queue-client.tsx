@@ -6,7 +6,7 @@ import styles from "./review-queue.module.css";
 
 import { canEditInventory } from "@/lib/inventory-selection";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Check, ChevronDown, ImageIcon, ListChecks, RefreshCw, Trash2 } from "lucide-react";
 
@@ -53,7 +53,16 @@ function Evidence({ item }: { item: ReviewItem }) {
 }
 
 export function ReviewQueueClient() {
-  const { token, accountId } = useApiSession();
+  const { token, accountId, loading, error } = useApiSession();
+  if (loading) return <p role="status">Loading your account...</p>;
+  if (!token || !accountId || error) return <p role="alert">{error || "Sign in to review captures."}</p>;
+  return <AccountReviewQueue key={accountId} token={token} accountId={accountId} />;
+}
+
+function AccountReviewQueue({token, accountId}: {token: string; accountId: string}) {
+  const live = useRef(true);
+  const generation = useRef(0);
+  useEffect(() => { live.current = true; return () => { live.current = false; generation.current++; }; }, []);
   const { confirmAction } = useAppDialog();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,19 +76,21 @@ export function ReviewQueueClient() {
 
   const load = useCallback(async () => {
     if (!token) return;
+    const run = ++generation.current;
     setLoading(true);
     setError(null);
     try {
       const result = await getReviewItems({ token });
+      if (!live.current || run !== generation.current) return;
       setItems(result.items);
       setDirty(new Set());
       setPendingCount(result.pending_count);
       setExpandedId(null);
       setPage(0);
     } catch (reason) {
-      setError(userFacingError(reason, "Review could not be loaded."));
+      if (live.current && run === generation.current) setError(userFacingError(reason, "Review could not be loaded."));
     } finally {
-      setLoading(false);
+      if (live.current && run === generation.current) setLoading(false);
     }
   }, [token]);
 
@@ -120,7 +131,7 @@ export function ReviewQueueClient() {
       message: "It will leave Review and will not be added to inventory.",
       confirmLabel: "Dismiss capture",
       danger: true,
-    })) return;
+    }) || !live.current) return;
     setSavingId(item.review_id);
     setError(null);
     try {
@@ -148,8 +159,8 @@ export function ReviewQueueClient() {
         <div><h1>Review</h1><p>Check uncertain captures before adding them to your inventory.</p></div>
         <button type="button" className="product-button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} />Refresh</button>
       </header>
-      {error && <div className="notice-error">{error}</div>}
-      {notice && <div className="notice-success">{notice}</div>}
+      {error && <div role="alert" className="notice-error">{error}</div>}
+      {notice && <div role="status" className="notice-success">{notice}</div>}
       {loading && items.length === 0 ? <div className="review-empty"><span className="loading-spinner" />Loading Review…</div> : null}
       {!loading && items.length === 0 && pendingCount === 0 ? (
         <div className="review-empty">

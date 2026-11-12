@@ -47,7 +47,7 @@ test("uses the supplied Petals wordmark without duplicate name text", () => {
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
   expect(
     container.querySelector(".app-sidebar-brand image")?.getAttribute("href"),
-  ).toBe("/brand/findez-wordmark.svg");
+  ).toBe("/brand/findez-mark-small.svg");
 });
 test.each(APP_NAV_ITEMS.filter((i) => i.route !== "/docs/api"))(
   "selects only $label on its route",

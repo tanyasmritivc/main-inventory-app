@@ -1,0 +1,150 @@
+{
+  "jest.config.js": {
+    "before": "3622b725a58e190a5c06650972da476d8fd1a12223530e12c83bb435a7a9e0f3",
+    "after": "f06dcbab613c891aff4360b5643200379b2cbcd91db34a0dba1fdc7db51b3c48"
+  },
+  "package-lock.json": {
+    "before": "5bb71efd5decd09e3530dc484b8cbb317a4e7acd2bacb6ee5d4919c2a11898a3",
+    "after": "71cd49a686e9fdc6e8ff50a4c92b251d4510d4e933d64ea9c09579977ed5b26e"
+  },
+  "package.json": {
+    "before": "020f94f59422f1329fc02bf246d8152fa7a7840f19f2f88063b7f40aa3205f92",
+    "after": "536bd5205f1d4d2a33fce1e1ae442cc48209283f521149261b19c5c8ee54d6fd"
+  },
+  "src/__tests__/ai-assistant-setup.test.tsx": {
+    "before": "8650d21265288b1e782111a415f3567ebdedde0bbf3e9faa41e80a68ee7488dc",
+    "after": "bde29e3018633113a62175473c97280262cdb9d180663323b87fc1fa8c3187a4"
+  },
+  "src/__tests__/api-docs.test.tsx": {
+    "before": "6c53c41c0e540d676f0c2c25d0bb2d2be1be0febf58593b2a2fa1da3aed3885a",
+    "after": "b845d7498f38754b63742dc2ea23e72e1170577ef65732f338fc1c8cedff4b2e"
+  },
+  "src/__tests__/api-keys-client.test.tsx": {
+    "before": "9961c7e327ef8d87e1198625708160e2714906851e552da69db02d8bd273af78",
+    "after": "56139854e6cffa9d2a98e43e5f6dee1a3b2f1c76670acce9ca8b37276313fde3"
+  },
+  "src/__tests__/app-sidebar.test.tsx": {
+    "before": "f4c6aea85e41a8db840fd326eae10c0327bd7ae2e8774cfd5921782d130deae6",
+    "after": "ceb0c062cf09972c3ed6caceffd437ebfc929e91896d7a388ed541984e2b1319"
+  },
+  "src/__tests__/auth-callback.test.ts": {
+    "before": "507e422411e12a907ca8bf1c389ca413ddb72d5b6200c119393e48d89de96ad7",
+    "after": "c71fe8c17a3972a2abb19b0201eb58abf8ec2faff5270bb6c894fb058518688f"
+  },
+  "src/__tests__/auth-signup.test.tsx": {
+    "before": "681b732fe34e23ed61986dac61cd05576283e3b951df0de1a9f9d6c8dfe8e276",
+    "after": "f8f3310080ccd28b10c9a2faf83d09ce74cdc121a1c1e4711abc1e6948dd9002"
+  },
+  "src/__tests__/auto-extract-request.test.ts": {
+    "before": "6b45e1273fe647a4d060c949047d20cff0b301f3e0341544e7672606ba0c8e09",
+    "after": "a9028519db3163145bb2fdd904880e136078a811581d56a208b399431933d175"
+  },
+  "src/__tests__/cad-entry.test.tsx": {
+    "before": "73c64f3d1cb90b0502335bfe2c2374e2c199b43947c9857d387f330be5b52c42",
+    "after": "8f6002dded6d8a8a8d415554372eb8cc9787cc28f1e341ad94d14bc2298bb719"
+  },
+  "src/__tests__/chat-capture-live.test.tsx": {
+    "before": "ba3ff92c0340e23973b1e28f762b2baa4cd9fb96e18fa644ce5b858925cbef0a",
+    "after": "7fc80fa0b7be15ada28d7fdae008adccea46cc8cbd57774036dc513b66172a54"
+  },
+  "src/__tests__/chat-item-actions.test.tsx": {
+    "before": "b78396e624a74a3ee6d5e43ab2d526be0722935612386fb28d3bdf63dc717ec0",
+    "after": "675f8d18718eeedffde01bc79c4c7d4fbb84c7fe2b9244756a68a1889b89c04f"
+  },
+  "src/__tests__/commerce-client.test.tsx": {
+    "before": "543b1816ffb00ff7dbc34464b08b244ed578889704e6eeb6bc4eeca0ab09ecd0",
+    "after": "bcddb0efb31f67c889fd656f0d2508bb4c0d3bb5f80005162bf9c420b09a7230"
+  },
+  "src/__tests__/email-link.test.ts": {
+    "before": "259e1f41d18534c944c6495e7ee133e746df495bbc41f91bbc25e824ccf0da76",
+    "after": "44565a77235ff80d357698f7aae71959e8b475ccb386a2c9d1a8efbce31c445d"
+  },
+  "src/__tests__/integration-api.test.ts": {
+    "before": "e3461e34f957078ab50f06e53c5c21e22a32500f7b05aa311cb9f2782443f9bd",
+    "after": "48a276e181d2112c34c3889707aed4ec80a99023de1e286ff82a4cb66d5b2651"
+  },
+  "src/__tests__/inventory-management-actions.test.tsx": {
+    "before": "f8a075d816582e8002a0022aaf5adf8ea751fa48427c86bc7df5272d3db99e92",
+    "after": "9c0e6f3ab7bb676f574eda050147f07ec7c630c146ba2e44c4558cc869b2e2b1"
+  },
+  "src/__tests__/inventory-navigation.test.tsx": {
+    "before": "49e95352509ec8ebc188f720566d5118a108a20d2453e3ee064c63c980bcf338",
+    "after": "74eff40d09f409cfe2cba01adc27d0160230f912643f4caaae09a8d4ac7e558f"
+  },
+  "src/__tests__/item-edit-receipt.test.tsx": {
+    "before": "c1d002c4b6678e823f2acc92ad18b8383550ae695b86f99461ab4a5270bf17a0",
+    "after": "1e1e269d983dec52165f5b9ba6619d3c8c5f4a4a9e3a1536cccc60c91b24a557"
+  },
+  "src/__tests__/legal-pages.test.tsx": {
+    "before": "eda284644478b3a9b8a4e37e19b92d045a41210a2f9ea04b4318edba402e3641",
+    "after": "213c51387cd472e145b00a8858870326622a188126481abb47361d7f354617e8"
+  },
+  "src/__tests__/organization-actions.test.tsx": {
+    "before": "57b2d80e171bbaad6f59a88bfe6c988a706bd83cb6e3a869f9151b9bdf1366a8",
+    "after": "619177a9cf2e163d10331bad0b8be8a6f14b7d811b07442b7cac4726d4ec6d19"
+  },
+  "src/__tests__/pilot-mode.test.ts": {
+    "before": "16eca9935d091584e5cecd9146a586a7fdd63e683a3f054c3a53555e405b2439",
+    "after": "0e14d10cbd739dd0bf343269886765a9256dd888ac8adeb143d740f2b6988669"
+  },
+  "src/__tests__/pricing-plans.test.tsx": {
+    "before": "641b0b7010040e50659e4a01b263779518fb6fef54bc390e219cbaae6ba622da",
+    "after": "b3642655a55fdf3c4843b40df36ebff0ade65259b8fed296fd34fe3ea3b87db4"
+  },
+  "src/__tests__/public-navigation.test.tsx": {
+    "before": "cc0e1069b40f60c8d0025e0bc3b34cf7a27a79f1345e3a06c04e45d46076bf6b",
+    "after": "407357ac5afd3acfaf3faa952822f65897d26d2e2baa945be0f7e4679620cfe8"
+  },
+  "src/__tests__/review-queue-client.test.tsx": {
+    "before": "039057cb3b4d962430f6f3287ff4e119fd41eae4c41ef3ed5b2da9eba76f3db4",
+    "after": "251f6156beb0dddd6b84b04ff8a3af5868a4c48c46f056043b04f7e2fb7cd3fc"
+  },
+  "src/__tests__/settings-connections.test.tsx": {
+    "before": "cd80e0a35625605e4d2269dad4619364a1d173e11f7f8088532b837a6a4bf7bd",
+    "after": "4597af6c2c423da09bc4c809af3370a6b7a5542c48652bfa62d8087fdfddeebd"
+  },
+  "src/__tests__/workspace-directory-access.test.tsx": {
+    "before": "563108ccb5f11b0a79902f968416a4253a85dbc662fc487af2eb55daaa541c32",
+    "after": "6287cbd867f7dd160724660a450c1324d6694c004fc6ddf17004555004d0f445"
+  },
+  "src/__tests__/workspace-flows.test.tsx": {
+    "before": "6324479d7031fae0f4dcc56387382c539e680fad5529f8471145b08af750cb89",
+    "after": "372791e7451219236f4b4aaa301af70d7f59377357f456710660680f21430f61"
+  },
+  "src/__tests__/workspace-management-actions.test.tsx": {
+    "before": "e6951aa13df0abb20d8f15fc2fefff192e0f1b88f1b55043a8dbe56c545eb9d9",
+    "after": "4268d25ed0d6c42f18df048f13d3670916b6f033c6d68994f7a0ae7a160c3965"
+  },
+  "src/__tests__/workspace-profile.test.tsx": {
+    "before": "e9894d2e2de89c71d599aee71c7bf59abeafde915347a10936762a66d59a9fc0",
+    "after": "1625e55fbd73f0446ffdee78a2b34ddc5d46dd2aeda7f3f0b72846fb552c70d4"
+  },
+  "src/app/sitemap.ts": {
+    "before": "b5627fd4b0223c5f12cf44704f98585f48b2a7eae9377c87f6416105d7a21363",
+    "after": "c94df47976a7a137b8801c46235751995dbf273eed90acb9beedaf1db0dc8b81"
+  },
+  "src/components/marketing-dark/cad-public.css": {
+    "before": "0ebb957614a45d4531a24fd316d18b4e9497a1bd3c081072e8b9e1f50f4438fa",
+    "after": "0ebb957614a45d4531a24fd316d18b4e9497a1bd3c081072e8b9e1f50f4438fa"
+  },
+  "src/components/site/ai-assistant-setup.tsx": {
+    "before": "9e522767801399ee0126dc9776bad3e84229706cb26e1f07e50e279fe94500fd",
+    "after": "127ffc6e4f826e252ba2ceb51e70cc6ee5403a88a5405a4da9b5423acb77d437"
+  },
+  "src/components/site/resource-removal-dialog.tsx": {
+    "before": "b6eb29c6c2e9c4e6fb882d22b597ff7ee1ff90b458056ca6b8e306d696c97893",
+    "after": "90f4c3149cede0d010ab9308824851a3299228ffde2a6a7ff6c7d1ba78c0543c"
+  },
+  "src/components/site/review-queue-client.tsx": {
+    "before": "a60259a736105785d912f0a54279e5f721f9c7395888b954201bbbf698285070",
+    "after": "3379f0697de39b0195668d31b17d8ef5d9ba48072edf93a021864302fa6300f1"
+  },
+  "src/__tests__/browser-setup.ts": {
+    "before": null,
+    "after": "a1bfcde504bc80aaf5f8ec6cd41c762e6c3af47b3b1535e4e6684eeb0e91b9ac"
+  },
+  "src/__tests__/resource-removal-boundary.test.tsx": {
+    "before": null,
+    "after": "a4804925732bdc32dfddf939770ba89bca0f85ec17af9f26d79dfb50c50dcdbf"
+  }
+}

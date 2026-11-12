@@ -40,12 +40,12 @@ test("settings-bound connections preserve the empty global context and report op
   expect((await screen.findByRole("alert")).textContent).toContain("Sync unavailable");
 });
 
-test("shows readiness honestly and only enables configured provider", async () => {
+test("merchant setup stays hidden while existing connections and order imports remain available", async () => {
   render(<CommerceClient />);
   await screen.findByText("example.myshopify.com");
-  expect((screen.getByRole("button", { name: "Connect Shopify" }) as HTMLButtonElement).disabled).toBe(false);
-  expect((screen.getByRole("button", { name: "Connect Amazon seller" }) as HTMLButtonElement).disabled).toBe(true);
-  expect(screen.getByText("Amazon seller connections are not enabled yet.")).toBeTruthy();
+  expect(screen.queryByRole("button", {name:"Connect Shopify"})).toBeNull();
+  expect(screen.queryByRole("button", {name:"Connect Amazon seller"})).toBeNull();
+  expect(screen.getByRole("region",{name:"Amazon order history"})).toBeTruthy();
   expect(accountRequest).toHaveBeenCalledWith("actor", "/commerce/connections?inventory_id=inventory", {});
 });
 test("viewers and mismatched accounts cannot fetch commerce data", () => {
