@@ -1831,3 +1831,12 @@ Header/background render immediately. Reduced-motion support retained. One CSS
 file deployed to the existing self-hosted frontend; build OvwsvSqgPjt7CStxo9321
 and TypeScript passed. Public delivered CSS confirms no cad-page-enter animation
 and hero-only selectors. No other route or runtime code changed.
+
+## CAD hero typography cleanup, November 11, 2026
+
+Separated the hero's visual hierarchy without changing copy: 56px balanced
+headline, 22px description with natural spacing and a narrower measure; 36px/18px
+on phones. Removed excess heading margin above the buttons. Only cad-public.css
+changed live. Preserved concurrent production release findez-welcome-assets-20261111
+with matching source hash. Build 1OYtWPFTTHqBSE_qpy4V6 and TypeScript passed;
+updated heading wrapping and smaller description visually verified in Safari.
