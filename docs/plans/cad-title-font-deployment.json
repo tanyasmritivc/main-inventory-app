@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-12T04:55:49.224333+00:00",
+  "live": "/home/ubuntu/findez-cad-title-font-20261111/frontend",
+  "build_id": "Waa9CEaxzOTiAhFku2gx9",
+  "changed_files": [
+    "src/components/marketing-dark/cad-public.css"
+  ],
+  "preserved_files": 645,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

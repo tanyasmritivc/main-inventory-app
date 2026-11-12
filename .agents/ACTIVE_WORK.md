@@ -1,3 +1,13 @@
+## November 11: CAD public title font
+
+Changed only the CAD public hero title from Inter Tight 500 to the existing
+Inter 400 face, matching the lighter reference supplied by the owner. Title
+size, spacing, copy and responsive rules are preserved. Production webpack and
+TypeScript build passed. Guarded self-hosted release changed one CSS file and
+preserved 645 other files, including the live monochrome confirmation template.
+Live /cad-intelligence verified in Safari. No backend or mobile changes.
+Receipt: docs/plans/cad-title-font-deployment.json.
+
 ## November 8 — Overly crowded wording deployed (PR368)
 
 The shared photo-scan notice now reads “Overly crowded photos can take around 4
