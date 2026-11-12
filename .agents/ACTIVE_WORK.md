@@ -1806,3 +1806,16 @@ and its entrance stylesheet return 200; live Chrome reload and final layout
 inspected. Safari-specific timing and memory were not profiled. No backend,
 authentication, content, dependency or mobile changes. Receipt:
 docs/plans/home-entry-deployment.json.
+
+CAD compact UI, November 11: removed the CAD Intelligence / Preview eyebrow
+from the inventory entry, comparison page and public setup guide. Removed all
+seven section eyebrows from the setup guide, preserving headings, instructions
+and table of contents. Inventory selection now uses compact 56px minimum rows,
+inline workspace context, a 760px maximum panel and a 320px organization selector.
+Existing selection/auth behavior and light/dark/system tokens are unchanged.
+
+Deployed five UI files to the self-hosted findez-cad-compact-20261111 release,
+preserving 625 other files. Changed-file ESLint and production build/TypeScript
+passed. Live public guide inspected in Chrome; public CSS confirms compact rows.
+Signed-in selector visual acceptance was not performed. No backend, mobile,
+dependencies or environment changes. Receipt: docs/plans/cad-compact-deployment.json.

@@ -51,7 +51,7 @@
 .hero h1 { font-size:clamp(30px,3.5vw,46px); font-weight:500; line-height:1.12; margin:24px 0 12px; }
 .hero > p { color:var(--cad-muted); font-size:16px; max-width:650px; }
 .topline { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:13px; }
-.preview { font-size:10px; font-weight:500; letter-spacing:.16em; color:var(--cad-muted); }
+.hero .topline { justify-content:flex-end; }
 .guideLink { display:inline-flex; gap:8px; align-items:center; }
 .inventoryStrip { display:flex; justify-content:space-between; gap:16px; align-items:center; border-top:1px solid var(--cad-line); border-bottom:1px solid var(--cad-line); padding:16px 0; font-size:13px; }
 .inventoryStrip > span { display:flex; align-items:center; gap:10px; color:var(--cad-muted); }
@@ -109,11 +109,16 @@
 .supportNote { border-top:1px solid var(--cad-line); padding-top:20px; margin-top:4px; font-size:13px; }
 .supportNote p { margin:0 0 6px; color:var(--cad-muted); }
 .supportNote small { line-height:1.5; margin-top:10px; font-size:12px; }
-.page .inventoryList { list-style:none; padding:0; margin:20px 0 0; display:grid; gap:10px; }
-.inventoryList a { display:flex; align-items:center; justify-content:space-between; padding:18px; border:1px solid var(--cad-line); border-radius:12px; }
+/* Compact inventory rows keep workspace context without oversized cards. */
+.page .inventoryPicker { width:100%; max-width:760px; min-width:0; padding:20px; }
+.inventoryPicker .file { margin:0; gap:8px; font-size:13px; }
+.inventoryPicker select { width:100%; max-width:320px; min-height:44px; }
+.page .inventoryList { list-style:none; padding:0; margin:16px 0 0; border-top:1px solid var(--cad-line); }
+.inventoryList li { margin:0; border-bottom:1px solid var(--cad-line); }
+.inventoryList a { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.65fr) 16px; align-items:center; gap:12px; min-height:56px; padding:10px 8px; border-radius:6px; }
 .inventoryList a:hover { background:color-mix(in srgb,var(--cad-text) 4%,transparent); text-decoration:none; }
-.inventoryList small { margin:0 0 5px; font-size:12px; }
-.inventoryList strong { font-size:16px; font-weight:500; }
+.inventoryList small { margin:0; font-size:12px; text-align:right; overflow-wrap:anywhere; }
+.inventoryList strong { font-size:14px; font-weight:500; overflow-wrap:anywhere; }
 .guidePage { --font-main:var(--font-app-inter),Inter,Arial,sans-serif; font-family:var(--font-main); padding-top:32px; }
 .guidePage > .hero { padding:32px 0; }
 .guideLayout { display:grid; grid-template-columns:210px minmax(0,1fr); gap:64px; }

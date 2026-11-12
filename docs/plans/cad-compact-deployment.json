@@ -1,0 +1,17 @@
+{
+  "deployed_at": "2026-11-12T00:54:46.845931+00:00",
+  "live": "/home/ubuntu/findez-cad-compact-20261111/frontend",
+  "build_id": "-xwUxYYD1o9FUKK2yZ_e1",
+  "changed_files": [
+    "src/app/docs/cad/page.tsx",
+    "src/components/cad/cad-client.tsx",
+    "src/components/cad/cad-entry.tsx",
+    "src/components/cad/cad-help.tsx",
+    "src/components/cad/cad.module.css"
+  ],
+  "preserved_files": 625,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}
