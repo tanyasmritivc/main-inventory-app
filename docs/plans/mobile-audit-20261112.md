@@ -60,7 +60,20 @@ Supabase singleton replaced onboarding's mock transport. The aggregate harness
 now resets auth and native-control overrides between audit groups. That
 interrupted run is not reported as
 an all-passing suite. The remaining groups and new regressions run in a rebuilt
-binary; final counts and delivery are recorded in the release receipt.
+binary; final counts and delivery are recorded in the release receipt. The
+Space-flow wrapper uses the existing synthetic-control helper for assertions
+that inspect Flutter sheets. Actual UIKit attachment menus are checked separately.
+The voice countdown regression retains its exact assertions with an injected
+clock, avoiding real-simulator scheduling jitter in the 1,700 ms duration check.
+
+The 30 audit groups completed in batches. Earlier interrupted aggregates are
+retained as failure evidence, not counted as clean runs. The final remaining
+batch passed 302 cases, with only the original wall-clock timing assertion
+failing; its corrected focused iOS rerun passed. The 13 host voice-composer
+cases also passed after that test-only correction. Actual UIKit attachment-menu
+checks passed all eight cases, and UIKit scan-progress checks passed both themes,
+large text and keyboard layouts. All production fixes passed their new native
+regressions. Final analysis is clean.
 
 Some imported suites intentionally use Flutter control fallbacks, synthetic
 camera/audio input, and simulated viewports. This replay is not an assertion

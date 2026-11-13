@@ -21,12 +21,12 @@ void main() {
   late Meter recorder;
   late VoiceComposerSession session;
   late List<String> sent;
-  void create(WidgetTester t) {
+  void create(WidgetTester t, {DateTime Function()? now}) {
     recorder = Meter();
     sent = [];
     session = VoiceComposerSession(
       recorder: recorder,
-      now: t.binding.clock.now,
+      now: now ?? t.binding.clock.now,
       onSend: (words, duration) => sent.add(words),
     );
     addTearDown(session.dispose);
@@ -43,21 +43,31 @@ void main() {
   testWidgets(
     'silence transcribes then gives two full seconds before sending once',
     (t) async {
-      create(t);
+      var now = t.binding.clock.now();
+      create(t, now: () => now);
+      Future<void> elapse(Duration duration) async {
+        now = now.add(duration);
+        await t.pump(duration);
+        await t.pump();
+      }
+
       await session.start();
       recorder.pendingStop = Completer<void>();
-      await pause(t);
+      recorder.soundLevel.value = 20;
+      await elapse(const Duration(milliseconds: 500));
+      recorder.soundLevel.value = 0;
+      await elapse(const Duration(milliseconds: 1200));
       expect(session.phase, VoiceComposerPhase.transcribing);
-      await t.pump(const Duration(seconds: 4));
+      await elapse(const Duration(seconds: 4));
       expect(sent, isEmpty);
       recorder.pendingStop!.complete();
       await t.pump();
       expect(session.phase, VoiceComposerPhase.counting);
-      await t.pump(const Duration(milliseconds: 1950));
+      await elapse(const Duration(milliseconds: 1950));
       expect(sent, isEmpty);
-      await t.pump(const Duration(milliseconds: 50));
+      await elapse(const Duration(milliseconds: 50));
       expect(sent, ['Where are my screws?']);
-      await t.pump(const Duration(seconds: 3));
+      await elapse(const Duration(seconds: 3));
       expect(sent.length, 1);
       expect(session.duration.inMilliseconds, 1700);
     },
