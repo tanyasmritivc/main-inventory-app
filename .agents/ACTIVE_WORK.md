@@ -1,3 +1,17 @@
+## November 12: chat import organization scope, build 221
+
+Lane `fix/mobile-import-organization-scope`. The chat attachment destination
+picker now uses the current world directory instead of all account workspaces.
+Only editable inventories appear. Personal stays separate, directory scope is
+validated, inventory organization is rechecked before opening Spaces, and stale
+responses/selections are discarded after scope changes. Unscoped connector entry
+points retain their previous behavior. No backend or database changes.
+
+Focused 13 tests and Flutter analysis passed. Full regression suite is running.
+Signed production 1.1.3 (221) built; package verification and Apple upload pending.
+Physical-device acceptance is unverified. Web counterpart was separately deployed
+from `fix/chat-import-organization-scope`, commit `40b14181`.
+
 ## November 10: complete release readiness audit, build 220
 
 Active lane `fix/app-store-readiness-220`. Run complete host, database and native

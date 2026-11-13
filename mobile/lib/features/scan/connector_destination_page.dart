@@ -26,6 +26,16 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
   bool busy = true;
   String? error;
   String? inventoryId;
+  int _generation = 0;
+  bool _current(ApiClient api, int generation) =>
+      mounted && identical(widget.api, api) && generation == _generation;
+
+  @override
+  void didUpdateWidget(covariant ConnectorDestinationPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.api, widget.api)) _load();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -33,20 +43,44 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
   }
 
   Future<void> _load() async {
+    final api = widget.api;
+    final generation = ++_generation;
     setState(() {
       busy = true;
       error = null;
+      inventories = [];
+      spaces = [];
+      scoped = null;
+      inventoryId = null;
     });
     try {
-      if (widget.api.inventoryContext != null) {
-        scoped = widget.api;
-        spaces = await scoped!.listSpaces();
+      if (api.inventoryContext != null) {
+        final found = await api.listSpaces();
+        if (!_current(api, generation)) return;
+        scoped = api;
+        spaces = found;
+      } else if (api.worldKey != null) {
+        final world = api.worldKey!;
+        final result = await api.collaboration(
+          '/worlds/${Uri.encodeComponent(world)}/directory',
+        );
+        if (!_current(api, generation)) return;
+        if (result['world'] != world) {
+          throw const FormatException(
+            'The organization could not be verified. Reopen this import.',
+          );
+        }
+        inventories = (result['inventories'] as List? ?? [])
+            .whereType<Map>()
+            .where((row) => row['can_edit'] == true)
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
       } else {
-        final result = await widget.api.collaboration('/inventory-workspaces');
+        final result = await api.collaboration('/inventory-workspaces');
         final found = <Map<String, dynamic>>[];
         for (final workspace
             in (result['workspaces'] as List? ?? []).whereType<Map>()) {
-          final response = await widget.api.collaboration(
+          final response = await api.collaboration(
             '/inventory-workspaces/${workspace['workspace_id']}/inventories',
           );
           found.addAll(
@@ -61,48 +95,63 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
                 ),
           );
         }
+        if (!_current(api, generation)) return;
         inventories = found;
       }
     } catch (e) {
+      if (!_current(api, generation)) return;
       error = describeError(e).$1;
     }
-    if (mounted) setState(() => busy = false);
+    if (_current(api, generation)) setState(() => busy = false);
   }
 
   Future<void> _select(Map<String, dynamic> inventory) async {
+    final api = widget.api;
+    final generation = _generation;
+    if (busy || !inventories.contains(inventory)) return;
     setState(() {
       busy = true;
       error = null;
     });
     try {
       final id = inventory['inventory_id'].toString();
-      final result = await widget.api.collaboration('/inventories/$id');
-      widget.api.assertCurrentContext();
+      final result = await api.collaboration('/inventories/$id');
+      if (!_current(api, generation)) return;
+      api.assertCurrentContext();
       final context = InventoryContext.fromJson(
         Map<String, dynamic>.from(result['inventory']),
-        accountId: widget.api.accountId!,
+        accountId: api.accountId!,
         expectedInventory: id,
       );
+      if (!context.canEdit ||
+          (api.worldKey != null &&
+              (context.organizationId ?? 'personal') != api.worldKey)) {
+        throw const FormatException(
+          'Choose an editable inventory in this organization.',
+        );
+      }
       final selected = ApiClient.forInventory(
-        widget.api,
+        api,
         context,
         isCurrent: () {
-          widget.api.assertCurrentContext();
-          return mounted && inventoryId == id;
+          api.assertCurrentContext();
+          return _current(api, generation) && inventoryId == id;
         },
       );
       inventoryId = id;
       final found = await selected.listSpaces();
-      if (mounted) {
+      if (_current(api, generation)) {
         setState(() {
           scoped = selected;
           spaces = found;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = describeError(e).$1);
+      if (_current(api, generation)) {
+        setState(() => error = describeError(e).$1);
+      }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (_current(api, generation)) setState(() => busy = false);
     }
   }
 
