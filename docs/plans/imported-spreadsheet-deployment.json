@@ -1,0 +1,15 @@
+{
+  "deployed_at": "2026-11-13T04:07:10.317707+00:00",
+  "live": "/home/ubuntu/findez-import-columns-20261112/frontend",
+  "build_id": "OA87LrzE5SzT-CY8up0hP",
+  "changed_files": [
+    "src/components/site/home-inventory-client.tsx",
+    "src/components/site/imported-spreadsheet.module.css",
+    "src/lib/imported-spreadsheet.ts"
+  ],
+  "preserved_files": 501,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}

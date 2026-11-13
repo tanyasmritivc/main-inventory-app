@@ -60,3 +60,25 @@ test('category selector filters and clears without a wall of category buttons', 
  await userEvent.click(screen.getByRole('button',{name:'Clear filter'}));
  expect(screen.getByRole('button',{name:'Washer'})).toBeTruthy();
 });
+
+test('imported Space shows original columns and supports order-status search without changing stock', async () => {
+ const imported = {...item,quantity:9,import_data:{filename:'orders.xlsx',sheet:'Orders',fields:[{name:'Order #',value:'10001'},{name:'Order status',value:'CANCELLED'},{name:'Qty',value:2},{name:'Returned',value:null}]}};
+ jest.mocked(api.searchItems).mockResolvedValue({items:[imported,{...imported,item_id:'other',name:'Bolt',import_data:{...imported.import_data,fields:[{name:'Order #',value:'10002'},{name:'Order status',value:'DELIVERED'},{name:'Qty',value:3},{name:'Returned',value:null}]}}],parsed:{}});
+ render(<HomeInventoryClient mode="inventory" locationFilter="Shelf" />);
+ const source = await screen.findByRole('region',{name:'Original spreadsheet columns'});
+ expect(within(source).getByText('Order #')).toBeTruthy();
+ expect(within(source).getByText('Returned')).toBeTruthy();
+ expect(within(source).getByText('2')).toBeTruthy();
+ expect(within(source).queryByText('9')).toBeNull();
+ await userEvent.type(screen.getByPlaceholderText('Search items…'),'CANCELLED');
+ expect(within(source).getByText('10001')).toBeTruthy();expect(within(source).queryByText('10002')).toBeNull();
+ await userEvent.clear(screen.getByPlaceholderText('Search items…'));
+ expect(within(source).getByText('10002')).toBeTruthy();
+ await userEvent.click(screen.getByRole('button',{name:'Inventory'}));
+ expect(screen.queryByRole('region',{name:'Original spreadsheet columns'})).toBeNull();
+ expect(screen.getAllByText('9').length).toBe(2);
+ await userEvent.click(screen.getByRole('button',{name:'Imported spreadsheet'}));
+ await userEvent.click(screen.getByRole('button',{name:'Open item Washer'}));
+ expect(await screen.findByRole('dialog',{name:'Washer'})).toBeTruthy();
+ expect(api.updateItem).not.toHaveBeenCalled();
+});

@@ -8,6 +8,8 @@ import {worldHref} from "@/lib/world-navigation";
 import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
+import { importedSheetFor, importedSheetCsv, importedCellText } from "@/lib/imported-spreadsheet";
+import sheetStyles from "./imported-spreadsheet.module.css";
 
 import toolbarStyles from "./inventory-toolbar.module.css";
 import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
@@ -258,6 +260,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   const [spaceCapture, setSpaceCapture] = useState<{file: File; inventoryId: string; worldId: string; spaceId: string; spaceName: string}>();
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
+  const [inventoryViewSpace, setInventoryViewSpace] = useState<string | null>(null);
   const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
   const [spacesLoadError, setSpacesLoadError] = useState<string | null>(null);
   const [initSettled, setInitSettled] = useState(false);
@@ -784,7 +787,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       const needle = query.trim().toLocaleLowerCase();
       const base = selectedSpace
         ? itemsInSpace(allItems ?? [], selectedSpace, spaceIndex).filter((item) => !needle ||
-            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode]
+            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode,
+              ...(item.import_data?.fields?.map(field => importedCellText(field.value)) ?? [])]
               .some((value) => typeof value === 'string' && value.toLocaleLowerCase().includes(needle)))
         : (sourceItems ?? []);
       if (!categoryFilter) return base;
@@ -821,7 +825,15 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     router.push(`/assist?q=${encodeURIComponent(prompt)}`);
   }
 
+  const importedSheet = useMemo(() => selectedSpace
+    ? importedSheetFor(itemsInSpace(allItems ?? [], selectedSpace, spaceIndex))
+    : null, [allItems, selectedSpace, spaceIndex]);
+  const showImportedSheet = !!importedSheet && inventoryViewSpace !== selectedSpace;
+
   const tableColumns = useMemo(() => {
+    if (showImportedSheet && importedSheet) return [
+      ...importedSheet.headers.map((label, index) => ({ field: `import:${index}`, label })),
+    ];
     const spaceItems = visibleItems ?? []
     const cols: { field: string; label: string }[] = [
       { field: 'name', label: 'Part # / Item' },
@@ -843,10 +855,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
     if (canEdit) cols.push({ field: 'actions', label: 'Actions' })
     return cols
-  }, [visibleItems, canEdit])
+  }, [visibleItems, canEdit, showImportedSheet, importedSheet])
 
   const gridTemplate = useMemo(() => {
     return tableColumns.map(col => {
+      if (col.field.startsWith('import:')) return /product|description|name/i.test(col.label) ? '340px' : /date/i.test(col.label) ? '220px' : '150px'
       if (col.field === 'name') return '2fr'
       if (col.field === 'actions') return '120px'
       if (col.field === 'quantity') return '56px'
@@ -876,9 +889,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     return items
   }, [sharedSpaceItems, sharedCategoryFilter, sharedSpaceSearch])
 
-  function exportCsv(rows: InventoryItem[], filename: string) {
+  function exportCsv(rows: InventoryItem[], filename: string, original = false) {
     const fields: Array<keyof InventoryItem> = ['name', 'category', 'subcategory', 'quantity', 'location', 'brand', 'part_number', 'barcode', 'purchase_source', 'notes', 'created_at'];
-    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
+    const csv = original && importedSheet ? importedSheetCsv(importedSheet, rows) : [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url; link.download = `${filename.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase() || 'findez-inventory'}.csv`; link.click();
@@ -1284,9 +1297,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
             </>}
-            <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
+            <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory', showImportedSheet)} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
+          {importedSheet && <>
+            <div className={sheetStyles.switcher} role="group" aria-label="Space view">
+              <button type="button" style={toolbarBtnStyle} aria-pressed={showImportedSheet} onClick={() => setInventoryViewSpace(null)}>Imported spreadsheet</button>
+              <button type="button" style={toolbarBtnStyle} aria-pressed={!showImportedSheet} onClick={() => setInventoryViewSpace(selectedSpace)}>Inventory</button>
+            </div>
+            {showImportedSheet && <p className={sheetStyles.hint}>
+              {importedSheet.filename}{importedSheet.sheet ? ` / ${importedSheet.sheet}` : ''}. Original imported values, including quantities and order statuses. Stock edits are shown in Inventory. Scroll sideways to see all columns. Export CSV uses this view and the current filters.
+            </p>}
+          </>}
           {canEdit && <PhotoScanHint />}
           {/* Space search + category pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
@@ -1322,10 +1344,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               {query.trim() || categoryFilter ? <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Try another search or clear the filters.</p> : canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
-            <div className="refresh-inventory-table">
+            <div className={showImportedSheet ? sheetStyles.scroll : undefined} tabIndex={showImportedSheet ? 0 : undefined} role={showImportedSheet ? "region" : undefined} aria-label={showImportedSheet ? "Original spreadsheet columns" : undefined}>
+            <div className={showImportedSheet ? sheetStyles.table : "refresh-inventory-table"}>
               <div className="refresh-table-heading" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                 {tableColumns.map(col => (
-                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: showImportedSheet ? 'none' as const : 'uppercase' as const, color: 'var(--text-secondary)' }}>
                     {col.label}
                   </div>
                 ))}
@@ -1334,6 +1357,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 <React.Fragment key={item.item_id}>
                   <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid var(--line)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
+                      if (col.field.startsWith('import:')) {
+                        const index = Number(col.field.slice(7));
+                        const value = importedCellText(item.import_data?.fields?.[index]?.value);
+                        return <div key={col.field} className={sheetStyles.cell}>
+                          {index === 0 ? <button type="button" className={sheetStyles.open} onClick={() => setExpandedItemId(item.item_id)} aria-label={`Open item ${item.name}`}>{value || '\u00a0'}</button> : value}
+                        </div>;
+                      }
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <DropdownMenu>
@@ -1402,6 +1432,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                   )}
                 </React.Fragment>
               ))}
+            </div>
             </div>
           )}
         </div>

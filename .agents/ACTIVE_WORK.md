@@ -1861,3 +1861,24 @@ complete web surface against actual deployed source from findez-welcome-assets-2
 Production frontend snapshot synchronized locally without secrets. No production
 write tests or customer account deletion. Full Jest, type/lint/build, API contract
 and user-flow checks pending. Preserve other active production work with source guards.
+
+Imported spreadsheet columns, November 12: deployed a web-only source view for
+Spaces whose items all have the same imported filename, sheet and column schema.
+Original columns (including empty and duplicate headers) and values are shown in
+source column order. Inventory view retains stock controls. Export CSV follows
+the selected view and filters; original fields are searchable within the Space.
+Mixed/manual Spaces retain the previous inventory table. No item writes or
+backend, auth, mobile, dependency or environment changes.
+
+Read-only Haas audit found all 380 original rows and all 11 columns already saved
+in import_data. Earlier CSV omitted those columns; the data was not lost.
+New exporter matches all source rows, with currency compared at cents to account
+for XLSX floating-point artifacts. Total source quantity is 612. Repeated orders,
+cancelled/pending/return rows and pack quantities remain unchanged. Original row
+positions were not recorded on import, so this view retains the app's row order.
+
+22 focused tests, changed-file ESLint (existing warnings only), production webpack
+build and TypeScript passed. Self-hosted release preserved 501 other source files.
+Read-only post-deploy comparison confirms all 380 live records are unchanged.
+Signed-in visual acceptance is pending because Safari's session expired; user
+was asked to sign in. Receipt: docs/plans/imported-spreadsheet-deployment.json.
