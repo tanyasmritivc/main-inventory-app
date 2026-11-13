@@ -1,3 +1,12 @@
+## Chat import scope: CI follow-up
+
+PR391 web Jest and API permissions passed. Its shared CI run43368478271 has
+unrelated failures in the unchanged mobile lane (floating Flutter deprecations)
+and backend `test_workbook_maps_each_sheet_and_preserves_duplicate_and_blank_headers`
+(expected original field `0012`, got None). These files were not deployed by the
+web import-picker patch. Targeted scope tests, lint and production build passed;
+signed-in visual acceptance remains unverified.
+
 ## November 11 - web launch readiness audit
 
 Owner: Codex, branch `fix/web-launch-readiness-20261111`. Audited the actual
