@@ -247,6 +247,7 @@ def client(monkeypatch):
     app.include_router(cad.router)
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(user_id='actor-a')
     monkeypatch.setattr(cad, 'read_inventory', lambda inv, actor: ([stock()], [], []))
+    monkeypatch.setattr(cad, 'authorize_inventory', lambda *args: None)
     return TestClient(app)
 
 

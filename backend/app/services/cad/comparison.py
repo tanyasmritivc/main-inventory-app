@@ -19,8 +19,10 @@ def count(value):
     return value if type(value) is int and 0 <= value <= 1_000_000_000 else 0
 
 
-def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reservations: list[dict], checkouts: list[dict]) -> dict:
+def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reservations: list[dict], checkouts: list[dict], corrections=None) -> dict:
+    from .corrections import identity, item_identity
     rows, warnings = snapshot.requirements() if isinstance(snapshot, TabularSnapshot) else requirements(snapshot)
+    warnings = list(warnings)
     items = {str(i['item_id']): i for i in inventory}
     if len(items) != len(inventory):
         raise ValueError('Inventory changed during paging. Try again.')
@@ -53,6 +55,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             warnings.append('Too many candidate stock records for ' + row['key'] + '; refine its identifiers.')
             candidates = set()
         exact, probable = [], []
+        part_brands = {normalized(items[k].get('brand')) for k in by_part.get(part, ())}
         for key in sorted(candidates):
             item = items[key]
             item_part, item_brand, item_barcode = (normalized(item.get(f)) for f in ('part_number', 'brand', 'barcode'))
@@ -63,10 +66,24 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
                 continue
             barcode_match = bool(barcode and barcode == item_barcode)
             part_match = bool(part and brand and part == item_part and brand == item_brand)
-            if barcode_match or part_match:
-                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number'))
+            # A unique supplier identity can match without a redundant manufacturer
+            # field. Conflicting supplier namespaces remain reviewable.
+            unique_part = bool(part and part == item_part and not brand and len(part_brands) <= 1)
+            if barcode_match or part_match or unique_part:
+                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number' if part_match else 'Exact part number; no conflicting supplier in this inventory'))
             else:
                 probable.append(key)
+        correction = (corrections or {}).get(identity(row))
+        stale_correction = False
+        if correction:
+            exact, probable = [], []
+            selected = str(correction.get('item_id') or '')
+            if correction['decision'] == 'match':
+                if selected in items and correction['item_fingerprint'] == item_identity(items[selected]):
+                    exact = [(selected, 'Confirmed by your inventory team')]
+                else:
+                    stale_correction = True
+                    warnings.append('A saved match changed or was removed: ' + row['name'] + '. Review it again.')
         eligible = not row['needs_review'] and row['procurement_policy'] == 'purchase'
         assigned, matches = 0, []
         for key, evidence in exact:
@@ -76,7 +93,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             matches.append({'item_id': key, 'name': str(items[key].get('name') or ''),
                             'location': str(items[key].get('location') or ''),
                             'assigned': take, 'evidence': evidence})
-        needs_review = not eligible or too_many or (not exact and bool(probable))
+        needs_review = stale_correction or not eligible or too_many or (not exact and bool(probable))
         status = ('needs_review' if needs_review else 'covered' if assigned == row['required']
                   else 'short' if assigned else 'missing')
         results.append({'key': row['key'], 'name': row['name'], 'part_number': row['part_number'],
@@ -84,14 +101,18 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
                         'assigned': assigned, 'missing': row['required'] - assigned, 'status': status,
                         'match_type': 'exact' if exact else 'probable' if probable else 'none',
                         'procurement_policy': row['procurement_policy'], 'matches': matches,
-                        'possible_matches': len(probable)})
+                        'possible_matches': len(probable),
+                        'candidates': [{'item_id': key, 'name': str(items[key].get('name') or ''),
+                                        'part_number': str(items[key].get('part_number') or ''),
+                                        'location': str(items[key].get('location') or '')}
+                                       for key in sorted(set(probable) | {k for k, _ in exact})][:100]})
     total = sum(r['required'] for r in results)
     covered = sum(r['assigned'] for r in results)
     fingerprint = hashlib.sha256(json.dumps([inventory, reservations, checkouts], sort_keys=True,
                                             separators=(',', ':'), default=str).encode()).hexdigest()
     return {'schema_version': 1, 'extraction_id': str(snapshot.extraction_id),
             'snapshot_sha256': hashlib.sha256(snapshot.model_dump_json().encode()).hexdigest(),
-            'source_verification': 'client_export_unverified',
+            'source_verification': 'onshape_api' if snapshot.provider == 'onshape' else 'client_export_unverified',
             'document': snapshot.document.model_dump(), 'revision': snapshot.revision.model_dump(),
             'inventory_as_of': datetime.now(timezone.utc).isoformat(), 'inventory_fingerprint': fingerprint,
             'completeness': 'partial' if warnings or snapshot.completeness == 'partial' else 'complete',

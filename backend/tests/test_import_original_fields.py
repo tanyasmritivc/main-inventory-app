@@ -27,7 +27,9 @@ def test_workbook_maps_each_sheet_and_preserves_duplicate_and_blank_headers():
     assert len(items) == 2
     assert items[0]['quantity'] == 0
     assert items[0]['part_number'] == 'PN-F1'
-    assert items[0]['purchase_source'] == '0012'
+    # Deployed import mapping preserves vendor part numbers in import_data;
+    # it no longer mislabels a part identifier as a purchase source.
+    assert items[0]['purchase_source'] is None
     assert items[0]['brand'] == 'Acme'
     assert items[0]['import_data']['fields'] == [
         {'name': '8', 'value': 'PN-F1'}, {'name': 'Shaft', 'value': 'Screw'},

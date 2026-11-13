@@ -122,6 +122,10 @@ def preview(raw, name):
         mapping = {}
         for field, aliases in ALIASES.items():
             choices = [i for i, h in enumerate(normalized) if h in aliases]
+            # Prefer the actual Name column when a CAD export also has Description.
+            if field == 'name':
+                preferred = [i for i in choices if normalized[i] not in ('description', 'part description')]
+                choices = preferred or choices
             if len(choices) == 1:
                 mapping[field] = choices[0]
         result.append({'name': table['name'], 'headers': table['headers'], 'row_count': len(table['rows']),

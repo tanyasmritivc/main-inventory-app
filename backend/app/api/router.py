@@ -87,3 +87,8 @@ api_router.include_router(scoped_router)
 
 from app.api.routes.private_images import router as private_images_router
 api_router.include_router(private_images_router)
+
+from app.api.routes.cad import router as cad_router
+api_router.include_router(cad_router)
+from app.api.routes.cad_onshape import router as cad_onshape_router
+api_router.include_router(cad_onshape_router)

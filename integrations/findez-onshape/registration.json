@@ -1,0 +1,13 @@
+{
+  "description": "Registration worksheet for Onshape Developer settings; not an installable manifest.",
+  "name": "FindEZ CAD Intelligence",
+  "scope": "OAuth2Read",
+  "callback_url": "https://www.findez.ai/cad/onshape/callback",
+  "extension": {
+    "name": "Check in FindEZ",
+    "location": "Element context menu",
+    "context": "Assembly",
+    "action_type": "Open in new window",
+    "action_url": "https://www.findez.ai/cad/onshape?documentId={$documentId}&wvm={$workspaceOrVersion}&wvmId={$workspaceOrVersionId}&elementId={$elementId}&configuration={$configuration}"
+  }
+}

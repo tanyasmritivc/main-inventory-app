@@ -1,3 +1,14 @@
+## November 12 - Onshape CAD Intelligence (verified candidate)
+
+Owner: Codex, branch `feat/onshape-cad-intelligence-20261112`.
+Built read-only Onshape OAuth/BOM integration, shared CAD results and
+inventory-scoped saved match corrections. 1,247 backend and 686 web tests pass;
+production build, changed-file lint and disposable SQL checks pass. Registration
+is not yet created. Receipt: `docs/releases/onshape-cad-20261112/README.md`.
+Migration 086 is a candidate, not applied to production. CAD baseline source
+was recovered byte-for-byte from the existing deployed Fusion implementation.
+No mobile changes. Vendor feed/crawl permissions remain unverified.
+
 ## November 11 - web launch readiness audit
 
 Owner: Codex, branch `fix/web-launch-readiness-20261111`. Audited the actual

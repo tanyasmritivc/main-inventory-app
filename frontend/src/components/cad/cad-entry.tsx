@@ -12,13 +12,13 @@ import styles from "./cad.module.css";
 type Organization = { organization_id: string; name: string };
 type Inventory = { inventory_id: string; name: string; workspace_name: string };
 
-export function CadEntry({ worldId }: { worldId?: string }) {
+export function CadEntry({ worldId, destination = "/cad" }: { worldId?: string; destination?: string }) {
   const { accountId, error } = useApiSession();
   if (!accountId) return <p role={error ? "alert" : "status"}>{error || "Opening CAD Intelligence..."}</p>;
-  return <AccountEntry key={`${accountId}:${worldId || "personal"}`} accountId={accountId} worldId={worldId} />;
+  return <AccountEntry key={`${accountId}:${worldId || "personal"}`} accountId={accountId} worldId={worldId} destination={destination} />;
 }
 
-function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: string }) {
+function AccountEntry({ accountId, worldId, destination }: { accountId: string; worldId?: string; destination: string }) {
   const [world, setWorld] = useState(worldId || "personal");
   const [organizations, setOrganizations] = useState<Organization[] | null>(null);
   const [directory, setDirectory] = useState<{ world: string; inventories: Inventory[] } | null>(null);
@@ -51,7 +51,7 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
   const ready = allowed && directory?.world === world;
   return <AppShell><section className={styles.page}>
     <header className={styles.hero}><div className={styles.topline}><a href="/docs/cad" target="_blank" rel="noreferrer">Setup guide ↗</a></div><h1>Start with your inventory.</h1>
-      <p>Choose where your parts are stored. Then bring in a Fusion assembly or spreadsheet to compare.</p></header>
+      <p>Choose where your parts are stored. Then compare your assembly or parts list.</p></header>
     <div className={`${styles.card} ${styles.inventoryPicker}`}>
       <label className={styles.file}>Organization
         <select value={world} onChange={event => { setWorld(event.target.value); setDirectory(null); setError(""); }}>
@@ -65,7 +65,7 @@ function AccountEntry({ accountId, worldId }: { accountId: string; worldId?: str
         : organizations !== null && !allowed ? <p role="alert">You do not have access to this organization. Choose another organization.</p>
         : !ready ? <p role="status">Loading inventories...</p>
         : directory.inventories.length ? <ul className={styles.inventoryList}>{directory.inventories.map(inventory => <li key={inventory.inventory_id}>
-          <Link href={`/cad?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><small>{inventory.workspace_name}</small><span aria-hidden="true">→</span></Link>
+          <Link href={`${destination}${destination.includes("?") ? "&" : "?"}inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><small>{inventory.workspace_name}</small><span aria-hidden="true">→</span></Link>
         </li>)}</ul>
         : <p>No inventories are available here. <Link href="/workspaces">Open workspaces</Link> to create or join one.</p>}
     </div>

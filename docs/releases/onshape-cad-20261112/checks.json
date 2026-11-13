@@ -1,0 +1,24 @@
+{
+  "backend_full": {
+    "passed": 1247,
+    "failed": 0,
+    "warnings": 206
+  },
+  "web_full": {
+    "passed": 686,
+    "failed": 0,
+    "suites": 91
+  },
+  "cad_web_focused": {
+    "passed": 30
+  },
+  "onshape_backend_focused": {
+    "passed": 26
+  },
+  "postgresql": "migration, client grants, inventory isolation, viewer denial, reset, refresh lease, state replay, disconnect and account deletion checks passed in disposable PostgreSQL 17",
+  "production_build": "passed using existing public production settings",
+  "changed_file_lint": "passed with zero warnings",
+  "deployment": "not deployed",
+  "migration": "086 candidate only; not applied to production",
+  "provider_acceptance": "pending OAuth app registration and live assembly test"
+}

@@ -2,6 +2,8 @@ import { apiRequest } from "@/lib/api";
 import { activeInventory, assertInventory } from "@/lib/inventory-selection";
 
 export type CadLine = {
+  review_token?: string;
+  candidates?: CadCandidate[];
   key: string; name: string; part_number: string; manufacturer: string;
   required: number; assigned: number; missing: number; unit: string;
   status: "covered" | "short" | "missing" | "needs_review";
@@ -9,6 +11,7 @@ export type CadLine = {
   procurement_policy: string; possible_matches: number;
   matches: { item_id: string; name: string; location: string; assigned: number; evidence: string }[];
 };
+export type CadCandidate = { item_id: string; name: string; part_number: string; location: string };
 export type CadComparison = {
   inventory_id: string; extraction_id: string;
   document: { name: string; external_id: string };

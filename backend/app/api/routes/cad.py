@@ -13,6 +13,7 @@ from app.services.cad.snapshot import MAX_SNAPSHOT_BYTES, Snapshot
 from app.services.cad.comparison import compare
 from app.services.cad.repository import read_inventory, authorize_inventory
 from app.services.cad import tabular
+from app.services.cad import corrections
 
 router = APIRouter(tags=['cad'])
 
@@ -42,10 +43,11 @@ def analyze(raw, inventory_id, actor_id, filename="bom.json", sheet="", mapping=
         raise HTTPException(422, message) from None
     items, reservations, checkouts = read_inventory(inventory_id, actor_id)
     try:
-        result = compare(snapshot, items, reservations, checkouts)
+        result = compare(snapshot, items, reservations, checkouts, corrections.load(snapshot, inventory_id, actor_id))
     except ValueError:
         raise HTTPException(409, 'Inventory changed while comparing. Try again.') from None
-    return {'inventory_id': inventory_id, **result}
+    authorize_inventory(inventory_id, actor_id)
+    return corrections.annotate({'inventory_id': inventory_id, **result}, snapshot, inventory_id, actor_id)
 
 
 @router.post('/inventories/{inventory_id}/cad/compare')
