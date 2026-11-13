@@ -1267,19 +1267,23 @@ class _TrialAuthRouteState extends State<_TrialAuthRoute> {
   @override
   void initState() {
     super.initState();
-    _subscription = Supabase.instance.client.auth.onAuthStateChange.listen((
-      state,
-    ) {
-      if (mounted &&
-          state.session != null &&
-          !state.session!.user.isAnonymous) {
-        final navigator = Navigator.of(context);
-        final route = ModalRoute.of(context);
-        // Auth can mount another route (for example an invitation sheet) in
-        // the same frame. Remove our auth route, never pop that newer route.
-        if (route != null && route.isActive) navigator.removeRoute(route);
-      }
-    });
+    _subscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (state) {
+        if (mounted &&
+            state.session != null &&
+            !state.session!.user.isAnonymous) {
+          final navigator = Navigator.of(context);
+          final route = ModalRoute.of(context);
+          // Auth can mount another route (for example an invitation sheet) in
+          // the same frame. Remove our auth route, never pop that newer route.
+          if (route != null && route.isActive) navigator.removeRoute(route);
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
   }
 
   @override

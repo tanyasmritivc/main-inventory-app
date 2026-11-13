@@ -153,24 +153,30 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     // Pop all open dialogs/sheets before the auth gate switches to the auth
     // screen. Without this, zombie widgets outlive their inherited dependencies
     // (Navigator, Theme, MediaQuery) and trip _dependents.isEmpty assertions.
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
-      if (state.event == AuthChangeEvent.signedOut) {
-        InventoryCache.clear();
-        ProStatus.reset();
-        unawaited(PushNotifications.stop());
-      }
-      if (widget.api.accountId != _notificationAccount && mounted) {
-        _notificationGeneration++;
-        setState(() => _notificationCount.value = 0);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.of(
-            context,
-            rootNavigator: true,
-          ).popUntil((route) => route.isFirst);
-        });
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (state) {
+        if (state.event == AuthChangeEvent.signedOut) {
+          InventoryCache.clear();
+          ProStatus.reset();
+          unawaited(PushNotifications.stop());
+        }
+        if (widget.api.accountId != _notificationAccount && mounted) {
+          _notificationGeneration++;
+          setState(() => _notificationCount.value = 0);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).popUntil((route) => route.isFirst);
+          });
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
   }
 
   Future<void> _syncSetupAnswers() async {

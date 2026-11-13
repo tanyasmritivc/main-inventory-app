@@ -365,6 +365,30 @@ void main() {
     },
   );
 
+  testWidgets('mounted account observers tolerate a temporary refresh error', (
+    tester,
+  ) async {
+    final auth = Supabase.instance.client.auth;
+    await auth.signInWithPassword(
+      email: 'test@example.test',
+      password: 'test-only',
+    );
+    auth.stopAutoRefresh();
+    await tester.pumpWidget(_gate(_Api()));
+    await settleHome(tester);
+    expect(find.byType(AuthPage), findsNothing);
+    // ignore: invalid_use_of_internal_member
+    auth.notifyException(
+      AuthRetryableFetchException(message: 'Temporary connection failure'),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(auth.currentSession, isNotNull);
+    expect(find.byType(AuthPage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    auth.stopAutoRefresh();
+  });
+
   testWidgets('offline refresh keeps saved sign-in and offers retry', (
     tester,
   ) async {

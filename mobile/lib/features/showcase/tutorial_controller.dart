@@ -150,15 +150,19 @@ class TutorialController {
       _pageController = pageController;
       _active = true;
       _authSub?.cancel();
-      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
-        event,
-      ) {
-        final account = event.session?.user.id;
-        if (event.event == AuthChangeEvent.signedOut ||
-            (account != null && account != userId)) {
-          dismiss();
-        }
-      });
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+        (event) {
+          final account = event.session?.user.id;
+          if (event.event == AuthChangeEvent.signedOut ||
+              (account != null && account != userId)) {
+            dismiss();
+          }
+        },
+        onError: (Object error, StackTrace stack) {
+          // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+          // Keep this observer and its current view until a confirmed auth event.
+        },
+      );
       _dismissKeyboard(context);
       await _navigateToPage(0);
       await _waitFrames(2);

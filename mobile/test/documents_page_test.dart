@@ -177,13 +177,13 @@ Widget _page(
       data: MediaQuery.of(context).copyWith(
         textScaler: scaler,
         // Synthetic 1x viewports must not inherit 3x native safe-area pixels.
-      padding: keyboardHeight == null
-          ? null
-          : EdgeInsets.only(top: 44, bottom: keyboardHeight == 0 ? 34 : 0),
-      viewPadding: keyboardHeight == null
-          ? null
-          : const EdgeInsets.only(top: 44, bottom: 34),
-      viewInsets: keyboardHeight == null
+        padding: keyboardHeight == null
+            ? null
+            : EdgeInsets.only(top: 44, bottom: keyboardHeight == 0 ? 34 : 0),
+        viewPadding: keyboardHeight == null
+            ? null
+            : const EdgeInsets.only(top: 44, bottom: 34),
+        viewInsets: keyboardHeight == null
             ? null
             : EdgeInsets.only(bottom: keyboardHeight),
       ),
@@ -279,6 +279,23 @@ void main() {
     );
   });
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  testWidgets('temporary auth stream errors preserve the document view', (
+    tester,
+  ) async {
+    final api = _Api();
+    await tester.pumpWidget(_page(api));
+    await tester.pumpAndSettle();
+    // The SDK emits refresh network failures independently of sign-out.
+    // ignore: invalid_use_of_internal_member
+    Supabase.instance.client.auth.notifyException(
+      AuthRetryableFetchException(message: 'Temporary connection failure'),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Workshop note'), findsOneWidget);
+    expect(api.deletes, 0);
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets(
     'matte sections classify notes correctly and keep only essential actions',
     (tester) async {

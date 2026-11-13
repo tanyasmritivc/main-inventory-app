@@ -49,14 +49,20 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
     super.initState();
     _owner = widget.api.accountId ?? '';
     _api = ApiClient.forAccount(widget.api, _owner);
-    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
-      if (mounted && !_sameAccount) {
-        setState(() {
-          _invitation = null;
-          _error = null;
-        });
-      }
-    });
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (_) {
+        if (mounted && !_sameAccount) {
+          setState(() {
+            _invitation = null;
+            _error = null;
+          });
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
     if (usesNativePresentation) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _presentNative());
     } else {

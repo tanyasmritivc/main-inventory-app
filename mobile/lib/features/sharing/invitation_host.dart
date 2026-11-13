@@ -73,16 +73,22 @@ class _InvitationHostState extends State<InvitationHost>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _session = _auth.onAuthStateChange.listen((_) {
-      // Do not call an async auth method inside the SDK's auth callback.
-      scheduleMicrotask(() {
-        if (!mounted) return;
-        if (_dialog != null && _auth.currentUser?.id != _dialogOwner) {
-          widget.navigatorKey.currentState?.removeRoute(_dialog!);
-        }
-        _resume();
-      });
-    });
+    _session = _auth.onAuthStateChange.listen(
+      (_) {
+        // Do not call an async auth method inside the SDK's auth callback.
+        scheduleMicrotask(() {
+          if (!mounted) return;
+          if (_dialog != null && _auth.currentUser?.id != _dialogOwner) {
+            widget.navigatorKey.currentState?.removeRoute(_dialog!);
+          }
+          _resume();
+        });
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
     _initialize();
   }
 

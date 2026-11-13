@@ -122,9 +122,15 @@ class _SpaceIconButtonState extends State<SpaceIconButton> {
     super.initState();
     _createController();
     if (widget.accountId == null) {
-      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
-        unawaited(_controller.load());
-      });
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+        (_) {
+          unawaited(_controller.load());
+        },
+        onError: (Object error, StackTrace stack) {
+          // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+          // Keep this observer and its current view until a confirmed auth event.
+        },
+      );
     }
   }
 

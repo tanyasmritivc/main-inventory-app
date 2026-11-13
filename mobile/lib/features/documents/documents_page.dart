@@ -191,21 +191,27 @@ class _DocumentsPageState extends State<DocumentsPage> {
     _search = TextEditingController();
     _contentClient = widget.contentClient ?? http.Client();
     _owner = _currentOwner;
-    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
-      if (!mounted || _owner == _currentOwner) return;
-      _owner = _currentOwner;
-      _generation++;
-      _search.clear();
-      setState(() {
-        _docs = [];
-        _links = {};
-        _noteContentIndex = {};
-        _error = null;
-        _loading = false;
-        _noteIndexLoading = false;
-      });
-      if (_owner != null) unawaited(_load());
-    });
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (_) {
+        if (!mounted || _owner == _currentOwner) return;
+        _owner = _currentOwner;
+        _generation++;
+        _search.clear();
+        setState(() {
+          _docs = [];
+          _links = {};
+          _noteContentIndex = {};
+          _error = null;
+          _loading = false;
+          _noteIndexLoading = false;
+        });
+        if (_owner != null) unawaited(_load());
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
     _load();
   }
 

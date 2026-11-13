@@ -82,8 +82,13 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
     _setup = _start();
   }
 
-  Future<WorldLanding?> _start() =>
-      WorldProvisioner(ExistingWorldApi(widget.api)).run(_choose);
+  Future<WorldLanding?> _start() {
+    final setup = WorldProvisioner(ExistingWorldApi(widget.api)).run(_choose);
+    // Retry creates this future before FutureBuilder reconnects next frame.
+    // Observe immediate failures now; FutureBuilder still presents the error.
+    setup.ignore();
+    return setup;
+  }
   Future<bool?> _choose(PendingWorld setup) async {
     if (!mounted || widget.api.accountId != setup.owner) return null;
     return showModalBottomSheet<bool>(
@@ -148,37 +153,46 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
       if (snapshot.hasError) {
         return Scaffold(
           backgroundColor: const Color(0xFFF7F7F6),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      "We couldn't finish setting up. Try again.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'CupertinoSystemText',
-                        fontSize: 18,
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        "We couldn't finish setting up. Try again.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'CupertinoSystemText',
+                          fontSize: 18,
+                        ),
                       ),
                     ),
-                  ),
-                  if (snapshot.error is SetupOutcomeUncertain) ...[
-                    const SizedBox(height: 12),
-                    const Text(
-                      'The last request is still unconfirmed. Retry checks it before creating anything else.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF6B6965)),
+                    if (snapshot.error is SetupOutcomeUncertain) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'The last request is still unconfirmed. Retry checks it before creating anything else.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B6965),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: () {
+                        setState(() {
+                          _setup = _start();
+                        });
+                      },
+                      child: const Text('Retry'),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: () => setState(() => _setup = _start()),
-                    child: const Text('Retry'),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

@@ -57,9 +57,15 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       ..addListener(_changed);
     _places = PlaceSession(widget.api, widget.api.accountId ?? '')
       ..addListener(_initialPlaceReady);
-    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((event) {
-      if (event.event == AuthChangeEvent.signedOut) unawaited(_clearPlace());
-    });
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (event) {
+        if (event.event == AuthChangeEvent.signedOut) unawaited(_clearPlace());
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
     if (!widget.pickOnly) {
       InvitationNavigation.instance.addListener(_invitation);
       unawaited(_startPlaces());

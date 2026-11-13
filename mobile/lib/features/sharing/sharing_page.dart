@@ -797,11 +797,17 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
   @override
   void initState() {
     super.initState();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
-      if (s.event == AuthChangeEvent.signedOut && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (s) {
+        if (s.event == AuthChangeEvent.signedOut && mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
   }
 
   @override
@@ -1170,11 +1176,17 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
   @override
   void initState() {
     super.initState();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
-      if (s.event == AuthChangeEvent.signedOut && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (s) {
+        if (s.event == AuthChangeEvent.signedOut && mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
   }
 
   @override
@@ -1378,11 +1390,17 @@ class _MembersSheetState extends State<_MembersSheet> {
   void initState() {
     super.initState();
     _load();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
-      if (s.event == AuthChangeEvent.signedOut && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (s) {
+        if (s.event == AuthChangeEvent.signedOut && mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The auth gate owns reconnect/retry. A refresh failure is not sign-out.
+        // Keep this observer and its current view until a confirmed auth event.
+      },
+    );
   }
 
   @override
