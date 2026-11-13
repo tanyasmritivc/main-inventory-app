@@ -1,3 +1,21 @@
+## November 12: chat import organization scope, build 221
+
+Lane `fix/mobile-import-organization-scope`. The chat attachment destination
+picker now uses the current world directory instead of all account workspaces.
+Only editable inventories appear. Personal stays separate, directory scope is
+validated, inventory organization is rechecked before opening Spaces, and stale
+responses/selections are discarded after scope changes. Unscoped connector entry
+points retain their previous behavior. No backend or database changes.
+
+All 1,390 Flutter tests passed with one existing skip; 13 focused tests and
+analysis passed. All five CI gates passed on final runtime a8bc0b24 (run43368941194).
+Apple Transporter verified and acknowledged 1.1.4 (221) on November12 at9:07PM.
+The original1.1.3 package was rejected because its approved train is closed.
+Processing at acknowledgment, tester availability unverified, no further polling.
+Physical-device acceptance is unverified. No public App Review submission.
+Receipt: docs/plans/mobile221-release.json. PR390.
+Web counterpart deployed separately from commit40b14181, PR391.
+
 ## November 10: complete release readiness audit, build 220
 
 Active lane `fix/app-store-readiness-220`. Run complete host, database and native
