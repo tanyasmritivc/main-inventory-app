@@ -7,10 +7,14 @@ validated, inventory organization is rechecked before opening Spaces, and stale
 responses/selections are discarded after scope changes. Unscoped connector entry
 points retain their previous behavior. No backend or database changes.
 
-Focused 13 tests and Flutter analysis passed. Full regression suite is running.
-Signed production 1.1.3 (221) built; package verification and Apple upload pending.
-Physical-device acceptance is unverified. Web counterpart was separately deployed
-from `fix/chat-import-organization-scope`, commit `40b14181`.
+All 1,390 Flutter tests passed with one existing skip; 13 focused tests and
+analysis passed. All five CI gates passed on final runtime a8bc0b24 (run43368941194).
+Apple Transporter verified and acknowledged 1.1.4 (221) on November12 at9:07PM.
+The original1.1.3 package was rejected because its approved train is closed.
+Processing at acknowledgment, tester availability unverified, no further polling.
+Physical-device acceptance is unverified. No public App Review submission.
+Receipt: docs/plans/mobile221-release.json. PR390.
+Web counterpart deployed separately from commit40b14181, PR391.
 
 ## November 10: complete release readiness audit, build 220
 
