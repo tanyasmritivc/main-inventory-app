@@ -11,7 +11,8 @@ Signed archive/export each verified 33 device executables and 27 privacy manifes
 On the user's explicit November 13 request, build processing was verified VALID
 and 1.1.4 (222) was submitted to public App Review. Apple confirmed
 WAITING_FOR_REVIEW at 2026-11-13T09:19:49.995Z. All 14 screenshots from 1.1.3
-retain their checksums, order, device sets and locale. Manual release retained.
+retain their checksums, order, device sets and locale. On the user's follow-up,
+release was changed to AFTER_APPROVAL and verified while WAITING_FOR_REVIEW.
 Physical acceptance and TestFlight tester availability remain unverified. Source is committed
 locally on fix/mobile-audit-20261112 because pushes create Vercel previews.
 See docs/plans/mobile222-release.json and docs/plans/mobile-audit-20261112.md.

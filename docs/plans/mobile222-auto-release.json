@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-11-13T09:21:08.472Z",
+  "appId": "6760401697",
+  "version": "1.1.4",
+  "build": "222",
+  "buildId": "746aae7e-c207-40b6-a570-b0bf10c646ce",
+  "versionId": "171d5848-df6b-4966-80e3-41aeb1cef203",
+  "submissionId": "f5a2038e-b776-4f72-9308-a7398e087a58",
+  "submissionState": "WAITING_FOR_REVIEW",
+  "versionState": "WAITING_FOR_REVIEW",
+  "submittedDate": "2026-11-13T09:19:49.995Z",
+  "releaseType": "AFTER_APPROVAL",
+  "previousScreenshotVersion": "1.1.3",
+  "screenshotsPreserved": true,
+  "screenshotCount": 14,
+  "screenshotSets": [
+    {
+      "locale": "en-US",
+      "type": "APP_IPAD_PRO_3GEN_129",
+      "count": 7
+    },
+    {
+      "locale": "en-US",
+      "type": "APP_IPHONE_67",
+      "count": 7
+    }
+  ],
+  "metadataPreserved": true,
+  "reviewCredentialsPreserved": true,
+  "autoReleaseRequested": true
+}

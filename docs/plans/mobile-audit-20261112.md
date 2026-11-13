@@ -103,3 +103,8 @@ Apple confirmed WAITING_FOR_REVIEW for both the review submission and app versio
 at 2026-11-13T09:19:49.995Z. This is submission acknowledgment, not approval or
 release. Physical acceptance remains unverified. See
 `mobile222-app-store-submission.json`. No production code or binary changed.
+
+The user then requested automatic release. The version releaseType was changed
+to AFTER_APPROVAL and read back successfully while still WAITING_FOR_REVIEW.
+All screenshot checksums and ordering remain unchanged. Receipt:
+`mobile222-auto-release.json`.
