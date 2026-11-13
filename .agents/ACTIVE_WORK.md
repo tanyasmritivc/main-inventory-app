@@ -1882,3 +1882,13 @@ build and TypeScript passed. Self-hosted release preserved 501 other source file
 Read-only post-deploy comparison confirms all 380 live records are unchanged.
 Signed-in visual acceptance is pending because Safari's session expired; user
 was asked to sign in. Receipt: docs/plans/imported-spreadsheet-deployment.json.
+
+Chat import organization scope, November 12: source picker now intersects Space
+groups with the active world's verified editable inventory directory. Account or
+world changes remount the picker and invalidate any selected destination and
+pending import callbacks. Personal is treated as its own world. Existing web
+requests were already world-scoped; these checks prevent accepting mismatched
+results or retaining destination state. No backend/auth/data changes.
+20 focused tests passed, changed-file lint and production webpack/TypeScript
+build passed. Self-hosted one-file overlay preserved 505 other source files.
+Receipt: docs/plans/chat-import-scope-deployment.json.
