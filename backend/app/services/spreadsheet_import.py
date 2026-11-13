@@ -5,20 +5,35 @@ import io
 import json
 import math
 import re
+import zipfile
 from datetime import date, datetime, time
 
 import openpyxl
 
 
 MAX_IMPORT_BYTES = 10 * 1024 * 1024
+MAX_IMPORT_ROWS = 5000
+MAX_IMPORT_COLUMNS = 200
+MAX_CELL_CHARS = 10000
 
 
 def _text(value: object) -> str:
     return '' if value is None else str(value).strip()
 
 
-def _table(name: str, headers: list, rows) -> dict | None:
-    source_rows = [list(row) for row in rows if any(_text(cell) for cell in row)]
+def _table(name: str, headers: list, rows, *, header_row: int = 1) -> dict | None:
+    source_rows = []
+    row_numbers = []
+    for number, row in enumerate(rows, header_row + 1):
+        if number > MAX_IMPORT_ROWS + header_row:
+            raise ValueError('Choose a file with at most 5,000 rows per sheet.')
+        if len(row) > MAX_IMPORT_COLUMNS or any(len(_text(cell)) > MAX_CELL_CHARS for cell in row):
+            raise ValueError('A sheet exceeds 200 columns or 10,000 characters per cell.')
+        if any(_text(cell) for cell in row):
+            source_rows.append(list(row))
+            row_numbers.append(number)
+    if len(headers) > MAX_IMPORT_COLUMNS or any(len(_text(cell)) > 1000 for cell in headers):
+        raise ValueError('The column headers are too large.')
     if not source_rows:
         return None
     # Preserve position: duplicate and unnamed columns must not overwrite values.
@@ -29,6 +44,9 @@ def _table(name: str, headers: list, rows) -> dict | None:
     ]
     return {
         'name': name,
+        'row_numbers': row_numbers,
+        'row_widths': [len(row) for row in source_rows],
+        'header_width': len(headers),
         'headers': [h.strip() or f'Column {i + 1}' for i, h in enumerate(source_headers)],
         'rows': [[_text(cell) for cell in row] for row in source_rows],
         'source_headers': source_headers,
@@ -55,7 +73,7 @@ def _json_value(value):
     return value
 
 
-def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
+def parse_import_tables(raw: bytes, filename: str, *, review: bool = False) -> list[dict]:
     """Return tables in the shape expected by the existing import route."""
     if not raw:
         raise ValueError('The selected file is empty.')
@@ -64,30 +82,45 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
 
     name = filename.lower()
     tables = []
-    if name.endswith(('.xlsx', '.xls')):
+    if name.endswith('.xlsx'):
         try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                entries = archive.infolist()
+                if len(entries) > 1000 or sum(entry.file_size for entry in entries) > 50 * 1024 * 1024:
+                    raise ValueError('The expanded workbook is too large.')
+                if any(entry.flag_bits & 1 for entry in entries):
+                    raise ValueError('Password-protected workbooks are not supported.')
+                if any(entry.filename.lower().endswith('vbaproject.bin') for entry in entries):
+                    raise ValueError('Macro-enabled workbooks are not supported.')
             workbook = openpyxl.load_workbook(
-                io.BytesIO(raw), read_only=True, data_only=True,
+                io.BytesIO(raw), read_only=True, data_only=not review, keep_links=False,
             )
             try:
                 for worksheet in workbook.worksheets:
                     rows = worksheet.iter_rows(values_only=True)
-                    headers = next(
-                        (row for row in rows if any(_text(cell) for cell in row)),
-                        None,
-                    )
-                    if headers is None:
+                    header = next(((number, row) for number, row in enumerate(rows, 1) if any(_text(cell) for cell in row)), None)
+                    if header is None:
                         continue
-                    table = _table(worksheet.title, list(headers), rows)
+                    header_row, headers = header
+                    table = _table(worksheet.title, list(headers), rows, header_row=header_row)
                     if table:
                         tables.append(table)
             finally:
                 workbook.close()
+        except ValueError:
+            raise
         except Exception as exc:
             raise ValueError('This Excel file could not be read.') from exc
     elif name.endswith('.csv'):
         try:
-            rows = csv.reader(io.StringIO(raw.decode('utf-8-sig')))
+            text = raw.decode('utf-8-sig')
+            if '\x00' in text:
+                raise ValueError('CSV files must contain UTF-8 text, not binary data.')
+            try:
+                dialect = csv.Sniffer().sniff(text[:8192], delimiters=',;\t')
+            except csv.Error:
+                dialect = csv.excel
+            rows = csv.reader(io.StringIO(text), dialect=dialect, strict=True)
             headers = next(rows, None)
             if headers is not None:
                 table = _table('Sheet1', headers, rows)
@@ -97,7 +130,14 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
             raise ValueError('This CSV file could not be read as UTF-8.') from exc
     elif name.endswith('.json'):
         try:
-            document = json.loads(raw.decode('utf-8-sig'))
+            def unique_object(pairs):
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise ValueError('JSON contains repeated keys in an object. Give each field a unique key before importing.')
+                    result[key] = value
+                return result
+            document = json.loads(raw.decode('utf-8-sig'), object_pairs_hook=unique_object)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError('This JSON file could not be read.') from exc
         records = document
@@ -120,6 +160,8 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
     else:
         raise ValueError('Choose an Excel (.xlsx), CSV, or JSON file.')
 
+    if sum(len(table['rows']) for table in tables) > MAX_IMPORT_ROWS or len(tables) > 20:
+        raise ValueError('Choose a file with at most 5,000 rows and 20 sheets.')
     if not tables:
         raise ValueError('No inventory rows were found in this file.')
     return tables
@@ -127,17 +169,17 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
 
 def infer_import_mapping(headers: list[str]) -> dict | None:
     """Map familiar columns; arbitrary layouts keep a descriptive sheet-based name."""
-    normalized = {
-        re.sub(r'[^a-z0-9]', '', str(header).lower()): header
-        for header in headers
-        if str(header).strip()
-    }
+    normalized = {}
+    for header in headers:
+        key = re.sub(r'[^a-z0-9]', '', str(header).lower())
+        if key:
+            normalized.setdefault(key, []).append(header)
 
     def column(*names: str) -> str | None:
         for name in names:
             found = normalized.get(re.sub(r'[^a-z0-9]', '', name.lower()))
-            if found:
-                return found
+            if found and len(found) == 1:
+                return found[0]
         return None
 
     part = column('part number', 'part #', 'part no', 'partnumber', 'sku',
@@ -166,7 +208,7 @@ def infer_import_mapping(headers: list[str]) -> dict | None:
                                      'dimension', 'screw length', 'shaft size'),
         'brand_column': column('brand', 'manufacturer', 'vendor', 'vendor name', 'supplier'),
         'purchase_source_column': column('purchase source', 'source',
-                                         'vendor part number', 'vendor part #', 'supplier code'),
+                                         'supplier url', 'purchase url', 'product url', 'where to buy'),
         'notes_columns': [],
         'category': 'Supplies',
     }
@@ -242,3 +284,27 @@ def build_import_items(tables: list[dict], *, filename: str, location: str) -> l
                 },
             })
     return items
+
+
+def correct_legacy_purchase_source(item: dict) -> dict:
+    """Project proven old identifier aliases out of purchase source; keep evidence.
+
+    No database mutation. Preserve manual values and any matching genuine source
+    column, including numeric store names. Unknown source fields remain untouched.
+    """
+    source = item.get('purchase_source')
+    data = item.get('import_data')
+    if not source or not isinstance(data, dict):
+        return item
+    fields = data.get('fields')
+    if not isinstance(fields, list):
+        return item
+    def key(value):
+        return re.sub(r'[^a-z0-9]', '', str(value).lower())
+    matching = {key(f.get('name', '')) for f in fields if isinstance(f, dict)
+                and f.get('value') is not None and str(f['value']).strip() == str(source).strip()}
+    purchase_labels = {'purchasesource', 'source', 'supplierurl', 'purchaseurl', 'producturl', 'wheretobuy'}
+    legacy_identifiers = {'vendorpartnumber', 'vendorpart', 'suppliercode'}
+    if matching & legacy_identifiers and not matching & purchase_labels:
+        return {**item, 'purchase_source': None}
+    return item
