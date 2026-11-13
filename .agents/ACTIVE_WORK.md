@@ -1,3 +1,17 @@
+## November 12 - imported item knowledge (verified, deployment blocked)
+
+Owner: Codex, `fix/chat-imported-record-knowledge`. Backend only. Adds
+organization-scoped original spreadsheet queries and distinct-order aggregates;
+chat distinguishes Connections purchases from inventory imports and missing data
+from zero. No customer data writes or client changes.
+
+Final full suite: 1,671 passed plus 10 subtests. All 18 focused tests also pass
+against a copied live backend. The saved private Haas audit replays as 113
+cancelled rows / 8 distinct orders across all 380 imported rows and 11 columns.
+Production has not changed: server network access failed and automatic review
+rejected sandbox escalation. Deployment and real-provider acceptance remain.
+See `docs/plans/chat-imported-record-knowledge.md` for the guarded rollout.
+
 ## November 11 - Crop-first Auto Extract follow-up (deployed)
 
 Same branch/PR389. User requests images only: cropped item thumbnail first and

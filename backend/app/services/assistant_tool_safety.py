@@ -3,7 +3,7 @@ import json
 import re
 
 
-READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
+READ_TOOLS = frozenset(('world_imports', 'inventory_search', 'inventory_knowledge_search',
                         'inventory_recall', 'documents_list', 'list_spaces',
                         'inventory_query', 'project_kit_readiness',
                         'world_directory', 'world_search', 'world_inventory', 'world_spaces',
