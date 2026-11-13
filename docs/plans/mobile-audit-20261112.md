@@ -86,3 +86,20 @@ Physical iPhone checks remain deferred to the user: actual camera/barcode,
 microphone, Apple/Google sign-in, push delivery, VoiceOver and final motion.
 Automated success does not establish those physical behaviors or authorize a
 public App Store submission.
+
+## App Store submission, November 13
+
+The user subsequently explicitly requested submission of the newest build with
+the previous submission's screenshots. Apple processing was verified VALID for
+1.1.4 (222), the newest uploaded build. A 1.1.4 App Store version was created
+with the previous manual release setting, existing store metadata and review
+credentials. Required release notes describe the reliability fixes.
+
+All 14 screenshots from 1.1.3 were inherited unchanged: seven iPhone and seven
+iPad screenshots in en-US. Their checksums, filenames and order were compared
+before and after submission. No screenshot upload or replacement was performed.
+
+Apple confirmed WAITING_FOR_REVIEW for both the review submission and app version
+at 2026-11-13T09:19:49.995Z. This is submission acknowledgment, not approval or
+release. Physical acceptance remains unverified. See
+`mobile222-app-store-submission.json`. No production code or binary changed.

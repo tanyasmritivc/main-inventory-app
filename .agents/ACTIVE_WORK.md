@@ -8,10 +8,14 @@ Fixed transient auth-stream errors and small-screen setup error/retry handling.
 1,393 host tests passed, explicit production-config check passed, analysis clean;
 30 native audit groups completed in batches with all identified failures resolved.
 Signed archive/export each verified 33 device executables and 27 privacy manifests.
-Processing/tester availability were not polled. Physical acceptance remains
-unverified. Public review and existing screenshots unchanged. Source is committed
+On the user's explicit November 13 request, build processing was verified VALID
+and 1.1.4 (222) was submitted to public App Review. Apple confirmed
+WAITING_FOR_REVIEW at 2026-11-13T09:19:49.995Z. All 14 screenshots from 1.1.3
+retain their checksums, order, device sets and locale. Manual release retained.
+Physical acceptance and TestFlight tester availability remain unverified. Source is committed
 locally on fix/mobile-audit-20261112 because pushes create Vercel previews.
 See docs/plans/mobile222-release.json and docs/plans/mobile-audit-20261112.md.
+Submission receipt: docs/plans/mobile222-app-store-submission.json.
 
 
 Lane `fix/mobile-import-organization-scope`. The chat attachment destination
