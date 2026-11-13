@@ -1,0 +1,18 @@
+{
+  "commit": "3a59f7c17ee1118db7dc05e5ba3a948449d5894c",
+  "status": "deployed",
+  "health": true,
+  "database_health": true,
+  "unrelated_python_files_preserved": 172,
+  "files": {
+    "app/services/world_chat.py": "5f5508f2f1b13b85a63617370250d82b1b9a4afd945ce6c4a1b2d2701dd14370",
+    "app/services/assistant_tool_safety.py": "c3814ffa87a382da7035d93d5cacfdee550e56920678b68b05cfd222ef0aafd9",
+    "app/services/world_imports.py": "32a7169fc313295d0c6dce11d38f2a25c0f343be82a9d3a1aeca920b2a5b9a53"
+  },
+  "rollback": "/home/ubuntu/findez-pr392-release-20261112/rollback",
+  "public_api_health": true,
+  "public_database_health": true,
+  "anonymous_directory_status": 401,
+  "focused_current_source_tests": 18,
+  "provider_acceptance": "pending: browser session expired"
+}

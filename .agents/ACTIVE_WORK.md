@@ -1,16 +1,14 @@
-## November 12 - imported item knowledge (verified, deployment blocked)
+## November 12 - imported item knowledge (deployed, PR392)
 
-Owner: Codex, `fix/chat-imported-record-knowledge`. Backend only. Adds
-organization-scoped original spreadsheet queries and distinct-order aggregates;
-chat distinguishes Connections purchases from inventory imports and missing data
-from zero. No customer data writes or client changes.
-
-Final full suite: 1,671 passed plus 10 subtests. All 18 focused tests also pass
-against a copied live backend. The saved private Haas audit replays as 113
-cancelled rows / 8 distinct orders across all 380 imported rows and 11 columns.
-Production has not changed: server network access failed and automatic review
-rejected sandbox escalation. Deployment and real-provider acceptance remain.
-See `docs/plans/chat-imported-record-knowledge.md` for the guarded rollout.
+Owner: Codex, `fix/chat-imported-record-knowledge`. Runtime `3a59f7c1` is
+live on the self-hosted backend after approved SSH access. A fresh source
+snapshot passed all 18 regressions; three runtime files were activated with
+checksums and rollback copies, preserving 172 unrelated Python files. Local and
+public API/database health pass; anonymous world directory returns 401.
+No schema, inventory, client or photo behavior changed. The prior full suite
+passed 1,671 tests plus ten subtests. Mobile CI has unrelated Flutter 3.50
+deprecation failures. Signed-in real-provider acceptance is pending because the
+Safari session expired. See docs/plans/chat-imported-record-knowledge.md.
 
 ## November 11 - Crop-first Auto Extract follow-up (deployed)
 

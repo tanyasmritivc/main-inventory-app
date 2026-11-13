@@ -1,6 +1,6 @@
 # Chat access to original imported item records
 
-Status: implemented and locally verified; NOT deployed. Branch
+Status: deployed to the self-hosted production backend on November 12, 2026. Branch
 `fix/chat-imported-record-knowledge`, stacked on
 `fix/auto-extract-direct-vision` to keep this PR limited to the chat data fix.
 
@@ -35,13 +35,28 @@ Validation:
   fields, original vs current quantity, foreign-organization rejection, and
   chat tool handoff are covered.
 
-Deployment still required. The current session's SSH network connection stopped
-resolving and its escalation request was automatically rejected because sandbox
-approval is disabled. A private checksum manifest and production overlay are in
-`.chat-import-knowledge-private/` in the command-center workspace. They preserve
-all unrelated live changes. Before publishing, re-read the three live files and
-check their hashes, apply the overlay to an isolated copy, run the new tests, back
-up originals, activate only those three files, restart `findez`, and verify
-`/health`, `/health/db` and an authenticated read-only Haas chat. Roll back those
-three files and restart if health fails. Do not reset/pull the composite VM tree.
-A real provider response and fresh production data read remain unverified.
+## Production release
+
+PR #392 runtime source `3a59f7c17ee1118db7dc05e5ba3a948449d5894c`
+was deployed after SSH escalation was approved in the follow-up session. Exact
+preflight hashes matched the previously tested overlay. Applied that patch to a
+fresh production source snapshot; all 18 focused regressions passed. Activated
+only world_chat.py, assistant_tool_safety.py and the new world_imports.py.
+All 172 unrelated Python files were preserved. No database migration, inventory
+writes, web release, mobile release, Vercel deployment or Render deployment.
+
+Local and public HTTPS `/health` and `/health/db` pass. Anonymous access to
+`/worlds/personal/directory` returns 401. Rollback originals and the verified
+manifest remain at `/home/ubuntu/findez-pr392-release-20261112/rollback`.
+See `chat-imported-record-release.json` for checksums.
+
+The full prior backend/API-doc suite passed 1,671 tests plus ten subtests. GitHub
+backend, PostgreSQL permissions, web and AI connector checks passed. The mobile
+CI job failed on Flutter 3.50 deprecation diagnostics in unchanged mobile files;
+this backend-only deployment does not resolve that separate upgrade issue.
+
+Real-provider browser acceptance remains pending: Safari's FindEZ session had
+expired and refreshing redirected to sign-in. The saved Haas audit replay is
+historical validation, not a fresh authenticated production answer. After signing
+in, ask about cancelled orders in the inventory spreadsheet and verify distinct
+order counts are distinguished from item rows. No claim of live model acceptance.
