@@ -1,0 +1,13 @@
+{
+  "deployed_at": "2026-11-13T04:45:44.481088+00:00",
+  "live": "/home/ubuntu/findez-import-scope-20261112/frontend",
+  "build_id": "_HeAwsuIuVKWCHAnnCxnE",
+  "changed_files": [
+    "src/components/site/world-spreadsheet-import.tsx"
+  ],
+  "preserved_files": 505,
+  "auth_handlers_unchanged": true,
+  "backend_changed": false,
+  "dependencies_changed": false,
+  "environment_changed": false
+}
