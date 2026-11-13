@@ -1,5 +1,19 @@
 ## November 12: chat import organization scope, build 221
 
+## Mobile audit 222 delivered, November 13, 2026
+
+Current iOS candidate 1.1.4 (222), runtime source f4f7a5cb, was validated and
+acknowledged by Apple. Delivery UUID: 746aae7e-c207-40b6-a570-b0bf10c646ce.
+Fixed transient auth-stream errors and small-screen setup error/retry handling.
+1,393 host tests passed, explicit production-config check passed, analysis clean;
+30 native audit groups completed in batches with all identified failures resolved.
+Signed archive/export each verified 33 device executables and 27 privacy manifests.
+Processing/tester availability were not polled. Physical acceptance remains
+unverified. Public review and existing screenshots unchanged. Source is committed
+locally on fix/mobile-audit-20261112 because pushes create Vercel previews.
+See docs/plans/mobile222-release.json and docs/plans/mobile-audit-20261112.md.
+
+
 Lane `fix/mobile-import-organization-scope`. The chat attachment destination
 picker now uses the current world directory instead of all account workspaces.
 Only editable inventories appear. Personal stays separate, directory scope is
@@ -3180,7 +3194,8 @@ reconnect/retry and confirmed sign-out. Also fixed the large-text setup error
 overflow and Retry callback/immediate-error handling. Final host suite: 1,393
 passed, one config-only skip covered by its explicit production-config run;
 analysis clean. Native replay isolated stale mock sessions/control overrides;
-remaining native checks and signed build 1.1.4 (222) delivery in progress.
+all identified native failures resolved. Apple validated and acknowledged
+build 1.1.4 (222) on November 13. Receipt: docs/plans/mobile222-release.json.
 Source stays local because pushes automatically trigger prohibited Vercel
 previews. Web/backend/database unchanged. Details: docs/plans/mobile-audit-20261112.md.
 Physical device acceptance remains deferred; no public App Store submission.
