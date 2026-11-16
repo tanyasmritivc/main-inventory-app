@@ -66,7 +66,10 @@ def open_panel():
     if palette and palette.isValid:
         palette.isVisible=True
         return
-    palette=app.userInterface.palettes.add(PALETTE,'FindEZ',str(Path(__file__).with_name('palette.html')),False,True,True,400,700,True)
+    # Fusion's embedded browser needs a URL, not a Windows drive/backslash path.
+    # as_uri also escapes spaces, Unicode, # and % in the installation folder.
+    html_url=Path(__file__).resolve().with_name('palette.html').as_uri()
+    palette=app.userInterface.palettes.add(PALETTE,'FindEZ',html_url,False,True,True,400,700,True)
     attach(palette.incomingFromHTML,Incoming())
     palette.dockingState=adsk.core.PaletteDockingStates.PaletteDockStateRight
     palette.isVisible=True

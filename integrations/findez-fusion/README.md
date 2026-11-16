@@ -1,4 +1,9 @@
-# FindEZ Fusion workspace candidate 0.2.0
+# FindEZ Fusion workspace candidate 0.2.1
+
+Version 0.2.1 loads the local panel through an escaped file URL, fixing the
+Windows path handling that could show "This site can't be reached" on opening.
+To update, stop FindEZ, replace the extracted add-in files, restart Fusion, and
+confirm version 0.2.1 in Scripts and Add-Ins before running it.
 
 This build adds a docked workspace. Activation requires the matching backend,
 web connection page and reviewed device-grant migration. Until those are live,

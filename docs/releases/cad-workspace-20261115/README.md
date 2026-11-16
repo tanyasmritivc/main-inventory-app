@@ -74,3 +74,21 @@ retained on the server under `/home/ubuntu/findez-cad-workspace-20261115`.
 Do not copy those private backups into Git. Runtime rollback restores the prior
 service working directory/router and removes the two new runtime files; retain
 the additive table for review rather than deleting any issued connections.
+# Windows panel follow-up: 0.2.1
+
+The user reached Open FindEZ on Windows but the embedded browser reported that
+the site could not be reached. The palette was given a raw Windows filesystem
+path. It now receives an absolute, URL-escaped file URI. Manifest and download
+version are 0.2.1. Existing installation files must be replaced and Fusion restarted.
+
+Validation: 79 focused CAD/native-contract/package tests pass. URL tests cover
+Windows spaces, Unicode, #, %, and macOS paths, plus reopening an existing panel.
+These checks do not establish native Fusion browser acceptance; user retry remains.
+
+Published only public/downloads/findez-fusion-workspace.zip in the active
+/home/ubuntu/findez-cad-workspace-20261115/frontend-fixed release, after checking
+the active directory and previous ZIP hash. Prior download retained at
+/home/ubuntu/findez-cad-workspace-20261115/workspace-before-0.2.1.zip.
+Public HTTPS download matches SHA-256
+1b0c3106907ba18b38e6a23ac702eb00a1b44d8d2192e8f99f3a339592066310.
+No backend, database, other download, service restart, Vercel or Render changes.

@@ -1,5 +1,11 @@
 ## November 15 - connected Fusion workspace candidate (deployed)
 
+Follow-up: workspace ZIP 0.2.1 published to the active self-hosted release after
+the Windows user reported a browser error opening the panel. Local HTML now uses
+an escaped absolute file URI instead of a raw OS path. 79 focused checks pass,
+including Windows paths with spaces, Unicode, # and %. Public download matches
+the tested package. Native Windows acceptance is still pending user retry.
+
 Owner: Codex, branch feat/cad-workspace. The user approved the exact additive
 20261115_cad_workspace.sql migration and first candidate release. Published only
 the new Fusion routes, connection UI, chooser destination support and workspace
