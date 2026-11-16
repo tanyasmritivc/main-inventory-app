@@ -1,0 +1,14 @@
+{
+  "files": [
+    "src/components/cad/cad-client.tsx",
+    "src/components/cad/cad-entry.tsx",
+    "src/components/cad/cad-help.tsx",
+    "src/components/cad/fusion-connect.tsx",
+    "src/components/marketing-dark/cad-public-content.tsx",
+    "src/components/site/cad-docs.tsx"
+  ],
+  "backend_old": "08261ac9d003a9d60b3238b366a946c1d69e26d38c15f250589be3882dbdffb1",
+  "backend_new": "69fc64f918d3c291f04491e330765e7c9eee680a84dbe16554ab46febda8a28a",
+  "zip_old": "8db8d69281f32a3b873f558496286523cd97957a6f4662992e07afa696ff1eaf",
+  "zip_new": "bba16d75a4fcd181261f0a9d0bd428a04eb85024442e56add7b8cdcfa388f5e0"
+}

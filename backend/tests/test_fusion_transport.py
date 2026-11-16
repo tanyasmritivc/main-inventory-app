@@ -65,3 +65,13 @@ def test_missing_certificate_file_fails_closed(monkeypatch):
             client.tls_context()
     finally:
         client.tls_context.cache_clear()
+
+
+@pytest.mark.parametrize('status,code',[(503,'AI-UNAVAILABLE'),(502,'AI-UNAVAILABLE'),(504,'AI-UNAVAILABLE'),(422,'SEARCH-QUESTION')])
+def test_search_http_errors_offer_a_safe_action(monkeypatch,status,code):
+    from urllib.error import HTTPError
+    opener=Mock();opener.open.side_effect=HTTPError('https://example.invalid',status,'private response',{},None)
+    monkeypatch.setattr(client.request,'build_opener',lambda *args:opener)
+    with pytest.raises(client.ClientError) as exc:client.call('/search',method='POST',data={'query':'parts'})
+    assert code in str(exc.value)
+    assert 'private response' not in str(exc.value)

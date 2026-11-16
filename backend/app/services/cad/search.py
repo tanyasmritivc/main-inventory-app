@@ -25,13 +25,22 @@ class SearchRequest(Model):
 
 
 class SearchPlan(Model):
-    terms: list[Term] = Field(min_length=1, max_length=6)
+    intent: Literal['parts', 'compare_design', 'clarify'] = 'parts'
+    terms: list[Term] = Field(default_factory=list, max_length=6)
     constraints: list[Term] = Field(default_factory=list, max_length=6)
     required_quantity: Annotated[StrictInt, Field(ge=1, le=1000000)] | None = None
 
 
-PROMPT = '''Translate a CAD parts search into JSON with exactly:
-{"terms":["short part name or exact part number"],"constraints":["requested specification"],"required_quantity":null}.
+PROMPT = '''Classify a question from a connected Fusion CAD panel into JSON with exactly:
+{"intent":"parts","terms":["short part name or exact part number"],"constraints":["requested specification"],"required_quantity":null}.
+Use intent compare_design when the user asks whether they have the parts to make
+this, what is missing from their current design, or to compare/check the open
+assembly, robot or project. Example: "do i have the parts required to make this".
+For compare_design return empty terms/constraints and null required_quantity.
+The native add-in will read the real open assembly and run an inventory comparison.
+You cannot see the design; never invent its components or answer its coverage.
+Use intent clarify with empty terms when the question lacks a part or design-check
+request. Use intent parts for a named part search, including synonyms or descriptions.
 Use 1 to 6 short terms including useful singular/plural synonyms, e.g. bearing, bearings.
 Preserve exact part numbers and manufacturer names. Terms retrieve candidates by name,
 brand, part number and location; put dimensions/materials in constraints instead.
@@ -67,6 +76,18 @@ def search(grant, data: SearchRequest):
         raise HTTPException(422, 'Enter a parts question.')
     workspace._inventory(grant['inventory_id'], grant['actor_id'])
     plan = interpret(query, grant)
+    if plan.intent != 'parts' or not plan.terms:
+        intent = 'compare_design' if plan.intent == 'compare_design' else 'clarify'
+        plan = SearchPlan(intent=intent)
+        workspace._inventory(grant['inventory_id'], grant['actor_id'])
+        # Keep the result shape compatible with 0.3.0 while newer add-ins can
+        # dispatch a read-only comparison on Fusion's main thread.
+        return {'intent': intent, 'source': data.source, 'query': query,
+                'interpreted': plan.model_dump(), 'items': [], 'parts': [],
+                'total': 0, 'truncated': False, 'offset': 0, 'next_offset': None,
+                'notice': ('This question needs the open assembly. Use BOM > Compare current assembly. Add-in 0.3.1 starts that comparison automatically.'
+                           if intent == 'compare_design' else
+                           'Name the part you want to find, or ask whether you have the parts for your current design.')}
     if plan.required_quantity is not None:
         # A model cannot invent a requested count or turn a dimension into stock.
         number = str(plan.required_quantity)
@@ -74,7 +95,7 @@ def search(grant, data: SearchRequest):
             plan.required_quantity = None
     terms = list(dict.fromkeys(searchable(t).strip() for t in plan.terms if searchable(t).strip()))
     if not terms:
-        raise HTTPException(503, 'AI search could not interpret this request. Try a part name or number.')
+        raise HTTPException(422, 'Enter a part name or ask about the current design.')
     constraints = list(dict.fromkeys(searchable(t).strip() for t in plan.constraints if searchable(t).strip()))
     if data.source == 'inventory':
         rows, _ = workspace.inventory_rows(grant, location=data.location)
@@ -111,7 +132,7 @@ def search(grant, data: SearchRequest):
                                   str(pair[1].get('item_id') or pair[1].get('catalog_id'))))
     workspace._inventory(grant['inventory_id'], grant['actor_id'])
     rows = [item for _, item in ranked[:50]]
-    return {'source': data.source, 'query': query, 'interpreted': plan.model_dump(),
+    return {'intent': 'parts', 'source': data.source, 'query': query, 'interpreted': plan.model_dump(),
             'items': rows if data.source == 'inventory' else [],
             'parts': rows if data.source == 'catalog' else [],
             'total': len(ranked), 'truncated': truncated or len(ranked) > 50,

@@ -69,6 +69,10 @@ def call(path, *, method='GET', data=None, token=None):
             raise ClientError('Too many requests. Wait a minute and try again.') from None
         if exc.code==409:
             raise ClientError('The connection or inventory changed. Try again.') from None
+        if path=='/search' and exc.code in (502,503,504):
+            raise ClientError('AI search is temporarily unavailable. Try Keyword search for a part, or BOM > Compare current assembly for this design. [AI-UNAVAILABLE]') from None
+        if path=='/search' and exc.code==422:
+            raise ClientError('Enter a part name or ask whether you have the parts for your current design. [SEARCH-QUESTION]') from None
         raise ClientError('FindEZ could not complete this request. Try again.') from None
     except (error.URLError,OSError,HTTPException) as exc:
         raise ClientError(network_message(exc)) from None

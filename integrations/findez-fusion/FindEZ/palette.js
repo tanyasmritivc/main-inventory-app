@@ -104,6 +104,13 @@
       const data = JSON.parse(raw);
       if (action === 'busy') { lock(data.busy); return 'OK'; }
       if (action === 'error' || action === 'notice') { message(data.message); return 'OK'; }
+      if (action === 'comparison_started') {
+        for (const name of ['inventory','catalog','bom']) $(name+'-tab').setAttribute('aria-pressed', String(name === 'bom'));
+        $('models').hidden = true; $('browser').hidden = true; $('bom').hidden = false;
+        modelPart = null; modelPage = null;
+        $('summary').replaceChildren(); $('results').replaceChildren(); $('warnings').replaceChildren();
+        message('Comparing ' + data.name + ' with your connected inventory...'); return 'OK';
+      }
       if (action === 'models') { showModels(data); return 'OK'; }
       if (action === 'pairing') { $('code').textContent = data.code; message('Compare this code with the browser, select an inventory and approve.'); return 'OK'; }
       if (action === 'disconnected') {
@@ -117,6 +124,10 @@
         message('Connected. This session expires in eight hours.'); tab('inventory'); return 'OK';
       }
       if (action === 'inventory' || action === 'catalog' || action === 'search') {
+        if (action === 'search' && data.intent === 'clarify') {
+          $('parts').replaceChildren(); $('search-explanation').textContent = data.notice;
+          next = null; offset = 0; $('page').textContent = ''; lock(false); message(''); return 'OK';
+        }
         const resultSource = action === 'search' ? data.source : action;
         const values = resultSource === 'inventory' ? (data.items || []) : (data.parts || []);
         if (action === 'search') $('search-explanation').textContent = 'AI searched: ' + data.interpreted.terms.join(', ') + '. ' + (data.interpreted.constraints.length ? 'Requested: ' + data.interpreted.constraints.join(', ') + '. ' : '') + data.notice + (data.truncated ? ' Showing a limited set; narrow your question.' : '');

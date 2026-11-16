@@ -8,7 +8,7 @@ export function FusionInstallSteps() {
       <li><strong>Add the inner FindEZ folder.</strong> Click <b>+ → Script or Add-In from device</b>. Open the extracted folder, then select the <b>FindEZ</b> folder inside it.</li>
     </ol>
     <div className={styles.folderGuide}><span>Select this folder:</span><pre>{'findez-fusion-workspace/\n  FindEZ/  ← select this\n    FindEZ.py\n    FindEZ.manifest\n    exporter.py'}</pre><p>Select the folder, not the ZIP or an individual file.</p></div>
-    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.3.0</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
+    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.3.1</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
     <div className={styles.runGuide} aria-label="Example: FindEZ row with the Run switch on"><span>FindEZ</span><span>Run <i aria-hidden="true" /> <b>On</b></span></div>
     <p>Click <b>Close</b>. The workspace includes <b>Open FindEZ</b> and <b>Export FindEZ BOM</b>. Optionally check <b>Run on Startup</b> to load FindEZ the next time you open Fusion.</p>
     <p><a href="/docs/cad#install">Full CAD documentation: installation, updates, connection and troubleshooting →</a></p>

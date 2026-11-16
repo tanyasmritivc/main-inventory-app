@@ -27,6 +27,7 @@ parts={}
 comparison=None
 context=None
 busy=False
+search_design=None
 model_browser=ModelBrowser()
 
 
@@ -104,6 +105,23 @@ def wait_pair(device,generation):
     raise ClientError('Connection canceled or expired. Start sign-in again.')
 
 
+def compare_design(expected=None):
+    global comparison
+    if busy:
+        raise ClientError('Wait for the current request to finish.')
+    if not context:
+        raise ClientError('Connect your inventory first.')
+    design=adsk.fusion.Design.cast(app.activeProduct)
+    if not design:
+        raise ClientError('Open a Fusion design first, then ask again.')
+    if expected is not None and design != expected:
+        raise ClientError('The active design changed while search was running. Ask again for this design.')
+    snapshot=extract(design,app.version)
+    comparison=None
+    send('comparison_started',{'name':snapshot['document']['name']})
+    task('comparison',lambda generation:session.request('/compare',method='POST',data=snapshot))
+
+
 class Result(adsk.core.CustomEventHandler):
     def notify(self,args):
         global busy,parts,comparison,context
@@ -128,11 +146,20 @@ class Result(adsk.core.CustomEventHandler):
             elif kind=='catalog':
                 parts={str(p['catalog_id']):p for p in data['parts']}
             elif kind=='search':
+                if data.get('intent')=='compare_design':
+                    if search_design is None:
+                        raise ClientError('Open a Fusion design first, then ask again.')
+                    compare_design(search_design)
+                    return
                 rows=data['items'] if data['source']=='inventory' else data['parts']
                 parts={str(p.get('item_id') or p.get('catalog_id')):p for p in rows}
             elif kind=='comparison':
                 comparison=data
             send(kind,data)
+        except (ClientError,ValueError) as exc:
+            busy=False
+            send('busy',{'busy':False})
+            send('error',{'message':str(exc)})
         except Exception:
             busy=False
             send('busy',{'busy':False})
@@ -141,7 +168,7 @@ class Result(adsk.core.CustomEventHandler):
 
 class Incoming(adsk.core.HTMLEventHandler):
     def notify(self,args):
-        global busy,parts,comparison,context
+        global busy,parts,comparison,context,search_design
         try:
             # Qt returns sendInfoToHTML acknowledgements through this same event.
             # They are not user commands. Replying to one creates an error loop.
@@ -163,6 +190,7 @@ class Incoming(adsk.core.HTMLEventHandler):
             elif action=='disconnect':
                 token=session.clear()
                 parts,comparison,context={},None,None
+                search_design=None
                 model_browser.clear()
                 busy=False
                 send('disconnected',{})
@@ -185,6 +213,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                     raise ClientError('Choose a saved location.')
                 parts={}
                 model_browser.clear()
+                search_design=adsk.fusion.Design.cast(app.activeProduct)
                 task('search',lambda generation:session.request('/search',method='POST',data={'query':query,'source':source,'location':location}))
             elif action=='models':
                 part=parts.get(str(data.get('id')))
@@ -200,14 +229,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 placement.insert_model(app,part,model,context['inventory_id'])
                 send('notice',{'message':'Position the component with the handles and confirm. Cancel removes this copy. Refresh BOM afterward.'})
             elif action=='compare':
-                if not context:
-                    raise ClientError('Connect your inventory first.')
-                design=adsk.fusion.Design.cast(app.activeProduct)
-                if not design:
-                    raise ClientError('Open a Fusion design first.')
-                snapshot=extract(design,app.version)
-                comparison=None
-                task('comparison',lambda generation:session.request('/compare',method='POST',data=snapshot))
+                compare_design()
             elif action=='insert_local':
                 part=parts.get(str(data.get('id')))
                 if not part or not context or busy:
@@ -273,7 +295,7 @@ def run():
 
 
 def stop():
-    global palette,executor,context,parts,comparison,busy
+    global palette,executor,context,parts,comparison,busy,search_design
     stop_event.set()
     token=session.clear()
     if executor:
@@ -292,5 +314,6 @@ def stop():
     if palette and palette.isValid:
         palette.deleteMe()
     palette,context,parts,comparison,busy=None,None,{},None,False
+    search_design=None
     model_browser.clear()
     handlers.clear()

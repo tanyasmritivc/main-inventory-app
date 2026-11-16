@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.3.0
+# FindEZ Fusion workspace candidate 0.3.1
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.3.0 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.3.1 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -82,3 +82,12 @@ HTTP redirects cannot forward credentials to another host. Only the fixed FindEZ
 API origin is called. No CAD geometry, file contents or private key is uploaded.
 All inventory permissions are rechecked by the backend. Native host testing is
 required before treating the candidate as a released Fusion add-in.
+
+## Questions about the open design
+
+In AI search, ask "Do I have the parts required to make this?" or "What is missing
+from my current assembly?" FindEZ reads the active assembly metadata and opens
+its inventory comparison in the BOM tab. It does not infer parts from the image
+or send geometry to the AI. If the active design changes during interpretation,
+ask again. Vague questions now ask for clarification instead of reporting a
+service failure. BOM > Compare current assembly also works without AI search.

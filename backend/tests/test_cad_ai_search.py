@@ -89,3 +89,24 @@ def test_model_cannot_invent_a_requested_quantity_from_a_dimension(setup):
     assert result['interpreted']['required_quantity'] is None
     assert result['items'][0]['shortage_for_request'] is None
     assert result['items'][0]['search_evidence']['recorded_constraints']==['8mm']
+
+
+@pytest.mark.parametrize('intent', ['parts', 'clarify', 'compare_design'])
+def test_empty_terms_are_a_question_or_design_intent_not_a_service_failure(setup,intent):
+    authorize,records,gateway=setup
+    gateway.return_value.choices[0].message.content=json.dumps({'intent':intent,'terms':[],'constraints':[],'required_quantity':None})
+    result=ai.search(GRANT,ai.SearchRequest(query='do i have the parts required to make this'))
+    assert result['intent']==('compare_design' if intent=='compare_design' else 'clarify')
+    assert result['items']==[] and result['parts']==[] and result['total']==0
+    assert result['notice']
+    records.assert_not_called()
+    assert authorize.call_count==2
+
+
+def test_unknown_model_action_cannot_dispatch_a_write(setup):
+    _,records,gateway=setup
+    gateway.return_value.choices[0].message.content=json.dumps({'intent':'insert_model','terms':[]})
+    with pytest.raises(HTTPException) as exc:
+        ai.search(GRANT,ai.SearchRequest(query='make this'))
+    assert exc.value.status_code==503
+    records.assert_not_called()

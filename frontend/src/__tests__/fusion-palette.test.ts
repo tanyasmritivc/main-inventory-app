@@ -74,3 +74,20 @@ test('keyword mode remains available when AI is unavailable',()=>{
  document.getElementById('search')!.dispatchEvent(new Event('submit',{cancelable:true}));
  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('inventory',JSON.stringify({q:'REV-21-1650',offset:0}));
 });
+
+test('design questions open the real BOM view and clear old results',()=>{
+ receive('connected',{inventory_name:'Lab',workspace_name:'Team'});
+ document.getElementById('results')!.textContent='Old design';
+ receive('comparison_started',{name:'Current robot'});
+ expect(document.getElementById('browser')!.hidden).toBe(true);
+ expect(document.getElementById('bom')!.hidden).toBe(false);
+ expect(document.getElementById('bom-tab')!.getAttribute('aria-pressed')).toBe('true');
+ expect(document.getElementById('results')!.textContent).toBe('');
+ expect(document.getElementById('message')!.textContent).toContain('Comparing Current robot');
+});
+test('vague AI questions show clarification without claiming no parts exist',()=>{
+ receive('search',{intent:'clarify',notice:'Name a part or ask about the current design.'});
+ expect(document.getElementById('search-explanation')!.textContent).toContain('Name a part');
+ expect(document.getElementById('parts')!.textContent).not.toContain('No matching parts');
+ expect((document.getElementById('next') as HTMLButtonElement).disabled).toBe(true);
+});

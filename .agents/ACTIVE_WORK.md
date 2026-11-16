@@ -2002,3 +2002,28 @@ Safari documentation, health, source and unrelated asset checks pass. World
 changes are preserved. No Vercel/Render or schema/mobile change. Native Fusion
 placement and real user Windows acceptance are not yet verified. Receipt:
 docs/releases/fusion-030-20261115/README.md.
+
+
+## Fusion design-question search, November 15, 2026 (published; native retry pending)
+
+User IMG_3575.DNG shows connected 0.3.0 and AI question “do i have the parts
+required to make this” failing. Production /fusion/search returned503; direct
+synthetic reproduction returned empty terms and failed SearchPlan min_length.
+The existing /fusion/compare request succeeded. Candidate0.3.1 adds bounded
+parts/compare_design/clarify intents, handles empty terms as clarification, and
+starts the native BOM comparison on Fusion's main thread for design questions.
+A design switch or revoked/disconnected generation prevents automatic follow-up.
+AI outages have an actionable keyword/BOM fallback; no raw response is exposed.
+
+1288 backend and702 web tests, TypeScript and lint pass. Live synthetic exact
+question classifies as compare_design and named-part query remains parts. Web
+release is prepared from current findez-world-json-20261116 to preserve concurrent
+World fixes. First build hit ENOSPC; removed only this task's inactive/failed
+compiler caches and restarted. No user files, secrets, schema, or stock changed.
+
+Cold build retry passed. Published self-hosted findez-fusion-031-20261116, build
+zFGmuu-B_leD5f-oRposv. Public0.3.1 ZIP matches tested hash and contains the
+automatic BOM handler. Live docs links, backend module hash, health, anonymous
+search401 and preservation of unrelated World source/config verified. No
+Vercel/Render, DB migration or mobile change. User native retry remains pending.
+Receipt: docs/releases/fusion-031-20261116/README.md.

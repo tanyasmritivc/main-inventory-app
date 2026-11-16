@@ -18,6 +18,7 @@ def workspace(monkeypatch):
                  'CustomEventHandler', 'HTMLEventHandler'):
         setattr(core, name, type(name, (), {}))
     core.PaletteDockingStates = NS(PaletteDockStateRight='right')
+    fusion.Design = NS(cast=lambda value: value)
     package = ModuleType('findez_panel_test')
     package.__path__ = [str(Path(__file__).resolve().parents[2] /
                             'integrations/findez-fusion/FindEZ')]
@@ -26,7 +27,7 @@ def workspace(monkeypatch):
         monkeypatch.setitem(sys.modules, name, module)
     module = importlib.import_module('findez_panel_test.workspace')
     panel = NS(isValid=True, incomingFromHTML=Mock(), isVisible=False)
-    module.app = NS(userInterface=NS(palettes=NS(add=Mock(return_value=panel))))
+    module.app = NS(activeProduct=NS(name='Test design'), version='test', userInterface=NS(palettes=NS(add=Mock(return_value=panel))))
     yield module, panel
     for name in list(sys.modules):
         if name.startswith('findez_panel_test.'):
@@ -137,3 +138,37 @@ def test_native_insert_requires_explicit_model_confirmation(workspace,monkeypatc
     module.Incoming().notify(NS(action='insert_model',data='{"id":"part","model_id":"opaque","confirmed":false}'))
     insert.assert_not_called()
     assert sent.call_args.args[0]=='error'
+
+
+def test_design_question_compares_real_snapshot_on_main_thread(workspace, monkeypatch):
+    import json
+    module,_=workspace
+    design=module.app.activeProduct
+    module.context={'inventory_id':'inventory'};module.search_design=design;module.busy=True
+    snapshot={'document':{'name':'Test assembly'},'occurrences':[]}
+    extract=Mock(return_value=snapshot);task=Mock();request=Mock();sent=Mock()
+    monkeypatch.setattr(module,'extract',extract);monkeypatch.setattr(module,'task',task)
+    monkeypatch.setattr(module,'send',sent);monkeypatch.setattr(module.session,'request',request)
+    module.Result().notify(NS(additionalInfo=json.dumps({'generation':module.session.generation,
+        'kind':'search','data':{'intent':'compare_design'}})))
+    extract.assert_called_once_with(design,'test')
+    sent.assert_any_call('comparison_started',{'name':'Test assembly'})
+    assert task.call_args.args[0]=='comparison'
+    task.call_args.args[1](module.session.generation)
+    request.assert_called_once_with('/compare',method='POST',data=snapshot)
+
+
+@pytest.mark.parametrize('changed', ['design','disconnected','missing'])
+def test_design_question_never_reads_changed_or_disconnected_design(workspace,monkeypatch,changed):
+    import json
+    module,_=workspace
+    module.context={'inventory_id':'inventory'};module.search_design=module.app.activeProduct
+    generation=module.session.generation
+    if changed=='design':module.app.activeProduct=NS(name='Other')
+    if changed=='disconnected':module.session.clear();module.context=None
+    if changed=='missing':module.search_design=None
+    extract=Mock();task=Mock()
+    monkeypatch.setattr(module,'extract',extract);monkeypatch.setattr(module,'task',task)
+    monkeypatch.setattr(module,'send',Mock())
+    module.Result().notify(NS(additionalInfo=json.dumps({'generation':generation,'kind':'search','data':{'intent':'compare_design'}})))
+    extract.assert_not_called();task.assert_not_called()
