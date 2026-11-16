@@ -1,3 +1,28 @@
+# Deployment completed — November 15
+
+Backend/database and web are live, authorized by the user's “deploy”. Final
+receipt: `organisation-spaces-release-20261115.json`. The validation/access blocks
+in the preparation history below are resolved. Final lifecycle and RLS checks
+passed, including the current production ownership/ACL restore. Existing people,
+roles, all 25 Spaces and 2,294 items were preserved by live assertions.
+
+Mobile 223 archive failed due to insufficient Mac disk space; no TestFlight upload.
+All prior host tests remain valid. Build/upload resumes once sufficient space is
+available; do not remove other tasks' artifacts. No public App Store changes.
+
+Rollback: private activation backup and exact source manifest in the release root.
+Restore only the API files recorded in `rollback-api` and the preceding web
+WorkingDirectory if an app rollback is needed. Preserve any later enrichment UI
+release. Do not restore the old database snapshot over customer writes. Migration
+087 is additive; a schema rollback requires a reviewed forward plan.
+
+The live API source was merged with production, not copied blindly from the old
+feature branch. Exact merged code, before/after manifests, tests and logs remain
+in the private release directory. No production Git reset/pull or source-wide
+replacement occurred. The previously published enrichment feature flag is enabled.
+
+---
+
 # Organisations and Spaces — 2026-11-15
 
 ## Requested behavior

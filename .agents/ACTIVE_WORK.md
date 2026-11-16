@@ -1,28 +1,33 @@
-## November 15 — Organisation/Space implementation prepared, NOT deployed
+## November 15 — Organisation/Space backend and web deployed
 
-Implementation is isolated in sibling findez-org-spaces-api/web/mobile checkouts.
-The new clients require backend migration 087 and its API routes. Do not activate
-clients first. Existing production services, data and enrolled people are unchanged.
-Web: 687 tests and final production build/TypeScript pass. Mobile: 1,393 tests pass,
-1 skip; final analysis reports no issues. Backend: 286 relevant tests pass across
-completed runs. The isolated production-snapshot rehearsal verified all existing
-membership rows/roles, 25 Spaces and 2,294 items unchanged, read access, write
-boundaries, revocation, quotas and idempotent setup/AI transactions.
+User explicitly authorized “deploy”, including migration 087. Final deployment:
+`/home/ubuntu/findez-organisation-spaces-20261115/candidate-flag/frontend`,
+build `SRUFmeKnudVt-0UsLgpCo`; API `/home/ubuntu/findez/backend`. The production
+preservation assertions passed: all 64 people, existing 21 org memberships,
+15 team memberships and their roles, all 25 Spaces and 2,294 items retained.
+Organisation members receive read access to every Space; prior editing stays.
 
-Final organisation-removal, account-deletion/custody and authority-lock extensions
-need another SQL rehearsal. The previous
-run exposed two optional legacy tables missing from the existing deletion guard.
-The patch only permits those dependencies when empty for the target inventory;
-records still fail closed. Source anchors match the saved live schema. The final
-runtime check is BLOCKED: SSH DNS fails under current sandbox permissions and
-escalated SSH was rejected by the configured approval policy. Local PostgreSQL
-socket/shared-memory access is also unavailable. No final migration success claim.
+Final restored-database migration/replay, AI/setup retries, quotas, ownership,
+account deletion, member departure/removal and authenticated RLS checks pass.
+The restore retains production object ownership/ACLs; only isolated pg_net and
+unavailable realtime/function-admin extension roles differ. The API overlay was
+three-way merged with current production, preserving 173 unrelated API files and
+483 unrelated web files, including enrichment. The merged candidate passes 92 API
+and 31 web tests, in addition to prior full web/mobile tests and server build.
+API, web and enrichment worker health pass. Signed-in Safari verifies existing
+Space cards/items and switching organisations. No customer writes made by UI QA.
 
-No push: repository automation can create prohibited Vercel previews (existing
-November 13 web release constraint). No production migration or application rollout.
-No mobile archive/upload: required backend activation is pending; current local
-free disk is about 1.3 GiB. Production DB changes still need explicit authorization
-under AGENTS.md, after the remaining rehearsal. See docs/plans/organisation-spaces-20261115.md.
+The first web build omitted a separately enabled public enrichment flag. Rebuilt
+and activated with `NEXT_PUBLIC_INVENTORY_INTELLIGENCE=true`, now retained in the
+private release env and our systemd override. A separate enrichment UI task is
+cleared to layer its changes over this final source; preserve its later release.
+
+Mobile 223 source is prepared (29c5ee1d). Signed archive failed with “No space left
+on device”. Own failed Xcode outputs were cleaned; no Apple upload or App Store
+change. Latest confirmed uploaded build is 222. Need adequate free local disk,
+then build/validate/upload 223 using completed tests. Do not repeat completed host
+checks without a code change. No Git pushes: standing prohibition on Vercel
+previews still applies. See docs/plans/organisation-spaces-release-20261115.json.
 
 ## November 12: chat import organization scope, build 221
 
@@ -1855,7 +1860,7 @@ This receipt supersedes earlier candidate/pending delivery notes below.
 Apple acknowledged signed production1.0.8(87), source445d3c7, delivery
 e421ff27-a8c5-48bb-aef2-9ea6aeaaf8dc. Full627 Flutter tests, clean analysis,
 Light/Dark Viewer gallery/return checks and all five CI gates39156943197 pass.
-All31 archive and31 export executables are iOS device code; strict signatures,
+All31 archive and 31 export executables are iOS device code; strict signatures,
 production defines/main target and Apple validation pass. IPA/archive preserved
 in Documents/FindEZ/AppStore/1.0.8-build87. Stop at this upload acknowledgment:
 processing/tester availability were not polled, physical acceptance remains

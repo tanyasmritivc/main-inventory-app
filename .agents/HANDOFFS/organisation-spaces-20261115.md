@@ -1,21 +1,20 @@
-# Organisation/Space continuation
+# Organisation/Space delivery follow-up
 
-Prepared across three isolated checkouts, with lane-specific branches
-`feat/organisation-spaces-api`, `feat/organisation-spaces-web`, and
-`feat/organisation-spaces-mobile`. No production changes or external release.
+Backend, migration 087 and web are deployed and healthy. See the release JSON and
+plan in docs/plans. Existing memberships/roles and all Spaces/items are preserved.
+No further production migration or permission request is pending for this change.
 
-Read `docs/plans/organisation-spaces-20261115.md` for the exact private isolated
-rehearsal location, source bases, changes, completed tests and blockers. Do not
-start from the original source checkouts or overwrite concurrent enrichment work.
+Only mobile beta delivery remains: source 29c5ee1d, version 1.1.4(223), in
+findez-org-spaces-mobile. The archive attempted on November 15 failed because the
+Mac ran out of disk space. No upload. Preserve other tasks’ archives and source.
+Once disk permits, build with the existing private production-defines.json and
+ExportOptions.plist in /Users/tanyasmritivictorcharles/projects/findez-readiness220-private.
+Use completed 1,393 host tests/1 skip and clean analysis; verify signed native
+archive/export and upload to TestFlight. Stop at Apple upload acknowledgment.
+Public App Store submission is unchanged. Check latest build number before retry
+if another task delivered a beta in the meantime.
 
-The final SQL additions are NOT runtime-verified. Current sandbox denies SSH DNS,
-escalation, local DB sockets and PostgreSQL shared memory. Final ownership,
-deletion, member departure/removal and authority-lock checks must pass on the
-isolated copy before production approval or client release. Earlier membership,
-role and item/Space preservation and core permission/AI/setup checks passed.
-Production DB changes require explicit approval after this remaining validation.
-
-Keep all existing enrolled people and roles exactly as recorded. Internal legacy
-storage is intentional compatibility, not a user-visible hierarchy. Never replace
-all memberships or recreate items as part of rollout. Only explicit future member
-removal/departure may invoke the new compatibility-assignment cleanup helper.
+A separate enrichment UI task is layering a compact UI onto our final deployment.
+Do not revert its newer release. Our final source/build and exact rollback/data
+backup remain /home/ubuntu/findez-organisation-spaces-20261115. Git pushes remain
+held because they trigger prohibited Vercel previews.
