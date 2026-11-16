@@ -1940,3 +1940,15 @@ Downloaded live ZIP matches SHA-256
 f20487ebcd475411161a37d5136944db6f11e6bf323c2ce8d799673bd622ac99.
 Native Windows Fusion sign-in still needs user retry after replacing files and
 restarting Fusion. No backend/DB/mobile or public CAD marketing changes.
+
+## CAD downloads unified, November 15, 2026 (complete)
+
+Current task updates every website CAD add-in download to workspace 0.2.2 with
+a version query to avoid stale cached responses. Eight links across public CAD
+hero/closing CTA, docs, comparison entry/tool and Fusion connection. Old 0.1.0
+docs entry remains historical text, with no download link. CSV template unchanged.
+36 targeted tests, scoped ESLint and production-source build passed. Self-hosted
+release findez-cad-downloads-20261115 is active, build Ww02Ynbf3xjbiMtPfxzEg.
+Live marketing/docs links and the downloaded 0.2.2 ZIP hash verified. No Vercel
+or Render deployment, no database/backend/mobile changes. Receipt:
+docs/releases/cad-downloads-20261115/README.md.

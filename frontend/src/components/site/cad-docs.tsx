@@ -18,7 +18,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
     <div className={styles.layout}>
       <aside className={styles.sidebar}><CadDocsNavigation /></aside>
       <main id="cad-docs-content" className={styles.content}>
-        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Set up FindEZ in Fusion, compare a bill of materials with your recorded stock, and export what still needs attention. Find every download, workflow, limit, and troubleshooting step here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.2.2 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 15, 2026 · Examples use fictional data</p></div>
+        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Set up FindEZ in Fusion, compare a bill of materials with your recorded stock, and export what still needs attention. Find every download, workflow, limit, and troubleshooting step here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.2.2 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip?v=0.2.2" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 15, 2026 · Examples use fictional data</p></div>
 
         <section id="quickstart"><h2>Choose your workflow</h2><p>A bill of materials (BOM) lists the parts and quantities a design requires. FindEZ compares that list with one inventory you can access. Start with the workflow that fits your design.</p>
           <ReferenceTable caption="Available CAD workflows" headings={['Workflow', 'Use it for', 'Start here']} rows={[
@@ -32,15 +32,15 @@ export function CadDocs({ world }: { world?: string } = {}) {
 
         <section id="downloads"><h2>Downloads & versions</h2><p>Download on the computer where Fusion runs. Extract the ZIP before adding it to Fusion. The workspace and export-only add-ins use the same FindEZ name; keep only the intended version registered and running.</p>
           <ReferenceTable caption="Choose the correct download" headings={['Download', 'Version', 'Includes']} rows={[
-            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip" download>Fusion workspace ZIP</a>, '0.2.2 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
-            [<a key="legacy" href="/downloads/findez-fusion-preview.zip" download>Legacy export-only ZIP</a>, '0.1.0', 'Export FindEZ BOM only. Does not include Open FindEZ or a connected panel.'],
+            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip?v=0.2.2" download>Fusion workspace ZIP</a>, '0.2.2 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
+            ['Legacy export-only add-in (superseded)', '0.1.0', 'Export FindEZ BOM only. Does not include Open FindEZ or a connected panel.'],
             [<a key="template" href="/downloads/findez-bom-template.csv" download>CSV template</a>, 'Flat BOM', 'Example columns for a spreadsheet comparison. Replace the sample rows with your own parts.'],
           ]} />
           <p><strong>Version 0.2.2:</strong> fixes a panel acknowledgement loop that could display “Unsupported panel command” during sign-in. It also includes the Windows file-URL fix. The download has passed automated checks; native Fusion testing remains in progress. Downloading a newer ZIP does not update an already installed add-in.</p>
         </section>
 
         <section id="install"><h2>Install the Fusion workspace</h2><ol>
-          <li>Download the <a href="/downloads/findez-fusion-workspace.zip" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
+          <li>Download the <a href="/downloads/findez-fusion-workspace.zip?v=0.2.2" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
           <li>Open Fusion and switch to the <strong>Design</strong> workspace. Open <strong>Utilities → Add-Ins → Scripts and Add-Ins</strong>.</li>
           <li>If an older FindEZ entry exists, follow <a href="#update">Update an existing installation</a> first.</li>
           <li>Click <strong>+ → Script or Add-In from device</strong>. Select the inner <strong>FindEZ</strong> folder that directly contains <code>FindEZ.py</code> and <code>FindEZ.manifest</code>. Select the folder, not the ZIP or a Python file.</li>
