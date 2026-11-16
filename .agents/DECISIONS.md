@@ -1266,3 +1266,13 @@ Fusion project designs. Copy geometry without altering its source or inventory;
 bind selection to the active design, chosen part, and inventory. Require explicit
 part/model confirmation. Local STEP/F3D is a fallback, not a prerequisite. No
 generated or hosted manufacturer geometry is claimed until its service exists.
+
+
+## November 15: CAD release consistency across the website
+
+User requires every related website download, version label and instruction to
+be updated together when CAD documentation or the add-in changes. Audit both
+server-rendered and animated installation illustrations plus documentation search
+keywords. Verify the public ZIP manifest/hash and every active source download
+href. Historical references may remain only when clearly labeled as old builds
+or troubleshooting guidance. Preserve public marketing layout and unrelated copy.

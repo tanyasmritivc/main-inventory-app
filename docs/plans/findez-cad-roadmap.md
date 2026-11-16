@@ -4,7 +4,7 @@ The requested product is an inventory-connected CAD workspace, shared parts and
 CAD library, BOM reconciliation, pricing and procurement system. The connected
 Fusion candidate is the first increment, not completion of this roadmap.
 
-## Current increment: connected Fusion candidate
+## Current increment: connected Fusion candidate 0.3.1
 
 Implemented and published to the self-hosted site on November 15, 2026 after the
 user approved the exact additive session migration and candidate release:
@@ -16,15 +16,21 @@ user approved the exact additive session migration and candidate release:
   reserved, checked-out and available quantities. Unknown stock remains unknown.
 - Browsing existing verified catalog identities and specifications separately
   from team ownership. No invented CAD assets, prices or stock availability.
-- Local STEP/F3D selection, wrapper identity metadata, SHA-256 asset provenance,
+- AI query interpretation for scoped part searches. Design questions dispatch the
+  actual active assembly comparison; vague questions ask for clarification.
+- Current-design and saved Fusion project model picker with independent-copy
+  insertion, part confirmation, and design/inventory-bound selection.
+- Optional local STEP/F3D selection, wrapper identity metadata, SHA-256 asset provenance,
   rigid placement handles, cancel/failed-import cleanup and retained geometry.
   This association and geometry remain unverified.
 - Read current assembly metadata, compare through the existing backend engine,
   subtract reservations/checkouts and export shortages from the Fusion panel.
 - Existing export-only add-in and browser JSON/CSV/XLSX import preserved.
 
-Native Fusion installation and placement acceptance remain pending. Fusion is
-not installed on the development Mac. Fake-adsk tests are API-contract tests,
+User photo IMG_3575.DNG confirms Windows installation, sign-in and inventory
+browsing; production logs confirm a successful native comparison. New 0.3.1
+design-question dispatch and native insertion/placement acceptance remain pending.
+Fusion is not installed on the development Mac. Fake-adsk tests are API-contract tests,
 not evidence of successful placement in a real design.
 
 ## Ordered remaining work and acceptance

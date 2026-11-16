@@ -5,7 +5,7 @@ import styles from './api-docs.module.css';
 
 export const cadSections = [
   ['quickstart', 'Start here', 'workflow choose fusion upload inventory'],
-  ['downloads', 'Downloads & versions', 'zip template 0.2.1 0.1.0 candidate'],
+  ['downloads', 'Downloads & versions', 'zip template 0.3.1 0.1.0 candidate'],
   ['install', 'Install the Fusion add-in', 'windows mac folder run toggle open findez'],
   ['update', 'Update an existing installation', 'old preview export only replace restart'],
   ['connect', 'Connect an inventory', 'sign in code pairing permissions disconnect expired'],

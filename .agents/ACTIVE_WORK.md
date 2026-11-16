@@ -2027,3 +2027,20 @@ automatic BOM handler. Live docs links, backend module hash, health, anonymous
 search401 and preservation of unrelated World source/config verified. No
 Vercel/Render, DB migration or mobile change. User native retry remains pending.
 Receipt: docs/releases/fusion-031-20261116/README.md.
+
+
+## CAD website consistency audit, November 15, 2026 (published)
+
+All eight production download hrefs and the public ZIP are0.3.1. Audit found
+stale findez-fusion-preview in the public static/animated folder illustration
+and0.2.1 in docs search keywords. Correct three strings only; no ZIP, backend,
+layout or unrelated marketing changes. Production-source build based on active
+findez-world-buttons-20261116. Scoped lint and three docs tests pass. User asked
+if the entire CAD roadmap is implemented; answer is no. Updated the tracker to
+reflect AI search, project model picker, design-question dispatch and actual
+Windows installation/sign-in evidence, while keeping placement acceptance pending.
+
+Published findez-cad-labels-20261116, build55xOfOnCM5xKskWPpi2j9. Production
+build, live folder illustration, animated runtime text, docs search metadata,
+all eight0.3.1 download links and unchanged ZIP hash verified. Receipt:
+docs/releases/cad-labels-20261116/README.md. No add-in reinstall needed.
