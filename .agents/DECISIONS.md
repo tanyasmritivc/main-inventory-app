@@ -1,3 +1,12 @@
+## November 16 - World is an existing-inventory view
+
+FindEZ World reuses canonical Space/item/bin IDs. The item's location continues
+to mean its Space/location; shelf/drawer/cabinet placement is separate metadata.
+Do not create duplicate Spaces, alter enrolled people or repurpose location.
+Showcase is deferred entirely, including public submissions and platform admin
+permissions. Mobile hosts the same live web experience with a narrowly scoped
+authentication bridge. Follow backend, then web, then TestFlight delivery.
+
 ## November 15 — Organisations and Spaces
 
 The requested product hierarchy is Organisations -> Spaces. Existing organisation,

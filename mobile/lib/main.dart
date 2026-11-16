@@ -32,6 +32,9 @@ import 'package:mobile/core/ui/app_text.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+  ]);
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);

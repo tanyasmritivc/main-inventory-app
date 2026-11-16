@@ -88,6 +88,19 @@ void main() {
                   'deleted': action == 'delete',
                 };
           await mount(tester, kind, theme);
+          if (kind == 'organization' && action == 'move') {
+            // Organisation removal no longer offers the legacy detach action.
+            expect(find.byType(CheckboxListTile), findsOneWidget);
+            expect(
+              find.widgetWithText(TextButton, 'Move and continue'),
+              findsNothing,
+            );
+            expect(
+              fixture.requests.every((request) => request.method == 'GET'),
+              isTrue,
+            );
+            return;
+          }
           expect(
             tester
                 .widget<TextButton>(
@@ -107,7 +120,9 @@ void main() {
             isNull,
           );
           await tester.tap(
-            find.byType(CheckboxListTile).at(action == 'move' ? 0 : 1),
+            find
+                .byType(CheckboxListTile)
+                .at(kind == 'organization' || action == 'move' ? 0 : 1),
           );
           await tester.pumpAndSettle();
           if ((kind == 'space' || kind == 'inventory') && action == 'move') {

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
 import 'world_style.dart';
+import 'findez_world_page.dart';
 import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -182,8 +183,20 @@ class _WorldShellState extends State<WorldShell> {
   }
 
   Future<void> _push(Widget page) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WorldStyle(child: page)));
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => WorldStyle(child: page)));
     if (mounted) unawaited(_load());
+  }
+
+  Future<void> _openWorld() async {
+    await Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => const FindEZWorldPage()));
+    if (!mounted) return;
+    // Match the existing refresh after a real inventory edit.
+    _revision++;
+    await _load();
   }
 
   Future<ApiClient> _inventory(Map<String, dynamic> row) async {
@@ -573,60 +586,84 @@ class _WorldShellState extends State<WorldShell> {
     ),
   );
 
-  Widget _tabHeader(BuildContext context, int index) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-    child: Row(
-      children: [
-        Expanded(
-          child: Align(
-            heightFactor: 1,
-            alignment: Alignment.centerLeft,
-            child: index != 0
-                ? Text(
-                    'Spaces',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+  Widget _tabHeader(BuildContext context, int index) {
+    final leading = Align(
+      heightFactor: 1,
+      alignment: Alignment.centerLeft,
+      child: index != 0
+          ? Text(
+              'Spaces',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600),
+            )
+          : OrganizationPill(
+              api: widget.session.api,
+              id: widget.session.organizationId,
+              name: widget.session.organizationName,
+              glass: true,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0,
+              ),
+              onSelected: widget.session.selectOrganization,
+            ),
+    );
+    final account = NotificationProfileButton(
+      api: widget.session.api,
+      onOpen: _account,
+      avatar: MemberAvatar(
+        name: _profile.name,
+        photoUrl: _profile.photoUrl,
+        size: 36,
+      ),
+    );
+    final world = TextButton.icon(
+      onPressed: _openWorld,
+      icon: const Icon(CupertinoIcons.globe, size: 18),
+      label: const Text('World'),
+    );
+    final largeText = MediaQuery.textScalerOf(context).scale(13) > 24;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      child: index == 0 && largeText
+          ? Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: leading),
+                    account,
+                  ],
+                ),
+                Align(alignment: Alignment.centerRight, child: world),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: leading),
+                if (index == 1)
+                  IconButton(
+                    tooltip: _searchingSpaces
+                        ? 'Close Space search'
+                        : 'Search Spaces',
+                    icon: Icon(
+                      _searchingSpaces
+                          ? CupertinoIcons.xmark
+                          : CupertinoIcons.search,
+                      size: 22,
                     ),
-                  )
-                : OrganizationPill(
-                    api: widget.session.api,
-                    id: widget.session.organizationId,
-                    name: widget.session.organizationName,
-                    glass: true,
-                    labelStyle: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0,
-                    ),
-                    onSelected: widget.session.selectOrganization,
+                    onPressed: () => setState(() {
+                      _searchingSpaces = !_searchingSpaces;
+                      _search.clear();
+                    }),
                   ),
-          ),
-        ),
-        if (index == 1)
-          IconButton(
-            tooltip: _searchingSpaces ? 'Close Space search' : 'Search Spaces',
-            icon: Icon(
-              _searchingSpaces ? CupertinoIcons.xmark : CupertinoIcons.search,
-              size: 22,
+                if (index == 0) world,
+                if (index == 0) account,
+              ],
             ),
-            onPressed: () => setState(() {
-              _searchingSpaces = !_searchingSpaces;
-              _search.clear();
-            }),
-          ),
-        if (index == 0)
-          NotificationProfileButton(
-            api: widget.session.api,
-            onOpen: _account,
-            avatar: MemberAvatar(
-              name: _profile.name,
-              photoUrl: _profile.photoUrl,
-              size: 36,
-            ),
-          ),
-      ],
-    ),
-  );
+    );
+  }
 
   Widget _buildWorld(BuildContext context) {
     if (!_loadedNavigation) {

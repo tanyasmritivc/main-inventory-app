@@ -1,3 +1,24 @@
+## November 16 - FindEZ World beta preparation
+
+The World button opens the deployed visual inventory experience in a fullscreen
+WebView. Existing canonical Spaces/items/bins and account permissions remain the
+source of truth. Session credentials are handed to the exact trusted embedded
+World page via postMessage after ready and on auth refresh, never in URLs or logs.
+Account changes retire the view. World allows landscape and restores portrait on
+close; the existing inventory refresh runs on return. Large accessibility text
+places the World entry on a second header row.
+
+Final host validation: 1,398 tests passed, one existing config-only skip; analyzer
+clean. The organization-removal test expectations were updated to match the
+already-existing delete-only UI; removal application code is unchanged. Web is
+live and verified with the selected test account. Native keyboard/orientation,
+real item create/return and physical-device acceptance remain unverified.
+
+Version 1.1.4 (223) is being packaged with the existing production signing and
+configuration. Initial archive ran out of disk; a rebuild follows safe compiler
+cache cleanup. No Apple upload yet. No pushes, because they trigger prohibited
+Vercel previews. Public App Store submission stays unchanged.
+
 ## November 15 — Organisation/Space backend and web deployed
 
 User explicitly authorized “deploy”, including migration 087. Final deployment:
