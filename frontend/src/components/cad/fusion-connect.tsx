@@ -52,7 +52,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
     finally { locked.current = false; if (mounted.current) setBusy(false); }
   }
   return <section className={styles.page}>
-    <header className={styles.hero}><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/downloads/findez-fusion-workspace.zip?v=0.2.2" download>Download the Fusion workspace candidate</a><p>Native placement testing is still in progress. The existing export add-in remains available. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
+    <header className={styles.hero}><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/downloads/findez-fusion-workspace.zip?v=0.2.3" download>Download the Fusion workspace candidate</a><p>Native placement testing is still in progress. The existing export add-in remains available. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
     <div className={styles.card}>
       {approved ? <div role="status"><h2>Connection approved</h2><p>Return to Fusion. The panel will connect automatically. If it timed out, start again there.</p></div> : <>
         <h2>{inventory.name}</h2>

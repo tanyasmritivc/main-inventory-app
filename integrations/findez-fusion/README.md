@@ -1,10 +1,18 @@
-# FindEZ Fusion workspace candidate 0.2.2
+# FindEZ Fusion workspace candidate 0.2.3
 
-Version 0.2.2 ignores Fusion's panel acknowledgement events instead of treating
-those replies as user commands. This fixes the "Unsupported panel command" error
-loop during sign-in. It also retains the Windows file-URL fix from 0.2.1.
+Version 0.2.3 adds the official ISRG certificate roots alongside system trust for
+Fusion Python installations missing those roots. HTTPS certificate and hostname
+verification remain enabled. Connection failures now distinguish certificate,
+DNS, timeout, network and unreadable-response errors. It retains the panel
+acknowledgement and Windows file-URL fixes. Native Windows sign-in needs retry.
+
+Public certificate sources (retrieved November 15, 2026):
+https://letsencrypt.org/certs/isrgrootx1.pem
+https://letsencrypt.org/certs/isrg-root-x2.pem
+These are public trust anchors, not private keys or account credentials.
+
 To update, stop FindEZ, replace the extracted add-in files, restart Fusion, and
-confirm version 0.2.2 in Scripts and Add-Ins before running it.
+confirm version 0.2.3 in Scripts and Add-Ins before running it.
 
 This build adds a docked workspace. Activation requires the matching backend,
 web connection page and reviewed device-grant migration. Until those are live,

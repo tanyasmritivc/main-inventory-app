@@ -1952,3 +1952,16 @@ release findez-cad-downloads-20261115 is active, build Ww02Ynbf3xjbiMtPfxzEg.
 Live marketing/docs links and the downloaded 0.2.2 ZIP hash verified. No Vercel
 or Render deployment, no database/backend/mobile changes. Receipt:
 docs/releases/cad-downloads-20261115/README.md.
+
+## Fusion HTTPS connection errors, November 15, 2026 (published; native retry pending)
+
+User reports generic FindEZ could not be reached before browser sign-in. Live
+API and exact 0.2.2 pairing request work from this environment, so Windows cause
+is not yet proven. Version 0.2.3 adds official public ISRG roots alongside system
+trust for embedded Python and safe certificate/DNS/timeout/network/response error
+codes. TLS hostname and chain verification and redirect rejection stay enabled.
+Live pairing succeeded with system roots absent and packaged roots only.
+54 Python and 10 frontend tests plus lint and production build passed. ZIP and
+guidance published on self-hosted findez-fusion-023-20261115, build
+JnPxP8K5crwFOuGCCIGTY. Live links and ZIP hash verified. Native retry remains needed.
+Receipt: docs/releases/fusion-023-20261115/README.md. No backend/DB/mobile change.
