@@ -1,100 +1,59 @@
-# FindEZ for Fusion: private BOM comparison preview
+# FindEZ Fusion workspace candidate 0.2.0
 
-Version 0.1.0. This is a prototype, not an Autodesk-certified marketplace release.
-The add-in exports metadata to a local JSON file. It does not upload the assembly,
-send geometry, request credentials, modify the design, or reserve inventory.
+This build adds a docked workspace. Activation requires the matching backend,
+web connection page and reviewed device-grant migration. Until those are live,
+keep using the existing Export FindEZ BOM command and web upload. Native Fusion
+placement has not yet been validated on a real host.
 
-## Install and export
+## Install and connect
 
-1. Extract the ZIP. Keep `FindEZ.py`, `FindEZ.manifest` and `exporter.py` together
-   inside the `FindEZ` folder.
-2. In Fusion's Design workspace, open Utilities > Scripts and Add-Ins. On the
-   Add-Ins tab, use the add/select-folder control to select that `FindEZ` folder.
-3. Select FindEZ and click Run. The Utilities panel now has **Export FindEZ BOM**.
-   If the command is unavailable, switch to Design and restart the add-in.
-4. Open the desired assembly/configuration, resolve external references, and run
-   **Export FindEZ BOM**. Choose a local destination for the JSON file.
-5. In a FindEZ deployment containing the CAD preview, choose your inventory and
-   open **CAD Intelligence** (`/cad?inventory=<inventory UUID>`). Choose the JSON
-   file, then click **Compare with inventory** to send its metadata for analysis.
+1. Extract the ZIP. In Fusion, open Utilities > Add-Ins > Scripts and Add-Ins.
+2. In Add-Ins, select the local `FindEZ` folder containing FindEZ.py and
+   FindEZ.manifest, then Run. Stop the older FindEZ add-in first.
+3. In the Design workspace, choose Open FindEZ in Utilities.
+4. Click Sign in with FindEZ. Your normal browser opens FindEZ. Sign in there,
+   choose Personal or your organization, and select an authorized inventory.
+5. Check that the displayed ten-character code matches the one in Fusion.
+   Confirm it and click Connect this inventory. Return to Fusion.
+6. The connection lasts eight hours and only reads the chosen inventory.
+   Disconnect to select another. Reload the connection page to list and revoke
+   active sessions. Credentials remain in memory, never the HTML or local disk.
 
-Use the normal FindEZ browser sign-in. Never paste access tokens or passwords into
-the add-in. The comparison endpoint must be deployed alongside the web page;
-this source package alone does not enable it on the production website.
+## Browse and insert
 
-Stop the add-in from Scripts and Add-Ins to remove the command. Remove its entry
-and delete the extracted folder to uninstall. No startup registration is enabled.
+Inventory shows recorded on-hand, reserved, checked-out and available quantities.
+The location filter uses existing saved location text. Parts catalog is separate:
+a catalog listing is not owned stock. Catalog specifications are displayed when
+available. Prices and hosted CAD models are not connected in this first stage.
 
-## What is exported
+Choose Insert local model, select a STEP (.step/.stp) or Fusion archive (.f3d),
+then position it with Fusion's translation/rotation handles and confirm. Scaling
+is disabled. Cancel removes the new occurrence. This local file is not uploaded;
+its association and geometry are unverified. Check its dimensions, units,
+orientation and specifications. The wrapper records the inventory/catalog
+identity and file digest; the imported geometry/hierarchy is retained below it.
+No stock is consumed or reserved. F3Z, SAT and STL are not supported yet.
 
-Document name and saved/unsaved revision, active configuration label, component
-names/part numbers, source identifiers/tokens, hierarchy, occurrence visibility
-and suppression evidence. The optional `FindEZ` attribute group can provide
-`manufacturer`, `barcode`, and `procurement_policy` when a team already maintains
-those attributes. No arbitrary custom properties are exported.
+## BOM and shortages
 
-Tokens are opaque source locators, not secrets or stable identity comparisons.
-Component identity is scoped by source file/version/configuration and component
-ID. Source metadata is proprietary design information: review the JSON before
-choosing to upload it to an inventory.
+Open BOM and click Compare current assembly. The add-in sends the current
+metadata snapshot directly to FindEZ. It uses the existing conservative matching
+and reservation/checkout deductions. Review unknown suppression, partial exports,
+name-only matches and local model associations. Refresh after any design or stock
+change; this is a snapshot, not a live stock guarantee. Export shortages CSV to
+save the result locally. Needs-review rows are included but are not confirmed
+purchase requirements. No ordering or automatic design substitution occurs.
 
-## Counting and matching limits
+The older Export FindEZ BOM toolbar command remains available and independent
+of sign-in. Upload its JSON through FindEZ /cad as before. CSV/XLSX web imports
+remain available. This workspace does not activate the separate Onshape app.
 
-- Traverse contextual occurrences once; repeated nested parts retain individual
-  occurrence records. Hidden parts count, suppressed subtrees do not.
-- Missing suppression evidence is marked incomplete and the subtree is excluded
-  from the count. Configured designs require independent verification.
-- By default, a parent expands to its children and a leaf is one procurement unit.
-  A component's `procurement_policy` attribute may be `purchase`, `fabricate`,
-  `assembly`, `exclude` or `review`. Purchased assemblies block child procurement
-  counts. Bodies directly owned by an expanded parent trigger a warning.
-- No readable leaf bodies means review. A part number equal to its name is treated
-  as a default, not a reliable manufacturer identifier.
-- Exact barcode or manufacturer plus part-number identity may cover recorded
-  quantities. Conflicting identifiers do not match. Names alone require review.
-  Dimensions, material, electrical ratings and engineering compatibility are not
-  established by this preview.
-- Existing kit reservations and active checkouts reduce available recorded stock.
-  One stock unit cannot cover two BOM lines. Reads are nontransactional and may
-  become stale; the preview neither reserves units nor certifies physical counts.
-- Limits: 5 MiB JSON, 20,000 occurrences, 5,000 definitions, depth 64. Large or
-  unreadable exports fail visibly; they are never silently truncated.
+## Troubleshooting and privacy
 
-## Private acceptance checklist
-
-Test on your own computer without sending the design file to a developer:
-
-- Two subassemblies with four identical screws each produce eight screws.
-- Hiding a part preserves its requirement; suppressing it excludes its subtree.
-- Purchased subassemblies do not count both the assembly and its children.
-- Saving/dirty edits/configuration changes show the correct revision state.
-- Matching parts in another inventory never appear in the selected inventory.
-- A shared stock of six screws covers only six of eight required screws.
-- Review warnings, missing metadata and quantities against an independently
-  checked BOM. No inventory count or design file should change after comparison.
-
-Automated tests use synthetic host objects and inventory data. Windows/macOS
-Fusion installation, commands and actual assembly semantics still require native
-acceptance. These tests do not imply that the prototype is ready for production.
-
-## Developer verification
-
-From the repository root:
-
-```sh
-python -m pytest -q backend/tests/test_cad_prototype.py
-python scripts/package_fusion.py
-```
-
-The package script creates the deterministic web download from reviewed source;
-it contains no credentials or compiled dependencies. Backend comparison uses the
-existing Supabase user authorization and inventory permission checks. No migration
-or new table is required for this stateless preview.
-
-Official references:
-
-- [Assembly traversal](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/AssemblyTraversalUsingRecursion_Sample.htm)
-- [Component ID scope](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/fusion_Component_id.htm)
-- [Occurrence timeline](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/fusion_Occurrence_timelineObject.htm)
-- [Document references](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/core_DocumentReference.htm)
-- [Add-in installation](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-install-an-ADD-IN-and-Script-in-Fusion-360.html)
+If approval expires, start sign-in again. If a request loses permission, disconnect
+and reconnect. On a failed disconnect, the panel clears its local session and
+explains that server revocation must be retried in the browser; expiry still applies.
+HTTP redirects cannot forward credentials to another host. Only the fixed FindEZ
+API origin is called. No CAD geometry, file contents or private key is uploaded.
+All inventory permissions are rechecked by the backend. Native host testing is
+required before treating the candidate as a released Fusion add-in.

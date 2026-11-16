@@ -6,6 +6,7 @@ from pathlib import Path
 import adsk.core
 import adsk.fusion
 from .exporter import extract
+from . import workspace
 
 COMMAND_ID = 'FindEZExportBOM'
 handlers = []
@@ -63,6 +64,7 @@ def run(context):
         if panel is None:
             raise RuntimeError('Design utilities panel is unavailable.')
         control = panel.controls.itemById(COMMAND_ID) or panel.controls.addCommand(definition)
+        workspace.run()
     except Exception:
         stop(context)
         ui.messageBox('Open the Design workspace, then start FindEZ again.', 'FindEZ')
@@ -70,6 +72,7 @@ def run(context):
 
 def stop(context):
     global control, definition
+    workspace.stop()
     if control and control.isValid:
         control.deleteMe()
     if definition and definition.isValid:

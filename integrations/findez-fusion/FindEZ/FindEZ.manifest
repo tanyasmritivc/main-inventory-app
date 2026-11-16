@@ -2,8 +2,8 @@
   "autodeskProduct": "Fusion360",
   "type": "addin",
   "author": "FindEZ",
-  "description": {"": "Export a private BOM snapshot for FindEZ inventory comparison."},
-  "version": "0.1.0",
+  "description": {"": "Browse FindEZ inventory, insert local CAD models and compare an assembly."},
+  "version": "0.2.0",
   "runOnStartup": false,
   "supportedOS": "windows|mac"
 }

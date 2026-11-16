@@ -1,3 +1,16 @@
+## November 15 - connected Fusion workspace candidate (deployed)
+
+Owner: Codex, branch feat/cad-workspace. The user approved the exact additive
+20261115_cad_workspace.sql migration and first candidate release. Published only
+the new Fusion routes, connection UI, chooser destination support and workspace
+ZIP directly to self-hosted production. Full roadmap remains active, not complete.
+Native Fusion acceptance, hosted models, saved Fusion corrections, pricing,
+procurement and nightly jobs remain. The 3D API will be provided later.
+Receipt: docs/releases/cad-workspace-20261115/README.md.
+Tracker: docs/plans/findez-cad-roadmap.md.
+Inherited Onshape candidate/migration remains unactivated. No mobile changes.
+No push: do not trigger Vercel previews. Preserve concurrent production work.
+
 ## November 12 - Onshape CAD Intelligence (verified candidate)
 
 Owner: Codex, branch `feat/onshape-cad-intelligence-20261112`.

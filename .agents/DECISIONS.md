@@ -1233,3 +1233,14 @@ permanent deletions but cannot confirm them: the signed-in key owner must review
 the saved impact and type the exact resource name in FindEZ. Expired or changed
 previews require a new request. Chat Space creation requires an explicit named
 request and the selected editable inventory. No submitted mobile app changes.
+
+## November 15: Fusion connection scope and staged CAD expansion
+
+The connected Fusion candidate receives a single-inventory, read-only eight-hour
+capability approved in the existing browser login. Tokens remain memory-only in
+native code and hashed in the private session table. CAD insertion never consumes
+or reserves inventory. Initially users choose local STEP/F3D geometry, explicitly
+unverified, while licensed hosted models and the deferred generation API are
+built separately. Catalog listings are not owned stock and missing prices are not
+zero. Preserve existing export/upload and the unactivated Onshape lane.
+The full six-stage scope remains tracked in docs/plans/findez-cad-roadmap.md.
