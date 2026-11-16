@@ -62,10 +62,10 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
       } else if (api.worldKey != null) {
         final world = api.worldKey!;
         final result = await api.collaboration(
-          '/worlds/${Uri.encodeComponent(world)}/directory',
+          '/worlds/${Uri.encodeComponent(world)}/spaces',
         );
         if (!_current(api, generation)) return;
-        if (result['world'] != world) {
+        if (result['world'] != world || result['inventories'] is! List) {
           throw const FormatException(
             'The organization could not be verified. Reopen this import.',
           );
@@ -73,27 +73,19 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
         inventories = (result['inventories'] as List? ?? [])
             .whereType<Map>()
             .where((row) => row['can_edit'] == true)
-            .map((row) => Map<String, dynamic>.from(row))
+            .expand((row) => (row['spaces'] as List? ?? []).whereType<Map>().map((space) => {...Map<String, dynamic>.from(row), 'chosen_space': Map<String, dynamic>.from(space)}))
             .toList();
       } else {
-        final result = await api.collaboration('/inventory-workspaces');
+        final result = await api.collaboration('/organizations');
         final found = <Map<String, dynamic>>[];
-        for (final workspace
-            in (result['workspaces'] as List? ?? []).whereType<Map>()) {
-          final response = await api.collaboration(
-            '/inventory-workspaces/${workspace['workspace_id']}/inventories',
-          );
-          found.addAll(
-            (response['inventories'] as List? ?? [])
-                .whereType<Map>()
-                .where((i) => i['can_edit'] == true)
-                .map(
-                  (i) => {
-                    ...Map<String, dynamic>.from(i),
-                    'workspace_name': workspace['name'],
-                  },
-                ),
-          );
+        for (final org in (result['organizations'] as List? ?? []).whereType<Map>()) {
+          final response = await api.collaboration('/worlds/${org['organization_id']}/spaces');
+          for (final group in (response['inventories'] as List? ?? []).whereType<Map>()) {
+            if (group['can_edit'] != true) continue;
+            for (final space in (group['spaces'] as List? ?? []).whereType<Map>()) {
+              found.add({...Map<String, dynamic>.from(group), 'chosen_space': Map<String, dynamic>.from(space), 'organization_name': org['name']});
+            }
+          }
         }
         if (!_current(api, generation)) return;
         inventories = found;
@@ -124,10 +116,9 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
         expectedInventory: id,
       );
       if (!context.canEdit ||
-          (api.worldKey != null &&
-              (context.organizationId ?? 'personal') != api.worldKey)) {
+          context.organizationId != inventory['organization_id']) {
         throw const FormatException(
-          'Choose an editable inventory in this organization.',
+          'Choose an editable Space in this organization.',
         );
       }
       final selected = ApiClient.forInventory(
@@ -140,12 +131,13 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
       );
       inventoryId = id;
       final found = await selected.listSpaces();
-      if (_current(api, generation)) {
-        setState(() {
-          scoped = selected;
-          spaces = found;
-        });
-      }
+      if (!_current(api, generation)) return;
+      selected.assertCurrentContext();
+      final space = found.where((r) => r['id'] == inventory['chosen_space']?['id']).firstOrNull;
+      if (space == null) throw const FormatException('This Space changed. Refresh and choose again.');
+      if (!mounted) return;
+      await Navigator.of(this.context).push(MaterialPageRoute<void>(builder: (_) => ImportSheetPage(
+        api: selected, location: space['name'].toString(), spaceId: space['id'].toString(), kind: widget.kind)));
     } catch (e) {
       if (_current(api, generation)) {
         setState(() => error = describeError(e).$1);
@@ -157,7 +149,7 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
 
   @override
   Widget build(BuildContext context) => UtilityPage(
-    title: scoped == null ? 'Choose inventory' : 'Choose Space',
+    title: 'Choose Space',
     body: ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
@@ -176,9 +168,9 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
           ),
         ],
         if (!busy && scoped == null && inventories.isEmpty)
-          const Text('Create an inventory and a Space before importing.'),
+          const Text('Create a Space before importing, or request edit access.'),
         if (!busy && scoped != null && spaces.isEmpty)
-          const Text('Create a Space in this inventory before importing.'),
+          const Text('Create a Space before importing.'),
         if (scoped == null)
           for (final inventory in inventories)
             Padding(
@@ -186,10 +178,10 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
               child: UtilityCard(
                 child: ListTile(
                   title: AppText(
-                    inventory['name'].toString(),
+                    inventory['chosen_space']['name'].toString(),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  subtitle: UtilityHint(inventory['workspace_name'].toString()),
+                  subtitle: inventory['organization_name'] == null ? null : UtilityHint(inventory['organization_name'].toString()),
                   trailing: const Icon(Icons.chevron_right, size: 18),
                   onTap: busy ? null : () => _select(inventory),
                 ),

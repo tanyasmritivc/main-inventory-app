@@ -15,7 +15,6 @@ import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
-import 'package:mobile/features/inventory/space_directory.dart';
 import 'package:mobile/main.dart';
 
 const actor = '10000000-0000-4000-8000-000000000001';
@@ -369,34 +368,12 @@ void main() {
         await tester.pump();
         await tester.tap(find.byTooltip('Spaces'));
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text('Workspaces'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Workspaces'));
+        expect(find.byType(WorldShell), findsOneWidget);
+        expect(find.text('Workspaces'), findsNothing);
+        expect(find.text('Browse inventories'), findsNothing);
+        await tester.tap(find.byTooltip('Ask'));
         await settle(tester);
-        expect(find.byType(WorkspaceHome), findsOneWidget);
-        await tester.tap(find.text(signup ? 'Tools' : 'Hardware'));
-        await settle(tester);
-        expect(find.byType(MainShell), findsNothing);
-        expect(find.byType(InventorySpacesPage), findsOneWidget);
-        expect(find.text('Spaces'), findsOneWidget);
-        // Back returns to the workspace directory, not the old dashboard.
-        await tester.tap(find.byType(BackButton));
-        await settle(tester);
-        expect(find.byType(WorkspaceHome), findsOneWidget);
-        await tester.tap(
-          find.bySemanticsLabel(
-            'Switch organization. Current: ${signup ? 'Personal' : 'Kestrel Labs'}',
-          ),
-        );
-        await settle(tester);
-        await tester.tap(find.text('Personal').last);
-        await settle(tester);
-        expect(find.byType(MainShell), findsNothing);
-        expect(find.byType(WorkspaceHome), findsOneWidget);
-        expect(
-          find.bySemanticsLabel('Switch organization. Current: Personal'),
-          findsOneWidget,
-        );
+        expect(find.bySemanticsLabel('Switch organization. Current: ${signup ? 'Personal' : 'Kestrel Labs'}'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         Supabase.instance.client.auth.stopAutoRefresh();

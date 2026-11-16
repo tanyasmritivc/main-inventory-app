@@ -121,6 +121,30 @@ Future<bool> createDirectorySpace(BuildContext context, ApiClient api) async {
   return true;
 }
 
+Future<bool> createOrganizationSpace(
+  BuildContext context,
+  ApiClient api,
+  String world,
+) async {
+  api.assertCurrentContext();
+  final name = await _askSpaceName(context);
+  if (!context.mounted || name == null) return false;
+  api.assertCurrentContext();
+  final saved = await api.collaboration(
+    '/worlds/${Uri.encodeComponent(world)}/spaces',
+    method: 'POST',
+    data: {'name': name},
+  );
+  api.assertCurrentContext();
+  if (saved['space']?['id'] == null) {
+    throw const FormatException(
+      'Saving could not be confirmed. Refresh Spaces before retrying.',
+    );
+  }
+  InventoryCache.clear();
+  return true;
+}
+
 /// Both organization and inventory directories use the same scoped Space actions.
 class SpaceDirectoryTile extends StatefulWidget {
   const SpaceDirectoryTile({

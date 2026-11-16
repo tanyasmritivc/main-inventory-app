@@ -66,7 +66,12 @@ const _choices = [
     ),
   ],
   [
-    _Choice('solo', 'Just me', 'A private inventory', Icons.person_outline),
+    _Choice(
+      'solo',
+      'Just me',
+      'Your personal organization',
+      Icons.person_outline,
+    ),
     _Choice(
       'household',
       'Me and my household',

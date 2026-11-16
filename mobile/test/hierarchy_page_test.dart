@@ -162,17 +162,6 @@ void main() {
           onOpenInventory: (id, workspace, organization) async {},
         ),
       );
-      if (level == HierarchyLevel.organization) {
-        await tester.tap(
-          find.descendant(
-            of: find.byWidgetPredicate(
-              (widget) => widget is SegmentedButton<bool>,
-            ),
-            matching: find.text('People'),
-          ),
-        );
-        await tester.pumpAndSettle();
-      }
       final savedAvatar = find.byWidgetPredicate(
         (widget) =>
             widget is MemberAvatar &&
@@ -227,8 +216,6 @@ void main() {
   ) async {
     organizationRole = 'member';
     await pump(tester, page(level: HierarchyLevel.organization, id: 'org-0'));
-    await tester.tap(find.text('People'));
-    await tester.pumpAndSettle();
     expect(find.text('Tanya'), findsOneWidget);
     expect(find.text('Member'), findsOneWidget);
     expect(find.text('New workspace'), findsNothing);

@@ -23,9 +23,8 @@ class ChatContextPicker extends StatefulWidget {
 
 class _ChatContextPickerState extends State<ChatContextPicker> {
   late final List<ChatSource> selected = List.of(widget.selected);
-  List<Map<String, dynamic>> inventories = [];
   List<ChatSource> rows = [];
-  String? inventory, error;
+  String? error;
   String query = '';
   int generation = 0;
   int? next;
@@ -64,7 +63,6 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
               name: space['name'] as String,
               inventoryId: group['inventory_id'] as String,
               resourceId: identity as String,
-              inventoryName: group['name'] as String?,
             ),
           );
         }
@@ -101,37 +99,11 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
 
   Future<void> _directory() async {
     if (widget.kind == 'space') return _loadSpaces();
-    setState(() {
-      busy = true;
-      error = null;
-    });
-    try {
-      final data = await widget.api.collaboration(
-        '/worlds/${Uri.encodeComponent(widget.api.worldKey!)}/directory',
-      );
-      widget.api.assertCurrentContext();
-      if (!mounted) return;
-      inventories = (data['inventories'] as List? ?? [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      inventory = inventories.firstOrNull?['inventory_id'] as String?;
-      await _load();
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          busy = false;
-          error = 'Could not load your inventories. Try again.';
-        });
-      }
-    }
+    await _load();
   }
 
   Future<void> _load({bool more = false}) async {
     final id = ++generation;
-    if (inventory == null) {
-      setState(() => busy = false);
-      return;
-    }
     setState(() {
       busy = true;
       error = null;
@@ -142,7 +114,6 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
     });
     try {
       final data = await widget.api.chatSourceChoices(
-        inventoryId: inventory!,
         kind: widget.kind,
         query: query,
         offset: more ? next ?? 0 : 0,
@@ -233,32 +204,6 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                 const UtilityHint(
                   'Choose context for this chat. This does not change where items are saved.',
                 ),
-                if (inventories.isNotEmpty) ...[
-                  const UtilitySection('Inventory'),
-                  DropdownButtonFormField<String>(
-                    initialValue: inventory,
-                    isExpanded: true,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    decoration: const InputDecoration(),
-                    items: [
-                      for (final row in inventories)
-                        DropdownMenuItem(
-                          value: row['inventory_id'] as String,
-                          child: AppText(
-                            '${row['name']} - ${row['workspace_name'] ?? ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      debounce?.cancel();
-                      inventory = value;
-                      unawaited(_load());
-                    },
-                  ),
-                ],
                 const SizedBox(height: 14),
                 TextField(
                   maxLength: 100,
@@ -291,8 +236,7 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   TextButton(
-                    onPressed: () =>
-                        inventories.isEmpty ? _directory() : _load(),
+                    onPressed: () => _directory(),
                     child: const AppText('Retry'),
                   ),
                 ],

@@ -1,3 +1,29 @@
+## November 15 — Organisation/Space implementation prepared, NOT deployed
+
+Implementation is isolated in sibling findez-org-spaces-api/web/mobile checkouts.
+The new clients require backend migration 087 and its API routes. Do not activate
+clients first. Existing production services, data and enrolled people are unchanged.
+Web: 687 tests and final production build/TypeScript pass. Mobile: 1,393 tests pass,
+1 skip; final analysis reports no issues. Backend: 286 relevant tests pass across
+completed runs. The isolated production-snapshot rehearsal verified all existing
+membership rows/roles, 25 Spaces and 2,294 items unchanged, read access, write
+boundaries, revocation, quotas and idempotent setup/AI transactions.
+
+Final organisation-removal, account-deletion/custody and authority-lock extensions
+need another SQL rehearsal. The previous
+run exposed two optional legacy tables missing from the existing deletion guard.
+The patch only permits those dependencies when empty for the target inventory;
+records still fail closed. Source anchors match the saved live schema. The final
+runtime check is BLOCKED: SSH DNS fails under current sandbox permissions and
+escalated SSH was rejected by the configured approval policy. Local PostgreSQL
+socket/shared-memory access is also unavailable. No final migration success claim.
+
+No push: repository automation can create prohibited Vercel previews (existing
+November 13 web release constraint). No production migration or application rollout.
+No mobile archive/upload: required backend activation is pending; current local
+free disk is about 1.3 GiB. Production DB changes still need explicit authorization
+under AGENTS.md, after the remaining rehearsal. See docs/plans/organisation-spaces-20261115.md.
+
 ## November 9: compact organization menu correction uploaded
 
 Apple acknowledged TestFlight 1.1.3 (216), delivery

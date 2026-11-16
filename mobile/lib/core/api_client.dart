@@ -322,7 +322,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> chatSourceChoices({
-    required String inventoryId,
+    String? inventoryId,
     required String kind,
     String query = '',
     int offset = 0,
@@ -330,7 +330,7 @@ class ApiClient {
     final result = await collaboration(
       '/worlds/${Uri.encodeComponent(worldKey!)}/chat-sources',
       query: {
-        'inventory_id': inventoryId,
+        if (inventoryId != null) 'inventory_id': inventoryId,
         'kind': kind,
         'query': query,
         'offset': offset,

@@ -11,11 +11,13 @@ void main() {
   final fixture = HierarchyFixture();
   setUpAll(fixture.initialize);
   tearDownAll(() => Supabase.instance.dispose());
-  Map<String, dynamic> row(String id, {bool editable = true}) => {
+  Map<String, dynamic> row(String id, {bool editable = true, String? org = 'org-a'}) => {
     'inventory_id': id,
     'name': id,
     'workspace_name': 'Workspace',
     'can_edit': editable,
+    'organization_id': org,
+    'spaces': [{'id': 'space', 'name': id}],
   };
   Widget page(ApiClient api) => MaterialApp(
     theme: AppTheme.create(Brightness.light),
@@ -30,10 +32,10 @@ void main() {
       'import picker reads only $world directory and saves within that scope',
       (tester) async {
         fixture.respond = (request) {
-          if (request.path == '/worlds/$world/directory') {
+          if (request.path == '/worlds/$world/spaces') {
             return {
               'world': world,
-              'inventories': [row('chosen'), row('read-only', editable: false)],
+              'inventories': [row('chosen', org: world == 'personal' ? null : world), row('read-only', editable: false, org: world)],
             };
           }
           if (request.path == '/inventories/chosen') {
@@ -48,7 +50,7 @@ void main() {
           if (request.path == '/inventories/chosen/spaces') {
             return {
               'spaces': [
-                {'id': 'space', 'name': 'Scoped shelf'},
+                {'id': 'space', 'name': 'chosen'},
               ],
             };
           }
@@ -63,10 +65,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('chosen'), findsOneWidget);
         expect(find.text('read-only'), findsNothing);
-        expect(fixture.requests.single.path, '/worlds/$world/directory');
+        expect(fixture.requests.single.path, '/worlds/$world/spaces');
         await tester.tap(find.text('chosen'));
         await tester.pumpAndSettle();
-        expect(find.text('Scoped shelf'), findsOneWidget);
+        expect(find.text('Choose inventory'), findsNothing);
         expect(
           fixture.requests.where(
             (r) => r.path.contains('inventory-workspaces'),
@@ -79,7 +81,7 @@ void main() {
   testWidgets(
     'rejects a selected inventory that now belongs to another organization',
     (tester) async {
-      fixture.respond = (r) => r.path.endsWith('/directory')
+      fixture.respond = (r) => r.path.endsWith('/spaces')
           ? {
               'world': 'org-a',
               'inventories': [row('moved')],
@@ -92,10 +94,10 @@ void main() {
       await tester.tap(find.text('moved'));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Choose an editable inventory'),
+        find.textContaining('Choose an editable Space'),
         findsOneWidget,
       );
-      expect(fixture.requests.any((r) => r.path.endsWith('/spaces')), isFalse);
+      expect(fixture.requests.any((r) => r.path == '/inventories/moved/spaces'), isFalse);
     },
   );
   testWidgets('wrong-world directory fails closed', (tester) async {
@@ -117,7 +119,7 @@ void main() {
     tester,
   ) async {
     final old = Completer<Object?>();
-    fixture.respond = (r) => r.path == '/worlds/org-a/directory'
+    fixture.respond = (r) => r.path == '/worlds/org-a/spaces'
         ? old.future
         : {
             'world': 'org-b',

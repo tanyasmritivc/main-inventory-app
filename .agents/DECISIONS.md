@@ -1,3 +1,13 @@
+## November 15 — Organisations and Spaces
+
+The requested product hierarchy is Organisations -> Spaces. Existing organisation,
+team and inventory membership rows and roles remain intact. Organisation membership
+provides a viewer floor for every Space; it does not grant editing. Standalone
+teams become organisations without combining their rosters. Personal is an
+organisation, with the existing personal world/history alias retained. Legacy
+container IDs remain internal compatibility storage for items, files and old links.
+Never delete those containers as a hierarchy migration or re-enrol existing users.
+
 ## November 8: App Store 1.1.2 build213 submitted with automatic release
 
 The user explicitly authorized public App Review submission, supplied replacement

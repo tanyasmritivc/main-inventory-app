@@ -150,15 +150,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
                 'Choose a destination. Your items stay in the draft until you save.',
               ),
               for (final group in groups) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 20, bottom: 4),
-                  child: Text(
-                    '${group['workspace_name']} · ${group['name']}',
-                    style: const TextStyle(fontWeight: FontWeight.w400),
-                  ),
-                ),
-                if ((group['spaces'] as List? ?? []).isEmpty)
-                  const Text('No Spaces yet. Create one through chat.'),
                 for (final space in group['spaces'] as List? ?? [])
                   ListTile(
                     title: Text(space['name'] as String),
@@ -173,7 +164,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard>
                 const Padding(
                   padding: EdgeInsets.only(top: 20),
                   child: Text(
-                    'No writable inventories. Ask chat to create one, or request edit access.',
+                    'No writable Spaces. Create a Space, or request edit access.',
                   ),
                 ),
             ],

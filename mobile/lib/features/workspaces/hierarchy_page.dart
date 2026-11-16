@@ -93,7 +93,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   Timer? _permissionTimer;
   int _generation = 0;
   String _query = '';
-  bool _organizationPeople = false;
+  final bool _organizationPeople = true;
   String get _id => Uri.encodeComponent(widget.id ?? '');
   bool get _org => widget.level == HierarchyLevel.organization;
   bool get _workspace => widget.level == HierarchyLevel.workspace;
@@ -871,7 +871,7 @@ class _HierarchyPageState extends State<HierarchyPage>
     }
     if (!await _confirm(
       'Remove member?',
-      'Remove this person and their access to all workspaces and inventories in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.',
+      'Remove this person and their access to every Space in this organization? Shared content stays.',
     )) {
       return;
     }
@@ -880,16 +880,14 @@ class _HierarchyPageState extends State<HierarchyPage>
     }
   }
 
-  Future<void> _attachWorkspace() async {
-    final id = await _choose('Choose your workspace', {
-      for (final row in rows(_data?['attachable']))
-        row['team_id'].toString(): row['name'].toString(),
-    });
-    if (mounted && id != null) await _mutate('$_base/workspaces/$id');
-  }
-
   Future<void> _transferOwner() async {
-    if (!_ownerAuthority || _busy || !_org && !_workspace || _personal) return;
+    if (!_ownerAuthority ||
+        _busy ||
+        !_org && !_workspace ||
+        _personal ||
+        _resource['is_personal'] == true) {
+      return;
+    }
     final confirmed = await confirmOwnershipTransfer(
       context,
       widget.api,
@@ -972,105 +970,11 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   List<Widget> _organizationContents() {
-    final workspaces = rows(
-      _data?['workspaces'],
-    ).where((w) => _matches(w['name'])).toList();
     final members = rows(
       _data?['members'],
     ).where((m) => m['role'] != 'none' && _matches(m['display_name'])).toList();
     return [
-      SegmentedButton<bool>(
-        segments: const [
-          ButtonSegment(value: false, label: Text('Workspaces')),
-          ButtonSegment(value: true, label: Text('People')),
-        ],
-        selected: {_organizationPeople},
-        showSelectedIcon: false,
-        onSelectionChanged: (value) => setState(() {
-          _organizationPeople = value.single;
-          _query = '';
-        }),
-      ),
-      const SizedBox(height: 20),
-      if (!_organizationPeople) ...[
-        if (_manager) ...[
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: _busy ? null : () => _create('workspace'),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New workspace'),
-              style: FilledButton.styleFrom(
-                backgroundColor: PlaceTokens.darkOrange,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-        ],
-        if (workspaces.isEmpty)
-          PlaceCardList(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _query.isNotEmpty
-                          ? 'No matching workspaces'
-                          : 'No workspaces yet',
-                      style: PlacePalette.of(context).rowTitle,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _manager
-                          ? 'Create a workspace for your team or project.'
-                          : 'Workspaces shared with you will appear here.',
-                      style: PlacePalette.of(
-                        context,
-                      ).text(13, color: PlacePalette.of(context).dim),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        for (final ws in workspaces) ...[
-          PlaceCardList(
-            children: [
-              PlaceRow(
-                title: ws['name'].toString(),
-                leading: PlaceBadge(ws['name'].toString()),
-                subtitle: ws['can_open'] == false
-                    ? 'Not assigned to this workspace'
-                    : 'Workspace',
-                onTap: _busy || ws['can_open'] == false
-                    ? null
-                    : () async {
-                        if (widget.onOpenWorkspace != null) {
-                          await widget.onOpenWorkspace!(
-                            ws['team_id'].toString(),
-                          );
-                        } else {
-                          await _navigate(
-                            HierarchyLevel.workspace,
-                            ws['team_id'].toString(),
-                            ws['name'].toString(),
-                            org: widget.id,
-                          );
-                        }
-                      },
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-        ],
-        if (_manager && rows(_data?['attachable']).isNotEmpty)
-          TextButton(
-            onPressed: _busy ? null : _attachWorkspace,
-            child: const Text('Add existing workspace'),
-          ),
-      ] else ...[
+      ...[
         if (_manager) ...[
           Align(
             alignment: Alignment.centerRight,
@@ -1213,7 +1117,10 @@ class _HierarchyPageState extends State<HierarchyPage>
               _menu({
                 if (_canRename) 'Rename': () => _rename(),
                 if (_org) 'Leave organization': _leaveOrganization,
-                if (_ownerAuthority && (_org || _workspace) && !_personal)
+                if (_ownerAuthority &&
+                    (_org || _workspace) &&
+                    !_personal &&
+                    _resource['is_personal'] != true)
                   'Transfer ownership': _transferOwner,
                 if (_org && _owner) 'Delete organization': _deleteOrganization,
                 if (_workspace && _manager && !_personal)
@@ -1624,7 +1531,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 if (_org) {
                   if (!await _confirm(
                     'Remove member?',
-                    'Remove this person and their access to all workspaces and inventories in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.',
+                    'Remove this person and their access to every Space in this organization? Shared content stays.',
                   )) {
                     return;
                   }

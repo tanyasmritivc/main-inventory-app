@@ -51,11 +51,15 @@ void main() {
         return {'user_id': 'actor-a', 'display_name': 'Alex'};
       }
       if (r.path == '/worlds/personal/directory') {
-        return {
+        return {'can_create_space': role != 'viewer',
           'inventories': [group()],
         };
       }
       if (r.path == '/worlds/personal/spaces') {
+        if (r.method == 'POST') {
+          spaces.add({'id': 'new', 'name': r.data['name'], 'item_count': 0});
+          return {'space': spaces.last};
+        }
         return {
           'inventories': [group()],
         };
@@ -312,7 +316,8 @@ void main() {
     ) async {
       await mount(tester, world: false, brightness: brightness);
       expect(find.byType(MainShell), findsNothing);
-      expect(find.text('personal / Tools'), findsOneWidget);
+      expect(find.text('personal / Tools'), findsNothing);
+      expect(find.text('Personal'), findsOneWidget);
       expect(f.requests.any((r) => r.path.endsWith('/search_items')), false);
       // Native storage/network fixture futures can complete after animations
       // settle. Wait for the data before capturing or tapping the Space.
@@ -459,7 +464,7 @@ void main() {
     expect(request.data, {'name': 'Parts bins'});
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('World New space creates in chosen inventory and refreshes', (
+  testWidgets('World New space creates directly in organization and refreshes', (
     tester,
   ) async {
     await mount(tester);
@@ -474,8 +479,6 @@ void main() {
     await spaceAuditCapture?.call('world-new-space');
     await tester.tap(button);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tools').last);
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Garage');
     await tester.pump();
     await tester.tap(find.text('Save'));
@@ -484,7 +487,7 @@ void main() {
     expect(
       f.requests
           .where(
-            (r) => r.method == 'POST' && r.path == '/inventories/inv-a/spaces',
+            (r) => r.method == 'POST' && r.path == '/worlds/personal/spaces',
           )
           .length,
       1,

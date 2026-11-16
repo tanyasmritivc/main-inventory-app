@@ -34,7 +34,7 @@ void main() {
         return {'user_id': 'actor-a', 'display_name': 'Alex'};
       }
       if (request.path.endsWith('/directory')) {
-        return {'has_items': false, 'inventories': []};
+        return {'has_items': false, 'can_create_space': true, 'inventories': []};
       }
       if (request.path.endsWith('/spaces')) return {'inventories': []};
       return <String, dynamic>{};
@@ -251,6 +251,7 @@ void main() {
       if (request.path.endsWith('/directory')) {
         return {
           'has_items': false,
+          'can_create_space': true,
           'inventories': [
             {
               'inventory_id': 'inventory-a',
@@ -349,7 +350,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Account settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Workspaces'), findsOneWidget);
+    expect(find.text('Workspaces'), findsNothing);
+    expect(find.text('People'), findsOneWidget);
     expect(find.byTooltip('More'), findsNothing);
     for (final removed in ['Overview', 'Review', 'Projects', 'Lent items']) {
       expect(find.text(removed), findsNothing);

@@ -154,11 +154,13 @@ class _RemovalState extends State<_RemovalDialog> {
           if (preview != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${preview!['workspaces']} workspaces · ${preview!['inventories']} inventories · ${preview!['spaces']} Spaces · ${preview!['items']} items',
+              widget.kind == 'organization'
+                  ? '${preview!['spaces']} Spaces · ${preview!['items']} items'
+                  : '${preview!['workspaces']} workspaces · ${preview!['inventories']} inventories · ${preview!['spaces']} Spaces · ${preview!['items']} items',
             ),
             const SizedBox(height: 12),
             const Text('What would you like to do?'),
-            if (preview!['can_move'] == true)
+            if (preview!['can_move'] == true && widget.kind != 'organization')
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(moveLabel),

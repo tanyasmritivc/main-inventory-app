@@ -18,7 +18,7 @@ class InventoryContext {
   final String? organizationId, organizationName;
   final bool canEdit, canManage, canRename;
   bool get isPersonal => workspaceId == 'personal';
-  String get label => '$workspaceName / $name';
+  String get label => organizationName ?? 'Personal';
 
   factory InventoryContext.fromJson(
     Map<String, dynamic> json, {

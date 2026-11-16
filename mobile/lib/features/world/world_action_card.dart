@@ -126,7 +126,8 @@ class _WorldActionCardState extends State<WorldActionCard> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               for (final inventory in inventories) ...[
-                if (inventories.length > 1)
+                if (inventories.length > 1 &&
+                    plan['hierarchy'] != 'organization_spaces')
                   Text(
                     inventory['name'].toString(),
                     style: Theme.of(context).textTheme.titleSmall,

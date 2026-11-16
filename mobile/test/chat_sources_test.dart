@@ -58,7 +58,7 @@ class _Api extends ApiClient {
 
   @override
   Future<Map<String, dynamic>> chatSourceChoices({
-    required String inventoryId,
+    String? inventoryId,
     required String kind,
     String query = '',
     int offset = 0,

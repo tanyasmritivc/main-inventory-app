@@ -400,8 +400,6 @@ void main() {
           expect(find.text('New workspace'), findsNothing);
           expect(find.text('Invite organization member'), findsNothing);
           expect(find.byTooltip('Actions'), findsOneWidget);
-          await tester.tap(find.text('People'));
-          await settle(tester);
           expect(find.text('Viewer'), findsOneWidget);
           expect(tester.takeException(), isNull);
           expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);

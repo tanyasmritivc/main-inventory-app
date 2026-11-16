@@ -40,12 +40,14 @@ class _OrganizationPillState extends State<OrganizationPill> {
     try {
       final result = await widget.api.collaboration('/organizations');
       if (!mounted || widget.api.accountId != account) return;
-      final organizations = placeRows(result['organizations'])
-        ..sort(
-          (a, b) => a['name'].toString().toLowerCase().compareTo(
-            b['name'].toString().toLowerCase(),
-          ),
-        );
+      final organizations =
+          placeRows(
+            result['organizations'],
+          ).where((org) => org['is_personal'] != true).toList()..sort(
+            (a, b) => a['name'].toString().toLowerCase().compareTo(
+              b['name'].toString().toLowerCase(),
+            ),
+          );
       setState(() => _loading = false);
       final box = context.findRenderObject()! as RenderBox;
       final overlay =

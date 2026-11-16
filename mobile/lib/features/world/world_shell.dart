@@ -10,7 +10,6 @@ import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
-import '../../core/ui/native_presentation.dart';
 import 'world_style.dart';
 import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +27,7 @@ import '../inventory/item_detail_sheet.dart';
 import '../../core/ask_answer.dart';
 import '../profile/account_menu.dart';
 import '../workspaces/organization_pill.dart';
-import '../workspaces/workspace_home.dart';
+import '../workspaces/hierarchy_page.dart';
 import '../scan/import_sheet_page.dart';
 import '../scan/space_barcode_flow.dart';
 import '../review/review_queue_page.dart';
@@ -182,12 +181,8 @@ class _WorldShellState extends State<WorldShell> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _inventories =>
-      placeRows(_directory?['inventories']);
   Future<void> _push(Widget page) async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => WorldStyle(child: page)));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WorldStyle(child: page)));
     if (mounted) unawaited(_load());
   }
 
@@ -202,7 +197,9 @@ class _WorldShellState extends State<WorldShell> {
       expectedInventory: row['inventory_id'],
       expectedWorkspace: row['workspace_id'],
     );
-    if ((inventory.organizationId ?? 'personal') != world ||
+    if (inventory.organizationId !=
+            (_directory?['organization']?['organization_id'] ??
+                (world == 'personal' ? null : world)) ||
         !mounted ||
         world != _world) {
       throw const FormatException('The organization changed. Choose again.');
@@ -214,61 +211,45 @@ class _WorldShellState extends State<WorldShell> {
     );
   }
 
-  Future<ApiClient?> _chooseInventory({bool writable = false}) async {
-    final rows = _inventories
-        .where((r) => !writable || r['can_edit'] == true)
-        .toList();
-    if (rows.isEmpty) {
+  Future<({ApiClient api, Map<String, dynamic> space})?> _chooseSpace({
+    bool writable = false,
+  }) async {
+    final choices = <Map<String, dynamic>>[
+      for (final group in _spaceGroups ?? <Map<String, dynamic>>[])
+        if (!writable || group['can_edit'] == true)
+          for (final space in placeRows(group['spaces']))
+            {'group': group, 'space': space},
+    ];
+    if (choices.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Create an inventory in Ask, or choose an inventory you can edit.',
-            ),
+            content: Text('Create a Space first, or request edit access.'),
           ),
         );
       }
       return null;
     }
-    final Map<String, dynamic>? choice;
-    if (usesNativePresentation) {
-      final id = await showNativeChoices(
-        context,
-        title: 'Inventory',
-        opaque: true,
-        rows: [
-          for (final row in rows)
-            {
-              'id': row['inventory_id'],
-              'title': row['name'],
-              'subtitle': rows.where((r) => r['name'] == row['name']).length > 1
-                  ? row['workspace_name']
-                  : '',
-            },
+    final choice = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (context) => ListView(
+        shrinkWrap: true,
+        children: [
+          const ListTile(title: Text('Choose a Space')),
+          for (final choice in choices)
+            ListTile(
+              title: Text(choice['space']['name'].toString()),
+              onTap: () => Navigator.pop(context, choice),
+            ),
         ],
-      );
-      choice = rows.where((row) => row['inventory_id'] == id).firstOrNull;
-    } else {
-      choice = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
-        showDragHandle: true,
-        useSafeArea: true,
-        builder: (context) => ListView(
-          shrinkWrap: true,
-          children: [
-            const ListTile(title: Text('Choose inventory')),
-            for (final row in rows)
-              ListTile(
-                title: Text(row['name'].toString()),
-                subtitle: Text(row['workspace_name'].toString()),
-                onTap: () => Navigator.pop(context, row),
-              ),
-          ],
-        ),
-      );
-    }
+      ),
+    );
     if (choice == null || !mounted) return null;
-    return _inventory(choice);
+    final api = await _inventory(choice['group']);
+    if (!mounted) return null;
+    return (api: api, space: Map<String, dynamic>.from(choice['space']));
   }
 
   Future<void> _guard(Future<void> Function() operation) async {
@@ -287,29 +268,9 @@ class _WorldShellState extends State<WorldShell> {
   }
 
   Future<void> _capture(String kind) => _guard(() async {
-    final api = await _chooseInventory(writable: true);
-    if (api == null || !mounted) return;
-    final spaces = await api.listSpaces();
-    if (!mounted) return;
-    final space = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        children: [
-          const ListTile(title: Text('Save to Space')),
-          if (spaces.isEmpty)
-            const ListTile(title: Text('Create a Space in Ask first.')),
-          for (final row in spaces)
-            ListTile(
-              title: Text(row['name'].toString()),
-              onTap: () => Navigator.pop(context, row),
-            ),
-        ],
-      ),
-    );
-    if (space == null || !mounted) return;
+    final destination = await _chooseSpace(writable: true);
+    if (destination == null || !mounted) return;
+    final api = destination.api, space = destination.space;
     var saved = false;
     if (kind == 'spreadsheet') {
       saved =
@@ -413,9 +374,10 @@ class _WorldShellState extends State<WorldShell> {
     setState(() => _creatingSpace = true);
     try {
       await _guard(() async {
-        final api = await _chooseInventory(writable: true);
-        if (api == null || !mounted) return;
-        if (await createDirectorySpace(context, api)) await _load();
+        if (_directory?['can_create_space'] != true) return;
+        if (await createOrganizationSpace(context, _chatApi, _world)) {
+          await _load();
+        }
       });
     } finally {
       if (mounted) setState(() => _creatingSpace = false);
@@ -428,9 +390,7 @@ class _WorldShellState extends State<WorldShell> {
     final rows = <Map<String, dynamic>>[];
     for (final group in _spaceGroups ?? <Map<String, dynamic>>[]) {
       for (final space in placeRows(group['spaces'])) {
-        if ('${space['name']} ${group['name']} ${group['workspace_name']}'
-            .toLowerCase()
-            .contains(query)) {
+        if (space['name'].toString().toLowerCase().contains(query)) {
           rows.add({'group': group, 'space': space});
         }
       }
@@ -489,22 +449,11 @@ class _WorldShellState extends State<WorldShell> {
                   '${row['group']['inventory_id']}:${spaceIdentifier(row['space'])}',
                 ),
                 space: row['space'],
-                subtitle:
-                    '${row['group']['workspace_name']} · ${row['group']['name']}',
+                subtitle: row['group']['can_edit'] == true ? '' : 'View only',
                 resolveApi: () => _inventory(row['group']),
                 onChanged: _load,
               ),
             ),
-          TextButton.icon(
-            icon: const Icon(Icons.folder_open_outlined),
-            label: const Text('Browse inventories'),
-            onPressed: () => _guard(() async {
-              final api = await _chooseInventory();
-              if (api != null && mounted) {
-                await _push(InventorySpacesPage(api: api));
-              }
-            }),
-          ),
           const SizedBox(height: 16),
           _more(context),
         ],
@@ -512,44 +461,17 @@ class _WorldShellState extends State<WorldShell> {
     );
   }
 
-  Future<void> _openInventorySpaces(
-    String id,
-    String workspace,
-    String? organization,
-  ) => _guard(() async {
-    if (organization != widget.session.organizationId) return;
-    final api = await _inventory({
-      'inventory_id': id,
-      'workspace_id': workspace,
-    });
-    if (mounted) await _push(InventorySpacesPage(api: api));
-  });
-
   Future<void> _tool(String kind) => _guard(() async {
-    final api = await _chooseInventory();
-    if (api == null || !mounted) return;
+    final destination = await _chooseSpace();
+    if (destination == null || !mounted) return;
+    final api = destination.api;
     if (kind == 'Projects') {
-      final spaces = await api.listSpaces();
-      if (!mounted) return;
-      final name = await showModalBottomSheet<String>(
-        context: context,
-        showDragHandle: true,
-        useSafeArea: true,
-        builder: (context) => ListView(
-          shrinkWrap: true,
-          children: [
-            const ListTile(title: Text('Choose a Space')),
-            for (final space in spaces)
-              ListTile(
-                title: Text(space['name'].toString()),
-                onTap: () => Navigator.pop(context, space['name'].toString()),
-              ),
-          ],
+      await _push(
+        ProjectKitsPage(
+          api: api,
+          location: destination.space['name'].toString(),
         ),
       );
-      if (name != null && mounted) {
-        await _push(ProjectKitsPage(api: api, location: name));
-      }
       return;
     }
     final page = switch (kind) {
@@ -593,12 +515,16 @@ class _WorldShellState extends State<WorldShell> {
         ListTile(
           dense: true,
           leading: const Icon(CupertinoIcons.person_2),
-          title: const Text('Workspaces'),
+          title: const Text('People'),
           trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
           onTap: () => _push(
-            WorkspaceHome(
-              session: widget.session,
-              onOpenInventory: _openInventorySpaces,
+            HierarchyPage(
+              api: widget.session.api,
+              level: HierarchyLevel.organization,
+              id: _directory?['organization']?['organization_id'],
+              name: widget.session.organizationName,
+              panel: HierarchyPanel.people,
+              onOpenInventory: (_, _, _) async {},
             ),
           ),
         ),
@@ -793,7 +719,7 @@ class _WorldShellState extends State<WorldShell> {
                           ),
                         ),
                         if (!keyboard &&
-                            _inventories.any((row) => row['can_edit'] == true))
+                            _directory?['can_create_space'] == true)
                           Align(
                             alignment: Alignment.bottomCenter,
                             child: Padding(

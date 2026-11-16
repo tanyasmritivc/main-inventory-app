@@ -265,7 +265,7 @@ class PlaceSession extends ChangeNotifier {
         final owned = placeRows(result['organizations'])
             .where(
               (row) =>
-                  row['owner_user_id'] == accountId || row['role'] == 'owner',
+                  row['is_personal'] != true && (row['owner_user_id'] == accountId || row['role'] == 'owner'),
             )
             .toList();
         owned.sort(
