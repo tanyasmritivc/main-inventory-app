@@ -166,3 +166,15 @@ def test_native_requests_use_production_api_origin_without_redirects(monkeypatch
     req=opener.open.call_args.args[0]
     assert req.full_url=='https://findez.openstack.ftctools.com/fusion/session'
     assert req.headers['Authorization']=='Bearer '+TOKEN
+
+
+def test_ai_search_route_rechecks_capability_after_model_work(monkeypatch):
+    authorize=Mock(return_value=grant()); search=Mock(return_value={'items':[],'source':'inventory'})
+    monkeypatch.setattr(service,'authorize',authorize);monkeypatch.setattr(routes,'search_parts',search)
+    app=FastAPI();app.include_router(routes.router)
+    with TestClient(app) as http:
+        response=http.post('/fusion/search',headers={'Authorization':'Bearer '+TOKEN},json={'query':'Find bearings','source':'inventory'})
+        assert response.status_code==200
+        assert authorize.call_count==2
+        assert search.call_args.args[0] is authorize.return_value
+        assert http.post('/fusion/search',headers={'Authorization':'Bearer '+TOKEN},json={'query':'bearings','inventory_id':'another'}).status_code==422

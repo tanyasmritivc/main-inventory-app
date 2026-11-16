@@ -1,23 +1,18 @@
-# FindEZ Fusion workspace candidate 0.2.3
+# FindEZ Fusion workspace candidate 0.3.0
 
-Version 0.2.3 adds the official ISRG certificate roots alongside system trust for
-Fusion Python installations missing those roots. HTTPS certificate and hostname
-verification remain enabled. Connection failures now distinguish certificate,
-DNS, timeout, network and unreadable-response errors. It retains the panel
-acknowledgement and Windows file-URL fixes. Native Windows sign-in needs retry.
+Search parts with AI and insert geometry already in Fusion without downloading a
+STEP file or switching browser tabs. Inventory and global catalog remain separate.
+The backend calculates stock from recorded quantities, reservations and checkouts.
 
-Public certificate sources (retrieved November 15, 2026):
+To update, stop FindEZ, replace the complete extracted add-in folder, restart
+Fusion, and confirm version 0.3.0 in Scripts and Add-Ins before running it.
+Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
+
+HTTPS hostname and chain verification remain enabled. The package includes public
+ISRG roots alongside system trust, from these official sources (November 15, 2026):
 https://letsencrypt.org/certs/isrgrootx1.pem
 https://letsencrypt.org/certs/isrg-root-x2.pem
 These are public trust anchors, not private keys or account credentials.
-
-To update, stop FindEZ, replace the extracted add-in files, restart Fusion, and
-confirm version 0.2.3 in Scripts and Add-Ins before running it.
-
-This build adds a docked workspace. Activation requires the matching backend,
-web connection page and reviewed device-grant migration. Until those are live,
-keep using the existing Export FindEZ BOM command and web upload. Native Fusion
-placement has not yet been validated on a real host.
 
 ## Install and connect
 
@@ -33,20 +28,36 @@ placement has not yet been validated on a real host.
    Disconnect to select another. Reload the connection page to list and revoke
    active sessions. Credentials remain in memory, never the HTML or local disk.
 
-## Browse and insert
+## AI search
 
-Inventory shows recorded on-hand, reserved, checked-out and available quantities.
-The location filter uses existing saved location text. Parts catalog is separate:
-a catalog listing is not owned stock. Catalog specifications are displayed when
-available. Prices and hosted CAD models are not connected in this first stage.
+AI search is the default for nonempty questions. Try "Find 12 M4 screws" or
+"Find bearings for an 8mm shaft." AI interprets terms and constraints; it never
+supplies stock records, vendor prices, model geometry or compatibility approval.
+Results show matching saved records and missing specifications that need review.
+Inventory quantities subtract reservations and checkouts. Catalog parts are not
+owned stock. Requested shortages apply to each record separately. Use BOM for the
+active assembly. Keyword search remains available if AI cannot answer.
 
-Choose Insert local model, select a STEP (.step/.stp) or Fusion archive (.f3d),
-then position it with Fusion's translation/rotation handles and confirm. Scaling
-is disabled. Cancel removes the new occurrence. This local file is not uploaded;
-its association and geometry are unverified. Check its dimensions, units,
-orientation and specifications. The wrapper records the inventory/catalog
-identity and file digest; the imported geometry/hierarchy is retained below it.
-No stock is consumed or reserved. F3Z, SAT and STL are not supported yet.
+## Insert without leaving Fusion
+
+1. On a part result, choose Choose Fusion model.
+2. Pick Current design or Fusion project. Browse project folders in the panel.
+   Save the active design to a project first for project browsing.
+3. Check the geometry against the selected part and tick the confirmation.
+4. Click Insert into design, position with the handles and confirm. Cancel removes
+   the new copy. Source components and inventory stock are not changed.
+
+The copy preserves geometry and records the selected part and model source.
+Saved FindEZ components appear first for that part in the Current design picker.
+Save the design to retain these associations. No geometry is uploaded to FindEZ.
+
+A catalog record alone is not a CAD model. Parts without geometry still need a
+model created or saved in Fusion. Automatic manufacturer model downloads and the
+user's deferred generation API are not connected. Other model sources offers an
+optional local STEP/F3D importer. Neither copies nor local files are certified by
+FindEZ; verify units, dimensions, orientation and compatibility before engineering
+use. Insertion does not reserve or consume stock. F3Z/SAT/STL and literal dragging
+from the HTML panel into the canvas are not supported.
 
 ## BOM and shortages
 

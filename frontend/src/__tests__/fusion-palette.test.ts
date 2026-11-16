@@ -18,7 +18,7 @@ test('inventory quantities, catalog identity and insertion stay separate',()=>{
  expect(document.querySelector('#parts img')).toBeNull();
  expect(document.getElementById('parts')!.textContent).toContain('30 available');
  document.querySelector<HTMLButtonElement>('#parts button')!.click();
- expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('insert',JSON.stringify({id:'owned'}));
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('models',JSON.stringify({id:'owned',mode:'design',folder_id:null,offset:0}));
  document.getElementById('catalog-tab')!.click();
  receive('catalog',{parts:[{catalog_id:'public',canonical_name:'Motor',specifications:{voltage:12}}],offset:0,total:1,next_offset:null});
  expect(document.getElementById('parts')!.textContent).toContain('Not a stock record');
@@ -40,4 +40,37 @@ test('busy requests disable actions but always allow disconnect',()=>{
  expect((document.getElementById('disconnect') as HTMLButtonElement).disabled).toBe(false);
  document.getElementById('disconnect')!.click();
  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('disconnect','{}');
+});
+
+test('AI search uses scoped source and distinguishes stock from uncertain specifications',()=>{
+ receive('connected',{inventory_name:'Lab',workspace_name:'Team'});
+ (document.getElementById('query') as HTMLInputElement).value='Find 12 bearings for an 8mm shaft';
+ document.getElementById('search')!.dispatchEvent(new Event('submit',{cancelable:true}));
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('search',JSON.stringify({query:'Find 12 bearings for an 8mm shaft',source:'inventory'}));
+ receive('search',{source:'inventory',interpreted:{terms:['bearing'],constraints:['8mm']},notice:'Check compatibility.',truncated:false,
+  items:[{item_id:'a',name:'Bearing',available:3,on_hand:5,reserved:2,checked_out:0,availability_known:true,requested_quantity:12,shortage_for_request:9,
+   search_evidence:{matched_terms:['bearing'],unverified_constraints:['8mm']}}],total:1});
+ expect(document.getElementById('parts')!.textContent).toContain('9 short for this record');
+ expect(document.getElementById('parts')!.textContent).toContain('Not established by saved records: 8mm');
+ expect(document.getElementById('search-explanation')!.textContent).toContain('AI searched: bearing');
+});
+test('Fusion model insertion requires confirmation without requesting a local path',()=>{
+ receive('connected',{inventory_name:'Lab',workspace_name:'Team'});
+ receive('models',{part_id:'bearing',part_name:'Bearing',mode:'project',folder:'Parts',note:'Copy model',parent:null,folder_id:'folder',offset:0,next_offset:null,folders:[],
+  models:[{id:'opaque',name:'Bearing geometry',source:'Fusion project',version:2}]});
+ const button=document.querySelector<HTMLButtonElement>('[data-model-insert]')!;
+ expect(button.disabled).toBe(true);
+ const checkbox=document.querySelector<HTMLInputElement>('#model-entries input')!;
+ checkbox.checked=true;checkbox.dispatchEvent(new Event('change'));
+ expect(button.disabled).toBe(false);button.click();
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('insert_model',JSON.stringify({id:'bearing',model_id:'opaque',confirmed:true}));
+ receive('busy',{busy:true});expect(button.disabled).toBe(true);
+ receive('disconnected',{});expect(document.getElementById('model-entries')!.children.length).toBe(0);
+});
+test('keyword mode remains available when AI is unavailable',()=>{
+ receive('connected',{inventory_name:'Lab',workspace_name:'Team'});
+ (document.getElementById('search-mode') as HTMLSelectElement).value='keyword';
+ (document.getElementById('query') as HTMLInputElement).value='REV-21-1650';
+ document.getElementById('search')!.dispatchEvent(new Event('submit',{cancelable:true}));
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('inventory',JSON.stringify({q:'REV-21-1650',offset:0}));
 });

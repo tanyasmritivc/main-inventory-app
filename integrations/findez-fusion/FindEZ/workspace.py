@@ -12,6 +12,7 @@ import adsk.fusion
 from .client import Session, call, ClientError, search_path
 from .exporter import extract
 from . import placement
+from .models import ModelBrowser
 
 PALETTE='FindEZWorkspace'
 EVENT='FindEZWorkspaceResult'
@@ -26,6 +27,7 @@ parts={}
 comparison=None
 context=None
 busy=False
+model_browser=ModelBrowser()
 
 
 def attach(event,handler):
@@ -125,6 +127,9 @@ class Result(adsk.core.CustomEventHandler):
                 parts={str(p['item_id']):p for p in data['items']}
             elif kind=='catalog':
                 parts={str(p['catalog_id']):p for p in data['parts']}
+            elif kind=='search':
+                rows=data['items'] if data['source']=='inventory' else data['parts']
+                parts={str(p.get('item_id') or p.get('catalog_id')):p for p in rows}
             elif kind=='comparison':
                 comparison=data
             send(kind,data)
@@ -158,6 +163,7 @@ class Incoming(adsk.core.HTMLEventHandler):
             elif action=='disconnect':
                 token=session.clear()
                 parts,comparison,context={},None,None
+                model_browser.clear()
                 busy=False
                 send('disconnected',{})
                 if token:
@@ -167,7 +173,32 @@ class Incoming(adsk.core.HTMLEventHandler):
                     raise ClientError('Connect your inventory first.')
                 path=search_path(action,data.get('q',''),data.get('offset',0),data.get('location'))
                 parts={}
+                model_browser.clear()
                 task(action,lambda generation:session.request(path))
+            elif action=='search':
+                query=data.get('query','')
+                source=data.get('source','inventory')
+                location=data.get('location')
+                if not context or not isinstance(query,str) or not query.strip() or len(query)>500 or source not in ('inventory','catalog'):
+                    raise ClientError('Connect an inventory and enter a parts question.')
+                if location is not None and (not isinstance(location,str) or len(location)>512):
+                    raise ClientError('Choose a saved location.')
+                parts={}
+                model_browser.clear()
+                task('search',lambda generation:session.request('/search',method='POST',data={'query':query,'source':source,'location':location}))
+            elif action=='models':
+                part=parts.get(str(data.get('id')))
+                if not part or not context or busy or placement.pending is not None:
+                    raise ClientError('Finish placement or search again and choose a current part.')
+                result=model_browser.browse(app,part,context['inventory_id'],data.get('mode','design'),data.get('folder_id'),data.get('offset',0))
+                send('models',result)
+            elif action=='insert_model':
+                part=parts.get(str(data.get('id')))
+                if not part or not context or busy or data.get('confirmed') is not True:
+                    raise ClientError('Choose a current part and confirm the selected model matches it.')
+                model=model_browser.resolve(app,part,context['inventory_id'],data.get('model_id'))
+                placement.insert_model(app,part,model,context['inventory_id'])
+                send('notice',{'message':'Position the component with the handles and confirm. Cancel removes this copy. Refresh BOM afterward.'})
             elif action=='compare':
                 if not context:
                     raise ClientError('Connect your inventory first.')
@@ -177,7 +208,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 snapshot=extract(design,app.version)
                 comparison=None
                 task('comparison',lambda generation:session.request('/compare',method='POST',data=snapshot))
-            elif action=='insert':
+            elif action=='insert_local':
                 part=parts.get(str(data.get('id')))
                 if not part or not context or busy:
                     raise ClientError('Search again and choose a current part.')
@@ -232,7 +263,7 @@ def run():
     executor=ThreadPoolExecutor(max_workers=2,thread_name_prefix='FindEZ')
     attach(app.registerCustomEvent(EVENT),Result())
     definitions=app.userInterface.commandDefinitions
-    definition=definitions.itemById(COMMAND) or definitions.addButtonDefinition(COMMAND,'Open FindEZ','Browse inventory, insert local CAD and compare your assembly.')
+    definition=definitions.itemById(COMMAND) or definitions.addButtonDefinition(COMMAND,'Open FindEZ','AI search, insert Fusion project models and compare your assembly.')
     attach(definition.commandCreated,Created())
     panel=app.userInterface.allToolbarPanels.itemById('SolidScriptsAddinsPanel')
     if not panel:
@@ -261,4 +292,5 @@ def stop():
     if palette and palette.isValid:
         palette.deleteMe()
     palette,context,parts,comparison,busy=None,None,{},None,False
+    model_browser.clear()
     handlers.clear()

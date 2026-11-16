@@ -1252,3 +1252,17 @@ Consolidate CAD instructions at /docs/cad using the API documentation components
 and writing style. The signed-in CAD Intelligence navigation opens this hub;
 /cad remains the comparison tool linked within it. Preserve organization context
 in those links and distinguish current candidates from planned capabilities.
+
+
+## November 15: AI search and geometry already in Fusion
+
+AI interprets a parts question into bounded search terms and constraints. The
+backend retrieves permitted records and computes stock facts separately; no
+inventory rows are sent to the interpretation model. Compatibility remains
+subject to review. Keyword search remains available during AI outages.
+
+Insertion defaults to an in-panel picker for current-design components and saved
+Fusion project designs. Copy geometry without altering its source or inventory;
+bind selection to the active design, chosen part, and inventory. Require explicit
+part/model confirmation. Local STEP/F3D is a fallback, not a prerequisite. No
+generated or hosted manufacturer geometry is claimed until its service exists.

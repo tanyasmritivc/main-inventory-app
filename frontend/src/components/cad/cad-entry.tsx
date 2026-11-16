@@ -69,6 +69,6 @@ function AccountEntry({ accountId, worldId, destination }: { accountId: string; 
         </li>)}</ul>
         : <p>No inventories are available here. <Link href="/workspaces">Open workspaces</Link> to create or join one.</p>}
     </div>
-    <p className={styles.muted}>New to this? <a href="/docs/cad" target="_blank" rel="noreferrer">Follow the step-by-step setup guide</a> or <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">email support</a>. You can also <a href="/downloads/findez-fusion-workspace.zip?v=0.2.3" download>download the Fusion workspace candidate</a> before choosing an inventory.</p>
+    <p className={styles.muted}>New to this? <a href="/docs/cad" target="_blank" rel="noreferrer">Follow the step-by-step setup guide</a> or <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">email support</a>. You can also <a href="/downloads/findez-fusion-workspace.zip?v=0.3.0" download>download the Fusion workspace candidate</a> before choosing an inventory.</p>
   </section></AppShell>;
 }

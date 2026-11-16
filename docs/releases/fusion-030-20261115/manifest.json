@@ -1,0 +1,17 @@
+{
+  "files": [
+    "src/components/cad/cad-client.tsx",
+    "src/components/cad/cad-entry.tsx",
+    "src/components/cad/cad-help.tsx",
+    "src/components/cad/fusion-connect.tsx",
+    "src/components/marketing-dark/cad-public-content.tsx",
+    "src/components/site/cad-docs-navigation.tsx",
+    "src/components/site/cad-docs.tsx"
+  ],
+  "backend_new": {
+    "app/api/routes/cad_workspace.py": "75701057467c09cc521fc6fbc50bd4bf0411349a16c614b0a7ab586c530d067e",
+    "app/services/cad/workspace.py": "daeeebb711a9d7a59aa3375b30c2ca8df502190ba3858f4ced558e81782643e7",
+    "app/services/cad/search.py": "08261ac9d003a9d60b3238b366a946c1d69e26d38c15f250589be3882dbdffb1"
+  },
+  "zip_sha256": "8db8d69281f32a3b873f558496286523cd97957a6f4662992e07afa696ff1eaf"
+}

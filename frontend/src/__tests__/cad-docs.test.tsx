@@ -15,7 +15,7 @@ test('CAD guide is public, uses appearance controls, and retains all old guide a
   for (const a of container.querySelectorAll('a[href^="#"]')) expect(container.querySelector(a.getAttribute('href')!)).not.toBeNull();
   const ids = Array.from(container.querySelectorAll('[id]')).map(node => node.id);
   expect(new Set(ids).size).toBe(ids.length);
-  expect(screen.getAllByRole('link', { name: 'Fusion workspace ZIP' }).every(link => link.getAttribute('href') === '/downloads/findez-fusion-workspace.zip?v=0.2.3')).toBe(true);
+  expect(screen.getAllByRole('link', { name: 'Fusion workspace ZIP' }).every(link => link.getAttribute('href') === '/downloads/findez-fusion-workspace.zip?v=0.3.0')).toBe(true);
   expect(screen.getByText('Legacy export-only add-in (superseded)').closest('tr')?.textContent).toContain('Does not include Open FindEZ');
   expect(container.querySelector('#onshape')?.textContent).toContain('not available in this production release');
   expect(container.querySelector('#roadmap')?.textContent).toContain('planned, not available');

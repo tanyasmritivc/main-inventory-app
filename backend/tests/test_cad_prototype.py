@@ -294,6 +294,6 @@ def test_space_chat_and_wrong_actor_scope_cannot_expand_to_inventory(monkeypatch
 def test_download_package_matches_reviewed_sources_exactly():
     from zipfile import ZipFile
     with ZipFile(ROOT / 'frontend/public/downloads/findez-fusion-workspace.zip') as archive:
-        assert set(archive.namelist()) == {'README.md', 'FindEZ/FindEZ.py', 'FindEZ/FindEZ.manifest', 'FindEZ/exporter.py','FindEZ/client.py','FindEZ/workspace.py','FindEZ/placement.py','FindEZ/palette.html','FindEZ/palette.css','FindEZ/palette.js'}
+        assert set(archive.namelist()) == {'README.md', 'FindEZ/FindEZ.py', 'FindEZ/FindEZ.manifest', 'FindEZ/exporter.py','FindEZ/client.py','FindEZ/workspace.py','FindEZ/placement.py','FindEZ/palette.html','FindEZ/palette.css','FindEZ/palette.js','FindEZ/models.py','FindEZ/isrg-roots.pem'}
         for name in archive.namelist():
             assert archive.read(name) == (ROOT / 'integrations/findez-fusion' / name).read_bytes()

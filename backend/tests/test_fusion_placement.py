@@ -101,3 +101,38 @@ def test_failed_execute_does_not_commit_partial_placement(host):
     assert args.executeFailed and not p.pending['committed']
     p.Destroyed().notify(args)
     host.wrapper.deleteMe.assert_called_once()
+
+
+def test_insert_current_component_copies_geometry_and_keeps_original_untouched(host):
+    p=host.module
+    original=NS(name='Source bearing',entityToken='source-token',attributes=Mock())
+    occurrences=NS(addNewComponentCopy=Mock(return_value=object()), addByInsert=Mock())
+    host.wrapper.component.occurrences=occurrences
+    p.insert_model(host.app,{'name':'Bearing','item_id':'stock'},('component',original),'inventory')
+    occurrences.addNewComponentCopy.assert_called_once_with(original,'identity')
+    occurrences.addByInsert.assert_not_called()
+    original.attributes.add.assert_not_called()
+    host.wrapper.component.attributes.add.assert_any_call('FindEZ','inventory_item_id','stock')
+    args,_=command();p.Created().notify(args);p.Destroyed().notify(args)
+    host.wrapper.deleteMe.assert_called_once()
+
+
+def test_saved_project_design_inserts_embedded_without_local_file(host):
+    p=host.module
+    host.app.activeProduct.parentDocument=NS(dataFile=NS(id='active'))
+    cloud=NS(id='model',fileExtension='f3d',versionNumber=4)
+    host.wrapper.component.occurrences=NS(addByInsert=Mock(return_value=object()))
+    p.insert_model(host.app,{'catalog_id':'bearing'},('data_file',cloud),'inventory')
+    host.wrapper.component.occurrences.addByInsert.assert_called_once_with(cloud,'identity',False)
+    host.app.importManager.importToTarget2.assert_not_called()
+    host.wrapper.component.attributes.add.assert_any_call('FindEZ','model_version','4')
+    args,_=command();p.Created().notify(args);p.Execute().notify(args);p.Destroyed().notify(args)
+    host.wrapper.deleteMe.assert_not_called()
+
+
+def test_failed_project_model_insert_rolls_back(host):
+    original=NS(entityToken='source-token')
+    host.wrapper.component.occurrences=NS(addNewComponentCopy=Mock(return_value=None))
+    with pytest.raises(ValueError): host.module.insert_model(host.app,{},('component',original),'inventory')
+    host.wrapper.deleteMe.assert_called_once()
+    assert host.module.pending is None

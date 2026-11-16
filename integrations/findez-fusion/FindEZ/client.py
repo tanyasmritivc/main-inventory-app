@@ -54,7 +54,7 @@ def call(path, *, method='GET', data=None, token=None):
         headers['Authorization']='Bearer '+token
     req = request.Request(API+path,data=raw,headers=headers,method=method)
     try:
-        with request.build_opener(NoRedirect(), request.HTTPSHandler(context=tls_context())).open(req,timeout=30) as response:
+        with request.build_opener(NoRedirect(), request.HTTPSHandler(context=tls_context())).open(req,timeout=60 if path == '/search' else 30) as response:
             body=response.read(MAX_RESPONSE+1)
             if len(body)>MAX_RESPONSE:
                 raise ClientError('This response is too large. Narrow your search.')

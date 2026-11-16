@@ -55,14 +55,67 @@ def insert(app,part,path,inventory_id):
                     'model_quality':'unverified','model_sha256':digest,'model_source':'user_selected_local_file'}
         for key,value in attributes.items():
             component.attributes.add('FindEZ',key,str(value))
-        pending={'occurrence':wrapper,'design':design,'committed':False}
-        definitions=app.userInterface.commandDefinitions
-        definition=definitions.itemById(COMMAND)
-        if not definition:
-            definition=definitions.addButtonDefinition(COMMAND,'Place FindEZ component','Position this component, then confirm. No inventory is changed.')
-            attach(definition.commandCreated,Created())
-        if not definition.execute():
-            raise ValueError('Fusion could not start placement.')
+        start_placement(app, design, wrapper)
+    except Exception:
+        pending=None
+        if wrapper.isValid:
+            wrapper.deleteMe()
+        raise
+
+
+def start_placement(app, design, occurrence):
+    global pending
+    pending={'occurrence':occurrence,'design':design,'committed':False}
+    definitions=app.userInterface.commandDefinitions
+    definition=definitions.itemById(COMMAND)
+    if not definition:
+        definition=definitions.addButtonDefinition(COMMAND,'Place FindEZ component','Position this component, then confirm. No inventory is changed.')
+        attach(definition.commandCreated,Created())
+    if not definition.execute():
+        raise ValueError('Fusion could not start placement.')
+
+
+def insert_model(app, part, model, inventory_id):
+    """Copy geometry already in Fusion. Only this new wrapper gets metadata."""
+    global pending
+    design=adsk.fusion.Design.cast(app.activeProduct)
+    if not design or pending is not None:
+        raise ValueError('Open a design and finish the current placement first.')
+    kind, value = model
+    if kind not in ('component', 'data_file'):
+        raise ValueError('Choose a model from this Fusion project.')
+    if kind == 'component' and value == design.rootComponent:
+        raise ValueError('Choose a component, not the entire active design.')
+    wrapper=design.rootComponent.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+    try:
+        occurrences=wrapper.component.occurrences
+        if kind == 'component':
+            inserted=occurrences.addNewComponentCopy(value, adsk.core.Matrix3D.create())
+            origin='fusion_component'
+            reference=str(value.entityToken)
+            version='current_design'
+        else:
+            if str(value.fileExtension).lower() != 'f3d':
+                raise ValueError('Select a saved Fusion design.')
+            if design.parentDocument.dataFile and value.id == design.parentDocument.dataFile.id:
+                raise ValueError('A design cannot be inserted into itself.')
+            inserted=occurrences.addByInsert(value, adsk.core.Matrix3D.create(), False)
+            origin='fusion_project_file'
+            reference=str(value.id)
+            version=str(value.versionNumber)
+        if not inserted:
+            raise ValueError('Fusion could not insert this model. Check its availability and try again.')
+        component=wrapper.component
+        component.name=str(part.get('name') or part.get('canonical_name') or 'FindEZ component')
+        component.partNumber=str(part.get('part_number') or '')
+        attributes={'manufacturer':part.get('brand') or '', 'barcode':part.get('barcode') or '',
+                    'procurement_policy':'purchase','inventory_id':inventory_id,
+                    'inventory_item_id':part.get('item_id') or '', 'catalog_id':part.get('catalog_id') or '',
+                    'model_quality':'unverified','model_source':origin,'model_reference':reference,
+                    'model_version':version}
+        for key,value in attributes.items():
+            component.attributes.add('FindEZ',key,str(value))
+        start_placement(app,design,wrapper)
     except Exception:
         pending=None
         if wrapper.isValid:

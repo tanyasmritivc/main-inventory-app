@@ -114,3 +114,26 @@ def test_unrecognized_user_commands_still_report_an_error(workspace, monkeypatch
     monkeypatch.setattr(module, 'send', sent)
     module.Incoming().notify(NS(action='not-a-command', data='{}'))
     sent.assert_called_once_with('error', {'message': 'Unsupported panel command.'})
+
+
+def test_ai_search_uses_only_current_session_and_clears_stale_parts(workspace, monkeypatch):
+    module,_=workspace
+    module.context={'inventory_id':'inventory'}
+    module.parts={'old':{'item_id':'old'}}
+    task=Mock();request=Mock(return_value={})
+    monkeypatch.setattr(module,'task',task);monkeypatch.setattr(module.session,'request',request)
+    module.Incoming().notify(NS(action='search',data='{"query":"Find 12 bearings","source":"inventory"}'))
+    assert module.parts=={}
+    assert task.call_args.args[0]=='search'
+    task.call_args.args[1](module.session.generation)
+    request.assert_called_once_with('/search',method='POST',data={'query':'Find 12 bearings','source':'inventory','location':None})
+
+
+def test_native_insert_requires_explicit_model_confirmation(workspace,monkeypatch):
+    module,_=workspace
+    module.context={'inventory_id':'inventory'};module.parts={'part':{'item_id':'part'}}
+    insert=Mock();monkeypatch.setattr(module.placement,'insert_model',insert)
+    sent=Mock();monkeypatch.setattr(module,'send',sent)
+    module.Incoming().notify(NS(action='insert_model',data='{"id":"part","model_id":"opaque","confirmed":false}'))
+    insert.assert_not_called()
+    assert sent.call_args.args[0]=='error'

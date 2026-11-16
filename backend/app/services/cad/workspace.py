@@ -70,7 +70,7 @@ def revoke(session):
     return {'disconnected': True}
 
 
-def browse(session, query='', offset=0, location=None):
+def inventory_rows(session, query='', location=None):
     inventory = session['inventory_id']
     items, reservations, checkouts = read_inventory(inventory, session['actor_id'])
     reserved, checked, uncertain = defaultdict(int), defaultdict(int), set()
@@ -96,23 +96,30 @@ def browse(session, query='', offset=0, location=None):
             'availability_known': known, 'on_order': None,
             'cad_model': None})
     result.sort(key=lambda r: (normalized(r['name']), str(r['item_id'])))
-    return {'inventory_id': inventory, 'inventory_name': session['inventory_name'],
-            'locations': sorted({str(i.get('location') or '') for i in items}),
-            'items': result[offset:offset+50], 'total': len(result), 'offset': offset,
-            'next_offset': offset+50 if len(result)>offset+50 else None,
+    return result, sorted({str(i.get('location') or '') for i in items})
+
+
+def browse(session, query='', offset=0, location=None):
+    result, locations = inventory_rows(session, query, location)
+    return {'inventory_id': session['inventory_id'], 'inventory_name': session['inventory_name'],
+            'locations': locations, 'items': result[offset:offset+50], 'total': len(result),
+            'offset': offset, 'next_offset': offset+50 if len(result)>offset+50 else None,
             'stock_basis': 'recorded_not_physically_verified'}
 
 
-def catalog(query='', offset=0):
+
+def catalog(query='', offset=0, field='canonical_name'):
     # Global catalog rows contain no team ownership/quantity. Search only public
     # manufacturer-verified identities; never promote community guesses.
+    if field not in ('canonical_name', 'part_number', 'brand'):
+        raise ValueError('Invalid catalog search field.')
     db = get_supabase_raw()
     request = db.table('parts_catalog').select(
         'catalog_id,canonical_name,brand,part_number,specifications,product_url,source_url,verification_status', count='exact').eq('verification_status','verified')
     if query:
         # ilike value, not PostgREST grammar interpolation. Escape wildcard chars.
         escaped = query.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')
-        request = request.ilike('canonical_name', '%'+escaped+'%')
+        request = request.ilike(field, '%'+escaped+'%')
     response = request.order('canonical_name').order('catalog_id').range(offset,offset+49).execute()
     rows = response.data or []
     return {'parts': [{**r,'cad_model':None,'price':None} for r in rows], 'offset':offset,

@@ -8,6 +8,7 @@ from starlette.concurrency import run_in_threadpool
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.limiter import limiter
 from app.services.cad import workspace
+from app.services.cad.search import SearchRequest, search as search_parts
 from app.services.cad.snapshot import Model, Snapshot, MAX_SNAPSHOT_BYTES
 from app.services.cad.repository import read_inventory
 from app.api.routes.cad import reject_duplicates
@@ -76,6 +77,13 @@ def inventory(request: Request, q: str=Query('',max_length=100),offset:int=Query
 def catalog(request: Request,q:str=Query('',max_length=100),offset:int=Query(0,ge=0,le=50000),grant=Depends(session)):
     result=workspace.catalog(q,offset)
     workspace._inventory(grant['inventory_id'],grant['actor_id'])
+    return result
+
+@router.post('/search')
+@limiter.limit('10/minute')
+def search(request: Request, data: SearchRequest, grant=Depends(session)):
+    result = search_parts(grant, data)
+    session(request)  # A revoked or expired capability cannot publish an AI result.
     return result
 
 @router.post('/compare')

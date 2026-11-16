@@ -1978,3 +1978,27 @@ exact screenshot error before fix, then passes with correct JSON headers/body.
 on findez-fusion-approval-20261115, build FV1ruq8pdGXnjVyJUq2bu. Corrected live
 JavaScript verified. No ZIP/backend/DB change; installed 0.2.3 stays current.
 Receipt: docs/releases/fusion-approval-20261115/README.md. User retry pending.
+
+
+## Fusion AI search and in-project models, November 15, 2026 (published; native acceptance pending)
+
+User requested AI search and insertion without leaving the active Fusion project.
+Version 0.3.0 adds query-only AI interpretation through the existing gateway,
+scoped inventory/catalog retrieval, server-computed available quantities, and
+explicit uncertain specifications. Read-only capability and revocation checks
+remain enforced. New native picker browses current-design components or saved
+Fusion project folders and copies selected geometry into the active design with
+confirmation and triad placement. Local STEP/F3D import is optional. Missing
+manufacturer CAD delivery and the deferred generation API remain explicit.
+
+All 1276 backend and 700 web tests, TypeScript, scoped lint, and the first
+production-source build passed. Synthetic live AI interpretation passed. Backend
+is active with authenticated /fusion/search and no migration. A concurrent World
+release changed the active frontend; the guard rejected the stale web candidate.
+Rebuilt on findez-world-web-20261116 and published as
+findez-fusion-ai-current-20261115, build K_u9iUkv15KtP-_A9IWv8. All eight live
+source download URLs point to 0.3.0; public ZIP hash matches the tested artifact.
+Safari documentation, health, source and unrelated asset checks pass. World
+changes are preserved. No Vercel/Render or schema/mobile change. Native Fusion
+placement and real user Windows acceptance are not yet verified. Receipt:
+docs/releases/fusion-030-20261115/README.md.
