@@ -78,6 +78,14 @@
 .preparation a { font-size:13px; }
 .downloadLink { display:inline-flex; gap:8px; align-items:center; font-weight:500; }
 .caption { display:block; margin-top:8px; font-size:11px; color:var(--cad-muted); }
+.connectedWorkspace > h2 { font-size:26px; font-weight:500; letter-spacing:-.03em; margin-bottom:24px; }
+.page .workspaceFeatures { list-style:none; padding:24px 0; margin:24px 0 18px; border-top:1px solid var(--cad-line); border-bottom:1px solid var(--cad-line); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; }
+.workspaceFeatures li { min-width:0; }
+.connectedWorkspace > p:last-child { margin-bottom:0; }
+.uploadIntro { padding-top:24px; border-top:1px solid var(--cad-line); scroll-margin-top:24px; }
+.uploadIntro h2 { font-weight:500; }
+.uploadIntro p { font-size:14px; color:var(--cad-muted); margin:0; }
+@media(max-width:650px) { .page .workspaceFeatures { grid-template-columns:1fr; gap:22px; } }
 .page .installDetails { border-top:1px solid var(--cad-line); margin-top:22px; padding-top:16px; color:var(--cad-text); font-size:13px; }
 .installDetails summary { font-weight:500; }
 .instructions { font-size:14px; }

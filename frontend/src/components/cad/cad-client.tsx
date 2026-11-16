@@ -57,24 +57,41 @@ export function CadClient() {
   return <section className={styles.page}>
     <header className={styles.hero}>
       <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad" target="_blank" rel="noreferrer"><BookOpen size={16} /> Setup guide <ArrowUpRight size={14} /></a></div>
-      <h1>Know what you can build.</h1>
-      <p>Bring a parts list. Find out what you have and what you still need.</p>
+      <h1>Your inventory, inside Fusion.</h1>
+      <p>Search for parts with AI, choose models from your Fusion project, and compare your open design with the parts you own.</p>
     </header>
     <div className={styles.inventoryStrip}><span><Box size={18} /><span>Comparing with <strong>{inventory?.name || "your selected inventory"}</strong></span></span><a href="/cad">Change inventory ↗</a></div>
-    <p className={styles.muted}><a href={`/cad/onshape?inventory=${encodeURIComponent(inventory?.inventory_id || "")}`}>Check an Onshape assembly</a> or upload its flattened BOM CSV below.</p>
+    <section className={`${styles.preparation} ${styles.connectedWorkspace}`} aria-labelledby="fusion-workspace-title">
+      <p className={styles.eyebrow}>CONNECTED FUSION WORKSPACE</p>
+      <h2 id="fusion-workspace-title">Keep working in your design.</h2>
+      <div className={styles.prepColumns}>
+        <div><h3>Install or update FindEZ</h3><p>Download and extract the workspace add-in on the computer running Fusion. Already installed? Stop FindEZ before replacing its files, then restart Fusion.</p>
+          <a className={`${styles.primaryLink} ${styles.downloadLink}`} href="/downloads/findez-fusion-workspace.zip?v=0.3.1" download><Download size={16} /> Download Fusion workspace</a>
+          <span className={styles.caption}>Version 0.3.1 candidate · Windows and Mac · ZIP</span>
+          <details className={styles.installDetails}><summary>Show installation steps</summary><FusionInstallSteps /></details>
+        </div>
+        <div><h3>Open FindEZ beside your assembly</h3><p>In Fusion, choose <b>Utilities → Add-Ins → Open FindEZ</b>. Click <b>Sign in with FindEZ</b> and approve your inventory in the browser, then return to the panel.</p>
+          <p>Select <b>{inventory?.name || "your selected inventory"}</b> when connecting to compare with the same inventory shown here.</p>
+          <a href="/docs/cad#connect" target="_blank" rel="noreferrer">Connection instructions ↗</a>
+        </div>
+      </div>
+      <ol className={styles.workspaceFeatures}>
+        <li><h3>Search with AI</h3><p>Try “Find 12 M4 screws.” Browse owned parts in Inventory or public records in Parts catalog.</p><a href="/docs/cad#browse" target="_blank" rel="noreferrer">Search guide ↗</a></li>
+        <li><h3>Choose a Fusion model</h3><p>Select geometry from your current design or saved Fusion project, confirm the part association, then position the copy.</p><a href="/docs/cad#insert" target="_blank" rel="noreferrer">Model insertion guide ↗</a></li>
+        <li><h3>Compare the open design</h3><p>Ask “Do I have the parts required to make this?” or use the BOM tab to see matches, shortages, and parts needing review.</p><a href="/docs/cad#bom" target="_blank" rel="noreferrer">BOM guide ↗</a></li>
+      </ol>
+      <p className={styles.muted}>The workspace is a candidate release; native placement testing is still in progress. Models must already exist in your Fusion project or be imported locally. Hosted manufacturer models, live prices, and purchasing are not available yet. <a href="/docs/cad#limits" target="_blank" rel="noreferrer">Current limitations ↗</a></p>
+    </section>
+    <header className={styles.uploadIntro} id="browser-comparison"><h2>Prefer to compare a file here?</h2><p>Upload a Fusion BOM or a spreadsheet as an alternative to the connected panel. Choose a source below to get started.</p></header>
     <div className={styles.workspace}>
     <div className={styles.flow}>
       <div className={styles.sourceChoices} role="group" aria-label="Parts list source">
-        <button aria-pressed={source === "fusion"} onClick={() => setSource("fusion")}><Box size={22} /><span><strong>Autodesk Fusion</strong><small>Export your assembly</small></span>{source === "fusion" && <Check size={16} />}</button>
+        <button aria-pressed={source === "fusion"} onClick={() => setSource("fusion")}><Box size={22} /><span><strong>Fusion BOM file</strong><small>Upload an exported JSON</small></span>{source === "fusion" && <Check size={16} />}</button>
         <button aria-pressed={source === "spreadsheet"} onClick={() => setSource("spreadsheet")}><FileSpreadsheet size={22} /><span><strong>CSV or Excel</strong><small>Use an existing parts list</small></span>{source === "spreadsheet" && <Check size={16} />}</button>
       </div>
       {source === "fusion" ? <div className={styles.preparation}>
-        <div className={styles.stepHeading}><span className={styles.stepNumber}>1</span><div><h2>Get your parts out of Fusion</h2><p>Already exported? Go straight to the upload below.</p></div></div>
-        <div className={styles.prepColumns}>
-          <div><h3>First time here?</h3><p>Install the free FindEZ add-in on the computer where you use Fusion.</p><a className={styles.downloadLink} href="/downloads/findez-fusion-workspace.zip?v=0.3.1" download><Download size={16} /> Download workspace candidate</a><span className={styles.caption}>Windows and Mac · ZIP download</span></div>
-          <div><h3>Add-in already running?</h3><p>Open your assembly. Choose <b>Utilities → Add-Ins → Export FindEZ BOM</b> and save the JSON file.</p><a href="/docs/cad#export" target="_blank" rel="noreferrer">Show export instructions ↗</a></div>
-        </div>
-        <details className={styles.installDetails}><summary>Show installation steps</summary><FusionInstallSteps /></details>
+        <div className={styles.stepHeading}><span className={styles.stepNumber}>1</span><div><h2>Export a BOM for web comparison</h2><p>Already exported? Go straight to the upload below.</p></div></div>
+        <p>Open your assembly in Fusion. Choose <b>Utilities → Add-Ins → Export FindEZ BOM</b> and save the JSON file. You can skip this export when comparing inside the connected FindEZ panel.</p><a href="/docs/cad#export" target="_blank" rel="noreferrer">Show export instructions ↗</a>
       </div> : <div className={styles.preparation}>
         <div className={styles.stepHeading}><span className={styles.stepNumber}>1</span><div><h2>Prepare your parts list</h2><p>Use one row per part, with its name and total quantity.</p></div></div>
         <p>Add manufacturer and part number, or a barcode, for accurate matching. Remove subtotals and duplicate summary rows.</p><a className={styles.downloadLink} href="/downloads/findez-bom-template.csv" download><Download size={16} /> Download CSV template</a>
@@ -114,6 +131,8 @@ export function CadClient() {
     <aside className={styles.helpRail}>
       <p className={styles.eyebrow}>HERE TO HELP</p><h2>A clear next step,<br />all the way through.</h2>
       <a className={styles.helpItem} href="/docs/cad#install" target="_blank" rel="noreferrer"><span>Install the Fusion add-in<small>Folder picker, Run toggle and setup</small></span><ArrowUpRight size={16} /></a>
+      <a className={styles.helpItem} href="/cad/fusion/connect"><span>Manage Fusion connections<small>Review or disconnect an inventory session</small></span><ArrowUpRight size={16} /></a>
+      <a className={styles.helpItem} href="/docs/cad#onshape"><span>Using Onshape?<small>Compare a flattened BOM CSV</small></span><ArrowUpRight size={16} /></a>
       <a className={styles.helpItem} href="/docs/cad#sample" target="_blank" rel="noreferrer"><span>No design to test?<small>Open a free sample in Fusion</small></span><ArrowUpRight size={16} /></a>
       <a className={styles.helpItem} href="/docs/cad#troubleshooting" target="_blank" rel="noreferrer"><span>Something not working?<small>Fix common setup and upload issues</small></span><ArrowUpRight size={16} /></a>
       <div className={styles.supportNote}><p>Still stuck?</p><a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">Email support ↗</a><small>Include the step and a screenshot. No design file needed.</small></div>

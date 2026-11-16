@@ -2044,3 +2044,19 @@ Published findez-cad-labels-20261116, build55xOfOnCM5xKskWPpi2j9. Production
 build, live folder illustration, animated runtime text, docs search metadata,
 all eight0.3.1 download links and unchanged ZIP hash verified. Receipt:
 docs/releases/cad-labels-20261116/README.md. No add-in reinstall needed.
+
+
+## Connected CAD comparison page, November 15, 2026 (published)
+
+User screenshot shows the signed-in /cad tool still leading with export/upload.
+Update its primary content to connected Fusion0.3.1: install/update, Open FindEZ,
+browser approval, AI parts search, project geometry selection and open-design BOM.
+Keep JSON/CSV/XLSX comparison as an explicit alternative, and link current guides.
+Preserve the public landing page, ZIP and production comparison implementation.
+Production has unrelated World storage updates and an older inline results UI;
+the scoped release patch preserves both. No backend or database changes.
+All702 web tests, scoped lint, TypeScript and the cold production-source build
+pass. Published findez-cad-page-20261116, build qY971QoEypRUNBRuC0wNU, based on
+findez-world-storage-final-20261116. Signed-in Safari confirms the connected
+workflow, selected inventory, current download and alternative upload controls.
+Live ZIP SHA-256 remains unchanged. Receipt: docs/releases/cad-page-20261116/README.md.
