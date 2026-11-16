@@ -3,10 +3,11 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FusionConnect } from "@/components/cad/fusion-connect";
 import { accountRequest } from "@/lib/account-request";
+import { activeInventory } from "@/lib/inventory-selection";
 jest.mock("@/lib/account-request", () => ({ accountRequest: jest.fn() }));
-jest.mock("@/lib/inventory-selection", () => ({ activeInventory: () => ({ accountId:"actor", inventory_id:"inventory", name:"Team stock" }) }));
+jest.mock("@/lib/inventory-selection", () => ({ activeInventory: jest.fn() }));
 jest.mock("@/components/site/app-shell", () => ({ AppShell: ({children}: {children:React.ReactNode}) => <>{children}</> }));
-beforeEach(() => { jest.clearAllMocks(); (accountRequest as jest.Mock).mockImplementation((_actor,path) => Promise.resolve(path === "/fusion/connections" ? {connections:[]} : {approved:true})); });
+beforeEach(() => { jest.clearAllMocks(); (activeInventory as jest.Mock).mockReturnValue({accountId:'actor',inventory_id:'inventory',name:'Team stock',can_edit:true}); (accountRequest as jest.Mock).mockImplementation((_actor,path) => Promise.resolve(path === "/fusion/connections" ? {connections:[]} : {approved:true})); });
 test("pairing requires a matching-code confirmation and scopes the approved inventory", async () => {
   render(<FusionConnect code="ABCD234567" />);
   await screen.findByText(/No active connections/);
@@ -44,4 +45,20 @@ test("disconnect removes only a confirmed revoked connection", async () => {
   fireEvent.click(await screen.findByRole("button",{name:"Disconnect"}));
   await screen.findByText(/No active connections/);
   expect(accountRequest).toHaveBeenCalledWith("actor","/fusion/connections/one",expect.objectContaining({method:"DELETE"}));
+});
+
+test('CAD writes require both editor access and a separate unchecked opt-in',async()=>{
+ (accountRequest as jest.Mock).mockImplementation((_actor,path)=>Promise.resolve(path==='/fusion/connections'?{connections:[],cad_writes_enabled:true}:{approved:true}));
+ render(<FusionConnect code="ABCD234567" />);
+ const write=await screen.findByRole('checkbox',{name:/Also allow this Fusion session/});
+ expect((write as HTMLInputElement).checked).toBe(false);
+ fireEvent.click(write);fireEvent.click(screen.getByRole('checkbox',{name:/I started/}));fireEvent.click(screen.getByText('Connect this inventory'));
+ await screen.findByText('Connection approved');
+ expect(accountRequest).toHaveBeenLastCalledWith('actor','/fusion/pairing/approve',expect.objectContaining({body:{code:'ABCD234567',inventory_id:'inventory',allow_cad_writes:true}}));
+});
+test('viewers never receive a CAD-write checkbox',async()=>{
+ (activeInventory as jest.Mock).mockReturnValue({accountId:'actor',inventory_id:'inventory',name:'Team stock',can_edit:false});
+ (accountRequest as jest.Mock).mockResolvedValue({connections:[],cad_writes_enabled:true});
+ render(<FusionConnect code="ABCD234567" />);await screen.findByText(/No active connections/);
+ expect(screen.queryByRole('checkbox',{name:/Also allow/})).toBeNull();
 });

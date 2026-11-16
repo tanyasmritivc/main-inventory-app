@@ -6,10 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
 import webbrowser
+from uuid import UUID, uuid4
 
 import adsk.core
 import adsk.fusion
-from .client import Session, call, ClientError, search_path
+from .client import Session, call, ClientError, search_path, download_step
 from .exporter import extract
 from . import placement
 from .models import ModelBrowser
@@ -29,6 +30,9 @@ context=None
 busy=False
 search_design=None
 model_browser=ModelBrowser()
+save_retry=None
+generated_design=None
+generated_jobs={}
 
 
 def attach(event,handler):
@@ -60,7 +64,9 @@ def task(kind,fn):
             try:
                 app.fireCustomEvent(EVENT,json.dumps(result))
             except RuntimeError:
-                pass  # Fusion may have unloaded the add-in while the request ended.
+                if result['kind']=='generated_file': Path(result['data']['path']).unlink(missing_ok=True)
+        elif result['kind']=='generated_file':
+            Path(result['data']['path']).unlink(missing_ok=True)
     executor.submit(work)
 
 
@@ -101,8 +107,19 @@ def wait_pair(device,generation):
                 # A late approved session cannot restore a disconnected account.
                 call('/session',method='DELETE',token=result['access_token'])
                 return {}
-            return session.request('/session')
+            return session.request_at(generation,'/session')
     raise ClientError('Connection canceled or expired. Start sign-in again.')
+
+
+def require_cad_write():
+    if not context or not context.get('allow_cad_writes'):
+        raise ClientError('Disconnect and reconnect with permission to save CAD work and generate models.')
+    if busy: raise ClientError('Wait for the current request to finish.')
+
+
+def valid_offset(value):
+    if type(value) is not int or not 0<=value<=10000: raise ClientError('Choose a valid history page.')
+    return value
 
 
 def compare_design(expected=None):
@@ -119,15 +136,17 @@ def compare_design(expected=None):
     snapshot=extract(design,app.version)
     comparison=None
     send('comparison_started',{'name':snapshot['document']['name']})
-    task('comparison',lambda generation:session.request('/compare',method='POST',data=snapshot))
+    task('comparison',lambda generation:session.request_at(generation,'/compare',method='POST',data=snapshot))
 
 
 class Result(adsk.core.CustomEventHandler):
     def notify(self,args):
-        global busy,parts,comparison,context
+        global busy,parts,comparison,context,save_retry
         try:
             message=json.loads(args.additionalInfo)
             if message['generation']!=session.generation:
+                if message['kind']=='generated_file':
+                    Path(message['data']['path']).unlink(missing_ok=True)
                 return
             busy=False
             send('busy',{'busy':False})
@@ -153,6 +172,26 @@ class Result(adsk.core.CustomEventHandler):
                     return
                 rows=data['items'] if data['source']=='inventory' else data['parts']
                 parts={str(p.get('item_id') or p.get('catalog_id')):p for p in rows}
+            elif kind=='version_saved':
+                save_retry=None
+                send('notice',{'message':'BOM version '+str(data['version'])+' saved to this inventory.'})
+                return
+            elif kind=='correction_saved':
+                compare_design()
+                return
+            elif kind=='generation_job':
+                generated_jobs[data['id']]=data
+            elif kind=='generated_file':
+                try:
+                    if generated_design != adsk.fusion.Design.cast(app.activeProduct) or not context:
+                        raise ClientError('The active design changed. Insert the generated model again in the intended design.')
+                    placement.insert(app,{'name':data['name']},data['path'],context['inventory_id'],generated_job=data['id'])
+                finally:
+                    Path(data['path']).unlink(missing_ok=True)
+                send('notice',{'message':'Generated geometry is unverified. Check dimensions, position the copy and confirm. Cancel removes it.'})
+                return
+            elif kind=='version':
+                comparison=data['comparison']
             elif kind=='comparison':
                 comparison=data
             send(kind,data)
@@ -168,14 +207,14 @@ class Result(adsk.core.CustomEventHandler):
 
 class Incoming(adsk.core.HTMLEventHandler):
     def notify(self,args):
-        global busy,parts,comparison,context,search_design
+        global busy,parts,comparison,context,search_design,save_retry,generated_design
         try:
             # Qt returns sendInfoToHTML acknowledgements through this same event.
             # They are not user commands. Replying to one creates an error loop.
             if args.action == 'response':
                 return
             args.returnData = 'OK'
-            if len(args.data or '')>4096:
+            if len(args.data or '')>70000:
                 raise ClientError('This command is too large.')
             data=json.loads(args.data or '{}')
             if not isinstance(data,dict):
@@ -191,6 +230,8 @@ class Incoming(adsk.core.HTMLEventHandler):
                 token=session.clear()
                 parts,comparison,context={},None,None
                 search_design=None
+                save_retry=None
+                generated_jobs.clear()
                 model_browser.clear()
                 busy=False
                 send('disconnected',{})
@@ -202,7 +243,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 path=search_path(action,data.get('q',''),data.get('offset',0),data.get('location'))
                 parts={}
                 model_browser.clear()
-                task(action,lambda generation:session.request(path))
+                task(action,lambda generation:session.request_at(generation,path))
             elif action=='search':
                 query=data.get('query','')
                 source=data.get('source','inventory')
@@ -214,7 +255,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 parts={}
                 model_browser.clear()
                 search_design=adsk.fusion.Design.cast(app.activeProduct)
-                task('search',lambda generation:session.request('/search',method='POST',data={'query':query,'source':source,'location':location}))
+                task('search',lambda generation:session.request_at(generation,'/search',method='POST',data={'query':query,'source':source,'location':location}))
             elif action=='models':
                 part=parts.get(str(data.get('id')))
                 if not part or not context or busy or placement.pending is not None:
@@ -230,6 +271,61 @@ class Incoming(adsk.core.HTMLEventHandler):
                 send('notice',{'message':'Position the component with the handles and confirm. Cancel removes this copy. Refresh BOM afterward.'})
             elif action=='compare':
                 compare_design()
+            elif action=='save_version':
+                require_cad_write()
+                design=adsk.fusion.Design.cast(app.activeProduct)
+                if not design: raise ClientError('Open a saved Fusion design first.')
+                snapshot=extract(design,app.version)
+                if snapshot['document']['external_id'].startswith('unsaved:'):
+                    raise ClientError('Save this design to a Fusion project first.')
+                # Retain the exact snapshot for a failed save, so retry cannot duplicate it.
+                if save_retry is None:
+                    save_retry={'request_id':str(uuid4()),'snapshot':snapshot}
+                elif save_retry['snapshot']['document']['external_id']!=snapshot['document']['external_id']:
+                    raise ClientError('Return to the design with the pending save, or disconnect before starting another save.')
+                task('version_saved',lambda generation:session.request_at(generation,'/bom/versions',method='POST',data=save_retry))
+            elif action=='versions':
+                task('versions',lambda generation:session.request_at(generation,'/bom/versions?offset='+str(valid_offset(data.get('offset',0)))))
+            elif action=='version':
+                key=str(UUID(data.get('id','')))
+                task('version',lambda generation:session.request_at(generation,'/bom/versions/'+key))
+            elif action=='correct':
+                require_cad_write()
+                line=next((r for r in (comparison or {}).get('items',[]) if r['key']==data.get('key')),None)
+                if not line or not line.get('review_token'): raise ClientError('Compare the current design before correcting its match.')
+                decision=data.get('decision')
+                if decision not in ('match','no_match','reset'): raise ClientError('Choose a match decision.')
+                item=data.get('item_id') if decision=='match' else None
+                if decision=='match' and item not in {str(r['item_id']) for r in line.get('candidates',[])}:
+                    raise ClientError('Choose one of the current inventory candidates.')
+                payload={'review_token':line['review_token'],'decision':decision,'item_id':item}
+                task('correction_saved',lambda generation:session.request_at(generation,'/bom/corrections',method='POST',data=payload))
+            elif action=='generate':
+                require_cad_write()
+                if data.get('confirmed') is not True: raise ClientError('Confirm the specifications and external generation first.')
+                payload={k:data.get(k) for k in ('prompt','name','units','request_id','confirmed')}
+                UUID(payload['request_id'])
+                task('generation_job',lambda generation:session.request_at(generation,'/generation/jobs',method='POST',data=payload))
+            elif action=='generation_jobs':
+                task('generation_jobs',lambda generation:session.request_at(generation,'/generation/jobs'))
+            elif action in ('generation_status','generation_resume','generation_cancel','generation_answer','generation_insert'):
+                key=str(UUID(data.get('id','')))
+                path='/generation/jobs/'+key
+                if action=='generation_status':
+                    task('generation_job',lambda generation:session.request_at(generation,path))
+                elif action=='generation_insert':
+                    job=generated_jobs.get(key)
+                    if not job or job.get('state')!='succeeded' or data.get('confirmed') is not True:
+                        raise ClientError('Refresh the model and confirm you will check its dimensions before insertion.')
+                    generated_design=adsk.fusion.Design.cast(app.activeProduct)
+                    if not generated_design or placement.pending is not None: raise ClientError('Open a design and finish the current placement first.')
+                    token=session.token
+                    task('generated_file',lambda generation:{'id':key,'name':job['name'],'path':download_step(path+'/download',token)})
+                else:
+                    require_cad_write()
+                    suffix={'generation_resume':'/resume','generation_cancel':'/cancel','generation_answer':'/answers'}[action]
+                    payload={k:data.get(k) for k in ('version','question_id','answer','request_id')} if action=='generation_answer' else None
+                    task('generation_job',lambda generation:session.request_at(generation,path+suffix,method='POST',data=payload))
             elif action=='insert_local':
                 part=parts.get(str(data.get('id')))
                 if not part or not context or busy:
@@ -295,7 +391,7 @@ def run():
 
 
 def stop():
-    global palette,executor,context,parts,comparison,busy,search_design
+    global palette,executor,context,parts,comparison,busy,search_design,save_retry,generated_design,generated_jobs
     stop_event.set()
     token=session.clear()
     if executor:
@@ -315,5 +411,6 @@ def stop():
         palette.deleteMe()
     palette,context,parts,comparison,busy=None,None,{},None,False
     search_design=None
+    save_retry,generated_design,generated_jobs=None,None,{}
     model_browser.clear()
     handlers.clear()

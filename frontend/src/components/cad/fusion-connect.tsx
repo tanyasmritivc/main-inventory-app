@@ -18,14 +18,16 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
   const [approved, setApproved] = useState(false);
   const [error, setError] = useState("");
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [writesEnabled, setWritesEnabled] = useState(false);
+  const [allowWrites, setAllowWrites] = useState(false);
   const mounted = useRef(true);
   const locked = useRef(false);
   const request = useRef<AbortController | null>(null);
   useEffect(() => {
     mounted.current = true;
     const controller = new AbortController();
-    void accountRequest<{ connections: Connection[] }>(actor, "/fusion/connections", { signal: controller.signal })
-      .then(data => { if (!controller.signal.aborted && mounted.current) setConnections(data.connections); })
+    void accountRequest<{ connections: Connection[]; cad_writes_enabled?: boolean }>(actor, "/fusion/connections", { signal: controller.signal })
+      .then(data => { if (!controller.signal.aborted && mounted.current) { setConnections(data.connections); setWritesEnabled(data.cad_writes_enabled === true); } })
       .catch(() => { if (!controller.signal.aborted) setError("Connections could not be loaded. Reload to try again."); });
     return () => { mounted.current = false; controller.abort(); request.current?.abort(); };
   }, [actor]);
@@ -34,7 +36,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
     locked.current = true; setBusy(true); setError("");
     const controller = new AbortController(); request.current = controller;
     try {
-      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: { code: value, inventory_id: inventory.inventory_id }, signal: controller.signal });
+      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: { code: value, inventory_id: inventory.inventory_id, ...(allowWrites && writesEnabled && inventory.can_edit ? { allow_cad_writes: true } : {}) }, signal: controller.signal });
       if (receipt.approved !== true) throw new Error("Connection was not confirmed. Start again in Fusion.");
       if (!controller.signal.aborted && mounted.current) setApproved(true);
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Connection failed. Start again in Fusion."); }
@@ -52,14 +54,15 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
     finally { locked.current = false; if (mounted.current) setBusy(false); }
   }
   return <section className={styles.page}>
-    <header className={styles.hero}><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/downloads/findez-fusion-workspace.zip?v=0.3.1" download>Download the Fusion workspace candidate</a><p>Native placement testing is still in progress. The existing export add-in remains available. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
+    <header className={styles.hero}><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/downloads/findez-fusion-workspace.zip?v=0.4.0" download>Download the Fusion workspace candidate</a><p>Native placement testing is still in progress. The existing export add-in remains available. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
     <div className={styles.card}>
       {approved ? <div role="status"><h2>Connection approved</h2><p>Return to Fusion. The panel will connect automatically. If it timed out, start again there.</p></div> : <>
         <h2>{inventory.name}</h2>
         <p>Fusion can read this inventory and the public parts catalog, and compare a parts list. It cannot change stock, make purchases, or access another inventory through this connection.</p>
         <label className={styles.file}>Code shown in your Fusion panel<input autoComplete="off" spellCheck={false} maxLength={10} value={value} onChange={e => { setValue(e.target.value.toUpperCase().replace(/\s/g, "")); setConfirmed(false); }} /></label>
         <label><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I started this connection in Fusion and the code matches.</label>
-        <p>Only approve a code displayed in your own Fusion add-in. Access expires after eight hours. Model geometry stays on your computer.</p>
+        {writesEnabled && inventory.can_edit && <label className={styles.confirm}><input type="checkbox" checked={allowWrites} onChange={e => setAllowWrites(e.target.checked)} /> Also allow this Fusion session to save shared BOM versions and match corrections, and generate STEP models through RexCAD. Generation sends the specifications you submit to RexCAD. This does not permit stock changes or purchases.</label>}
+        <p>Only approve a code displayed in your own Fusion add-in. Access expires after eight hours. Assembly comparison does not upload geometry. Model generation sends only the specification you explicitly submit.</p>
         <button disabled={busy || !confirmed || !/^[A-HJ-NP-Z2-9]{10}$/.test(value)} onClick={connect}>{busy ? "Connecting..." : "Connect this inventory"}</button>
         <p><a href={`/cad/fusion/connect${value ? `?code=${encodeURIComponent(value)}` : ""}`}>Choose a different inventory</a></p>
       </>}

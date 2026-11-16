@@ -1,3 +1,16 @@
+## November 16 - CAD 0.4.0 candidate awaiting migration approval
+
+Owner: Codex, feat/cad-workspace. Saved inventory-scoped BOM versions/corrections
+and RexCAD on-demand STEP generation are implemented and staged separately at
+/home/ubuntu/findez-cad-bom-generation-20261116. Not activated; live remains 0.3.1.
+User supplied generation docs/key; the key is private outside the repository.
+Production-copy rehearsal preserved 131 tables and existing policies/functions.
+Read-only sessions are not silently expanded. Explicit editor opt-in is required.
+No stock writes, Onshape activation, pricing, procurement or nightly catalog jobs.
+Native Windows placement still needs acceptance. Public marketing layout preserved;
+only its two download query versions change. No push or external hosting.
+See docs/releases/cad-bom-generation-20261116/README.md for checks and next action.
+
 ## November 15 - connected Fusion workspace candidate (deployed)
 
 Follow-up: workspace ZIP 0.2.1 published to the active self-hosted release after

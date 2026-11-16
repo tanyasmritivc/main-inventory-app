@@ -1,0 +1,34 @@
+{
+  "production_modified": false,
+  "original_rows_unchanged": true,
+  "credential_table_private": true,
+  "original_tables_verified": 131,
+  "existing_policies_unchanged": true,
+  "existing_functions_unchanged": true,
+  "migration_sha256": "dc402aeb1f97a36e51befdff5189d980b620ecdbbedd12524a23655392106623",
+  "production_build": "EDZJ7z9dzDQSye8g9OiI8",
+  "build_base": "/home/ubuntu/findez-world-mobile-dock-20261116/frontend",
+  "zip_sha256": "f78a2031f0b7ca0ba08cd392f718ac15b1879203d2d443558069bbff9f1cb13d",
+  "live_rexcad": {
+    "state": "succeeded",
+    "bytes": 26787,
+    "sha256": "638942e82aa127f7d5499e07f3155c043fdb01fa151b912de4a0af20d2d22f01",
+    "provider_reported_solids": 1,
+    "provider_reported_bounds_mm": [
+      60,
+      40,
+      5
+    ],
+    "independent_native_validation": false
+  },
+  "checks": {
+    "full_backend": 1309,
+    "subsequent_focused_backend": 113,
+    "full_web": 704,
+    "subsequent_focused_web": 31,
+    "typescript": "passed",
+    "changed_file_eslint": "passed",
+    "concurrency": "8 retries yield 1 record; 8 distinct saves sequential",
+    "secret_scan": "passed"
+  }
+}

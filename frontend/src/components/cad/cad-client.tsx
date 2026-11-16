@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { activeInventory } from "@/lib/inventory-selection";
 import { compareCad, previewBom, type CadComparison, type BomPreview, type BomMapping, type BomField } from "@/lib/cad";
 import styles from "./cad.module.css";
+import { CadHistory } from "./cad-history";
 import { CadResults } from "./cad-results";
 import { FusionInstallSteps } from "./cad-help";
 import { Box, FileSpreadsheet, Upload, BookOpen, ArrowUpRight, Check, Download } from "lucide-react";
@@ -66,8 +67,8 @@ export function CadClient() {
       <h2 id="fusion-workspace-title">Keep working in your design.</h2>
       <div className={styles.prepColumns}>
         <div><h3>Install or update FindEZ</h3><p>Download and extract the workspace add-in on the computer running Fusion. Already installed? Stop FindEZ before replacing its files, then restart Fusion.</p>
-          <a className={`${styles.primaryLink} ${styles.downloadLink}`} href="/downloads/findez-fusion-workspace.zip?v=0.3.1" download><Download size={16} /> Download Fusion workspace</a>
-          <span className={styles.caption}>Version 0.3.1 candidate · Windows and Mac · ZIP</span>
+          <a className={`${styles.primaryLink} ${styles.downloadLink}`} href="/downloads/findez-fusion-workspace.zip?v=0.4.0" download><Download size={16} /> Download Fusion workspace</a>
+          <span className={styles.caption}>Version 0.4.0 candidate · Windows and Mac · ZIP</span>
           <details className={styles.installDetails}><summary>Show installation steps</summary><FusionInstallSteps /></details>
         </div>
         <div><h3>Open FindEZ beside your assembly</h3><p>In Fusion, choose <b>Utilities → Add-Ins → Open FindEZ</b>. Click <b>Sign in with FindEZ</b> and approve your inventory in the browser, then return to the panel.</p>
@@ -79,9 +80,11 @@ export function CadClient() {
         <li><h3>Search with AI</h3><p>Try “Find 12 M4 screws.” Browse owned parts in Inventory or public records in Parts catalog.</p><a href="/docs/cad#browse" target="_blank" rel="noreferrer">Search guide ↗</a></li>
         <li><h3>Choose a Fusion model</h3><p>Select geometry from your current design or saved Fusion project, confirm the part association, then position the copy.</p><a href="/docs/cad#insert" target="_blank" rel="noreferrer">Model insertion guide ↗</a></li>
         <li><h3>Compare the open design</h3><p>Ask “Do I have the parts required to make this?” or use the BOM tab to see matches, shortages, and parts needing review.</p><a href="/docs/cad#bom" target="_blank" rel="noreferrer">BOM guide ↗</a></li>
+        <li><h3>Generate a custom model</h3><p>Describe dimensions, answer any clarification in the panel, then insert the verified download into your design. Review the generated geometry before use.</p><a href="/docs/cad#generate" target="_blank" rel="noreferrer">Generation guide ↗</a></li>
       </ol>
-      <p className={styles.muted}>The workspace is a candidate release; native placement testing is still in progress. Models must already exist in your Fusion project or be imported locally. Hosted manufacturer models, live prices, and purchasing are not available yet. <a href="/docs/cad#limits" target="_blank" rel="noreferrer">Current limitations ↗</a></p>
+      <p className={styles.muted}>The workspace is a candidate release; native placement testing is still in progress. Use Generate model for a custom STEP, or choose geometry from your Fusion project. Reconnect with CAD writing permission to generate models and save BOMs. Hosted manufacturer models, live prices, and purchasing are not available yet. <a href="/docs/cad#limits" target="_blank" rel="noreferrer">Current limitations ↗</a></p>
     </section>
+    <CadHistory />
     <header className={styles.uploadIntro} id="browser-comparison"><h2>Prefer to compare a file here?</h2><p>Upload a Fusion BOM or a spreadsheet as an alternative to the connected panel. Choose a source below to get started.</p></header>
     <div className={styles.workspace}>
     <div className={styles.flow}>

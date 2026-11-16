@@ -1,0 +1,90 @@
+{
+  "frontend": {
+    "src/components/cad/cad-client.tsx": {
+      "before": "63f0e256a86e5c6639ca8c9ac828e4acf874f97c7dbc048a936e20b474befd66",
+      "after": "80f63d953efc30261e7457dddc305f078a03043eae8d92475766475cb3c7871f"
+    },
+    "src/components/cad/cad-correction.tsx": {
+      "before": null,
+      "after": "5a0b1e2441a0d8add0687588d24995175745d1f7752a57520100432001f3a135"
+    },
+    "src/components/cad/cad-results.tsx": {
+      "before": null,
+      "after": "0c78b633980dbf6e4f9cd1d6a5419b693ab2ec667ba9d1bb560d3a6ca321fda2"
+    },
+    "src/components/cad/cad-history.tsx": {
+      "before": null,
+      "after": "ec478d36455899e7e08168cd296fa89c6bf6fb73ee29eaf04e8d9524dc74ac38"
+    },
+    "src/components/cad/cad-entry.tsx": {
+      "before": "49ca009927fcd87b84716fa97efc31d7ca0ac683c30ac5e73af023610b46f52c",
+      "after": "9c6cc82438bb3c0ea42734f52ac999aa7b3d6862f81f153c7f7a0405cd7e1311"
+    },
+    "src/components/cad/cad-help.tsx": {
+      "before": "9593bd31b82e5657cf4a4ad7680af99ea97f453e6611e8ad3a5297bc99a3ef7f",
+      "after": "24cd1efa23d7f34e14abf3ca79fc159edaef4eaf5f94d141b7ed274e7901dc77"
+    },
+    "src/components/cad/fusion-connect.tsx": {
+      "before": "6b3ac9bb1e1c726a8be8fdb3c475daa6d2d8d46f8432218a0394d466e27f0e40",
+      "after": "2f059d264f9647672072bc145cc028427bf3e13f3c97321227c302fd0b0f5981"
+    },
+    "src/components/site/cad-docs.tsx": {
+      "before": "6567e7ca37aa6cd2abeaa7b97fd3822f5eec96c6d2419bab25ce495e8a641c63",
+      "after": "d9bdb56c519516b5037c862e664ea2cfe8960f7b9901c370d195fdd52263f4f5"
+    },
+    "src/components/site/cad-docs-navigation.tsx": {
+      "before": "97c8c585d056fcb8cab9cb2628ac0e163f8480caf5b402c048599e42c39a6f14",
+      "after": "a8dfa319f97ded1f5f1eeac084c7a6d5d361342e8b85a4c3b0ae12da2c216255"
+    },
+    "src/components/marketing-dark/cad-public-content.tsx": {
+      "before": "b4791e84fa9ea051a8c79b75d469c4a47992e97b4443c336988cc8569809d150",
+      "after": "65c4bf2a324f5742075ae3f66b97c6abd489c0ee3afc702eb20c597accaa0d47"
+    },
+    "src/lib/cad.ts": {
+      "before": "7aa88d752edf3dde2b3dd9159e4292f3e47d38bb2fabc004bac35ceed4d4bdb1",
+      "after": "e7a24cdc56b06d724b0d682238c005fbded4cae64204d3d376a1c4702de1ecb0"
+    },
+    "public/downloads/findez-fusion-workspace.zip": {
+      "before": "bba16d75a4fcd181261f0a9d0bd428a04eb85024442e56add7b8cdcfa388f5e0",
+      "after": "f78a2031f0b7ca0ba08cd392f718ac15b1879203d2d443558069bbff9f1cb13d"
+    }
+  },
+  "backend": {
+    "app/api/routes/cad.py": {
+      "before": "1df8ac0daac799036e5d46f36574c8c6e589607d7856606e67b978e7f48cb334",
+      "after": "1777579b03f4c31e4b8bafe2d3de3456661024a185e017fffc9851ea67bd74b6"
+    },
+    "app/api/routes/cad_workspace.py": {
+      "before": "75701057467c09cc521fc6fbc50bd4bf0411349a16c614b0a7ab586c530d067e",
+      "after": "44044c3b8a9a60ebb7df042d1d4b710eb0407331364ab28e4f4c509059f053b4"
+    },
+    "app/services/cad/workspace.py": {
+      "before": "daeeebb711a9d7a59aa3375b30c2ca8df502190ba3858f4ced558e81782643e7",
+      "after": "106dd1262e04196221991b3cfeae11990cf5190547cad15a0b27cfe600cb61ae"
+    },
+    "app/services/cad/comparison.py": {
+      "before": "e011f84bde12f0c953509d4261013947bc65ef72d1074ec8a8481ae1aef255ad",
+      "after": "2e688b1ba10569c632a972c816e8cb1c964e2f8069ec2a2f4eeaee3473b0effa"
+    },
+    "app/services/cad/corrections.py": {
+      "before": null,
+      "after": "99842a067555ee3e44923d49564651d3ff7375be56d1c0d6e46d45f169a4d187"
+    },
+    "app/services/cad/security.py": {
+      "before": null,
+      "after": "8bc466f65db5ae0bb75d85d81cc0ddd68e43b104b8ea8a31679d21e0d82225f7"
+    },
+    "app/services/cad/projects.py": {
+      "before": null,
+      "after": "217600e1184357ad7197fe85864be53068dc21e90804dea1dcdfc6092cef0530"
+    },
+    "app/services/cad/generation.py": {
+      "before": null,
+      "after": "a94920eb44426196bfb438fcde78c07285708af71dc3d86c030081a8b40dd3bb"
+    },
+    "app/services/cad/rexcad.py": {
+      "before": null,
+      "after": "3e5a5322525ed338b53aca4b47b87c6a46a05c777f4e8381aa544b5ab528a0be"
+    }
+  }
+}

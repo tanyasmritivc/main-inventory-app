@@ -1,3 +1,16 @@
+## November 16 - CAD 0.4.0 candidate awaiting migration approval
+
+Owner: Codex, feat/cad-workspace. Saved inventory-scoped BOM versions/corrections
+and RexCAD on-demand STEP generation are implemented and staged separately at
+/home/ubuntu/findez-cad-bom-generation-20261116. Not activated; live remains 0.3.1.
+User supplied generation docs/key; the key is private outside the repository.
+Production-copy rehearsal preserved 131 tables and existing policies/functions.
+Read-only sessions are not silently expanded. Explicit editor opt-in is required.
+No stock writes, Onshape activation, pricing, procurement or nightly catalog jobs.
+Native Windows placement still needs acceptance. Public marketing layout preserved;
+only its two download query versions change. No push or external hosting.
+See docs/releases/cad-bom-generation-20261116/README.md for checks and next action.
+
 ## November 8 — Overly crowded wording deployed (PR368)
 
 The shared photo-scan notice now reads “Overly crowded photos can take around 4

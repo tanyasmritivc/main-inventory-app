@@ -115,6 +115,7 @@ def test_catalog_restricts_verified_and_escapes_search(monkeypatch):
 
 
 def api(monkeypatch):
+    monkeypatch.setattr(service,'authorize',lambda token:grant())
     app=FastAPI(); app.include_router(routes.router)
     app.dependency_overrides[routes.session]=grant
     app.dependency_overrides[get_current_user]=lambda:AuthenticatedUser(ACTOR)
@@ -137,8 +138,19 @@ def test_approval_is_explicit_actor_bound_and_validated(monkeypatch):
     approve=Mock(return_value={'approved':True});monkeypatch.setattr(service,'approve',approve)
     with api(monkeypatch) as http:
         assert http.post('/fusion/pairing/approve',json={'code':'ABCD234567','inventory_id':INV}).status_code==200
-        approve.assert_called_once_with('ABCD234567',INV,ACTOR)
+        approve.assert_called_once_with('ABCD234567',INV,ACTOR,False)
         assert http.post('/fusion/pairing/approve',json={'code':'bad','inventory_id':INV}).status_code==422
+
+def test_bom_save_is_bounded_and_rejects_forged_inventory(monkeypatch):
+    save=Mock(return_value={'version':1});monkeypatch.setattr(routes.projects,'save',save)
+    payload={'request_id':INV,'snapshot':snapshot().model_dump(mode='json')}
+    with api(monkeypatch) as http:
+        assert http.post('/fusion/bom/versions',json=payload).status_code==200
+        assert save.call_args.args[1:3]==(INV,ACTOR)
+        assert save.call_args.args[4]=='grant'
+        assert http.post('/fusion/bom/versions',json={**payload,'inventory_id':'other'}).status_code==422
+        assert http.post('/fusion/bom/versions',content=b'x'*(5*1024*1024+1)).status_code==413
+    assert save.call_count==1
 
 
 def test_client_rejects_redirects_and_stale_account_connect():
@@ -148,6 +160,13 @@ def test_client_rejects_redirects_and_stale_account_connect():
     assert session.connect(TOKEN,session.generation)
     assert session.clear()==TOKEN
     with pytest.raises(client.ClientError):session.request('/inventory')
+
+def test_queued_native_write_cannot_switch_to_a_new_inventory_session(monkeypatch):
+    session=client.Session();session.connect(TOKEN,session.generation);old=session.generation
+    session.clear();session.connect('b'*64,session.generation)
+    transport=Mock();monkeypatch.setattr(client,'call',transport)
+    with pytest.raises(client.ClientError):session.request_at(old,'/bom/versions',method='POST',data={})
+    transport.assert_not_called()
 
 @pytest.mark.parametrize('source,query,offset',[('https://evil.invalid','',0),('inventory','a'*101,0),('inventory','',-1),('inventory','',True)])
 def test_client_validates_search(source,query,offset):

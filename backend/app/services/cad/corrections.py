@@ -1,11 +1,16 @@
 """Inventory-scoped human decisions, invalidated when either identity changes."""
+import hashlib
+import json
 from fastapi import HTTPException
 
 from app.services.supabase_client import get_supabase_raw
-from .onshape import digest
 from .security import configured, seal, unseal
 from .repository import authorize_inventory, read_inventory
 from .snapshot import requirements
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 def rows_for(snapshot):
@@ -44,7 +49,7 @@ def annotate(result, snapshot, inventory, actor):
     return result
 
 
-def save(inventory, actor, token, decision, item_id):
+def save(inventory, actor, token, decision, item_id, grant=None):
     receipt = unseal('cad_review', token, ttl=3600)
     if receipt.get('actor') != actor or receipt.get('inventory') != inventory:
         raise HTTPException(403, 'This review belongs to another account or inventory.')
@@ -61,9 +66,11 @@ def save(inventory, actor, token, decision, item_id):
         fingerprint = item_identity(item)
     elif item_id is not None:
         raise HTTPException(422, 'Only a confirmed match can include an inventory item.')
-    result = get_supabase_raw().rpc('findez_cad_save_correction', {'p_actor': actor,
-        'p_inventory': inventory, 'p_identity': receipt['identity'], 'p_decision': decision,
-        'p_item': item_id, 'p_fingerprint': fingerprint}).execute().data
+    params = {'p_actor': actor, 'p_inventory': inventory, 'p_identity': receipt['identity'],
+        'p_decision': decision, 'p_item': item_id, 'p_fingerprint': fingerprint}
+    if grant is not None:
+        params['p_grant'] = grant
+    result = get_supabase_raw().rpc('findez_cad_save_review' if grant is not None else 'findez_cad_save_correction', params).execute().data
     if result is not True:
         raise HTTPException(409, 'The match could not be saved. Check your access and compare again.')
     return {'saved': True, 'inventory_id': inventory}

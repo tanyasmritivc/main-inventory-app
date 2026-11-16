@@ -91,3 +91,31 @@ test('vague AI questions show clarification without claiming no parts exist',()=
  expect(document.getElementById('parts')!.textContent).not.toContain('No matching parts');
  expect((document.getElementById('next') as HTMLButtonElement).disabled).toBe(true);
 });
+
+test('generation retries preserve request identity and insertion requires explicit review',()=>{
+ receive('connected',{inventory_name:'Lab',allow_cad_writes:true});
+ (document.getElementById('generation-name') as HTMLInputElement).value='Plate';
+ (document.getElementById('generation-prompt') as HTMLTextAreaElement).value='60 x 40 x 5 mm plate';
+ const submit=()=>document.getElementById('generation-form')!.dispatchEvent(new Event('submit',{cancelable:true}));
+ host.adsk.fusionSendData.mockClear(); submit(); expect(host.adsk.fusionSendData).not.toHaveBeenCalled();
+ (document.getElementById('generation-consent') as HTMLInputElement).checked=true;
+ submit(); const first=host.adsk.fusionSendData.mock.calls[0]; submit();
+ expect(host.adsk.fusionSendData.mock.calls[1]).toEqual(first);
+ expect(first[0]).toBe('generate'); expect(JSON.parse(first[1]).request_id).toMatch(/^[a-f0-9-]{36}$/);
+ receive('generation_job',{id:'job',name:'Plate',state:'succeeded'});
+ const insert=document.querySelector<HTMLButtonElement>('[data-generated-insert]')!;
+ expect(insert.disabled).toBe(true); receive('busy',{busy:false}); expect(insert.disabled).toBe(true);
+ const check=document.querySelector<HTMLInputElement>('#generation-job input')!;
+ check.checked=true;check.dispatchEvent(new Event('change'));insert.click();
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('generation_insert',JSON.stringify({id:'job',confirmed:true}));
+ receive('busy',{busy:true});expect(insert.disabled).toBe(true);
+});
+
+test('read-only sessions cannot submit generation or save BOMs and disconnect clears jobs',()=>{
+ receive('connected',{inventory_name:'Lab',allow_cad_writes:false});
+ expect((document.getElementById('save-version') as HTMLButtonElement).disabled).toBe(true);
+ expect((document.getElementById('generation-submit') as HTMLButtonElement).disabled).toBe(true);
+ receive('generation_job',{id:'job',name:'Plate',state:'needs_input',version:3,question:{id:'q',text:'Thickness?'}});
+ expect((document.querySelector('#generation-job button[data-cad-write]') as HTMLButtonElement).disabled).toBe(true);
+ receive('disconnected',{});expect(document.getElementById('generation-job')!.textContent).toBe('');
+});

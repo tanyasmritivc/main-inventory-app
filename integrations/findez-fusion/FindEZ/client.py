@@ -54,7 +54,7 @@ def call(path, *, method='GET', data=None, token=None):
         headers['Authorization']='Bearer '+token
     req = request.Request(API+path,data=raw,headers=headers,method=method)
     try:
-        with request.build_opener(NoRedirect(), request.HTTPSHandler(context=tls_context())).open(req,timeout=60 if path == '/search' else 30) as response:
+        with request.build_opener(NoRedirect(), request.HTTPSHandler(context=tls_context())).open(req,timeout=90 if path.startswith('/generation/') else 60 if path == '/search' else 30) as response:
             body=response.read(MAX_RESPONSE+1)
             if len(body)>MAX_RESPONSE:
                 raise ClientError('This response is too large. Narrow your search.')
@@ -68,7 +68,14 @@ def call(path, *, method='GET', data=None, token=None):
         if exc.code==429:
             raise ClientError('Too many requests. Wait a minute and try again.') from None
         if exc.code==409:
-            raise ClientError('The connection or inventory changed. Try again.') from None
+            raise ClientError('The job, saved request, or inventory changed. Refresh before trying again.') from None
+        if path.startswith('/generation/'):
+            if exc.code==410:
+                raise ClientError('This temporary model has expired or is no longer available. Generate a new model.') from None
+            if exc.code in (502,503,504):
+                raise ClientError('Model generation is unavailable. Retry the same submission or open My recent generation jobs to resume it; do not change the specification just to retry.') from None
+            if exc.code==422:
+                raise ClientError('Check the model name, dimensions, units, and clarification answer before retrying.') from None
         if path=='/search' and exc.code in (502,503,504):
             raise ClientError('AI search is temporarily unavailable. Try Keyword search for a part, or BOM > Compare current assembly for this design. [AI-UNAVAILABLE]') from None
         if path=='/search' and exc.code==422:
@@ -103,7 +110,12 @@ class Session:
             return True
 
     def request(self,path,**kwargs):
+        return self.request_at(self.generation,path,**kwargs)
+
+    def request_at(self,generation,path,**kwargs):
         with self.lock:
+            if generation != self.generation:
+                raise ClientError('The connected inventory changed. Start this action again.')
             token=self.token
         if not token:
             raise ClientError('Sign in to FindEZ first.')
@@ -119,3 +131,37 @@ def search_path(source,query,offset,location=None):
             raise ClientError('Choose a saved location.')
         params['location']=location
     return '/'+source+'?'+parse.urlencode(params)
+
+
+def download_step(path, token):
+    """Download from FindEZ only; the provider credential never leaves its server."""
+    import hashlib
+    import tempfile
+    if not re.fullmatch(r'/generation/jobs/[a-f0-9-]{36}/download', path):
+        raise ClientError('Choose a valid generated model.')
+    saved = None
+    try:
+        req = request.Request(API + path, headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/step'})
+        with request.build_opener(NoRedirect(), request.HTTPSHandler(context=tls_context())).open(req, timeout=60) as response:
+            size = int(response.headers.get('Content-Length', '0'))
+            digest = response.headers.get('X-STEP-SHA256', '')
+            if not 0 < size <= 100 * 1024 * 1024 or not re.fullmatch('[a-f0-9]{64}', digest) or response.headers.get_content_type() != 'application/step':
+                raise ClientError('The STEP download metadata could not be verified.')
+            hasher = hashlib.sha256(); total = 0
+            with tempfile.NamedTemporaryFile(prefix='findez-generated-', suffix='.step', delete=False) as output:
+                saved = Path(output.name)
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk: break
+                    total += len(chunk)
+                    if total > size: raise ClientError('The STEP download exceeds its expected size.')
+                    hasher.update(chunk); output.write(chunk)
+            if total != size or hasher.hexdigest() != digest:
+                raise ClientError('The STEP download failed its checksum. Retry before inserting.')
+            return str(saved)
+    except (error.URLError, OSError, HTTPException, ValueError):
+        if saved: saved.unlink(missing_ok=True)
+        raise ClientError('The generated model could not be downloaded. Refresh its status and retry.') from None
+    except Exception:
+        if saved: saved.unlink(missing_ok=True)
+        raise

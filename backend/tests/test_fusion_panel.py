@@ -1,5 +1,6 @@
 """Panel URL contract tests. Native Fusion browser acceptance remains separate."""
 import importlib
+import json
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import sys
 from types import ModuleType, SimpleNamespace as NS
@@ -59,6 +60,27 @@ def test_reopening_panel_preserves_existing_session(workspace):
     module.app.userInterface.palettes.add.assert_called_once()
     panel.incomingFromHTML.add.assert_called_once()
     assert panel.isVisible
+
+
+@pytest.mark.parametrize('stale',['session','design'])
+def test_generated_download_never_inserts_after_context_change(workspace,monkeypatch,tmp_path,stale):
+    module,_=workspace
+    artifact=tmp_path/'generated.step';artifact.write_text('test STEP')
+    module.context={'inventory_id':'inventory'}
+    module.generated_design=module.app.activeProduct if stale=='session' else object()
+    insert=Mock();monkeypatch.setattr(module.placement,'insert',insert);monkeypatch.setattr(module,'send',Mock())
+    module.Result().notify(NS(additionalInfo=json.dumps({'kind':'generated_file','generation':module.session.generation-(1 if stale=='session' else 0),'data':{'path':str(artifact),'id':'job','name':'Plate'}})))
+    insert.assert_not_called();assert not artifact.exists()
+
+
+def test_generated_insert_is_bound_to_design_and_tempfile_is_removed(workspace,monkeypatch,tmp_path):
+    module,_=workspace
+    artifact=tmp_path/'generated.step';artifact.write_text('test STEP')
+    module.context={'inventory_id':'inventory'};module.generated_design=module.app.activeProduct
+    insert=Mock();monkeypatch.setattr(module.placement,'insert',insert);monkeypatch.setattr(module,'send',Mock())
+    module.Result().notify(NS(additionalInfo=json.dumps({'kind':'generated_file','generation':module.session.generation,'data':{'path':str(artifact),'id':'job','name':'Plate'}})))
+    insert.assert_called_once_with(module.app,{'name':'Plate'},str(artifact),'inventory',generated_job='job')
+    assert not artifact.exists()
 
 
 @pytest.mark.parametrize('payload', ['OK', '{}', '{"status":"OK"}', '', 'x' * 5000],
@@ -122,12 +144,12 @@ def test_ai_search_uses_only_current_session_and_clears_stale_parts(workspace, m
     module.context={'inventory_id':'inventory'}
     module.parts={'old':{'item_id':'old'}}
     task=Mock();request=Mock(return_value={})
-    monkeypatch.setattr(module,'task',task);monkeypatch.setattr(module.session,'request',request)
+    monkeypatch.setattr(module,'task',task);monkeypatch.setattr(module.session,'request_at',request)
     module.Incoming().notify(NS(action='search',data='{"query":"Find 12 bearings","source":"inventory"}'))
     assert module.parts=={}
     assert task.call_args.args[0]=='search'
     task.call_args.args[1](module.session.generation)
-    request.assert_called_once_with('/search',method='POST',data={'query':'Find 12 bearings','source':'inventory','location':None})
+    request.assert_called_once_with(module.session.generation,'/search',method='POST',data={'query':'Find 12 bearings','source':'inventory','location':None})
 
 
 def test_native_insert_requires_explicit_model_confirmation(workspace,monkeypatch):
@@ -148,14 +170,14 @@ def test_design_question_compares_real_snapshot_on_main_thread(workspace, monkey
     snapshot={'document':{'name':'Test assembly'},'occurrences':[]}
     extract=Mock(return_value=snapshot);task=Mock();request=Mock();sent=Mock()
     monkeypatch.setattr(module,'extract',extract);monkeypatch.setattr(module,'task',task)
-    monkeypatch.setattr(module,'send',sent);monkeypatch.setattr(module.session,'request',request)
+    monkeypatch.setattr(module,'send',sent);monkeypatch.setattr(module.session,'request_at',request)
     module.Result().notify(NS(additionalInfo=json.dumps({'generation':module.session.generation,
         'kind':'search','data':{'intent':'compare_design'}})))
     extract.assert_called_once_with(design,'test')
     sent.assert_any_call('comparison_started',{'name':'Test assembly'})
     assert task.call_args.args[0]=='comparison'
     task.call_args.args[1](module.session.generation)
-    request.assert_called_once_with('/compare',method='POST',data=snapshot)
+    request.assert_called_once_with(module.session.generation,'/compare',method='POST',data=snapshot)
 
 
 @pytest.mark.parametrize('changed', ['design','disconnected','missing'])

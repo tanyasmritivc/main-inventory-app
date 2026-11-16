@@ -24,7 +24,7 @@ def clear_command_handlers():
     command_handlers.clear()
 
 
-def insert(app,part,path,inventory_id):
+def insert(app,part,path,inventory_id,generated_job=None):
     global pending
     design=adsk.fusion.Design.cast(app.activeProduct)
     if not design or pending is not None:
@@ -53,6 +53,9 @@ def insert(app,part,path,inventory_id):
                     'procurement_policy':'purchase','inventory_id':inventory_id,
                     'inventory_item_id':part.get('item_id') or '', 'catalog_id':part.get('catalog_id') or '',
                     'model_quality':'unverified','model_sha256':digest,'model_source':'user_selected_local_file'}
+        if generated_job:
+            attributes.update({'procurement_policy':'fabricate', 'model_quality':'generated_unverified',
+                               'model_source':'rexcad', 'generation_job_id':generated_job})
         for key,value in attributes.items():
             component.attributes.add('FindEZ',key,str(value))
         start_placement(app, design, wrapper)

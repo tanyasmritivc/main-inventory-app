@@ -1,7 +1,6 @@
 """OAuth is actor-scoped; assembly comparisons and corrections are inventory-scoped."""
-from typing import Literal
 from uuid import UUID
-from fastapi import APIRouter, Depends, Request, Query
+from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from starlette.concurrency import run_in_threadpool
 
@@ -22,14 +21,6 @@ def actor(user):
 class Callback(Model):
     code: str = Field(min_length=1, max_length=4096)
     state: str = Field(min_length=32, max_length=256)
-
-
-class Correction(Model):
-    review_token: str = Field(min_length=20, max_length=4096)
-    decision: Literal['match', 'no_match', 'reset']
-    item_id: UUID | None = None
-
-
 @router.get('/onshape/connection')
 def connection(user: AuthenticatedUser = Depends(get_current_user)):
     return connections.status(actor(user))
@@ -68,19 +59,3 @@ async def check(request: Request, inventory_id: UUID, body: onshape.Assembly, us
     snapshot = await onshape.extract(body, token)
     await run_in_threadpool(connections.assert_connected, user_id, generation)
     return await run_in_threadpool(analyze, snapshot, inventory, user_id)
-
-
-@router.post('/inventories/{inventory_id}/cad/corrections')
-@limiter.limit('30/minute')
-async def correct(request: Request, inventory_id: UUID, body: Correction, user: AuthenticatedUser = Depends(get_current_user)):
-    return await run_in_threadpool(corrections.save, str(inventory_id), actor(user), body.review_token,
-        body.decision, str(body.item_id) if body.item_id else None)
-
-
-@router.get('/inventories/{inventory_id}/cad/candidates')
-@limiter.limit('30/minute')
-async def candidates(request: Request, inventory_id: UUID, q: str = Query(min_length=2, max_length=100), user: AuthenticatedUser = Depends(get_current_user)):
-    items, _, _ = await run_in_threadpool(read_inventory, str(inventory_id), actor(user))
-    needle = q.strip().casefold()
-    matches = [i for i in items if needle in str(i.get('name') or '').casefold() or needle in str(i.get('part_number') or '').casefold()]
-    return {'inventory_id': str(inventory_id), 'items': [{k: i.get(k) for k in ('item_id','name','part_number','location')} for i in matches[:50]], 'has_more': len(matches)>50}

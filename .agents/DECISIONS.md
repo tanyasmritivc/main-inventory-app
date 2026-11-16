@@ -1,3 +1,14 @@
+## November 16 - Explicit CAD writes and temporary generation ownership
+
+Keep Fusion read capability as the default. Shared BOM/correction saves and
+RexCAD generation require separate editor opt-in at pairing, with role/session
+checks on every write. Use immutable, retry-safe BOM versions and a durable
+FindEZ job receipt before submitting to RexCAD. Scope provider jobs by both actor
+and inventory; never accept a caller-supplied provider UUID with the shared key.
+Generated STEP is unverified fabricated geometry and does not establish catalog
+identity, stock ownership or manufacturer certification. Temporary retention is
+seven days; inserting and saving in Fusion retains geometry in the design.
+
 ## Keep a crawlable raster website favicon (2026-10-18)
 
 Use stable PNG/ICO website icon URLs with the existing approved app mark. Keep

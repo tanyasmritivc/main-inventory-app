@@ -30,8 +30,9 @@ export function CadCorrection({ line, onRefresh }: { line: CadLine; onRefresh: (
     const request = new AbortController(); controller.current = request;
     setBusy(true); setMessage("");
     try {
-      await accountRequest(actor, "/cad/corrections", { method: "POST", signal: request.signal,
-        body: JSON.stringify({ review_token: line.review_token, decision, item_id: decision === "match" ? selected : null }) });
+      const result = await accountRequest<{ saved: boolean; inventory_id: string }>(actor, "/cad/corrections", { method: "POST", signal: request.signal,
+        body: { review_token: line.review_token, decision, item_id: decision === "match" ? selected : null } });
+      if (result.saved !== true || result.inventory_id !== inventory?.inventory_id) throw new Error("The correction could not be confirmed. Compare again before retrying.");
       if (!request.signal.aborted) { setMessage("Correction saved. Refreshing comparison..."); onRefresh(); }
     } catch (e) { if (!request.signal.aborted) setMessage(e instanceof Error ? e.message : "Correction could not be saved."); }
     finally { if (!request.signal.aborted) setBusy(false); }

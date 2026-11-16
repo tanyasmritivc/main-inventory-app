@@ -3,7 +3,7 @@
   "type": "addin",
   "author": "FindEZ",
   "description": {"": "AI search for parts, insert Fusion project models and compare an assembly."},
-  "version": "0.3.1",
+  "version": "0.4.0",
   "runOnStartup": false,
   "supportedOS": "windows|mac"
 }

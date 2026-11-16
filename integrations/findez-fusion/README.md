@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.3.1
+# FindEZ Fusion workspace candidate 0.4.0
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.3.1 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.4.0 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -24,7 +24,8 @@ These are public trust anchors, not private keys or account credentials.
    choose Personal or your organization, and select an authorized inventory.
 5. Check that the displayed ten-character code matches the one in Fusion.
    Confirm it and click Connect this inventory. Return to Fusion.
-6. The connection lasts eight hours and only reads the chosen inventory.
+6. The connection lasts eight hours. It reads the chosen inventory; editors can
+   separately opt in to shared CAD saves and model generation during pairing.
    Disconnect to select another. Reload the connection page to list and revoke
    active sessions. Credentials remain in memory, never the HTML or local disk.
 
@@ -53,7 +54,7 @@ Save the design to retain these associations. No geometry is uploaded to FindEZ.
 
 A catalog record alone is not a CAD model. Parts without geometry still need a
 model created or saved in Fusion. Automatic manufacturer model downloads and the
-user's deferred generation API are not connected. Other model sources offers an
+nightly catalog generation are not connected. RexCAD on-demand generation is available from Generate model with explicit CAD writing permission. Other model sources offers an
 optional local STEP/F3D importer. Neither copies nor local files are certified by
 FindEZ; verify units, dimensions, orientation and compatibility before engineering
 use. Insertion does not reserve or consume stock. F3Z/SAT/STL and literal dragging
@@ -91,3 +92,23 @@ its inventory comparison in the BOM tab. It does not infer parts from the image
 or send geometry to the AI. If the active design changes during interpretation,
 ask again. Vague questions now ask for clarification instead of reporting a
 service failure. BOM > Compare current assembly also works without AI search.
+
+## Save BOMs and generate models (0.4.0 candidate)
+
+Reconnect and select the optional CAD writing permission. Editing access to the
+inventory is required; existing connections remain read-only. Save the design in
+Fusion first, then use BOM > Save BOM version. Historical versions and reviewed
+match corrections are shared with authorized inventory members. Stock is unchanged.
+
+Use Generate model to send explicit dimensions and units to RexCAD. Answer any
+clarification in the panel, refresh status, then review and choose Insert generated
+STEP. The file is downloaded automatically through FindEZ and checked by size and
+SHA-256. Position the copy and confirm; Cancel removes it. Save your Fusion design
+to retain it beyond the provider's seven-day temporary retention. Generated models
+are unverified fabricated parts, not manufacturer-certified or owned stock.
+
+My recent generation jobs resumes your own jobs in the same inventory. Retry an
+uncertain submission with the same specification to avoid duplicates. No provider
+key is stored in this add-in. Drawing uploads, previews, nightly generation,
+pricing and procurement remain unavailable. Native placement requires real Fusion
+acceptance; automated host-contract checks do not establish it.
