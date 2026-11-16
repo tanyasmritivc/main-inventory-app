@@ -1,0 +1,65 @@
+{
+  "version": "1.1.5",
+  "build": 224,
+  "source_commit": "c4a5cddb90bc8ca6ce537845a6ccfabe711ed2c9",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "8b69bada7fa51f792831abb55c9af35f36e820d09bcc24dacf0f4066ddb9882b",
+  "uploaded": true,
+  "apple_delivery": {
+    "tool": "Apple Transporter",
+    "status": "Delivered",
+    "observed_local_time": "2026-11-15 23:51 America/Los_Angeles",
+    "app_id": "6760401697",
+    "processing_at_acknowledgment": true,
+    "tester_availability_verified": false
+  },
+  "validation": {
+    "full_flutter_suite": "passed",
+    "focused_world_tests": 6,
+    "flutter_analyze": "No issues found",
+    "native_splash": "rendered and visually reviewed",
+    "embedded_web_tests": 22,
+    "physical_device_acceptance": "unverified"
+  },
+  "web_release": {
+    "deployed": true,
+    "build_id": "fDtG2-4SynhFl-_6-B2nP",
+    "live_path": "/home/ubuntu/findez-world-mobile-landscape-final-20261116/frontend",
+    "previous_path": "/home/ubuntu/findez-world-mobile-landscape-20261116/frontend",
+    "rollback_dropin": "/etc/systemd/system/findez-web.service.d/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-world-mobile-landscape.conf",
+    "preserved_files": 671,
+    "changed_files": {
+      "src/components/world/scene.js": "0288053aac6d77093811e361f404ddbdf3daa6ff79289a3065efed09dfc2b575",
+      "src/components/world/world-client.tsx": "61cfb3c4a25de44df21ef06b9b9b9c3b96b008390bfa4b33d7998395ff3096e9",
+      "src/components/world/world.css": "3a3f8984686fd54de4de2101254256a3a552894851fc63799499f8d3d895e6b5"
+    },
+    "checks": {
+      "routes": {
+        "/": 200,
+        "/signin": 200,
+        "/world": 200,
+        "/world?embed=1": 200,
+        "/world/s/invalid": 404,
+        "/world/s/thisisnotarealworldtoken12345": 404,
+        "/cad-intelligence": 200,
+        "/docs/cad": 200,
+        "/worlds/personal": 307,
+        "/inventory": 307,
+        "/settings/profile": 307,
+        "/downloads/findez-fusion-workspace.zip": 200,
+        "/downloads/desktop/FindEZ-0.1.2-mac-arm64.dmg": 200,
+        "/.well-known/apple-app-site-association": 200
+      },
+      "static_chunks": 39,
+      "world_privacy_headers": true
+    },
+    "source_commit": "a1259d4b",
+    "public_mobile_css_verified": true,
+    "backend_service": "findez.service active",
+    "enrichment_service": "findez-enrichment.service active"
+  }
+}

@@ -13,8 +13,13 @@ is unchanged. No inventory, membership or backend changes.
 Full host Flutter suite passed; six focused World tests and analyzer passed.
 Rendered native splash inspected. Embedded component layouts inspected at small
 landscape and keyboard-height viewports; physical-device acceptance remains
-unverified. Signed 1.1.5 (224) archived/exported; delivery verification pending.
-No push or public App Store submission.
+unverified. Apple Transporter acknowledged delivery of 1.1.5 (224) on November 15 at
+23:51 Pacific. Runtime source c4a5cddb. Verified 33 archive and 33 export iOS
+device executables, strict signatures, 27 privacy manifests, production config
+and the exact bundled pixel splash. Apple processing was pending at acknowledgment;
+tester availability remains unverified and was not polled. Embedded layout is live
+in web build fDtG2-4SynhFl-_6-B2nP, preserving 671 unrelated files. Receipt:
+docs/plans/findez-world-mobile224-release.json. No push or public App Store submission.
 
 ## November 16 - FindEZ World beta uploaded
 
