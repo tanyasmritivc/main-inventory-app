@@ -24,3 +24,15 @@ Existing public assets were hardlinked; the disposable webpack compiler cache
 was moved to the new build to avoid unnecessary disk usage. Old static assets
 were retained for already-open tabs. No Vercel or Render deployment. Local commit
 was not pushed to avoid an automatic external hosting preview.
+
+## Follow-up: headers scroll with the page
+
+The user clarified that headers must scroll away naturally. The follow-up release
+changes only api-docs.module.css: both header rows are in normal document flow,
+the reserved spacer is hidden, and sidebar/anchor offsets are 24px.
+Build DOhoNGzkQxncLahfi1imr passed with existing production settings and is active
+at /home/ubuntu/findez-docs-scroll-20261115/frontend. Previous release is
+/home/ubuntu/findez-docs-header-20261115/frontend. Source hashes were guarded
+before activation; live CSS was verified for both routes. Safari verified the
+CAD installation section with the headers scrolled out of view. No public
+marketing page change, backend change or external hosting deployment.

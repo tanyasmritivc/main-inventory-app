@@ -1914,3 +1914,14 @@ Seven targeted tests and scoped lint passed. Production build
 wZ90T3Yc7qgaL43VuZwwj passed and is live in findez-docs-header-20261115.
 Both pages visually verified in Safari at 1440x900 and 390x900, including desktop
 section anchors. Three runtime files changed; no backend or database changes.
+
+## Documentation headers scroll with page, November 15, 2026 (complete)
+
+User clarified that the headers should move up with the document. Both /docs/api
+and /docs/cad now use ordinary flow for the site navigation and docs toolbar.
+Removed the reserved header spacer and adjusted sidebar/anchor offsets to 24px.
+Only api-docs.module.css changed at runtime; marketing routes are unaffected.
+Production-source build DOhoNGzkQxncLahfi1imr passed and is live on self-hosted
+findez-docs-scroll-20261115. Both routes serve the corrected CSS, and Safari
+confirmed the CAD installation section has no pinned header. No external host
+deployment. Supersedes the pinned-header behavior from the previous release.
