@@ -53,9 +53,9 @@ const permissionRows = [
 export function ApiDocs() {
   const limits = apiReference["x-limits"];
   const queryEndpoint = endpoints.find((entry) => entry.path === "/api/v1/query")!;
-  return <AppThemeProvider><HeaderMarkup reserveSpace/><div className={styles.page}>
+  return <AppThemeProvider><div className={styles.siteHeader}><HeaderMarkup reserveSpace manageScroll={false} /></div><div className={styles.page}>
     <a href="#api-docs-content" className={styles.skipLink}>Skip to documentation</a>
-    <header className={styles.header} style={{top:52}}><Link href="/docs/api" className={styles.brand}>API documentation</Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
+    <header className={styles.header}><Link href="/docs/api" className={styles.brand}>API documentation</Link><div><Link href="/docs/api/openapi.json" download="findez-openapi.json">OpenAPI JSON</Link><Link href="/settings/api-keys">Manage API keys ↗</Link><DocsAppearance /></div></header>
     <div className={styles.layout}>
       <aside className={styles.sidebar}><DocsNavigation /></aside>
       <main id="api-docs-content" className={styles.content}>

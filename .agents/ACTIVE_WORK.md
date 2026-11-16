@@ -1903,3 +1903,14 @@ Self-hosted build z1TrFkN-y0PfMiN2i5aNI is active in findez-cad-docs-20261115.
 Desktop Safari and live links passed; phone-width visual check remains unverified
 because computer control stopped providing screenshots. Receipt:
 docs/releases/cad-docs-20261115/README.md. No external hosting preview or push.
+
+## Documentation header alignment, November 15, 2026 (complete)
+
+Fixed API and CAD documentation headers. The marketing header no longer auto-hides
+on these two routes, and has an opaque background. The docs toolbar, sidebar and
+anchor offsets now agree. Mobile toolbar has no relative top displacement and
+wraps its links and appearance control. Marketing routes remain unchanged.
+Seven targeted tests and scoped lint passed. Production build
+wZ90T3Yc7qgaL43VuZwwj passed and is live in findez-docs-header-20261115.
+Both pages visually verified in Safari at 1440x900 and 390x900, including desktop
+section anchors. Three runtime files changed; no backend or database changes.

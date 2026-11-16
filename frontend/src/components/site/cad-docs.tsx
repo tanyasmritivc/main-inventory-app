@@ -12,9 +12,9 @@ function ReferenceTable({ caption, headings, rows }: { caption: string; headings
 
 export function CadDocs({ world }: { world?: string } = {}) {
   const comparisonHref = world ? `/cad?world=${encodeURIComponent(world)}` : '/cad';
-  return <AppThemeProvider><HeaderMarkup reserveSpace /><div className={styles.page}>
+  return <AppThemeProvider><div className={styles.siteHeader}><HeaderMarkup reserveSpace manageScroll={false} /></div><div className={styles.page}>
     <a href="#cad-docs-content" className={styles.skipLink}>Skip to documentation</a>
-    <header className={styles.header} style={{ top: 52 }}><Link href="/docs/cad" className={styles.brand}>CAD Intelligence</Link><div><a href="#downloads">Downloads</a><Link href={comparisonHref}>Open comparison tool ↗</Link><DocsAppearance /></div></header>
+    <header className={styles.header}><Link href="/docs/cad" className={styles.brand}>CAD Intelligence</Link><div><a href="#downloads">Downloads</a><Link href={comparisonHref}>Open comparison tool ↗</Link><DocsAppearance /></div></header>
     <div className={styles.layout}>
       <aside className={styles.sidebar}><CadDocsNavigation /></aside>
       <main id="cad-docs-content" className={styles.content}>
