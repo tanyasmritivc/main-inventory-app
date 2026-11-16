@@ -71,7 +71,7 @@ export function CadClient() {
       {source === "fusion" ? <div className={styles.preparation}>
         <div className={styles.stepHeading}><span className={styles.stepNumber}>1</span><div><h2>Get your parts out of Fusion</h2><p>Already exported? Go straight to the upload below.</p></div></div>
         <div className={styles.prepColumns}>
-          <div><h3>First time here?</h3><p>Install the free FindEZ add-in on the computer where you use Fusion.</p><a className={styles.downloadLink} href="/downloads/findez-fusion-preview.zip" download><Download size={16} /> Download add-in</a><span className={styles.caption}>Windows and Mac · ZIP download</span></div>
+          <div><h3>First time here?</h3><p>Install the free FindEZ add-in on the computer where you use Fusion.</p><a className={styles.downloadLink} href="/downloads/findez-fusion-workspace.zip" download><Download size={16} /> Download workspace candidate</a><span className={styles.caption}>Windows and Mac · ZIP download</span></div>
           <div><h3>Add-in already running?</h3><p>Open your assembly. Choose <b>Utilities → Add-Ins → Export FindEZ BOM</b> and save the JSON file.</p><a href="/docs/cad#export" target="_blank" rel="noreferrer">Show export instructions ↗</a></div>
         </div>
         <details className={styles.installDetails}><summary>Show installation steps</summary><FusionInstallSteps /></details>

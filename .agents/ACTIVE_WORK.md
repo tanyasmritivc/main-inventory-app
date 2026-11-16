@@ -1891,3 +1891,15 @@ complete web surface against actual deployed source from findez-welcome-assets-2
 Production frontend snapshot synchronized locally without secrets. No production
 write tests or customer account deletion. Full Jest, type/lint/build, API contract
 and user-flow checks pending. Preserve other active production work with source guards.
+
+## CAD documentation hub, November 15, 2026 (complete)
+
+Published /docs/cad using the API documentation UI and searchable CAD topics.
+Signed-in CAD Intelligence navigation opens the hub with comparison inside it.
+The public /cad-intelligence page remains unchanged. Workspace 0.2.1 is the primary
+download; legacy export-only and planned capabilities are labeled accurately.
+696 frontend tests, TypeScript, scoped lint and production-source build passed.
+Self-hosted build z1TrFkN-y0PfMiN2i5aNI is active in findez-cad-docs-20261115.
+Desktop Safari and live links passed; phone-width visual check remains unverified
+because computer control stopped providing screenshots. Receipt:
+docs/releases/cad-docs-20261115/README.md. No external hosting preview or push.

@@ -45,7 +45,7 @@ export function worldNavigation(
       },
       {
         label: "CAD Intelligence",
-        route: `/cad?world=${encodeURIComponent(world)}`,
+        route: `/docs/cad?world=${encodeURIComponent(world)}`,
         icon: Boxes,
         section: "Organization",
       },

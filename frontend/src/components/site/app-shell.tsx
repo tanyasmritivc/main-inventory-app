@@ -309,7 +309,7 @@ export function AppShell({
       icon: Plug,
       section: "Account settings",
     },
-    { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Account settings" },
+    { label: "CAD Intelligence", route: "/docs/cad", icon: Boxes, section: "Account settings" },
     {
       label: "Appearance",
       route: "/settings/appearance",

@@ -85,7 +85,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     icon: FileStack,
     section: "Your world",
   },
-  { label: "CAD Intelligence", route: "/cad", icon: Boxes, section: "Your world", keywords: ["Fusion", "assembly", "BOM", "shortages"] },
+  { label: "CAD Intelligence", route: "/docs/cad", icon: Boxes, section: "Your world", keywords: ["Fusion", "assembly", "BOM", "shortages"] },
   {
     label: "Review",
     route: "/review",

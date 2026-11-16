@@ -1244,3 +1244,11 @@ unverified, while licensed hosted models and the deferred generation API are
 built separately. Catalog listings are not owned stock and missing prices are not
 zero. Preserve existing export/upload and the unactivated Onshape lane.
 The full six-stage scope remains tracked in docs/plans/findez-cad-roadmap.md.
+
+## November 15: Separate CAD documentation from public marketing
+
+The user explicitly preserved /cad-intelligence as the public marketing page.
+Consolidate CAD instructions at /docs/cad using the API documentation components
+and writing style. The signed-in CAD Intelligence navigation opens this hub;
+/cad remains the comparison tool linked within it. Preserve organization context
+in those links and distinguish current candidates from planned capabilities.

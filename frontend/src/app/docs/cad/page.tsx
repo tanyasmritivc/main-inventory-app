@@ -1,13 +1,15 @@
-import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
-import { CadHelp } from '@/components/cad/cad-help';
-import styles from '@/components/cad/cad.module.css';
+import type { Metadata } from 'next';
+import { CadDocs } from '@/components/site/cad-docs';
 
-export const metadata = { title: 'CAD Intelligence setup guide | FindEZ', description: 'Install the FindEZ Fusion add-in, export your parts list, compare inventory, and troubleshoot each step.' };
+export const metadata: Metadata = {
+  title: 'CAD Intelligence documentation',
+  description: 'FindEZ CAD documentation: Fusion downloads, installation, inventory connections, local model insertion, BOM comparison, Onshape CSV, matching, limits and troubleshooting.',
+  alternates: { canonical: '/docs/cad' },
+  openGraph: { title: 'CAD Intelligence documentation | FindEZ', description: 'Connect your design to your inventory. Setup, workflows and reference in one place.', url: 'https://findez.ai/docs/cad' },
+};
 
-export default function CadGuidePage() {
-  return <><HeaderMarkup reserveSpace/><main className={`${styles.page} ${styles.guidePage}`}>
-    <nav className={styles.topline} aria-label="Guide navigation"><a href="/cad">Open CAD Intelligence ↗</a></nav>
-    <header className={styles.hero}><h1>From your design<br />to what&apos;s on your shelf.</h1><p>Install once. Export a parts list. Compare it with your inventory.</p></header>
-    <div className={styles.guideLayout}><aside className={styles.guideNav}><p className={styles.eyebrow}>IN THIS GUIDE</p><a href="#install">1. Install the add-in</a><a href="#export">2. Export from Fusion</a><a href="#compare">3. Compare in FindEZ</a><a href="#onshape">Onshape</a><a href="#spreadsheet">CSV and Excel</a><a href="#sample">Try a sample design</a><a href="#results">Understand results</a><a href="#troubleshooting">Troubleshooting</a><a href="#support">Contact support</a></aside><CadHelp /></div>
-  </main><FooterMarkup/></>;
+export default async function CadDocumentationPage({ searchParams }: { searchParams: Promise<{ world?: string | string[] }> }) {
+  const params = await searchParams;
+  const world = typeof params.world === 'string' && params.world.length <= 200 ? params.world : undefined;
+  return <CadDocs world={world} />;
 }
