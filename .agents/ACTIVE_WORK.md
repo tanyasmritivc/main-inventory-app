@@ -1925,3 +1925,18 @@ Production-source build DOhoNGzkQxncLahfi1imr passed and is live on self-hosted
 findez-docs-scroll-20261115. Both routes serve the corrected CSS, and Safari
 confirmed the CAD installation section has no pinned header. No external host
 deployment. Supersedes the pinned-header behavior from the previous release.
+
+## Fusion Qt response event fix, November 15, 2026 (complete; device retry pending)
+
+User photo IMG_3553.DNG showed the Windows panel loaded but Sign in with FindEZ
+displayed Unsupported panel command. Autodesk documents Qt sendInfoToHTML replies
+as incomingFromHTML action=response. Our handler parsed/replied to these as user
+commands, creating a feedback loop. Version 0.2.2 ignores response before parsing
+and returns OK for real command deliveries. Regression tests reproduced seven
+failures on the old handler and pass with the fix. 45 Python and 10 frontend tests
+pass, plus scoped ESLint and production-source build tdP3CerZjT06m_Ht2W-9F.
+Published ZIP and version guidance on self-hosted findez-fusion-022-20261115.
+Downloaded live ZIP matches SHA-256
+f20487ebcd475411161a37d5136944db6f11e6bf323c2ce8d799673bd622ac99.
+Native Windows Fusion sign-in still needs user retry after replacing files and
+restarting Fusion. No backend/DB/mobile or public CAD marketing changes.

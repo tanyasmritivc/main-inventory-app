@@ -3,7 +3,7 @@
   "type": "addin",
   "author": "FindEZ",
   "description": {"": "Browse FindEZ inventory, insert local CAD models and compare an assembly."},
-  "version": "0.2.1",
+  "version": "0.2.2",
   "runOnStartup": false,
   "supportedOS": "windows|mac"
 }

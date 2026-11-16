@@ -138,6 +138,11 @@ class Incoming(adsk.core.HTMLEventHandler):
     def notify(self,args):
         global busy,parts,comparison,context
         try:
+            # Qt returns sendInfoToHTML acknowledgements through this same event.
+            # They are not user commands. Replying to one creates an error loop.
+            if args.action == 'response':
+                return
+            args.returnData = 'OK'
             if len(args.data or '')>4096:
                 raise ClientError('This command is too large.')
             data=json.loads(args.data or '{}')
