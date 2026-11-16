@@ -15,7 +15,7 @@ test("pairing requires a matching-code confirmation and scopes the approved inve
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(button);
   await screen.findByText("Connection approved");
-  expect(accountRequest).toHaveBeenCalledWith("actor","/fusion/pairing/approve",expect.objectContaining({method:"POST",body:JSON.stringify({code:"ABCD234567",inventory_id:"inventory"})}));
+  expect(accountRequest).toHaveBeenCalledWith("actor","/fusion/pairing/approve",expect.objectContaining({method:"POST",body:{code:"ABCD234567",inventory_id:"inventory"}}));
 });
 test("editing the code clears confirmation and an expired code retains the draft", async () => {
   (accountRequest as jest.Mock).mockImplementation((_actor,path) => path === "/fusion/connections" ? Promise.resolve({connections:[]}) : Promise.reject(new Error("Connection expired")));

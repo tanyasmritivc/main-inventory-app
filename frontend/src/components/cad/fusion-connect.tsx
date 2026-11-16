@@ -34,7 +34,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
     locked.current = true; setBusy(true); setError("");
     const controller = new AbortController(); request.current = controller;
     try {
-      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: JSON.stringify({ code: value, inventory_id: inventory.inventory_id }), signal: controller.signal });
+      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: { code: value, inventory_id: inventory.inventory_id }, signal: controller.signal });
       if (receipt.approved !== true) throw new Error("Connection was not confirmed. Start again in Fusion.");
       if (!controller.signal.aborted && mounted.current) setApproved(true);
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Connection failed. Start again in Fusion."); }

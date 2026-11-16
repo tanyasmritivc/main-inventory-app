@@ -1965,3 +1965,16 @@ Live pairing succeeded with system roots absent and packaged roots only.
 guidance published on self-hosted findez-fusion-023-20261115, build
 JnPxP8K5crwFOuGCCIGTY. Live links and ZIP hash verified. Native retry remains needed.
 Receipt: docs/releases/fusion-023-20261115/README.md. No backend/DB/mobile change.
+
+## Fusion browser approval JSON fix, November 15, 2026 (published; native retry pending)
+
+User IMG_3563.DNG shows browser pairing form reached, but approval rejected.
+Server status lines confirm POST /fusion/pairing/approve returns 422. The form
+passed a pre-serialized string without Content-Type; the shared helper assigns
+application/json only to object bodies. Send an object through accountRequest.
+New test uses real accountRequest/apiRequest and mocked fetch: reproduces the
+exact screenshot error before fix, then passes with correct JSON headers/body.
+20 frontend tests, scoped lint and production build passed. One-module fix live
+on findez-fusion-approval-20261115, build FV1ruq8pdGXnjVyJUq2bu. Corrected live
+JavaScript verified. No ZIP/backend/DB change; installed 0.2.3 stays current.
+Receipt: docs/releases/fusion-approval-20261115/README.md. User retry pending.
