@@ -1,4 +1,4 @@
-## November 16 - FindEZ World beta preparation
+## November 16 - FindEZ World beta uploaded
 
 The World button opens the deployed visual inventory experience in a fullscreen
 WebView. Existing canonical Spaces/items/bins and account permissions remain the
@@ -14,10 +14,16 @@ already-existing delete-only UI; removal application code is unchanged. Web is
 live and verified with the selected test account. Native keyboard/orientation,
 real item create/return and physical-device acceptance remain unverified.
 
-Version 1.1.4 (223) is being packaged with the existing production signing and
-configuration. Initial archive ran out of disk; a rebuild follows safe compiler
-cache cleanup. No Apple upload yet. No pushes, because they trigger prohibited
-Vercel previews. Public App Store submission stays unchanged.
+Apple Transporter acknowledged delivery of 1.1.5 (223) on November 15 at
+22:30 Pacific. Source c04427c4 (World implementation 699bddc6); all 33 archive
+and 33 export device executables, strict signatures, 27 privacy manifests and
+production configuration passed. Version 1.1.4 was rejected as an already-approved
+closed train; only the marketing version changed for the final package.
+Processing was pending at acknowledgment; tester availability is unverified.
+Exact requested What to Test text is saved locally; the API lookups for note publication had
+no build record, so publishing that note is still pending. No processing poll.
+No pushes or public App Store submission changes. Receipt:
+docs/plans/findez-world-mobile-release.json.
 
 ## November 15 — Organisation/Space backend and web deployed
 

@@ -29,10 +29,37 @@ backend, inventory/auth provider, dependency, or Info.plist edits in this lane.
 
 ## Delivery
 
-Version 1.1.4 (223); branch feat/organisation-spaces-mobile. Initial archive failed
-for lack of disk; safe compiler-cache cleanup and rebuild are in progress.
-No upload acknowledged yet. Preserve the public App Store submission. No push
-because the standing user instruction prohibits Vercel previews.
+Apple Transporter acknowledged delivery of **1.1.5 (223)** on November 15, 2026
+at 22:30 Pacific. Final package source `c04427c4`; World implementation commit
+`699bddc6` (message `FindEZ World screen`), branch `feat/organisation-spaces-mobile`.
+No push: the standing user instruction prohibits Vercel previews.
+
+The first signed 1.1.4 (223) passed local checks but Apple rejected its closed
+release train (90186/90062). The next marketing version was rebuilt and verified:
+33 iOS device executables in archive and export, strict signatures, 27 privacy
+manifests, production defines, bundle ID, app/share-extension versions and anon
+Supabase configuration. Final IPA SHA-256:
+`b46549b9c27fbb62ff4183f9bd7464ba379c050e978ba1057d9d2374385cf02e`.
+Apple delivery passed. Processing was pending at acknowledgment; tester
+availability and native acceptance remain unverified. No App Store submission.
+
+The exact testing note is prepared below. API lookups for note publication had no build
+record yet, so the note is not published. No processing/group-availability poll.
+Receipt: [findez-world-mobile-release.json](findez-world-mobile-release.json).
+
+`git diff --name-only` after committing runtime/version changes was empty.
+Changed implementation files, including new files, were:
+
+- mobile/lib/features/world/findez_world_page.dart
+- mobile/lib/features/world/world_shell.dart
+- mobile/lib/main.dart
+- mobile/pubspec.yaml (version only)
+- mobile/test/findez_world_page_test.dart
+- mobile/test/workspace_deletion_test.dart (stale expectations only)
+
+Shared state, decisions and these release records also changed. No other runtime
+files changed in this mobile lane. Full native simulator screenshots/checks listed
+above remain unfulfilled; browser responsiveness and host mocks are not substitutes.
 
 What to Test: New World button at the top: your spaces as a pixel art world.
 Follow Bolt's tour, add an item, finish a quest, play Count it, and try room styles
