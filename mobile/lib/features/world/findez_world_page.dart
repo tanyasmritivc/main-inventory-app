@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'world_splash.dart';
+
 /// World uses the existing account and inventory through the live web client.
 class FindEZWorldPage extends StatefulWidget {
   const FindEZWorldPage({super.key});
@@ -35,7 +37,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
   WebViewController? _controller;
   Timer? _timeout;
   int _generation = 0;
-  bool _ready = false, _closed = false;
+  bool _ready = false, _closed = false, _sessionSent = false;
   String? _error;
 
   @override
@@ -44,7 +46,6 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
     _accountId = _auth.currentUser?.id;
     unawaited(
       SystemChrome.setPreferredOrientations(const [
-        DeviceOrientation.portraitUp,
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]),
@@ -53,7 +54,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
       (state) {
         if (state.session?.user.id != _accountId || state.session == null) {
           _retireSession();
-        } else if (_ready) {
+        } else if (_sessionSent) {
           unawaited(_sendSession(_generation));
         }
       },
@@ -74,6 +75,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
     setState(() {
       _controller = null;
       _ready = false;
+      _sessionSent = false;
       _error = 'Your session changed. Close World and open it again.';
     });
   }
@@ -83,6 +85,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
     _timeout?.cancel();
     setState(() {
       _ready = false;
+      _sessionSent = false;
       _error =
           message ??
           'World could not connect. Check your connection and try again.';
@@ -102,6 +105,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
     final generation = ++_generation;
     setState(() {
       _ready = false;
+      _sessionSent = false;
       _error = null;
       _controller = null;
     });
@@ -109,7 +113,7 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
     try {
       final controller = WebViewController();
       await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
-      await controller.setBackgroundColor(const Color(0xfff4f1e9));
+      await controller.setBackgroundColor(worldBackground);
       await controller.setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
@@ -144,17 +148,17 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
               _fail(generation);
               return;
             }
-            setState(() => _ready = false);
+            setState(() {
+              _ready = false;
+              _sessionSent = false;
+            });
             _startTimeout(generation);
           },
           onPageFinished: (url) {
-            // Public shares have no account handoff or native ready message.
             if (_current(generation) &&
                 FindEZWorldPage.isWorldUrl(url) &&
-                Uri.parse(url).path.startsWith('/world/s/') &&
                 _error == null) {
-              _timeout?.cancel();
-              setState(() => _ready = true);
+              unawaited(_watchWorldReady(generation));
             }
           },
           onUrlChange: (change) {
@@ -177,7 +181,13 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
       await controller.addJavaScriptChannel(
         'FindEZApp',
         onMessageReceived: (message) {
-          if (message.message == 'ready' &&
+          if (message.message == 'world-ready' &&
+              _current(generation) &&
+              _error == null) {
+            unawaited(_sceneReady(generation));
+          } else if (message.message == 'world-error' && _current(generation)) {
+            _fail(generation);
+          } else if (message.message == 'ready' &&
               _current(generation) &&
               _error == null) {
             unawaited(_sendSession(generation));
@@ -226,8 +236,57 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
         }
       ''');
       if (!_current(generation)) return;
+      _sessionSent = true;
+      await _watchWorldReady(generation);
+    } catch (_) {
+      _fail(generation);
+    }
+  }
+
+  Future<void> _sceneReady(int generation) async {
+    final controller = _controller;
+    if (!_current(generation) || controller == null || _error != null) return;
+    try {
+      final url = await controller.currentUrl();
+      if (!_current(generation) ||
+          _error != null ||
+          url == null ||
+          !FindEZWorldPage.isWorldUrl(url)) {
+        return;
+      }
+      if (!_sessionSent && !Uri.parse(url).path.startsWith('/world/s/')) return;
       _timeout?.cancel();
       setState(() => _ready = true);
+    } catch (_) {
+      _fail(generation);
+    }
+  }
+
+  Future<void> _watchWorldReady(int generation) async {
+    final controller = _controller;
+    if (!_current(generation) || controller == null || _error != null) return;
+    try {
+      // Keep the native splash above the web session, asset and scene loading
+      // phases. No website styles or inventory state are changed by this observer.
+      await controller.runJavaScript('''
+        if (window === window.top && location.origin === "${FindEZWorldPage.origin}" &&
+            (location.pathname === "/world" || location.pathname.startsWith("/world/s/"))) {
+          window.__findezWorldObserver?.disconnect();
+          const check = () => {
+            const failed = document.querySelector('.world-alert, .world-start button');
+            const ready = document.querySelector('[data-world-stage] canvas') &&
+              !document.querySelector('.loading, .world-start');
+            if (!failed && !ready) return;
+            window.__findezWorldObserver?.disconnect();
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              window.FindEZApp.postMessage(failed ? 'world-error' : 'world-ready');
+            }));
+          };
+          window.__findezWorldObserver = new MutationObserver(check);
+          window.__findezWorldObserver.observe(document.documentElement, {childList:true, subtree:true});
+          check();
+        }
+      ''');
     } catch (_) {
       _fail(generation);
     }
@@ -267,65 +326,79 @@ class _FindEZWorldPageState extends State<FindEZWorldPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xfff4f1e9),
-    resizeToAvoidBottomInset: true,
-    body: Stack(
-      children: [
-        if (_controller != null && _error == null)
-          Positioned.fill(
-            child: WebViewWidget(
-              key: ObjectKey(_controller),
-              controller: _controller!,
+  Widget build(BuildContext context) {
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    return Scaffold(
+      backgroundColor: worldBackground,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        children: [
+          if (_controller != null && _error == null)
+            Positioned.fill(
+              child: ExcludeSemantics(
+                excluding: !landscape || !_ready,
+                child: IgnorePointer(
+                  ignoring: !landscape || !_ready,
+                  child: WebViewWidget(
+                    key: ObjectKey(_controller),
+                    controller: _controller!,
+                  ),
+                ),
+              ),
             ),
-          ),
-        if (!_ready || _error != null)
-          Positioned.fill(
-            child: ColoredBox(
-              color: const Color(0xfff4f1e9),
-              child: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_error == null) const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Text(
-                          _error ?? 'Opening World...',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Color(0xff242424)),
-                        ),
-                        if (_error != null &&
-                            _accountId != null &&
-                            _auth.currentSession?.user.id == _accountId)
-                          TextButton(
-                            onPressed: _load,
-                            child: const Text('Try again'),
+          if (_error == null && (!_ready || !landscape))
+            Positioned.fill(child: WorldSplash(rotate: _ready && !landscape)),
+          if (_error != null)
+            Positioned.fill(
+              child: ColoredBox(
+                color: worldBackground,
+                child: SafeArea(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Color(0xfff3f0e8)),
                           ),
-                      ],
+                          if (_error != null &&
+                              _accountId != null &&
+                              _auth.currentSession?.user.id == _accountId)
+                            TextButton(
+                              onPressed: _load,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xfff3f0e8),
+                              ),
+                              child: const Text('Try again'),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        Positioned(
-          top: 0,
-          left: 0,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: IconButton.filledTonal(
-                tooltip: 'Close World',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close, size: 20),
+          if (_ready || _error != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: IconButton.filledTonal(
+                    tooltip: 'Close World',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, size: 20),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

@@ -1751,3 +1751,23 @@ notification permission ordering, and present once per authenticated host. Do no
 wait for inventory/profile loads. Automatic access sheets dismiss only by gesture,
 backdrop or accessibility escape. Manual plan views retain their controls. Never
 claim Founders Access for unverified, non-pilot or changed accounts.
+
+
+## November 16 — World landscape and pixel splash, build 224
+
+World now requests landscape only and restores portrait on exit. A dark blue
+native splash with pixel FIND world lettering remains until the trusted embedded
+scene reports rendered readiness. Portrait fallback blocks play without destroying
+the WebView. Existing session retirement, navigation restrictions, timeout and
+retry behavior remain. Global app orientation and launch screen are unchanged.
+
+The embedded web companion adds a compact mode toolbar, bottom Space/Storage/
+Search/Add dock and scrollable Build, menu, storage and form panels. Desktop World
+is unchanged. No inventory, membership or backend changes.
+
+Full host Flutter suite passed; six focused World tests and analyzer passed.
+Rendered native splash inspected. Embedded component layouts inspected at small
+landscape and keyboard-height viewports; physical-device acceptance remains
+unverified. Signed 1.1.5 (224) archived/exported; delivery verification pending.
+No push or public App Store submission.
+

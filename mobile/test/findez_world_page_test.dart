@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/world/findez_world_page.dart';
+import 'package:mobile/features/world/world_splash.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 // The fake implements the already installed WebView plugin's platform contract.
 // ignore: depend_on_referenced_packages
@@ -77,6 +78,11 @@ class WorldWebController extends PlatformWebViewController {
   String? url;
   Completer<String?>? pendingUrl;
   final scripts = <String>[];
+  List<String> get sessions =>
+      scripts.where((s) => s.contains('fz-session')).toList();
+  void rendered() => channel.onMessageReceived(
+    const JavaScriptMessage(message: 'world-ready'),
+  );
   @override
   Future<void> setJavaScriptMode(JavaScriptMode mode) async {}
   @override
@@ -165,25 +171,28 @@ void main() {
       await mount(tester);
       final controller = platform.controllers.single;
       expect(controller.url, 'https://www.findez.ai/world?embed=1');
-      expect(controller.scripts, isEmpty);
-      expect(find.text('Opening World...'), findsOneWidget);
+      expect(controller.sessions, isEmpty);
+      expect(find.byType(WorldSplash), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(orientations.single, [
-        'DeviceOrientation.portraitUp',
         'DeviceOrientation.landscapeLeft',
         'DeviceOrientation.landscapeRight',
       ]);
       controller.ready();
-      await tester.pump();
-      expect(find.text('Opening World...'), findsNothing);
-      expect(controller.scripts.single, contains('window === window.top'));
-      expect(controller.scripts.single, contains('"type":"fz-session"'));
+      await tester.pumpAndSettle();
+      expect(find.byType(WorldSplash), findsOneWidget);
+      controller.rendered();
+      await tester.pumpAndSettle();
+      expect(find.byType(WorldSplash), findsNothing);
+      expect(controller.sessions.single, contains('window === window.top'));
+      expect(controller.sessions.single, contains('"type":"fz-session"'));
       expect(
-        controller.scripts.single,
+        controller.sessions.single,
         contains('"refresh_token":"test-refresh"'),
       );
       await Supabase.instance.client.auth.refreshSession();
       await tester.pump();
-      expect(controller.scripts.length, 2);
+      expect(controller.sessions.length, 2);
       expect(
         await controller.navigation.navigate(
           const NavigationRequest(
@@ -195,8 +204,8 @@ void main() {
       );
       controller.url = 'https://external.test/world';
       controller.ready();
-      await tester.pump();
-      expect(controller.scripts.length, 2);
+      await tester.pumpAndSettle();
+      expect(controller.sessions.length, 2);
       await close(tester);
       expect(orientations.last, ['DeviceOrientation.portraitUp']);
     },
@@ -213,7 +222,7 @@ void main() {
     await tester.pump();
     controller.pendingUrl!.complete(FindEZWorldPage.entry.toString());
     await tester.pump();
-    expect(controller.scripts, isEmpty);
+    expect(controller.sessions, isEmpty);
     expect(
       find.text('Your session changed. Close World and open it again.'),
       findsOneWidget,
@@ -240,6 +249,43 @@ void main() {
       await tester.pump();
       expect(find.text('Try again'), findsNothing);
       await close(tester);
+    },
+  );
+
+  testWidgets(
+    'portrait blocks play and landscape reveals the same ready WebView',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      await mount(tester);
+      final controller = platform.controllers.single;
+      expect(find.bySemanticsLabel('FIND world'), findsOneWidget);
+      semantics.dispose();
+      controller
+          .rendered(); // A premature message cannot bypass the session handoff.
+      await tester.pump();
+      expect(find.text('Rotate to landscape to play'), findsNothing);
+      controller.ready();
+      await tester.pumpAndSettle();
+      controller.rendered();
+      await tester.pumpAndSettle();
+      expect(find.text('Rotate to landscape to play'), findsOneWidget);
+      final surface = find.ancestor(
+        of: find.byKey(const ValueKey('web-surface')),
+        matching: find.byType(IgnorePointer),
+      );
+      expect(tester.widget<IgnorePointer>(surface.first).ignoring, isTrue);
+      tester.view.physicalSize = const Size(844, 390);
+      await tester.pump();
+      expect(find.byType(WorldSplash), findsNothing);
+      expect(tester.widget<IgnorePointer>(surface.first).ignoring, isFalse);
+      expect(platform.controllers, hasLength(1));
+      expect(tester.takeException(), isNull);
+      await close(tester);
+      expect(orientations.last, ['DeviceOrientation.portraitUp']);
     },
   );
 
