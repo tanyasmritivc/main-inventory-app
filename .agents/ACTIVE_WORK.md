@@ -2108,3 +2108,17 @@ overlays. Live Safari verified hub, Tools removal, simplified comparison and
 separate consent controls. Navigation follow-up maps /cad/* to the hub selection;
 two focused navigation tests and final TypeScript/lint pass. No add-in reinstall
 required. Preserve this latest source when preparing another web release.
+
+## Fusion 0.4.1 slate-grey UI — November 16, 2026
+
+User requested softer UI contrast against Fusion's elephant-grey background.
+Panel CSS uses explicit slate backgrounds, muted blue actions, quieter tabs and
+BOM sections. Executable code is unchanged. Current download/documentation version
+0.4.1; public marketing layout untouched (download version only). Native Windows
+visual acceptance requires updated local add-in. Checks and deployment receipt:
+docs/releases/cad-slate-panel-20261116/.
+
+0.4.1 is live at /home/ubuntu/findez-cad-slate-20261116/frontend, build
+S_GRX3XOMJyKaJ0By08hG. Five guarded web/download files overlaid on the CAD hub.
+Live HTTPS ZIP SHA256 892adf048de38420f991a0355958d70c905be0ab3bb8f7df0b5a7b8711563284.
+Browser previews verified 280/380/720px; Windows host appearance pending update.

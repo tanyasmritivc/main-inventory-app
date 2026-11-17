@@ -1,0 +1,22 @@
+{
+  "src/components/cad/cad-help.tsx": {
+    "before": "24cd1efa23d7f34e14abf3ca79fc159edaef4eaf5f94d141b7ed274e7901dc77",
+    "after": "57489e5f17d25647b97f446f2c233be299a57e8bff27bb73034c061f70c95380"
+  },
+  "src/components/marketing-dark/cad-public-content.tsx": {
+    "before": "65c4bf2a324f5742075ae3f66b97c6abd489c0ee3afc702eb20c597accaa0d47",
+    "after": "f72e1104c81d83e6bf0cde4a22be5bbaa264d01f6abb823bd9400f26a92501a0"
+  },
+  "src/components/site/cad-docs-navigation.tsx": {
+    "before": "92eb1df526c13d340fd720f3dcf0c97ca370da85b4057c538569fc1a1c6438e8",
+    "after": "1878f66a342e387ac4c68a3464ab35f3cda8d5572c47b38386764dd718b3b398"
+  },
+  "src/components/site/cad-docs.tsx": {
+    "before": "2b0b9ab8b4060264f51d36a21fccddeab11ca0e097e7ca826ef0172bf4aa86ce",
+    "after": "d4638bc46959e7f491ee4ecd937ff7fe152501ce001fc498b32fdcea3b419a7f"
+  },
+  "public/downloads/findez-fusion-workspace.zip": {
+    "before": "49083752baabac5a09c7c0174fdf6f36a35b6a0b899fe4a0548efb880ae8aff7",
+    "after": "892adf048de38420f991a0355958d70c905be0ab3bb8f7df0b5a7b8711563284"
+  }
+}
