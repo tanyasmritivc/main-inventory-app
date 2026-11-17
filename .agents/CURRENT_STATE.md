@@ -2593,3 +2593,18 @@ fallback passed desktop/phone public checks and a real signed-in photo scan:
 25.663s to visible draft,one preview-only POST. Its marked QA account and13
 images were removed. No mobile binary or schema changes. Physical iPhone
 lifecycle testing remains not rerun. PR366 (web); PR367 (runner/test matrix).
+
+
+## November 16, 2026 - CAD 0.4.0 published with improved Fusion panel
+
+User explicitly approved the saved-BOM/RexCAD migration and release. Applied only
+20261116_cad_bom_generation.sql; backend and web are live on self-hosted production.
+All eight download links serve 0.4.0. Existing grants stay read-only; reconnect and
+opt into CAD writes. RexCAD key is backend-only in a protected environment file.
+Responsive panel UI, top-level feedback and duplicate insertion guard included.
+Full regressions: 1320 backend, 710 web; final native contract tests: 22. Production
+build VWmoOFhFWLVqJVVZaKnVb based on latest World space-games release. All 21 CAD
+runtime hashes and live ZIP verified. No further web activation planned while
+World/Connections releases build on this release. Native Windows Fusion placement
+remains unverified; pricing/procurement/nightly catalogs remain unfinished.
+Receipt: docs/releases/cad-bom-generation-20261116/README.md.

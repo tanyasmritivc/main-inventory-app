@@ -93,7 +93,7 @@ test('vague AI questions show clarification without claiming no parts exist',()=
 });
 
 test('generation retries preserve request identity and insertion requires explicit review',()=>{
- receive('connected',{inventory_name:'Lab',allow_cad_writes:true});
+ receive('connected',{inventory_name:'Lab',allow_cad_writes:true,generation_enabled:true,saved_bom_enabled:true});
  (document.getElementById('generation-name') as HTMLInputElement).value='Plate';
  (document.getElementById('generation-prompt') as HTMLTextAreaElement).value='60 x 40 x 5 mm plate';
  const submit=()=>document.getElementById('generation-form')!.dispatchEvent(new Event('submit',{cancelable:true}));
@@ -118,4 +118,17 @@ test('read-only sessions cannot submit generation or save BOMs and disconnect cl
  receive('generation_job',{id:'job',name:'Plate',state:'needs_input',version:3,question:{id:'q',text:'Thickness?'}});
  expect((document.querySelector('#generation-job button[data-cad-write]') as HTMLButtonElement).disabled).toBe(true);
  receive('disconnected',{});expect(document.getElementById('generation-job')!.textContent).toBe('');
+});
+
+
+test('server capability flags disable unavailable features even for editors',()=>{
+ receive('connected',{inventory_name:'Lab',allow_cad_writes:true,generation_enabled:false,saved_bom_enabled:false});
+ for (const id of ['generation-submit','generation-history','save-version','load-versions']) expect((document.getElementById(id) as HTMLButtonElement).disabled).toBe(true);
+ expect(document.getElementById('generation-note')!.textContent).toContain('unavailable on this server');
+});
+test('errors remain visible after a request unlocks the controls',()=>{
+ receive('busy',{busy:true}); receive('error',{message:'Connection failed. Try again.'}); receive('busy',{busy:false});
+ expect(document.getElementById('message')!.dataset.kind).toBe('error');
+ expect(document.getElementById('message')!.textContent).toContain('Connection failed');
+ expect(document.getElementById('message')!.compareDocumentPosition(document.getElementById('session')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

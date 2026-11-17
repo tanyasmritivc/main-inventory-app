@@ -194,3 +194,15 @@ def test_design_question_never_reads_changed_or_disconnected_design(workspace,mo
     monkeypatch.setattr(module,'send',Mock())
     module.Result().notify(NS(additionalInfo=json.dumps({'generation':generation,'kind':'search','data':{'intent':'compare_design'}})))
     extract.assert_not_called();task.assert_not_called()
+
+
+def test_duplicate_generated_insert_cannot_retarget_inflight_download(workspace,monkeypatch):
+    module,_=workspace
+    original=object();module.generated_design=original;module.busy=True
+    module.context={'inventory_id':'inventory'}
+    key='11111111-1111-4111-8111-111111111111'
+    module.generated_jobs[key]={'state':'succeeded','name':'Plate'}
+    task=Mock();sent=Mock();monkeypatch.setattr(module,'task',task);monkeypatch.setattr(module,'send',sent)
+    module.Incoming().notify(NS(action='generation_insert',data=json.dumps({'id':key,'confirmed':True})))
+    task.assert_not_called();assert module.generated_design is original
+    assert sent.call_args.args[0]=='error'

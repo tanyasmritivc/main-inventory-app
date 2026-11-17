@@ -314,6 +314,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 if action=='generation_status':
                     task('generation_job',lambda generation:session.request_at(generation,path))
                 elif action=='generation_insert':
+                    if busy or not context: raise ClientError('Wait for the current request, then try insertion again.')
                     job=generated_jobs.get(key)
                     if not job or job.get('state')!='succeeded' or data.get('confirmed') is not True:
                         raise ClientError('Refresh the model and confirm you will check its dimensions before insertion.')

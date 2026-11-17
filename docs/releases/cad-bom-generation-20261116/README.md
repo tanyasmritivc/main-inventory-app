@@ -1,8 +1,9 @@
 # CAD 0.4.0 candidate: BOM history and RexCAD STEP generation
 
-Implemented and staged, **not deployed**. The public site and download remain
-0.3.1 until the new database migration is explicitly approved and activated.
-The prior approval covered the first connection migration, not this migration.
+Published to the self-hosted production site after the user's explicit migration
+and release approval. Version 0.4.0, including the improved Fusion panel, is served
+by all eight CAD download links. This remains a candidate pending native Fusion
+placement acceptance; it is not the entire CAD roadmap.
 
 ## Included
 
@@ -24,14 +25,14 @@ The prior approval covered the first connection migration, not this migration.
 No inventory quantity changes, direct purchases, Onshape activation or new package
 dependencies. The RexCAD key is stored in an owner-only file outside the repository
 and is absent from runtime source and uncompressed ZIP entries.
-It has not yet been installed into the active production backend environment.
+The provider key and CAD signing key are installed in a root-owned, mode-0600 backend environment file. They are not browser or add-in configuration.
 
 ## Validation
 
 See [validation.json](validation.json) for exact migration and ZIP hashes.
 
-- Full backend regression: 1,309 passed. Subsequent focused changes: 113 passed.
-- Full web regression: 704 passed. Subsequent focused web checks: 31 passed.
+- Full backend regression: 1,320 passed. Final Fusion host contract checks: 22 passed.
+- Full web regression: 710 passed.
 - TypeScript, changed-file ESLint and whitespace checks pass.
 - Real PostgreSQL tests cover old read-only grants, private table/function ACLs,
   actor and inventory isolation, immutable history, retries, foreign-item rejection,
@@ -48,7 +49,7 @@ See [validation.json](validation.json) for exact migration and ZIP hashes.
   independent native Fusion validation or proof of arbitrary design intent.
 - Candidate routes import and generate OpenAPI against actual production Python
   dependencies. The real production-configured webpack build passes, build
-  `EDZJ7z9dzDQSye8g9OiI8`. No local preview, Vercel, Render or repository push.
+  `VWmoOFhFWLVqJVVZaKnVb`. No local preview, Vercel, Render or repository push.
 
 Native Windows Fusion insertion/triad/cancel acceptance is still required. The
 contract tests cover changed-design rejection and temporary-file cleanup but do
@@ -66,13 +67,13 @@ Staged root: `/home/ubuntu/findez-cad-bom-generation-20261116`.
 `prepare.py` overlays only the files enumerated in `manifest.json` onto current
 production source and verifies all unrelated source hashes remain unchanged.
 `rehearse.py` never applies SQL to production and cleans up its disposable database.
-The final build base is `findez-world-mobile-dock-20261116/frontend`; refresh.py
+The final build base is `findez-world-space-games-20261116/frontend`; refresh.py
 carried the newest concurrent World changes into the candidate and the production
 build passed again. Before activation, verify the active source still matches the
 preparation receipt. If it changed, refresh and rebuild before switching. Never
 switch back to an older base wholesale.
 
-After explicit approval:
+Activation procedure (completed after explicit approval):
 
 1. Recheck source/migration hashes and retain a fresh private database backup.
 2. Apply only the approved SQL to self-hosted Postgres and reload PostgREST schema.
@@ -99,3 +100,30 @@ Drawing reference uploads, generated previews, persistent licensed CAD assets,
 canonical exact variants, nightly ingestion/generation, vendor pricing, procurement,
 receiving, engineering substitution checks and advanced planning remain unfinished.
 This release is one connected increment, not completion of the full CAD roadmap.
+
+## Publication and UI acceptance
+
+Published backend and approved additive migration, then the web release at
+`/home/ubuntu/findez-cad-bom-generation-20261116/frontend`. All 21 scoped runtime
+hashes match the manifest. Every CAD add-in download link serves the same 0.4.0
+archive; its uncompressed add-in matches the source byte for byte. Public docs
+and the signed-in comparison page display the new version and workflows.
+
+The panel now has a compact brand/version header, responsive tabs, properly themed
+text areas, clear action groups and visible progress/errors above results. It was
+rendered at 280, 380 and 520 pixels without horizontal overflow. Server capability
+flags disable unavailable features. A duplicate insertion cannot retarget an
+in-flight generated-model download to another design.
+
+Release checks caught two deployment issues and automatically restored prior
+runtime code: the production API deliberately does not expose OpenAPI, and newly
+retained static-asset directories needed service-readable permissions. Both checks
+were corrected before the successful activation. The additive migration was kept;
+no stock or existing grant permissions were changed. Live health, auth rejection,
+PostgREST schema visibility and RexCAD status/download checks pass.
+
+Safari verified the live documentation and the authenticated inventory chooser and
+CAD workflow, successful empty BOM-history load, and Fusion connection form with
+optional writing consent unchecked. Native Fusion on Windows is not available in this environment, so
+actual insert/position/confirm/cancel acceptance remains outstanding. No claim of
+full native testing is made. No Vercel, Render, local website preview or git push.

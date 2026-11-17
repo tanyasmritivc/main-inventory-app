@@ -2073,3 +2073,18 @@ pass. Published findez-cad-page-20261116, build qY971QoEypRUNBRuC0wNU, based on
 findez-world-storage-final-20261116. Signed-in Safari confirms the connected
 workflow, selected inventory, current download and alternative upload controls.
 Live ZIP SHA-256 remains unchanged. Receipt: docs/releases/cad-page-20261116/README.md.
+
+
+## November 16, 2026 - CAD 0.4.0 published with improved Fusion panel
+
+User explicitly approved the saved-BOM/RexCAD migration and release. Applied only
+20261116_cad_bom_generation.sql; backend and web are live on self-hosted production.
+All eight download links serve 0.4.0. Existing grants stay read-only; reconnect and
+opt into CAD writes. RexCAD key is backend-only in a protected environment file.
+Responsive panel UI, top-level feedback and duplicate insertion guard included.
+Full regressions: 1320 backend, 710 web; final native contract tests: 22. Production
+build VWmoOFhFWLVqJVVZaKnVb based on latest World space-games release. All 21 CAD
+runtime hashes and live ZIP verified. No further web activation planned while
+World/Connections releases build on this release. Native Windows Fusion placement
+remains unverified; pricing/procurement/nightly catalogs remain unfinished.
+Receipt: docs/releases/cad-bom-generation-20261116/README.md.

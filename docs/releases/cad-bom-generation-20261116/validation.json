@@ -1,14 +1,14 @@
 {
-  "production_modified": false,
+  "production_modified": true,
   "original_rows_unchanged": true,
   "credential_table_private": true,
   "original_tables_verified": 131,
   "existing_policies_unchanged": true,
   "existing_functions_unchanged": true,
   "migration_sha256": "dc402aeb1f97a36e51befdff5189d980b620ecdbbedd12524a23655392106623",
-  "production_build": "EDZJ7z9dzDQSye8g9OiI8",
-  "build_base": "/home/ubuntu/findez-world-mobile-dock-20261116/frontend",
-  "zip_sha256": "f78a2031f0b7ca0ba08cd392f718ac15b1879203d2d443558069bbff9f1cb13d",
+  "production_build": "VWmoOFhFWLVqJVVZaKnVb",
+  "build_base": "/home/ubuntu/findez-world-space-games-20261116/frontend",
+  "zip_sha256": "49083752baabac5a09c7c0174fdf6f36a35b6a0b899fe4a0548efb880ae8aff7",
   "live_rexcad": {
     "state": "succeeded",
     "bytes": 26787,
@@ -22,13 +22,38 @@
     "independent_native_validation": false
   },
   "checks": {
-    "full_backend": 1309,
-    "subsequent_focused_backend": 113,
-    "full_web": 704,
-    "subsequent_focused_web": 31,
+    "full_backend": 1320,
+    "subsequent_focused_backend": 22,
+    "full_web": 710,
+    "subsequent_focused_web": null,
     "typescript": "passed",
     "changed_file_eslint": "passed",
     "concurrency": "8 retries yield 1 record; 8 distinct saves sequential",
     "secret_scan": "passed"
+  },
+  "approved_by_user": true,
+  "live_source_hashes_verified": 21,
+  "download_links_verified": 8,
+  "palette_viewports_px": [
+    280,
+    380,
+    520
+  ],
+  "production_runtime_provider_download": "passed",
+  "production_postgrest_schema": "passed",
+  "native_fusion_acceptance": false,
+  "safari_live_checks": [
+    "public CAD documentation 0.4.0",
+    "authenticated inventory selection",
+    "connected-workflow comparison page",
+    "saved BOM history returns empty successfully",
+    "Fusion connection form exposes optional write consent unchecked"
+  ],
+  "external_http": {
+    "docs_api": 200,
+    "public_cad": 200,
+    "fusion_session_no_token": 401,
+    "generation_jobs_no_token": 401,
+    "bom_versions_no_token": 401
   }
 }

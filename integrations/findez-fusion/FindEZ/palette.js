@@ -2,8 +2,8 @@
 (() => {
   const $ = id => document.getElementById(id);
   let source = 'inventory', offset = 0, next = null, connected = false, busy = false;
-  let modelPart = null, modelPage = null, allowWrites = false, draft = null;
-  const message = text => { $('message').textContent = text; };
+  let modelPart = null, modelPage = null, allowWrites = false, generationEnabled = false, bomEnabled = false, draft = null;
+  const message = (text, kind = 'notice') => { $('message').textContent = text; $('message').dataset.kind = kind; };
   function send(action, data = {}) {
     if (!window.adsk) { message('Open this panel from the FindEZ Fusion add-in.'); return; }
     window.adsk.fusionSendData(action, JSON.stringify(data));
@@ -16,16 +16,20 @@
   }
   function lock(value) {
     busy = value;
+    $('session').setAttribute('aria-busy', String(value));
+    if (value) message($('message').textContent || 'Working...', 'busy');
+    else if ($('message').dataset.kind === 'busy') message('');
     document.querySelectorAll('button').forEach(b => { if (b.id !== 'disconnect') b.disabled = value; });
     document.querySelectorAll('[data-model-insert]').forEach(b => { b.disabled = value || !b.closest('article').querySelector('input').checked; });
-    $('save-version').disabled = value || !allowWrites; $('generation-submit').disabled = value || !allowWrites;
+    $('save-version').disabled = value || !allowWrites || !bomEnabled; $('generation-submit').disabled = value || !allowWrites || !generationEnabled;
+    $('load-versions').disabled = value || !bomEnabled; $('generation-history').disabled = value || !generationEnabled;
     document.querySelectorAll('[data-cad-write]').forEach(b => { b.disabled = value || !allowWrites; });
     document.querySelectorAll('[data-generated-insert]').forEach(b => { b.disabled = value || !b.parentElement.querySelector('input[type=checkbox]').checked; });
     if (!value) { $('models-previous').disabled = !modelPage || modelPage.offset === 0; $('models-next').disabled = !modelPage || modelPage.next_offset === null; $('previous').disabled = offset === 0; $('next').disabled = next === null; $('export').disabled = !$('results').children.length; }
   }
   function browse(start = 0) {
     if (!connected || busy) return;
-    offset = start;
+    offset = start; next = null;
     $('parts').replaceChildren();
     $('search-explanation').textContent = '';
     const query = $('query').value.trim();
@@ -46,7 +50,7 @@
     $('browser').hidden = view === 'bom' || view === 'generate'; $('bom').hidden = view !== 'bom'; $('generate').hidden = view !== 'generate';
     if (view === 'bom' || view === 'generate') return;
     source = view; offset = 0; next = null;
-    $('location').hidden = $('location-label').hidden = view !== 'inventory';
+    $('location-filter').hidden = view !== 'inventory';
     $('query').placeholder = view === 'inventory' ? 'Find 12 M4 screws, or bearings for an 8mm shaft' : 'Describe the catalog part you need';
     $('source-note').textContent = view === 'inventory' ? 'Your recorded inventory. Available quantities subtract reservations and active checkouts.' : 'Global catalog. These parts are not necessarily owned by your team. Prices and manufacturer CAD downloads are not connected. You can insert geometry from your Fusion project.';
     browse();
@@ -114,7 +118,7 @@
   $('generation-history').onclick = () => send('generation_jobs');
   $('generation-form').onsubmit = event => {
     event.preventDefault();
-    if (!connected || busy || !allowWrites || !$('generation-consent').checked) return;
+    if (!connected || busy || !allowWrites || !generationEnabled || !$('generation-consent').checked) return;
     const spec = { name:$('generation-name').value.trim(), prompt:$('generation-prompt').value.trim(), units:$('generation-units').value, confirmed:true };
     const signature = JSON.stringify(spec);
     if (!draft || draft.signature !== signature) draft = { signature, request_id:requestId() };
@@ -155,7 +159,7 @@
     try {
       const data = JSON.parse(raw);
       if (action === 'busy') { lock(data.busy); return 'OK'; }
-      if (action === 'error' || action === 'notice') { message(data.message); return 'OK'; }
+      if (action === 'error' || action === 'notice') { message(data.message, action); return 'OK'; }
       if (action === 'comparison_started') {
         for (const name of ['inventory','catalog','bom','generate']) $(name+'-tab').setAttribute('aria-pressed', String(name === 'bom'));
         $('models').hidden = true; $('browser').hidden = true; $('bom').hidden = false; $('generate').hidden = true;
@@ -185,12 +189,14 @@
       if (action === 'models') { showModels(data); return 'OK'; }
       if (action === 'pairing') { $('code').textContent = data.code; message('Compare this code with the browser, select an inventory and approve.'); return 'OK'; }
       if (action === 'disconnected') {
-        connected = false; allowWrites = false; draft = null; $('versions').replaceChildren(); $('generation-job').replaceChildren(); $('generation-jobs').replaceChildren(); modelPart = null; modelPage = null; $('model-entries').replaceChildren(); $('models').hidden = true; $('search-explanation').textContent = ''; lock(false); $('session').hidden = true; $('sign-in').hidden = false;
+        connected = false; allowWrites = false; generationEnabled = false; bomEnabled = false; draft = null; $('versions').replaceChildren(); $('generation-job').replaceChildren(); $('generation-jobs').replaceChildren(); modelPart = null; modelPage = null; $('model-entries').replaceChildren(); $('models').hidden = true; $('search-explanation').textContent = ''; lock(false); $('session').hidden = true; $('sign-in').hidden = false;
         $('code').textContent = ''; $('parts').replaceChildren(); $('results').replaceChildren(); $('summary').replaceChildren(); $('warnings').replaceChildren();
         message('Disconnected. Sign in to choose an inventory.'); return 'OK';
       }
       if (action === 'connected') {
-        connected = true; allowWrites = data.allow_cad_writes === true; $('write-note').textContent = allowWrites ? 'Saved versions and corrections are shared with this inventory. Stock is not changed.' : 'To save BOMs or generate models, reconnect and approve CAD writing access.'; lock(false); $('sign-in').hidden = true; $('session').hidden = false;
+        connected = true; allowWrites = data.allow_cad_writes === true;
+        generationEnabled = data.generation_enabled === true; bomEnabled = data.saved_bom_enabled === true;
+        $('generation-note').textContent = !generationEnabled ? 'Model generation is unavailable on this server. You can still choose models from your Fusion project.' : !allowWrites ? 'Reconnect and approve CAD writing access to generate a model.' : 'Ready to generate. Review the specification before submitting.'; $('write-note').textContent = allowWrites ? 'Saved versions and corrections are shared with this inventory. Stock is not changed.' : 'To save BOMs or generate models, reconnect and approve CAD writing access.'; lock(false); $('sign-in').hidden = true; $('session').hidden = false;
         $('inventory-name').textContent = data.inventory_name; $('workspace-name').textContent = data.workspace_name;
         message('Connected. This session expires in eight hours.'); tab('inventory'); return 'OK';
       }
