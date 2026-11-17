@@ -153,3 +153,14 @@
 .permissionOption input { flex: 0 0 auto; margin-top: 5px; width: 18px; height: 18px; }
 .permissionOption span { min-width: 0; }
 .permissionOption strong { display: block; margin-bottom: 6px; }
+.purchaseSection { border-top:1px solid var(--cad-line); margin-top:28px; padding-top:24px; }
+.purchaseLine { border-top:1px solid var(--cad-line); padding:20px 0; }
+.purchaseLine h4 { margin:0 0 8px; font-weight:500; }
+.purchaseQuote { padding:12px 0; border-bottom:1px solid var(--cad-line); }
+.purchaseQuote a { margin-right:16px; }
+.purchaseForm { margin:18px 0; max-width:680px; }
+.purchaseForm fieldset { display:grid; gap:14px; border:1px solid var(--cad-line); border-radius:12px; padding:20px; }
+.purchaseForm label { display:grid; gap:6px; font-size:14px; }
+.purchaseForm input:not([type=checkbox]), .purchaseForm select, .purchaseForm textarea { width:100%; min-width:0; color:var(--cad-text); background:var(--cad-panel); border:1px solid var(--cad-line); border-radius:8px; padding:10px; font:inherit; }
+.purchaseForm .permissionOption { display:flex; align-items:flex-start; }
+.purchaseForm .permissionOption input { flex:none; margin-top:3px; }

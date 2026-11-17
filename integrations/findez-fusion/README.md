@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.4.1
+# FindEZ Fusion workspace candidate 0.4.2
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.4.1 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.4.2 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -113,11 +113,11 @@ key is stored in this add-in. Drawing uploads, previews, nightly generation,
 pricing and procurement remain unavailable. Native placement requires real Fusion
 acceptance; automated host-contract checks do not establish it.
 
-## 0.4.1 appearance update
+## 0.4.2 appearance update
 
 Slate-grey panel surfaces, muted blue primary actions, softer tab selection, and
 quieter BOM summaries replace the high-contrast black and white blocks. The panel
 sets its own background so Fusion’s embedded browser renders consistent surfaces.
 Status messages remain visible while you work. Commands, permissions and CAD behavior are
 unchanged. Stop FindEZ, replace the complete add-in folder, restart Fusion, and
-confirm 0.4.1 before running it.
+confirm 0.4.2 before running it.

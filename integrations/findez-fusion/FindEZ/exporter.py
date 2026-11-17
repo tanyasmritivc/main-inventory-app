@@ -81,7 +81,17 @@ def extract(design, host_version):
             suppression = 'unknown' if state is None else 'suppressed' if state else 'active'
             if suppression == 'unknown':
                 warn('Suppression could not be established for ' + key + '.')
-            reference = read(occurrence, 'documentReference')
+            # Fusion documents documentReference for external components. Some
+            # host builds throw when it is read on a normal local occurrence.
+            # Older hosts without the flag retain the conservative read path.
+            try:
+                external = occurrence.isReferencedComponent
+            except (AttributeError, RuntimeError):
+                external = None
+            reference = read(occurrence, 'documentReference') if external is not False else None
+            if external is True and reference is None:
+                suppression = 'unknown'
+                warn('An external reference could not be identified at ' + key + '.')
             if reference:
                 source_here = file_identity(read(reference, 'dataFile'), ('unresolved:' + key, 'unknown'))
                 if source_here[0].startswith('unresolved:'):

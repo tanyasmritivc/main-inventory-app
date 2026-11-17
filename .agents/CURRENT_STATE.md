@@ -1,15 +1,25 @@
-## November 16 - CAD 0.4.0 candidate awaiting migration approval
+## November 16 - CAD purchasing and Fusion 0.4.2 published
 
-Owner: Codex, feat/cad-workspace. Saved inventory-scoped BOM versions/corrections
-and RexCAD on-demand STEP generation are implemented and staged separately at
-/home/ubuntu/findez-cad-bom-generation-20261116. Not activated; live remains 0.3.1.
-User supplied generation docs/key; the key is private outside the repository.
-Production-copy rehearsal preserved 131 tables and existing policies/functions.
-Read-only sessions are not silently expanded. Explicit editor opt-in is required.
-No stock writes, Onshape activation, pricing, procurement or nightly catalog jobs.
-Native Windows placement still needs acceptance. Public marketing layout preserved;
-only its two download query versions change. No push or external hosting.
-See docs/releases/cad-bom-generation-20261116/README.md for checks and next action.
+Owner: Codex, feat/cad-workspace. User explicitly approved the tested purchasing
+migration and candidate release. Applied 20261117_cad_purchasing.sql (two private
+tables, one service-only RPC); installation preserved existing stock. Published
+web quote history/pack-MOQ/bulk estimates, BOM quantity differences, purchase plans,
+owner/admin approval, manual order tracking, and idempotent partial receiving into
+existing inventory items. Purchasing remains a web workflow; old Fusion grants
+cannot write stock or purchases. No approved live vendor feeds are available.
+
+Fusion 0.4.2 fixes local-occurrence documentReference access; unknown external
+references still require review. All current links and ZIP versions are 0.4.2.
+The slate UI, saved BOMs/corrections and on-demand RexCAD generation remain live.
+Active web: /home/ubuntu/findez-cad-purchasing-20261116/frontend,
+build ETdpqkfhqjB8-UDAmWCSZ. Backend: /home/ubuntu/findez/backend.
+1386 backend and 717 full web tests pass, plus the additional receiving UI test.
+Production-copy rehearsal preserved 135 tables, policies and functions; concurrent
+retry/stock tests pass. Live signed-in Safari lists/history, public ZIP and anonymous
+API rejection verified. No production test orders or stock writes were performed.
+Native Windows acceptance, hosted canonical CAD library, nightly catalog pipelines,
+live feeds, in-panel purchasing and engineering substitution logic remain unfinished.
+Receipt: docs/releases/cad-purchasing-20261116/README.md. No push/external hosting.
 
 ## November 8 — Overly crowded wording deployed (PR368)
 

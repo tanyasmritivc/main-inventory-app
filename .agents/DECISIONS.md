@@ -1,3 +1,16 @@
+## November 16 - CAD purchasing authorization and quote provenance
+
+Manual supplier quotes are explicit exact-part confirmations, never inferred
+engineering substitutes. Preserve every quote/source/expiry; calculate decimal
+pack/MOQ and all-unit tier costs without combining currencies or fabricating tax
+and freight. Live feeds remain disconnected until an approved source exists.
+Purchase plans use fresh inventory reconciliation of immutable saved BOMs and
+allow one active plan per project. Web editors prepare plans/receive deliveries;
+owners/admins approve and record orders. Existing Fusion grants do not expand to
+procurement. Only explicit receipt transactions increment stock, with an actor-
+and-payload-bound replay receipt, optimistic plan revision and stock row lock.
+Pending browser writes retain their request ID across reloads in tab-local storage.
+
 ## November 16 - Explicit CAD writes and temporary generation ownership
 
 Keep Fusion read capability as the default. Shared BOM/correction saves and

@@ -68,6 +68,24 @@ def nested_design():
 def snapshot(): return Snapshot.model_validate(exporter.extract(nested_design(), 'synthetic-host'))
 
 
+def test_local_occurrence_does_not_read_external_document_reference():
+    model = nested_design()
+    occ = model.rootComponent.occurrences.item(0)
+    occ.isReferencedComponent = False
+    del occ.documentReference
+    result = exporter.extract(model, 'synthetic-host')
+    assert 'Unavailable Fusion property: documentReference' not in result['warnings']
+
+
+def test_missing_external_reference_stays_incomplete():
+    model = nested_design()
+    occ = model.rootComponent.occurrences.item(0)
+    occ.isReferencedComponent = True
+    occ.documentReference = None
+    result = exporter.extract(model, 'synthetic-host')
+    assert any('external reference could not be identified' in warning for warning in result['warnings'])
+
+
 def stock(quantity=6, **values):
     return {'item_id': 'stock-1', 'name': 'Screw', 'brand': 'Example', 'part_number': 'M3-12',
             'barcode': '', 'quantity': quantity, 'location': 'Synthetic bin', **values}

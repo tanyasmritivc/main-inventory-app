@@ -1,3 +1,19 @@
+## CAD purchase planning and Fusion 0.4.2 - November 16, 2026 (published)
+
+Owner Codex in findez-cad-workspace / feat/cad-workspace. User approved the new
+purchasing migration and release. Two private tables and one service-only stock
+transaction support web manual quotes, approvals, ordering and partial receiving.
+Existing Fusion grants are unchanged. Saved BOM quantity comparison and the local
+occurrence reference fix included; all current downloads 0.4.2. Production source
+preservation guards passed. Full tests 1386 backend/717 web, additional receiving
+UI check, PostgreSQL concurrency, restored-production rehearsal (135 unchanged
+tables), production build and live read-only checks pass. Active web directory is
+findez-cad-purchasing-20261116/frontend, build ETdpqkfhqjB8-UDAmWCSZ.
+Native acceptance and broader catalog/engineering roadmap remain open. See release
+receipt for precise boundaries and rollback. No push or other hosting deployment.
+
+This published receipt supersedes the earlier CAD candidate notes below.
+
 ## November 16 - CAD 0.4.0 candidate awaiting migration approval
 
 Owner: Codex, feat/cad-workspace. Saved inventory-scoped BOM versions/corrections

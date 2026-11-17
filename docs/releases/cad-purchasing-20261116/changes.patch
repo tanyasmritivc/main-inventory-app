@@ -1,0 +1,524 @@
+diff --git a/backend/app/api/routes/cad.py b/backend/app/api/routes/cad.py
+index cd6c2b20..4e9a6e6e 100644
+--- a/backend/app/api/routes/cad.py
++++ b/backend/app/api/routes/cad.py
+@@ -15,10 +15,47 @@ from app.services.cad.comparison import compare
+ from app.services.cad.repository import read_inventory, authorize_inventory
+ from app.services.cad import tabular
+ from app.services.cad import corrections
++from app.services.cad import purchasing, revisions
+ 
+ router = APIRouter(tags=['cad'])
+ 
+ 
++@router.get('/inventories/{inventory_id}/cad/capabilities')
++def capabilities(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
++    from app.services.supabase_client import get_supabase_raw
++    authorize_inventory(str(inventory_id), actor(user))
++    role = get_supabase_raw().rpc('findez_inventory_role', {'p_inventory': str(inventory_id), 'p_actor': actor(user)}).execute().data
++    return {'inventory_id': str(inventory_id), 'purchasing': purchasing.enabled(),
++        'can_edit': role in ('owner', 'admin', 'editor'), 'can_approve': role in ('owner', 'admin')}
++
++
++@router.get('/inventories/{inventory_id}/cad/revision-diff')
++def revision_diff(inventory_id: UUID, before: UUID, after: UUID, user: AuthenticatedUser = Depends(get_current_user)):
++    return revisions.compare(str(inventory_id), actor(user), str(before), str(after))
++
++
++@router.get('/inventories/{inventory_id}/cad/purchases')
++def purchase_plans(inventory_id: UUID, offset: int = Query(0, ge=0, le=10000), user: AuthenticatedUser = Depends(get_current_user)):
++    return purchasing.plans(str(inventory_id), actor(user), offset)
++
++
++@router.get('/inventories/{inventory_id}/cad/purchases/{plan_id}')
++def purchase_plan(inventory_id: UUID, plan_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
++    return purchasing.detail(str(inventory_id), actor(user), str(plan_id))
++
++
++@router.post('/inventories/{inventory_id}/cad/purchases')
++@limiter.limit('10/minute')
++def create_purchase_plan(request: Request, inventory_id: UUID, body: purchasing.CreatePlan, user: AuthenticatedUser = Depends(get_current_user)):
++    return purchasing.create(str(inventory_id), actor(user), body)
++
++
++@router.post('/inventories/{inventory_id}/cad/purchases/{plan_id}/actions')
++@limiter.limit('30/minute')
++def purchase_action(request: Request, inventory_id: UUID, plan_id: UUID, body: purchasing.Action, user: AuthenticatedUser = Depends(get_current_user)):
++    return purchasing.action(str(inventory_id), actor(user), str(plan_id), body)
++
++
+ def reject_duplicates(pairs):
+     result = {}
+     for key, value in pairs:
+diff --git a/frontend/public/downloads/findez-fusion-workspace.zip b/frontend/public/downloads/findez-fusion-workspace.zip
+index 752c749d5c59128f1e0167c6961937f7f5ce6110..f477aac8a4c616515bef2064125ba75617e4f69c 100644
+GIT binary patch
+delta 4795
+zcmV;s5=8BSivpXB0uoS50|XQR000O8003`Y69le9krI6YOtFw{5d^MGzIKxV5-<TF
+zlQI&zf5s>}Fxd(K0A3;h01^NI07hwUWJOvpWq5FJa&%>KE^v9Z8fkCaIQF}L1vm3S
+z_ST~&MLXE_AOoZqP+*!CX{OlSqA+NQw%N#}hoq8vivIU~kB3M~a?=940@_GC-hGlj
+zIXSsvwEkI&=0IMynoB`wP4|YWl3Yr7*EfXkfA&(DIT6g<Np&+Pm0~p$hSNq9sYuN<
+z-w1N2xM8}SOfH&+T)cfn6hPKQwSwq_sJ2Q9*=oQ8I2@`%lS=M(RMf<5adk=FHk1oe
+z^UA<HRh;Qb!{{x81zeMrY(-7g;a38fj3%vSMDHlz+bd~gB^$D)H%tSq(hy2C-?a@j
+zf2=0YE}j!6He9fBa&mGqnK-7%CoRQft>lihEw4SR_Wki>^8UruyH{^6$vG)b%d_&d
+zn7qFD*YfGVuV1`_u_xs3<m~j(WB+F|nbd4e*k_|?Wu{IjbF!7%EN_`YerJmbf#;4Y
+z!No=cj1M0tb_jRk@N~ztrW@v0;=|X(e-B!wKssT6T;ta@OiaV%jQn;^9-W@%i||pD
+zgV^5Fre!abl4@F9OG!Wr2LKNG*f-2D6zHBQ0}3d~71Oc-9VoVDiiwJ8f;v;os6$!I
+zG7JHKN%wmu>W-nvCn|a>SD!#hbjRj6M%%`mUrLek4X|_C0bQ#E*)T(mQ4vDKf6qQw
+zY;VZ)0_ORuHIBbIxoW{!ckXMp7?3+H{t)z*@`kP&7QDdoe^`)$Jm}#`sPV){?hF{f
+z^cICXCk@|mbN=M)QG(P?f#x-^;NHQ5ibRNBk9H1}=z#PjG0@<JHSj>Q6$As{Gh6VF
+zc8@j<KEOU(<JSBymTJv&Vi86@f54X-X1&mnqH~jUV+4E>)pjp=5LL8hyA^nUXGDOa
+zZE9=OD@L6A2TS8-+`>Gq9~}A;0?uyAXJidB<meiTiVgDwmjGXwS>j=9-moRNq01bm
+zH8pgJLvsikO|zoaP0k}y)-4*f#jvkW-_%-xHS`2a!Rum<x}KrV!`=_4e;?-qA06NC
+z!^o>qFlQeVAG02Uz6{C{#`{TRfd&V`7-Z2TYl}FWNIuwYoV3z^dbkA8)8Zu;^^5-$
+z9urD0!ND4^2egyEoT9Uo-rj?0xjjYUS&~(|1L6R`i>u|Hf(@DHe%vkMX!_^f;*#sv
+zvgT{fYCEqX5}{{1-?Jfpe>!svc0vx~2rxhzIQJ5!yezbARfX%08q>6Bg@%+>FEDa=
+ztN_TrrK28wCB>R=FwGPbZ+ngkpF;|+pV=iXB;MzC5G4H)(r*?pZTLFxZLR!9imrSu
+z_t&^8^(c84_E-R@e{lO-b|vo$s}BcvsKbuxXsiGX_M-^|3q@7{e?!n_&$}Fm`=ZA+
+zL@`Gb$+*b_h*Je>I}I2vzDMbK`&mG+s2L_G*aSfdJd3XnHdZQcCK!MIY$>W2k|1D!
+zAj7cY2;jlbxZp?#)Ely@TIF)%+>>IrVTzyIe_y^v_q^qro7Cs3EpKYrJ}1twmpANy
+z?`E5V2FPN|u*|BLf6flm5hokWr+c%_Bbgn7T=L6f3>lbS5_&_W(61Fn!gz?`X@0Sl
+zmpSa2O)Rb+L~J&1rK$jy(8Q&+fAGLQ8F8iKZ3&E_J@<L;8DKDm^MNQLyhN?%!M>w0
+zqBflCWcF?34HMBRy(lBanEcT8h6yn2jE<4&uy7&c8W%Y?f0>iVr~mvVuP-7|LjYXA
+zceB0P3yYivO5D*+Ve-xD6Xf;YP7O6xw=Jx+nBIBWvD!z2fMXaCMnv6;8zJvRfjb=z
+zUorTIpd<9S#7*_J<mI0sNH7fRT<7}llJ!}<fCd5r8`oP13Rpj&S)z$PAVt5X{V5cM
+zAuZ_c?W(J0e-H-fn<+sX(z!NN&+p`p^}u0MKvpgIJo*p@$h$3A3{*WJ9@GK$NE9el
+z(A<zlR`7pRX4!-Grm2~-Fg3a3W-D7`J#*dA4Q5*GsPG%SLNj$sZ6vi=Fu>%{230pc
+z9b4xq6<l}B*UtjKlYHL~*W*2O1N(~A<Cu*PwBl^Ge*@?})@IHl2HabIt)LchrD#Ar
+zTJz#_#P*LECe*|oq9ZkNOleR}eak>?!QerR(3OSLyl!!6JM7KM9aqUHSCPA7#%86C
+zvDs{Z3LP|JgVMGHFH=UNS?172^!_6<{Qt<&<&9-h6J_R=B^+BH^|cTI4B6|atC$_)
+zuDp8se{oHYk_$CsqSOS&5W%2aiU9u?B@;f#Uyu9PdIaYG5cpQdIGRcWN+fd>0#07G
+zyA@M?A?{_vtAlT0@;wUThGG~wmTpzvkNcg-o`3ZxG1FoX!rW4AiC)u{;uT~t{0RLn
+zzC#>r+S(2)cFWma-};B8mg}d;kTMKETtJV+f3rH*7u0S|4!q+#(qv85mz+M`c8p|u
+zSI|I>H;Jn&wts48dtR_(kWxpt;LPY2z;amHZXLEw9ZuK1BcYxKOXlee+;-|v#1$T;
+zUor5>z$of3qB>SEbVY6wCkRLeva==-i#$EQVoC*@Q0`bxGcY_XUY@>rZ4J~Oo1v~#
+ze;s;VjD&C74W)$I(De;sqgK619bxBpM%M#YgtXeRja^{Jfx$uq7*oC$p)mYs%P|rl
+zQz_x7S%^MI9kDy?=yv=>UOm@jkB1mg{$NVrSmlIP6$%6Zx(8w&A}ttEG^wZ{dW%wq
+zmsiir6qvAH6*_W^h7bJ-$wS|pq9El8e~TVqU<Z{DX19`DGFWFB0Kf^vq%g-0#h%d`
+z2?SOUWjo0veV<joJ!FGu6=~a1(XOF>1+7E1v!be!H5&^&=|YUng9UzX>gYb+qo*XH
+ze4eM5d8ZzzN^RD5XRWBjxwoD9IGqtyWOV6zx7gQ~8)l|~lq?GMHjNfb{)jUXf28d}
+zpA1@1e15nMjbMj8=qOu7owlSYRXsQD*#8h%|7cI7Qg}yDb?4z<3RqMudb>jETX;R$
+zG`18jk1d?qMr)w-$<1leQ*UQWi=gT6fS8c6<a+5(yOB&xHkgOOzHDSbf7wrGWd%88
+zEt`5e!}bih8JYSX%)^|#=nS{;f0l0>Z5SVqK*##*@4)WihkgQ3<YjFn!AG3linEb3
+z-2sx!V*x<+{WaQNa!As*B4;|eEsYshJXLbm6pom_Nn~IVyTl-5cO>P+I8+1vy$@!r
+z7g1*M3(vRxsm3Clek4M`_Sz;$th+*{%%g=JU3L}#u4zZgYP2~Gl|i!Me`sg-?Hi2@
+zKpU@;e(d7Rp9$t9&C`1r&kg?nCOJ2oJ1cOr>$Yj$f{yT1eoPZ~Rn`OyGKV|9dqB?o
+zeS(rQIe5pfyxVt#<9J3b4wN#Z6NNjs@Jbiv+(0<W3<sFLgu`SqJjy43J9j7jQA^_|
+z#@(F(l(k}mC%-Lb^l(87e<YUVg}V`>8_Gq{hZc0Nx0dBEg|4=2M-wMMbM3+{BmfMt
+z#oAqD+af=}g|v&N?ag|igu-92Cs6%GGeAkNi-XT)SI8sqk|_112)(c;!iv@fET3R3
+z$WE~Ky5{Q$&`^R|pf}KsAh-TvW9fObeT2Jq0q@MN%fk7dT^{(ke<vmumgKQ}lKb#@
+zHt&tPg$05E694u)`Yr^I$s=5h3!n(8#H7b*V@1$i=sTvvQnZRN1zW=Fm<D5=kVS6|
+z5E2)Hx#a6>@Di+A@OKPl-R|~!8Vq<=!ZJwn)1o!&pZ|fkF~5=S2MphGAMX~Sym~@j
+z^QR@b0INFu#qehp5%`k}sDwiV46fsE^#TEt{{pj49j-eBUCyt6vRRt}e`PN?NLU6_
+zU~4N>u}*5TR_-VfMgs<Llyseq%2#TSr4})Fto*XYDNDiqeAcR6lPZtQtL!h`8PQ7P
+z?1k8nRRxIyFBQbw7P$B-TeaDBh_istRI>+$v^fZ;#m49dOF;l$763$zhbROVQ@yDU
+z3sz#a>70uyMA#(R9WH@HfAOGPDSGFHjaf7`*F`h~E(vBF8w6+IH!$MEHuJZK{G$sP
+z=)>es4R)lQe|$q9G!G5lGQ?-xGKtB=o<iBdq<6#b(Gq{)#j25mUYzYiz~qL}9#bK_
+znTa1&b#fCAwFXvG(PQ*uzh%61>Tl^}rFZ9!Z)N4-7<QaJz0vhEe<%O->E`UI9W`X6
+zqi2r(8n;Xw1s5GfH$aTDn0X`yT$;SZiuWAz%R2emkvSyUTYDdIB;-bSE<kg&^gCzB
+z7=);%#XgoBWQbZmR@Cf3y~&T4mx*XAK%mqW5->zbT)h-GubD9sstchFQU?Y$JIlIo
+zlKfQH!j^LDhCpU_fBwEBOiUHps>*=@dZ<op3#z8I&x9aH@WWsh*qO6)^iABm(yjO7
+zURE7AK`J=tqp(qv@bY-mJsp61P~>mn$I13(xNT|yUtDRR3>(s5#}J*_JHM0!tNO(x
+z`*-|x&Yp4Ck)HpAEforFd~csrFn%(6dQP!mC(dfk4CyJ*e^3rvsTk>PA>Qt#f<hIE
+zubpgAofKJNyNxp_W;g*<?!(=l`nbaF2{oSbdmzsS)@!Fxp+{h;3HHpXI}lv&OAp%Q
+z3`SbH1I*^^fUMdp&GZi%Vs(q`HZF~58#t}yvN15(L`=gpIg0olkH=trf`1unl^yA~
+ze3@OBTB9yVfAOL7CCzU^F?rcL#4n_5XEeR-O{_adKwp%wBaQwB#RdgMl(P3P0ws4+
+zHP#7ND(ka+(I<YP5huh}<Yb)M9$-{WjrD;-dioOO)JCB|#?mzLa8S%?U2UY9J382z
+zhSCTPJ7WNqSSrtQU_8+p{l(XY=#BXN+>yM}o?K;qf6sL`ve-Nv<*SJ+x1OJTQ}k-?
+z<bd+y5<CO|CJdpw^^YRR8n5eN8O~sbK_+}FJO>|q14>VieFG{B^uMaIz<5`qhdX4S
+zT!}u=3lJgGaYg?U&CKt5gcWw8St0j}xHg1R!~n4jGsuV{(4K_2UGQRq#Mdpp0`3&B
+zXcpo|e>U9~1kf4WT<C|U(y{<8K)45DXb7lSh(7@8zV5{f5Z^ppjtQZ&PS@h@KkskF
+z*5DUYhRT(jf*82xMlB-0q3Wc;3Xx)Ntk4_OJXb)te-5%?=7(4B1h|^SKLT;e>W8Uo
+zd#^r`^k@p^84rHp9Nl!P0*ks|Vz#4o3>_gme>75L$e7Udc_SvI`>Cl8K1DGn0E#@^
+z6zEL^c3CVe;Jg?*Fz3OJ(K*v(`iql6gFGf|-<BSCn%w6=XoVx6X$yWY1u8g?6eXrP
+z0NdLTm4^dIttU+XfQgHyIX6j<FasSmcZ{}lA6kD@cg7xCDiK%C<_3eSKVrj~VtVL=
+ze<}I|9?u-Th}m(n{vb`mea*=Wcn1UIxIWPii1lOakhJgp0{S6*qWV~IefQ_o_jBUE
+zHJEloMYUZE@FM^+RASHAr%A>6yAYp=J7>`~%=#z|XyY7eg+*_M($9$vPJ=BA5%8ca
+z^c_k?sOA*vLj!jZ@TK$n#dCv4-{Q^^e_=>&88U5J`m%S#WA-Lw!<f+*P+Rc`2A!cK
+zlGN}lZwMQP!3xFBz%Dcv!nZ8wL~7;Oe%n&6wkkA2V#hXtQ$EuphRnslHpR$#YFZx^
+z-qch6@~1wB05ktUkC+ISfOt_L?|x<yB4!ni6NA=Ie6hgA9Dx$|MD1|zA`GMLf7E&0
+z75Z#B*AERH|70_-B}a`jRYi(1q3=1f8_%mev`xDE>4iMbP5b<-H^+VcjqcF$A?LB`
+zwF?0$vY|;0Uw?4mrVZ=l8Xwe?#<hm}H>#=-eeU<4>ce?L|JX2s&vmv@hvo68Fu5IF
+zM&0^>bSNA?SW~bJf_O+qV##9@f1;2hU-48_t7cfa<mf#h6mO2a_~uePir4({qrgby
+zeR%=gVJJ7g*%tr(>q2a_<D&QX`tl+a1vzfHy5xg}lHOa$8>72jDR2QTW>M)an9dy&
+zLpXo<Pq8q8Wan`aHzk7q&qD>_R&%2tC-;auf)A0sDC09vPEwA4?FJTTe~{bY-H>M^
+zBP<5jpU%vzO33bUM(%lJAa*~`y!gN6Wr})2hTOqPoV9vvlAasi`5Y=VS2>{ez;hCp
+z(DAMKqBl?0n~4zKc2Y&=?~{``V@ACG|4Cs@KK>2(#fuDY@FV;WxD5Zp{tr+~0|XQR
+z000O8003`YCztq|VF>^LvyEZ(AOsTxu0xZCf^h_{OulxL`+`6U#wa>4*$MyvULuo4
+zgHQqIla_-$0s<<N)q_C+$dea@Kms{PlUam60kV^sgd+r9&aZ!yz=Re8hgp-@gg*ih
+VVv`w#J^`VVScN183xfav006nm2h{)o
+
+delta 4621
+zcmV+o67ubvi~@p-0uoS50|XQR000O8003`Y96qf^krI6YRI!k45d?o~<9Cw*5-<UQ
+zlQI&z4)2{eIzS2l0Q(;R01^O`@Pib8ty$}D+c*;c?!SVU`yl!1)h0!|xbq?lq%WYr
+zHZ9U@ad$;w&=MW9kx4H}CG{5l-*1Kwk(89A1x`R4nU8tTZ-&&-(a{B?%}-La2lA@Z
+zTna)Px;IQ!<XpnLz9xLPm&z=NVCGh;>jkM5YnU*cwwg#q8m9S`Ah(JermNY1?5u6c
+z*}K<70cA~8Cx||XdaI<6od!O@!?7wfspW1*MMKOMS6Ad+OSvEouMNyo#hIS9jNUL<
+zz%^ORPBc^<ekH)kXwqp$^o|0*y^==OvLzdO%{0g=4WUHyUDr~>8uI+?1!3Zf3s%jJ
+zj*ezCrxf|DrI>A$+>x&1jaSuwzCW4GKD@km|N8AYIVHt$by6J{vo~k|UOoHI<;(Xl
+z_LTgCoE$%X;{VKMvxaR5`(hNWP3erXAX}-;>V_%QcfOnvcy6f@TwH0O@$u8l4&hE5
+zE_Y08dd2)oeE5d=L8}y4C+v@F{JNHjGEC0NZ>Qw(@o~NgA4NHs?E`IpJN8m3smkI~
+zN&;Ru0CDigzGa4?LHA4<a6m;an3gU0K(P%|Ow>#h^qFEt9jaoUaR~e?y5BR=^a@2i
+z(b1(`e+DPf9b4cS?OJnsE=8(0(9UHCcAXOBiWzE*iWDM$_N8WfL&`Il=j+Zm{TAe+
+zgJ9jcU-RWi+_LyX&>PBsTe@yp$O5nbVMz+|Xuv0t#tR>{GY|mf4H|brTE64v^y$gt
+zgsGhZ&udV@y+Z~Si4naY?HoAK5gAxw<iRr=;6Y|<2nM-lwvZp)9%CAEfPJySt@&Rp
+z^_thjGK_jaF15^Np%X>tA?d~l<RrT7LGb`pv}U_CWPcw-z@lq^8ynPXMqK)bNaJQY
+z!n~{>9s3FZXIJt$*?<i>riP;8ig|%6pfAik$*>J?*@|1}GKaFEhOTgE0ie;gYg%9D
+zI-+F#qRChc`-bwBHVSN@CtM2N6btnA9DN@4emwrP80F~neh(wBC&`?AN^;C*2<9?4
+zM;M<cQ3V<j1Tn~evPsq!aW=7hh}$@6t^e$B4y4QC6&KCR{}!GTS})<jT8IaXlcAkr
+zvQ$3aLuk1@Md4MFb+-fIfWO1lYEL1C%nLv67I6&y(|&Qq^&8pn4QGv=*MLNr*)I1i
+z#FulYU~lALjz9yffpf25%G*NAPSv>X&R{BwPG~4u%@UD+!*c~f{w*E#>}x4D{0hrV
+zG4rwKr0_MQ;QF~;(m~;UVF$s|ub}*9fNA0Dbg;Gd8!4vprQBcQsx+hIZP;T8p#LH5
+zZ`g&rEv!Er-LVgQsbjDLG1!kG5F!*+0S>{NgY0r79zu^xKrts1$+XD<#JK{!odSl#
+z_h>yIKT80Ai-uu=f=vKQkXd|luvn>lm>~ZA*->;a6hYtsAj7cZ2;?EpxZo%V^c%9S
+zJLPKQ!i!?JVToVZe_y}F^t|Dkn>6R@EpHpxz925JSJ&)-?`E5l2FhZ~u+3^#E)LTX
+zXB(`id$Y}v%nm^<`Q-^h29}pZ-q0xwdxZ%Y4;Y?*))(7(nZush!s7Zt<Ywzu>IzT^
+zLtNVUhYTEw5m!3hR-hQh^HAqO0ES>V9hoB1OWb-I;yVT-dc&no7T-o*GZB;0n=(p_
+z#Sdd|TmZw)m>8)K3kMmOxX7i+f;>6?*Dra05rrBP;QE7`9rRw<<h0P@PHqa5Z`Yrp
+zt`By9YUru@ZDFP5^xoT!H69HDk1-%jn7R|!Lf(o3cRC)vWAKQeBlWn%O%1)|?VmA7
+zIE?#Tm-_FM^%-8k0Rn)H>n(r+_751A7^06zG3;q$%Q9uyP%AFNs=;oH=6-4{WghE!
+zQE`|W_GY!nl^NyQC0A)IWc2o!&qu7#dXXD{^c@wLKpB0@%{HetAIo`<b0^n2>qFxQ
+zIlz>l?Olyu#BFF9?(>36>Qz#(GB;#sV2jt#3z5KBy&;yw)Q!9H()Qz?oD>%ddg9cC
+z#+bpVmPLa9k9vj=>Nn6n_Ju+DKLoxtq@PQz0rkt=NdYI%yWN_pp%M48<@Le$m-!xl
+z1^J~IX4uND$`4C^C#vUP{V};L_F&8{)mG>YT`OJ#yx@;;7{Pa_Wo_5kVa0AZyB$XV
+zxDL8zmy9JtbmIaVSe`W@zT0tYa^k(-Q6?Lzz8~;d*ejClT|;*}-NCOf*#4QF9b^HV
+z#<$a3aAtA~a5=2(Q3|$|j;A|Xp`c!W1}o<A9MZOQEaD2!(ytihWKb0S7g^nf=6wf}
+z-~<87z=2T{z#=ctuh^MDOel9}q8S7pR+eXP-`D`PcN*yH)Q8>|L)ZzeYAUFOu6u-y
+zUiBe$hdRGAx*4e=r1g&Nx`R5747uGhP)y<R7$S|r@Shz=BtWH7!O^pTK6fU6Vt*3t
+zcl@2aexb=8Png;eED4Z8l!S8x9OQuL9)$TBWkE#Iq^5%CEm|2~UcabPV!~!sI4&U?
+z{_KyhKl_6N8d9z`Q&4gsN({y7R*`cC>#PDmIH8zyP1ru#3p67^z#34tw@lKMTld==
+z5J0Oa+m4EE1I-0^U4dRy)v{rKQ^1ohL~I@{@O#rl_jr$)l0f+)FE5MUJ<xX8s_ibq
+z(1{BlJBw*KBde(B$~D&U&{176QwC8o6dG)ryuI=FPl+Mz0paQBe1OjnpAjP2@d05{
+zt)fZK3#n9tH0{;@7*zjcuM1Locd+U&E58=7s8|kmh0?e5ezIk3C0reUTROK*_CV>A
+zhtqQ4-aeL=!PDPCF%e_M^~zsGqL^50unt3fS!BR`*_ZRGh8nVwZBx#%cSda{roM;s
+zxF#?Az%6{_+fxvXPb1J>hoJA^?&*iV8(8FRZ4|*H&S1sK#D&|4NtUrdAp89-#$IxQ
+z9Y&E0ojjJNf-4^RT{MM%^Z&g<1{Lv+AQ;)*7dSJH-GF}|q8a-|v|0RxmyiC)xeQ0s
+z#0YqPvIP?Ru23m+w6LSAJ^~;$?MT&+Om+szhDor(=l<*Fj6fIf`G4%IhQF}MMOvhn
+z<X#*6|7~)qv2an~W;b2iz5^fOmFbix?5gY#FsdBxZsid<@t3`SO3LI`6n{O>4C(~O
+z@l0AAsAMK58h2soRSxFdK)7cLw@bc-!(uYNXC;3-b=R=bOVihR{e>>Hwc-k|<vOhB
+z;p-WQSdo|Ra|OMkTm*k;LHBxVRsLG&ddqe+N%9kST)2S(fDl`3+*d~1<OjM?b}_Vl
+zSdW}g_^+P{RsR)#5U8Zz@<PsK-}ffyB`Ec^2xnn0gf*=LEMH(O$=<N`F8$jC(a?ff
+zqStU5L2do5^UCXH&k^oU9I`X}mJu#r?DC+`1DIG?k*6-PAL8THd=PaDO9TND{|-;|
+zJp@nLBYd?KAQ4K5MUT_gnxOyM>XZ&kF)G3oYzePZ9*lidLWbTNC?qKabIGr7Axp4p
+z!H>*U)9v=U3;{f^U>TJ8vgpj_r+?yA`ER8Ex_n>y__PS^)l>3@KdZ<YMAhLhhTpvL
+zdpLB$0Rcnm_)jiDfZ6{5v*#VII|MR%4g|BAS(^cWsuvt2EQ2YqwH2yZCpB3sca#XD
+z0RuQny3R)BE49Z`i<moBe%a!brQm)(Yt^nvl}F}P_LuIAXr*!XLTt#Yg2aKB3gT@G
+zTzr+S+Uz>SS-@wi*#kq`9E8(iWAuZiAOJ550HVf26atH>-c*MLE3w*i&P5d>Y?AB_
+zmq4O_cu=ksz4OAxESj3@BANl01T&5ef-~?N81Z47`P)PO(FF|jVe+R2J5tU+zM&7A
+zhX!vM;xlfU#AISmq3mGNyW#g}i9hgS)yP3F&h{Z-a>HnksSw`G#E+^vxrv8b1FNa%
+zG5WFJGG03Mw{)`7yK~34vhr{YJI<co==zy|lmGg3bN1AZ8Zy$+Ge>`oTPBWzi;kij
+zAjVnDJQ4#gO<rQfdye^KoqX-c9Fpv<y^lB&a-%yJpt)N5oik(%LR8aYAIl9gL@ggH
+zYIdOB<j2d)M6?wkQ0fW^7@{PuUW%L7%$Nw(h0q460|T3#WnDN)eyVF>OSyGJAhSDv
+zf8P-%rV4FU<-h<vR429tRnyvMLXac)VK58q%-K2mChlG7*86cUs}7tX6&&<Y*r-W(
+zdA#YK4!}Jq^0)BgWcxDQHno5+t~5}F4Qa4rh|cVtUrK^i{bG{+JN`On&$#PI&ws*}
+z3WYYlw@)e<KN&qer&zEPXSHUA^b}}+D2J_7jP$k;Z}(C`p^C)UPBy4cimb5R#u*ed
+zoB%5K;cicTT;cYF8c+E>kY@wywbQ83Be2v2d*;*~2(I^~2W@f&Bdy#4W^;BxR_&E$
+z`UefMx<z&ymqxS=oYr#L7?^A#reT^KMf{G(W3WEKzl^oYj`Ul;%&tqVQ5U3t_|W;1
+z=C`1jyzCv~7gDw}n%?#%)}14uFG|>vMt_51gMuPT+4~oPk~^sy>x3(n^;y2?6Ti@i
+z6JjfJGEQv|Fsi1;`amH)eTi~vqfj7YX_|OADCV@THqy);9qdd)X@rKIF@Q=em1j9H
+zo@kB!;%h_nMtpwmNM31At}?%W=Q<l%Y#xsC)x?!s&riN7dNp@)K>2YA9s&RphS1&m
+zM-gO=*Y&UrXRyN{6TTImgAcv|rKiWf0hI;%UsYLPysOc}9kNfZL?7q{h>+>HqJN2I
+z=65~93OmuPko!ek8$u~!fLMkZWJD2YPeR--c(Fm^>lR-DcM4cE3vnZVn{EpN=nQTy
+z^g~l=S%4NG+ygN*1XL`<9{_b<_u>VJZyqkkgwR>1YjO9V_qSqe@QW!!<;qP#4BT_0
+z7Lngjb<$vkNHI57=nZO~D<IrI2iY+5!>e}!TutI1fjDLL!_>9CSD#3FGzIgF2fuKR
+zZaP(gMcpqk+tE6Pj*uOH8YwblOlbPN5fjq=)KmwbqL>o^MILSn^d<tkEEX1UUJM<W
+z^I*s5oM|%s#mS&S9uu~2OOHEE?sFit!jaFk1;3X96`V(k64M-j?QMw4!-1pL6Q+N_
+z#6{Dbo1{mWfsUFxMq9cMtv{+eV-GErh%0AvgTd7wvEfWHJ#@l<6nz4ZXO3RP>^NC}
+zkf!0j=Hvyug8_0}pJ)ff`Z0D$+V_3|{SZD;eXO{?`*Z61Iq}~bOuM0?+O7ro5daw~
+zv1jblq~iQth|k2Gv*;RTeUt{YaSpY@qBle7=fno5!Ip&xcu*Gl4y7Vga|-pLfjbEJ
+z()s=3xxu4vac7BtFeJAOnKmtb**oGfdlRx@%;*cKt#|~3&QKCbYIv46gbl-Bg<@x5
+z7a9xUTNZR8wQ_8~Z7Ek<6&fM2W1GM!pXm`p=3-!*Vq`rvt&a+C>M4KuQ=dbCnSY>1
+zOax0nyeN=&KQjptvkJ$FLF*^JSm0ugK#6;zcDQ#DhS7F^>OAfWeYTwIhlY-SvYFSC
+zqsE!4BE^`{_ng^{=T#osCf)t?LLTR)eg4&(<39gJcWC*L^H}xTg@6><(4>a1KR9sH
+zhIMj{59&$dT0{LCRaJ;S_xn%v;XI*#Y#71kI@_qj@_1C3+>S1zZv8+y6b>J(DOd(U
+zJR~Er<gp2VQOJ?6cq*z@Gpt;4^d1n3H%DH4b15FhYyS9AU?lRsya4VnlpEh{i~s(0
+zAvW4^(ffOSc@c_&9JgFu^1(t$?=9qw(cP{TxPTV3sPq<0=Z=XXoIm`hSeQVv^SFqc
+z62brHp@ML$xzUf4d&C{Vhsa)(@tG$lDaXHd0}C{1$Zha$$g`0V7K7_gXJ%F<WcN5D
+z_dGHXyPs!X{NM62MLi)y?%*WOT0J&N&yDYV4i%cK98i1UIf+Z?_*Q(;n<wkdL<ny?
+zsUq|D$;q5CBVPaiq_8F*{|5ZxMTR%{5&j2UhW}yz2eS}j3n2s?KCMQRAA@lOe`@1*
+zlazx%3h$jaIzS2l0Q(=4-h)s9PLnT$JpySdlWv4T0WXuVgg^qIN0ah|KLHt&GKC`?
+zGI|aKSO@?Bm=yp36951J0000000000qyg?&lW~PV0(W7PvV}eY2$S)JBnEPV00000
+D2BOh@
+
+diff --git a/frontend/src/components/cad/cad-client.tsx b/frontend/src/components/cad/cad-client.tsx
+index a5d21464..3d050225 100644
+--- a/frontend/src/components/cad/cad-client.tsx
++++ b/frontend/src/components/cad/cad-client.tsx
+@@ -58,7 +58,7 @@ export function CadClient() {
+     <header className={styles.hero}>
+       <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad"><BookOpen size={16} /> CAD Intelligence <ArrowUpRight size={14} /></a></div>
+       <h1>Compare a parts list.</h1>
+-      <p>Upload a parts list, review inventory coverage, and open your saved BOM versions.</p>
++      <p>Upload a parts list, review saved BOM versions, and manage purchase plans for this inventory.</p>
+     </header>
+     <div className={styles.inventoryStrip}><span><Box size={18} /><span>Comparing with <strong>{inventory?.name || "your selected inventory"}</strong></span></span><a href="/cad">Change inventory ↗</a></div>
+     <CadHistory />
+diff --git a/frontend/src/components/cad/cad-help.tsx b/frontend/src/components/cad/cad-help.tsx
+index bae90f5f..bb773218 100644
+--- a/frontend/src/components/cad/cad-help.tsx
++++ b/frontend/src/components/cad/cad-help.tsx
+@@ -8,7 +8,7 @@ export function FusionInstallSteps() {
+       <li><strong>Add the inner FindEZ folder.</strong> Click <b>+ → Script or Add-In from device</b>. Open the extracted folder, then select the <b>FindEZ</b> folder inside it.</li>
+     </ol>
+     <div className={styles.folderGuide}><span>Select this folder:</span><pre>{'findez-fusion-workspace/\n  FindEZ/  ← select this\n    FindEZ.py\n    FindEZ.manifest\n    exporter.py'}</pre><p>Select the folder, not the ZIP or an individual file.</p></div>
+-    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.4.1</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
++    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.4.2</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
+     <div className={styles.runGuide} aria-label="Example: FindEZ row with the Run switch on"><span>FindEZ</span><span>Run <i aria-hidden="true" /> <b>On</b></span></div>
+     <p>Click <b>Close</b>, then choose <b>Utilities → Add-Ins → Open FindEZ</b>. Use <b>Sign in with FindEZ</b> to connect an inventory and work inside the panel. <b>Export FindEZ BOM</b> remains available for optional web comparison. Check <b>Run on Startup</b> to load FindEZ the next time you open Fusion.</p>
+     <p><a href="/docs/cad#install">Full CAD documentation: installation, updates, connection and troubleshooting →</a></p>
+diff --git a/frontend/src/components/cad/cad-history.tsx b/frontend/src/components/cad/cad-history.tsx
+index a9d379db..39c36e59 100644
+--- a/frontend/src/components/cad/cad-history.tsx
++++ b/frontend/src/components/cad/cad-history.tsx
+@@ -4,6 +4,7 @@ import { activeInventory } from "@/lib/inventory-selection";
+ import { accountRequest } from "@/lib/account-request";
+ import type { CadComparison } from "@/lib/cad";
+ import { CadResults } from "./cad-results";
++import { CadPurchasing } from "./cad-purchasing";
+ import styles from "./cad.module.css";
+ 
+ type Version = { id: string; project_id: string; version: number; created_at: string; document: { name: string } };
+@@ -13,7 +14,9 @@ export function CadHistory() {
+ }
+ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activeInventory>> }) {
+   const [versions, setVersions] = useState<Version[] | null>(null);
+-  const [selected, setSelected] = useState<{ version: number; created_at: string; comparison: CadComparison } | null>(null);
++  const [selected, setSelected] = useState<{ id: string; version: number; created_at: string; comparison: CadComparison } | null>(null);
++  const [baseline, setBaseline] = useState("");
++  const [diff, setDiff] = useState<{ name: string; before: number; after: number; delta: number; change: string; needs_review: boolean }[] | null>(null);
+   const [offset, setOffset] = useState(0);
+   const [next, setNext] = useState<number | null>(null);
+   const [busy, setBusy] = useState(false);
+@@ -23,12 +26,12 @@ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activ
+   async function load(start = 0, id?: string) {
+     if (!inventory || busy) return;
+     const controller = new AbortController(); request.current = controller;
+-    setBusy(true); setError(""); setSelected(null);
++    setBusy(true); setError(""); setSelected(null); setDiff(null); setBaseline("");
+     try {
+       if (id) {
+         const result = await accountRequest<{ inventory_id: string; version: number; created_at: string; comparison: CadComparison }>(inventory.accountId, `/cad/versions/${encodeURIComponent(id)}`, { signal: controller.signal });
+         if (result.inventory_id !== inventory.inventory_id) throw new Error("The inventory changed. Reopen its history.");
+-        if (!controller.signal.aborted) setSelected(result);
++        if (!controller.signal.aborted) setSelected({ ...result, id });
+       } else {
+         const result = await accountRequest<{ inventory_id: string; versions: Version[]; next_offset: number | null }>(inventory.accountId, `/cad/versions?offset=${start}`, { signal: controller.signal });
+         if (result.inventory_id !== inventory.inventory_id) throw new Error("The inventory changed. Reopen its history.");
+@@ -37,6 +40,18 @@ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activ
+     } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Saved versions could not be loaded."); }
+     finally { if (!controller.signal.aborted) setBusy(false); }
+   }
++  async function compareVersions() {
++    if (!selected || !baseline || busy) return;
++    const controller = new AbortController(); request.current = controller;
++    setBusy(true); setError(""); setDiff(null);
++    try {
++      const result = await accountRequest<{ inventory_id: string; changes: NonNullable<typeof diff> }>(inventory.accountId,
++        `/cad/revision-diff?before=${encodeURIComponent(baseline)}&after=${encodeURIComponent(selected.id)}`, { signal: controller.signal });
++      if (result.inventory_id !== inventory.inventory_id) throw new Error("The inventory changed. Reopen its history.");
++      if (!controller.signal.aborted) setDiff(result.changes);
++    } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Versions could not be compared."); }
++    finally { if (!controller.signal.aborted) setBusy(false); }
++  }
+   return <section className={styles.preparation} aria-label="Saved BOM history"><h2>Saved BOM versions</h2><p>Save a version from the connected Fusion panel, then review it here with your team. Each version keeps the design metadata and inventory comparison as they were when saved.</p>
+     <button disabled={busy} onClick={() => void load()}>Load saved versions</button>
+     {error && <p role="alert">{error}</p>}
+@@ -44,6 +59,11 @@ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activ
+     {versions && <ul>{versions.map(v => <li key={v.id}><button disabled={busy} onClick={() => void load(0, v.id)}>{v.document.name} / BOM {v.version} / {new Date(v.created_at).toLocaleString()}</button></li>)}</ul>}
+     {offset > 0 && <button disabled={busy} onClick={() => void load(Math.max(0, offset - 50))}>Newer versions</button>}
+     {next !== null && <button disabled={busy} onClick={() => void load(next)}>Older versions</button>}
+-    {selected && <><p><strong>Historical BOM {selected.version}.</strong> Saved {new Date(selected.created_at).toLocaleString()}. This is not current stock availability. Compare again in Fusion to refresh it.</p><button onClick={() => setSelected(null)}>Close saved version</button><CadResults key={selected.created_at} result={selected.comparison} onRefresh={() => {}} /></>}
++    {selected && <><p><strong>Historical BOM {selected.version}.</strong> Saved {new Date(selected.created_at).toLocaleString()}. This is not current stock availability. Compare again in Fusion to refresh it.</p><button disabled={busy} onClick={() => { setSelected(null); setDiff(null); }}>Close saved version</button>
++      <label>Compare requirements with <select disabled={busy} value={baseline} onChange={event => { setBaseline(event.target.value); setDiff(null); }}><option value="">Choose another version</option>{versions?.filter(v => v.id !== selected.id && v.project_id === versions.find(s => s.id === selected.id)?.project_id).map(v => <option key={v.id} value={v.id}>BOM {v.version} / {new Date(v.created_at).toLocaleString()}</option>)}</select></label>
++      <button disabled={busy || !baseline} onClick={() => void compareVersions()}>Compare saved requirements</button>
++      {diff && <div><p>Design quantity changes only. This does not refresh stock or check geometry and compatibility.</p>{diff.length ? <ul>{diff.map((row, i) => <li key={i}>{row.name}: {row.before} to {row.after} ({row.delta > 0 ? "+" : ""}{row.delta}){row.needs_review ? " / identity needs review" : ""}</li>)}</ul> : <p>No requirement quantity changes.</p>}</div>}
++      <CadResults key={selected.created_at} result={selected.comparison} onRefresh={() => {}} /></>}
++    <CadPurchasing versionId={selected?.id} />
+   </section>;
+ }
+diff --git a/frontend/src/components/cad/cad.module.css b/frontend/src/components/cad/cad.module.css
+index 96b2b177..feb2d3c9 100644
+--- a/frontend/src/components/cad/cad.module.css
++++ b/frontend/src/components/cad/cad.module.css
+@@ -153,3 +153,14 @@
+ .permissionOption input { flex: 0 0 auto; margin-top: 5px; width: 18px; height: 18px; }
+ .permissionOption span { min-width: 0; }
+ .permissionOption strong { display: block; margin-bottom: 6px; }
++.purchaseSection { border-top:1px solid var(--cad-line); margin-top:28px; padding-top:24px; }
++.purchaseLine { border-top:1px solid var(--cad-line); padding:20px 0; }
++.purchaseLine h4 { margin:0 0 8px; font-weight:500; }
++.purchaseQuote { padding:12px 0; border-bottom:1px solid var(--cad-line); }
++.purchaseQuote a { margin-right:16px; }
++.purchaseForm { margin:18px 0; max-width:680px; }
++.purchaseForm fieldset { display:grid; gap:14px; border:1px solid var(--cad-line); border-radius:12px; padding:20px; }
++.purchaseForm label { display:grid; gap:6px; font-size:14px; }
++.purchaseForm input:not([type=checkbox]), .purchaseForm select, .purchaseForm textarea { width:100%; min-width:0; color:var(--cad-text); background:var(--cad-panel); border:1px solid var(--cad-line); border-radius:8px; padding:10px; font:inherit; }
++.purchaseForm .permissionOption { display:flex; align-items:flex-start; }
++.purchaseForm .permissionOption input { flex:none; margin-top:3px; }
+diff --git a/frontend/src/components/marketing-dark/cad-public-content.tsx b/frontend/src/components/marketing-dark/cad-public-content.tsx
+index c5d2c8ce..21135af7 100644
+--- a/frontend/src/components/marketing-dark/cad-public-content.tsx
++++ b/frontend/src/components/marketing-dark/cad-public-content.tsx
+@@ -2,7 +2,7 @@ import type {CSSProperties} from 'react';
+ // Server-rendered copy and sample data from the supplied CAD prototype.
+ export function CadHero(){return (<section className={"c-hero"}><div className={"x-in"}>
+ <h1 className={"c-h1"}>{"Can you build it with what you already own?"}<span >{"CAD Intelligence compares a Fusion assembly’s parts list with your FindEZ inventory."}</span></h1>
+-<div className={"x-ctas"}><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.1"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download the Fusion add-in"}</a><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div>
++<div className={"x-ctas"}><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.2"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download the Fusion add-in"}</a><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div>
+ <p className={"x-small"}>{"Free through Founders Access. Setup takes a few minutes."}</p>
+ </div></section>);}
+ export function CadComparison(){return (<section className={"cm"} id={"cm"}><div className={"cm-st"}><canvas id={"cmc"} aria-hidden={"true"}></canvas>
+@@ -75,7 +75,7 @@ export function CadLimitations(){return (<section className={"c-sec"} style={{"p
+ export function CadStart(){return (<section className={"c-sec"} id={"start"} style={{"paddingTop": "40px"}}><div className={"x-in"}>
+ <h2 className={"x-h2"}><span className="wd" style={{transitionDelay:"0ms"}}>{"Get"}</span>{" "}<span className="wd" style={{transitionDelay:"35ms"}}>{"started."}</span><span ><span className="wd" style={{transitionDelay:"70ms"}}>{"Install"}</span>{" "}<span className="wd" style={{transitionDelay:"105ms"}}>{"once,"}</span>{" "}<span className="wd" style={{transitionDelay:"140ms"}}>{"then"}</span>{" "}<span className="wd" style={{transitionDelay:"175ms"}}>{"compare"}</span>{" "}<span className="wd" style={{transitionDelay:"210ms"}}>{"any"}</span>{" "}<span className="wd" style={{transitionDelay:"245ms"}}>{"assembly."}</span></span></h2>
+ <div className={"gs"}><div >
+-<div className={"gs-r"}><div ><h3 >{"Fusion add-in"}</h3><p >{"The preview add-in for Autodesk Fusion. Works on Mac and Windows."}</p></div><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.1"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download add-in"}</a></div>
++<div className={"gs-r"}><div ><h3 >{"Fusion add-in"}</h3><p >{"The preview add-in for Autodesk Fusion. Works on Mac and Windows."}</p></div><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.2"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download add-in"}</a></div>
+ <div className={"gs-r"}><div ><h3 >{"Installation guide"}</h3><p >{"Step-by-step setup, a sample design to try, and troubleshooting."}</p></div><a className={"x-p d lg"} href={"/docs/cad"}>{"Read the setup guide"}</a></div>
+ <div className={"gs-r"}><div ><h3 >{"Comparison tool"}</h3><p >{"Upload a BOM, choose an inventory and compare. Sign in with your FindEZ account."}</p></div><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div></div>
+ <div className={"gs-tree"}><pre id={"gs-pre"}>{"Downloads/\n└─ findez-fusion-workspace/\n   └─ "}<b >{"FindEZ/"}</b>
+diff --git a/frontend/src/components/site/cad-docs-navigation.tsx b/frontend/src/components/site/cad-docs-navigation.tsx
+index f0d005d8..47d8ed16 100644
+--- a/frontend/src/components/site/cad-docs-navigation.tsx
++++ b/frontend/src/components/site/cad-docs-navigation.tsx
+@@ -5,7 +5,7 @@ import styles from './api-docs.module.css';
+ 
+ export const cadSections = [
+   ['quickstart', 'Start here', 'workflow choose fusion upload inventory'],
+-  ['downloads', 'Downloads & versions', 'zip template 0.4.1 0.1.0 candidate'],
++  ['downloads', 'Downloads & versions', 'zip template 0.4.2 0.1.0 candidate'],
+   ['install', 'Install the Fusion add-in', 'windows mac folder run toggle open findez'],
+   ['update', 'Update an existing installation', 'old preview export only replace restart'],
+   ['connect', 'Connect an inventory', 'sign in code pairing permissions disconnect expired'],
+@@ -14,6 +14,7 @@ export const cadSections = [
+   ['insert', 'Insert a Fusion model', 'step stp f3d placement geometry cancel dimensions'],
+   ['bom', 'Compare inside Fusion', 'assembly bom refresh shortages export'],
+   ['history', 'Saved BOMs & corrections', 'versions projects history remember match shared review'],
++  ['purchasing', 'Quotes, orders & receiving', 'purchase plans supplier prices packs minimum bulk currency approval delivery receipts'],
+   ['generate', 'Generate a STEP model', 'rexcad dimensions clarification checksum retry expiry'],
+   ['export', 'Export from Fusion', 'json offline export only'],
+   ['compare', 'Compare on the web', 'upload inventory results'],
+@@ -32,6 +33,7 @@ const groups = [
+   ['Get started', ['quickstart', 'downloads', 'install', 'update', 'connect', 'first-model']],
+   ['Work in Fusion', ['browse', 'insert', 'generate', 'bom', 'history']],
+   ['Compare a file', ['export', 'compare', 'onshape', 'spreadsheet']],
++  ['Plan purchases', ['purchasing']],
+   ['Reference & help', ['results', 'limits', 'privacy', 'sample', 'troubleshooting', 'roadmap', 'support']],
+ ] as const;
+ 
+diff --git a/frontend/src/components/site/cad-docs.tsx b/frontend/src/components/site/cad-docs.tsx
+index 2de0a027..1b3e718f 100644
+--- a/frontend/src/components/site/cad-docs.tsx
++++ b/frontend/src/components/site/cad-docs.tsx
+@@ -18,7 +18,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+     <div className={styles.layout}>
+       <aside className={styles.sidebar}><CadDocsNavigation /></aside>
+       <main id="cad-docs-content" className={styles.content}>
+-        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Your home for everything CAD: install FindEZ, create your first model, search parts, compare inventory, and review saved BOMs. Find downloads, tools, and help here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.4.1 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip?v=0.4.1" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 16, 2026 · Examples use fictional data</p></div>
++        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Your home for everything CAD: install FindEZ, create your first model, search parts, compare inventory, and review saved BOMs. Find downloads, tools, and help here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.4.2 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 16, 2026 · Examples use fictional data</p></div>
+ 
+         <section id="quickstart"><h2>Choose your workflow</h2>
+           <ReferenceTable caption="CAD tools and guides" headings={['I want to…', 'Open']} rows={[
+@@ -39,19 +39,19 @@ export function CadDocs({ world }: { world?: string } = {}) {
+ 
+         <section id="downloads"><h2>Downloads & versions</h2><p>Download on the computer where Fusion runs. Extract the ZIP before adding it to Fusion. The workspace and export-only add-ins use the same FindEZ name; keep only the intended version registered and running.</p>
+           <ReferenceTable caption="Choose the correct download" headings={['Download', 'Version', 'Includes']} rows={[
+-            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip?v=0.4.1" download>Fusion workspace ZIP</a>, '0.4.1 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
++            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Fusion workspace ZIP</a>, '0.4.2 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
+             ['Legacy export-only add-in (superseded)', '0.1.0', 'Export FindEZ BOM only. Does not include Open FindEZ or a connected panel.'],
+             [<a key="template" href="/downloads/findez-bom-template.csv" download>CSV template</a>, 'Flat BOM', 'Example columns for a spreadsheet comparison. Replace the sample rows with your own parts.'],
+           ]} />
+-          <p><strong>Version 0.4.1:</strong> softens the Fusion panel with slate-grey surfaces, muted blue actions, quieter tabs, and less boxed-in results. It retains shared BOM versions, remembered match corrections, and RexCAD STEP generation. Reconnect and explicitly allow CAD writing to use these controls. Generation sends your submitted specifications to RexCAD and can ask clarification questions. STEP downloads are checked automatically before insertion. Check the inserted model and its placement before using it. Downloading a ZIP does not update an installed add-in.</p>
++          <p><strong>Version 0.4.2:</strong> softens the Fusion panel with slate-grey surfaces, muted blue actions, quieter tabs, and less boxed-in results. It retains shared BOM versions, remembered match corrections, and RexCAD STEP generation. Reconnect and explicitly allow CAD writing to use these controls. Generation sends your submitted specifications to RexCAD and can ask clarification questions. STEP downloads are checked automatically before insertion. Check the inserted model and its placement before using it. Downloading a ZIP does not update an installed add-in.</p>
+         </section>
+ 
+         <section id="install"><h2>Install the Fusion workspace</h2><ol>
+-          <li>Download the <a href="/downloads/findez-fusion-workspace.zip?v=0.4.1" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
++          <li>Download the <a href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
+           <li>Open Fusion and switch to the <strong>Design</strong> workspace. Open <strong>Utilities → Add-Ins → Scripts and Add-Ins</strong>.</li>
+           <li>If an older FindEZ entry exists, follow <a href="#update">Update an existing installation</a> first.</li>
+           <li>Click <strong>+ → Script or Add-In from device</strong>. Select the inner <strong>FindEZ</strong> folder that directly contains <code>FindEZ.py</code> and <code>FindEZ.manifest</code>. Select the folder, not the ZIP or a Python file.</li>
+-          <li>Select FindEZ and confirm <strong>version 0.4.1</strong>. Turn on its <strong>Run</strong> toggle. Older Fusion versions use a Run button. Optionally enable Run on Startup.</li>
++          <li>Select FindEZ and confirm <strong>version 0.4.2</strong>. Turn on its <strong>Run</strong> toggle. Older Fusion versions use a Run button. Optionally enable Run on Startup.</li>
+           <li>Close the dialog. Choose <strong>Utilities → Add-Ins → Open FindEZ</strong>. A FindEZ panel should open beside your design with a <strong>Sign in with FindEZ</strong> button.</li>
+         </ol>
+           <CodeExample label="Extracted workspace folder" examples={{ Folder: 'findez-fusion-workspace/\n  README.md\n  FindEZ/                 ← select this folder\n    FindEZ.py\n    FindEZ.manifest\n    workspace.py\n    client.py\n    placement.py\n    exporter.py\n    palette.html\n    palette.css\n    palette.js' }} />
+@@ -62,7 +62,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <li>In Scripts and Add-Ins, select FindEZ and switch <strong>Run</strong> off.</li>
+           <li>Check the <strong>Full Path</strong> field. If it points to <code>findez-fusion-preview</code>, it is the export-only installation. Remove that old registration using the remove/unlink control.</li>
+           <li>Close Fusion. Extract the new workspace ZIP. Replace the complete contents of your registered FindEZ folder, or register the new extracted inner FindEZ folder after reopening Fusion.</li>
+-          <li>Restart Fusion so its Python modules reload. Confirm the intended folder and <strong>0.4.1</strong> in the add-in manager, switch Run on, and open FindEZ.</li>
++          <li>Restart Fusion so its Python modules reload. Confirm the intended folder and <strong>0.4.2</strong> in the add-in manager, switch Run on, and open FindEZ.</li>
+         </ol><p>Updating the add-in does not change your designs or inventory. Reconnect after restarting: the Fusion session is kept in memory. If you still see only Export FindEZ BOM, check the registered version and path before downloading again.</p></section>
+ 
+         <section id="connect"><h2>Connect an inventory</h2><ol>
+@@ -116,7 +116,21 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <li>Open BOM and compare the assembly. Use <strong>Correct this match</strong> to remember a reviewed match or mark that none of the candidates match. Compare again to see the updated allocation.</li>
+           <li>Click <strong>Save BOM version</strong>. FindEZ reads the assembly and current inventory again, then stores an immutable version. Retrying a failed save does not create a duplicate.</li>
+           <li>Open <strong>Saved BOM versions</strong> in the panel or the web comparison page. Saved counts are historical; compare again for current availability.</li>
+-        </ol><p>Versions and corrections are shared with authorized readers of this inventory. Saving does not reserve or consume stock. Up to 500 projects per inventory and 200 versions per project are supported.</p></section>
++        </ol><p>Versions and corrections are shared with authorized readers of this inventory. Saving does not reserve or consume stock. Up to 500 projects per inventory and 200 versions per project are supported.</p><p>On the web, open a saved version and choose another version of the same project under <strong>Compare requirements with</strong>. The comparison shows added, removed, and changed quantities. Parts without a manufacturer and part number retain their definition identity and need review. This comparison does not inspect geometry, refresh stock, or verify engineering compatibility.</p></section>
++
++        <section id="purchasing"><h2>Plan purchases, compare quotes, and receive parts</h2>
++          <p>This workflow is in the signed-in <Link href={comparisonHref}>CAD comparison and history tool</Link>, under <strong>Purchase plans</strong>, when purchasing is enabled on the server. It is not yet a Fusion panel control. Supplier quotes are entered by your team; FindEZ has no live vendor feed connected.</p>
++          <ol>
++            <li>Save a BOM in Fusion. On the web, load and select that version, open Purchase plans, then choose <strong>Create plan from selected BOM</strong>. FindEZ compares the saved design with current inventory. Resolve incomplete extraction and ambiguous purchase lines first. Fabricated components are not added to the purchase list.</li>
++            <li>For each shortage, add a supplier quote with its HTTPS product link, source or reference, currency, price per individual unit, pack size, minimum order, quote date, and expiry. Confirm the exact variant, dimensions, and material yourself.</li>
++            <li>Add bulk price breaks as one quantity and unit price per line, for example <code>100, 0.08</code>. These are prices for every unit once that quantity is reached. FindEZ compares pack-rounded quantities and shows extra units if a larger order costs less.</li>
++            <li>Select a quote for every line. Prices remain separate by currency and exclude shipping and tax. Expired and out-of-stock quotes cannot be selected or approved. Listed stock is supplier information, not a physical stock check.</li>
++            <li>An inventory owner or administrator approves the selected quotes and quantities. Use <strong>Export by vendor</strong> to create a purchasing CSV. Place orders with the vendors yourself, then record all vendor order references. FindEZ does not perform checkout or payment.</li>
++            <li>When a delivery arrives, choose <strong>Receive</strong>, search for the existing destination stock record, enter only the quantity delivered now, and confirm the part and location. Receiving increases that record&apos;s stock and records a restock event. Create a stock record in the inventory first if needed. Partial deliveries leave the remaining quantity on order.</li>
++          </ol>
++          <p>Creating, approving, or marking a plan ordered does not add stock. One active plan is allowed per CAD project. Plans are shared with authorized inventory readers; editors can prepare quotes and receive deliveries, while owners and administrators approve and record orders. Approved plans can be reopened before ordering. Draft and approved plans can be cancelled. Ordered plans must be received; vendor cancellations and returns are not supported here yet.</p>
++          <p>If a connection fails while saving, use <strong>Retry the same change</strong>. The page retains the pending request in this browser tab for this account and inventory, including across reloads. Confirm the result before starting another delivery entry. Duplicate retries do not add stock twice. A saved plan&apos;s quantities are planning snapshots; check other project commitments and outstanding orders before purchasing.</p>
++        </section>
+ 
+         <section id="generate"><h2>Generate a STEP model inside Fusion</h2><ol>
+           <li>Connect with CAD writing permission, then open the <strong>Generate</strong> tab. Enter a name, units, and explicit dimensions. Include holes, orientation, material-related constraints, and required geometry where relevant.</li>
+@@ -176,7 +190,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           ]} />
+           <h3>Identity evidence</h3><p>Exact barcodes or part numbers provide stronger evidence than names. Manufacturer information helps resolve conflicting suppliers or identifiers. Name-only candidates need review. The comparison does not validate mechanical fit, electrical ratings, materials, or engineering compatibility.</p>
+           <h3>Quantities and corrections</h3><p>Existing reservations and checkouts reduce available recorded stock. Requirements competing for the same stock cannot each count all of it. Review the assigned and missing quantities per line. Editors with CAD writing permission can choose Correct this match, select a candidate, and remember the decision for this inventory. None match keeps the line unresolved; Forget correction removes the decision. The next comparison applies saved decisions only while both identities still match. These decisions do not certify engineering compatibility.</p>
+-          <p>Shortages exports are planning files, not purchase orders. Review needs-review rows, duplicate parts, and missing identifiers before ordering. No vendor quotes or automatic substitutions are included.</p>
++          <p>Shortages exports are planning files, not purchase orders. Review needs-review rows, duplicate parts, and missing identifiers before ordering. Supplier quotes can be recorded separately in <a href="#purchasing">Purchase plans</a>; no automatic substitutions are made.</p>
+         </section>
+ 
+         <section id="limits"><h2>File limits & current limitations</h2>
+@@ -185,7 +199,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+             ['Spreadsheet', '5,000 data rows, 200 columns, 20 worksheets', 'Only the selected worksheet is compared. Use plain values and individual units.'],
+             ['Fusion JSON', '5,000 definitions and 20,000 occurrences', 'Use the add-in export schema; arbitrary JSON is not a BOM.'],
+             ['Local model insertion', '100 MiB per file', 'STEP/STP or F3D, used locally inside Fusion. Not a web BOM upload.'],
+-          ]} /><p>Configuration, suppressed parts, missing references, and assembly structure can affect completeness. Quantities are snapshots, not a reservation or a physical stock check. The candidate does not provide hosted CAD assets, verified model previews, live pricing, purchasing, automatic design changes, or automatic project synchronization. Saved BOM versions are explicit snapshots.</p></section>
++          ]} /><p>Configuration, suppressed parts, missing references, and assembly structure can affect completeness. Quantities are snapshots, not a reservation or a physical stock check. The candidate does not provide hosted CAD assets, verified model previews, live pricing, purchasing inside Fusion, automatic design changes, or automatic project synchronization. Saved BOM versions are explicit snapshots.</p></section>
+ 
+         <section id="privacy"><h2>Privacy & permissions</h2><p>The Fusion panel loads its UI locally. Signing in opens your normal browser; do not enter your FindEZ password into a palette or share a pairing code you did not initiate.</p>
+           <ReferenceTable caption="What leaves your computer" headings={['Action', 'Data used by FindEZ']} rows={[
+@@ -205,10 +219,10 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <details><summary>Generate model is disabled or I cannot click it</summary><p>Check that you are connected, have an editable design open, and have completed the name, units, specification, and generation-consent fields. If the panel says to approve CAD writing access, disconnect and sign in again. On the browser connection page, select both the matching-code confirmation and the separate optional model-generation permission before connecting. Only an inventory editor can enable it. Selecting RexCAD consent inside Fusion alone does not grant this permission.</p></details>
+           <details><summary>My model says queued — should I start again?</summary><p>No. The job has been accepted. Click Refresh status and answer any clarification that appears. My recent generation jobs lets you resume the same job after reconnecting to the same inventory.</p></details>
+           <details><summary>I see the model and a Place FindEZ Component dialog</summary><p>Adjust its position if needed and click OK to keep it, or Cancel to remove the copy. Save the Fusion design and check dimensions. Seeing the shape does not verify every dimension or manufacturing requirement.</p></details>
+-          <details className={styles.responseFields}><summary>I only see Export FindEZ BOM, not Open FindEZ</summary><p>Check Scripts and Add-Ins. Version 0.1.0 is export-only. Install the workspace ZIP, confirm version 0.4.1 and its Full Path, and switch Run on. Remove the old registration and restart Fusion after replacing files. Look under Design → Utilities → Add-Ins.</p></details>
+-          <details className={styles.responseFields}><summary>Sign-in shows Unsupported panel command</summary><p>Update to workspace version 0.4.1. Earlier versions could mistake Fusion’s acknowledgement messages for new commands and repeatedly display this error. Stop FindEZ, replace the complete extracted files, restart Fusion, confirm 0.4.1 in Scripts and Add-Ins, and try Sign in with FindEZ again.</p></details>
+-          <details className={styles.responseFields}><summary>Sign-in says FindEZ could not be reached</summary><p>Update the complete add-in to 0.4.1 and restart Fusion. This version includes public certificate roots for embedded Python and shows a specific error code if the connection still fails. TLS-CERT means certificate verification failed; check the computer date and managed-network HTTPS inspection. DNS means the API hostname could not be resolved. TIMEOUT or NETWORK means Fusion could not connect. Send the displayed code to support. The browser opening findez.ai does not by itself confirm Fusion can reach the API.</p></details>
+-          <details className={styles.responseFields}><summary>Open FindEZ says the site cannot be reached</summary><p>The initial panel should load locally, before sign-in. Version 0.4.1 retains the Windows file-URL fix. Stop FindEZ, replace the complete extracted files, restart Fusion, and confirm 0.4.1. Check that palette.html, palette.js, and palette.css are present beside FindEZ.py. If the error appears instead in your browser after clicking Sign in with FindEZ, check your internet connection and open the connection page directly.</p></details>
++          <details className={styles.responseFields}><summary>I only see Export FindEZ BOM, not Open FindEZ</summary><p>Check Scripts and Add-Ins. Version 0.1.0 is export-only. Install the workspace ZIP, confirm version 0.4.2 and its Full Path, and switch Run on. Remove the old registration and restart Fusion after replacing files. Look under Design → Utilities → Add-Ins.</p></details>
++          <details className={styles.responseFields}><summary>Sign-in shows Unsupported panel command</summary><p>Update to workspace version 0.4.2. Earlier versions could mistake Fusion’s acknowledgement messages for new commands and repeatedly display this error. Stop FindEZ, replace the complete extracted files, restart Fusion, confirm 0.4.2 in Scripts and Add-Ins, and try Sign in with FindEZ again.</p></details>
++          <details className={styles.responseFields}><summary>Sign-in says FindEZ could not be reached</summary><p>Update the complete add-in to 0.4.2 and restart Fusion. This version includes public certificate roots for embedded Python and shows a specific error code if the connection still fails. TLS-CERT means certificate verification failed; check the computer date and managed-network HTTPS inspection. DNS means the API hostname could not be resolved. TIMEOUT or NETWORK means Fusion could not connect. Send the displayed code to support. The browser opening findez.ai does not by itself confirm Fusion can reach the API.</p></details>
++          <details className={styles.responseFields}><summary>Open FindEZ says the site cannot be reached</summary><p>The initial panel should load locally, before sign-in. Version 0.4.2 retains the Windows file-URL fix. Stop FindEZ, replace the complete extracted files, restart Fusion, and confirm 0.4.2. Check that palette.html, palette.js, and palette.css are present beside FindEZ.py. If the error appears instead in your browser after clicking Sign in with FindEZ, check your internet connection and open the connection page directly.</p></details>
+           <details className={styles.responseFields}><summary>Fusion says Failed to add script</summary><p>Extract the ZIP and select the inner FindEZ folder. FindEZ.py and FindEZ.manifest must sit directly inside it with those exact names. Do not select the outer download folder or a single file. Send support the exact error and folder picker screenshot if it still fails.</p></details>
+           <details className={styles.responseFields}><summary>I cannot find Run, or neither command appears</summary><p>New Fusion versions use a small Run toggle in the FindEZ row; older versions have a Run button. Switch to the Design workspace, enable FindEZ, and close the manager. If it switches off or displays an error, capture that message. Searching with S cannot find a command that has not loaded.</p></details>
+           <details className={styles.responseFields}><summary>The pairing code expired or the panel is not connected</summary><p>Start Sign in with FindEZ again inside Fusion. Use the new code within ten minutes and approve the same selected inventory. Confirm the code matches your panel. Return to Fusion; if the session has expired or access changed, disconnect and reconnect.</p></details>
+@@ -221,10 +235,10 @@ export function CadDocs({ world }: { world?: string } = {}) {
+         <section id="roadmap"><h2>Planned capabilities</h2><p>The current release is a Fusion workspace candidate with saved BOMs and on-demand generation. The following capabilities are planned, not available controls or promises of a release date.</p>
+           <ReferenceTable caption="CAD development scope" headings={['Area', 'Planned work']} rows={[
+             ['Fusion workspace', 'Complete native placement acceptance, hosted model retrieval and previews, and saved/frequently used parts.'],
+-            ['BOM and identity', 'Canonical variant identity, specification checks, automatic synchronization, and design-change comparison.'],
++            ['BOM and identity', 'Canonical variant identity, specification checks, automatic synchronization, and geometry-aware design-change analysis. Saved requirement quantity comparison is available on the web.'],
+             ['Parts and CAD assets', 'A curated manufacturer catalog with exact variants, source rights, model quality labels, validation, and incremental generation jobs.'],
+-            ['Pricing', 'Approved vendor offers, timestamps and currencies, pack quantities, price history, and reviewed compatible alternatives.'],
+-            ['Procurement', 'Purchase lists, vendor grouping, team approval, order tracking, partial receiving, and inventory reconciliation.'],
++            ['Pricing', 'Approved live vendor feeds and reviewed engineering alternatives. Team-supplied quote history and pack/bulk estimates are supported in web purchase plans when enabled.'],
++            ['Procurement', 'In-panel purchasing, order cancellation/returns, automatic replenishment allocation, and vendor checkout. Web purchase plans support approval, order recording, and partial receiving when enabled.'],
+             ['Further integrations', 'Direct Onshape connection, cost recommendations, and multi-project planning.'],
+           ]} /><p>Catalog availability, owned stock, CAD geometry, and vendor offers remain distinct. A generated model or similarly named part must not silently become a verified engineering substitute. Suggested purchases and design substitutions require human review.</p></section>
+ 

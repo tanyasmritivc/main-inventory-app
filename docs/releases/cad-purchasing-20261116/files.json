@@ -1,0 +1,16 @@
+[
+  "backend/app/api/routes/cad.py",
+  "frontend/public/downloads/findez-fusion-workspace.zip",
+  "frontend/src/components/cad/cad-client.tsx",
+  "frontend/src/components/cad/cad-help.tsx",
+  "frontend/src/components/cad/cad-history.tsx",
+  "frontend/src/components/cad/cad.module.css",
+  "frontend/src/components/marketing-dark/cad-public-content.tsx",
+  "frontend/src/components/site/cad-docs-navigation.tsx",
+  "frontend/src/components/site/cad-docs.tsx",
+  "backend/app/services/cad/pricing.py",
+  "backend/app/services/cad/purchasing.py",
+  "backend/app/services/cad/revisions.py",
+  "frontend/src/components/cad/cad-purchasing.tsx",
+  "frontend/src/lib/cad-purchasing.ts"
+]

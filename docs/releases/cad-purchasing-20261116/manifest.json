@@ -1,0 +1,58 @@
+{
+  "backend/app/api/routes/cad.py": {
+    "before": "1777579b03f4c31e4b8bafe2d3de3456661024a185e017fffc9851ea67bd74b6",
+    "after": "1eccd338eeb8a3efa4544ed4f2b91dc94e735eb86e4001cf6069100bbaa9f3c8"
+  },
+  "frontend/public/downloads/findez-fusion-workspace.zip": {
+    "before": "892adf048de38420f991a0355958d70c905be0ab3bb8f7df0b5a7b8711563284",
+    "after": "1fcbc00f574343be0c6d4916dfab4009ff2f9643a9bc72a57e38bd8a8fbd57a6"
+  },
+  "frontend/src/components/cad/cad-client.tsx": {
+    "before": "d1f69258b3c1c0e0ee37b63f99d894aa9fef64abbcf93d41f7fd63765a9eb266",
+    "after": "9c523ac07b5225edc4535faedc8363cc0c9c3e95cc0b4c6c7c112cd68620df8a"
+  },
+  "frontend/src/components/cad/cad-help.tsx": {
+    "before": "57489e5f17d25647b97f446f2c233be299a57e8bff27bb73034c061f70c95380",
+    "after": "7df6ca74ec5c56bcc5019b2138a4f4c186670aa66b25f9b7bdfbdeba97f6238c"
+  },
+  "frontend/src/components/cad/cad-history.tsx": {
+    "before": "ec478d36455899e7e08168cd296fa89c6bf6fb73ee29eaf04e8d9524dc74ac38",
+    "after": "9c7a0da832d185a2cb7ad128a1acdd180c81306c2f01a4ee8d0a06ce9e4a56d1"
+  },
+  "frontend/src/components/cad/cad.module.css": {
+    "before": "c18ca733f3aefc5a02e0b1426350f695e10883b99e218c30fd331b8b79628b6e",
+    "after": "59dad578dab48c464c4f58ec9bcf9282da330d78b33a15522d6d38e3314663a8"
+  },
+  "frontend/src/components/marketing-dark/cad-public-content.tsx": {
+    "before": "f72e1104c81d83e6bf0cde4a22be5bbaa264d01f6abb823bd9400f26a92501a0",
+    "after": "9f1058e03ec43b04de1334d2549b2cf74897a003bdf3bd47bb0edabb8613dee5"
+  },
+  "frontend/src/components/site/cad-docs-navigation.tsx": {
+    "before": "1878f66a342e387ac4c68a3464ab35f3cda8d5572c47b38386764dd718b3b398",
+    "after": "ff4082414a5d54a7ed11d9d9f3c564d5f92613d414eb8ebebcc03104a056e5e4"
+  },
+  "frontend/src/components/site/cad-docs.tsx": {
+    "before": "d4638bc46959e7f491ee4ecd937ff7fe152501ce001fc498b32fdcea3b419a7f",
+    "after": "d64f263586fffa85e846577b90e73c70cfbde412d6587dd8f4e649f1a2a9adfe"
+  },
+  "backend/app/services/cad/pricing.py": {
+    "before": null,
+    "after": "bb69cc5a65f91f9cea54590c984fbb1c057eccefe3e43f7de9b474d8d08cfffd"
+  },
+  "backend/app/services/cad/purchasing.py": {
+    "before": null,
+    "after": "a759c30fcebdaabf84afe4bb0720ed98af426f836d7b31038e58f39fb1f6504d"
+  },
+  "backend/app/services/cad/revisions.py": {
+    "before": null,
+    "after": "01fc55ad1d21781f418be93b60a5f9502ae6bbdb5dfdfd7eb84e70ff132ac3ac"
+  },
+  "frontend/src/components/cad/cad-purchasing.tsx": {
+    "before": null,
+    "after": "03efdf7a6c144c51dcdb43c5bdb2a3c2c52c33fdc7b2cb82f621e0b2d75831e3"
+  },
+  "frontend/src/lib/cad-purchasing.ts": {
+    "before": null,
+    "after": "7af37ab178ad65aadf6490b5730a4c7bc2202a0751c3e8ca1722efc655059b6b"
+  }
+}

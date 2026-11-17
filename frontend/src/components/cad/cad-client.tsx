@@ -58,7 +58,7 @@ export function CadClient() {
     <header className={styles.hero}>
       <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad"><BookOpen size={16} /> CAD Intelligence <ArrowUpRight size={14} /></a></div>
       <h1>Compare a parts list.</h1>
-      <p>Upload a parts list, review inventory coverage, and open your saved BOM versions.</p>
+      <p>Upload a parts list, review saved BOM versions, and manage purchase plans for this inventory.</p>
     </header>
     <div className={styles.inventoryStrip}><span><Box size={18} /><span>Comparing with <strong>{inventory?.name || "your selected inventory"}</strong></span></span><a href="/cad">Change inventory ↗</a></div>
     <CadHistory />

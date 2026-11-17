@@ -15,8 +15,45 @@ from app.services.cad.comparison import compare
 from app.services.cad.repository import read_inventory, authorize_inventory
 from app.services.cad import tabular
 from app.services.cad import corrections
+from app.services.cad import purchasing, revisions
 
 router = APIRouter(tags=['cad'])
+
+
+@router.get('/inventories/{inventory_id}/cad/capabilities')
+def capabilities(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.supabase_client import get_supabase_raw
+    authorize_inventory(str(inventory_id), actor(user))
+    role = get_supabase_raw().rpc('findez_inventory_role', {'p_inventory': str(inventory_id), 'p_actor': actor(user)}).execute().data
+    return {'inventory_id': str(inventory_id), 'purchasing': purchasing.enabled(),
+        'can_edit': role in ('owner', 'admin', 'editor'), 'can_approve': role in ('owner', 'admin')}
+
+
+@router.get('/inventories/{inventory_id}/cad/revision-diff')
+def revision_diff(inventory_id: UUID, before: UUID, after: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    return revisions.compare(str(inventory_id), actor(user), str(before), str(after))
+
+
+@router.get('/inventories/{inventory_id}/cad/purchases')
+def purchase_plans(inventory_id: UUID, offset: int = Query(0, ge=0, le=10000), user: AuthenticatedUser = Depends(get_current_user)):
+    return purchasing.plans(str(inventory_id), actor(user), offset)
+
+
+@router.get('/inventories/{inventory_id}/cad/purchases/{plan_id}')
+def purchase_plan(inventory_id: UUID, plan_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    return purchasing.detail(str(inventory_id), actor(user), str(plan_id))
+
+
+@router.post('/inventories/{inventory_id}/cad/purchases')
+@limiter.limit('10/minute')
+def create_purchase_plan(request: Request, inventory_id: UUID, body: purchasing.CreatePlan, user: AuthenticatedUser = Depends(get_current_user)):
+    return purchasing.create(str(inventory_id), actor(user), body)
+
+
+@router.post('/inventories/{inventory_id}/cad/purchases/{plan_id}/actions')
+@limiter.limit('30/minute')
+def purchase_action(request: Request, inventory_id: UUID, plan_id: UUID, body: purchasing.Action, user: AuthenticatedUser = Depends(get_current_user)):
+    return purchasing.action(str(inventory_id), actor(user), str(plan_id), body)
 
 
 def reject_duplicates(pairs):
