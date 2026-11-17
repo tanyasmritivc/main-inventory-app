@@ -3,6 +3,8 @@ import { activeInventory, assertInventory } from "@/lib/inventory-selection";
 
 export type CadLine = {
   review_token?: string;
+  specifications?: Record<string,string>;
+  specification_issues?: {item_id:string;conflicts:string[];unknown:string[]}[];
   candidates?: CadCandidate[];
   key: string; name: string; part_number: string; manufacturer: string;
   required: number; assigned: number; missing: number; unit: string;

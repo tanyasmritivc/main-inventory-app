@@ -118,7 +118,7 @@ function Purchasing({ inventory, versionId }: { inventory: NonNullable<ReturnTyp
         <div className={styles.actions}><button disabled={busy} onClick={exportPlan}>Export by vendor</button><button disabled={disabled} onClick={() => void work(() => read(plan.id))}>Reload this plan</button></div>
         {plan.order_reference && <p>Order reference: {plan.order_reference}</p>}
         {plan.lines.map(line => <section className={styles.purchaseLine} key={line.id}>
-          <h4>{line.name}</h4><p>{line.manufacturer} {line.part_number}</p><p>Required {line.required} / available when planned {line.available} / shortage {line.quantity}</p>
+          <h4>{line.name}</h4><p>{line.manufacturer} {line.part_number}</p><p>{Object.entries(line.specifications || {}).map(([key, value]) => `${key}: ${value}`).join(" / ")}</p><p>Required {line.required} / available when planned {line.available} / shortage {line.quantity}</p>
           {line.selected_quote && <p>Selected: {line.selected_quote.vendor}, {line.selected_quote.currency} {line.selected_quote.estimate.subtotal} for {line.selected_quote.estimate.order_quantity} units ({line.selected_quote.estimate.surplus_quantity} extra).</p>}
           {['ordered', 'completed'].includes(plan.state) && <p>Received {line.received} / still on order {(line.selected_quote?.estimate.order_quantity || 0) - line.received}. On-order units are not on-hand stock.</p>}
           <details><summary>Supplier quotes ({line.quotes.length})</summary>{line.quotes.map(quote => <div className={styles.purchaseQuote} key={quote.id}>

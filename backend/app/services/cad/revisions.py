@@ -1,5 +1,6 @@
 """Compare immutable design requirements, never historical stock allocations."""
 from collections import defaultdict
+import json
 from fastapi import HTTPException
 from . import projects
 
@@ -15,6 +16,7 @@ def changes(before, after):
             identified = bool(manufacturer and part)
             key = ('part', manufacturer, part, line['procurement_policy']) if identified else (
                 'definition', line['key'], line['name'], line['procurement_policy'])
+            key=(*key,str(line.get('catalog_id') or ''),json.dumps(line.get('specifications') or {},sort_keys=True,separators=(',',':')))
             row = rows[key]
             row['required'] += line['required']
             row['names'].add(line['name'])

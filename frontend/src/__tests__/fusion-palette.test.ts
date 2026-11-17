@@ -9,6 +9,9 @@ const receive=(action:string,data:unknown)=>host.fusionJavaScriptHandler.handle(
 beforeEach(()=>{
  document.body.innerHTML=html.match(/<body>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g,'');
  host.adsk={fusionSendData:jest.fn()};
+ localStorage.clear();
+ new Function(fs.readFileSync(path.join(root,'planning.js'),'utf8'))();
+ new Function(fs.readFileSync(path.join(root,'purchasing.js'),'utf8'))();
  new Function(script)();
 });
 test('inventory quantities, catalog identity and insertion stay separate',()=>{
@@ -131,4 +134,58 @@ test('errors remain visible after a request unlocks the controls',()=>{
  expect(document.getElementById('message')!.dataset.kind).toBe('error');
  expect(document.getElementById('message')!.textContent).toContain('Connection failed');
  expect(document.getElementById('message')!.compareDocumentPosition(document.getElementById('session')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+const purchasingContext={inventory_id:'inventory',purchase_context:'actor:inventory',inventory_name:'Lab',allow_purchasing:true,can_approve_purchases:true};
+const purchaseButton=(name:string)=>Array.from(document.querySelectorAll<HTMLButtonElement>('#purchases button')).find(b=>b.textContent===name)!;
+const plan={id:'plan',inventory_id:'inventory',name:'Robot',state:'draft',revision:1,inventory_as_of:'today',totals:{USD:'2.00'},lines:[{id:'line',name:'Bearing',manufacturer:'Maker',part_number:'608',required:4,available:2,quantity:2,received:0,quotes:[],selected_quote:null}]};
+test('purchasing is denied by default and context changes clear private plans',()=>{
+ receive('connected',{...purchasingContext,allow_purchasing:false});
+ expect(purchaseButton('Load purchase plans').disabled).toBe(true);
+ receive('connected',purchasingContext);receive('purchase_detail',plan);
+ expect(document.getElementById('purchase-detail')!.textContent).toContain('Robot');
+ receive('disconnected',{});expect(document.getElementById('purchase-detail')!.textContent).toBe('');
+ expect(purchaseButton('Load purchase plans').disabled).toBe(true);
+});
+test('uncertain purchase writes retain exact requests through reconnect and reject other accounts',()=>{
+ receive('connected',purchasingContext);receive('version_saved',{id:'version',version:2});
+ purchaseButton('Create plan from current shortages').click();
+ const first=host.adsk.fusionSendData.mock.calls.at(-1)!;
+ expect(first[0]).toBe('purchase_write');expect(JSON.parse(first[1]).body.bom_version_id).toBe('version');
+ receive('purchase_error',{message:'Network timeout'});
+ expect(purchaseButton('Create plan from current shortages').disabled).toBe(true);
+ receive('disconnected',{});receive('connected',{...purchasingContext,purchase_context:'other:inventory'});
+ expect(purchaseButton('Retry the same change').hidden).toBe(true);
+ receive('connected',purchasingContext);purchaseButton('Retry the same change').click();
+ expect(host.adsk.fusionSendData.mock.calls.at(-1)).toEqual(first);
+ receive('purchase_saved',{id:'plan',inventory_id:'inventory'});
+ expect(localStorage.getItem('findez.purchase.pending.v1:actor:inventory')).toBeNull();
+ expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('purchase_detail',JSON.stringify({id:'plan'}));
+});
+test('rejected purchase request unlocks changes and wrong-inventory results never render',()=>{
+ receive('connected',purchasingContext);receive('version_saved',{id:'version',version:2});purchaseButton('Create plan from current shortages').click();
+ receive('purchase_error',{status:409,message:'Reload the plan'});
+ expect(purchaseButton('Retry the same change').hidden).toBe(true);
+ receive('purchase_detail',{...plan,inventory_id:'other',name:'Private other plan'});
+ expect(document.getElementById('purchase-detail')!.textContent).not.toContain('Private other plan');
+});
+test('native receiving requires a selected scoped destination and explicit confirmation',()=>{
+ const quote={id:'q',vendor:'Vendor',currency:'USD',estimate:{order_quantity:4,subtotal:'2.00'},valid_until:'2099-01-01T00:00:00Z',availability:'in_stock'};
+ receive('connected',purchasingContext);receive('purchase_detail',{...plan,state:'ordered',revision:5,lines:[{...plan.lines[0],selected_quote:quote,received:1}]});
+ purchaseButton('Find destination').click();
+ receive('purchase_candidates',{inventory_id:'inventory',items:[{item_id:'stock',name:'Bearing',part_number:'608',location:'Bin 2'}]});
+ const form=document.querySelector<HTMLFormElement>('#purchase-detail form')!;
+ const select=form.querySelector<HTMLSelectElement>('select')!;select.value='stock';
+ const qty=form.querySelector<HTMLInputElement>('[name=quantity]')!;qty.value='2';
+ host.adsk.fusionSendData.mockClear();form.dispatchEvent(new Event('submit',{cancelable:true}));expect(host.adsk.fusionSendData).not.toHaveBeenCalled();
+ form.querySelector<HTMLInputElement>('[type=checkbox]')!.checked=true;
+ form.dispatchEvent(new Event('submit',{cancelable:true}));
+ const payload=JSON.parse(host.adsk.fusionSendData.mock.calls[0][1]);
+ expect(payload).toMatchObject({id:'plan',body:{action:'receive',expected_revision:5,line_id:'line',item_id:'stock',quantity:2,identity_confirmed:true}});
+});
+test('editors cannot approve and malformed pending storage blocks new writes',()=>{
+ receive('connected',{...purchasingContext,can_approve_purchases:false});receive('purchase_detail',plan);
+ expect(purchaseButton('Approve quoted plan')).toBeUndefined();
+ localStorage.setItem('findez.purchase.pending.v1:actor:inventory','broken');receive('connected',purchasingContext);
+ receive('version_saved',{id:'version',version:2});expect(purchaseButton('Create plan from current shortages').disabled).toBe(true);
 });

@@ -7,6 +7,7 @@ import json
 
 from .snapshot import Snapshot, requirements
 from .tabular import TabularSnapshot
+from .specifications import check as check_specs
 
 
 def normalized(value):
@@ -37,9 +38,9 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             obligations[key] += qty
     remaining = {key: 0 if key in blocked else max(0, count(item.get('quantity')) - obligations[key])
                  for key, item in items.items()}
-    by_part, by_name, by_barcode = defaultdict(set), defaultdict(set), defaultdict(set)
+    by_part, by_name, by_barcode, by_catalog = defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(set)
     for key, item in items.items():
-        for index, field in ((by_part, 'part_number'), (by_name, 'name'), (by_barcode, 'barcode')):
+        for index, field in ((by_part, 'part_number'), (by_name, 'name'), (by_barcode, 'barcode'), (by_catalog,'catalog_id')):
             value = normalized(item.get(field))
             if value:
                 index[value].add(key)
@@ -47,7 +48,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
     for row in rows:
         part = '' if row['part_number_is_default'] else normalized(row['part_number'])
         brand, barcode = normalized(row['manufacturer']), normalized(row['barcode'])
-        candidates = set(by_part.get(part, ())) | set(by_barcode.get(barcode, ()))
+        catalog=normalized(row.get('catalog_id'))
+        candidates = set(by_part.get(part, ())) | set(by_barcode.get(barcode, ())) | set(by_catalog.get(catalog, ()))
         if not candidates:
             candidates = set(by_name.get(normalized(row['name']), ()))
         too_many = len(candidates) > 100
@@ -55,6 +57,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             warnings.append('Too many candidate stock records for ' + row['key'] + '; refine its identifiers.')
             candidates = set()
         exact, probable = [], []
+        specification_issues = []
         part_brands = {normalized(items[k].get('brand')) for k in by_part.get(part, ())}
         for key in sorted(candidates):
             item = items[key]
@@ -62,6 +65,12 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             conflict = ((part and item_part and part != item_part)
                         or (brand and item_brand and brand != item_brand)
                         or (barcode and item_barcode and barcode != item_barcode))
+            conflicts, unknown = check_specs(row.get('specifications'), item.get('specifications'))
+            if catalog and item.get('catalog_id') and catalog!=normalized(item['catalog_id']): conflicts.append('catalog_id')
+            if conflicts or unknown:
+                specification_issues.append({'item_id':key,'conflicts':conflicts,'unknown':unknown})
+                probable.append(key)
+                continue
             if conflict:
                 continue
             barcode_match = bool(barcode and barcode == item_barcode)
@@ -69,8 +78,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             # A unique supplier identity can match without a redundant manufacturer
             # field. Conflicting supplier namespaces remain reviewable.
             unique_part = bool(part and part == item_part and not brand and len(part_brands) <= 1)
-            if barcode_match or part_match or unique_part:
-                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number' if part_match else 'Exact part number; no conflicting supplier in this inventory'))
+            if barcode_match or part_match or unique_part or (catalog and catalog==normalized(item.get('catalog_id'))):
+                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number' if part_match else 'Exact catalog identity' if catalog else 'Exact part number; no conflicting supplier in this inventory'))
             else:
                 probable.append(key)
         correction = (corrections or {}).get(identity(row))
@@ -79,7 +88,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
             exact, probable = [], []
             selected = str(correction.get('item_id') or '')
             if correction['decision'] == 'match':
-                if selected in items and correction['item_fingerprint'] == item_identity(items[selected]):
+                if selected in items and correction['item_fingerprint'] == item_identity(items[selected]) and not check_specs(row.get('specifications'),items[selected].get('specifications'))[0] and not (catalog and items[selected].get('catalog_id') and catalog!=normalized(items[selected]['catalog_id'])):
                     exact = [(selected, 'Confirmed by your inventory team')]
                 else:
                     stale_correction = True
@@ -97,7 +106,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
         status = ('needs_review' if needs_review else 'covered' if assigned == row['required']
                   else 'short' if assigned else 'missing')
         results.append({'key': row['key'], 'name': row['name'], 'part_number': row['part_number'],
-                        'manufacturer': row['manufacturer'], 'required': row['required'], 'unit': 'each',
+                        'manufacturer': row['manufacturer'], 'catalog_id':str(row['catalog_id']) if row.get('catalog_id') else None,
+                        'specifications':row.get('specifications',{}), 'specification_issues':specification_issues, 'required': row['required'], 'unit': 'each',
                         'assigned': assigned, 'missing': row['required'] - assigned, 'status': status,
                         'match_type': 'exact' if exact else 'probable' if probable else 'none',
                         'procurement_policy': row['procurement_policy'], 'matches': matches,

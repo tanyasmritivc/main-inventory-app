@@ -80,7 +80,8 @@ def test_replayed_creation_does_not_recalculate_stock(monkeypatch):
     body=purchasing.CreatePlan(request_id=uuid4(),bom_version_id=uuid4())
     assert purchasing.create(INV,ACTOR,body)=={'id':'existing'}
     evaluate.assert_not_called()
-    assert rpc.call_args.args[-1]==['create',str(body.bom_version_id)]
+    assert rpc.call_args.args[-2]==['create',str(body.bom_version_id)]
+    assert rpc.call_args.args[-1] is None
 
 
 def test_revision_diff_counts_requirements_not_shared_stock():
@@ -105,3 +106,26 @@ def test_cross_project_revision_diff_rejected(monkeypatch):
     monkeypatch.setattr(revisions.projects,'version',Mock(side_effect=[{'project_id':'one'},{'project_id':'two'}]))
     with pytest.raises(HTTPException) as error: revisions.compare(INV,ACTOR,'a','b')
     assert error.value.status_code==422
+
+
+def test_specification_change_is_a_design_change_even_when_quantity_same():
+    base={'key':'a','name':'Screw','manufacturer':'Maker','part_number':'M4','required':2,'procurement_policy':'purchase','status':'covered'}
+    old={**base,'specifications':{'length_mm':'12'}};new={**base,'specifications':{'length_mm':'16'}}
+    result=revisions.changes({'items':[old]},{'items':[new]})
+    assert {r['change'] for r in result}=={'added','removed'}
+
+
+def test_purchase_plan_retains_exact_variant_requirements(monkeypatch):
+    from backend.tests.test_cad_prototype import snapshot
+    monkeypatch.setenv('CAD_PURCHASING_ENABLED','true')
+    monkeypatch.setattr(purchasing,'authorize_inventory',Mock())
+    db=Mock();db.table.side_effect=[Query([]),Query([{'snapshot':snapshot().model_dump(mode='json')}])]
+    monkeypatch.setattr(purchasing,'get_supabase_raw',lambda:db)
+    spec={'length_mm':'16','material':'stainless steel'};catalog=str(uuid4())
+    monkeypatch.setattr(purchasing.projects,'evaluate',lambda *args:{'completeness':'complete','inventory_as_of':'now',
+        'items':[{'key':'screw','name':'Screw','manufacturer':'Maker','part_number':'M4','required':5,'assigned':2,'missing':3,
+            'status':'short','procurement_policy':'purchase','specifications':spec,'catalog_id':catalog}]})
+    rpc=Mock();monkeypatch.setattr(purchasing,'_rpc',rpc)
+    purchasing.create(INV,ACTOR,purchasing.CreatePlan(request_id=uuid4(),bom_version_id=uuid4()))
+    line=rpc.call_args.args[6]['lines'][0]
+    assert line['specifications']==spec and line['catalog_id']==catalog and line['quantity']==3

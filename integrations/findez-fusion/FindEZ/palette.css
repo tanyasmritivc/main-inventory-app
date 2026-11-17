@@ -11,3 +11,5 @@ h1{font-size:24px;line-height:1.25;font-weight:500;letter-spacing:-.6px;margin:2
 @keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#message[data-kind=busy]::before{animation:none}}@media(max-width:320px){body{padding:0 12px 20px}.views{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:1fr}#message{margin-left:0;margin-right:0}.context{grid-template-columns:1fr}.context button{justify-self:start}.field-row{grid-template-columns:1fr}}
 
 input::placeholder,textarea::placeholder{color:#adb7c5;opacity:1}html{scrollbar-color:#798491 var(--bg)}
+
+.views{grid-template-columns:repeat(5,minmax(0,1fr))}.purchase-form{display:grid;gap:10px;margin:14px 0}.purchase-form button{width:100%}#purchase-list{display:grid;gap:8px;margin:16px 0}#purchase-list button{text-align:left}#purchase-detail>button{margin:6px 6px 6px 0}#purchase-detail small{display:block}#purchase-pending:not(:empty){padding:10px;border:1px solid var(--warning);border-radius:6px}#purchase-create{width:100%;margin-top:12px}@media(max-width:360px){.views{grid-template-columns:repeat(3,minmax(0,1fr))}}

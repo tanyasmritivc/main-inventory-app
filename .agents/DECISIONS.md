@@ -1,3 +1,16 @@
+## November 16 — native purchasing scope and conservative planning
+
+Native purchasing has an independent false-by-default pairing grant, separate from
+model generation/BOM writing. Its service-only RPC holds the grant row lock through
+the existing purchasing stock transaction, serializing revocation and receiving.
+The palette retains uncertain mutations by actor/inventory in local storage, never
+bearer tokens, and fails closed if retry state cannot be retained.
+Multi-project planning is a read-only free-stock preview: earlier selected projects
+consume the shared comparison pool first. All reservations/checkouts are excluded,
+even those for selected projects; incoming orders never count as physical stock.
+Nominal specifications can prevent conflicting exact-ID matches, but do not prove
+engineering compatibility. Preserve requirements in saved BOMs, plans and exports.
+
 ## November 16 - CAD purchasing authorization and quote provenance
 
 Manual supplier quotes are explicit exact-part confirmations, never inferred

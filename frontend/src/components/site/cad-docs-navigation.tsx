@@ -5,7 +5,7 @@ import styles from './api-docs.module.css';
 
 export const cadSections = [
   ['quickstart', 'Start here', 'workflow choose fusion upload inventory'],
-  ['downloads', 'Downloads & versions', 'zip template 0.4.2 0.1.0 candidate'],
+  ['downloads', 'Downloads & versions', 'zip template 0.5.0 0.1.0 candidate'],
   ['install', 'Install the Fusion add-in', 'windows mac folder run toggle open findez'],
   ['update', 'Update an existing installation', 'old preview export only replace restart'],
   ['connect', 'Connect an inventory', 'sign in code pairing permissions disconnect expired'],
@@ -14,6 +14,7 @@ export const cadSections = [
   ['insert', 'Insert a Fusion model', 'step stp f3d placement geometry cancel dimensions'],
   ['bom', 'Compare inside Fusion', 'assembly bom refresh shortages export'],
   ['history', 'Saved BOMs & corrections', 'versions projects history remember match shared review'],
+  ['planning', 'Plan several projects', 'shared stock priority allocation multiple projects reservations incoming orders'],
   ['purchasing', 'Quotes, orders & receiving', 'purchase plans supplier prices packs minimum bulk currency approval delivery receipts'],
   ['generate', 'Generate a STEP model', 'rexcad dimensions clarification checksum retry expiry'],
   ['export', 'Export from Fusion', 'json offline export only'],
@@ -33,7 +34,7 @@ const groups = [
   ['Get started', ['quickstart', 'downloads', 'install', 'update', 'connect', 'first-model']],
   ['Work in Fusion', ['browse', 'insert', 'generate', 'bom', 'history']],
   ['Compare a file', ['export', 'compare', 'onshape', 'spreadsheet']],
-  ['Plan purchases', ['purchasing']],
+  ['Plan purchases', ['planning', 'purchasing']],
   ['Reference & help', ['results', 'limits', 'privacy', 'sample', 'troubleshooting', 'roadmap', 'support']],
 ] as const;
 

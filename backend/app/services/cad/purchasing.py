@@ -14,6 +14,10 @@ from .snapshot import Model, Snapshot
 from .pricing import Quote, Quantity, estimate
 
 
+def native_enabled():
+    return enabled() and os.environ.get("CAD_NATIVE_PURCHASING_ENABLED") == "true"
+
+
 def enabled():
     return os.environ.get('CAD_PURCHASING_ENABLED', '').lower() == 'true'
 
@@ -59,11 +63,15 @@ class Action(Model):
         return self
 
 
-def _rpc(inventory, actor, request, plan, action, revision, data, identity):
+def _rpc(inventory, actor, request, plan, action, revision, data, identity, grant=None):
     params = {'p_actor': actor, 'p_inventory': inventory, 'p_request': str(request),
         'p_plan': plan, 'p_action': action, 'p_expected': revision, 'p_data': data,
         'p_hash': projects.digest(identity)}
-    result = get_supabase_raw().rpc('findez_cad_purchase_action', params).execute().data
+    if grant is not None:
+        if not native_enabled():
+            raise HTTPException(503, 'Purchasing inside Fusion is not enabled yet.')
+        params['p_grant'] = grant
+    result = get_supabase_raw().rpc('findez_cad_native_purchase_action' if grant is not None else 'findez_cad_purchase_action', params).execute().data
     messages = {
         'forbidden': (403, 'Inventory editing permission is required.'),
         'approval_required': (403, 'An inventory owner or administrator must approve and record orders.'),
@@ -89,14 +97,14 @@ def _rpc(inventory, actor, request, plan, action, revision, data, identity):
     return {'inventory_id': inventory, **result}
 
 
-def create(inventory, actor, body: CreatePlan):
+def create(inventory, actor, body: CreatePlan, grant=None):
     access(inventory, actor)
     # A successful retry must survive subsequent stock changes or a completed
     # order. The RPC still verifies actor, role and the original request hash.
     previous = get_supabase_raw().table('cad_purchase_events').select('id').eq('inventory_id', inventory).eq(
         'request_id', str(body.request_id)).limit(1).execute().data or []
     if previous:
-        return _rpc(inventory, actor, body.request_id, None, 'create', None, {}, ['create', str(body.bom_version_id)])
+        return _rpc(inventory, actor, body.request_id, None, 'create', None, {}, ['create', str(body.bom_version_id)], grant)
     # Reconcile against current stock, not the historical comparison. The saved
     # snapshot stays immutable and the resulting plan records its own timestamp.
     rows = get_supabase_raw().table('cad_bom_versions').select('snapshot').eq('inventory_id', inventory).eq('id', str(body.bom_version_id)).limit(1).execute().data or []
@@ -109,6 +117,7 @@ def create(inventory, actor, body: CreatePlan):
         raise HTTPException(409, 'Resolve incomplete extraction and review lines in Fusion before creating a purchase plan.')
     lines = [{'id': str(uuid4()), 'component_key': row['key'], 'name': row['name'],
         'manufacturer': row['manufacturer'], 'part_number': row['part_number'],
+        'catalog_id': row.get('catalog_id'), 'specifications': row.get('specifications', {}),
         'required': row['required'], 'available': row['assigned'], 'quantity': row['missing'],
         'received': 0, 'quotes': [], 'selected_quote': None}
         for row in result['items'] if row['missing'] > 0 and row['procurement_policy'] == 'purchase']
@@ -118,7 +127,7 @@ def create(inventory, actor, body: CreatePlan):
         raise HTTPException(422, 'Split this BOM into purchase plans of at most 500 lines and 1,000,000 units per line.')
     data = {'bom_version_id': str(body.bom_version_id), 'name': snapshot.document.name,
         'lines': lines, 'inventory_as_of': result['inventory_as_of']}
-    return _rpc(inventory, actor, body.request_id, None, 'create', None, data, ['create', str(body.bom_version_id)])
+    return _rpc(inventory, actor, body.request_id, None, 'create', None, data, ['create', str(body.bom_version_id)], grant)
 
 
 def plans(inventory, actor, offset=0):
@@ -147,7 +156,7 @@ def detail(inventory, actor, plan):
         'vendor_groups': dict(groups), 'excludes': ['shipping', 'tax']}
 
 
-def action(inventory, actor, plan, body: Action):
+def action(inventory, actor, plan, body: Action, grant=None):
     current = detail(inventory, actor, plan)
     data = body.model_dump(mode='json', exclude_none=True, exclude={'action', 'request_id', 'expected_revision'})
     if body.action == 'quote':
@@ -160,4 +169,4 @@ def action(inventory, actor, plan, body: Action):
         if len(json.dumps(current['lines']).encode()) + len(json.dumps(data['quote']).encode()) > 3_000_000:
             raise HTTPException(422, 'This plan has reached its quote history limit.')
     return _rpc(inventory, actor, body.request_id, plan, body.action, body.expected_revision, data,
-        [plan, body.model_dump(mode='json')])
+        [plan, body.model_dump(mode='json')], grant)

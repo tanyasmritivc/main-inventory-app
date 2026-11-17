@@ -7,6 +7,7 @@ import threading
 import time
 import webbrowser
 from uuid import UUID, uuid4
+from urllib.parse import urlencode
 
 import adsk.core
 import adsk.fusion
@@ -57,9 +58,9 @@ def task(kind,fn):
             data=fn(generation)
             result={'kind':kind,'data':data,'generation':generation}
         except ClientError as exc:
-            result={'kind':'error','data':{'message':str(exc)},'generation':generation}
+            result={'kind':'purchase_error' if kind=='purchase_saved' else 'error','data':{'message':str(exc),'status':exc.status},'generation':generation}
         except Exception:
-            result={'kind':'error','data':{'message':'The request could not be completed. Try again.'},'generation':generation}
+            result={'kind':'purchase_error' if kind=='purchase_saved' else 'error','data':{'message':'The request could not be completed. Retry the same change.'},'generation':generation}
         if not stop_event.is_set():
             try:
                 app.fireCustomEvent(EVENT,json.dumps(result))
@@ -172,8 +173,12 @@ class Result(adsk.core.CustomEventHandler):
                     return
                 rows=data['items'] if data['source']=='inventory' else data['parts']
                 parts={str(p.get('item_id') or p.get('catalog_id')):p for p in rows}
+            elif kind=='purchase_csv':
+                export_purchase(data)
+                return
             elif kind=='version_saved':
                 save_retry=None
+                send('version_saved',data)
                 send('notice',{'message':'BOM version '+str(data['version'])+' saved to this inventory.'})
                 return
             elif kind=='correction_saved':
@@ -300,6 +305,39 @@ class Incoming(adsk.core.HTMLEventHandler):
                     raise ClientError('Choose one of the current inventory candidates.')
                 payload={'review_token':line['review_token'],'decision':decision,'item_id':item}
                 task('correction_saved',lambda generation:session.request_at(generation,'/bom/corrections',method='POST',data=payload))
+            elif action.startswith('purchase_'):
+                if not context or not context.get('allow_purchasing'):
+                    raise ClientError('Reconnect and enable optional purchase plans and receiving.')
+                if action=='purchase_list':
+                    path='/purchases?offset='+str(valid_offset(data.get('offset',0)))
+                    task('purchase_list',lambda generation:session.request_at(generation,path))
+                elif action=='purchase_detail':
+                    key=str(UUID(data.get('id','')))
+                    task('purchase_detail',lambda generation:session.request_at(generation,'/purchases/'+key))
+                elif action=='purchase_candidates':
+                    q=data.get('q','')
+                    if not isinstance(q,str) or not 2<=len(q)<=100: raise ClientError('Enter 2 to 100 characters to find the delivery destination.')
+                    task('purchase_candidates',lambda generation:session.request_at(generation,'/purchase-candidates?'+urlencode({'q':q})))
+                elif action=='purchase_write':
+                    payload=data.get('body')
+                    if not isinstance(payload,dict): raise ClientError('Choose a valid purchase action.')
+                    UUID(payload.get('request_id',''))
+                    path='/purchases'
+                    if data.get('id'): path+='/'+str(UUID(data['id']))+'/actions'
+                    task('purchase_saved',lambda generation:session.request_at(generation,path,method='POST',data=payload))
+                elif action=='purchase_export':
+                    key=str(UUID(data.get('id','')))
+                    task('purchase_csv',lambda generation:session.request_at(generation,'/purchases/'+key))
+                else:
+                    raise ClientError('Choose a supported purchase action.')
+            elif action=='plan_projects':
+                ids=data.get('version_ids',[])
+                if not isinstance(ids,list) or not 1<=len(ids)<=20: raise ClientError('Choose up to twenty saved projects.')
+                payload={'version_ids':[str(UUID(key)) for key in ids]}
+                task('planning',lambda generation:session.request_at(generation,'/bom/planning',method='POST',data=payload))
+            elif action=='revision_diff':
+                query=urlencode({k:str(UUID(data.get(k,''))) for k in ('before','after')})
+                task('revision_diff',lambda generation:session.request_at(generation,'/bom/revision-diff?'+query))
             elif action=='generate':
                 require_cad_write()
                 if data.get('confirmed') is not True: raise ClientError('Confirm the specifications and external generation first.')
@@ -415,3 +453,22 @@ def stop():
     save_retry,generated_design,generated_jobs=None,None,{}
     model_browser.clear()
     handlers.clear()
+
+
+def export_purchase(plan):
+    dialog=app.userInterface.createFileDialog()
+    dialog.title='Export purchase plan by vendor'
+    dialog.filter='CSV (*.csv)'
+    dialog.initialFilename='findez-purchase-plan.csv'
+    if dialog.showSave()!=adsk.core.DialogResults.DialogOK: return
+    def cell(value):
+        text=str(value if value is not None else '')
+        return "'"+text if text.lstrip().startswith(('=','+','-','@')) else text
+    with open(dialog.filename,'w',newline='',encoding='utf-8-sig') as stream:
+        writer=csv.writer(stream)
+        writer.writerow(['Vendor','Part','Part number','Required shortage','Order quantity','Received','Currency','Subtotal excluding tax/shipping','Source','Catalog ID','Required specifications'])
+        for line in sorted(plan['lines'],key=lambda row:(row.get('selected_quote') or {}).get('vendor','')):
+            quote=line.get('selected_quote') or {}; estimate=quote.get('estimate') or {}
+            writer.writerow([cell(v) for v in [quote.get('vendor'),line['name'],line.get('part_number'),line['quantity'],
+                estimate.get('order_quantity'),line['received'],quote.get('currency'),estimate.get('subtotal'),quote.get('product_url'),line.get('catalog_id'),json.dumps(line.get('specifications') or {},sort_keys=True)]])
+    send('notice',{'message':'Purchase plan exported. No order was placed.'})

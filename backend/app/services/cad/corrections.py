@@ -18,12 +18,18 @@ def rows_for(snapshot):
 
 
 def identity(row):
-    return digest({k: row.get(k, '') for k in ('name', 'part_number', 'manufacturer', 'barcode',
-        'source_document', 'source_token', 'configuration', 'procurement_policy')})
+    value={k: row.get(k, '') for k in ('name', 'part_number', 'manufacturer', 'barcode',
+        'source_document', 'source_token', 'configuration', 'procurement_policy')}
+    if row.get('specifications'): value['specifications']=row['specifications']
+    if row.get('catalog_id'): value['catalog_id']=str(row['catalog_id'])
+    return digest(value)
 
 
 def item_identity(item):
-    return digest({k: str(item.get(k) or '').strip().casefold() for k in ('name', 'part_number', 'brand', 'barcode')})
+    value={k: str(item.get(k) or '').strip().casefold() for k in ('name','part_number','brand','barcode')}
+    if item.get('specifications'): value['specifications']=item['specifications']
+    if item.get('catalog_id'): value['catalog_id']=str(item['catalog_id'])
+    return digest(value)
 
 
 def load(snapshot, inventory, actor):

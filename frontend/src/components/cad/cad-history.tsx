@@ -4,6 +4,7 @@ import { activeInventory } from "@/lib/inventory-selection";
 import { accountRequest } from "@/lib/account-request";
 import type { CadComparison } from "@/lib/cad";
 import { CadResults } from "./cad-results";
+import { CadPlanning } from "./cad-planning";
 import { CadPurchasing } from "./cad-purchasing";
 import styles from "./cad.module.css";
 
@@ -64,6 +65,7 @@ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activ
       <button disabled={busy || !baseline} onClick={() => void compareVersions()}>Compare saved requirements</button>
       {diff && <div><p>Design quantity changes only. This does not refresh stock or check geometry and compatibility.</p>{diff.length ? <ul>{diff.map((row, i) => <li key={i}>{row.name}: {row.before} to {row.after} ({row.delta > 0 ? "+" : ""}{row.delta}){row.needs_review ? " / identity needs review" : ""}</li>)}</ul> : <p>No requirement quantity changes.</p>}</div>}
       <CadResults key={selected.created_at} result={selected.comparison} onRefresh={() => {}} /></>}
+    {versions && versions.length > 0 && <CadPlanning versions={versions} />}
     <CadPurchasing versionId={selected?.id} />
   </section>;
 }

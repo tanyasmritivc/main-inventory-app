@@ -62,3 +62,13 @@ test('viewers never receive a CAD-write checkbox',async()=>{
  render(<FusionConnect code="ABCD234567" />);await screen.findByText(/No active connections/);
  expect(screen.queryByRole('checkbox',{name:/Also allow/})).toBeNull();
 });
+
+test('purchase consent is independent, unchecked and sent only after explicit selection',async()=>{
+ (accountRequest as jest.Mock).mockImplementation((_actor,path)=>Promise.resolve(path==='/fusion/connections'?{connections:[],cad_writes_enabled:true,purchasing_enabled:true}:{approved:true}));
+ render(<FusionConnect code="ABCD234567" />);
+ const purchase=await screen.findByRole('checkbox',{name:/Enable purchase plans and receiving/});
+ expect((purchase as HTMLInputElement).checked).toBe(false);
+ fireEvent.click(purchase);fireEvent.click(screen.getByRole('checkbox',{name:/I started/}));fireEvent.click(screen.getByText('Connect this inventory'));
+ await screen.findByText('Connection approved');
+ expect(accountRequest).toHaveBeenLastCalledWith('actor','/fusion/pairing/approve',expect.objectContaining({body:{code:'ABCD234567',inventory_id:'inventory',allow_purchasing:true}}));
+});

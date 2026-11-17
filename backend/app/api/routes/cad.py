@@ -15,7 +15,7 @@ from app.services.cad.comparison import compare
 from app.services.cad.repository import read_inventory, authorize_inventory
 from app.services.cad import tabular
 from app.services.cad import corrections
-from app.services.cad import purchasing, revisions
+from app.services.cad import purchasing, revisions, planning
 
 router = APIRouter(tags=['cad'])
 
@@ -181,3 +181,9 @@ async def save_version(request: Request, inventory_id: UUID, user: Authenticated
     from app.services.cad import projects
     data = await read_version(request)
     return await run_in_threadpool(projects.save, data.snapshot, str(inventory_id), actor(user), data.request_id)
+
+
+@router.post('/inventories/{inventory_id}/cad/planning')
+@limiter.limit('10/minute')
+def plan_projects(request: Request, inventory_id: UUID, body: planning.Request, user: AuthenticatedUser=Depends(get_current_user)):
+    return planning.evaluate(str(inventory_id), actor(user), body)

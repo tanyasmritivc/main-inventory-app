@@ -1,0 +1,11 @@
+{
+  "https://findez.ai": {
+    "documentation": true,
+    "download_sha256": "6f8e2ec2afec7332b9a3af23fc20ee8a2fa58d1ca51217e9dd46a5d491a97ada"
+  },
+  "https://www.findez.ai": {
+    "documentation": true,
+    "download_sha256": "6f8e2ec2afec7332b9a3af23fc20ee8a2fa58d1ca51217e9dd46a5d491a97ada"
+  },
+  "unauthenticated_native_routes_denied": true
+}

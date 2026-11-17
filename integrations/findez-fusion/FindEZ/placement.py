@@ -1,6 +1,7 @@
 """Native import and placement only. Called on Fusion's main event thread."""
 from pathlib import Path
 import hashlib
+import json
 import adsk.core
 import adsk.fusion
 
@@ -51,6 +52,7 @@ def insert(app,part,path,inventory_id,generated_job=None):
         component.partNumber=str(part.get('part_number') or '')
         attributes={'manufacturer':part.get('brand') or '', 'barcode':part.get('barcode') or '',
                     'procurement_policy':'purchase','inventory_id':inventory_id,
+                    'specifications':json.dumps({k:str(v) for k,v in (part.get('specifications') or {}).items() if isinstance(v,(str,int,float))}),
                     'inventory_item_id':part.get('item_id') or '', 'catalog_id':part.get('catalog_id') or '',
                     'model_quality':'unverified','model_sha256':digest,'model_source':'user_selected_local_file'}
         if generated_job:
@@ -113,6 +115,7 @@ def insert_model(app, part, model, inventory_id):
         component.partNumber=str(part.get('part_number') or '')
         attributes={'manufacturer':part.get('brand') or '', 'barcode':part.get('barcode') or '',
                     'procurement_policy':'purchase','inventory_id':inventory_id,
+                    'specifications':json.dumps({k:str(v) for k,v in (part.get('specifications') or {}).items() if isinstance(v,(str,int,float))}),
                     'inventory_item_id':part.get('item_id') or '', 'catalog_id':part.get('catalog_id') or '',
                     'model_quality':'unverified','model_source':origin,'model_reference':reference,
                     'model_version':version}

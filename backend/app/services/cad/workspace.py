@@ -29,13 +29,20 @@ def start():
             'verification_uri': 'https://www.findez.ai/cad/fusion/connect'}
 
 
-def approve(code, inventory, actor, allow_cad_writes=False):
+def approve(code, inventory, actor, allow_cad_writes=False, allow_purchasing=False):
     from .projects import require_enabled
     if allow_cad_writes:
         require_enabled()
     _inventory(inventory, actor)
-    result = get_supabase_raw().rpc('findez_cad_device_approve_writes' if allow_cad_writes else 'findez_cad_device_approve', {
-        'p_code': code, 'p_actor': actor, 'p_inventory': inventory}).execute().data
+    from .purchasing import native_enabled
+    params = {'p_code': code, 'p_actor': actor, 'p_inventory': inventory}
+    function = 'findez_cad_device_approve_writes' if allow_cad_writes else 'findez_cad_device_approve'
+    if allow_purchasing:
+        if not native_enabled():
+            raise HTTPException(503, 'Purchasing inside Fusion is not enabled yet.')
+        function = 'findez_cad_device_approve_purchasing'
+        params['p_writes'] = allow_cad_writes
+    result = get_supabase_raw().rpc(function, params).execute().data
     if result is not True:
         raise HTTPException(409, 'This connection expired or was already used. Start again in Fusion.')
     return {'approved': True}
@@ -54,11 +61,12 @@ def exchange(device):
 
 def authorize(token):
     from .projects import enabled
+    from .purchasing import native_enabled
     if not re.fullmatch(r'[A-Za-z0-9_-]{64}', token or ''):
         raise HTTPException(401, 'Connect FindEZ from Fusion again.')
     fields = 'id,actor_id,inventory_id,session_expires_at,revoked_at'
     rows = get_supabase_raw().table('cad_device_grants').select(
-        fields + (',allow_cad_writes' if enabled() else '')).eq('token_hash', digest(token)).limit(1).execute().data or []
+        fields + (',allow_cad_writes' if enabled() else '') + (',allow_purchasing' if native_enabled() else '')).eq('token_hash', digest(token)).limit(1).execute().data or []
     now = datetime.now(timezone.utc)
     if not rows or rows[0]['revoked_at'] or datetime.fromisoformat(rows[0]['session_expires_at'].replace('Z', '+00:00')) <= now:
         raise HTTPException(401, 'Connect FindEZ from Fusion again.')
@@ -67,7 +75,8 @@ def authorize(token):
     if role not in ('owner', 'admin', 'editor', 'viewer'):
         raise HTTPException(403, 'Your inventory access changed. Reconnect FindEZ.')
     inventory = _inventory(row['inventory_id'], row['actor_id'])
-    return {**row, 'allow_cad_writes': bool(row.get('allow_cad_writes')) and role in ('owner', 'admin', 'editor'),
+    return {**row, 'allow_purchasing': native_enabled() and bool(row.get('allow_purchasing')) and role in ('owner','admin','editor'),
+            'can_approve_purchases': role in ('owner','admin'), 'allow_cad_writes': bool(row.get('allow_cad_writes')) and role in ('owner', 'admin', 'editor'),
             'inventory_name': inventory['name'], 'workspace_name': inventory['workspace']['name']}
 
 
@@ -97,6 +106,7 @@ def inventory_rows(session, query='', location=None):
         key = str(item['item_id'])
         known = type(item.get('quantity')) is int and 0 <= item['quantity'] <= 1_000_000_000 and key not in uncertain
         result.append({k: item.get(k) for k in ('item_id','name','brand','part_number','barcode','location')} | {
+            'catalog_id':item.get('catalog_id'), 'specifications':item.get('specifications',{}),
             'on_hand': count(item.get('quantity')) if type(item.get('quantity')) is int and 0 <= item['quantity'] <= 1_000_000_000 else None, 'reserved': reserved[key], 'checked_out': checked[key],
             'available': max(0, count(item.get('quantity'))-reserved[key]-checked[key]) if known else 0,
             'availability_known': known, 'on_order': None,

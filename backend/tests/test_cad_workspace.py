@@ -138,7 +138,7 @@ def test_approval_is_explicit_actor_bound_and_validated(monkeypatch):
     approve=Mock(return_value={'approved':True});monkeypatch.setattr(service,'approve',approve)
     with api(monkeypatch) as http:
         assert http.post('/fusion/pairing/approve',json={'code':'ABCD234567','inventory_id':INV}).status_code==200
-        approve.assert_called_once_with('ABCD234567',INV,ACTOR,False)
+        approve.assert_called_once_with('ABCD234567',INV,ACTOR,False,False)
         assert http.post('/fusion/pairing/approve',json={'code':'bad','inventory_id':INV}).status_code==422
 
 def test_bom_save_is_bounded_and_rejects_forged_inventory(monkeypatch):

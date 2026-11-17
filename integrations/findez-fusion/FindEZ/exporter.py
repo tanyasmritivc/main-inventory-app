@@ -5,9 +5,9 @@ leave this boundary; tests use small protocol fakes, not a simulated CAD engine.
 """
 
 import json
-from uuid import uuid4
+from uuid import uuid4, UUID
 
-VERSION = '0.1.0'
+VERSION = '0.5.0'
 MAX_BYTES = 5 * 1024 * 1024
 
 
@@ -122,7 +122,19 @@ def extract(design, host_version):
         # Include source file/version/config and observed metadata. Never compare
         # entityToken strings to decide whether definitions are the same.
         manufacturer, barcode = attr(component, 'manufacturer'), attr(component, 'barcode')
-        identity = (source_here, configuration, comp_id or key, name, part, policy, manufacturer, barcode)
+        raw_specs=attr(component,'specifications')
+        specs={}
+        if raw_specs:
+            try:
+                specs=json.loads(raw_specs)
+                if not isinstance(specs,dict) or len(specs)>32 or any(not isinstance(v,str) or len(str(k))>64 or len(v)>256 for k,v in specs.items()): raise ValueError()
+            except (ValueError,TypeError):
+                specs={};warn('Component '+key+' has unreadable specifications; review its identity.');policy='review'
+        catalog=attr(component,'catalog_id')
+        if catalog:
+            try: catalog=str(UUID(catalog))
+            except (ValueError,AttributeError):catalog='';warn('Component '+key+' has an invalid catalog identity.');policy='review'
+        identity = (source_here, configuration, comp_id or key, name, part, policy, manufacturer, barcode, json.dumps(specs,sort_keys=True),catalog)
         definition_key = identities.get(identity)
         if definition_key is None:
             if len(definitions) >= 5000:
@@ -130,7 +142,7 @@ def extract(design, host_version):
             definition_key = 'd' + str(len(definitions))
             identities[identity] = definition_key
             definitions.append({'key': definition_key, 'name': name, 'part_number': part,
-                                'manufacturer': manufacturer, 'barcode': barcode,
+                                'manufacturer': manufacturer, 'barcode': barcode, 'specifications':specs,'catalog_id':catalog or None,
                                 'part_number_is_default': not part or part.strip().casefold() == name.strip().casefold(),
                                 'procurement_policy': policy, 'source_token': text(read(component, 'entityToken', ''), 4096),
                                 'source_document': source_here[0], 'source_version': source_here[1],

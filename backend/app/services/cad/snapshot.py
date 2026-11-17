@@ -4,7 +4,7 @@ from collections import Counter
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator, field_validator
 
 Text = Annotated[str, Field(max_length=512)]
 Key = Annotated[str, Field(min_length=1, max_length=128, pattern=r'^[A-Za-z0-9_.:-]+$')]
@@ -33,6 +33,16 @@ class Definition(Model):
     part_number: Text = ''
     manufacturer: Text = ''
     barcode: Text = ''
+    specifications: dict[str, str] = Field(default_factory=dict, max_length=32)
+    catalog_id: UUID | None = None
+
+    @field_validator('specifications')
+    @classmethod
+    def bounded_specs(cls,value):
+        if any(not k.strip() or len(k)>64 or not v.strip() or len(v)>256 for k,v in value.items()):
+            raise ValueError('Use bounded, explicit nominal specifications.')
+        return value
+
     part_number_is_default: StrictBool = True
     procurement_policy: Literal['purchase', 'fabricate', 'assembly', 'exclude', 'review']
     source_token: Annotated[str, Field(max_length=4096)] = ''

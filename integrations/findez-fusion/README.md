@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.4.2
+# FindEZ Fusion workspace candidate 0.5.0
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.4.2 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.5.0 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -109,15 +109,39 @@ are unverified fabricated parts, not manufacturer-certified or owned stock.
 
 My recent generation jobs resumes your own jobs in the same inventory. Retry an
 uncertain submission with the same specification to avoid duplicates. No provider
-key is stored in this add-in. Drawing uploads, previews, nightly generation,
-pricing and procurement remain unavailable. Native placement requires real Fusion
+key is stored in this add-in. Drawing uploads, previews, nightly generation and live vendor pricing remain unavailable. Manual quotes and procurement are described below. Native placement requires real Fusion
 acceptance; automated host-contract checks do not establish it.
 
-## 0.4.2 appearance update
+## Slate appearance retained from 0.4.1
 
 Slate-grey panel surfaces, muted blue primary actions, softer tab selection, and
 quieter BOM summaries replace the high-contrast black and white blocks. The panel
 sets its own background so Fusion’s embedded browser renders consistent surfaces.
-Status messages remain visible while you work. Commands, permissions and CAD behavior are
-unchanged. Stop FindEZ, replace the complete add-in folder, restart Fusion, and
-confirm 0.4.2 before running it.
+Status messages remain visible while you work. Stop FindEZ, replace the complete add-in folder, restart Fusion, and
+confirm 0.5.0 before running it.
+
+
+## Purchasing and planning in 0.5.0
+
+Reconnect and separately enable optional **purchase plans and receiving**. Existing
+sessions do not gain this permission. In Purchases, load saved BOMs, select a
+version and create a plan from current shortages. Record supplier quotes with exact
+variant confirmation, prices per unit, pack size, MOQ, dates and source. Separate
+all-unit price breaks with semicolons (`100, 0.08; 250, 0.06`). Live feeds are not
+connected. Owners/admins approve plans and record orders placed with vendors.
+Editors can receive partial deliveries into existing stock after confirming the
+exact part, destination and quantity. Only receiving increases stock. There is no
+checkout/payment. Ordered cancellation and returns are not supported yet.
+
+A failed or uncertain change retains its exact request locally for the same
+account and inventory. Use Retry the same change. Reconnect to the same account
+and inventory to recover it. Never clear local pending data to repeat an uncertain
+delivery. No token is persisted. If local storage fails, reconcile on the website.
+
+BOM > Saved BOM versions also offers requirement differences and shared-stock
+planning for up to twenty projects. Select one version per project and arrange
+priority. Free stock is allocated once, earlier projects first. All existing
+reservations/checkouts are excluded; incoming orders are separate. This preview
+makes no reservations. Nominal specification conflicts prevent automatic matching.
+Known dimensions may use explicit mm/cm/in units; missing evidence needs review.
+These checks do not certify strength, tolerances, thread fit or engineering use.

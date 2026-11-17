@@ -7,7 +7,7 @@ from pydantic import Field, ValidationError, StrictBool
 from starlette.concurrency import run_in_threadpool
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.limiter import limiter
-from app.services.cad import workspace, projects, generation, corrections, rexcad
+from app.services.cad import workspace, projects, generation, corrections, rexcad, purchasing, revisions, planning
 from app.services.cad.search import SearchRequest, search as search_parts
 from app.services.cad.snapshot import Model, Snapshot, MAX_SNAPSHOT_BYTES
 from app.services.cad.repository import read_inventory
@@ -22,6 +22,7 @@ class Approval(Model):
     code: str = Field(pattern=r'^[A-HJ-NP-Z2-9]{10}$')
     inventory_id: UUID
     allow_cad_writes: StrictBool = False
+    allow_purchasing: StrictBool = False
 
 class Poll(Model):
     device_code: str = Field(pattern=r'^[A-Za-z0-9_-]{64}$')
@@ -40,7 +41,7 @@ def start(request: Request, response: Response):
 @router.post('/pairing/approve')
 @limiter.limit('10/minute')
 def approve(request: Request, data: Approval, user: AuthenticatedUser = Depends(get_current_user)):
-    return workspace.approve(data.code,str(data.inventory_id),user.actor_id or user.user_id,data.allow_cad_writes)
+    return workspace.approve(data.code,str(data.inventory_id),user.actor_id or user.user_id,data.allow_cad_writes,data.allow_purchasing)
 
 @router.post('/pairing/poll')
 @limiter.limit('20/minute')
@@ -52,7 +53,10 @@ def poll(request: Request, data: Poll, response: Response):
 def info(grant=Depends(session)):
     return {**{k:grant[k] for k in ('inventory_id','inventory_name','workspace_name','session_expires_at')},
             'allow_cad_writes': bool(grant.get('allow_cad_writes')), 'saved_bom_enabled': projects.enabled(),
-            'generation_enabled': projects.enabled() and rexcad.configured()}
+            'generation_enabled': projects.enabled() and rexcad.configured(),
+            'purchasing_enabled': purchasing.native_enabled(), 'allow_purchasing': bool(grant.get('allow_purchasing')),
+            'can_approve_purchases': bool(grant.get('can_approve_purchases')),
+            'purchase_context': grant['actor_id'] + ':' + grant['inventory_id']}
 
 @router.delete('/session')
 def disconnect(grant=Depends(session)):
@@ -60,7 +64,7 @@ def disconnect(grant=Depends(session)):
 
 @router.get('/connections')
 def connections(user: AuthenticatedUser = Depends(get_current_user)):
-    return {'cad_writes_enabled':projects.enabled(), 'connections':get_supabase_raw().table('cad_device_grants').select(
+    return {'purchasing_enabled':purchasing.native_enabled(), 'cad_writes_enabled':projects.enabled(), 'connections':get_supabase_raw().table('cad_device_grants').select(
         'id,inventory_id,approved_at,session_expires_at').eq('actor_id',user.actor_id or user.user_id)
         .is_('revoked_at','null').gt('session_expires_at',datetime.now(timezone.utc).isoformat()).execute().data or []}
 
@@ -197,3 +201,59 @@ def download_job(request: Request, job_id: UUID, grant=Depends(session)):
     session(request)
     return Response(data, media_type='application/step', headers={'Cache-Control':'no-store',
         'X-STEP-SHA256':metadata['artifact']['sha256'], 'Content-Disposition':'attachment; filename="generated.step"'})
+
+
+def purchase_session(request: Request):
+    grant = session(request)
+    if not purchasing.native_enabled() or not grant.get('allow_purchasing'):
+        raise HTTPException(403, 'Reconnect and enable the optional purchasing permission for this inventory.')
+    return grant
+
+
+@router.get('/purchases')
+def native_plans(request: Request, offset: int=Query(0,ge=0,le=10000), grant=Depends(purchase_session)):
+    result = purchasing.plans(grant['inventory_id'], grant['actor_id'], offset)
+    purchase_session(request)
+    return result
+
+
+@router.get('/purchases/{plan_id}')
+def native_plan(request: Request, plan_id: UUID, grant=Depends(purchase_session)):
+    result = purchasing.detail(grant['inventory_id'], grant['actor_id'], str(plan_id))
+    purchase_session(request)
+    return result
+
+
+@router.post('/purchases')
+@limiter.limit('10/minute')
+def native_create(request: Request, body: purchasing.CreatePlan, grant=Depends(purchase_session)):
+    return purchasing.create(grant['inventory_id'], grant['actor_id'], body, grant['id'])
+
+
+@router.post('/purchases/{plan_id}/actions')
+@limiter.limit('30/minute')
+def native_action(request: Request, plan_id: UUID, body: purchasing.Action, grant=Depends(purchase_session)):
+    return purchasing.action(grant['inventory_id'], grant['actor_id'], str(plan_id), body, grant['id'])
+
+
+@router.get('/bom/revision-diff')
+def native_diff(request: Request, before: UUID, after: UUID, grant=Depends(session)):
+    result = revisions.compare(grant['inventory_id'], grant['actor_id'], str(before), str(after))
+    session(request)
+    return result
+
+
+@router.get('/purchase-candidates')
+@limiter.limit('30/minute')
+def native_destinations(request: Request, q: str=Query(min_length=2,max_length=100), grant=Depends(purchase_session)):
+    result = workspace.browse(grant,q)
+    purchase_session(request)
+    return result
+
+
+@router.post('/bom/planning')
+@limiter.limit('10/minute')
+def native_planning(request: Request, body: planning.Request, grant=Depends(session)):
+    result = planning.evaluate(grant['inventory_id'], grant['actor_id'], body)
+    session(request)
+    return result

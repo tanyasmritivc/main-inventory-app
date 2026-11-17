@@ -5,6 +5,7 @@ export type PurchaseQuote = {
 };
 export type PurchaseLine = {
   id: string; name: string; manufacturer: string; part_number: string; required: number;
+  specifications?: Record<string, string>; catalog_id?: string | null;
   available: number; quantity: number; received: number; quotes: PurchaseQuote[];
   selected_quote: PurchaseQuote | null;
 };
@@ -14,13 +15,13 @@ export type PurchasePlan = PurchaseSummary & {
   order_reference: string | null; totals: Record<string, string>;
 };
 export function purchaseCsv(plan: PurchasePlan) {
-  const rows: (string | number)[][] = [["Vendor", "Component", "Manufacturer", "Part number", "Shortage", "Order quantity", "Received", "Currency", "Subtotal (excluding tax and shipping)", "Product link", "Order reference"]];
+  const rows: (string | number)[][] = [["Vendor", "Component", "Manufacturer", "Part number", "Shortage", "Order quantity", "Received", "Currency", "Subtotal (excluding tax and shipping)", "Product link", "Order reference", "Catalog ID", "Required specifications"]];
   const sorted = [...plan.lines].sort((a, b) => (a.selected_quote?.vendor || "").localeCompare(b.selected_quote?.vendor || ""));
   for (const line of sorted) {
     const quote = line.selected_quote;
     rows.push([quote?.vendor || "Unquoted", line.name, line.manufacturer, line.part_number, line.quantity,
       quote?.estimate.order_quantity || "", line.received, quote?.currency || "", quote?.estimate.subtotal || "",
-      quote?.product_url || "", plan.order_reference || ""]);
+      quote?.product_url || "", plan.order_reference || "", line.catalog_id || "", JSON.stringify(line.specifications || {})]);
   }
   return rows.map(row => row.map(value => {
     const text = String(value);

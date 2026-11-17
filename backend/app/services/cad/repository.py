@@ -32,7 +32,16 @@ def read_inventory(inventory_id: str, actor_id: str):
                 return result
         raise HTTPException(413, 'This inventory exceeds the prototype comparison limit.')
 
-    items = pages('items', 'item_id,name,brand,part_number,barcode,quantity,location', 'item_id')
+    items = pages('items', 'item_id,name,brand,part_number,barcode,quantity,location,catalog_id', 'item_id')
+    # Read only manufacturer-verified catalog specifications. Do not promote
+    # free-form item notes or an AI name interpretation into dimensional evidence.
+    ids=sorted({str(item['catalog_id']) for item in items if item.get('catalog_id')})
+    specs={}
+    for start in range(0,len(ids),100):
+        rows=client.table('parts_catalog').select('catalog_id,specifications').eq('verification_status','verified').in_('catalog_id',ids[start:start+100]).execute().data or []
+        specs.update({str(row['catalog_id']):row.get('specifications') or {} for row in rows})
+    for item in items:
+        if str(item.get('catalog_id')) in specs: item['specifications']=specs[str(item['catalog_id'])]
     reservations = pages('project_kit_reservations', 'id,inventory_item_id,quantity', 'id')
     checkouts = pages('checkouts', 'checkout_id,item_id,quantity', 'checkout_id', active=True)
     # Revocation during paging must not publish results from the earlier grant.

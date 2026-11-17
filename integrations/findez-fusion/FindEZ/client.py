@@ -13,7 +13,9 @@ API = 'https://findez.openstack.ftctools.com/fusion'
 MAX_RESPONSE = 8 * 1024 * 1024
 
 class ClientError(Exception):
-    pass
+    def __init__(self, message, status=None):
+        super().__init__(message)
+        self.status = status
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -63,6 +65,12 @@ def call(path, *, method='GET', data=None, token=None):
                 raise ValueError()
             return result
     except error.HTTPError as exc:
+        if path.startswith('/purchases') or path.startswith('/purchase-candidates'):
+            message = {401:'Reconnect to FindEZ.',403:'Purchasing permission changed. Reconnect with purchasing enabled.',
+                404:'This purchase plan or destination is unavailable.',409:'This plan changed, the quote expired, or the action is unavailable. Reload the plan.',
+                422:'Check the quote fields, dates, quantities and exact-part confirmation.',429:'Too many requests. Wait a minute and retry.'}.get(exc.code,
+                'The purchase result could not be confirmed. Retry the same change; do not submit a new receipt.')
+            raise ClientError(message, status=exc.code) from None
         if exc.code in (401,403):
             raise ClientError('Your connection expired or access changed. Disconnect and sign in again.') from None
         if exc.code==429:

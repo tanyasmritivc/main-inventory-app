@@ -25,6 +25,7 @@
     $('load-versions').disabled = value || !bomEnabled; $('generation-history').disabled = value || !generationEnabled;
     document.querySelectorAll('[data-cad-write]').forEach(b => { b.disabled = value || !allowWrites; });
     document.querySelectorAll('[data-generated-insert]').forEach(b => { b.disabled = value || !b.parentElement.querySelector('input[type=checkbox]').checked; });
+    purchasing?.lock(value); planning?.lock(value);
     if (!value) { $('models-previous').disabled = !modelPage || modelPage.offset === 0; $('models-next').disabled = !modelPage || modelPage.next_offset === null; $('previous').disabled = offset === 0; $('next').disabled = next === null; $('export').disabled = !$('results').children.length; }
   }
   function browse(start = 0) {
@@ -45,10 +46,10 @@
   }
   function tab(view) {
     if (busy) return;
-    for (const name of ['inventory','catalog','bom','generate']) $(name+'-tab').setAttribute('aria-pressed', String(name === view));
+    for (const name of ['inventory','catalog','bom','generate','purchases']) $(name+'-tab').setAttribute('aria-pressed', String(name === view));
     $('models').hidden = true; modelPart = null; modelPage = null;
-    $('browser').hidden = view === 'bom' || view === 'generate'; $('bom').hidden = view !== 'bom'; $('generate').hidden = view !== 'generate';
-    if (view === 'bom' || view === 'generate') return;
+    $('browser').hidden = view === 'bom' || view === 'generate' || view === 'purchases'; $('bom').hidden = view !== 'bom'; $('generate').hidden = view !== 'generate'; $('purchases').hidden = view !== 'purchases';
+    if (view === 'bom' || view === 'generate' || view === 'purchases') return;
     source = view; offset = 0; next = null;
     $('location-filter').hidden = view !== 'inventory';
     $('query').placeholder = view === 'inventory' ? 'Find 12 M4 screws, or bearings for an 8mm shaft' : 'Describe the catalog part you need';
@@ -101,7 +102,7 @@
   $('disconnect').onclick = () => send('disconnect');
   $('search').onsubmit = event => { event.preventDefault(); browse(); };
   $('location').onchange = () => browse();
-  for (const name of ['inventory','catalog','bom','generate']) $(name+'-tab').onclick = () => tab(name);
+  for (const name of ['inventory','catalog','bom','generate','purchases']) $(name+'-tab').onclick = () => tab(name);
   $('previous').onclick = () => browse(Math.max(0, offset - 50));
   $('next').onclick = () => { if (next !== null) browse(next); };
   $('compare').onclick = () => { $('summary').replaceChildren(); $('results').replaceChildren(); $('warnings').replaceChildren(); message('Reading the active assembly...'); send('compare'); };
@@ -159,10 +160,12 @@
     try {
       const data = JSON.parse(raw);
       if (action === 'busy') { lock(data.busy); return 'OK'; }
+      if (planning?.handle(action,data)) return 'OK';
+      if (purchasing?.handle(action,data)) return 'OK';
       if (action === 'error' || action === 'notice') { message(data.message, action); return 'OK'; }
       if (action === 'comparison_started') {
-        for (const name of ['inventory','catalog','bom','generate']) $(name+'-tab').setAttribute('aria-pressed', String(name === 'bom'));
-        $('models').hidden = true; $('browser').hidden = true; $('bom').hidden = false; $('generate').hidden = true;
+        for (const name of ['inventory','catalog','bom','generate','purchases']) $(name+'-tab').setAttribute('aria-pressed', String(name === 'bom'));
+        $('models').hidden = true; $('browser').hidden = true; $('bom').hidden = false; $('generate').hidden = true; $('purchases').hidden = true;
         modelPart = null; modelPage = null;
         $('summary').replaceChildren(); $('results').replaceChildren(); $('warnings').replaceChildren();
         message('Comparing ' + data.name + ' with your connected inventory...'); return 'OK';
@@ -189,11 +192,13 @@
       if (action === 'models') { showModels(data); return 'OK'; }
       if (action === 'pairing') { $('code').textContent = data.code; message('Compare this code with the browser, select an inventory and approve.'); return 'OK'; }
       if (action === 'disconnected') {
+        purchasing?.configure(null); planning?.configure(null);
         connected = false; allowWrites = false; generationEnabled = false; bomEnabled = false; draft = null; $('versions').replaceChildren(); $('generation-job').replaceChildren(); $('generation-jobs').replaceChildren(); modelPart = null; modelPage = null; $('model-entries').replaceChildren(); $('models').hidden = true; $('search-explanation').textContent = ''; lock(false); $('session').hidden = true; $('sign-in').hidden = false;
         $('code').textContent = ''; $('parts').replaceChildren(); $('results').replaceChildren(); $('summary').replaceChildren(); $('warnings').replaceChildren();
         message('Disconnected. Sign in to choose an inventory.'); return 'OK';
       }
       if (action === 'connected') {
+        purchasing?.configure(data); planning?.configure(data);
         connected = true; allowWrites = data.allow_cad_writes === true;
         generationEnabled = data.generation_enabled === true; bomEnabled = data.saved_bom_enabled === true;
         $('generation-note').textContent = !generationEnabled ? 'Model generation is unavailable on this server. You can still choose models from your Fusion project.' : !allowWrites ? 'Reconnect and approve CAD writing access to generate a model.' : 'Ready to generate. Review the specification before submitting.'; $('write-note').textContent = allowWrites ? 'Saved versions and corrections are shared with this inventory. Stock is not changed.' : 'To save BOMs or generate models, reconnect and approve CAD writing access.'; lock(false); $('sign-in').hidden = true; $('session').hidden = false;
@@ -249,6 +254,7 @@
           row.append(node('span',line.status.replaceAll('_',' '),'status '+line.status));
           row.append(node('p',`${line.required} required · ${line.assigned} assigned · ${line.missing} unmatched`));
           if (line.status === 'needs_review') row.append(node('small','Confirm the exact part before treating this as a purchase requirement.'));
+          for (const issue of line.specification_issues || []) row.append(node('small','Specification review: '+(issue.conflicts.length?'conflicting '+issue.conflicts.join(', ')+'. ':'')+(issue.unknown.length?'not established: '+issue.unknown.join(', '):'')));
           for (const match of line.matches) row.append(node('small',`${match.evidence}: ${match.assigned} from ${match.location || 'Unsorted'}`));
           if (allowWrites && line.review_token && !data.historical) {
             const details=node('details'); details.append(node('summary','Correct this match'));
@@ -269,5 +275,7 @@
     } catch { message('The response could not be displayed. Try again.'); }
     return 'OK';
   }};
+  const planning = window.createFindEZPlanning?.({$,node,send,message});
+  const purchasing = window.createFindEZPurchasing?.({$,node,send,message,requestId});
   send('ready');
 })();

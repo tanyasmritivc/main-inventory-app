@@ -1,3 +1,25 @@
+## CAD 0.5.0 native purchasing and planning — November 16, 2026 (published)
+
+Owner Codex in findez-cad-workspace / feat/cad-workspace. User explicitly approved
+20261118_cad_native_purchasing.sql and this candidate. Live self-hosted web directory
+/home/ubuntu/findez-cad-native-planning-20261116/frontend, build UcTg9gTeAGgsMWsg7C5II.
+Native purchasing is separately opt-in and uses the shared transaction; existing
+grants remain false. Multi-project planning shares stock once in priority order;
+nominal specification checks preserve variant metadata through BOMs and purchases.
+Docs/help/navigation and active ZIP links all agree on 0.5.0. Public landing content
+is unchanged except versioned download URLs. No push or other hosting deployment.
+Full suites 1398 backend/726 web passed, followed by 71/29 affected checks after
+final metadata/docs edits; types/lint/package checks, PostgreSQL role/replay and
+revocation concurrency, restored-production rehearsal (137 unchanged tables),
+production build/import/HTTP checks and public ZIP/auth checks passed. Browser
+panel rendering at 320/380/520px passed with fictional data. Native Fusion acceptance
+is not established by these checks. Full roadmap remains incomplete; see
+docs/plans/findez-cad-roadmap.md and docs/releases/cad-native-planning-20261116/README.md.
+Server disk is constrained (~368 MB root, ~610 MB /dev/shm free after staging).
+No independent CAD geometry engine is installed locally; no approved vendor feeds
+or manufacturer CAD redistribution licenses supplied. Do not claim those systems
+are implemented or verified. Prior release receipts below remain historical.
+
 ## November 16 - CAD purchasing and Fusion 0.4.2 published
 
 Owner: Codex, feat/cad-workspace. User explicitly approved the tested purchasing

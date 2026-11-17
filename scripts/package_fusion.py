@@ -6,7 +6,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'integrations/findez-fusion'
 DESTINATION = ROOT / 'frontend/public/downloads/findez-fusion-workspace.zip'
-FILES = ('README.md', 'FindEZ/FindEZ.py', 'FindEZ/FindEZ.manifest', 'FindEZ/exporter.py', 'FindEZ/client.py', 'FindEZ/isrg-roots.pem', 'FindEZ/workspace.py', 'FindEZ/placement.py', 'FindEZ/models.py', 'FindEZ/palette.html', 'FindEZ/palette.css', 'FindEZ/palette.js')
+FILES = ('README.md', 'FindEZ/FindEZ.py', 'FindEZ/FindEZ.manifest', 'FindEZ/exporter.py', 'FindEZ/client.py', 'FindEZ/isrg-roots.pem', 'FindEZ/workspace.py', 'FindEZ/placement.py', 'FindEZ/models.py', 'FindEZ/palette.html', 'FindEZ/palette.css', 'FindEZ/palette.js', 'FindEZ/purchasing.js', 'FindEZ/planning.js')
 
 
 def build():

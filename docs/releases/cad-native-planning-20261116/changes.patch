@@ -1,0 +1,2086 @@
+diff --git a/backend/app/api/routes/cad.py b/backend/app/api/routes/cad.py
+index 4e9a6e6e..394141ca 100644
+--- a/backend/app/api/routes/cad.py
++++ b/backend/app/api/routes/cad.py
+@@ -15,7 +15,7 @@ from app.services.cad.comparison import compare
+ from app.services.cad.repository import read_inventory, authorize_inventory
+ from app.services.cad import tabular
+ from app.services.cad import corrections
+-from app.services.cad import purchasing, revisions
++from app.services.cad import purchasing, revisions, planning
+ 
+ router = APIRouter(tags=['cad'])
+ 
+@@ -181,3 +181,9 @@ async def save_version(request: Request, inventory_id: UUID, user: Authenticated
+     from app.services.cad import projects
+     data = await read_version(request)
+     return await run_in_threadpool(projects.save, data.snapshot, str(inventory_id), actor(user), data.request_id)
++
++
++@router.post('/inventories/{inventory_id}/cad/planning')
++@limiter.limit('10/minute')
++def plan_projects(request: Request, inventory_id: UUID, body: planning.Request, user: AuthenticatedUser=Depends(get_current_user)):
++    return planning.evaluate(str(inventory_id), actor(user), body)
+diff --git a/backend/app/api/routes/cad_workspace.py b/backend/app/api/routes/cad_workspace.py
+index 0892dfc0..54d29f59 100644
+--- a/backend/app/api/routes/cad_workspace.py
++++ b/backend/app/api/routes/cad_workspace.py
+@@ -7,7 +7,7 @@ from pydantic import Field, ValidationError, StrictBool
+ from starlette.concurrency import run_in_threadpool
+ from app.core.auth import AuthenticatedUser, get_current_user
+ from app.core.limiter import limiter
+-from app.services.cad import workspace, projects, generation, corrections, rexcad
++from app.services.cad import workspace, projects, generation, corrections, rexcad, purchasing, revisions, planning
+ from app.services.cad.search import SearchRequest, search as search_parts
+ from app.services.cad.snapshot import Model, Snapshot, MAX_SNAPSHOT_BYTES
+ from app.services.cad.repository import read_inventory
+@@ -22,6 +22,7 @@ class Approval(Model):
+     code: str = Field(pattern=r'^[A-HJ-NP-Z2-9]{10}$')
+     inventory_id: UUID
+     allow_cad_writes: StrictBool = False
++    allow_purchasing: StrictBool = False
+ 
+ class Poll(Model):
+     device_code: str = Field(pattern=r'^[A-Za-z0-9_-]{64}$')
+@@ -40,7 +41,7 @@ def start(request: Request, response: Response):
+ @router.post('/pairing/approve')
+ @limiter.limit('10/minute')
+ def approve(request: Request, data: Approval, user: AuthenticatedUser = Depends(get_current_user)):
+-    return workspace.approve(data.code,str(data.inventory_id),user.actor_id or user.user_id,data.allow_cad_writes)
++    return workspace.approve(data.code,str(data.inventory_id),user.actor_id or user.user_id,data.allow_cad_writes,data.allow_purchasing)
+ 
+ @router.post('/pairing/poll')
+ @limiter.limit('20/minute')
+@@ -52,7 +53,10 @@ def poll(request: Request, data: Poll, response: Response):
+ def info(grant=Depends(session)):
+     return {**{k:grant[k] for k in ('inventory_id','inventory_name','workspace_name','session_expires_at')},
+             'allow_cad_writes': bool(grant.get('allow_cad_writes')), 'saved_bom_enabled': projects.enabled(),
+-            'generation_enabled': projects.enabled() and rexcad.configured()}
++            'generation_enabled': projects.enabled() and rexcad.configured(),
++            'purchasing_enabled': purchasing.native_enabled(), 'allow_purchasing': bool(grant.get('allow_purchasing')),
++            'can_approve_purchases': bool(grant.get('can_approve_purchases')),
++            'purchase_context': grant['actor_id'] + ':' + grant['inventory_id']}
+ 
+ @router.delete('/session')
+ def disconnect(grant=Depends(session)):
+@@ -60,7 +64,7 @@ def disconnect(grant=Depends(session)):
+ 
+ @router.get('/connections')
+ def connections(user: AuthenticatedUser = Depends(get_current_user)):
+-    return {'cad_writes_enabled':projects.enabled(), 'connections':get_supabase_raw().table('cad_device_grants').select(
++    return {'purchasing_enabled':purchasing.native_enabled(), 'cad_writes_enabled':projects.enabled(), 'connections':get_supabase_raw().table('cad_device_grants').select(
+         'id,inventory_id,approved_at,session_expires_at').eq('actor_id',user.actor_id or user.user_id)
+         .is_('revoked_at','null').gt('session_expires_at',datetime.now(timezone.utc).isoformat()).execute().data or []}
+ 
+@@ -197,3 +201,59 @@ def download_job(request: Request, job_id: UUID, grant=Depends(session)):
+     session(request)
+     return Response(data, media_type='application/step', headers={'Cache-Control':'no-store',
+         'X-STEP-SHA256':metadata['artifact']['sha256'], 'Content-Disposition':'attachment; filename="generated.step"'})
++
++
++def purchase_session(request: Request):
++    grant = session(request)
++    if not purchasing.native_enabled() or not grant.get('allow_purchasing'):
++        raise HTTPException(403, 'Reconnect and enable the optional purchasing permission for this inventory.')
++    return grant
++
++
++@router.get('/purchases')
++def native_plans(request: Request, offset: int=Query(0,ge=0,le=10000), grant=Depends(purchase_session)):
++    result = purchasing.plans(grant['inventory_id'], grant['actor_id'], offset)
++    purchase_session(request)
++    return result
++
++
++@router.get('/purchases/{plan_id}')
++def native_plan(request: Request, plan_id: UUID, grant=Depends(purchase_session)):
++    result = purchasing.detail(grant['inventory_id'], grant['actor_id'], str(plan_id))
++    purchase_session(request)
++    return result
++
++
++@router.post('/purchases')
++@limiter.limit('10/minute')
++def native_create(request: Request, body: purchasing.CreatePlan, grant=Depends(purchase_session)):
++    return purchasing.create(grant['inventory_id'], grant['actor_id'], body, grant['id'])
++
++
++@router.post('/purchases/{plan_id}/actions')
++@limiter.limit('30/minute')
++def native_action(request: Request, plan_id: UUID, body: purchasing.Action, grant=Depends(purchase_session)):
++    return purchasing.action(grant['inventory_id'], grant['actor_id'], str(plan_id), body, grant['id'])
++
++
++@router.get('/bom/revision-diff')
++def native_diff(request: Request, before: UUID, after: UUID, grant=Depends(session)):
++    result = revisions.compare(grant['inventory_id'], grant['actor_id'], str(before), str(after))
++    session(request)
++    return result
++
++
++@router.get('/purchase-candidates')
++@limiter.limit('30/minute')
++def native_destinations(request: Request, q: str=Query(min_length=2,max_length=100), grant=Depends(purchase_session)):
++    result = workspace.browse(grant,q)
++    purchase_session(request)
++    return result
++
++
++@router.post('/bom/planning')
++@limiter.limit('10/minute')
++def native_planning(request: Request, body: planning.Request, grant=Depends(session)):
++    result = planning.evaluate(grant['inventory_id'], grant['actor_id'], body)
++    session(request)
++    return result
+diff --git a/backend/app/services/cad/comparison.py b/backend/app/services/cad/comparison.py
+index c47f79d3..ca2164a7 100644
+--- a/backend/app/services/cad/comparison.py
++++ b/backend/app/services/cad/comparison.py
+@@ -7,6 +7,7 @@ import json
+ 
+ from .snapshot import Snapshot, requirements
+ from .tabular import TabularSnapshot
++from .specifications import check as check_specs
+ 
+ 
+ def normalized(value):
+@@ -37,9 +38,9 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+             obligations[key] += qty
+     remaining = {key: 0 if key in blocked else max(0, count(item.get('quantity')) - obligations[key])
+                  for key, item in items.items()}
+-    by_part, by_name, by_barcode = defaultdict(set), defaultdict(set), defaultdict(set)
++    by_part, by_name, by_barcode, by_catalog = defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(set)
+     for key, item in items.items():
+-        for index, field in ((by_part, 'part_number'), (by_name, 'name'), (by_barcode, 'barcode')):
++        for index, field in ((by_part, 'part_number'), (by_name, 'name'), (by_barcode, 'barcode'), (by_catalog,'catalog_id')):
+             value = normalized(item.get(field))
+             if value:
+                 index[value].add(key)
+@@ -47,7 +48,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+     for row in rows:
+         part = '' if row['part_number_is_default'] else normalized(row['part_number'])
+         brand, barcode = normalized(row['manufacturer']), normalized(row['barcode'])
+-        candidates = set(by_part.get(part, ())) | set(by_barcode.get(barcode, ()))
++        catalog=normalized(row.get('catalog_id'))
++        candidates = set(by_part.get(part, ())) | set(by_barcode.get(barcode, ())) | set(by_catalog.get(catalog, ()))
+         if not candidates:
+             candidates = set(by_name.get(normalized(row['name']), ()))
+         too_many = len(candidates) > 100
+@@ -55,6 +57,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+             warnings.append('Too many candidate stock records for ' + row['key'] + '; refine its identifiers.')
+             candidates = set()
+         exact, probable = [], []
++        specification_issues = []
+         part_brands = {normalized(items[k].get('brand')) for k in by_part.get(part, ())}
+         for key in sorted(candidates):
+             item = items[key]
+@@ -62,6 +65,12 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+             conflict = ((part and item_part and part != item_part)
+                         or (brand and item_brand and brand != item_brand)
+                         or (barcode and item_barcode and barcode != item_barcode))
++            conflicts, unknown = check_specs(row.get('specifications'), item.get('specifications'))
++            if catalog and item.get('catalog_id') and catalog!=normalized(item['catalog_id']): conflicts.append('catalog_id')
++            if conflicts or unknown:
++                specification_issues.append({'item_id':key,'conflicts':conflicts,'unknown':unknown})
++                probable.append(key)
++                continue
+             if conflict:
+                 continue
+             barcode_match = bool(barcode and barcode == item_barcode)
+@@ -69,8 +78,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+             # A unique supplier identity can match without a redundant manufacturer
+             # field. Conflicting supplier namespaces remain reviewable.
+             unique_part = bool(part and part == item_part and not brand and len(part_brands) <= 1)
+-            if barcode_match or part_match or unique_part:
+-                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number' if part_match else 'Exact part number; no conflicting supplier in this inventory'))
++            if barcode_match or part_match or unique_part or (catalog and catalog==normalized(item.get('catalog_id'))):
++                exact.append((key, 'Exact barcode' if barcode_match else 'Exact manufacturer and part number' if part_match else 'Exact catalog identity' if catalog else 'Exact part number; no conflicting supplier in this inventory'))
+             else:
+                 probable.append(key)
+         correction = (corrections or {}).get(identity(row))
+@@ -79,7 +88,7 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+             exact, probable = [], []
+             selected = str(correction.get('item_id') or '')
+             if correction['decision'] == 'match':
+-                if selected in items and correction['item_fingerprint'] == item_identity(items[selected]):
++                if selected in items and correction['item_fingerprint'] == item_identity(items[selected]) and not check_specs(row.get('specifications'),items[selected].get('specifications'))[0] and not (catalog and items[selected].get('catalog_id') and catalog!=normalized(items[selected]['catalog_id'])):
+                     exact = [(selected, 'Confirmed by your inventory team')]
+                 else:
+                     stale_correction = True
+@@ -97,7 +106,8 @@ def compare(snapshot: Snapshot | TabularSnapshot, inventory: list[dict], reserva
+         status = ('needs_review' if needs_review else 'covered' if assigned == row['required']
+                   else 'short' if assigned else 'missing')
+         results.append({'key': row['key'], 'name': row['name'], 'part_number': row['part_number'],
+-                        'manufacturer': row['manufacturer'], 'required': row['required'], 'unit': 'each',
++                        'manufacturer': row['manufacturer'], 'catalog_id':str(row['catalog_id']) if row.get('catalog_id') else None,
++                        'specifications':row.get('specifications',{}), 'specification_issues':specification_issues, 'required': row['required'], 'unit': 'each',
+                         'assigned': assigned, 'missing': row['required'] - assigned, 'status': status,
+                         'match_type': 'exact' if exact else 'probable' if probable else 'none',
+                         'procurement_policy': row['procurement_policy'], 'matches': matches,
+diff --git a/backend/app/services/cad/corrections.py b/backend/app/services/cad/corrections.py
+index ff67a459..f1b2c963 100644
+--- a/backend/app/services/cad/corrections.py
++++ b/backend/app/services/cad/corrections.py
+@@ -18,12 +18,18 @@ def rows_for(snapshot):
+ 
+ 
+ def identity(row):
+-    return digest({k: row.get(k, '') for k in ('name', 'part_number', 'manufacturer', 'barcode',
+-        'source_document', 'source_token', 'configuration', 'procurement_policy')})
++    value={k: row.get(k, '') for k in ('name', 'part_number', 'manufacturer', 'barcode',
++        'source_document', 'source_token', 'configuration', 'procurement_policy')}
++    if row.get('specifications'): value['specifications']=row['specifications']
++    if row.get('catalog_id'): value['catalog_id']=str(row['catalog_id'])
++    return digest(value)
+ 
+ 
+ def item_identity(item):
+-    return digest({k: str(item.get(k) or '').strip().casefold() for k in ('name', 'part_number', 'brand', 'barcode')})
++    value={k: str(item.get(k) or '').strip().casefold() for k in ('name','part_number','brand','barcode')}
++    if item.get('specifications'): value['specifications']=item['specifications']
++    if item.get('catalog_id'): value['catalog_id']=str(item['catalog_id'])
++    return digest(value)
+ 
+ 
+ def load(snapshot, inventory, actor):
+diff --git a/backend/app/services/cad/purchasing.py b/backend/app/services/cad/purchasing.py
+index 8e73da41..99096b12 100644
+--- a/backend/app/services/cad/purchasing.py
++++ b/backend/app/services/cad/purchasing.py
+@@ -14,6 +14,10 @@ from .snapshot import Model, Snapshot
+ from .pricing import Quote, Quantity, estimate
+ 
+ 
++def native_enabled():
++    return enabled() and os.environ.get("CAD_NATIVE_PURCHASING_ENABLED") == "true"
++
++
+ def enabled():
+     return os.environ.get('CAD_PURCHASING_ENABLED', '').lower() == 'true'
+ 
+@@ -59,11 +63,15 @@ class Action(Model):
+         return self
+ 
+ 
+-def _rpc(inventory, actor, request, plan, action, revision, data, identity):
++def _rpc(inventory, actor, request, plan, action, revision, data, identity, grant=None):
+     params = {'p_actor': actor, 'p_inventory': inventory, 'p_request': str(request),
+         'p_plan': plan, 'p_action': action, 'p_expected': revision, 'p_data': data,
+         'p_hash': projects.digest(identity)}
+-    result = get_supabase_raw().rpc('findez_cad_purchase_action', params).execute().data
++    if grant is not None:
++        if not native_enabled():
++            raise HTTPException(503, 'Purchasing inside Fusion is not enabled yet.')
++        params['p_grant'] = grant
++    result = get_supabase_raw().rpc('findez_cad_native_purchase_action' if grant is not None else 'findez_cad_purchase_action', params).execute().data
+     messages = {
+         'forbidden': (403, 'Inventory editing permission is required.'),
+         'approval_required': (403, 'An inventory owner or administrator must approve and record orders.'),
+@@ -89,14 +97,14 @@ def _rpc(inventory, actor, request, plan, action, revision, data, identity):
+     return {'inventory_id': inventory, **result}
+ 
+ 
+-def create(inventory, actor, body: CreatePlan):
++def create(inventory, actor, body: CreatePlan, grant=None):
+     access(inventory, actor)
+     # A successful retry must survive subsequent stock changes or a completed
+     # order. The RPC still verifies actor, role and the original request hash.
+     previous = get_supabase_raw().table('cad_purchase_events').select('id').eq('inventory_id', inventory).eq(
+         'request_id', str(body.request_id)).limit(1).execute().data or []
+     if previous:
+-        return _rpc(inventory, actor, body.request_id, None, 'create', None, {}, ['create', str(body.bom_version_id)])
++        return _rpc(inventory, actor, body.request_id, None, 'create', None, {}, ['create', str(body.bom_version_id)], grant)
+     # Reconcile against current stock, not the historical comparison. The saved
+     # snapshot stays immutable and the resulting plan records its own timestamp.
+     rows = get_supabase_raw().table('cad_bom_versions').select('snapshot').eq('inventory_id', inventory).eq('id', str(body.bom_version_id)).limit(1).execute().data or []
+@@ -109,6 +117,7 @@ def create(inventory, actor, body: CreatePlan):
+         raise HTTPException(409, 'Resolve incomplete extraction and review lines in Fusion before creating a purchase plan.')
+     lines = [{'id': str(uuid4()), 'component_key': row['key'], 'name': row['name'],
+         'manufacturer': row['manufacturer'], 'part_number': row['part_number'],
++        'catalog_id': row.get('catalog_id'), 'specifications': row.get('specifications', {}),
+         'required': row['required'], 'available': row['assigned'], 'quantity': row['missing'],
+         'received': 0, 'quotes': [], 'selected_quote': None}
+         for row in result['items'] if row['missing'] > 0 and row['procurement_policy'] == 'purchase']
+@@ -118,7 +127,7 @@ def create(inventory, actor, body: CreatePlan):
+         raise HTTPException(422, 'Split this BOM into purchase plans of at most 500 lines and 1,000,000 units per line.')
+     data = {'bom_version_id': str(body.bom_version_id), 'name': snapshot.document.name,
+         'lines': lines, 'inventory_as_of': result['inventory_as_of']}
+-    return _rpc(inventory, actor, body.request_id, None, 'create', None, data, ['create', str(body.bom_version_id)])
++    return _rpc(inventory, actor, body.request_id, None, 'create', None, data, ['create', str(body.bom_version_id)], grant)
+ 
+ 
+ def plans(inventory, actor, offset=0):
+@@ -147,7 +156,7 @@ def detail(inventory, actor, plan):
+         'vendor_groups': dict(groups), 'excludes': ['shipping', 'tax']}
+ 
+ 
+-def action(inventory, actor, plan, body: Action):
++def action(inventory, actor, plan, body: Action, grant=None):
+     current = detail(inventory, actor, plan)
+     data = body.model_dump(mode='json', exclude_none=True, exclude={'action', 'request_id', 'expected_revision'})
+     if body.action == 'quote':
+@@ -160,4 +169,4 @@ def action(inventory, actor, plan, body: Action):
+         if len(json.dumps(current['lines']).encode()) + len(json.dumps(data['quote']).encode()) > 3_000_000:
+             raise HTTPException(422, 'This plan has reached its quote history limit.')
+     return _rpc(inventory, actor, body.request_id, plan, body.action, body.expected_revision, data,
+-        [plan, body.model_dump(mode='json')])
++        [plan, body.model_dump(mode='json')], grant)
+diff --git a/backend/app/services/cad/repository.py b/backend/app/services/cad/repository.py
+index 45c843db..d548be80 100644
+--- a/backend/app/services/cad/repository.py
++++ b/backend/app/services/cad/repository.py
+@@ -32,7 +32,16 @@ def read_inventory(inventory_id: str, actor_id: str):
+                 return result
+         raise HTTPException(413, 'This inventory exceeds the prototype comparison limit.')
+ 
+-    items = pages('items', 'item_id,name,brand,part_number,barcode,quantity,location', 'item_id')
++    items = pages('items', 'item_id,name,brand,part_number,barcode,quantity,location,catalog_id', 'item_id')
++    # Read only manufacturer-verified catalog specifications. Do not promote
++    # free-form item notes or an AI name interpretation into dimensional evidence.
++    ids=sorted({str(item['catalog_id']) for item in items if item.get('catalog_id')})
++    specs={}
++    for start in range(0,len(ids),100):
++        rows=client.table('parts_catalog').select('catalog_id,specifications').eq('verification_status','verified').in_('catalog_id',ids[start:start+100]).execute().data or []
++        specs.update({str(row['catalog_id']):row.get('specifications') or {} for row in rows})
++    for item in items:
++        if str(item.get('catalog_id')) in specs: item['specifications']=specs[str(item['catalog_id'])]
+     reservations = pages('project_kit_reservations', 'id,inventory_item_id,quantity', 'id')
+     checkouts = pages('checkouts', 'checkout_id,item_id,quantity', 'checkout_id', active=True)
+     # Revocation during paging must not publish results from the earlier grant.
+diff --git a/backend/app/services/cad/revisions.py b/backend/app/services/cad/revisions.py
+index bd665b52..f8fda3d8 100644
+--- a/backend/app/services/cad/revisions.py
++++ b/backend/app/services/cad/revisions.py
+@@ -1,5 +1,6 @@
+ """Compare immutable design requirements, never historical stock allocations."""
+ from collections import defaultdict
++import json
+ from fastapi import HTTPException
+ from . import projects
+ 
+@@ -15,6 +16,7 @@ def changes(before, after):
+             identified = bool(manufacturer and part)
+             key = ('part', manufacturer, part, line['procurement_policy']) if identified else (
+                 'definition', line['key'], line['name'], line['procurement_policy'])
++            key=(*key,str(line.get('catalog_id') or ''),json.dumps(line.get('specifications') or {},sort_keys=True,separators=(',',':')))
+             row = rows[key]
+             row['required'] += line['required']
+             row['names'].add(line['name'])
+diff --git a/backend/app/services/cad/snapshot.py b/backend/app/services/cad/snapshot.py
+index 8af1d722..e094785f 100644
+--- a/backend/app/services/cad/snapshot.py
++++ b/backend/app/services/cad/snapshot.py
+@@ -4,7 +4,7 @@ from collections import Counter
+ from typing import Annotated, Literal
+ from uuid import UUID
+ 
+-from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
++from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator, field_validator
+ 
+ Text = Annotated[str, Field(max_length=512)]
+ Key = Annotated[str, Field(min_length=1, max_length=128, pattern=r'^[A-Za-z0-9_.:-]+$')]
+@@ -33,6 +33,16 @@ class Definition(Model):
+     part_number: Text = ''
+     manufacturer: Text = ''
+     barcode: Text = ''
++    specifications: dict[str, str] = Field(default_factory=dict, max_length=32)
++    catalog_id: UUID | None = None
++
++    @field_validator('specifications')
++    @classmethod
++    def bounded_specs(cls,value):
++        if any(not k.strip() or len(k)>64 or not v.strip() or len(v)>256 for k,v in value.items()):
++            raise ValueError('Use bounded, explicit nominal specifications.')
++        return value
++
+     part_number_is_default: StrictBool = True
+     procurement_policy: Literal['purchase', 'fabricate', 'assembly', 'exclude', 'review']
+     source_token: Annotated[str, Field(max_length=4096)] = ''
+diff --git a/backend/app/services/cad/workspace.py b/backend/app/services/cad/workspace.py
+index 771e3847..be3e85ae 100644
+--- a/backend/app/services/cad/workspace.py
++++ b/backend/app/services/cad/workspace.py
+@@ -29,13 +29,20 @@ def start():
+             'verification_uri': 'https://www.findez.ai/cad/fusion/connect'}
+ 
+ 
+-def approve(code, inventory, actor, allow_cad_writes=False):
++def approve(code, inventory, actor, allow_cad_writes=False, allow_purchasing=False):
+     from .projects import require_enabled
+     if allow_cad_writes:
+         require_enabled()
+     _inventory(inventory, actor)
+-    result = get_supabase_raw().rpc('findez_cad_device_approve_writes' if allow_cad_writes else 'findez_cad_device_approve', {
+-        'p_code': code, 'p_actor': actor, 'p_inventory': inventory}).execute().data
++    from .purchasing import native_enabled
++    params = {'p_code': code, 'p_actor': actor, 'p_inventory': inventory}
++    function = 'findez_cad_device_approve_writes' if allow_cad_writes else 'findez_cad_device_approve'
++    if allow_purchasing:
++        if not native_enabled():
++            raise HTTPException(503, 'Purchasing inside Fusion is not enabled yet.')
++        function = 'findez_cad_device_approve_purchasing'
++        params['p_writes'] = allow_cad_writes
++    result = get_supabase_raw().rpc(function, params).execute().data
+     if result is not True:
+         raise HTTPException(409, 'This connection expired or was already used. Start again in Fusion.')
+     return {'approved': True}
+@@ -54,11 +61,12 @@ def exchange(device):
+ 
+ def authorize(token):
+     from .projects import enabled
++    from .purchasing import native_enabled
+     if not re.fullmatch(r'[A-Za-z0-9_-]{64}', token or ''):
+         raise HTTPException(401, 'Connect FindEZ from Fusion again.')
+     fields = 'id,actor_id,inventory_id,session_expires_at,revoked_at'
+     rows = get_supabase_raw().table('cad_device_grants').select(
+-        fields + (',allow_cad_writes' if enabled() else '')).eq('token_hash', digest(token)).limit(1).execute().data or []
++        fields + (',allow_cad_writes' if enabled() else '') + (',allow_purchasing' if native_enabled() else '')).eq('token_hash', digest(token)).limit(1).execute().data or []
+     now = datetime.now(timezone.utc)
+     if not rows or rows[0]['revoked_at'] or datetime.fromisoformat(rows[0]['session_expires_at'].replace('Z', '+00:00')) <= now:
+         raise HTTPException(401, 'Connect FindEZ from Fusion again.')
+@@ -67,7 +75,8 @@ def authorize(token):
+     if role not in ('owner', 'admin', 'editor', 'viewer'):
+         raise HTTPException(403, 'Your inventory access changed. Reconnect FindEZ.')
+     inventory = _inventory(row['inventory_id'], row['actor_id'])
+-    return {**row, 'allow_cad_writes': bool(row.get('allow_cad_writes')) and role in ('owner', 'admin', 'editor'),
++    return {**row, 'allow_purchasing': native_enabled() and bool(row.get('allow_purchasing')) and role in ('owner','admin','editor'),
++            'can_approve_purchases': role in ('owner','admin'), 'allow_cad_writes': bool(row.get('allow_cad_writes')) and role in ('owner', 'admin', 'editor'),
+             'inventory_name': inventory['name'], 'workspace_name': inventory['workspace']['name']}
+ 
+ 
+@@ -97,6 +106,7 @@ def inventory_rows(session, query='', location=None):
+         key = str(item['item_id'])
+         known = type(item.get('quantity')) is int and 0 <= item['quantity'] <= 1_000_000_000 and key not in uncertain
+         result.append({k: item.get(k) for k in ('item_id','name','brand','part_number','barcode','location')} | {
++            'catalog_id':item.get('catalog_id'), 'specifications':item.get('specifications',{}),
+             'on_hand': count(item.get('quantity')) if type(item.get('quantity')) is int and 0 <= item['quantity'] <= 1_000_000_000 else None, 'reserved': reserved[key], 'checked_out': checked[key],
+             'available': max(0, count(item.get('quantity'))-reserved[key]-checked[key]) if known else 0,
+             'availability_known': known, 'on_order': None,
+diff --git a/frontend/public/downloads/findez-fusion-workspace.zip b/frontend/public/downloads/findez-fusion-workspace.zip
+index f477aac8a4c616515bef2064125ba75617e4f69c..8da8985f843fddf3eddf7bf967334c4ddbe6ae24 100644
+GIT binary patch
+delta 38043
+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
+XSxq$@+`ln@-JWl-K%k(azu*23<z&VV
+
+delta 28732
+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
+Clqj75
+
+diff --git a/frontend/src/components/cad/cad-help.tsx b/frontend/src/components/cad/cad-help.tsx
+index bb773218..61a3803b 100644
+--- a/frontend/src/components/cad/cad-help.tsx
++++ b/frontend/src/components/cad/cad-help.tsx
+@@ -8,7 +8,7 @@ export function FusionInstallSteps() {
+       <li><strong>Add the inner FindEZ folder.</strong> Click <b>+ → Script or Add-In from device</b>. Open the extracted folder, then select the <b>FindEZ</b> folder inside it.</li>
+     </ol>
+     <div className={styles.folderGuide}><span>Select this folder:</span><pre>{'findez-fusion-workspace/\n  FindEZ/  ← select this\n    FindEZ.py\n    FindEZ.manifest\n    exporter.py'}</pre><p>Select the folder, not the ZIP or an individual file.</p></div>
+-    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.4.2</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
++    <ol start={4}><li><strong>Switch FindEZ on.</strong> Confirm version <b>0.5.0</b>, then find the FindEZ row and turn on the small toggle in the <b>Run</b> column. Blue means it is running. In older Fusion versions, select FindEZ and click the Run button.</li></ol>
+     <div className={styles.runGuide} aria-label="Example: FindEZ row with the Run switch on"><span>FindEZ</span><span>Run <i aria-hidden="true" /> <b>On</b></span></div>
+     <p>Click <b>Close</b>, then choose <b>Utilities → Add-Ins → Open FindEZ</b>. Use <b>Sign in with FindEZ</b> to connect an inventory and work inside the panel. <b>Export FindEZ BOM</b> remains available for optional web comparison. Check <b>Run on Startup</b> to load FindEZ the next time you open Fusion.</p>
+     <p><a href="/docs/cad#install">Full CAD documentation: installation, updates, connection and troubleshooting →</a></p>
+diff --git a/frontend/src/components/cad/cad-history.tsx b/frontend/src/components/cad/cad-history.tsx
+index 39c36e59..90973f1c 100644
+--- a/frontend/src/components/cad/cad-history.tsx
++++ b/frontend/src/components/cad/cad-history.tsx
+@@ -4,6 +4,7 @@ import { activeInventory } from "@/lib/inventory-selection";
+ import { accountRequest } from "@/lib/account-request";
+ import type { CadComparison } from "@/lib/cad";
+ import { CadResults } from "./cad-results";
++import { CadPlanning } from "./cad-planning";
+ import { CadPurchasing } from "./cad-purchasing";
+ import styles from "./cad.module.css";
+ 
+@@ -64,6 +65,7 @@ function History({ inventory }: { inventory: NonNullable<ReturnType<typeof activ
+       <button disabled={busy || !baseline} onClick={() => void compareVersions()}>Compare saved requirements</button>
+       {diff && <div><p>Design quantity changes only. This does not refresh stock or check geometry and compatibility.</p>{diff.length ? <ul>{diff.map((row, i) => <li key={i}>{row.name}: {row.before} to {row.after} ({row.delta > 0 ? "+" : ""}{row.delta}){row.needs_review ? " / identity needs review" : ""}</li>)}</ul> : <p>No requirement quantity changes.</p>}</div>}
+       <CadResults key={selected.created_at} result={selected.comparison} onRefresh={() => {}} /></>}
++    {versions && versions.length > 0 && <CadPlanning versions={versions} />}
+     <CadPurchasing versionId={selected?.id} />
+   </section>;
+ }
+diff --git a/frontend/src/components/cad/cad-purchasing.tsx b/frontend/src/components/cad/cad-purchasing.tsx
+index dff1098f..70960153 100644
+--- a/frontend/src/components/cad/cad-purchasing.tsx
++++ b/frontend/src/components/cad/cad-purchasing.tsx
+@@ -118,7 +118,7 @@ function Purchasing({ inventory, versionId }: { inventory: NonNullable<ReturnTyp
+         <div className={styles.actions}><button disabled={busy} onClick={exportPlan}>Export by vendor</button><button disabled={disabled} onClick={() => void work(() => read(plan.id))}>Reload this plan</button></div>
+         {plan.order_reference && <p>Order reference: {plan.order_reference}</p>}
+         {plan.lines.map(line => <section className={styles.purchaseLine} key={line.id}>
+-          <h4>{line.name}</h4><p>{line.manufacturer} {line.part_number}</p><p>Required {line.required} / available when planned {line.available} / shortage {line.quantity}</p>
++          <h4>{line.name}</h4><p>{line.manufacturer} {line.part_number}</p><p>{Object.entries(line.specifications || {}).map(([key, value]) => `${key}: ${value}`).join(" / ")}</p><p>Required {line.required} / available when planned {line.available} / shortage {line.quantity}</p>
+           {line.selected_quote && <p>Selected: {line.selected_quote.vendor}, {line.selected_quote.currency} {line.selected_quote.estimate.subtotal} for {line.selected_quote.estimate.order_quantity} units ({line.selected_quote.estimate.surplus_quantity} extra).</p>}
+           {['ordered', 'completed'].includes(plan.state) && <p>Received {line.received} / still on order {(line.selected_quote?.estimate.order_quantity || 0) - line.received}. On-order units are not on-hand stock.</p>}
+           <details><summary>Supplier quotes ({line.quotes.length})</summary>{line.quotes.map(quote => <div className={styles.purchaseQuote} key={quote.id}>
+diff --git a/frontend/src/components/cad/cad-results.tsx b/frontend/src/components/cad/cad-results.tsx
+index 5ae7fa6b..2d3fc0c0 100644
+--- a/frontend/src/components/cad/cad-results.tsx
++++ b/frontend/src/components/cad/cad-results.tsx
+@@ -30,7 +30,7 @@ export function CadResults({ result, onRefresh }: { result: CadComparison; onRef
+         <button onClick={download}>Export shortages</button></div>
+       <div className={styles.tableWrap} role="region" aria-label="Component comparison, scroll horizontally for more columns" tabIndex={0}><table><caption>Component requirements and inventory matches</caption><thead><tr><th scope="col">Component</th><th scope="col">Required</th><th scope="col">Covered</th><th scope="col">Missing</th><th scope="col">Status</th></tr></thead>
+         <tbody>{visibleRows.map((line) => <tr key={line.key}><th scope="row"><strong>{line.name}</strong><small>{[line.manufacturer, line.part_number].filter(Boolean).join(" / ") || "No supplier identifier"}</small>
+-          <details><summary>Match evidence</summary>{line.matches.length ? <ul>{line.matches.map((match) => <li key={match.item_id}>{match.evidence}: {match.name} / {match.location || "Unsorted"} / {match.assigned} assigned in preview</li>)}</ul> : <p>{line.possible_matches ? "Potential matches require identity review and do not count toward coverage." : "No exact inventory identity found."}</p>}<p>Procurement policy: {line.procurement_policy}</p></details>{line.review_token && <CadCorrection line={line} onRefresh={onRefresh} />}</th>
++          <details><summary>Match evidence</summary>{line.matches.length ? <ul>{line.matches.map((match) => <li key={match.item_id}>{match.evidence}: {match.name} / {match.location || "Unsorted"} / {match.assigned} assigned in preview</li>)}</ul> : <p>{line.possible_matches ? "Potential matches require identity review and do not count toward coverage." : "No exact inventory identity found."}</p>}<ul>{line.specification_issues?.map(issue=><li key={issue.item_id}>Specification review: {issue.conflicts.length>0 && `Conflicting ${issue.conflicts.join(", ")}. `}{issue.unknown.length>0 && `Not established: ${issue.unknown.join(", ")}.`}</li>)}</ul><p>Procurement policy: {line.procurement_policy}</p></details>{line.review_token && <CadCorrection line={line} onRefresh={onRefresh} />}</th>
+           <td>{line.required}</td><td>{line.assigned}</td><td>{line.missing}</td><td>{labels[line.status]}</td></tr>)}</tbody></table>
+         {!rows.length && <p className={styles.empty}>No components in this view.</p>}</div>
+       {rows.length > 100 && <nav className={styles.actions} aria-label="Component pages">
+diff --git a/frontend/src/components/cad/fusion-connect.tsx b/frontend/src/components/cad/fusion-connect.tsx
+index 647f3162..d33eab8f 100644
+--- a/frontend/src/components/cad/fusion-connect.tsx
++++ b/frontend/src/components/cad/fusion-connect.tsx
+@@ -20,14 +20,16 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
+   const [connections, setConnections] = useState<Connection[]>([]);
+   const [writesEnabled, setWritesEnabled] = useState(false);
+   const [allowWrites, setAllowWrites] = useState(false);
++  const [purchasingEnabled, setPurchasingEnabled] = useState(false);
++  const [allowPurchasing, setAllowPurchasing] = useState(false);
+   const mounted = useRef(true);
+   const locked = useRef(false);
+   const request = useRef<AbortController | null>(null);
+   useEffect(() => {
+     mounted.current = true;
+     const controller = new AbortController();
+-    void accountRequest<{ connections: Connection[]; cad_writes_enabled?: boolean }>(actor, "/fusion/connections", { signal: controller.signal })
+-      .then(data => { if (!controller.signal.aborted && mounted.current) { setConnections(data.connections); setWritesEnabled(data.cad_writes_enabled === true); } })
++    void accountRequest<{ connections: Connection[]; cad_writes_enabled?: boolean; purchasing_enabled?: boolean }>(actor, "/fusion/connections", { signal: controller.signal })
++      .then(data => { if (!controller.signal.aborted && mounted.current) { setConnections(data.connections); setWritesEnabled(data.cad_writes_enabled === true); setPurchasingEnabled(data.purchasing_enabled === true); } })
+       .catch(() => { if (!controller.signal.aborted) setError("Connections could not be loaded. Reload to try again."); });
+     return () => { mounted.current = false; controller.abort(); request.current?.abort(); };
+   }, [actor]);
+@@ -36,7 +38,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
+     locked.current = true; setBusy(true); setError("");
+     const controller = new AbortController(); request.current = controller;
+     try {
+-      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: { code: value, inventory_id: inventory.inventory_id, ...(allowWrites && writesEnabled && inventory.can_edit ? { allow_cad_writes: true } : {}) }, signal: controller.signal });
++      const receipt = await accountRequest<{approved: boolean}>(actor, "/fusion/pairing/approve", { method: "POST", body: { code: value, inventory_id: inventory.inventory_id, ...(allowPurchasing && purchasingEnabled && inventory.can_edit ? { allow_purchasing: true } : {}), ...(allowWrites && writesEnabled && inventory.can_edit ? { allow_cad_writes: true } : {}) }, signal: controller.signal });
+       if (receipt.approved !== true) throw new Error("Connection was not confirmed. Start again in Fusion.");
+       if (!controller.signal.aborted && mounted.current) setApproved(true);
+     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Connection failed. Start again in Fusion."); }
+@@ -56,12 +58,13 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
+   return <section className={styles.page}>
+     <header className={styles.hero}><a href="/docs/cad#connect">← CAD Intelligence</a><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/docs/cad#downloads">Downloads and installation</a><p>Setup, generation permissions, and troubleshooting are in CAD Intelligence. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
+     <div className={styles.card}>
+-      {approved ? <div role="status"><h2>Connection approved</h2><p>{allowWrites ? "Model generation and shared BOM saves are enabled for this session." : "This session can browse and compare. To generate models or save BOMs, reconnect and enable the optional CAD writing permission."}</p><p>Return to Fusion. The panel will connect automatically. If it timed out, start again there.</p></div> : <>
++      {approved ? <div role="status"><h2>Connection approved</h2><p>{allowWrites ? "Model generation and shared BOM saves are enabled for this session." : "This session can browse and compare. To generate models or save BOMs, reconnect and enable the optional CAD writing permission."}</p><p>{allowPurchasing ? "Purchase plans and confirmed receiving are enabled. Approvals and ordering still require your inventory owner/admin role." : "Purchasing access is disabled for this session."}</p><p>Return to Fusion. The panel will connect automatically. If it timed out, start again there.</p></div> : <>
+         <h2>{inventory.name}</h2>
+-        <p>Fusion can read this inventory and the public parts catalog, and compare a parts list. It cannot change stock, make purchases, or access another inventory through this connection.</p>
++        <p>Fusion can read this inventory and the public parts catalog, and compare a parts list. By default it cannot change stock or manage purchases. Optional permissions below apply only to this inventory.</p>
+         <label className={styles.file}>Code shown in your Fusion panel<input autoComplete="off" spellCheck={false} maxLength={10} value={value} onChange={e => { setValue(e.target.value.toUpperCase().replace(/\s/g, "")); setConfirmed(false); }} /></label>
+         <label className={styles.permissionOption}><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>I started this connection in Fusion and the code matches.</span></label>
+         {writesEnabled && inventory.can_edit && <label className={styles.permissionOption}><input type="checkbox" checked={allowWrites} onChange={e => setAllowWrites(e.target.checked)} /><span><strong>Enable model generation and saved BOMs (optional)</strong>Also allow this Fusion session to save shared BOM versions and match corrections, and generate STEP models through RexCAD. Generation sends the specifications you submit to RexCAD. This does not permit stock changes or purchases.</span></label>}
++        {purchasingEnabled && inventory.can_edit && <label className={styles.permissionOption}><input type="checkbox" checked={allowPurchasing} onChange={e => setAllowPurchasing(e.target.checked)} /><span><strong>Enable purchase plans and receiving (optional)</strong>Allow this Fusion session to read quotes and orders, create purchase plans, record supplier quotes, and add delivered quantities to existing stock after an explicit confirmation. Approvals and order recording require an owner/admin role. No vendor checkout or payment is performed.</span></label>}
+         <p>Only approve a code displayed in your own Fusion add-in. Access expires after eight hours. Assembly comparison does not upload geometry. Model generation sends only the specification you explicitly submit.</p>
+         <button disabled={busy || !confirmed || !/^[A-HJ-NP-Z2-9]{10}$/.test(value)} onClick={connect}>{busy ? "Connecting..." : "Connect this inventory"}</button>
+         <p><a href={`/cad/fusion/connect${value ? `?code=${encodeURIComponent(value)}` : ""}`}>Choose a different inventory</a></p>
+diff --git a/frontend/src/components/marketing-dark/cad-public-content.tsx b/frontend/src/components/marketing-dark/cad-public-content.tsx
+index 21135af7..dfa383ba 100644
+--- a/frontend/src/components/marketing-dark/cad-public-content.tsx
++++ b/frontend/src/components/marketing-dark/cad-public-content.tsx
+@@ -2,7 +2,7 @@ import type {CSSProperties} from 'react';
+ // Server-rendered copy and sample data from the supplied CAD prototype.
+ export function CadHero(){return (<section className={"c-hero"}><div className={"x-in"}>
+ <h1 className={"c-h1"}>{"Can you build it with what you already own?"}<span >{"CAD Intelligence compares a Fusion assembly’s parts list with your FindEZ inventory."}</span></h1>
+-<div className={"x-ctas"}><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.2"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download the Fusion add-in"}</a><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div>
++<div className={"x-ctas"}><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.5.0"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download the Fusion add-in"}</a><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div>
+ <p className={"x-small"}>{"Free through Founders Access. Setup takes a few minutes."}</p>
+ </div></section>);}
+ export function CadComparison(){return (<section className={"cm"} id={"cm"}><div className={"cm-st"}><canvas id={"cmc"} aria-hidden={"true"}></canvas>
+@@ -75,7 +75,7 @@ export function CadLimitations(){return (<section className={"c-sec"} style={{"p
+ export function CadStart(){return (<section className={"c-sec"} id={"start"} style={{"paddingTop": "40px"}}><div className={"x-in"}>
+ <h2 className={"x-h2"}><span className="wd" style={{transitionDelay:"0ms"}}>{"Get"}</span>{" "}<span className="wd" style={{transitionDelay:"35ms"}}>{"started."}</span><span ><span className="wd" style={{transitionDelay:"70ms"}}>{"Install"}</span>{" "}<span className="wd" style={{transitionDelay:"105ms"}}>{"once,"}</span>{" "}<span className="wd" style={{transitionDelay:"140ms"}}>{"then"}</span>{" "}<span className="wd" style={{transitionDelay:"175ms"}}>{"compare"}</span>{" "}<span className="wd" style={{transitionDelay:"210ms"}}>{"any"}</span>{" "}<span className="wd" style={{transitionDelay:"245ms"}}>{"assembly."}</span></span></h2>
+ <div className={"gs"}><div >
+-<div className={"gs-r"}><div ><h3 >{"Fusion add-in"}</h3><p >{"The preview add-in for Autodesk Fusion. Works on Mac and Windows."}</p></div><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.4.2"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download add-in"}</a></div>
++<div className={"gs-r"}><div ><h3 >{"Fusion add-in"}</h3><p >{"The preview add-in for Autodesk Fusion. Works on Mac and Windows."}</p></div><a className={"x-p w lg"} href={"/downloads/findez-fusion-workspace.zip?v=0.5.0"}><svg width={"15"} height={"15"} viewBox={"0 0 24 24"} fill={"none"} stroke={"currentColor"} strokeWidth={"2.2"} strokeLinecap={"round"} strokeLinejoin={"round"}><path d={"M12 4v12M7 11l5 5 5-5M5 20h14"}></path></svg>{"Download add-in"}</a></div>
+ <div className={"gs-r"}><div ><h3 >{"Installation guide"}</h3><p >{"Step-by-step setup, a sample design to try, and troubleshooting."}</p></div><a className={"x-p d lg"} href={"/docs/cad"}>{"Read the setup guide"}</a></div>
+ <div className={"gs-r"}><div ><h3 >{"Comparison tool"}</h3><p >{"Upload a BOM, choose an inventory and compare. Sign in with your FindEZ account."}</p></div><a className={"x-p d lg"} href={"/cad"}>{"Open CAD Intelligence"}</a></div></div>
+ <div className={"gs-tree"}><pre id={"gs-pre"}>{"Downloads/\n└─ findez-fusion-workspace/\n   └─ "}<b >{"FindEZ/"}</b>
+diff --git a/frontend/src/components/site/cad-docs-navigation.tsx b/frontend/src/components/site/cad-docs-navigation.tsx
+index 47d8ed16..27be5c78 100644
+--- a/frontend/src/components/site/cad-docs-navigation.tsx
++++ b/frontend/src/components/site/cad-docs-navigation.tsx
+@@ -5,7 +5,7 @@ import styles from './api-docs.module.css';
+ 
+ export const cadSections = [
+   ['quickstart', 'Start here', 'workflow choose fusion upload inventory'],
+-  ['downloads', 'Downloads & versions', 'zip template 0.4.2 0.1.0 candidate'],
++  ['downloads', 'Downloads & versions', 'zip template 0.5.0 0.1.0 candidate'],
+   ['install', 'Install the Fusion add-in', 'windows mac folder run toggle open findez'],
+   ['update', 'Update an existing installation', 'old preview export only replace restart'],
+   ['connect', 'Connect an inventory', 'sign in code pairing permissions disconnect expired'],
+@@ -14,6 +14,7 @@ export const cadSections = [
+   ['insert', 'Insert a Fusion model', 'step stp f3d placement geometry cancel dimensions'],
+   ['bom', 'Compare inside Fusion', 'assembly bom refresh shortages export'],
+   ['history', 'Saved BOMs & corrections', 'versions projects history remember match shared review'],
++  ['planning', 'Plan several projects', 'shared stock priority allocation multiple projects reservations incoming orders'],
+   ['purchasing', 'Quotes, orders & receiving', 'purchase plans supplier prices packs minimum bulk currency approval delivery receipts'],
+   ['generate', 'Generate a STEP model', 'rexcad dimensions clarification checksum retry expiry'],
+   ['export', 'Export from Fusion', 'json offline export only'],
+@@ -33,7 +34,7 @@ const groups = [
+   ['Get started', ['quickstart', 'downloads', 'install', 'update', 'connect', 'first-model']],
+   ['Work in Fusion', ['browse', 'insert', 'generate', 'bom', 'history']],
+   ['Compare a file', ['export', 'compare', 'onshape', 'spreadsheet']],
+-  ['Plan purchases', ['purchasing']],
++  ['Plan purchases', ['planning', 'purchasing']],
+   ['Reference & help', ['results', 'limits', 'privacy', 'sample', 'troubleshooting', 'roadmap', 'support']],
+ ] as const;
+ 
+diff --git a/frontend/src/components/site/cad-docs.tsx b/frontend/src/components/site/cad-docs.tsx
+index 1b3e718f..eb771fef 100644
+--- a/frontend/src/components/site/cad-docs.tsx
++++ b/frontend/src/components/site/cad-docs.tsx
+@@ -18,7 +18,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+     <div className={styles.layout}>
+       <aside className={styles.sidebar}><CadDocsNavigation /></aside>
+       <main id="cad-docs-content" className={styles.content}>
+-        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Your home for everything CAD: install FindEZ, create your first model, search parts, compare inventory, and review saved BOMs. Find downloads, tools, and help here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.4.2 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 16, 2026 · Examples use fictional data</p></div>
++        <div className={styles.hero}><p className={styles.eyebrow}>CAD documentation</p><h1>Connect your design to your inventory.</h1><p>Your home for everything CAD: install FindEZ, create your first model, search parts, compare inventory, and review saved BOMs. Find downloads, tools, and help here.</p><div className={styles.baseUrl}><span>Fusion workspace</span><code>0.5.0 · Candidate</code><a href="/downloads/findez-fusion-workspace.zip?v=0.5.0" download>Download workspace ZIP ↓</a></div><p className={styles.muted}>Public documentation · Reviewed November 16, 2026 · Examples use fictional data</p></div>
+ 
+         <section id="quickstart"><h2>Choose your workflow</h2>
+           <ReferenceTable caption="CAD tools and guides" headings={['I want to…', 'Open']} rows={[
+@@ -39,22 +39,22 @@ export function CadDocs({ world }: { world?: string } = {}) {
+ 
+         <section id="downloads"><h2>Downloads & versions</h2><p>Download on the computer where Fusion runs. Extract the ZIP before adding it to Fusion. The workspace and export-only add-ins use the same FindEZ name; keep only the intended version registered and running.</p>
+           <ReferenceTable caption="Choose the correct download" headings={['Download', 'Version', 'Includes']} rows={[
+-            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Fusion workspace ZIP</a>, '0.4.2 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
++            [<a key="workspace" href="/downloads/findez-fusion-workspace.zip?v=0.5.0" download>Fusion workspace ZIP</a>, '0.5.0 candidate', 'Open FindEZ and Export FindEZ BOM. Windows and macOS. Use this for the connected panel.'],
+             ['Legacy export-only add-in (superseded)', '0.1.0', 'Export FindEZ BOM only. Does not include Open FindEZ or a connected panel.'],
+             [<a key="template" href="/downloads/findez-bom-template.csv" download>CSV template</a>, 'Flat BOM', 'Example columns for a spreadsheet comparison. Replace the sample rows with your own parts.'],
+           ]} />
+-          <p><strong>Version 0.4.2:</strong> softens the Fusion panel with slate-grey surfaces, muted blue actions, quieter tabs, and less boxed-in results. It retains shared BOM versions, remembered match corrections, and RexCAD STEP generation. Reconnect and explicitly allow CAD writing to use these controls. Generation sends your submitted specifications to RexCAD and can ask clarification questions. STEP downloads are checked automatically before insertion. Check the inserted model and its placement before using it. Downloading a ZIP does not update an installed add-in.</p>
++          <p><strong>Version 0.5.0:</strong> adds optional purchasing controls inside Fusion, shared-stock planning for several projects, saved-version comparisons, and conservative nominal specification checks. It keeps the slate-grey panel. It retains shared BOM versions, remembered match corrections, and RexCAD STEP generation. Enable model generation and saved BOMs for CAD writes; separately enable purchase plans and receiving for purchasing. Generation sends your submitted specifications to RexCAD and can ask clarification questions. STEP downloads are checked automatically before insertion. Check the inserted model and its placement before using it. Downloading a ZIP does not update an installed add-in.</p>
+         </section>
+ 
+         <section id="install"><h2>Install the Fusion workspace</h2><ol>
+-          <li>Download the <a href="/downloads/findez-fusion-workspace.zip?v=0.4.2" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
++          <li>Download the <a href="/downloads/findez-fusion-workspace.zip?v=0.5.0" download>Fusion workspace ZIP</a>. On Windows, right-click it and choose <strong>Extract All</strong>. On macOS, double-click it.</li>
+           <li>Open Fusion and switch to the <strong>Design</strong> workspace. Open <strong>Utilities → Add-Ins → Scripts and Add-Ins</strong>.</li>
+           <li>If an older FindEZ entry exists, follow <a href="#update">Update an existing installation</a> first.</li>
+           <li>Click <strong>+ → Script or Add-In from device</strong>. Select the inner <strong>FindEZ</strong> folder that directly contains <code>FindEZ.py</code> and <code>FindEZ.manifest</code>. Select the folder, not the ZIP or a Python file.</li>
+-          <li>Select FindEZ and confirm <strong>version 0.4.2</strong>. Turn on its <strong>Run</strong> toggle. Older Fusion versions use a Run button. Optionally enable Run on Startup.</li>
++          <li>Select FindEZ and confirm <strong>version 0.5.0</strong>. Turn on its <strong>Run</strong> toggle. Older Fusion versions use a Run button. Optionally enable Run on Startup.</li>
+           <li>Close the dialog. Choose <strong>Utilities → Add-Ins → Open FindEZ</strong>. A FindEZ panel should open beside your design with a <strong>Sign in with FindEZ</strong> button.</li>
+         </ol>
+-          <CodeExample label="Extracted workspace folder" examples={{ Folder: 'findez-fusion-workspace/\n  README.md\n  FindEZ/                 ← select this folder\n    FindEZ.py\n    FindEZ.manifest\n    workspace.py\n    client.py\n    placement.py\n    exporter.py\n    palette.html\n    palette.css\n    palette.js' }} />
++          <CodeExample label="Extracted workspace folder" examples={{ Folder: 'findez-fusion-workspace/\n  README.md\n  FindEZ/                 ← select this folder\n    FindEZ.py\n    FindEZ.manifest\n    workspace.py\n    client.py\n    placement.py\n    exporter.py\n    palette.html\n    palette.css\n    palette.js\n    planning.js\n    purchasing.js' }} />
+           <p>The folder may have a suffix such as <code>(2)</code> after a repeat download. Check the files and version, rather than assuming a folder name identifies the build. Do not rename the inner FindEZ folder or its entry files.</p>
+         </section>
+ 
+@@ -62,13 +62,13 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <li>In Scripts and Add-Ins, select FindEZ and switch <strong>Run</strong> off.</li>
+           <li>Check the <strong>Full Path</strong> field. If it points to <code>findez-fusion-preview</code>, it is the export-only installation. Remove that old registration using the remove/unlink control.</li>
+           <li>Close Fusion. Extract the new workspace ZIP. Replace the complete contents of your registered FindEZ folder, or register the new extracted inner FindEZ folder after reopening Fusion.</li>
+-          <li>Restart Fusion so its Python modules reload. Confirm the intended folder and <strong>0.4.2</strong> in the add-in manager, switch Run on, and open FindEZ.</li>
++          <li>Restart Fusion so its Python modules reload. Confirm the intended folder and <strong>0.5.0</strong> in the add-in manager, switch Run on, and open FindEZ.</li>
+         </ol><p>Updating the add-in does not change your designs or inventory. Reconnect after restarting: the Fusion session is kept in memory. If you still see only Export FindEZ BOM, check the registered version and path before downloading again.</p></section>
+ 
+         <section id="connect"><h2>Connect an inventory</h2><ol>
+           <li>In the Fusion panel, click <strong>Sign in with FindEZ</strong>. Keep the displayed ten-character code visible.</li>
+           <li>Your normal browser opens the <Link href="/cad/fusion/connect">Fusion connection page</Link>. Sign in to FindEZ there, choose Personal or your organization, and select an inventory you can access.</li>
+-          <li>Check that the code matches your Fusion panel. Select <strong>I started this connection in Fusion and the code matches</strong>.</li><li>To generate models or save BOMs, also select <strong>Enable model generation and saved BOMs</strong>. This separate, optional checkbox is available to inventory editors. Leaving it unchecked allows browsing and comparison only.</li><li>Click <strong>Connect this inventory</strong>.</li>
++          <li>Check that the code matches your Fusion panel. Select <strong>I started this connection in Fusion and the code matches</strong>.</li><li>To generate models or save BOMs, also select <strong>Enable model generation and saved BOMs</strong>. This separate, optional checkbox is available to inventory editors. Leaving it unchecked allows browsing and comparison only.</li><li>To manage purchases inside Fusion, separately select <strong>Enable purchase plans and receiving</strong> when available. This permits confirmed deliveries to increase stock. Owners/admins approve and record orders.</li><li>Click <strong>Connect this inventory</strong>.</li>
+           <li>Return to Fusion. The panel connects automatically and shows the selected inventory. If the code expired, start sign-in again from the panel.</li>
+         </ol><p>Pairing codes expire after ten minutes. A connected session lasts up to eight hours and is limited to the selected inventory. Use <strong>Disconnect</strong> to choose another inventory. Opening the connection page alone does not create a pairing code.</p>
+           <h3>Review or revoke a connection</h3><p>Open <Link href="/cad/fusion/connect">Manage Fusion connections</Link>, select an inventory, and review <strong>Your active Fusion connections</strong>. Reload after a new connection completes. Disconnect an entry to revoke it. If Fusion cannot reach the server during disconnect, its local session is cleared, but server revocation must be retried from the browser or allowed to expire.</p>
+@@ -94,7 +94,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+             ['Available', 'Recorded quantity after reservations and active checkouts are deducted, with a floor of zero.'],
+             ['Required', 'Units needed by the current assembly or uploaded parts list.'],
+             ['Missing / to buy', 'Required units not covered by confirmed available matches. Review uncertain rows first.'],
+-          ]} /><p>On-order quantities, vendor availability, and prices are not supplied by this candidate. Inserting a part into a design does not reserve or consume it.</p>
++          ]} /><p>Search results do not supply vendor quotes or on-order stock. Review manual quotes and recorded orders in Purchases, and incoming deliveries in multi-project planning. Inserting a part into a design does not reserve or consume it.</p>
+         </section>
+ 
+         <section id="insert"><h2>Insert a model without leaving Fusion</h2><p>Search for a part, then choose geometry from your active design or saved Fusion project. A local STEP download is not required for these models.</p><ol>
+@@ -116,20 +116,21 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <li>Open BOM and compare the assembly. Use <strong>Correct this match</strong> to remember a reviewed match or mark that none of the candidates match. Compare again to see the updated allocation.</li>
+           <li>Click <strong>Save BOM version</strong>. FindEZ reads the assembly and current inventory again, then stores an immutable version. Retrying a failed save does not create a duplicate.</li>
+           <li>Open <strong>Saved BOM versions</strong> in the panel or the web comparison page. Saved counts are historical; compare again for current availability.</li>
+-        </ol><p>Versions and corrections are shared with authorized readers of this inventory. Saving does not reserve or consume stock. Up to 500 projects per inventory and 200 versions per project are supported.</p><p>On the web, open a saved version and choose another version of the same project under <strong>Compare requirements with</strong>. The comparison shows added, removed, and changed quantities. Parts without a manufacturer and part number retain their definition identity and need review. This comparison does not inspect geometry, refresh stock, or verify engineering compatibility.</p></section>
++        </ol><p>Versions and corrections are shared with authorized readers of this inventory. Saving does not reserve or consume stock. Up to 500 projects per inventory and 200 versions per project are supported.</p><p>In Fusion, load saved versions and expand <strong>Compare saved versions</strong>. Choose two versions of the same project. On the web, open a saved version and choose another version of the same project under <strong>Compare requirements with</strong>. The comparison shows added, removed, and changed quantities. Parts without a manufacturer and part number retain their definition identity and need review. Specification or catalog identity changes are kept separate when present. This comparison does not inspect geometry, refresh stock, or verify engineering compatibility.</p></section>
+ 
++        <section id="planning"><h2>Plan several projects against shared stock</h2><ol><li>Load saved BOM versions. In Fusion, expand <strong>Plan several projects</strong> in BOM. On the web, expand <strong>Plan multiple projects</strong> below the saved history.</li><li>Select one saved version per project, up to twenty. The order you select them sets priority; use <strong>Move earlier</strong> to change it.</li><li>Choose <strong>Compare shared stock</strong>. Earlier projects receive available stock first. One unit cannot cover two projects. Existing reservations and checkouts are excluded, including reservations for the selected projects.</li><li>Review shortages and uncertain matches. On-order quantities are listed separately and never counted as physically available. This preview does not reserve or purchase parts.</li></ol><p>The preview uses saved design requirements and newly read inventory. It is not an atomic stock commitment; compare again after inventory changes.</p></section>
+         <section id="purchasing"><h2>Plan purchases, compare quotes, and receive parts</h2>
+-          <p>This workflow is in the signed-in <Link href={comparisonHref}>CAD comparison and history tool</Link>, under <strong>Purchase plans</strong>, when purchasing is enabled on the server. It is not yet a Fusion panel control. Supplier quotes are entered by your team; FindEZ has no live vendor feed connected.</p>
++          <p>This workflow is in the signed-in <Link href={comparisonHref}>CAD comparison and history tool</Link>, under <strong>Purchase plans</strong>, when purchasing is enabled on the server. In Fusion 0.5.0, reconnect and separately enable <strong>purchase plans and receiving</strong>, then open <strong>Purchases</strong>. This option appears only after the server enables native purchasing. Existing connections gain no new permissions. Supplier quotes are entered by your team; FindEZ has no live vendor feed connected.</p>
+           <ol>
+-            <li>Save a BOM in Fusion. On the web, load and select that version, open Purchase plans, then choose <strong>Create plan from selected BOM</strong>. FindEZ compares the saved design with current inventory. Resolve incomplete extraction and ambiguous purchase lines first. Fabricated components are not added to the purchase list.</li>
++            <li>Save a BOM in Fusion. In Purchases, load saved BOMs, choose a version and click <strong>Create plan from current shortages</strong>. On the web, load and select that version, open Purchase plans, then choose <strong>Create plan from selected BOM</strong>. FindEZ compares the saved design with current inventory. Resolve incomplete extraction and ambiguous purchase lines first. Fabricated components are not added to the purchase list.</li>
+             <li>For each shortage, add a supplier quote with its HTTPS product link, source or reference, currency, price per individual unit, pack size, minimum order, quote date, and expiry. Confirm the exact variant, dimensions, and material yourself.</li>
+-            <li>Add bulk price breaks as one quantity and unit price per line, for example <code>100, 0.08</code>. These are prices for every unit once that quantity is reached. FindEZ compares pack-rounded quantities and shows extra units if a larger order costs less.</li>
++            <li>Add bulk price breaks as one quantity and unit price per line, for example <code>100, 0.08</code>. In Fusion, separate breaks with semicolons, for example <code>100, 0.08; 250, 0.06</code>. These are prices for every unit once that quantity is reached. FindEZ compares pack-rounded quantities and shows extra units if a larger order costs less.</li>
+             <li>Select a quote for every line. Prices remain separate by currency and exclude shipping and tax. Expired and out-of-stock quotes cannot be selected or approved. Listed stock is supplier information, not a physical stock check.</li>
+             <li>An inventory owner or administrator approves the selected quotes and quantities. Use <strong>Export by vendor</strong> to create a purchasing CSV. Place orders with the vendors yourself, then record all vendor order references. FindEZ does not perform checkout or payment.</li>
+             <li>When a delivery arrives, choose <strong>Receive</strong>, search for the existing destination stock record, enter only the quantity delivered now, and confirm the part and location. Receiving increases that record&apos;s stock and records a restock event. Create a stock record in the inventory first if needed. Partial deliveries leave the remaining quantity on order.</li>
+           </ol>
+           <p>Creating, approving, or marking a plan ordered does not add stock. One active plan is allowed per CAD project. Plans are shared with authorized inventory readers; editors can prepare quotes and receive deliveries, while owners and administrators approve and record orders. Approved plans can be reopened before ordering. Draft and approved plans can be cancelled. Ordered plans must be received; vendor cancellations and returns are not supported here yet.</p>
+-          <p>If a connection fails while saving, use <strong>Retry the same change</strong>. The page retains the pending request in this browser tab for this account and inventory, including across reloads. Confirm the result before starting another delivery entry. Duplicate retries do not add stock twice. A saved plan&apos;s quantities are planning snapshots; check other project commitments and outstanding orders before purchasing.</p>
++          <p>If a connection fails while saving, use <strong>Retry the same change</strong>. The web page retains the pending request in this browser tab for this account and inventory, including across reloads. Fusion retains the request locally for the same account and inventory across reconnection; no credentials are stored. If local request storage fails, native purchasing pauses. Confirm the result before starting another delivery entry. Duplicate retries do not add stock twice. A saved plan&apos;s quantities are planning snapshots; check other project commitments and outstanding orders before purchasing.</p>
+         </section>
+ 
+         <section id="generate"><h2>Generate a STEP model inside Fusion</h2><ol>
+@@ -199,7 +200,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+             ['Spreadsheet', '5,000 data rows, 200 columns, 20 worksheets', 'Only the selected worksheet is compared. Use plain values and individual units.'],
+             ['Fusion JSON', '5,000 definitions and 20,000 occurrences', 'Use the add-in export schema; arbitrary JSON is not a BOM.'],
+             ['Local model insertion', '100 MiB per file', 'STEP/STP or F3D, used locally inside Fusion. Not a web BOM upload.'],
+-          ]} /><p>Configuration, suppressed parts, missing references, and assembly structure can affect completeness. Quantities are snapshots, not a reservation or a physical stock check. The candidate does not provide hosted CAD assets, verified model previews, live pricing, purchasing inside Fusion, automatic design changes, or automatic project synchronization. Saved BOM versions are explicit snapshots.</p></section>
++          ]} /><p>Configuration, suppressed parts, missing references, and assembly structure can affect completeness. Quantities are snapshots, not a reservation or a physical stock check. The candidate does not provide hosted CAD assets, verified model previews, live pricing, automatic design changes, or automatic project synchronization. Saved BOM versions are explicit snapshots.</p></section>
+ 
+         <section id="privacy"><h2>Privacy & permissions</h2><p>The Fusion panel loads its UI locally. Signing in opens your normal browser; do not enter your FindEZ password into a palette or share a pairing code you did not initiate.</p>
+           <ReferenceTable caption="What leaves your computer" headings={['Action', 'Data used by FindEZ']} rows={[
+@@ -211,7 +212,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
+             ['Save BOM version / correction', 'Stores component metadata, historical comparison or your reviewed match in the selected inventory. No assembly geometry is uploaded.'],
+             ['Generate model', 'Sends the specification and clarification answers you explicitly submit to RexCAD. The generated STEP is downloaded through FindEZ into Fusion. Temporary provider results expire after seven days.'],
+             ['Insert local model', 'Imports a local geometry file into Fusion. The file contents are not uploaded by this action.'],
+-          ]} /><p>Fusion sessions are scoped to one authorized inventory and held in memory. They are read-only by default. Inventory editors can explicitly permit shared BOM versions, match corrections, and model generation during pairing. This permission does not allow stock changes or purchases. The backend stores hashed credentials and checks current inventory permissions. The panel receives no bearer token. Restarting Fusion requires reconnecting; explicit server revocation is available on the connection page.</p><p>CAD uses FindEZ sign-in and its own scoped connection. Integration API keys do not authorize CAD routes. For external inventory scripts, use the separate <Link href="/docs/api">API documentation</Link>. See the <Link href="/privacy">Privacy Policy</Link> for the service&apos;s broader data practices.</p></section>
++          ]} /><p>Fusion sessions are scoped to one authorized inventory and held in memory. They are read-only by default. Inventory editors can explicitly permit shared BOM versions, match corrections, and model generation during pairing. CAD writing permission does not allow stock changes or purchases. The separate purchasing permission permits explicit receiving into inventory; existing sessions do not gain it automatically. The backend stores hashed credentials and checks current inventory permissions. The panel receives no bearer token. Restarting Fusion requires reconnecting; explicit server revocation is available on the connection page.</p><p>CAD uses FindEZ sign-in and its own scoped connection. Integration API keys do not authorize CAD routes. For external inventory scripts, use the separate <Link href="/docs/api">API documentation</Link>. See the <Link href="/privacy">Privacy Policy</Link> for the service&apos;s broader data practices.</p></section>
+ 
+         <section id="sample"><h2>Try a sample design</h2><p>Open an assembly from Fusion&apos;s Data Panel under <strong>Samples → Basic Training → 06 - Assemblies</strong>. Compare it in the connected panel or export its BOM and upload the JSON. A blank Untitled design has no parts to compare.</p><p>Samples test the workflow; their parts may not exist in your inventory and may lack exact identifiers. Missing and needs-review results can be expected. Use an editable saved copy before inserting a model. No sample inventory is created automatically.</p></section>
+ 
+@@ -219,10 +220,10 @@ export function CadDocs({ world }: { world?: string } = {}) {
+           <details><summary>Generate model is disabled or I cannot click it</summary><p>Check that you are connected, have an editable design open, and have completed the name, units, specification, and generation-consent fields. If the panel says to approve CAD writing access, disconnect and sign in again. On the browser connection page, select both the matching-code confirmation and the separate optional model-generation permission before connecting. Only an inventory editor can enable it. Selecting RexCAD consent inside Fusion alone does not grant this permission.</p></details>
+           <details><summary>My model says queued — should I start again?</summary><p>No. The job has been accepted. Click Refresh status and answer any clarification that appears. My recent generation jobs lets you resume the same job after reconnecting to the same inventory.</p></details>
+           <details><summary>I see the model and a Place FindEZ Component dialog</summary><p>Adjust its position if needed and click OK to keep it, or Cancel to remove the copy. Save the Fusion design and check dimensions. Seeing the shape does not verify every dimension or manufacturing requirement.</p></details>
+-          <details className={styles.responseFields}><summary>I only see Export FindEZ BOM, not Open FindEZ</summary><p>Check Scripts and Add-Ins. Version 0.1.0 is export-only. Install the workspace ZIP, confirm version 0.4.2 and its Full Path, and switch Run on. Remove the old registration and restart Fusion after replacing files. Look under Design → Utilities → Add-Ins.</p></details>
+-          <details className={styles.responseFields}><summary>Sign-in shows Unsupported panel command</summary><p>Update to workspace version 0.4.2. Earlier versions could mistake Fusion’s acknowledgement messages for new commands and repeatedly display this error. Stop FindEZ, replace the complete extracted files, restart Fusion, confirm 0.4.2 in Scripts and Add-Ins, and try Sign in with FindEZ again.</p></details>
+-          <details className={styles.responseFields}><summary>Sign-in says FindEZ could not be reached</summary><p>Update the complete add-in to 0.4.2 and restart Fusion. This version includes public certificate roots for embedded Python and shows a specific error code if the connection still fails. TLS-CERT means certificate verification failed; check the computer date and managed-network HTTPS inspection. DNS means the API hostname could not be resolved. TIMEOUT or NETWORK means Fusion could not connect. Send the displayed code to support. The browser opening findez.ai does not by itself confirm Fusion can reach the API.</p></details>
+-          <details className={styles.responseFields}><summary>Open FindEZ says the site cannot be reached</summary><p>The initial panel should load locally, before sign-in. Version 0.4.2 retains the Windows file-URL fix. Stop FindEZ, replace the complete extracted files, restart Fusion, and confirm 0.4.2. Check that palette.html, palette.js, and palette.css are present beside FindEZ.py. If the error appears instead in your browser after clicking Sign in with FindEZ, check your internet connection and open the connection page directly.</p></details>
++          <details className={styles.responseFields}><summary>I only see Export FindEZ BOM, not Open FindEZ</summary><p>Check Scripts and Add-Ins. Version 0.1.0 is export-only. Install the workspace ZIP, confirm version 0.5.0 and its Full Path, and switch Run on. Remove the old registration and restart Fusion after replacing files. Look under Design → Utilities → Add-Ins.</p></details>
++          <details className={styles.responseFields}><summary>Sign-in shows Unsupported panel command</summary><p>Update to workspace version 0.5.0. Earlier versions could mistake Fusion’s acknowledgement messages for new commands and repeatedly display this error. Stop FindEZ, replace the complete extracted files, restart Fusion, confirm 0.5.0 in Scripts and Add-Ins, and try Sign in with FindEZ again.</p></details>
++          <details className={styles.responseFields}><summary>Sign-in says FindEZ could not be reached</summary><p>Update the complete add-in to 0.5.0 and restart Fusion. This version includes public certificate roots for embedded Python and shows a specific error code if the connection still fails. TLS-CERT means certificate verification failed; check the computer date and managed-network HTTPS inspection. DNS means the API hostname could not be resolved. TIMEOUT or NETWORK means Fusion could not connect. Send the displayed code to support. The browser opening findez.ai does not by itself confirm Fusion can reach the API.</p></details>
++          <details className={styles.responseFields}><summary>Open FindEZ says the site cannot be reached</summary><p>The initial panel should load locally, before sign-in. Version 0.5.0 retains the Windows file-URL fix. Stop FindEZ, replace the complete extracted files, restart Fusion, and confirm 0.5.0. Check that palette.html, palette.js, and palette.css are present beside FindEZ.py. If the error appears instead in your browser after clicking Sign in with FindEZ, check your internet connection and open the connection page directly.</p></details>
+           <details className={styles.responseFields}><summary>Fusion says Failed to add script</summary><p>Extract the ZIP and select the inner FindEZ folder. FindEZ.py and FindEZ.manifest must sit directly inside it with those exact names. Do not select the outer download folder or a single file. Send support the exact error and folder picker screenshot if it still fails.</p></details>
+           <details className={styles.responseFields}><summary>I cannot find Run, or neither command appears</summary><p>New Fusion versions use a small Run toggle in the FindEZ row; older versions have a Run button. Switch to the Design workspace, enable FindEZ, and close the manager. If it switches off or displays an error, capture that message. Searching with S cannot find a command that has not loaded.</p></details>
+           <details className={styles.responseFields}><summary>The pairing code expired or the panel is not connected</summary><p>Start Sign in with FindEZ again inside Fusion. Use the new code within ten minutes and approve the same selected inventory. Confirm the code matches your panel. Return to Fusion; if the session has expired or access changed, disconnect and reconnect.</p></details>
+@@ -235,11 +236,11 @@ export function CadDocs({ world }: { world?: string } = {}) {
+         <section id="roadmap"><h2>Planned capabilities</h2><p>The current release is a Fusion workspace candidate with saved BOMs and on-demand generation. The following capabilities are planned, not available controls or promises of a release date.</p>
+           <ReferenceTable caption="CAD development scope" headings={['Area', 'Planned work']} rows={[
+             ['Fusion workspace', 'Complete native placement acceptance, hosted model retrieval and previews, and saved/frequently used parts.'],
+-            ['BOM and identity', 'Canonical variant identity, specification checks, automatic synchronization, and geometry-aware design-change analysis. Saved requirement quantity comparison is available on the web.'],
++            ['BOM and identity', 'A complete canonical variant catalog, automatic synchronization, and geometry-aware design-change analysis. Saved requirement comparisons and nominal specification conflict checks are supported; missing dimensions still need review.'],
+             ['Parts and CAD assets', 'A curated manufacturer catalog with exact variants, source rights, model quality labels, validation, and incremental generation jobs.'],
+-            ['Pricing', 'Approved live vendor feeds and reviewed engineering alternatives. Team-supplied quote history and pack/bulk estimates are supported in web purchase plans when enabled.'],
+-            ['Procurement', 'In-panel purchasing, order cancellation/returns, automatic replenishment allocation, and vendor checkout. Web purchase plans support approval, order recording, and partial receiving when enabled.'],
+-            ['Further integrations', 'Direct Onshape connection, cost recommendations, and multi-project planning.'],
++            ['Pricing', 'Approved live vendor feeds and reviewed engineering alternatives. Team-supplied quote history and pack/bulk estimates are supported in web and separately authorized Fusion purchase plans when enabled.'],
++            ['Procurement', 'Order cancellation/returns, automatic replenishment allocation, and vendor checkout. Web and separately authorized Fusion purchase plans support approval, order recording, and partial receiving when enabled.'],
++            ['Further integrations', 'Direct Onshape connection and engineering-reviewed alternatives. Shared-stock planning previews support selected saved projects; they do not reserve stock.'],
+           ]} /><p>Catalog availability, owned stock, CAD geometry, and vendor offers remain distinct. A generated model or similarly named part must not silently become a verified engineering substitute. Suggested purchases and design substitutions require human review.</p></section>
+ 
+         <section id="support"><h2>Support & documentation coverage</h2><p>This guide covers the public CAD downloads, Fusion workspace candidate, export-only workflow, web comparison, Onshape CSV, and current limitations. The <Link href="/cad-intelligence">public CAD Intelligence page</Link> introduces the feature; the <Link href={comparisonHref}>comparison tool</Link> uses your signed-in inventory.</p><p>Contact <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">info@findez.ai</a> with your operating system, Fusion version, FindEZ add-in version, the step you reached, and the exact error or a redacted screenshot. Never include passwords, access tokens, pairing codes, or private design files.</p><div className={styles.footerLinks}><a href="#downloads">Downloads ↓</a><Link href="/cad/fusion/connect">Manage Fusion connections ↗</Link><Link href={comparisonHref}>Open comparison tool ↗</Link><Link href="/docs/api">API documentation</Link><a href="#quickstart">Back to start ↑</a></div></section>
+diff --git a/frontend/src/lib/cad-purchasing.ts b/frontend/src/lib/cad-purchasing.ts
+index 090062b4..e366a74f 100644
+--- a/frontend/src/lib/cad-purchasing.ts
++++ b/frontend/src/lib/cad-purchasing.ts
+@@ -5,6 +5,7 @@ export type PurchaseQuote = {
+ };
+ export type PurchaseLine = {
+   id: string; name: string; manufacturer: string; part_number: string; required: number;
++  specifications?: Record<string, string>; catalog_id?: string | null;
+   available: number; quantity: number; received: number; quotes: PurchaseQuote[];
+   selected_quote: PurchaseQuote | null;
+ };
+@@ -14,13 +15,13 @@ export type PurchasePlan = PurchaseSummary & {
+   order_reference: string | null; totals: Record<string, string>;
+ };
+ export function purchaseCsv(plan: PurchasePlan) {
+-  const rows: (string | number)[][] = [["Vendor", "Component", "Manufacturer", "Part number", "Shortage", "Order quantity", "Received", "Currency", "Subtotal (excluding tax and shipping)", "Product link", "Order reference"]];
++  const rows: (string | number)[][] = [["Vendor", "Component", "Manufacturer", "Part number", "Shortage", "Order quantity", "Received", "Currency", "Subtotal (excluding tax and shipping)", "Product link", "Order reference", "Catalog ID", "Required specifications"]];
+   const sorted = [...plan.lines].sort((a, b) => (a.selected_quote?.vendor || "").localeCompare(b.selected_quote?.vendor || ""));
+   for (const line of sorted) {
+     const quote = line.selected_quote;
+     rows.push([quote?.vendor || "Unquoted", line.name, line.manufacturer, line.part_number, line.quantity,
+       quote?.estimate.order_quantity || "", line.received, quote?.currency || "", quote?.estimate.subtotal || "",
+-      quote?.product_url || "", plan.order_reference || ""]);
++      quote?.product_url || "", plan.order_reference || "", line.catalog_id || "", JSON.stringify(line.specifications || {})]);
+   }
+   return rows.map(row => row.map(value => {
+     const text = String(value);
+diff --git a/frontend/src/lib/cad.ts b/frontend/src/lib/cad.ts
+index 3e9f3da2..2216f067 100644
+--- a/frontend/src/lib/cad.ts
++++ b/frontend/src/lib/cad.ts
+@@ -3,6 +3,8 @@ import { activeInventory, assertInventory } from "@/lib/inventory-selection";
+ 
+ export type CadLine = {
+   review_token?: string;
++  specifications?: Record<string,string>;
++  specification_issues?: {item_id:string;conflicts:string[];unknown:string[]}[];
+   candidates?: CadCandidate[];
+   key: string; name: string; part_number: string; manufacturer: string;
+   required: number; assigned: number; missing: number; unit: string;

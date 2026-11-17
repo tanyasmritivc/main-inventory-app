@@ -1,0 +1,94 @@
+{
+  "backend/app/api/routes/cad.py": {
+    "before": "1eccd338eeb8a3efa4544ed4f2b91dc94e735eb86e4001cf6069100bbaa9f3c8",
+    "after": "1e804b15ae73fb904e87f01697684abe866bbbcb1644a15d85e6afdfac7e9335"
+  },
+  "backend/app/api/routes/cad_workspace.py": {
+    "before": "44044c3b8a9a60ebb7df042d1d4b710eb0407331364ab28e4f4c509059f053b4",
+    "after": "e7dc62fa4fd1364f42ab1d0d770e34816b68137a31048de3bb61d0e30d633065"
+  },
+  "backend/app/services/cad/comparison.py": {
+    "before": "2e688b1ba10569c632a972c816e8cb1c964e2f8069ec2a2f4eeaee3473b0effa",
+    "after": "655129cbe63960c41ffec98c979fa1542dfd4058d52f85a107a5afe2f66c3f6d"
+  },
+  "backend/app/services/cad/corrections.py": {
+    "before": "99842a067555ee3e44923d49564651d3ff7375be56d1c0d6e46d45f169a4d187",
+    "after": "cbd93cb52e37e8e54b9c02a7fd20d3d8bd8c29839a7d9efbc9c266479e1b561c"
+  },
+  "backend/app/services/cad/planning.py": {
+    "before": null,
+    "after": "79a128c336c22b63f1c912f9c17678e7f80cbcfe4bc0f728b6fe2499a934599a"
+  },
+  "backend/app/services/cad/purchasing.py": {
+    "before": "a759c30fcebdaabf84afe4bb0720ed98af426f836d7b31038e58f39fb1f6504d",
+    "after": "ae7b98f967d8be5dfb3f925e33c0058b2763734c86b58faa77812a94324154b2"
+  },
+  "backend/app/services/cad/repository.py": {
+    "before": "f8af10e326bb9197d232054d800101e06136634cce575a94ba8b6f57971b424b",
+    "after": "402d9614a690821f32c8a99f285f2e5e8a02070a8af003eb743f321f79b58c3a"
+  },
+  "backend/app/services/cad/revisions.py": {
+    "before": "01fc55ad1d21781f418be93b60a5f9502ae6bbdb5dfdfd7eb84e70ff132ac3ac",
+    "after": "7c6dc1f61141412d8f43860bfdd4036039ea979df5331ac906e24b535c10cce4"
+  },
+  "backend/app/services/cad/snapshot.py": {
+    "before": "1eb5ba47894efa1b7e40f9e92751e4add2e4a43293859ebd5bd6541c504ef6db",
+    "after": "cb24d43ca158e3944d6e9b270bffd1a2146ce5db4b7145f0d5bdc4abe8fbc075"
+  },
+  "backend/app/services/cad/specifications.py": {
+    "before": null,
+    "after": "5c74f3c228dbe1cccb37439378bcb98ed222f3fa5ad572a8431ee248617dd6fb"
+  },
+  "backend/app/services/cad/workspace.py": {
+    "before": "106dd1262e04196221991b3cfeae11990cf5190547cad15a0b27cfe600cb61ae",
+    "after": "3d590e453e11cf6c6f437081487dc7c5d89ba310bba339dd13bdbb4e638a85d5"
+  },
+  "frontend/public/downloads/findez-fusion-workspace.zip": {
+    "before": "1fcbc00f574343be0c6d4916dfab4009ff2f9643a9bc72a57e38bd8a8fbd57a6",
+    "after": "6f8e2ec2afec7332b9a3af23fc20ee8a2fa58d1ca51217e9dd46a5d491a97ada"
+  },
+  "frontend/src/components/cad/cad-help.tsx": {
+    "before": "7df6ca74ec5c56bcc5019b2138a4f4c186670aa66b25f9b7bdfbdeba97f6238c",
+    "after": "831f17400b4410be20b57a5f166a5a4b689439e3ce6ff7d5ac4af4662f9c3439"
+  },
+  "frontend/src/components/cad/cad-history.tsx": {
+    "before": "9c7a0da832d185a2cb7ad128a1acdd180c81306c2f01a4ee8d0a06ce9e4a56d1",
+    "after": "8e117c871215cdaedff6a99ff5680570eab8bcdb141e0a28b3bfdd0450de98e5"
+  },
+  "frontend/src/components/cad/cad-planning.tsx": {
+    "before": null,
+    "after": "9ba2bc044754675af45861251f46b504d5fe68c00510bd08cf807d3d93dbc3ed"
+  },
+  "frontend/src/components/cad/cad-purchasing.tsx": {
+    "before": "03efdf7a6c144c51dcdb43c5bdb2a3c2c52c33fdc7b2cb82f621e0b2d75831e3",
+    "after": "3e7382c3c360554daba957a31cfb27ed7e138a37d3c77268f7be48ffdd20a4fb"
+  },
+  "frontend/src/components/cad/cad-results.tsx": {
+    "before": "0c78b633980dbf6e4f9cd1d6a5419b693ab2ec667ba9d1bb560d3a6ca321fda2",
+    "after": "aff540af4b883ed7f068a56f31ca97cf21f540c7f252aa4c91e0f7129bca67b7"
+  },
+  "frontend/src/components/cad/fusion-connect.tsx": {
+    "before": "7504bff81fbb2b7ce31e60348101fe40460ff5405a45e79b8893157db1dbf93c",
+    "after": "8794401300aa60c3864106ad8f1c2063f14ffa09a2ee01b4557bf8195b4ea770"
+  },
+  "frontend/src/components/marketing-dark/cad-public-content.tsx": {
+    "before": "9f1058e03ec43b04de1334d2549b2cf74897a003bdf3bd47bb0edabb8613dee5",
+    "after": "a300c47411001eb5bf601ee732ea65b5ff5a28297d3703483f447b275643259c"
+  },
+  "frontend/src/components/site/cad-docs-navigation.tsx": {
+    "before": "ff4082414a5d54a7ed11d9d9f3c564d5f92613d414eb8ebebcc03104a056e5e4",
+    "after": "9b71b29058dbaf2d7e20e1a645949f43349f71f68e3ac4c6ef30f514ad28f604"
+  },
+  "frontend/src/components/site/cad-docs.tsx": {
+    "before": "d64f263586fffa85e846577b90e73c70cfbde412d6587dd8f4e649f1a2a9adfe",
+    "after": "cdf00c7ea7fb669e8af2955bb80d787ea6f0a482afbb6ae98a80e458f52a1896"
+  },
+  "frontend/src/lib/cad-purchasing.ts": {
+    "before": "7af37ab178ad65aadf6490b5730a4c7bc2202a0751c3e8ca1722efc655059b6b",
+    "after": "71c845d84365ea694f46785aced02abb55b71857e6df40972557921285a75f4b"
+  },
+  "frontend/src/lib/cad.ts": {
+    "before": "e7a24cdc56b06d724b0d682238c005fbded4cae64204d3d376a1c4702de1ecb0",
+    "after": "063bf2018551f63fb254e8037d2ac56fc8c3b0f043aec94603f3f7b0188ee3d3"
+  }
+}
