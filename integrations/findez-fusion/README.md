@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.5.0
+# FindEZ Fusion workspace candidate 0.5.1
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.5.0 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.5.1 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -118,10 +118,10 @@ Slate-grey panel surfaces, muted blue primary actions, softer tab selection, and
 quieter BOM summaries replace the high-contrast black and white blocks. The panel
 sets its own background so Fusion’s embedded browser renders consistent surfaces.
 Status messages remain visible while you work. Stop FindEZ, replace the complete add-in folder, restart Fusion, and
-confirm 0.5.0 before running it.
+confirm 0.5.1 before running it.
 
 
-## Purchasing and planning in 0.5.0
+## Purchasing and planning introduced in 0.5.0
 
 Reconnect and separately enable optional **purchase plans and receiving**. Existing
 sessions do not gain this permission. In Purchases, load saved BOMs, select a
@@ -145,3 +145,13 @@ reservations/checkouts are excluded; incoming orders are separate. This preview
 makes no reservations. Nominal specification conflicts prevent automatic matching.
 Known dimensions may use explicit mm/cm/in units; missing evidence needs review.
 These checks do not certify strength, tolerances, thread fit or engineering use.
+
+## 0.5.1 purchase-plan error guidance
+
+Creation errors now distinguish no confirmed shortages, unresolved review rows,
+and an existing active plan. An empty/fabricated-only or fully covered BOM does
+not need a purchase plan. For review rows, compare in BOM, resolve them, save a new
+version, and select that version in Purchases. Existing plans are under Load
+purchase plans. Quote expiry applies to quote approval, not to every creation
+failure. Unknown server errors remain sanitized and uncertain writes retain the
+same safe retry behavior. This fix does not bypass purchasing checks.

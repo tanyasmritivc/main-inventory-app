@@ -197,3 +197,30 @@ def test_ai_search_route_rechecks_capability_after_model_work(monkeypatch):
         assert authorize.call_count==2
         assert search.call_args.args[0] is authorize.return_value
         assert http.post('/fusion/search',headers={'Authorization':'Bearer '+TOKEN},json={'query':'bearings','inventory_id':'another'}).status_code==422
+
+
+@pytest.mark.parametrize('detail,expected', [
+    ('No confirmed shortages remain in this design.', 'Covered parts and generated/fabricated parts'),
+    ('Resolve incomplete extraction and review lines in Fusion before creating a purchase plan.', 'save a new BOM version'),
+    ('This project already has an active purchase plan. Open that plan first.', 'Load purchase plans'),
+    ('Choose a current, available quote for every line.', 'Every purchase line'),
+])
+def test_native_purchase_conflicts_keep_specific_recovery_guidance(monkeypatch,detail,expected):
+    import io,json
+    error=client.error.HTTPError(client.API+'/purchases',409,'Conflict',{},io.BytesIO(json.dumps({'detail':detail}).encode()))
+    opener=Mock();opener.open.side_effect=error
+    monkeypatch.setattr(client.request,'build_opener',lambda *args:opener)
+    with pytest.raises(client.ClientError) as result:client.call('/purchases',method='POST',data={})
+    assert expected in str(result.value) and result.value.status==409
+    assert 'the quote expired' not in str(result.value)
+
+
+@pytest.mark.parametrize('body',[b'<html>private error</html>', b'{"detail":"private error SQL secret"}',
+    b'{"detail":[{"input":"private error"}]}', b'{"detail":{"password":"private error"}}',b'x'*8193])
+def test_native_purchase_errors_never_echo_unrecognized_server_data(monkeypatch,body):
+    import io
+    error=client.error.HTTPError(client.API+'/purchases',409,'Conflict',{},io.BytesIO(body))
+    opener=Mock();opener.open.side_effect=error
+    monkeypatch.setattr(client.request,'build_opener',lambda *args:opener)
+    with pytest.raises(client.ClientError) as result:client.call('/purchases',method='POST',data={})
+    assert 'private error' not in str(result.value) and result.value.status==409

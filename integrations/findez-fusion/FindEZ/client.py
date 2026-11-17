@@ -47,6 +47,50 @@ def network_message(exc):
     return 'Fusion could not connect to findez.openstack.ftctools.com. Check whether your firewall or proxy allows Fusion to reach it. [NETWORK]'
 
 
+
+# Only known public domain errors may reach the palette. Never echo arbitrary
+# API/proxy errors, validation input, exception text, or response bodies.
+PURCHASE_ERRORS = {
+    'No confirmed shortages remain in this design.':
+        'No confirmed parts need purchasing in this saved BOM. Open BOM and compare the assembly. Covered parts and generated/fabricated parts do not create purchase lines.',
+    'Resolve incomplete extraction and review lines in Fusion before creating a purchase plan.':
+        'This saved BOM has incomplete extraction or purchase rows needing review. Open BOM, compare the assembly, resolve the review rows, and save a new BOM version. Then choose that version in Purchases.',
+    'This project already has an active purchase plan. Open that plan first.':
+        'This project already has an active purchase plan. Click Load purchase plans and open it instead of creating another.',
+    'This plan changed. Reload it before making another change.':
+        'This plan changed. Click Refresh plan before making another change.',
+    'Choose a current, available quote for every line.':
+        'Every purchase line needs a selected, unexpired quote that is not out of stock. Add or select the missing quotes before approval.',
+    'An inventory owner or administrator must approve and record orders.':
+        'An inventory owner or administrator must approve the plan and record placed orders. Editors can add quotes and confirm deliveries.',
+    'The delivery exceeds the quantity still on order.':
+        'This delivery exceeds the quantity still on order. Refresh the plan and enter only this delivery’s remaining units.',
+    'Correct the destination stock quantity before receiving.':
+        'The destination stock quantity needs correction in FindEZ before receiving this delivery.',
+    'This action is not available in the current purchase state.':
+        'This action is unavailable in the current plan state. Refresh the plan to see its available actions.',
+    'This request was already used for a different change.':
+        'This request was already used for different details. Refresh the plan and review its recorded changes before trying again.',
+    'The purchase planning limit has been reached.':
+        'This inventory has reached its purchase planning limit. Review existing plans before creating another.',
+    'Purchasing inside Fusion is not enabled yet.':
+        'Purchasing inside Fusion is not enabled on this server yet.',
+    'CAD purchasing is not enabled yet.':
+        'CAD purchasing is not enabled on this server yet.',
+}
+
+
+def purchase_error_message(exc, fallback):
+    try:
+        body=exc.read(8193)
+        if len(body)>8192:return fallback
+        parsed=json.loads(body)
+        detail=parsed.get('detail') if isinstance(parsed,dict) else None
+        return PURCHASE_ERRORS.get(detail,fallback) if isinstance(detail,str) else fallback
+    except (ValueError,OSError,HTTPException):
+        return fallback
+
+
 def call(path, *, method='GET', data=None, token=None):
     if not path.startswith('/') or path.startswith('//') or '\\' in path or '#' in path:
         raise ClientError('Invalid FindEZ request.')
@@ -70,7 +114,7 @@ def call(path, *, method='GET', data=None, token=None):
                 404:'This purchase plan or destination is unavailable.',409:'This plan changed, the quote expired, or the action is unavailable. Reload the plan.',
                 422:'Check the quote fields, dates, quantities and exact-part confirmation.',429:'Too many requests. Wait a minute and retry.'}.get(exc.code,
                 'The purchase result could not be confirmed. Retry the same change; do not submit a new receipt.')
-            raise ClientError(message, status=exc.code) from None
+            raise ClientError(purchase_error_message(exc,message), status=exc.code) from None
         if exc.code in (401,403):
             raise ClientError('Your connection expired or access changed. Disconnect and sign in again.') from None
         if exc.code==429:

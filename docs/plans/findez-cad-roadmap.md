@@ -4,10 +4,11 @@ The requested product is an inventory-connected CAD workspace, shared parts and
 CAD library, BOM reconciliation, pricing and procurement system. The connected
 Fusion candidate is the first increment, not completion of this roadmap.
 
-## Live release: Fusion 0.5.0 purchasing and shared-stock planning
+## Live release: Fusion 0.5.1 purchasing and shared-stock planning
 
 Published on November 16 after explicit approval of the native purchasing migration.
 The full requested roadmap is not complete.
+0.5.1 corrects misleading purchase conflict messages; guards and stock behavior are unchanged.
 
 - Fusion panel, scoped sign-in, personal/team inventory selection, AI search,
   location browsing and separate global catalog identities.
@@ -26,7 +27,7 @@ The full requested roadmap is not complete.
   separated totals; quote selection and owner/admin approval; vendor-grouped export;
   manual order references; explicit partial receipts into existing stock records.
   Receiving is transactional, retry-safe, permission-checked and audited.
-- Slate Fusion panel, centralized CAD docs and consistent 0.5.0 download links.
+- Slate Fusion panel, centralized CAD docs and consistent 0.5.1 download links.
   Local occurrences no longer require external documentReference access; unresolved
   external references remain incomplete. Public marketing layout unchanged.
 

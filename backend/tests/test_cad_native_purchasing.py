@@ -48,3 +48,21 @@ def test_explicit_purchase_pairing_uses_independent_consent(monkeypatch):
     workspace.approve('ABCD234567',INV,ACTOR,False,True)
     name,params=next(args for method,args,_ in db.calls if method=='rpc')
     assert name=='findez_cad_device_approve_purchasing' and params['p_writes'] is False
+
+
+@pytest.mark.parametrize('completeness,expected',[('partial','save a new BOM version'),('complete','No confirmed parts need purchasing')])
+def test_actual_creation_guard_survives_native_error_transport(monkeypatch,completeness,expected):
+    import io,json
+    from backend.tests.test_cad_workspace import client
+    from backend.tests.test_cad_prototype import snapshot
+    monkeypatch.setenv('CAD_PURCHASING_ENABLED','true')
+    monkeypatch.setattr(purchasing,'authorize_inventory',Mock())
+    db=Mock();db.table.side_effect=[Query([]),Query([{'snapshot':snapshot().model_dump(mode='json')}])]
+    monkeypatch.setattr(purchasing,'get_supabase_raw',lambda:db)
+    monkeypatch.setattr(purchasing.projects,'evaluate',lambda *args:{'completeness':completeness,'items':[]})
+    with pytest.raises(HTTPException) as guarded:
+        purchasing.create(INV,ACTOR,purchasing.CreatePlan(request_id=uuid4(),bom_version_id=uuid4()))
+    error=client.error.HTTPError(client.API+'/purchases',guarded.value.status_code,'Conflict',{},io.BytesIO(json.dumps({'detail':guarded.value.detail}).encode()))
+    opener=Mock();opener.open.side_effect=error;monkeypatch.setattr(client.request,'build_opener',lambda *args:opener)
+    with pytest.raises(client.ClientError) as displayed:client.call('/purchases',method='POST',data={})
+    assert displayed.value.status==409 and expected in str(displayed.value)

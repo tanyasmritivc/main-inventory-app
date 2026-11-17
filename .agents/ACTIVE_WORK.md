@@ -1,3 +1,16 @@
+## Fusion 0.5.1 purchase-plan guidance — November 16 local / 17 UTC (published)
+
+IMG_3652 showed generic HTTP409 text while creating a plan. Fixed the native client
+mapping to retain known safe domain reasons and specific recovery instructions.
+No stock/API/schema changes or guard bypass. Docs/help/downloads all 0.5.1.
+Active web /home/ubuntu/findez-fusion-051-20261117/frontend, built from the then
+active profile-card release, preserving unrelated changes. Build FoZpM-svEnZxt13XRAK-k.
+108 affected backend tests, 21 web tests, two additional real-guard regressions,
+lint/build/TypeScript and live ZIP/docs checks passed. User must update and retry;
+the screenshot does not reveal which domain guard rejected their particular BOM.
+Full roadmap and real Fusion native acceptance remain unfinished. No push.
+Receipt: docs/releases/fusion-051-20261117/README.md.
+
 ## CAD 0.5.0 native purchasing and planning — November 16, 2026 (published)
 
 Owner Codex in findez-cad-workspace / feat/cad-workspace. User explicitly approved
