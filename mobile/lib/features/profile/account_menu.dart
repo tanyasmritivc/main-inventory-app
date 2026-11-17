@@ -13,6 +13,7 @@ Future<void> showAccountMenu(
   required ApiClient api,
   required ProfileStore profile,
   VoidCallback? onOpenHistory,
+  Future<void> Function()? onOpenWorld,
 }) async {
   if (usesNativePresentation) {
     return showNativeAccountMenu(
@@ -20,6 +21,7 @@ Future<void> showAccountMenu(
       api: api,
       profile: profile,
       onOpenHistory: onOpenHistory,
+      onOpenWorld: onOpenWorld,
     );
   }
   final selected = await showModalBottomSheet<String>(
@@ -55,6 +57,14 @@ Future<void> showAccountMenu(
 
             onTap: () => NotificationsPage.open(sheet, api: api),
           ),
+          if (onOpenWorld != null)
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              leading: const Icon(Icons.public),
+              title: const Text('World'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(sheet).pop('world'),
+            ),
           if (onOpenHistory != null)
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -69,5 +79,7 @@ Future<void> showAccountMenu(
       ),
     ),
   );
-  if (context.mounted && selected == 'history') onOpenHistory?.call();
+  if (!context.mounted) return;
+  if (selected == 'history') onOpenHistory?.call();
+  if (selected == 'world') await onOpenWorld?.call();
 }

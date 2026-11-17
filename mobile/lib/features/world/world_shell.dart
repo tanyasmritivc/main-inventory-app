@@ -315,6 +315,7 @@ class _WorldShellState extends State<WorldShell> {
       api: widget.session.api,
       profile: _profile,
       onOpenHistory: () => _history?.call(),
+      onOpenWorld: _openWorld,
     );
     if (mounted) await _profile.load(force: true);
   }
@@ -619,49 +620,28 @@ class _WorldShellState extends State<WorldShell> {
         size: 36,
       ),
     );
-    final world = TextButton.icon(
-      onPressed: _openWorld,
-      icon: const Icon(CupertinoIcons.globe, size: 18),
-      label: const Text('World'),
-    );
-    final largeText = MediaQuery.textScalerOf(context).scale(13) > 24;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-      child: index == 0 && largeText
-          ? Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: leading),
-                    account,
-                  ],
-                ),
-                Align(alignment: Alignment.centerRight, child: world),
-              ],
-            )
-          : Row(
-              children: [
-                Expanded(child: leading),
-                if (index == 1)
-                  IconButton(
-                    tooltip: _searchingSpaces
-                        ? 'Close Space search'
-                        : 'Search Spaces',
-                    icon: Icon(
-                      _searchingSpaces
-                          ? CupertinoIcons.xmark
-                          : CupertinoIcons.search,
-                      size: 22,
-                    ),
-                    onPressed: () => setState(() {
-                      _searchingSpaces = !_searchingSpaces;
-                      _search.clear();
-                    }),
-                  ),
-                if (index == 0) world,
-                if (index == 0) account,
-              ],
+      child: Row(
+        children: [
+          Expanded(child: leading),
+          if (index == 1)
+            IconButton(
+              tooltip: _searchingSpaces
+                  ? 'Close Space search'
+                  : 'Search Spaces',
+              icon: Icon(
+                _searchingSpaces ? CupertinoIcons.xmark : CupertinoIcons.search,
+                size: 22,
+              ),
+              onPressed: () => setState(() {
+                _searchingSpaces = !_searchingSpaces;
+                _search.clear();
+              }),
             ),
+          if (index == 0) account,
+        ],
+      ),
     );
   }
 

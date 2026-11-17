@@ -22,6 +22,7 @@ Future<void> showNativeAccountMenu(
   required ApiClient api,
   required ProfileStore profile,
   VoidCallback? onOpenHistory,
+  Future<void> Function()? onOpenWorld,
 }) async {
   final appearance = AppearanceScope.maybeOf(context);
   final prefs = await SharedPreferences.getInstance();
@@ -60,6 +61,7 @@ Future<void> showNativeAccountMenu(
                   'subtitle': 'Edit profile',
                 },
                 row('notifications', 'Notifications', 'bell'),
+                if (onOpenWorld != null) row('world', 'World', 'globe'),
                 if (onOpenHistory != null)
                   row('history', 'Chat history', 'clock'),
               ],
@@ -262,6 +264,9 @@ Future<void> showNativeAccountMenu(
             ),
           );
         }
+        return;
+      case 'world':
+        await onOpenWorld?.call();
         return;
       case 'history':
         onOpenHistory?.call();

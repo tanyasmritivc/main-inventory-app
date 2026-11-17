@@ -1,3 +1,9 @@
+## November 16 - World lives in mobile Settings
+
+The visual World experience is opened from the profile-photo Settings panel,
+not the Ask home header. Keep the existing World launch/return lifecycle and
+refresh behavior; native and Flutter fallback Settings expose the same entry.
+
 ## November 16 - World is an existing-inventory view
 
 FindEZ World reuses canonical Space/item/bin IDs. The item's location continues

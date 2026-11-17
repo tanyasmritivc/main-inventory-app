@@ -1,3 +1,19 @@
+## November 16 - World entry moved into mobile Settings (225 pending)
+
+Removed the World button and its large-text second row from the Ask header.
+The profile-photo Settings panel now has a World row with a globe icon in both
+native iOS and Flutter fallback menus. It dismisses Settings before invoking the
+existing World route, landscape lifecycle and inventory refresh on return.
+No web, backend, inventory or permission changes. Version prepared: 1.1.5 (225).
+
+Full mobile Dart analysis passed with no issues. Focused existing Flutter tests
+could not start because the session denies local server sockets (errno 1).
+The installed SDK is read-only; a task-local SDK copy allowed the runner to start,
+but did not remove the socket restriction. Computer control also refused Terminal
+access. No archive or TestFlight upload performed. Latest confirmed upload is 224.
+Physical-device acceptance remains unverified. No Git push (standing prohibition).
+Continuation: .agents/HANDOFFS/world-settings225.md.
+
 ## November 16 — World landscape and pixel splash, build 224
 
 World now requests landscape only and restores portrait on exit. A dark blue
