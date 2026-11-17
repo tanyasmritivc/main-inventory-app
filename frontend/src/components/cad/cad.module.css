@@ -148,3 +148,8 @@
 .helpSections .supportCard { padding:24px; border:1px solid var(--cad-line); border-radius:18px; background:var(--cad-panel); }
 @media(max-width:1050px) { .workspace { grid-template-columns:minmax(0,1fr); } .helpRail { border-top:1px solid var(--cad-line); padding-top:24px; } .helpRail h2 br { display:none; } }
 @media(max-width:650px) { .page { padding:24px 16px 60px; gap:20px; } .hero h1 { margin-top:20px; font-size:32px; } .hero > p { font-size:14px; } .inventoryStrip { align-items:flex-start; font-size:12px; } .sourceChoices { gap:8px; } .page .sourceChoices button { padding:14px 10px; gap:8px; } .sourceChoices button > svg:first-child { display:none; } .sourceChoices small { font-size:11px; } .sourceChoices strong { font-size:13px; } .preparation { padding:20px; } .prepColumns { grid-template-columns:1fr; gap:20px; } .prepColumns > div + div { padding:20px 0 0; border-left:0; border-top:1px solid var(--cad-line); } .guideLayout { grid-template-columns:1fr; gap:36px; } .guideNav { position:static; gap:12px; } .guidePage > .hero { padding:0; } .glossary > div { grid-template-columns:1fr; gap:5px; } }
+
+.permissionOption { display: flex; align-items: flex-start; gap: 12px; padding: 16px; margin: 16px 0; border: 1px solid var(--app-border); border-radius: 10px; line-height: 1.6; }
+.permissionOption input { flex: 0 0 auto; margin-top: 5px; width: 18px; height: 18px; }
+.permissionOption span { min-width: 0; }
+.permissionOption strong { display: block; margin-bottom: 6px; }

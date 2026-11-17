@@ -1287,3 +1287,12 @@ server-rendered and animated installation illustrations plus documentation searc
 keywords. Verify the public ZIP manifest/hash and every active source download
 href. Historical references may remain only when clearly labeled as old builds
 or troubleshooting guidance. Preserve public marketing layout and unrelated copy.
+
+## November 16, 2026 — one CAD documentation home
+
+User requested all CAD guidance/tools be organized under CAD Intelligence, with
+no duplicate card in Tools. /docs/cad is that hub, using the API documentation UI.
+/cad and /cad/fusion/connect remain functional destinations linked from the hub;
+CAD subroutes select CAD Intelligence in navigation. Public CAD marketing is
+unchanged. Keep generation setup, permissions, troubleshooting, and current
+limitations together here when updating releases.

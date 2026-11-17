@@ -263,7 +263,6 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
     <div className="settings-content">
       {section === "connections" && <SettingsConnections />}
       {pendingPhoto && <ProfilePhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={changePhoto} />}
-      {section === "profile" && <section className="settings-panel"><header><h2>CAD Intelligence</h2><p>Compare a Fusion assembly with your inventory.</p></header><Link className="workspace-button" href="/cad">Open CAD Intelligence <ChevronRight size={16} aria-hidden="true" /></Link></section>}
       {section === "profile" && <section className="settings-panel" id="profile">
         <header>
           <h2>Personal details</h2>

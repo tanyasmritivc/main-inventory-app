@@ -22,7 +22,7 @@ export function worldNavigation(
     organization: world === "personal" ? undefined : { id: world, name },
     personal: world === "personal",
     homeHref: home,
-    activeRoute: view === "cad" ? `/cad?world=${encodeURIComponent(world)}` : worldHref(world, view),
+    activeRoute: view === "cad" ? `/docs/cad?world=${encodeURIComponent(world)}` : worldHref(world, view),
     breadcrumbs: [{ label: name, href: home }],
     items: [
       {

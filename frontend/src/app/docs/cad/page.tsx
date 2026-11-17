@@ -3,7 +3,7 @@ import { CadDocs } from '@/components/site/cad-docs';
 
 export const metadata: Metadata = {
   title: 'CAD Intelligence documentation',
-  description: 'FindEZ CAD documentation: Fusion downloads, installation, inventory connections, local model insertion, BOM comparison, Onshape CSV, matching, limits and troubleshooting.',
+  description: 'FindEZ CAD documentation: Fusion downloads, installation, inventory connections, your first generated model, Fusion model insertion, saved BOMs, inventory comparison, Onshape CSV, matching, limits and troubleshooting.',
   alternates: { canonical: '/docs/cad' },
   openGraph: { title: 'CAD Intelligence documentation | FindEZ', description: 'Connect your design to your inventory. Setup, workflows and reference in one place.', url: 'https://findez.ai/docs/cad' },
 };

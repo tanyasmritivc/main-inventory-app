@@ -351,7 +351,7 @@ export function AppShell({
     ? worldNavigation(
         inventory.workspace.organization_id || "personal",
         inventory.workspace.organization_name || "Personal",
-        pathname === "/cad" ? "cad" : ["/inventory", "/home", "/spaces"].includes(pathname)
+        (pathname === "/cad" || pathname.startsWith("/cad/")) ? "cad" : ["/inventory", "/home", "/spaces"].includes(pathname)
           ? "spaces"
           : "tools",
       )

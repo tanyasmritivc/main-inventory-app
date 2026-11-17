@@ -1,0 +1,8 @@
+{
+  "base": "/home/ubuntu/findez-cad-docs-hub-20261116/frontend",
+  "active": "/home/ubuntu/findez-cad-docs-hub-final-20261116/frontend",
+  "build": "m-24zClfCwocqLXVGyYsI",
+  "dropin": "/etc/systemd/system/findez-web.service.d/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-cad-docs-hub.conf",
+  "download_sha256": "49083752baabac5a09c7c0174fdf6f36a35b6a0b899fe4a0548efb880ae8aff7",
+  "routes": "passed"
+}

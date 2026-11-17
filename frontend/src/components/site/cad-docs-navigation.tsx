@@ -9,6 +9,7 @@ export const cadSections = [
   ['install', 'Install the Fusion add-in', 'windows mac folder run toggle open findez'],
   ['update', 'Update an existing installation', 'old preview export only replace restart'],
   ['connect', 'Connect an inventory', 'sign in code pairing permissions disconnect expired'],
+  ['first-model', 'Create your first design', 'beginner new blank hybrid plate hole no design experience'],
   ['browse', 'AI search & catalog', 'search location stock reserved checked out available'],
   ['insert', 'Insert a Fusion model', 'step stp f3d placement geometry cancel dimensions'],
   ['bom', 'Compare inside Fusion', 'assembly bom refresh shortages export'],
@@ -22,9 +23,16 @@ export const cadSections = [
   ['limits', 'File limits & limitations', 'size rows sheets columns unsupported'],
   ['privacy', 'Privacy & permissions', 'geometry credentials tokens session access read only'],
   ['sample', 'Try a sample design', 'test assembly demo'],
-  ['troubleshooting', 'Troubleshooting', 'site reached missing open findez export run failed empty'],
+  ['troubleshooting', 'Troubleshooting', 'site reached missing open findez export run failed empty disabled cannot click generation queued permission'],
   ['roadmap', 'Planned capabilities', 'pricing procurement saved corrections vendor models generation'],
   ['support', 'Support', 'help contact email'],
+] as const;
+
+const groups = [
+  ['Get started', ['quickstart', 'downloads', 'install', 'update', 'connect', 'first-model']],
+  ['Work in Fusion', ['browse', 'insert', 'generate', 'bom', 'history']],
+  ['Compare a file', ['export', 'compare', 'onshape', 'spreadsheet']],
+  ['Reference & help', ['results', 'limits', 'privacy', 'sample', 'troubleshooting', 'roadmap', 'support']],
 ] as const;
 
 export function CadDocsNavigation() {
@@ -35,7 +43,10 @@ export function CadDocsNavigation() {
     <label htmlFor="cad-docs-search">Find a CAD topic</label>
     <input id="cad-docs-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Try installation or shortages" />
     {needle && <p role="status">{matches.length} {matches.length === 1 ? 'topic' : 'topics'} found</p>}
-    <div className={styles.navGroup}><span>Guide & reference</span>{matches.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}</div>
+    {groups.map(([title, ids]) => {
+      const sections = matches.filter(([id]) => (ids as readonly string[]).includes(id));
+      return sections.length ? <div key={title} className={styles.navGroup}><span>{title}</span>{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</div> : null;
+    })}
     {needle && <button type="button" onClick={() => setQuery('')}>Clear search</button>}
   </nav>;
 }

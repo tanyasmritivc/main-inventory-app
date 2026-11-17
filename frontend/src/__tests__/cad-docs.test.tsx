@@ -39,3 +39,14 @@ test('comparison links retain the organization while the public page remains sep
   expect(within(main).getAllByRole('link', { name: 'Open comparison tool ↗' })[0].getAttribute('href')).toBe('/cad?world=team%20%2F%20robotics');
   expect(within(main).getByRole('link', { name: 'public CAD Intelligence page' }).getAttribute('href')).toBe('/cad-intelligence');
 });
+
+
+test('CAD hub groups setup, Fusion, file comparison and help with a beginner path', () => {
+  render(<CadDocs />);
+  const nav = screen.getByRole('navigation', { name: 'CAD documentation' });
+  for (const label of ['Get started', 'Work in Fusion', 'Compare a file', 'Reference & help']) expect(within(nav).getByText(label)).toBeTruthy();
+  expect(screen.getByRole('table', { name: 'CAD tools and guides' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Create your first design' })).toBeTruthy();
+  expect(screen.getByText('Generate model is disabled or I cannot click it')).toBeTruthy();
+  expect(screen.getByRole('table', { name: 'Generation status and next step' })).toBeTruthy();
+});

@@ -6,7 +6,6 @@ import { compareCad, previewBom, type CadComparison, type BomPreview, type BomMa
 import styles from "./cad.module.css";
 import { CadHistory } from "./cad-history";
 import { CadResults } from "./cad-results";
-import { FusionInstallSteps } from "./cad-help";
 import { Box, FileSpreadsheet, Upload, BookOpen, ArrowUpRight, Check, Download } from "lucide-react";
 
 
@@ -57,35 +56,13 @@ export function CadClient() {
 
   return <section className={styles.page}>
     <header className={styles.hero}>
-      <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad" target="_blank" rel="noreferrer"><BookOpen size={16} /> Setup guide <ArrowUpRight size={14} /></a></div>
-      <h1>Your inventory, inside Fusion.</h1>
-      <p>Search for parts with AI, choose models from your Fusion project, and compare your open design with the parts you own.</p>
+      <div className={styles.topline}><a className={styles.guideLink} href="/docs/cad"><BookOpen size={16} /> CAD Intelligence <ArrowUpRight size={14} /></a></div>
+      <h1>Compare a parts list.</h1>
+      <p>Upload a parts list, review inventory coverage, and open your saved BOM versions.</p>
     </header>
     <div className={styles.inventoryStrip}><span><Box size={18} /><span>Comparing with <strong>{inventory?.name || "your selected inventory"}</strong></span></span><a href="/cad">Change inventory ↗</a></div>
-    <section className={`${styles.preparation} ${styles.connectedWorkspace}`} aria-labelledby="fusion-workspace-title">
-      <p className={styles.eyebrow}>CONNECTED FUSION WORKSPACE</p>
-      <h2 id="fusion-workspace-title">Keep working in your design.</h2>
-      <div className={styles.prepColumns}>
-        <div><h3>Install or update FindEZ</h3><p>Download and extract the workspace add-in on the computer running Fusion. Already installed? Stop FindEZ before replacing its files, then restart Fusion.</p>
-          <a className={`${styles.primaryLink} ${styles.downloadLink}`} href="/downloads/findez-fusion-workspace.zip?v=0.4.0" download><Download size={16} /> Download Fusion workspace</a>
-          <span className={styles.caption}>Version 0.4.0 candidate · Windows and Mac · ZIP</span>
-          <details className={styles.installDetails}><summary>Show installation steps</summary><FusionInstallSteps /></details>
-        </div>
-        <div><h3>Open FindEZ beside your assembly</h3><p>In Fusion, choose <b>Utilities → Add-Ins → Open FindEZ</b>. Click <b>Sign in with FindEZ</b> and approve your inventory in the browser, then return to the panel.</p>
-          <p>Select <b>{inventory?.name || "your selected inventory"}</b> when connecting to compare with the same inventory shown here.</p>
-          <a href="/docs/cad#connect" target="_blank" rel="noreferrer">Connection instructions ↗</a>
-        </div>
-      </div>
-      <ol className={styles.workspaceFeatures}>
-        <li><h3>Search with AI</h3><p>Try “Find 12 M4 screws.” Browse owned parts in Inventory or public records in Parts catalog.</p><a href="/docs/cad#browse" target="_blank" rel="noreferrer">Search guide ↗</a></li>
-        <li><h3>Choose a Fusion model</h3><p>Select geometry from your current design or saved Fusion project, confirm the part association, then position the copy.</p><a href="/docs/cad#insert" target="_blank" rel="noreferrer">Model insertion guide ↗</a></li>
-        <li><h3>Compare the open design</h3><p>Ask “Do I have the parts required to make this?” or use the BOM tab to see matches, shortages, and parts needing review.</p><a href="/docs/cad#bom" target="_blank" rel="noreferrer">BOM guide ↗</a></li>
-        <li><h3>Generate a custom model</h3><p>Describe dimensions, answer any clarification in the panel, then insert the verified download into your design. Review the generated geometry before use.</p><a href="/docs/cad#generate" target="_blank" rel="noreferrer">Generation guide ↗</a></li>
-      </ol>
-      <p className={styles.muted}>The workspace is a candidate release; native placement testing is still in progress. Use Generate model for a custom STEP, or choose geometry from your Fusion project. Reconnect with CAD writing permission to generate models and save BOMs. Hosted manufacturer models, live prices, and purchasing are not available yet. <a href="/docs/cad#limits" target="_blank" rel="noreferrer">Current limitations ↗</a></p>
-    </section>
     <CadHistory />
-    <header className={styles.uploadIntro} id="browser-comparison"><h2>Prefer to compare a file here?</h2><p>Upload a Fusion BOM or a spreadsheet as an alternative to the connected panel. Choose a source below to get started.</p></header>
+    <header className={styles.uploadIntro} id="browser-comparison"><h2>Upload a parts list</h2><p>Upload a Fusion BOM or a spreadsheet as an alternative to the connected panel. Choose a source below to get started.</p></header>
     <div className={styles.workspace}>
     <div className={styles.flow}>
       <div className={styles.sourceChoices} role="group" aria-label="Parts list source">

@@ -2088,3 +2088,23 @@ runtime hashes and live ZIP verified. No further web activation planned while
 World/Connections releases build on this release. Native Windows Fusion placement
 remains unverified; pricing/procurement/nightly catalogs remain unfinished.
 Receipt: docs/releases/cad-bom-generation-20261116/README.md.
+
+## CAD documentation hub — November 16, 2026
+
+User requested a single organized CAD home and removal of the scattered Tools entry.
+CAD Intelligence remains /docs/cad; grouped setup, Fusion workflows, file comparison,
+and reference/help now include a first-generated-model tutorial and permission/status
+troubleshooting. Tools, account menu, and profile settings no longer duplicate CAD.
+/cad remains a focused comparison/history tool linked from the hub. Connection consent
+checkboxes are separate visible blocks; authorization semantics unchanged. Public
+marketing page and 0.4.0 plugin ZIP unchanged. Production overlay preserves the newer
+World Tools source; do not deploy this older worktree wholesale. No backend/migration.
+711 web tests, TypeScript, and changed-file lint pass. Release receipt lives under
+docs/releases/cad-documentation-hub-20261116/.
+
+Final CAD hub is live at /home/ubuntu/findez-cad-docs-hub-final-20261116/frontend,
+build m-24zClfCwocqLXVGyYsI. Twelve runtime files changed across two guarded
+overlays. Live Safari verified hub, Tools removal, simplified comparison and
+separate consent controls. Navigation follow-up maps /cad/* to the hub selection;
+two focused navigation tests and final TypeScript/lint pass. No add-in reinstall
+required. Preserve this latest source when preparing another web release.

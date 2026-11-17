@@ -1,5 +1,5 @@
 "use client";
-import { Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
+import { Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { InventoryChatArchive } from "./inventory-chat-archive";
@@ -8,7 +8,6 @@ import { CommerceDashboardCard } from "./commerce-dashboard-card";
 
 const tools = [
   ["Capture / Import", "Photos, barcodes and spreadsheets", "/scan"],
-  ["CAD Intelligence", "Compare a Fusion assembly with your inventory", "/cad"],
   ["Documents", "Files for your inventory", "/documents"],
   ["Review", "Check items before saving", "/review"],
   ["Activity", "Recent inventory changes", "/activity"],
@@ -17,7 +16,7 @@ const tools = [
   ["Labels", "Print and identify items", "/labels"],
   ["Inventory settings", "Access and preferences", "/inventory-access"],
 ] as const;
-const toolIcons = [Barcode, Boxes, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
+const toolIcons = [Barcode, FileText, Eye, Activity, ShoppingCart, ArrowLeftRight, Tag, SlidersHorizontal];
 type Inventory = { inventory_id: string; name: string; workspace_name: string; can_edit: boolean };
 export function WorldTools({accountId, inventories, organizationId}: {accountId: string; inventories: Inventory[]; organizationId?: string}) {
   const [selected, setSelected] = useState("");
