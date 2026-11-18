@@ -1,3 +1,10 @@
+## November 17, 2026 — every UI change supports both themes
+
+User requires all future interface changes to work in light and dark mode. Check
+both themes, including menus and responsive layouts, before publishing. Caption
+text is plain white in dark mode and dark in light mode; do not reintroduce shine.
+World belongs in the profile dropdown rather than the app header.
+
 ## Space Ask searches the selected organization (November 17, 2026)
 
 The floating Space/inventory Ask uses the server-authorized organization tools,

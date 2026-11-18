@@ -266,7 +266,7 @@ export function AppSidebar({
         <div className="app-sidebar-brand">
           <Link href={homeHref} aria-label="FindEZ home" onClick={closeDrawer}>
             <FindEZMark className="app-sidebar-compact-mark" width={30} height={30} />
-            <FindEZWordmark className="app-sidebar-wordmark" width={111} height={30}/>
+            <FindEZWordmark sidebar className="app-sidebar-wordmark" width={102} height={31}/>
           </Link>
           <button
             onClick={onToggle}

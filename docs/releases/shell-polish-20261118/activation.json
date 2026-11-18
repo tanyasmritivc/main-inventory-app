@@ -1,0 +1,8 @@
+{
+  "base": "/home/ubuntu/findez-ask-layout-20261118/frontend",
+  "active": "/home/ubuntu/findez-shell-polish-20261118/frontend",
+  "build": "0AzXMvfhNAqLxxPiBZYkf",
+  "override": "/etc/systemd/system/findez-web.service.d/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-shell-polish.conf",
+  "checks": "health, database health and web routes passed",
+  "schema_changes": false
+}

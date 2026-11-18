@@ -120,11 +120,11 @@ html[data-app-theme] .refresh-item-panel .item-gallery h2 { font:500 14px/1.4 va
 html[data-app-theme] .refresh-item-panel .workspace-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 html[data-app-theme] .refresh-item-panel .workspace-actions { display:flex; align-items:center; gap:6px; }
 
-html[data-app-theme] .app-frame.app-frame .ask-world-title { font-size:clamp(28px,3.2vw,38px); margin-bottom:32px; }
+html[data-app-theme] .app-frame.app-frame .ask-world-title { font-size:clamp(24px,2.4vw,30px); margin-bottom:28px; }
 
 /* Define the app header without changing the page's background color. */
 html[data-app-theme] .app-frame.app-frame .app-topbar {
-  background: var(--bg);
+  background: var(--surf2);
   border-bottom: 1px solid var(--line2);
 }
 html[data-app-theme] .app-frame .app-topbar .app-inventory-switcher {

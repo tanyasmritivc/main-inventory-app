@@ -1,0 +1,55 @@
+{
+  "activation": {
+    "base": "/home/ubuntu/findez-ask-layout-20261118/frontend",
+    "active": "/home/ubuntu/findez-shell-polish-20261118/frontend",
+    "build": "0AzXMvfhNAqLxxPiBZYkf",
+    "override": "/etc/systemd/system/findez-web.service.d/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-shell-polish.conf",
+    "checks": "health, database health and web routes passed",
+    "schema_changes": false
+  },
+  "source_hashes": {
+    "frontend/src/app/web-ui-refresh.css": "ef926e192fa60bead61a31660f0312aec2fb20baab0775aa406c107aac7900c3",
+    "frontend/src/components/site/account-menu.tsx": "f6cb696adca466e1305e0ddb0403a51e0b3ad1dbea4d214ff60965c153139ca8",
+    "frontend/src/components/site/app-shell.tsx": "f1e80120934b239d92dc40041d043cbc0a0de3c70810892bcb102c9027dab72d",
+    "frontend/src/components/site/app-sidebar.tsx": "4642a0f1a1fd8e47278fdd97ea81c59dd1a7f35cc59d2d82f0a6ab84433fb900",
+    "frontend/src/components/site/findez-brand.tsx": "b7c8dce5015b729e7144f4df1df12ec0016656453029502823137b030e886d5d",
+    "frontend/src/components/site/sidebar-founders.module.css": "348a18e632a90fef90cae99b78098de769bf406bb548bc226621094b01e0e180",
+    "frontend/public/brand/findez-sidebar-wordmark.svg": "9275fe8dcc4ad4fb22f57c4a67bb711e8e5d3d44ce2d075082f320b58dd14b2b",
+    "frontend/public/brand/findez-sidebar-wordmark-white.svg": "fe5973c4ab9e68cfcf73fa51d10bae172224810427f4aeb70ae868b8fb092f19"
+  },
+  "preserved_other_source_files": 537,
+  "routes": {
+    "/": {
+      "status": 200,
+      "url": "https://findez.ai/"
+    },
+    "/signin": {
+      "status": 200,
+      "url": "https://findez.ai/signin"
+    },
+    "/spaces": {
+      "status": 200,
+      "url": "https://findez.ai/signin?redirect=%2Fspaces"
+    },
+    "/assist": {
+      "status": 200,
+      "url": "https://findez.ai/signin?redirect=%2Fassist"
+    }
+  },
+  "public_assets": {
+    "findez-sidebar-wordmark.svg": "9275fe8dcc4ad4fb22f57c4a67bb711e8e5d3d44ce2d075082f320b58dd14b2b",
+    "findez-sidebar-wordmark-white.svg": "fe5973c4ab9e68cfcf73fa51d10bae172224810427f4aeb70ae868b8fb092f19"
+  },
+  "css_urls": [
+    "/_next/static/css/713df525b0c6539c.css",
+    "/_next/static/css/80db197d9925f51e.css",
+    "/_next/static/css/6af549c6132cde23.css",
+    "/_next/static/css/c74a6da81f62b818.css",
+    "/_next/static/css/dd0abe847a8a185d.css",
+    "/_next/static/css/c930ece3ba0b7b86.css",
+    "/_next/static/css/baf222930f742f6f.css",
+    "/_next/static/css/d2da83023e0260db.css"
+  ],
+  "caption_css": true,
+  "service": "active"
+}

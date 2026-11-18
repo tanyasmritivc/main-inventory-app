@@ -1,15 +1,15 @@
 :global(html[data-app-theme] .app-frame .app-sidebar-footer) > .link.link {
   --founders-surface: #faf9fa;
-  --founders-sheen: #f1e9ed;
-  --founders-edge: #c9abb6;
-  --founders-edge-end: #b7afc8;
+  --founders-sheen: #fbd3e7;
+  --founders-edge: #e88ab8;
+  --founders-edge-end: #d580c5;
   position: relative;
   background:
     linear-gradient(110deg, var(--founders-surface) 55%, var(--founders-sheen)) padding-box,
     linear-gradient(115deg, var(--founders-edge), var(--founders-edge-end)) border-box;
   border: 1px solid transparent;
   color: var(--text);
-  box-shadow: 0 3px 10px #210e180d;
+  box-shadow: 0 0 16px #e66eaa24;
   text-decoration: none;
   animation: float 6s ease-in-out infinite;
   transition: box-shadow 180ms ease;
@@ -17,13 +17,13 @@
 
 :global(html[data-app-theme="dark"] .app-frame .app-sidebar-footer) > .link.link {
   --founders-surface: #242424;
-  --founders-sheen: #30282d;
-  --founders-edge: #926572;
-  --founders-edge-end: #625773;
+  --founders-sheen: #68334f;
+  --founders-edge: #f29bc6;
+  --founders-edge-end: #d589ce;
 }
 
 :global(html[data-app-theme] .app-frame .app-sidebar-footer) > .link.link:hover {
-  box-shadow: 0 3px 14px #a9687b26;
+  box-shadow: 0 0 20px #ec8dbc42;
   animation-play-state: paused;
 }
 

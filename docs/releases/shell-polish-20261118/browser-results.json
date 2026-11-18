@@ -1,0 +1,62 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "caption": "rgb(11, 11, 12)",
+    "fontSize": "30px",
+    "shiny": false,
+    "header": "rgb(243, 243, 242)",
+    "bg": "rgb(255, 255, 255)",
+    "border": "1px",
+    "brand": 102,
+    "founder": "linear-gradient(110deg, rgb(250, 249, 250) 55%, rgb(251, 211, 231)), linear-gradient(115deg, rgb(232, 138, 184), rgb(213, 128, 197))",
+    "shadow": "rgba(230, 110, 170, 0.14) 0px 0px 16px 0px",
+    "menu": "World present",
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "caption": "rgb(244, 244, 245)",
+    "fontSize": "30px",
+    "shiny": false,
+    "header": "rgb(27, 27, 30)",
+    "bg": "rgb(13, 13, 15)",
+    "border": "1px",
+    "brand": 102,
+    "founder": "linear-gradient(110deg, rgb(36, 36, 36) 55%, rgb(104, 51, 79)), linear-gradient(115deg, rgb(242, 155, 198), rgb(213, 137, 206))",
+    "shadow": "rgba(230, 110, 170, 0.14) 0px 0px 16px 0px",
+    "menu": "World present",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "caption": "rgb(11, 11, 12)",
+    "fontSize": "24px",
+    "shiny": false,
+    "header": "rgb(243, 243, 242)",
+    "bg": "rgb(255, 255, 255)",
+    "border": "1px",
+    "brand": 102,
+    "founder": "linear-gradient(110deg, rgb(250, 249, 250) 55%, rgb(251, 211, 231)), linear-gradient(115deg, rgb(232, 138, 184), rgb(213, 128, 197))",
+    "shadow": "rgba(230, 110, 170, 0.14) 0px 0px 16px 0px",
+    "menu": "World present",
+    "errors": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "caption": "rgb(244, 244, 245)",
+    "fontSize": "24px",
+    "shiny": false,
+    "header": "rgb(27, 27, 30)",
+    "bg": "rgb(13, 13, 15)",
+    "border": "1px",
+    "brand": 102,
+    "founder": "linear-gradient(110deg, rgb(36, 36, 36) 55%, rgb(104, 51, 79)), linear-gradient(115deg, rgb(242, 155, 198), rgb(213, 137, 206))",
+    "shadow": "rgba(230, 110, 170, 0.14) 0px 0px 16px 0px",
+    "menu": "World present",
+    "errors": []
+  }
+]

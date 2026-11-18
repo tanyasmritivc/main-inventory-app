@@ -1,3 +1,14 @@
+## Web shell polish — November 17, 2026 (published)
+
+Smaller balanced sidebar logo, brighter pink Founders Access, distinct light/dark
+header, World in profile dropdown, smaller plain caption. User requires all future
+UI changes to support both themes. 45 tests, lint, production build/TypeScript,
+four desktop/phone/theme browser cases and live source/assets/CSS checks passed.
+Active /home/ubuntu/findez-shell-polish-20261118/frontend, build
+0AzXMvfhNAqLxxPiBZYkf; preserved 537 other source files. No backend/schema/mobile
+changes or Git push. Signed-in Safari/physical-device acceptance unverified.
+Receipt: docs/releases/shell-polish-20261118/README.md.
+
 ## Ask layout - November 17, 2026 (published)
 
 Fixed clipped floating Space chat by removing inherited desktop viewport minimum

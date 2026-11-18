@@ -22,3 +22,10 @@ test('failed sign out remains visible and never redirects',async()=>{
  await userEvent.click(screen.getByRole('button',{name:'Open profile'}));await userEvent.click(screen.getByRole('menuitem',{name:'Sign out'}));
  await screen.findByRole('alert');expect(router.replace).not.toHaveBeenCalled();
 });
+test('World opens its existing destination from the profile menu',async()=>{
+ render(<AccountMenu name="Local tester" email="tester@example.test" initial="L"/>);
+ await userEvent.click(screen.getByRole('button',{name:'Open profile'}));
+ await userEvent.click(screen.getByRole('menuitem',{name:/^World$/}));
+ expect(router.push).toHaveBeenCalledWith('/world');
+ expect(screen.queryByRole('menuitem',{name:/^World$/})).toBeNull();
+});

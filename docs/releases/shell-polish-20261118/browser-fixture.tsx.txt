@@ -1,0 +1,26 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { AssistClient } from '@/components/site/assist-client';
+import {AppSidebar} from '@/components/site/app-sidebar';
+import {AppThemeProvider} from '@/components/site/use-app-theme';
+import {AccountMenu} from '@/components/site/account-menu';
+import shell from '@/components/site/desktop-shell.module.css';
+import { ContextChat } from '@/components/site/context-chat';
+import { selectInventory, type InventorySelection } from '@/lib/inventory-selection';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
+const original:InventorySelection={accountId:'fixture-actor',inventory_id:'30000000-0000-0000-0000-000000000001',owner_user_id:'fixture-owner',team_id:null,is_default:false,name:'Workshop',can_edit:true,workspace:{workspace_id:'fixture-team',team_id:null,kind:'team',role:'member',name:'Fixture Robotics',organization_name:'Fixture Robotics',organization_id:'20000000-0000-0000-0000-000000000001'}};
+export default function Fixture(){
+ const [main,setMain]=useState(false);
+ const [selection,setSelection]=useState<InventorySelection|null>(null);
+ useEffect(()=>{
+  setMain(new URLSearchParams(window.location.search).has('main'));
+  const auth=createSupabaseBrowserClient().auth;
+  Object.assign(auth,{getSession:async()=>({data:{session:{user:{id:'fixture-actor'},access_token:'fixture-token'}},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})});
+  selectInventory(original);setSelection(original);document.documentElement.dataset.appTheme='light';
+ },[]);
+ const [pinned,setPinned]=useState(true),[open,setOpen]=useState(false);
+ return <AppThemeProvider><main className={`app-frame ${shell.shell} ${pinned ? 'sidebar-pinned' : ''} ${open ? 'sidebar-open' : ''} is-ask-workspace`}>
+ <AppSidebar pinned={pinned} onPin={()=>setPinned(!pinned)} sidebarOpen={open} onToggle={()=>setOpen(!open)} userName="Fixture tester" userInitial="F"/>
+ <header className="app-topbar"><button className="app-icon-button app-mobile-nav-button" onClick={()=>setOpen(true)}>Menu</button><nav className="app-inventory-switcher">Fixture organization</nav><div className="app-topbar-spacer"/><button className="app-command-trigger">Go to...</button><AccountMenu name="Fixture tester" email="fixture@example.test" initial="F"/></header>
+ <div className="app-main"><div className="app-content">{selection && <AssistClient worldId="20000000-0000-0000-0000-000000000001" title="What’s in your world?"/>}</div></div></main></AppThemeProvider>;
+}

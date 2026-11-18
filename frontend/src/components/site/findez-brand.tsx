@@ -10,9 +10,11 @@ export function FindEZMark({ width = 24, height = 24, ...props }: SVGProps<SVGSV
   </svg>;
 }
 
-export function FindEZWordmark(props: SVGProps<SVGSVGElement>) {
-  return <svg viewBox="0 0 357.5 101" role="img" aria-label="FindEZ" {...props}>
-    <image className={styles.light} href="/brand/findez-wordmark.svg" width="357.5" height="101" />
-    <image className={styles.dark} href="/brand/findez-wordmark-white.svg" width="357.5" height="101" />
+export function FindEZWordmark({ sidebar = false, ...props }: SVGProps<SVGSVGElement> & { sidebar?: boolean }) {
+  const width = sidebar ? 327.5 : 357.5;
+  const asset = sidebar ? "findez-sidebar-wordmark" : "findez-wordmark";
+  return <svg viewBox={`0 0 ${width} 101`} role="img" aria-label="FindEZ" {...props}>
+    <image className={styles.light} href={`/brand/${asset}.svg`} width={width} height="101" />
+    <image className={styles.dark} href={`/brand/${asset}-white.svg`} width={width} height="101" />
   </svg>;
 }

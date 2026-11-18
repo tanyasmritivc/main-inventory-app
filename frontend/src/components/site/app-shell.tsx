@@ -456,7 +456,6 @@ export function AppShell({
             </nav>
           )}
           <div className="app-topbar-spacer" />
-          <Link className="app-command-trigger" style={{ width: "auto", minWidth: "max-content", padding: "0 10px", fontSize: 12 }} href="/world">World</Link>
           <button
             className="app-command-trigger"
             aria-label="Go to a page"
