@@ -43,3 +43,21 @@ def test_many_argument_fragments_with_repeated_identity_do_not_hit_false_size_li
     result=list(completion_events(iter(chunks)))
     assert result[-1]['tool_calls'][0].function.arguments==args
     assert result[-1]['tool_calls'][0].function.name=='world_search'
+
+
+def test_completed_tool_array_uses_position_even_when_gateway_repeats_delta_index():
+    calls=[{'index':0,'id':'one','function':{'name':'world_directory','arguments':'{}'}},
+           {'index':0,'id':'two','function':{'name':'world_search','arguments':'{"query":"gears"}'}}]
+    result=list(completion_events(ns({'choices':[{'message':{'content':'','tool_calls':calls},'finish_reason':'tool_calls'}]})))
+    assert [c.id for c in result[-1]['tool_calls']]==['one','two']
+    assert [c.function.name for c in result[-1]['tool_calls']]==['world_directory','world_search']
+    assert all(e['type']!='delta' for e in result)
+
+
+def test_final_full_array_does_not_duplicate_a_nonzero_stream_index():
+    call={'index':1,'id':'read','function':{'name':'world_search','arguments':'{"query":"gears"}'}}
+    result=list(completion_events(iter([
+        ns({'choices':[{'delta':{'tool_calls':[call]}}]}),
+        ns({'choices':[{'message':{'tool_calls':[call]}}]})])))
+    assert len(result[-1]['tool_calls'])==1
+    assert result[-1]['tool_calls'][0].id=='read'

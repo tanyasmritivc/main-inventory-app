@@ -120,8 +120,8 @@ def test_history_save_failure_is_not_silently_reported_as_success():
 
 
 @pytest.mark.parametrize('contextual',[False,True])
-def test_formatting_instructions_only_apply_to_context_window(contextual):
-    from app.services.context_ask import PRESENTATION
+def test_inventory_formatting_applies_to_both_chats_but_scope_guidance_is_context_only(contextual):
+    from app.services.context_ask import PRESENTATION, SCOPE
     from app.services.agent_gateway_client import _as_namespace
     calls=[]
     def model(**kwargs):
@@ -130,7 +130,8 @@ def test_formatting_instructions_only_apply_to_context_window(contextual):
     with patch.object(world,'authorize',return_value=ORG),patch('app.services.agent_gateway_client.gateway_completion',side_effect=model):
         events=list(world.stream_turn(ACTOR,ORG,'Hello',[],CID,contextual=contextual))
     assert events[-1]['type']=='done'
-    assert any(m['content']==PRESENTATION for m in calls[0]['messages']) is contextual
+    assert any(m['content']==PRESENTATION for m in calls[0]['messages'])
+    assert any(m['content']==SCOPE for m in calls[0]['messages']) is contextual
     assert 'Markdown table' in PRESENTATION and '**bold section headings**' in PRESENTATION
 
 
@@ -149,3 +150,48 @@ def test_model_format_failure_retries_with_a_reset_and_no_duplicate_final_text()
     assert events[-1]['type']=='done'
     assert visible==events[-1]['assistant_message']
     assert 'Old' not in visible and 'private' not in visible
+
+@pytest.mark.parametrize('contextual',[False,True])
+def test_control_markup_recovery_uses_buffered_native_tools_and_never_replays_reads(contextual):
+    from app.services.agent_gateway_client import _as_namespace as ns
+    calls=[]; operations=[]
+    def native(name,args,ident):
+        return ns({'choices':[{'message':{'content':'','tool_calls':[{'id':ident,'function':{'name':name,'arguments':json.dumps(args)}}]},'finish_reason':'tool_calls'}]})
+    final='**Your gears**\n\n| Part | Quantity | Space |\n|---|---|---|\n| Gear A | 3 | Workshop |\n| Gear B | 2 | Store |'
+    replies=[native('world_search',{'query':'gears'},'read1'),
+             ns({'choices':[{'message':{'content':'<tool_call>private invalid request'},'finish_reason':'stop'}]}),
+             ns({'choices':[{'message':{'content':final},'finish_reason':'stop'}]})]
+    def gateway(**kwargs):
+        calls.append(kwargs.copy())
+        reply=replies.pop(0)
+        return iter([reply]) if kwargs['stream'] else reply
+    def execute(actor,org,name,args):
+        operations.append((actor,org,name,args))
+        return {'items':[{'name':'Gear A','quantity':3,'location':'Workshop'},{'name':'Gear B','quantity':2,'location':'Store'}]}
+    with patch.object(world,'authorize',return_value=ORG),patch.object(world,'execute',side_effect=execute),patch('app.services.agent_gateway_client.gateway_completion',side_effect=gateway):
+        events=list(world.stream_turn(ACTOR,ORG,'gears',[],CID,contextual=contextual))
+    assert [c['stream'] for c in calls]==[True,True,False]
+    assert calls[-1]['request_timeout_seconds']==60
+    assert calls[-1]['tools'] and calls[-1]['tool_choice']=='auto'
+    assert len(operations)==1 and operations[0][:3]==(ACTOR,ORG,'world_search')
+    visible=''
+    for event in events:
+        if event['type']=='reset':visible=''
+        if event['type']=='delta':visible+=event['delta']
+    assert events[-1]['type']=='done' and visible==events[-1]['assistant_message']==final
+    assert 'private' not in visible
+
+
+def test_invalid_buffered_recovery_still_fails_closed():
+    from app.services.agent_gateway_client import _as_namespace as ns
+    from app.services.completion_stream import CompletionStreamError
+    calls=[]
+    def gateway(**kwargs):
+        calls.append(kwargs)
+        reply=ns({'choices':[{'message':{'content':'<tool_call>world_delete_items'},'finish_reason':'stop'}]})
+        return iter([reply]) if kwargs['stream'] else reply
+    with patch.object(world,'authorize',return_value=ORG),patch.object(world,'execute') as execute,patch('app.services.agent_gateway_client.gateway_completion',side_effect=gateway):
+        with pytest.raises(CompletionStreamError):
+            list(world.stream_turn(ACTOR,ORG,'gears',[],CID))
+    assert len(calls)==2 and calls[-1]['stream'] is False
+    execute.assert_not_called()

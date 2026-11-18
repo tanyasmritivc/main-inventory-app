@@ -83,8 +83,17 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
                 activity = thinking_message
                 activity_started = monotonic()
                 yield {'type': 'status', 'message': activity}
-            for fallback_index, call in enumerate(getattr(delta, 'tool_calls', None) or []):
-                index = getattr(call, 'index', None)
+            completed_calls = getattr(delta, 'tool_calls', None) or []
+            if snapshot and completed_calls:
+                if len(completed_calls) < len(calls):
+                    raise CompletionStreamError('snapshot_mismatch', 'The model removed a completed tool call')
+                # Compare a final full array against prior deltas by order, even
+                # if the gateway used nonzero stream indices. Do not duplicate.
+                calls = {i: value for i, (_, value) in enumerate(sorted(calls.items()))}
+            for fallback_index, call in enumerate(completed_calls):
+                # Full messages use array position; `index` belongs to delta
+                # chunks. Some gateways repeat index=0 on every completed call.
+                index = None if snapshot else getattr(call, 'index', None)
                 index = fallback_index if index is None else index
                 # Five legitimate lookups previously failed at index 4 and
                 # restarted generation. Bound the batch, not a four-item task.

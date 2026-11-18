@@ -1,0 +1,96 @@
+[
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "gears",
+    "seconds": 3.8,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 3 saved gear records, 16 gears in total:\n\n| Part | Quantity | Space / location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |",
+    "passed": true
+  },
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "Where are my gears?",
+    "seconds": 3.3,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 3 gear records, 16 units total:\n\n| Part | Quantity | Location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| [Miter Gear 24T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000003) | 3 | Storage |\n\nMost of them sit in Storage, with the 8 pcs of 30T M0.8 gears in the Workshop.",
+    "passed": true
+  },
+  {
+    "contextual": true,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "gears",
+    "seconds": 4.7,
+    "operations": [
+      "world_directory",
+      "world_search"
+    ],
+    "answer": "**Your gears**\n\nFound 3 saved gear records in Fixture Robotics, 16 units total:\n\n| Part | Quantity | Inventory / location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |\n\nThe search is complete, so this is all matching gear records in the organization.",
+    "passed": true
+  },
+  {
+    "contextual": true,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "Show all gears",
+    "seconds": 3.3,
+    "operations": [
+      "world_search"
+    ],
+    "answer": "**Your gears**\n\nFound 3 gear records, 16 units total, across your organization.\n\n| Part | Quantity | Space / location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |",
+    "passed": true
+  },
+  {
+    "contextual": false,
+    "forced_recovery": true,
+    "streams": [
+      true,
+      false,
+      false
+    ],
+    "question": "gears",
+    "seconds": 3.1,
+    "operations": [
+      "world_search"
+    ],
+    "answer": "**Your gears**\n\nYou have 3 gear records, 16 units total:\n\n| Part | Quantity | Space / location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |",
+    "passed": true
+  },
+  {
+    "contextual": true,
+    "forced_recovery": true,
+    "streams": [
+      true,
+      false,
+      false
+    ],
+    "question": "Where are my gears?",
+    "seconds": 4.1,
+    "operations": [
+      "world_search",
+      "world_search"
+    ],
+    "answer": "**Your gears**\n\nYou have 3 gear records, 16 units total, in two places: the Workshop and Storage.\n\n| Part | Quantity | Location |\n|---|---|---|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |\n\nThat was a complete match, no other gear records in this organization.",
+    "passed": true
+  }
+]

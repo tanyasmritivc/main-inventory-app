@@ -1,0 +1,15 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { AssistClient } from '@/components/site/assist-client';
+import { selectInventory, type InventorySelection } from '@/lib/inventory-selection';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
+const original:InventorySelection={accountId:'fixture-actor',inventory_id:'30000000-0000-0000-0000-000000000001',owner_user_id:'fixture-owner',team_id:null,is_default:false,name:'Workshop',can_edit:true,workspace:{workspace_id:'fixture-team',team_id:null,kind:'team',role:'member',name:'Fixture Robotics',organization_name:'Fixture Robotics',organization_id:'20000000-0000-0000-0000-000000000001'}};
+export default function Fixture(){
+ const [selection,setSelection]=useState<InventorySelection|null>(null);
+ useEffect(()=>{
+  const auth=createSupabaseBrowserClient().auth;
+  Object.assign(auth,{getSession:async()=>({data:{session:{user:{id:'fixture-actor'},access_token:'fixture-token'}},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})});
+  selectInventory(original);setSelection(original);document.documentElement.dataset.appTheme='light';
+ },[]);
+ return <main className="app-frame" style={{minHeight:'100vh',background:'var(--app-bg)',padding:32}}><h1>Fictional Space fixture</h1><button onClick={()=>{const next={...original,inventory_id:'30000000-0000-0000-0000-000000000002',workspace:{...original.workspace,organization_id:'20000000-0000-0000-0000-000000000002',organization_name:'Other Organization'}};selectInventory(next);setSelection(next);}}>Switch organization</button>{selection&&<AssistClient worldId="20000000-0000-0000-0000-000000000001"/>}</main>;
+}

@@ -1,3 +1,16 @@
+## Main chat formatting and protocol recovery — November 17, 2026 (published)
+
+Follow-up screenshots showed the main chat. Inventory headings/tables now apply
+to both main and floating Space chat. Organization scopes/layout stay unchanged.
+Control-markup failures retry through the gateway complete-message parser; native
+completed tool arrays use array positions, preventing repeated-index collisions.
+33 focused backend/19 web tests, six real-model fictional cases and four desktop/
+phone/theme browser cases passed. Six additional related-suite failures match
+existing baseline; full suites remain red. Live health/auth checks passed.
+Three backend files published with 197 other Python sources preserved. No schema,
+stock, web bundle, native binary or Git push. Historical answers are unchanged.
+Receipt: docs/releases/chat-recovery-20261118/README.md.
+
 ## Organization-wide Space Ask — November 17, 2026 (published)
 
 Branch fix/space-ask-org-20261117. Floating Ask derives its organization from the

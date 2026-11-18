@@ -1,0 +1,13 @@
+{
+  "backend_focused_passed": 33,
+  "web_focused_passed": 19,
+  "additional_related_passed": 26,
+  "additional_related_failed": 6,
+  "additional_failures_match_existing_baseline": true,
+  "live_model_cases": 6,
+  "browser_cases": 4,
+  "website_http": 200,
+  "api_http": 200,
+  "unauthenticated_chat_http": 401,
+  "exact_customer_conversation_replayed": false
+}

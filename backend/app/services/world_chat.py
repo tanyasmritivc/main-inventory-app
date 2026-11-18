@@ -566,9 +566,10 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
     from app.services.chat_question import GUIDANCE, PublicReply, ReceiptClaimError, separate, present
     messages.append({'role': 'system', 'content': GUIDANCE})
+    from app.services.context_ask import PRESENTATION, SCOPE
+    messages.append({'role': 'system', 'content': PRESENTATION})
     if contextual:
-        from app.services.context_ask import PRESENTATION
-        messages.append({'role': 'system', 'content': PRESENTATION})
+        messages.append({'role': 'system', 'content': SCOPE})
     def validate_public(text):
         import re
         from app.services.assistant_tool_safety import validate_model_answer
@@ -582,6 +583,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     card_repair_available = True
     repairing = False
     generation_limit = CHAT_GENERATION_TOKENS
+    buffered_protocol_recovery = False
     for step in range(9):
         enabled = step < 8 and not repairing
         available_tools = capture_tools(client_tools, capture)
@@ -592,8 +594,9 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 from app.core.config import get_settings
                 response = gateway_completion(messages=messages, conversation_id=conversation_id,
                     model=get_settings().findez_chat_vision_model,
-                    max_tokens=generation_limit, stream=True,
-                    **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
+                    max_tokens=generation_limit, stream=not buffered_protocol_recovery,
+                    **({'request_timeout_seconds': 60.0} if buffered_protocol_recovery else {}),
+                    **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {'tools': []}))
                 content, calls = '', []
                 presentation = PublicReply(validate_public, references)
                 from app.services.chat_progress import response_status
@@ -630,6 +633,10 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     raise
                 retry_available = False
                 if reason == 'control_markup':
+                    # Recover through the gateway's complete-message parser.
+                    # Never parse visible tool markup ourselves or replay tools.
+                    # Explicit tools=[] still selects raw completion if disabled.
+                    buffered_protocol_recovery = True
                     messages.append({'role': 'system', 'content': 'The last generation used invalid internal control markup in visible text. Use only the provided native tool_calls field for tool requests. Write only the user-facing answer in content. Do not include tool, argument or reasoning tags. Do not repeat completed actions; use their existing receipts.'})
                 generation_limit = CHAT_RETRY_TOKENS
                 yield {'type': 'reset'}
