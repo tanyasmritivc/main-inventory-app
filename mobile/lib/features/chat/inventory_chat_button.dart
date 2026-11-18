@@ -7,8 +7,8 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import 'chat_page.dart';
 
-/// A contextual assistant always receives the already-authorized inventory client.
-/// It cannot silently fall back to the organization-wide chat or legacy account.
+/// Space questions use the authorized inventory's organization boundary.
+/// Personal Spaces and inventory-only chat retain their existing scope.
 class InventoryChatButton extends StatelessWidget {
   const InventoryChatButton({
     super.key,
@@ -96,7 +96,7 @@ class InventoryChatButton extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Only in ${chatApi.chatSpaceName ?? api.inventoryContext!.name}',
+                                    chatApi.contextualChatLabel,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: Theme.of(
@@ -239,7 +239,7 @@ class _InventoryChatSheet extends StatelessWidget {
         border: null,
         automaticallyImplyLeading: false,
         middle: Text(
-          'Only in ${api.chatSpaceName ?? api.inventoryContext!.name}',
+          api.contextualChatLabel,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

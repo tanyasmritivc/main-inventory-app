@@ -1,3 +1,19 @@
+## Organization Space chat and answer formatting (227)
+
+Run `flutter test test/space_chat_api_test.dart test/inventory_chat_test.dart
+test/chat_answer_format_test.dart test/world_shell_test.dart --concurrency=1`.
+Organization Space questions and history must use that authorized organization's
+world endpoint; personal Spaces retain their Space endpoint. Inventory operations
+and file parsing retain their existing inventory/Space boundaries. Retired account
+or inventory clients must fail before sending. Space photo questions must not
+enable extraction. Main Ask routing stays unchanged.
+
+Run `flutter test integration_test/launch227_regression_test.dart -d <simulator>
+--no-pub --reporter expanded` after the broader `mobile_full_audit_test.dart`.
+Check organization scope labels in both themes, table rendering at 320pt and 2.6x
+text, and semantic bold headings. Markdown emphasis must remain bold after the
+app's normal-weight typography adapter runs. The native suites use synthetic data.
+
 ## Scan tips and composer motion (212)
 
 See [scan presentation212](docs/plans/scan-presentation212.md) for focused and

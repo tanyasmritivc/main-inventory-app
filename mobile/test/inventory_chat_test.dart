@@ -15,12 +15,14 @@ import 'package:mobile/features/chat/chat_page.dart';
 import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/chat/inventory_chat_button.dart';
 
-InventoryContext scope(String id) => InventoryContext(
+InventoryContext scope(String id, {String? organization}) => InventoryContext(
   accountId: 'fixture',
   inventoryId: id,
   name: id,
-  workspaceId: 'personal',
+  workspaceId: organization == null ? 'personal' : 'workspace-a',
   workspaceName: 'Personal',
+  organizationId: organization,
+  organizationName: organization,
   role: 'viewer',
   canEdit: false,
   canManage: false,
@@ -28,12 +30,15 @@ InventoryContext scope(String id) => InventoryContext(
 );
 
 class ChatApi extends ApiClient {
-  ChatApi(String? id, {String? spaceId})
+  ChatApi(String? id, {String? spaceId, String? organization})
     : super(
         baseUrl: 'https://fixture.invalid',
         chatSpaceId: spaceId,
         chatSpaceName: spaceId == null ? null : 'Hardware',
-        inventoryContext: id == null ? null : scope(id),
+        worldKey: spaceId == null ? null : organization,
+        inventoryContext: id == null
+            ? null
+            : scope(id, organization: organization),
       );
   final stream = StreamController<AiStreamEvent>.broadcast();
   final conversations = <String?>[];
@@ -94,6 +99,33 @@ void main({Future<void> Function(WidgetTester, String)? capture}) {
       floatingActionButton: InventoryChatButton(api: api),
     ),
   );
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} organization Space sheet explains its boundary',
+      (tester) async {
+        final api = ChatApi(
+          'Hardware',
+          spaceId: 'space-a',
+          organization: 'Robotics',
+        );
+        await tester.pumpWidget(host(api, brightness: brightness, scale: 2));
+        await tester.tap(find.text('Ask FindEZ'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Across accessible Spaces in Robotics'),
+          findsOneWidget,
+        );
+        expect(find.text('Only in Hardware'), findsNothing);
+        await tester.tap(find.byTooltip('Capture or attach'));
+        await tester.pumpAndSettle();
+        expect(find.text('Auto Extract'), findsNothing);
+        expect(find.text('Choose files'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await api.stream.close();
+      },
+    );
+  }
   testWidgets('Space attachment menu excludes extraction and supports files', (
     tester,
   ) async {

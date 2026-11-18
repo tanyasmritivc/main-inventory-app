@@ -208,6 +208,11 @@ class ApiClient {
       httpClient: dio.Dio(source._dio.options.copyWith())
         ..httpClientAdapter = source._dio.httpClientAdapter,
       inventoryContext: source.inventoryContext,
+      // The authorized inventory supplies the organization boundary. Personal
+      // Spaces retain their own endpoint; never infer a different organization.
+      worldKey: source.inventoryContext!.isPersonal
+          ? null
+          : source.inventoryContext!.organizationId,
       chatSpaceId: spaceId,
       chatSpaceName: name,
       isCurrent: () {
@@ -219,6 +224,9 @@ class ApiClient {
 
   final String? chatSpaceId, chatSpaceName;
   final String? worldKey;
+  String get contextualChatLabel => chatSpaceId != null && worldKey != null
+      ? 'Across accessible Spaces in ${inventoryContext!.organizationName ?? "this organization"}'
+      : 'Only in ${chatSpaceName ?? inventoryContext!.name}';
   final InventoryContext? inventoryContext;
   final String? _boundAccount;
   final bool Function()? _isCurrent;
@@ -289,17 +297,17 @@ class ApiClient {
 
   String inventoryPath(String path) {
     assertCurrentContext();
-    if (chatSpaceId != null &&
-        RegExp(
-          r'^/(?:ai_command|ai_photo_question|conversations|chat-files)(?:[/?]|$)',
-        ).hasMatch(path)) {
-      return '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}/space-chat/${Uri.encodeComponent(chatSpaceId!)}$path';
-    }
     if (worldKey != null &&
         RegExp(
           r'^/(?:ai_command|ai_photo_question|conversations)(?:[/?]|$)',
         ).hasMatch(path)) {
       return '/worlds/${Uri.encodeComponent(worldKey!)}$path';
+    }
+    if (chatSpaceId != null &&
+        RegExp(
+          r'^/(?:ai_command|ai_photo_question|conversations|chat-files)(?:[/?]|$)',
+        ).hasMatch(path)) {
+      return '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}/space-chat/${Uri.encodeComponent(chatSpaceId!)}$path';
     }
     return inventoryContext != null && _inventoryRoutes.hasMatch(path)
         ? '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}$path'
@@ -1479,7 +1487,7 @@ class ApiClient {
       'supports_item_management': true,
       'supports_task_actions': true,
       'supports_photo_attachment': true,
-      if (worldKey != null) 'supports_capture': true,
+      if (worldKey != null && chatSpaceId == null) 'supports_capture': true,
       if ((worldKey != null || chatSpaceId != null) && sources.isNotEmpty)
         'sources': sources.map((s) => s.toJson()).toList(),
     });
@@ -1531,9 +1539,11 @@ class ApiClient {
     request.fields['supports_photo_attachment'] = 'true';
     if (worldKey != null) {
       if (requestId != null) request.fields['request_id'] = requestId;
-      request.fields['supports_capture'] = 'true';
-      request.fields['auto_extract'] = photo.autoExtract.toString();
-      request.fields['preview_only'] = previewOnly.toString();
+      if (chatSpaceId == null) {
+        request.fields['supports_capture'] = 'true';
+        request.fields['auto_extract'] = photo.autoExtract.toString();
+        request.fields['preview_only'] = previewOnly.toString();
+      }
       if (sources.isNotEmpty) {
         request.fields['sources'] = json.encode(
           sources.map((s) => s.toJson()).toList(),
