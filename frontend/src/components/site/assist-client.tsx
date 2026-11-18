@@ -846,7 +846,7 @@ function AssistClientWorkspace({
         className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}
       >
         <h1 className={messages.length || opening ? "sr-only" : `ask-title${worldId ? " ask-world-title" : ""}`}>
-          {messages.length || opening ? title : <span className="shiny-text">{title}</span>}
+          {title}
         </h1>
         <div className="ask-thread" role="region" aria-label="Conversation" tabIndex={0} ref={thread} onScroll={() => {
           const node = thread.current;

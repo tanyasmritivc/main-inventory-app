@@ -42,7 +42,7 @@
 .shell.shell :global(.scan-input-action input) { flex:1 1 180px; min-width:0; }
 .shell.shell :global(.scan-destination) { flex-wrap:wrap; gap:8px; }
 .shell.shell :global(.source-tabs button) { flex-shrink:0; }
-.shell.shell.shell :global(.ask-workspace) { background:var(--app-bg); min-height:calc(100dvh - 64px); }
+.shell.shell.shell :global(.ask-workspace:not([data-contextual])) { background:var(--app-bg); }
 .shell.shell:global(.is-ask-workspace) :global(.app-content) { max-width:none; padding:0; }
 .shell.shell :global(.ask-chat.is-empty) { padding-bottom:clamp(32px,8vh,80px); }
 .shell.shell :global(.ask-composer-box) { border-radius:18px; box-shadow:0 4px 18px #00000006; background:var(--app-surface); }

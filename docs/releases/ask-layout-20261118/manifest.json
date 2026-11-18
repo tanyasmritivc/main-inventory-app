@@ -1,0 +1,18 @@
+{
+  "frontend/src/app/web-ui-refresh.css": {
+    "before": "715cb71528e7171aac76862de8986010869e42dcfaf98cd171a829b5dbe9ba09",
+    "after": "ca2af5d2a7f13c00b90e3b3eb6c6a57a371ab5e1d9be4ec7c1dacdeac5f2f5fb"
+  },
+  "frontend/src/components/site/assist-client.tsx": {
+    "before": "dea66a507a7da3ee275608e29d61fbfa0e53ebde75c97b50df0bf6a1979cb695",
+    "after": "835975f7c0478b81567b499cf23138290a7e0f24d77d99add0a31bd9fe9ab2b5"
+  },
+  "frontend/src/components/site/context-chat.module.css": {
+    "before": "823f608135f09c3ea00085ed92fbc5b129720a108306a4cc8185d820026f2ffa",
+    "after": "6add0bb9daa05deb5167cc520b376b51f2b89c8061f648df06dc8cbb64e21987"
+  },
+  "frontend/src/components/site/desktop-shell.module.css": {
+    "before": "201b5c2a3cf23778535f55c32b31f481e9872a8d90eecd91a1533f9859e40fee",
+    "after": "4503218de7bd5eeb42efdd415cca2d5e67956221987fa0fba06425b682534584"
+  }
+}

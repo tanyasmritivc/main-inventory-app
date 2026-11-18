@@ -1,0 +1,1570 @@
+[
+  {
+    "width": 1920,
+    "height": 960,
+    "theme": "dark",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 1436,
+        "right": 1896,
+        "top": 256,
+        "bottom": 936,
+        "width": 460,
+        "height": 680
+      },
+      "box": {
+        "left": 1453,
+        "right": 1879,
+        "top": 775.5,
+        "bottom": 894.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 1474,
+        "right": 1858,
+        "top": 794.5,
+        "bottom": 838.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1822,
+        "right": 1858,
+        "top": 845.5,
+        "bottom": 881.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 1453,
+        "right": 1879,
+        "top": 684.5,
+        "bottom": 743.5,
+        "width": 426,
+        "height": 59
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 1436,
+        "right": 1896,
+        "top": 256,
+        "bottom": 936,
+        "width": 460,
+        "height": 680
+      },
+      "box": {
+        "left": 1453,
+        "right": 1879,
+        "top": 775.5,
+        "bottom": 894.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 1474,
+        "right": 1858,
+        "top": 794.5,
+        "bottom": 838.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1822,
+        "right": 1858,
+        "top": 845.5,
+        "bottom": 881.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 1453,
+        "right": 1454,
+        "top": 394,
+        "bottom": 395,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 382
+    }
+  },
+  {
+    "width": 1920,
+    "height": 960,
+    "theme": "dark",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 266,
+        "right": 1920,
+        "top": 66,
+        "bottom": 960,
+        "width": 1654,
+        "height": 894
+      },
+      "box": {
+        "left": 793,
+        "right": 1393,
+        "top": 406.34375,
+        "bottom": 525.34375,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 814,
+        "right": 1372,
+        "top": 425.34375,
+        "bottom": 469.34375,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1336,
+        "right": 1372,
+        "top": 476.34375,
+        "bottom": 512.34375,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 738,
+        "right": 1448,
+        "top": 320.65625,
+        "bottom": 364.34375,
+        "width": 710,
+        "height": 43.6875
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 266,
+        "right": 1920,
+        "top": 66,
+        "bottom": 960,
+        "width": 1654,
+        "height": 894
+      },
+      "box": {
+        "left": 793,
+        "right": 1393,
+        "top": 804.5,
+        "bottom": 923.5,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 814,
+        "right": 1372,
+        "top": 823.5,
+        "bottom": 867.5,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1336,
+        "right": 1372,
+        "top": 874.5,
+        "bottom": 910.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 738,
+        "right": 739,
+        "top": 148,
+        "bottom": 149,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 647
+    }
+  },
+  {
+    "width": 1920,
+    "height": 960,
+    "theme": "light",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 1436,
+        "right": 1896,
+        "top": 256,
+        "bottom": 936,
+        "width": 460,
+        "height": 680
+      },
+      "box": {
+        "left": 1453,
+        "right": 1879,
+        "top": 775.5,
+        "bottom": 894.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 1474,
+        "right": 1858,
+        "top": 794.5,
+        "bottom": 838.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1822,
+        "right": 1858,
+        "top": 845.5,
+        "bottom": 881.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 1453,
+        "right": 1879,
+        "top": 684.5,
+        "bottom": 743.5,
+        "width": 426,
+        "height": 59
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 1436,
+        "right": 1896,
+        "top": 256,
+        "bottom": 936,
+        "width": 460,
+        "height": 680
+      },
+      "box": {
+        "left": 1453,
+        "right": 1879,
+        "top": 775.5,
+        "bottom": 894.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 1474,
+        "right": 1858,
+        "top": 794.5,
+        "bottom": 838.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1822,
+        "right": 1858,
+        "top": 845.5,
+        "bottom": 881.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 1453,
+        "right": 1454,
+        "top": 394,
+        "bottom": 395,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 382
+    }
+  },
+  {
+    "width": 1920,
+    "height": 960,
+    "theme": "light",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 266,
+        "right": 1920,
+        "top": 66,
+        "bottom": 960,
+        "width": 1654,
+        "height": 894
+      },
+      "box": {
+        "left": 793,
+        "right": 1393,
+        "top": 406.34375,
+        "bottom": 525.34375,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 814,
+        "right": 1372,
+        "top": 425.34375,
+        "bottom": 469.34375,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1336,
+        "right": 1372,
+        "top": 476.34375,
+        "bottom": 512.34375,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 738,
+        "right": 1448,
+        "top": 320.65625,
+        "bottom": 364.34375,
+        "width": 710,
+        "height": 43.6875
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 266,
+        "right": 1920,
+        "top": 66,
+        "bottom": 960,
+        "width": 1654,
+        "height": 894
+      },
+      "box": {
+        "left": 793,
+        "right": 1393,
+        "top": 804.5,
+        "bottom": 923.5,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 814,
+        "right": 1372,
+        "top": 823.5,
+        "bottom": 867.5,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1336,
+        "right": 1372,
+        "top": 874.5,
+        "bottom": 910.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 738,
+        "right": 739,
+        "top": 148,
+        "bottom": 149,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 647
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "theme": "dark",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 796,
+        "right": 1256,
+        "top": 76,
+        "bottom": 696,
+        "width": 460,
+        "height": 620
+      },
+      "box": {
+        "left": 813,
+        "right": 1239,
+        "top": 535.5,
+        "bottom": 654.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 834,
+        "right": 1218,
+        "top": 554.5,
+        "bottom": 598.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1182,
+        "right": 1218,
+        "top": 605.5,
+        "bottom": 641.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 813,
+        "right": 1239,
+        "top": 444.5,
+        "bottom": 503.5,
+        "width": 426,
+        "height": 59
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 796,
+        "right": 1256,
+        "top": 76,
+        "bottom": 696,
+        "width": 460,
+        "height": 620
+      },
+      "box": {
+        "left": 813,
+        "right": 1239,
+        "top": 535.5,
+        "bottom": 654.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 834,
+        "right": 1218,
+        "top": 554.5,
+        "bottom": 598.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1182,
+        "right": 1218,
+        "top": 605.5,
+        "bottom": 641.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 813,
+        "right": 814,
+        "top": 214,
+        "bottom": 215,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 322
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "theme": "dark",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 266,
+        "right": 1280,
+        "top": 66,
+        "bottom": 720,
+        "width": 1014,
+        "height": 654
+      },
+      "box": {
+        "left": 473,
+        "right": 1073,
+        "top": 286.34375,
+        "bottom": 405.34375,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 494,
+        "right": 1052,
+        "top": 305.34375,
+        "bottom": 349.34375,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1016,
+        "right": 1052,
+        "top": 356.34375,
+        "bottom": 392.34375,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 418,
+        "right": 1128,
+        "top": 200.65625,
+        "bottom": 244.34375,
+        "width": 710,
+        "height": 43.6875
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 266,
+        "right": 1280,
+        "top": 66,
+        "bottom": 720,
+        "width": 1014,
+        "height": 654
+      },
+      "box": {
+        "left": 473,
+        "right": 1073,
+        "top": 564.5,
+        "bottom": 683.5,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 494,
+        "right": 1052,
+        "top": 583.5,
+        "bottom": 627.5,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1016,
+        "right": 1052,
+        "top": 634.5,
+        "bottom": 670.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 418,
+        "right": 419,
+        "top": 148,
+        "bottom": 149,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 407
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "theme": "light",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 796,
+        "right": 1256,
+        "top": 76,
+        "bottom": 696,
+        "width": 460,
+        "height": 620
+      },
+      "box": {
+        "left": 813,
+        "right": 1239,
+        "top": 535.5,
+        "bottom": 654.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 834,
+        "right": 1218,
+        "top": 554.5,
+        "bottom": 598.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1182,
+        "right": 1218,
+        "top": 605.5,
+        "bottom": 641.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 813,
+        "right": 1239,
+        "top": 444.5,
+        "bottom": 503.5,
+        "width": 426,
+        "height": 59
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 796,
+        "right": 1256,
+        "top": 76,
+        "bottom": 696,
+        "width": 460,
+        "height": 620
+      },
+      "box": {
+        "left": 813,
+        "right": 1239,
+        "top": 535.5,
+        "bottom": 654.5,
+        "width": 426,
+        "height": 119
+      },
+      "input": {
+        "left": 834,
+        "right": 1218,
+        "top": 554.5,
+        "bottom": 598.5,
+        "width": 384,
+        "height": 44
+      },
+      "send": {
+        "left": 1182,
+        "right": 1218,
+        "top": 605.5,
+        "bottom": 641.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 813,
+        "right": 814,
+        "top": 214,
+        "bottom": 215,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 322
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "theme": "light",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 266,
+        "right": 1280,
+        "top": 66,
+        "bottom": 720,
+        "width": 1014,
+        "height": 654
+      },
+      "box": {
+        "left": 473,
+        "right": 1073,
+        "top": 286.34375,
+        "bottom": 405.34375,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 494,
+        "right": 1052,
+        "top": 305.34375,
+        "bottom": 349.34375,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1016,
+        "right": 1052,
+        "top": 356.34375,
+        "bottom": 392.34375,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 418,
+        "right": 1128,
+        "top": 200.65625,
+        "bottom": 244.34375,
+        "width": 710,
+        "height": 43.6875
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 266,
+        "right": 1280,
+        "top": 66,
+        "bottom": 720,
+        "width": 1014,
+        "height": 654
+      },
+      "box": {
+        "left": 473,
+        "right": 1073,
+        "top": 564.5,
+        "bottom": 683.5,
+        "width": 600,
+        "height": 119
+      },
+      "input": {
+        "left": 494,
+        "right": 1052,
+        "top": 583.5,
+        "bottom": 627.5,
+        "width": 558,
+        "height": 44
+      },
+      "send": {
+        "left": 1016,
+        "right": 1052,
+        "top": 634.5,
+        "bottom": 670.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 418,
+        "right": 419,
+        "top": 148,
+        "bottom": 149,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 407
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 8,
+        "right": 382,
+        "top": 116,
+        "bottom": 836,
+        "width": 374,
+        "height": 720
+      },
+      "box": {
+        "left": 25,
+        "right": 365,
+        "top": 675.5,
+        "bottom": 794.5,
+        "width": 340,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 344,
+        "top": 694.5,
+        "bottom": 738.5,
+        "width": 298,
+        "height": 44
+      },
+      "send": {
+        "left": 308,
+        "right": 344,
+        "top": 745.5,
+        "bottom": 781.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 365,
+        "top": 584.5,
+        "bottom": 643.5,
+        "width": 340,
+        "height": 59
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 8,
+        "right": 382,
+        "top": 116,
+        "bottom": 836,
+        "width": 374,
+        "height": 720
+      },
+      "box": {
+        "left": 25,
+        "right": 365,
+        "top": 675.5,
+        "bottom": 794.5,
+        "width": 340,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 344,
+        "top": 694.5,
+        "bottom": 738.5,
+        "width": 298,
+        "height": 44
+      },
+      "send": {
+        "left": 308,
+        "right": 344,
+        "top": 745.5,
+        "bottom": 781.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 26,
+        "top": 254,
+        "bottom": 255,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 422
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 0,
+        "right": 390,
+        "top": 66,
+        "bottom": 844,
+        "width": 390,
+        "height": 778
+      },
+      "box": {
+        "left": 16,
+        "right": 374,
+        "top": 218.1875,
+        "bottom": 337.1875,
+        "width": 358,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 353,
+        "top": 237.1875,
+        "bottom": 281.1875,
+        "width": 316,
+        "height": 44
+      },
+      "send": {
+        "left": 317,
+        "right": 353,
+        "top": 288.1875,
+        "bottom": 324.1875,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 374,
+        "top": 144,
+        "bottom": 176.1875,
+        "width": 358,
+        "height": 32.1875
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 0,
+        "right": 390,
+        "top": 66,
+        "bottom": 844,
+        "width": 390,
+        "height": 778
+      },
+      "box": {
+        "left": 16,
+        "right": 374,
+        "top": 688.5,
+        "bottom": 807.5,
+        "width": 358,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 353,
+        "top": 707.5,
+        "bottom": 751.5,
+        "width": 316,
+        "height": 44
+      },
+      "send": {
+        "left": 317,
+        "right": 353,
+        "top": 758.5,
+        "bottom": 794.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 17,
+        "top": 140,
+        "bottom": 141,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 539
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 8,
+        "right": 382,
+        "top": 116,
+        "bottom": 836,
+        "width": 374,
+        "height": 720
+      },
+      "box": {
+        "left": 25,
+        "right": 365,
+        "top": 675.5,
+        "bottom": 794.5,
+        "width": 340,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 344,
+        "top": 694.5,
+        "bottom": 738.5,
+        "width": 298,
+        "height": 44
+      },
+      "send": {
+        "left": 308,
+        "right": 344,
+        "top": 745.5,
+        "bottom": 781.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 365,
+        "top": 584.5,
+        "bottom": 643.5,
+        "width": 340,
+        "height": 59
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 8,
+        "right": 382,
+        "top": 116,
+        "bottom": 836,
+        "width": 374,
+        "height": 720
+      },
+      "box": {
+        "left": 25,
+        "right": 365,
+        "top": 675.5,
+        "bottom": 794.5,
+        "width": 340,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 344,
+        "top": 694.5,
+        "bottom": 738.5,
+        "width": 298,
+        "height": 44
+      },
+      "send": {
+        "left": 308,
+        "right": 344,
+        "top": 745.5,
+        "bottom": 781.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 26,
+        "top": 254,
+        "bottom": 255,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 422
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 0,
+        "right": 390,
+        "top": 66,
+        "bottom": 844,
+        "width": 390,
+        "height": 778
+      },
+      "box": {
+        "left": 16,
+        "right": 374,
+        "top": 218.1875,
+        "bottom": 337.1875,
+        "width": 358,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 353,
+        "top": 237.1875,
+        "bottom": 281.1875,
+        "width": 316,
+        "height": 44
+      },
+      "send": {
+        "left": 317,
+        "right": 353,
+        "top": 288.1875,
+        "bottom": 324.1875,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 374,
+        "top": 144,
+        "bottom": 176.1875,
+        "width": 358,
+        "height": 32.1875
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 0,
+        "right": 390,
+        "top": 66,
+        "bottom": 844,
+        "width": 390,
+        "height": 778
+      },
+      "box": {
+        "left": 16,
+        "right": 374,
+        "top": 688.5,
+        "bottom": 807.5,
+        "width": 358,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 353,
+        "top": 707.5,
+        "bottom": 751.5,
+        "width": 316,
+        "height": 44
+      },
+      "send": {
+        "left": 317,
+        "right": 353,
+        "top": 758.5,
+        "bottom": 794.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 17,
+        "top": 140,
+        "bottom": 141,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 539
+    }
+  },
+  {
+    "width": 375,
+    "height": 500,
+    "theme": "dark",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 8,
+        "right": 367,
+        "top": 24,
+        "bottom": 492,
+        "width": 359,
+        "height": 468
+      },
+      "box": {
+        "left": 25,
+        "right": 350,
+        "top": 331.5,
+        "bottom": 450.5,
+        "width": 325,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 329,
+        "top": 350.5,
+        "bottom": 394.5,
+        "width": 283,
+        "height": 44
+      },
+      "send": {
+        "left": 293,
+        "right": 329,
+        "top": 401.5,
+        "bottom": 437.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 350,
+        "top": 240.5,
+        "bottom": 299.5,
+        "width": 325,
+        "height": 59
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 8,
+        "right": 367,
+        "top": 24,
+        "bottom": 492,
+        "width": 359,
+        "height": 468
+      },
+      "box": {
+        "left": 25,
+        "right": 350,
+        "top": 331.5,
+        "bottom": 450.5,
+        "width": 325,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 329,
+        "top": 350.5,
+        "bottom": 394.5,
+        "width": 283,
+        "height": 44
+      },
+      "send": {
+        "left": 293,
+        "right": 329,
+        "top": 401.5,
+        "bottom": 437.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 26,
+        "top": 162,
+        "bottom": 163,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 170
+    }
+  },
+  {
+    "width": 375,
+    "height": 500,
+    "theme": "dark",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 0,
+        "right": 375,
+        "top": 66,
+        "bottom": 500,
+        "width": 375,
+        "height": 434
+      },
+      "box": {
+        "left": 16,
+        "right": 359,
+        "top": 218.1875,
+        "bottom": 337.1875,
+        "width": 343,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 338,
+        "top": 237.1875,
+        "bottom": 281.1875,
+        "width": 301,
+        "height": 44
+      },
+      "send": {
+        "left": 302,
+        "right": 338,
+        "top": 288.1875,
+        "bottom": 324.1875,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 359,
+        "top": 144,
+        "bottom": 176.1875,
+        "width": 343,
+        "height": 32.1875
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 0,
+        "right": 375,
+        "top": 66,
+        "bottom": 500,
+        "width": 375,
+        "height": 434
+      },
+      "box": {
+        "left": 16,
+        "right": 359,
+        "top": 344.5,
+        "bottom": 463.5,
+        "width": 343,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 338,
+        "top": 363.5,
+        "bottom": 407.5,
+        "width": 301,
+        "height": 44
+      },
+      "send": {
+        "left": 302,
+        "right": 338,
+        "top": 414.5,
+        "bottom": 450.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 17,
+        "top": 140,
+        "bottom": 141,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(244, 244, 245)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 195
+    }
+  },
+  {
+    "width": 375,
+    "height": 500,
+    "theme": "light",
+    "main": false,
+    "empty": {
+      "host": {
+        "left": 8,
+        "right": 367,
+        "top": 24,
+        "bottom": 492,
+        "width": 359,
+        "height": 468
+      },
+      "box": {
+        "left": 25,
+        "right": 350,
+        "top": 331.5,
+        "bottom": 450.5,
+        "width": 325,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 329,
+        "top": 350.5,
+        "bottom": 394.5,
+        "width": 283,
+        "height": 44
+      },
+      "send": {
+        "left": 293,
+        "right": 329,
+        "top": 401.5,
+        "bottom": 437.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 350,
+        "top": 240.5,
+        "bottom": 299.5,
+        "width": 325,
+        "height": 59
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 8,
+        "right": 367,
+        "top": 24,
+        "bottom": 492,
+        "width": 359,
+        "height": 468
+      },
+      "box": {
+        "left": 25,
+        "right": 350,
+        "top": 331.5,
+        "bottom": 450.5,
+        "width": 325,
+        "height": 119
+      },
+      "input": {
+        "left": 46,
+        "right": 329,
+        "top": 350.5,
+        "bottom": 394.5,
+        "width": 283,
+        "height": 44
+      },
+      "send": {
+        "left": 293,
+        "right": 329,
+        "top": 401.5,
+        "bottom": 437.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 25,
+        "right": 26,
+        "top": 162,
+        "bottom": 163,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1219,
+      "client": 170
+    }
+  },
+  {
+    "width": 375,
+    "height": 500,
+    "theme": "light",
+    "main": true,
+    "empty": {
+      "host": {
+        "left": 0,
+        "right": 375,
+        "top": 66,
+        "bottom": 500,
+        "width": 375,
+        "height": 434
+      },
+      "box": {
+        "left": 16,
+        "right": 359,
+        "top": 218.1875,
+        "bottom": 337.1875,
+        "width": 343,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 338,
+        "top": 237.1875,
+        "bottom": 281.1875,
+        "width": 301,
+        "height": 44
+      },
+      "send": {
+        "left": 302,
+        "right": 338,
+        "top": 288.1875,
+        "bottom": 324.1875,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 359,
+        "top": 144,
+        "bottom": 176.1875,
+        "width": 343,
+        "height": 32.1875
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 0,
+      "client": 0
+    },
+    "full": {
+      "host": {
+        "left": 0,
+        "right": 375,
+        "top": 66,
+        "bottom": 500,
+        "width": 375,
+        "height": 434
+      },
+      "box": {
+        "left": 16,
+        "right": 359,
+        "top": 344.5,
+        "bottom": 463.5,
+        "width": 343,
+        "height": 119
+      },
+      "input": {
+        "left": 37,
+        "right": 338,
+        "top": 363.5,
+        "bottom": 407.5,
+        "width": 301,
+        "height": 44
+      },
+      "send": {
+        "left": 302,
+        "right": 338,
+        "top": 414.5,
+        "bottom": 450.5,
+        "width": 36,
+        "height": 36
+      },
+      "title": {
+        "left": 16,
+        "right": 17,
+        "top": 140,
+        "bottom": 141,
+        "width": 1,
+        "height": 1
+      },
+      "color": "rgb(11, 11, 12)",
+      "shiny": false,
+      "scroll": 1372,
+      "client": 195
+    }
+  }
+]

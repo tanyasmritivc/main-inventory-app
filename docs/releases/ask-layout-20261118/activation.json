@@ -1,0 +1,8 @@
+{
+  "base": "/home/ubuntu/findez-header-20261117/frontend",
+  "active": "/home/ubuntu/findez-ask-layout-20261118/frontend",
+  "build": "Of98YQCy0nw3xuaYaOAOY",
+  "override": "/etc/systemd/system/findez-web.service.d/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-ask-layout.conf",
+  "checks": "health, database health and web routes passed",
+  "schema_changes": false
+}

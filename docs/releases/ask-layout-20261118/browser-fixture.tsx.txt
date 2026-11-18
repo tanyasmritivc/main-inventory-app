@@ -1,0 +1,19 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { AssistClient } from '@/components/site/assist-client';
+import shell from '@/components/site/desktop-shell.module.css';
+import { ContextChat } from '@/components/site/context-chat';
+import { selectInventory, type InventorySelection } from '@/lib/inventory-selection';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
+const original:InventorySelection={accountId:'fixture-actor',inventory_id:'30000000-0000-0000-0000-000000000001',owner_user_id:'fixture-owner',team_id:null,is_default:false,name:'Workshop',can_edit:true,workspace:{workspace_id:'fixture-team',team_id:null,kind:'team',role:'member',name:'Fixture Robotics',organization_name:'Fixture Robotics',organization_id:'20000000-0000-0000-0000-000000000001'}};
+export default function Fixture(){
+ const [main,setMain]=useState(false);
+ const [selection,setSelection]=useState<InventorySelection|null>(null);
+ useEffect(()=>{
+  setMain(new URLSearchParams(window.location.search).has('main'));
+  const auth=createSupabaseBrowserClient().auth;
+  Object.assign(auth,{getSession:async()=>({data:{session:{user:{id:'fixture-actor'},access_token:'fixture-token'}},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})});
+  selectInventory(original);setSelection(original);document.documentElement.dataset.appTheme='light';
+ },[]);
+ return <main className={`app-frame ${shell.shell} sidebar-pinned ${main ? 'is-ask-workspace' : ''}`} style={{minHeight:'100vh',background:'var(--app-bg)'}}><div className="app-main"><div className="app-content">{main ? selection && <AssistClient worldId="20000000-0000-0000-0000-000000000001" title="What’s in your world?"/> : <div style={{height:1600,padding:32}}><h1>Fictional Space fixture</h1></div>}</div></div>{!main && selection && <ContextChat inventory={selection}/>}</main>;
+}

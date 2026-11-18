@@ -1,0 +1,21 @@
+{
+  "build": "Of98YQCy0nw3xuaYaOAOY",
+  "active": "/home/ubuntu/findez-ask-layout-20261118/frontend",
+  "source_hashes": "matched",
+  "unrelated_source_files_preserved": 539,
+  "public_routes": {
+    "/": 200,
+    "/signin": 200,
+    "/spaces": 200,
+    "/assist": 200
+  },
+  "published_css_verified": [
+    "https://findez.ai/_next/static/css/cbfaec0bae818dfc.css",
+    "https://findez.ai/_next/static/css/d2da83023e0260db.css",
+    "https://findez.ai/_next/static/css/512be925065d3b77.css",
+    "https://findez.ai/_next/static/css/b918a58d7472d2da.css",
+    "https://findez.ai/_next/static/css/b55b2c03dbf1f467.css"
+  ],
+  "backend_changed": false,
+  "schema_changed": false
+}

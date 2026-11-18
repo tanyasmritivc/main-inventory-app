@@ -1,3 +1,16 @@
+## Ask layout - November 17, 2026 (published)
+
+Fixed clipped floating Space chat by removing inherited desktop viewport minimum
+height; flex header/footer stay visible while the transcript scrolls. Caption is
+plain white in dark mode; main composer capped at 600px with its design intact.
+23 focused tests, 16 browser cases with desktop shell styles, production build,
+TypeScript and live source/CSS checks passed. Existing lint warnings retained.
+Active /home/ubuntu/findez-ask-layout-20261118/frontend, build
+Of98YQCy0nw3xuaYaOAOY; preserved 539 unrelated sources and newer header styles.
+No backend/schema/mobile/landing changes or Git push. Browser checks use synthetic
+Chrome data; signed-in Safari acceptance unverified.
+Receipt: docs/releases/ask-layout-20261118/README.md.
+
 ## Main chat formatting and protocol recovery — November 17, 2026 (published)
 
 Follow-up screenshots showed the main chat. Inventory headings/tables now apply

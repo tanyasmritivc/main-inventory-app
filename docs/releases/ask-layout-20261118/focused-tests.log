@@ -1,0 +1,10 @@
+
+> frontend@0.1.0 test
+> jest --runInBand src/__tests__/context-chat.test.tsx src/__tests__/web-refresh-ui.test.tsx src/__tests__/ask-stream.test.ts src/__tests__/ask-markdown.test.tsx
+
+
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        3.051 s, estimated 5 s
+Ran all test suites matching src/__tests__/context-chat.test.tsx|src/__tests__/web-refresh-ui.test.tsx|src/__tests__/ask-stream.test.ts|src/__tests__/ask-markdown.test.tsx.
