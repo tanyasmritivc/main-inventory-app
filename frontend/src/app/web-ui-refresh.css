@@ -120,3 +120,14 @@ html[data-app-theme] .refresh-item-panel .workspace-section-heading { display:fl
 html[data-app-theme] .refresh-item-panel .workspace-actions { display:flex; align-items:center; gap:6px; }
 
 html[data-app-theme] .app-frame.app-frame .ask-world-title { font-size:clamp(28px,3.2vw,38px); margin-bottom:32px; }
+
+/* Define the app header without changing the page's background color. */
+html[data-app-theme] .app-frame.app-frame .app-topbar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--line2);
+}
+html[data-app-theme] .app-frame .app-topbar .app-inventory-switcher {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
