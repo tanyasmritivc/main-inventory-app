@@ -1,11 +1,21 @@
-## November 17 - Spaces counts and outlines, build 226 candidate
+## November 17 - Spaces counts and outlines, build 226 uploaded
 
-The shared Space directory tile now displays the server-provided item_count in
-both organization and inventory views, keeps View only labels, distinguishes
-missing counts from zero, and uses a rounded theme-aware outline. Counts refer
-to saved item records, not summed physical units. Existing open/menu/actions and
-permissions remain unchanged. 28 focused Spaces tests pass; native visual checks,
-full suite, signed package and TestFlight delivery are in progress. No Git push.
+Apple acknowledged delivery of FindEZ 1.1.5 (226), runtime source b69dfda4.
+The shared Space card restores server-provided item counts and rounded outlines
+in organization and inventory views, preserving view-only labels and actions.
+Counts represent saved records, not summed physical units; unknown is not zero.
+
+Analyzer clean; 1,404 full tests passed with one existing skip; 28 focused Spaces
+checks and four iOS simulator checks passed. Light/dark screenshots inspected.
+The initial IPA was rejected locally for a stale simulator objective_c framework;
+clearing generated native caches and rebuilding passed all 33 archive/export
+device executable checks, strict signatures, 27 privacy manifests and production
+configuration. Apple validation passed before upload.
+Delivery: e29d00ba-4034-4222-88c0-5f13594bd5f4.
+Processing/tester availability pending and unpolled; physical iPhone acceptance
+unverified. No Git push or public App Store submission.
+Receipt: docs/plans/findez-spaces-mobile226-release.json.
+Visual evidence: docs/plans/spaces226-visual/.
 
 ## November 17 - World Settings build 225 uploaded
 
