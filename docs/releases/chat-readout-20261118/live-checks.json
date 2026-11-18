@@ -1,0 +1,9 @@
+{
+  "source_hashes_match": true,
+  "service_health": "passed",
+  "routes": {
+    "https://findez.ai": 200,
+    "https://findez.openstack.ftctools.com/health": 200,
+    "unauthenticated_chat": 401
+  }
+}

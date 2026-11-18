@@ -1,3 +1,16 @@
+## Inventory chat readout — November 17, 2026 (published)
+
+Reproduced reported gear interruption: missing imported descriptions/bulky tool
+results caused repeated lookups through the round limit, followed by invalid
+control markup. Compact previews preserve row facts/descriptions before optional
+details; query schema explains AND terms; final round explicitly requests answer.
+49 focused tests passed; 54 related passed, eight unchanged baseline failures.
+Six realistic model cases and one forced-budget case passed. Read-only main/Space
+replays each completed in one query with tables. Deployed three backend files,
+preserved 198 others; health/source/auth checks passed. No schema/stock/mobile/web
+bundle change or Git push. Full signed-in Safari acceptance remains unverified.
+Receipt: docs/releases/chat-readout-20261118/README.md.
+
 ## Web shell polish — November 17, 2026 (published)
 
 Smaller balanced sidebar logo, brighter pink Founders Access, distinct light/dark

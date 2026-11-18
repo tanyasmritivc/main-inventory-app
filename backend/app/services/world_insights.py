@@ -30,7 +30,7 @@ class Filters(Model):
 
 class Query(Model):
     inventory_id: str | None = None
-    terms: list[str] = Field(default_factory=list, max_length=12)
+    terms: list[str] = Field(default_factory=list, max_length=12, description='Every term must match (AND). These are not alternative synonyms. For gears use ["gear"], not a list of gear types. Start with one distinctive term; shorten it if no records match.')
     filters: Filters = Field(default_factory=Filters)
 
 class Projects(Model):
@@ -47,7 +47,7 @@ class Activity(Model):
 
 MODELS = {'world_query': Query, 'world_projects': Projects, 'world_project_readiness': Readiness, 'world_activity': Activity}
 DESCRIPTIONS = {
-    'world_query': 'For what am I running low on or what needs restocking, call this ONCE with filters.stock_status=low and no inventory_id to check the whole organization. No directory lookup is needed. Answer from that result; do not repeatedly guess quantity cutoffs or load full inventories. Items without enabled thresholds cannot be called low, even at zero. Classification indicates purpose, never a threshold. Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
+    'world_query': 'Search current saved inventory across the selected organization by omitting inventory_id. For an ordinary part lookup, call once with one distinctive term, such as terms=["gear"]. Multiple terms are AND constraints, never alternative synonyms or a list of part types. When matching rows answer the question, use them instead of repeatedly searching each variant. For what am I running low on or what needs restocking, call this ONCE with filters.stock_status=low and no inventory_id to check the whole organization. No directory lookup is needed. Answer from that result; do not repeatedly guess quantity cutoffs or load full inventories. Items without enabled thresholds cannot be called low, even at zero. Classification indicates purpose, never a threshold. Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
     'world_projects': 'Find saved projects by name in one authorized inventory. Returns exact project IDs for readiness.',
     'world_project_readiness': 'Compare a saved project BOM with current stock and reservations. Returns deterministic shortages. Similar names do not prove compatibility. This does not reserve or purchase parts.',
     'world_activity': 'Read the signed-in user\'s inventory changes since an optional ISO timestamp. Results are limited to 100 and may be incomplete. Historical events are not current inventory facts.',

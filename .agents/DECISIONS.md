@@ -1,3 +1,12 @@
+## November 17 — preserve inventory facts before optional model context
+
+Imported descriptions must not disappear at the provider depth boundary. Send
+compact core inventory rows before optional details, flatten spreadsheet scalar
+fields, and keep complete counts distinct from displayed-row limits. Preserve the
+shared privacy and size filters. Explain AND semantics in query tool schemas and
+explicitly finalize from existing evidence when the tool allowance is exhausted.
+Never execute control markup as a substitute for native validated tool calls.
+
 ## November 17, 2026 — every UI change supports both themes
 
 User requires all future interface changes to work in light and dark mode. Check

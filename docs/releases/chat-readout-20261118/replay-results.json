@@ -1,0 +1,53 @@
+{
+  "before": {
+    "completed": false,
+    "error_type": "CompletionStreamError",
+    "reason": "control_markup",
+    "bad_markup": [
+      {
+        "markup": "<tool_call>",
+        "position": 45,
+        "length": 76
+      },
+      {
+        "markup": "<tool_call>",
+        "position": 56,
+        "length": 416
+      }
+    ],
+    "read_operation_count": 26,
+    "model_requests": 10
+  },
+  "candidate_main": {
+    "completed": true,
+    "seconds": 18.5,
+    "table": true,
+    "bad_markup": [],
+    "read_operation_count": 1,
+    "model_requests": 2
+  },
+  "candidate_space": {
+    "completed": true,
+    "seconds": 16.0,
+    "table": true,
+    "bad_markup": [],
+    "read_operation_count": 1,
+    "model_requests": 2
+  },
+  "live_main": {
+    "completed": true,
+    "seconds": 10.9,
+    "table": true,
+    "bad_markup": [],
+    "read_operation_count": 1,
+    "model_requests": 2
+  },
+  "live_space": {
+    "completed": true,
+    "seconds": 13.5,
+    "table": true,
+    "bad_markup": [],
+    "read_operation_count": 1,
+    "model_requests": 2
+  }
+}

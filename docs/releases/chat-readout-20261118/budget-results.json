@@ -1,0 +1,24 @@
+[
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "question": "what gears do I have?",
+    "seconds": 9.6,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 15 gear records, 120 units total, all steel, module 0.8, 6mm D-bore, in Fasteners.\n\n| Part | Spec (teeth) | Quantity | Space / location |\n|---|---|---|---|\n| PN-F1 | 11T | 1 | Fasteners |\n| PN-F2 | 12T | 2 | Fasteners |\n| PN-F3 | 13T | 3 | Fasteners |\n| PN-F4 | 14T | 4 | Fasteners |\n| PN-F5 | 15T | 5 | Fasteners |\n| PN-F6 | 16T | 6 | Fasteners |\n| PN-F7 | 17T | 7 | Fasteners |\n| PN-F8 | 18T | 8 | Fasteners |\n| PN-F9 | 19T | 9 | Fasteners |\n| PN-F10 | 20T | 10 | Fasteners |\n| PN-F11 | 21T | 11 | Fasteners |\n| PN-F12 | 22T | 12 | Fasteners |\n| PN-F13 | 23T | 13 | Fasteners |\n| PN-F14 | 24T | 14 | Fasteners |\n| PN-F15 | 25T | 15 | Fasteners |\n\nIt's a complete matched set from 11 to 25 teeth, where the quantity of each matches its tooth count (for example, 14 units of the 14T gear).",
+    "passed": true
+  }
+]

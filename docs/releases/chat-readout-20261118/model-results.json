@@ -1,0 +1,94 @@
+[
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "what gears do I have?",
+    "seconds": 13.6,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 15 gear records, 120 units in total. All are M0.8 module, 6mm D-bore steel gears, stored in the Fasteners Space (spanning two inventories):\n\n| Part | Description | Qty | Location |\n|---|---|---|---|\n| [PN-F1](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | Gear M0.8 11T 6mm D-bore | 1 | Fasteners |\n| [PN-F2](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002) | Gear M0.8 12T 6mm D-bore | 2 | Fasteners |\n| [PN-F3](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000003) | Gear M0.8 13T 6mm D-bore | 3 | Fasteners |\n| [PN-F4](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000004) | Gear M0.8 14T 6mm D-bore | 4 | Fasteners |\n| [PN-F5](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000005) | Gear M0.8 15T 6mm D-bore | 5 | Fasteners |\n| [PN-F6](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000006) | Gear M0.8 16T 6mm D-bore | 6 | Fasteners |\n| [PN-F7](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000007) | Gear M0.8 17T 6mm D-bore | 7 | Fasteners |\n| [PN-F8](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000008) | Gear M0.8 18T 6mm D-bore | 8 | Fasteners |\n| [PN-F9](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000009) | Gear M0.8 19T 6mm D-bore | 9 | Fasteners |\n| [PN-F10](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000010) | Gear M0.8 20T 6mm D-bore | 10 | Fasteners |\n| [PN-F11](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000011) | Gear M0.8 21T 6mm D-bore | 11 | Fasteners |\n| [PN-F12](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000012) | Gear M0.8 22T 6mm D-bore | 12 | Fasteners |\n| [PN-F13](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000013) | Gear M0.8 23T 6mm D-bore | 13 | Fasteners |\n| [PN-F14](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000014) | Gear M0.8 24T 6mm D-bore | 14 | Fasteners |\n| [PN-F15](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000015) | Gear M0.8 25T 6mm D-bore | 15 | Fasteners |\n\nIt's a complete set: tooth counts run from 11T to 25T in single-tooth steps, with stock increasing one unit per tooth count.",
+    "passed": true
+  },
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "Were are my gears",
+    "seconds": 12.4,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "All 15 gear records sit in the **Fasteners** location. They're steel M0.8 gears with a 6 mm D-bore, tooth counts from 11T to 25T, one part per tooth count, 120 units in total.\n\n| Part | Quantity | Location |\n|---|---|---|\n| [PN-F1](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) (Gear M0.8 11T) | 1 | Fasteners |\n| [PN-F2](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002) (Gear M0.8 12T) | 2 | Fasteners |\n| [PN-F3](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000003) (Gear M0.8 13T) | 3 | Fasteners |\n| [PN-F4](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000004) (Gear M0.8 14T) | 4 | Fasteners |\n| [PN-F5](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000005) (Gear M0.8 15T) | 5 | Fasteners |\n| [PN-F6](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000006) (Gear M0.8 16T) | 6 | Fasteners |\n| [PN-F7](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000007) (Gear M0.8 17T) | 7 | Fasteners |\n| [PN-F8](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000008) (Gear M0.8 18T) | 8 | Fasteners |\n| [PN-F9](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000009) (Gear M0.8 19T) | 9 | Fasteners |\n| [PN-F10](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000010) (Gear M0.8 20T) | 10 | Fasteners |\n| [PN-F11](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000011) (Gear M0.8 21T) | 11 | Fasteners |\n| [PN-F12](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000012) (Gear M0.8 22T) | 12 | Fasteners |\n| [PN-F13](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000013) (Gear M0.8 23T) | 13 | Fasteners |\n| [PN-F14](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000014) (Gear M0.8 24T) | 14 | Fasteners |\n| [PN-F15](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000015) (Gear M0.8 25T) | 15 | Fasteners |\n\nThe search was complete, so this covers every saved gear record in the organization.",
+    "passed": true
+  },
+  {
+    "contextual": true,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "gears",
+    "seconds": 7.2,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 15 gear records, 120 units total, all steel M0.8 gears with 6mm D-bore, in the Fasteners Space. Tooth counts run from 11T to 25T, one record per count.\n\n| Part | Description | Qty | Space / location |\n|---|---|---|---|\n| PN-F1 | Gear M0.8 11T 6mm D-bore | 1 | Fasteners |\n| PN-F2 | Gear M0.8 12T 6mm D-bore | 2 | Fasteners |\n| PN-F3 | Gear M0.8 13T 6mm D-bore | 3 | Fasteners |\n| PN-F4 | Gear M0.8 14T 6mm D-bore | 4 | Fasteners |\n| PN-F5 | Gear M0.8 15T 6mm D-bore | 5 | Fasteners |\n| PN-F6 | Gear M0.8 16T 6mm D-bore | 6 | Fasteners |\n| PN-F7 | Gear M0.8 17T 6mm D-bore | 7 | Fasteners |\n| PN-F8 | Gear M0.8 18T 6mm D-bore | 8 | Fasteners |\n| PN-F9 | Gear M0.8 19T 6mm D-bore | 9 | Fasteners |\n| PN-F10 | Gear M0.8 20T 6mm D-bore | 10 | Fasteners |\n| PN-F11 | Gear M0.8 21T 6mm D-bore | 11 | Fasteners |\n| PN-F12 | Gear M0.8 22T 6mm D-bore | 12 | Fasteners |\n| PN-F13 | Gear M0.8 23T 6mm D-bore | 13 | Fasteners |\n| PN-F14 | Gear M0.8 24T 6mm D-bore | 14 | Fasteners |\n| PN-F15 | Gear M0.8 25T 6mm D-bore | 15 | Fasteners |\n\nThese records live in two inventories, each with a Fasteners location (PN-F1 to F7 in one, PN-F8 to F15 in the other).",
+    "passed": true
+  },
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "what gears do I have?",
+    "seconds": 6.1,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nYou have 15 gear records, all steel M0.8 mod gears with 6mm D-bore, tooth counts from 11T to 25T, stored under location \"Fasteners\". Total of 120 units, and the search was complete.\n\n| Part | Description | Quantity | Location |\n|---|---|---|---|\n| PN-F1 | Gear M0.8 11T 6mm D-bore | 1 | Fasteners |\n| PN-F2 | Gear M0.8 12T 6mm D-bore | 2 | Fasteners |\n| PN-F3 | Gear M0.8 13T 6mm D-bore | 3 | Fasteners |\n| PN-F4 | Gear M0.8 14T 6mm D-bore | 4 | Fasteners |\n| PN-F5 | Gear M0.8 15T 6mm D-bore | 5 | Fasteners |\n| PN-F6 | Gear M0.8 16T 6mm D-bore | 6 | Fasteners |\n| PN-F7 | Gear M0.8 17T 6mm D-bore | 7 | Fasteners |\n| PN-F8 | Gear M0.8 18T 6mm D-bore | 8 | Fasteners |\n| PN-F9 | Gear M0.8 19T 6mm D-bore | 9 | Fasteners |\n| PN-F10 | Gear M0.8 20T 6mm D-bore | 10 | Fasteners |\n| PN-F11 | Gear M0.8 21T 6mm D-bore | 11 | Fasteners |\n| PN-F12 | Gear M0.8 22T 6mm D-bore | 12 | Fasteners |\n| PN-F13 | Gear M0.8 23T 6mm D-bore | 13 | Fasteners |\n| PN-F14 | Gear M0.8 24T 6mm D-bore | 14 | Fasteners |\n| PN-F15 | Gear M0.8 25T 6mm D-bore | 15 | Fasteners |",
+    "passed": true
+  },
+  {
+    "contextual": false,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true,
+      true
+    ],
+    "question": "Were are my gears",
+    "seconds": 10.4,
+    "operations": [
+      "world_query",
+      "world_directory"
+    ],
+    "answer": "**Your gears**\n\nYou have 15 gear records, 120 units total, all filed under the **Fasteners** location, split across two inventories:\n\n| Part | Description | Quantity | Inventory / location |\n|---|---|---|---|\n| [PN-F1](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | Gear M0.8 11T 6mm D-bore | 1 | Workshop, Fasteners |\n| [PN-F2](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002) | Gear M0.8 12T 6mm D-bore | 2 | Workshop, Fasteners |\n| [PN-F3](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000003) | Gear M0.8 13T 6mm D-bore | 3 | Workshop, Fasteners |\n| [PN-F4](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000004) | Gear M0.8 14T 6mm D-bore | 4 | Workshop, Fasteners |\n| [PN-F5](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000005) | Gear M0.8 15T 6mm D-bore | 5 | Workshop, Fasteners |\n| [PN-F6](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000006) | Gear M0.8 16T 6mm D-bore | 6 | Workshop, Fasteners |\n| [PN-F7](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000007) | Gear M0.8 17T 6mm D-bore | 7 | Workshop, Fasteners |\n| [PN-F8](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000008) | Gear M0.8 18T 6mm D-bore | 8 | Storage, Fasteners |\n| [PN-F9](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000009) | Gear M0.8 19T 6mm D-bore | 9 | Storage, Fasteners |\n| [PN-F10](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000010) | Gear M0.8 20T 6mm D-bore | 10 | Storage, Fasteners |\n| [PN-F11](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000011) | Gear M0.8 21T 6mm D-bore | 11 | Storage, Fasteners |\n| [PN-F12](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000012) | Gear M0.8 22T 6mm D-bore | 12 | Storage, Fasteners |\n| [PN-F13](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000013) | Gear M0.8 23T 6mm D-bore | 13 | Storage, Fasteners |\n| [PN-F14](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000014) | Gear M0.8 24T 6mm D-bore | 14 | Storage, Fasteners |\n| [PN-F15](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000015) | Gear M0.8 25T 6mm D-bore | 15 | Storage, Fasteners |\n\nIn short: the smaller gears (11T to 17T) sit in the Workshop Fasteners bin, and the larger ones (18T to 25T) are in Storage, Fasteners. All are steel finish, M0.8 with 6mm D-bore.",
+    "passed": true
+  },
+  {
+    "contextual": true,
+    "forced_recovery": false,
+    "streams": [
+      true,
+      true
+    ],
+    "question": "gears",
+    "seconds": 9.4,
+    "operations": [
+      "world_query"
+    ],
+    "answer": "**Your gears**\n\nFound 15 saved gear records, 120 units in total, all steel M0.8 gears with a 6mm D-bore. Tooth counts run from 11T to 25T, one part per tooth count.\n\n| Part | Spec | Quantity | Location |\n|---|---|---|---|\n| [PN-F1](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | M0.8 11T 6mm D-bore | 1 | Fasteners |\n| [PN-F2](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002) | M0.8 12T 6mm D-bore | 2 | Fasteners |\n| [PN-F3](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000003) | M0.8 13T 6mm D-bore | 3 | Fasteners |\n| [PN-F4](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000004) | M0.8 14T 6mm D-bore | 4 | Fasteners |\n| [PN-F5](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000005) | M0.8 15T 6mm D-bore | 5 | Fasteners |\n| [PN-F6](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000006) | M0.8 16T 6mm D-bore | 6 | Fasteners |\n| [PN-F7](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000007) | M0.8 17T 6mm D-bore | 7 | Fasteners |\n| [PN-F8](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000008) | M0.8 18T 6mm D-bore | 8 | Fasteners |\n| [PN-F9](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000009) | M0.8 19T 6mm D-bore | 9 | Fasteners |\n| [PN-F10](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000010) | M0.8 20T 6mm D-bore | 10 | Fasteners |\n| [PN-F11](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000011) | M0.8 21T 6mm D-bore | 11 | Fasteners |\n| [PN-F12](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000012) | M0.8 22T 6mm D-bore | 12 | Fasteners |\n| [PN-F13](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000013) | M0.8 23T 6mm D-bore | 13 | Fasteners |\n| [PN-F14](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000014) | M0.8 24T 6mm D-bore | 14 | Fasteners |\n| [PN-F15](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000015) | M0.8 25T 6mm D-bore | 15 | Fasteners |\n\nThey are spread across two inventories, with PN-F1 through PN-F7 in the first and PN-F8 through PN-F15 in the second.",
+    "passed": true
+  }
+]

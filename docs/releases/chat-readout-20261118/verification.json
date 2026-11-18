@@ -1,0 +1,20 @@
+{
+  "focused_passed": 49,
+  "additional_passed": 54,
+  "additional_failed": 8,
+  "baseline_failures_identical": true,
+  "baseline_failure_ids": [
+    "test_agent_gateway.py::test_bounded_photo_timeout_is_local_and_does_not_change_normal_gateway_timeout",
+    "test_agent_gateway.py::test_gateway_client_posts_directly_to_configured_endpoint",
+    "test_agent_gateway.py::test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model",
+    "test_chat_response_style.py::test_replies_are_normalized_before_emission_and_session_persistence[events]",
+    "test_chat_response_style.py::test_replies_are_normalized_before_emission_and_session_persistence[sse]",
+    "test_chat_response_style.py::test_replies_are_normalized_before_emission_and_session_persistence[sync]",
+    "test_model_chat.py::test_roadrunner_requirements_reach_model_and_exact_authorized_project_tool[False]",
+    "test_model_chat.py::test_roadrunner_requirements_reach_model_and_exact_authorized_project_tool[True]"
+  ],
+  "live_fictional_cases": 6,
+  "live_budget_cases": 1,
+  "all_model_cases_completed": true,
+  "customer_mutations_enabled": false
+}

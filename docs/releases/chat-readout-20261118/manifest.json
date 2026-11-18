@@ -1,0 +1,14 @@
+{
+  "app/services/world_chat.py": {
+    "before": "54c7dee3728bdd6b3aca85dda3cc077c3b67d69115a7767a111fcd92c9349dcd",
+    "after": "8c489a4c54698425a471197217c6d0e88e5dc758e54f27098fb67880cb17b2aa"
+  },
+  "app/services/world_insights.py": {
+    "before": "84c64e48f5ea9fe1a5d3ab33761144edb53b684c62caa42b9d1fc41c5ea28685",
+    "after": "6e6118e456ee5eaa35a4d2cebfcc4e957f882e75ceef775319594aa7b8021d56"
+  },
+  "app/services/world_inventory_preview.py": {
+    "before": null,
+    "after": "900037c574b166852349a9129a047d62d815edb304671d1e6e25f51262dddfb1"
+  }
+}
