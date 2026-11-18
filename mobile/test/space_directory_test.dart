@@ -51,7 +51,8 @@ void main() {
         return {'user_id': 'actor-a', 'display_name': 'Alex'};
       }
       if (r.path == '/worlds/personal/directory') {
-        return {'can_create_space': role != 'viewer',
+        return {
+          'can_create_space': role != 'viewer',
           'inventories': [group()],
         };
       }
@@ -158,6 +159,43 @@ void main() {
       await tester.pumpAndSettle();
     }
   }
+
+  for (final brightness in Brightness.values) {
+    for (final world in [true, false]) {
+      testWidgets(
+        'Spaces show counts and outlines ${brightness.name} world=$world',
+        (tester) async {
+          await mount(tester, world: world, brightness: brightness);
+          expect(find.text('2 items'), findsOneWidget);
+          expect(find.text('1 item'), findsOneWidget);
+          final card = tester.widget<Material>(
+            find.byKey(const ValueKey('space-outline-bench')),
+          );
+          final shape = card.shape! as RoundedRectangleBorder;
+          expect(shape.side.style, BorderStyle.solid);
+          expect(shape.side.width, greaterThanOrEqualTo(1));
+          expect(shape.side.color.a, greaterThan(0));
+          expect(tester.takeException(), isNull);
+          await spaceAuditCapture?.call('counts-${brightness.name}-$world');
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+  }
+
+  testWidgets(
+    'Space counts retain zero, unknown and viewer labels at large text',
+    (tester) async {
+      role = 'viewer';
+      spaces[0]['item_count'] = 0;
+      spaces[1].remove('item_count');
+      await mount(tester, scale: 2);
+      expect(find.text('0 items · View only'), findsOneWidget);
+      expect(find.text('Item count unavailable · View only'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   Future<void> menu(WidgetTester tester) async {
     await tester.tap(find.byTooltip('Options for Workbench'));
@@ -464,37 +502,38 @@ void main() {
     expect(request.data, {'name': 'Parts bins'});
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('World New space creates directly in organization and refreshes', (
-    tester,
-  ) async {
-    await mount(tester);
-    expect(find.byTooltip('Account'), findsNothing);
-    expect(find.text('Search Spaces'), findsNothing);
-    final button = find.text('New space');
-    expect(button.hitTestable(), findsOneWidget);
-    expect(
-      tester.getBottomLeft(button).dy,
-      lessThan(tester.getTopLeft(find.byTooltip('Spaces')).dy),
-    );
-    await spaceAuditCapture?.call('world-new-space');
-    await tester.tap(button);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Garage');
-    await tester.pump();
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-    expect(find.text('Garage'), findsOneWidget);
-    expect(
-      f.requests
-          .where(
-            (r) => r.method == 'POST' && r.path == '/worlds/personal/spaces',
-          )
-          .length,
-      1,
-    );
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
+  testWidgets(
+    'World New space creates directly in organization and refreshes',
+    (tester) async {
+      await mount(tester);
+      expect(find.byTooltip('Account'), findsNothing);
+      expect(find.text('Search Spaces'), findsNothing);
+      final button = find.text('New space');
+      expect(button.hitTestable(), findsOneWidget);
+      expect(
+        tester.getBottomLeft(button).dy,
+        lessThan(tester.getTopLeft(find.byTooltip('Spaces')).dy),
+      );
+      await spaceAuditCapture?.call('world-new-space');
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Garage');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('Garage'), findsOneWidget);
+      expect(
+        f.requests
+            .where(
+              (r) => r.method == 'POST' && r.path == '/worlds/personal/spaces',
+            )
+            .length,
+        1,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('World viewer does not see creation action', (tester) async {
     role = 'viewer';

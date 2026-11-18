@@ -268,40 +268,62 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
   }
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-    leading: SpaceTexture(identity: id.isEmpty ? name : id),
-    title: Text(name),
-    subtitle: Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Text(widget.subtitle),
-    ),
-    trailing: IconButton(
-      key: _anchor,
-      tooltip: 'Options for $name',
-      onPressed: _busy
-          ? null
-          : () => _run(() async {
-              final api = await widget.resolveApi();
-              if (!mounted) return;
-              api.assertCurrentContext();
-              await _menu(api);
-            }),
-      icon: const Icon(CupertinoIcons.ellipsis),
-    ),
-    onTap: _busy
-        ? null
-        : () => _run(() async {
-            // Show the destination immediately, while its authorized data is resolved.
-            await openDirectorySpace(
-              context,
-              null,
-              widget.space,
-              resolveApi: widget.resolveApi,
-            );
-            if (mounted) await widget.onChanged();
-          }),
-  );
+  Widget build(BuildContext context) {
+    final count = widget.space['item_count'];
+    final countLabel = count is num && count.isFinite && count >= 0
+        ? '$count ${count == 1 ? 'item' : 'items'}'
+        : 'Item count unavailable';
+    final subtitle = [
+      countLabel,
+      if (widget.subtitle.isNotEmpty) widget.subtitle,
+    ].join(' · ');
+    return Material(
+      key: ValueKey('space-outline-$id'),
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AppTheme.border(context)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 12,
+          horizontal: 16,
+        ),
+        leading: SpaceTexture(identity: id.isEmpty ? name : id),
+        title: Text(name),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle),
+        ),
+        trailing: IconButton(
+          key: _anchor,
+          tooltip: 'Options for $name',
+          onPressed: _busy
+              ? null
+              : () => _run(() async {
+                  final api = await widget.resolveApi();
+                  if (!mounted) return;
+                  api.assertCurrentContext();
+                  await _menu(api);
+                }),
+          icon: const Icon(CupertinoIcons.ellipsis),
+        ),
+        onTap: _busy
+            ? null
+            : () => _run(() async {
+                // Show the destination immediately, while its authorized data is resolved.
+                await openDirectorySpace(
+                  context,
+                  null,
+                  widget.space,
+                  resolveApi: widget.resolveApi,
+                );
+                if (mounted) await widget.onChanged();
+              }),
+      ),
+    );
+  }
 }
 
 class _MenuLabel extends StatelessWidget {
@@ -507,13 +529,15 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
                       ),
                     ),
                   for (final space in rows)
-                    SpaceDirectoryTile(
-                      key: ValueKey(spaceIdentifier(space)),
-                      space: space,
-                      subtitle:
-                          '${space['item_count'] ?? 0} ${space['item_count'] == 1 ? 'item' : 'items'}',
-                      resolveApi: () async => widget.api,
-                      onChanged: _load,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: SpaceDirectoryTile(
+                        key: ValueKey(spaceIdentifier(space)),
+                        space: space,
+                        subtitle: '',
+                        resolveApi: () async => widget.api,
+                        onChanged: _load,
+                      ),
                     ),
                 ],
                 if (widget.api.canEdit)

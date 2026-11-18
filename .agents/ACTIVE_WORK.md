@@ -1,3 +1,12 @@
+## November 17 - Spaces counts and outlines, build 226 candidate
+
+The shared Space directory tile now displays the server-provided item_count in
+both organization and inventory views, keeps View only labels, distinguishes
+missing counts from zero, and uses a rounded theme-aware outline. Counts refer
+to saved item records, not summed physical units. Existing open/menu/actions and
+permissions remain unchanged. 28 focused Spaces tests pass; native visual checks,
+full suite, signed package and TestFlight delivery are in progress. No Git push.
+
 ## November 17 - World Settings build 225 uploaded
 
 Apple acknowledged delivery of FindEZ 1.1.5 (225), runtime source
