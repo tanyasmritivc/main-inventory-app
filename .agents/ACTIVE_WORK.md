@@ -1,18 +1,19 @@
-## November 16 - World entry moved into mobile Settings (225 pending)
+## November 17 - World Settings build 225 uploaded
 
-Removed the World button and its large-text second row from the Ask header.
-The profile-photo Settings panel now has a World row with a globe icon in both
-native iOS and Flutter fallback menus. It dismisses Settings before invoking the
-existing World route, landscape lifecycle and inventory refresh on return.
-No web, backend, inventory or permission changes. Version prepared: 1.1.5 (225).
+Apple acknowledged delivery of FindEZ 1.1.5 (225), runtime source
+25c6f847dc72672ca881757e429072b99a1f7598. World opens from the profile-photo
+Settings panel in both native iOS and Flutter fallback menus; the Ask header
+entry is removed. Existing landscape/portrait lifecycle and refresh remain.
 
-Full mobile Dart analysis passed with no issues. Focused existing Flutter tests
-could not start because the session denies local server sockets (errno 1).
-The installed SDK is read-only; a task-local SDK copy allowed the runner to start,
-but did not remove the socket restriction. Computer control also refused Terminal
-access. No archive or TestFlight upload performed. Latest confirmed upload is 224.
-Physical-device acceptance remains unverified. No Git push (standing prohibition).
-Continuation: .agents/HANDOFFS/world-settings225.md.
+The preparation script completed after granting Flutter SDK/build access outside
+the sandbox. Analyzer passed with no issues; the full suite passed 1,399 tests
+with one skip. Archive and export each passed strict signature checks and all 33
+device executable checks; 27 privacy manifests, app/extension versions, production
+configuration, fonts and World splash were verified. Apple validation passed.
+Upload acknowledgment: 8570364b-7d5e-48e3-9b7f-2cb4c96b07e0.
+Processing and tester availability remain pending/unpolled. Physical iPhone
+acceptance remains unverified. No public App Store submission or Git push.
+Receipt: docs/plans/findez-world-mobile225-release.json.
 
 ## November 16 — World landscape and pixel splash, build 224
 

@@ -1,0 +1,27 @@
+{
+  "version": "1.1.5",
+  "build": 225,
+  "source_commit": "25c6f847dc72672ca881757e429072b99a1f7598",
+  "archive_device_executables_verified": 33,
+  "export_device_executables_verified": 33,
+  "strict_signatures": true,
+  "privacy_manifests": 27,
+  "production_configuration_verified": true,
+  "ipa_sha256": "29f94fd6cc016b7a8272d17456e397664c48d89d877cf6a50acf69fb1937d69a",
+  "uploaded": true,
+  "apple_validation": true,
+  "delivery_uuid": "8570364b-7d5e-48e3-9b7f-2cb4c96b07e0",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "public_app_store_submission_changed": false,
+  "recorded_at_utc": "2026-11-18T05:40:51.961019+00:00",
+  "validation": {
+    "flutter_analyze": "No issues found",
+    "full_flutter_tests_passed": 1399,
+    "skipped_tests": 1,
+    "apple_validation": "passed",
+    "physical_device_acceptance": "unverified"
+  },
+  "artifact_path": "/Users/tanyasmritivictorcharles/projects/findez-command-center/.world-private/mobile225/FindEZ-1.1.5-225.ipa",
+  "git_push_performed": false
+}
