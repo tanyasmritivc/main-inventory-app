@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/chat/ask_answer_view.dart';
@@ -28,7 +27,7 @@ void main() {
                   child: AskAnswerView(
                     refined: true,
                     answer:
-                        '**Your gears**\n\n| Part | Quantity | Space |\n|---|---:|---|\n| 30T M0.8 gear | 20 | Fastener DB |\n| 6mm D-bore pinion | 10 | Workshop |',
+                        '# Heading one\n\n## Heading two\n\n### Heading three\n\n#### Heading four\n\n##### Heading five\n\n###### Heading six\n\n**Your gears**\n\n| Part | Quantity | Space |\n|---|---:|---|\n| 30T M0.8 gear | 20 | Fastener DB |\n| 6mm D-bore pinion | 10 | Workshop |',
                   ),
                 ),
               ),
@@ -36,14 +35,44 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(find.byType(Table), findsOneWidget);
-          final markdown = tester.widget<MarkdownBody>(
-            find.byType(MarkdownBody),
-          );
-          expect(markdown.styleSheet!.strong!.fontWeight, FontWeight.w600);
-          expect(
-            markdown.styleSheet!.strong!.color,
-            markdown.styleSheet!.p!.color,
-          );
+          final weights = <String, FontWeight?>{};
+          void inspect(InlineSpan span, [FontWeight? inherited]) {
+            final weight = span.style?.fontWeight ?? inherited;
+            if (span is TextSpan) {
+              if (span.text != null) weights[span.text!.trim()] = weight;
+              for (final child in span.children ?? <InlineSpan>[]) {
+                inspect(child, weight);
+              }
+            }
+          }
+
+          for (final text in tester.widgetList<RichText>(
+            find.byType(RichText),
+          )) {
+            inspect(text.text);
+          }
+          for (final text in tester.widgetList<SelectableText>(
+            find.byType(SelectableText),
+          )) {
+            if (text.textSpan != null) {
+              inspect(text.textSpan!, text.style?.fontWeight);
+            }
+          }
+          for (final label in [
+            'Your gears',
+            'Heading one',
+            'Heading two',
+            'Heading three',
+            'Heading four',
+            'Heading five',
+            'Heading six',
+          ]) {
+            expect(
+              weights[label],
+              FontWeight.w600,
+              reason: '$label must render with semantic emphasis',
+            );
+          }
           expect(tester.takeException(), isNull);
         },
       );

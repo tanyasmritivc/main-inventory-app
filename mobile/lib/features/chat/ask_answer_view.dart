@@ -167,6 +167,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
     final primary = AppTheme.adaptive(context, Color(0xFFF2F2F2));
     final secondary = AppTheme.adaptive(context, Color(0xFF85858E));
     final data = widget.contextData;
+    final markdownTheme = MarkdownStyleSheet.fromTheme(Theme.of(context));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -280,6 +281,12 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                 // Generated images must not trigger arbitrary third-party requests.
                 sizedImageBuilder: (_) => const SizedBox.shrink(),
                 styleSheet: MarkdownStyleSheet(
+                  h1: markdownTheme.h1?.copyWith(fontWeight: FontWeight.w600),
+                  h2: markdownTheme.h2?.copyWith(fontWeight: FontWeight.w600),
+                  h3: markdownTheme.h3?.copyWith(fontWeight: FontWeight.w600),
+                  h4: markdownTheme.h4?.copyWith(fontWeight: FontWeight.w600),
+                  h5: markdownTheme.h5?.copyWith(fontWeight: FontWeight.w600),
+                  h6: markdownTheme.h6?.copyWith(fontWeight: FontWeight.w600),
                   code: const TextStyle(fontFamily: 'CupertinoSystemText'),
                   p: AppTypography.styleOf(
                     context,
