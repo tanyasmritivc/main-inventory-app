@@ -120,6 +120,7 @@ async function performAskQuestion({
   photo,
   conversationId,
   worldId,
+  contextual = false,
   requestId,
   retryOf,
   sources = [],
@@ -134,6 +135,7 @@ async function performAskQuestion({
 }: {
   accountId: string;
   worldId?: string;
+  contextual?: boolean;
   requestId?: string;
   retryOf?: string;
   sources?: ChatSource[];
@@ -176,6 +178,7 @@ async function performAskQuestion({
         supports_capture: true,
         request_id: requestId,
         retry_of: retryOf,
+        ...(contextual && selected ? { context_inventory_id: selected.inventory_id } : {}),
       }
     : {};
   if (photo) {

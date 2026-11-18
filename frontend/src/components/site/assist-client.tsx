@@ -93,7 +93,7 @@ function AssistClientWorkspace({
   contextual = false,
 }: AssistProps) {
   const inventoryId = worldId ? undefined : activeInventory()?.inventory_id;
-  const draftScope = worldId ? `:world:${worldId}` : inventoryId ? `:inventory:${inventoryId}` : "";
+  const draftScope = (worldId ? `:world:${worldId}` : inventoryId ? `:inventory:${inventoryId}` : "") + (contextual ? ":contextual" : "");
   const prefix = worldId ? `/worlds/${encodeURIComponent(worldId)}` : "";
   const retry = useRef<
     | {
@@ -567,11 +567,12 @@ function AssistClientWorkspace({
     let receivedCapture = false;
     let provisional = "";
     // Auto Extract owns its longer inference deadline in askQuestion.
-    const timer = extracting && worldId ? undefined : window.setTimeout(() => control.abort(), 180_000);
+    const timer = extracting && worldId ? undefined : window.setTimeout(() => control.abort(), contextual ? 300_000 : 180_000);
     try {
       await askQuestion({
         accountId: account,
         worldId,
+        contextual,
         requestId: retry.current.id,
         sources: requestSources,
         autoExtract: extracting,
@@ -1138,7 +1139,7 @@ function AssistClientWorkspace({
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }}
               className="workspace-input"
               aria-label="Your question"
-              placeholder={homeEmpty ? placeholder : "Ask about your inventory…"}
+              placeholder={homeEmpty ? placeholder : contextual && worldId ? "Ask about this organization…" : "Ask about your inventory…"}
               onFocus={stopPlaceholder}
               maxLength={4000}
               value={input}

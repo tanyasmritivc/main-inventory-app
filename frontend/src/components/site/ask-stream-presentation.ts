@@ -26,6 +26,13 @@ export function chunkFades(births: FadeBirths) {
       if (!node.children) return;
       node.children = node.children.flatMap((child) => {
         if (child.type !== "text") { wrap(child); return [child]; }
+        // Markdown emits separator whitespace between rows, sections and list
+        // items. A span there is invalid HTML (and triggers hydration warnings).
+        // Keep its position in the fade clock, but animate only actual content.
+        if (!(child.value ?? "").trim()) {
+          offset += (child.value ?? "").length;
+          return [child];
+        }
         const parts = [...(child.value ?? "").matchAll(/\s+|\S+/g)].map((part) => {
           const birth = Math.min(...births.times.slice(offset, offset + part[0].length));
           offset += part[0].length;

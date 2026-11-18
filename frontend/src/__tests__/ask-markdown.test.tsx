@@ -25,6 +25,21 @@ test("GFM tables remain accessible and scrollable", () => {
   expect(container.querySelector(".ask-markdown-table")).toBeTruthy();
 });
 
+test("animated tables retain valid row structure without hydration errors", () => {
+  const error = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const view = render(<AskMarkdown animate>{"**Your gears**\n\n| Part | Quantity | Space |\n| --- | ---: | --- |\n| Gear | 8 | Workshop |"}</AskMarkdown>);
+    expect(view.container.querySelector("table > span, thead > span, tbody > span, tr > span")).toBeNull();
+    expect(view.container.querySelector("td .ask-chunk")).toBeTruthy();
+    expect(screen.getByRole("table").textContent).toContain("Workshop");
+    view.rerender(<AskMarkdown animate>{"**Your gears**\n\n| Part | Quantity | Space |\n| --- | ---: | --- |\n| Gear | 8 | Workshop |\n| Servo | 5 | Storage |"}</AskMarkdown>);
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+    expect(error).not.toHaveBeenCalled();
+  } finally {
+    error.mockRestore();
+  }
+});
+
 test("generated images, raw HTML and executable links cannot make requests or run code", () => {
   const { container } = render(<AskMarkdown>{'![tracking](https://evil.test/pixel)\n\n<script>alert(1)</script>\n\n<a href="javascript:alert(1)">HTML link</a>\n\n[Bad link](javascript:alert%281%29)'}</AskMarkdown>);
   expect(container.querySelector("img,script,iframe")).toBeNull();

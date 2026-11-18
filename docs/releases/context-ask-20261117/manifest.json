@@ -1,0 +1,38 @@
+{
+  "backend/app/api/routes/world_chat.py": {
+    "before": "2987348ec6f6b8a6c60fc5bbeb53ca9a2f050141f68223be1869a2f922e6713e",
+    "after": "9269ba7b66b0a2e743f1dd98ba9f2b8868251bc69b35175254807bff4db39bce"
+  },
+  "backend/app/services/world_chat.py": {
+    "before": "c6b7cf7637e9130c5212c73fda97770a790721da0e6f03fb4f92de46f8fa1507",
+    "after": "bf3b200e5e2574996209121c3b9fda108e5d10acd78762b08c091e558f88fa35"
+  },
+  "backend/app/services/completion_stream.py": {
+    "before": "80e9b1e29bd670fedad0e1974b51162af03cf236387b4178231a86defc406985",
+    "after": "4b5ef04aaf51f27e82596cf65614993d5f9e099b3d72c5a34585633a71fe8234"
+  },
+  "backend/app/services/organization_spaces.py": {
+    "before": "20cb634b6caad549548465e47242a8f1982de750c560cbd8162acaa2b3a57f74",
+    "after": "fdff68ca8634c341c0adbb94fd3011385dd5cdfc3ebcd2b2002556ae87071840"
+  },
+  "backend/app/services/context_ask.py": {
+    "before": null,
+    "after": "acb4baeb7a5c713e9d21f12ade666ba19ae5d4528452c146b92b4ba8b16ff778"
+  },
+  "frontend/src/components/site/assist-client.tsx": {
+    "before": "526c7ae81d7ac8373b7cb52679ee6c5d7dca5037bd6547b2fac6694ceda7bba0",
+    "after": "dea66a507a7da3ee275608e29d61fbfa0e53ebde75c97b50df0bf6a1979cb695"
+  },
+  "frontend/src/components/site/context-chat.tsx": {
+    "before": "9f37c3a611e05fdeeb5419841ea6f80749a5365e1243786b6988655020918a9f",
+    "after": "a75e0fbcd03f10977d04d4a536fb3001900157879205aa7f73005686072c01bf"
+  },
+  "frontend/src/lib/ask-stream.ts": {
+    "before": "c52ae6246ec8af6ac28d2fc089d087ee0f57823fbffc63c1cb3467f4169d1742",
+    "after": "a76dff9bab77df67d5d4986321f5bc9f8cbb27a444c597511add6a138b492cf3"
+  },
+  "frontend/src/components/site/context-chat.module.css": {
+    "before": "b71c3a08f304050220e03e1843c0f27080b4ecb6de55969510096a266e17221c",
+    "after": "823f608135f09c3ea00085ed92fbc5b129720a108306a4cc8185d820026f2ffa"
+  }
+}

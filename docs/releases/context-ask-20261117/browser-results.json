@@ -1,0 +1,42 @@
+[
+  {
+    "viewport": 1440,
+    "theme": "light",
+    "width": 460,
+    "right": 1416,
+    "bold": "Your gears",
+    "tables": 1,
+    "scopeSwitch": "passed",
+    "tableConsole": "passed"
+  },
+  {
+    "viewport": 1440,
+    "theme": "dark",
+    "width": 460,
+    "right": 1416,
+    "bold": "Your gears",
+    "tables": 1,
+    "scopeSwitch": "passed",
+    "tableConsole": "passed"
+  },
+  {
+    "viewport": 390,
+    "theme": "light",
+    "width": 374,
+    "right": 382,
+    "bold": "Your gears",
+    "tables": 1,
+    "scopeSwitch": "passed",
+    "tableConsole": "passed"
+  },
+  {
+    "viewport": 390,
+    "theme": "dark",
+    "width": 374,
+    "right": 382,
+    "bold": "Your gears",
+    "tables": 1,
+    "scopeSwitch": "passed",
+    "tableConsole": "passed"
+  }
+]

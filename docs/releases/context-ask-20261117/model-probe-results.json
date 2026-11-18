@@ -1,0 +1,21 @@
+[
+  {
+    "question": "Were are my gears",
+    "seconds": 4.1,
+    "operations": [
+      "world_search",
+      "world_directory"
+    ],
+    "answer": "**Your gears**\n\nI found 3 gear records, 16 units total, in your Fixture Robotics organization:\n\n| Part | Quantity | Location |\n|------|----------|----------|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |\n\nMost of your gears are in the Storage inventory, with one set of 30-tooth module 0.8 gears kept in the Workshop.",
+    "passed": true
+  },
+  {
+    "question": "Where are my gears?",
+    "seconds": 2.4,
+    "operations": [
+      "world_search"
+    ],
+    "answer": "**Your gears**\n\nYou have 3 gear records, 16 gears total, split across two inventories:\n\n| Part | Quantity | Space / location |\n|------|----------|------------------|\n| [Gear 30T M0.8](findez://item/30000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001) | 8 | Workshop |\n| [Servo Gear 40T](findez://item/30000000-0000-0000-0000-000000000002/40000000-0000-0000-0000-000000000002) | 5 | Storage |\n| Miter Gear 24T | 3 | Storage |\n\nThe 8 30T mod 0.8 gears are in the Workshop, while the servo and miter gears are in Storage.",
+    "passed": true
+  }
+]

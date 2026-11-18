@@ -1,0 +1,13 @@
+{
+  "https://findez.ai/": 200,
+  "https://findez.ai/spaces": 200,
+  "https://findez.ai/assist": 200,
+  "https://findez.ai/docs/cad": 200,
+  "https://findez.openstack.ftctools.com/health": 200,
+  "https://findez.openstack.ftctools.com/health/db": 200,
+  "public_openapi": 404,
+  "unauthenticated_chat": 401,
+  "source_hashes": "matched",
+  "context_schema": "verified in deployed route source",
+  "build": "Xh97AxD2rflMaFWKfx01a"
+}

@@ -1,3 +1,14 @@
+## Space Ask searches the selected organization (November 17, 2026)
+
+The floating Space/inventory Ask uses the server-authorized organization tools,
+never a remembered organization or account-wide stock scope. Send the entry
+inventory ID and reject mismatched organization targets. Personal is separate;
+all inventory roles and author-private conversation fences still apply. Main
+chat scope, layout and default prompt stay unchanged. Contextual draft/resume
+storage must not replace main-chat state. Preserve reset events through SSE and
+treat whole model messages as snapshots, not additional text deltas. Table
+separator whitespace must not be wrapped in animation spans.
+
 ## November 16 — native purchasing scope and conservative planning
 
 Native purchasing has an independent false-by-default pairing grant, separate from

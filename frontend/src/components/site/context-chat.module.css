@@ -20,6 +20,10 @@
 .panel :global(.ask-composer-box textarea) { min-height:64px; max-height:120px; font-size:16px; }
 .panel :global(.ask-message) { margin-bottom:24px; }
 .panel :global(.ask-body) { font-size:15px; }
+.panel :global(.ask-markdown-table) { max-width:100%; overflow-x:auto; margin:12px 0; }
+.panel :global(.ask-markdown table) { width:100%; border-collapse:collapse; font-size:13px; }
+.panel :global(.ask-markdown th),.panel :global(.ask-markdown td) { padding:8px 10px; border-bottom:1px solid var(--app-border); vertical-align:top; line-height:1.5; }
+.panel :global(.ask-markdown th) { text-align:left; font-weight:600; color:var(--app-text); background:var(--app-surface-2); }
 @media(max-width:600px) { .launcher { right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); } .panel { right:8px; bottom:calc(8px + env(safe-area-inset-bottom)); width:calc(100vw - 16px); height:min(720px,calc(100dvh - 32px - env(safe-area-inset-bottom))); border-radius:22px; } }
 @media(prefers-reduced-transparency:reduce) { .panel { background:var(--app-surface); backdrop-filter:none; } }
 @media(forced-colors:active) { .panel,.launcher { background:Canvas; color:CanvasText; border:1px solid CanvasText; } }

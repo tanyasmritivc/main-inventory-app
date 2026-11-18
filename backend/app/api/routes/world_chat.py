@@ -30,6 +30,7 @@ class Question(BaseModel):
     supports_task_actions: bool = False
     request_id: UUID | None = None
     retry_of: UUID | None = None
+    context_inventory_id: UUID | None = None
     sources: chat_sources.SourceList = Field(default_factory=list)
 
 
@@ -131,8 +132,12 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None, retry_of=None, preview_only=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None, retry_of=None, preview_only=False, context_inventory_id=None):
     key = await asyncio.to_thread(world.authorize, actor, key)
+    if context_inventory_id:
+        # A contextual request must belong to the organization of its entry Space.
+        # Membership in two organizations never permits mixing their inventory.
+        await asyncio.to_thread(world.inventory_scope, actor, key, str(context_inventory_id))
     retry_context = None
     if retry_of:
         from app.services.response_feedback import owned_message
@@ -262,13 +267,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             yield encode({'type': 'status', 'message': 'Loading your conversation context...'})
             stage = 'chat_reply'
             from app.services.world_user_context import load as load_user_context
-            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
+            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions and not context_inventory_id else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft, enabled=supports_capture) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}), **({'read_only_retry': True} if retry_of else {}))):
-                    if event['type'] == 'reset':
-                        # Tool-turn preambles and repaired attempts are not public answers.
-                        continue
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}), **({'read_only_retry': True} if retry_of else {}), **({'contextual': True} if context_inventory_id else {}))):
+                    # Forward reset events: clients must replace failed attempts, not append retries.
                     if event['type'] == 'done':
+                        if context_inventory_id:
+                            await asyncio.to_thread(world.inventory_scope, actor, key, str(context_inventory_id))
                         if supports_task_actions or retry_of:
                             event['answer_context']['request_message_id'] = turn_id
                         if retry_context is not None:
@@ -330,13 +335,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id, retry_of=body.retry_of)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id, retry_of=body.retry_of, context_inventory_id=body.context_inventory_id)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), preview_only: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), request_id: UUID | None = Form(None), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), preview_only: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), request_id: UUID | None = Form(None), sources: str = Form('[]', max_length=110000), context_inventory_id: UUID | None = Form(None), user: AuthenticatedUser = Depends(get_current_user)):
     try:
         selected_sources = chat_sources.source_adapter.validate_json(sources)
     except ValueError:
@@ -349,7 +354,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip(), str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions, request_id=request_id, preview_only=preview_only and auto_extract and supports_capture)
+    return await answer(user.user_id, world.world_key(world_id), message.strip(), str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions, request_id=request_id, preview_only=preview_only and auto_extract and supports_capture, context_inventory_id=context_inventory_id)
 
 
 class Decision(BaseModel):

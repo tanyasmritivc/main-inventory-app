@@ -29,7 +29,14 @@ def directory(actor, world):
         offset += len(batch)
     inventories = []
     for candidate in rows:
-        inv = _inventory(candidate['inventory_id'], actor)
+        try:
+            inv = _inventory(candidate['inventory_id'], actor)
+        except HTTPException as exc:
+            if exc.status_code not in (403, 404):
+                raise
+            # A restricted/deleted Space must not block other authorized Spaces.
+            # Never expose its name, counts, or contents in the directory.
+            continue
         total = raw.table('items').select('item_id', count='exact', head=True).eq('inventory_id', inv['inventory_id']).execute().count
         inventories.append({'inventory_id': inv['inventory_id'], 'name': inv['name'],
                             'workspace_id': inv.get('team_id') or 'personal',

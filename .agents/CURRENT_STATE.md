@@ -1,3 +1,20 @@
+## Organization-wide Space Ask — November 17, 2026 (published)
+
+Branch fix/space-ask-org-20261117. Floating Ask derives its organization from the
+selected inventory; server checks entry membership, existing tools reauthorize
+all targets, Personal stays separate, and private conversations remain author/org
+bound. Main chat scope/layout/prompt defaults unchanged. Context-only headings,
+tables, spacing and separate draft/resume key; shared stream reset/snapshot/tool
+identity fixes stop replayed text and false parser limits. Animated table markup
+is now valid. No schema, stock, mobile, CAD ZIP or landing-page changes.
+Live web: /home/ubuntu/findez-context-tables-20261117/frontend;
+build Xh97AxD2rflMaFWKfx01a. API remains /home/ubuntu/findez/backend.
+43 focused tests, 2 live-model fictional cases, 4 browser cases, production builds,
+types/lint, live hashes/health and unauthenticated rejection passed. Full suites
+remain red with exactly the same 314 backend / 12 web failure identities as the
+untouched deployed-source baseline. No authenticated customer-chat replay claim.
+Evidence: docs/releases/context-ask-20261117/README.md. No push.
+
 ## Fusion 0.5.1 purchase-plan guidance — November 16 local / 17 UTC (published)
 
 IMG_3652 showed generic HTTP409 text while creating a plan. Fixed the native client

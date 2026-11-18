@@ -60,7 +60,14 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
             if not choices:
                 continue
             choice = choices[0]
-            delta = getattr(choice, 'delta', None) or getattr(choice, 'message', None)
+            # A final `message` is a complete snapshot, not another delta. Some
+            # gateways emit both; concatenating them repeats the answer/tools.
+            delta = getattr(choice, 'delta', None)
+            snapshot = delta is None
+            if snapshot:
+                delta = getattr(choice, 'message', None)
+            if getattr(choice, 'finish_reason', None) in ('length', 'content_filter'):
+                raise CompletionStreamError('output_limit' if choice.finish_reason == 'length' else 'content_filter', 'The model answer was interrupted')
             if delta is None:
                 continue
             # Liveness is evidence of a received model chunk, not a timer claiming
@@ -85,9 +92,22 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
                     raise CompletionStreamError('tool_index', 'Invalid model tool index')
                 entry = calls.setdefault(index, {'id': '', 'name': '', 'arguments': ''})
                 function = getattr(call, 'function', None)
-                entry['id'] += getattr(call, 'id', None) or ''
-                entry['name'] += getattr(function, 'name', None) or ''
-                entry['arguments'] += getattr(function, 'arguments', None) or ''
+                for key, fragment in (('id', getattr(call, 'id', None)),
+                                      ('name', getattr(function, 'name', None)),
+                                      ('arguments', getattr(function, 'arguments', None))):
+                    if not fragment:
+                        continue
+                    if not isinstance(fragment, str):
+                        raise CompletionStreamError('tool_type', 'Invalid model tool fragment')
+                    if snapshot:
+                        if not fragment.startswith(entry[key]):
+                            raise CompletionStreamError('snapshot_mismatch', 'The model changed its completed tool call')
+                        entry[key] = fragment
+                    elif key != 'arguments' and fragment == entry[key]:
+                        # Tool identity may be repeated on each argument delta.
+                        continue
+                    else:
+                        entry[key] += fragment
                 if len(entry['arguments']) > 8000 or len(entry['name']) > 200 or len(entry['id']) > 300:
                     raise CompletionStreamError('tool_size', 'Model tool call is too large')
             if report_activity and calls:
@@ -105,7 +125,12 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
             if content:
                 if not isinstance(content, str):
                     raise CompletionStreamError('text_type', 'Invalid model text')
-                parts.append(content)
+                if snapshot:
+                    if not content.startswith(''.join(parts)):
+                        raise CompletionStreamError('snapshot_mismatch', 'The model changed its completed answer')
+                    parts = [content]
+                else:
+                    parts.append(content)
                 if not calls:
                     # Keep punctuation identical to the saved answer, even when
                     # whitespace around an em dash spans several network chunks.
@@ -114,8 +139,6 @@ def completion_events(response, *, report_activity=False, thinking_message='Thin
                     emitted = safe
                     if delta:
                         yield {'type': 'delta', 'delta': delta}
-            if getattr(choice, 'finish_reason', None) in ('length', 'content_filter'):
-                raise CompletionStreamError('output_limit' if choice.finish_reason == 'length' else 'content_filter', 'The model answer was interrupted')
         normalized = format_chat_reply(public_text_prefix(''.join(parts), final=True))
         if not calls and len(normalized) > len(emitted):
             yield {'type': 'delta', 'delta': normalized[len(emitted):]}

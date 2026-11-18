@@ -401,7 +401,7 @@ def capture_tools(tools, capture):
         and (capture and capture.get('enabled') or t['function']['name'] != 'world_draft_items')]
 
 
-def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None, user_context=None, image_content=None, read_only_retry=False):
+def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None, user_context=None, image_content=None, read_only_retry=False, contextual=False):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
@@ -566,6 +566,9 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
     from app.services.chat_question import GUIDANCE, PublicReply, ReceiptClaimError, separate, present
     messages.append({'role': 'system', 'content': GUIDANCE})
+    if contextual:
+        from app.services.context_ask import PRESENTATION
+        messages.append({'role': 'system', 'content': PRESENTATION})
     def validate_public(text):
         import re
         from app.services.assistant_tool_safety import validate_model_answer

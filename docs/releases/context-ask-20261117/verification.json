@@ -1,0 +1,31 @@
+{
+  "focused_backend": 20,
+  "focused_web": 23,
+  "live_model_cases": 2,
+  "browser_cases": 4,
+  "typescript": "passed",
+  "production_build": "passed",
+  "eslint": {
+    "errors": 0,
+    "existing_warnings": 3
+  },
+  "full_backend": {
+    "passed": 1071,
+    "failed": 314,
+    "baseline_passed": 1053,
+    "baseline_failed": 314,
+    "new_failure_ids": [],
+    "additional_targeted_tests_after_full_run": 2
+  },
+  "full_web": {
+    "passed": 735,
+    "failed": 12,
+    "baseline_passed": 727,
+    "baseline_failed": 12,
+    "new_failure_headlines": []
+  },
+  "backend_failure_ids_sha256": "0a8af1dee4a2275e36e232f27d88a0aa8119282fb92ae3c3cdc786f5c0270bcc",
+  "web_failure_headlines_sha256": "a215037ad3b82e97dc03632ff0b2861131bcf8faee6ee1d930ad4f7d2f31875d",
+  "additional_web_after_full_run": 1,
+  "table_hydration_console": "all four browser cases passed"
+}
