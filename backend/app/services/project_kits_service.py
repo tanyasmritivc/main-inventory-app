@@ -26,6 +26,25 @@ def _list_reservations() -> list[dict]:
         offset += page_size
 
 
+def available_stock(inventory, reservations):
+    """Shared physical-stock calculation for project kits and file BOMs."""
+    reserved = {}
+    for reservation in reservations:
+        ident = reservation['inventory_item_id']
+        reserved[ident] = reserved.get(ident, 0) + int(reservation['quantity'])
+    return {item['item_id']: max(0, int(item.get('quantity') or 0) - reserved.get(item['item_id'], 0))
+            for item in inventory}
+
+
+def allocate_stock(matches, remaining, needed):
+    """Consume units in a preview only, never in the inventory database."""
+    for item in matches:
+        ident = item['item_id']
+        take = min(needed, remaining[ident])
+        remaining[ident] -= take
+        needed -= take
+
+
 def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str | None = None) -> dict:
     inventory = [
         item for item in list_items(user_id=owner_user_id)
@@ -40,10 +59,7 @@ def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str
                             if reservation['inventory_item_id'] == item['item_id'])
         for item in inventory
     }
-    remaining_unreserved = {
-        item['item_id']: max(0, int(item.get('quantity') or 0) - reserved_by_item[item['item_id']])
-        for item in inventory
-    }
+    remaining_unreserved = available_stock(inventory, reservations)
     results = []
     for row in rows:
         part_key = _normalized_identifier(row.get('part_number'))
@@ -67,11 +83,7 @@ def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str
         missing = max(0, required - available)
         needed = max(0, required - reserved_for_kit)
         # A physical unit cannot satisfy two requirement rows in the same kit.
-        for item in matches:
-            item_id = item['item_id']
-            take = min(needed, remaining_unreserved[item_id])
-            remaining_unreserved[item_id] -= take
-            needed -= take
+        allocate_stock(matches, remaining_unreserved, needed)
         results.append({
             **row,
             'available_quantity': available,

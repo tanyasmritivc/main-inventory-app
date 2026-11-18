@@ -1,0 +1,46 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 20px;
+}
+
+.copy {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.row .title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.row .description {
+  margin: 4px 0 0;
+  max-width: 52ch;
+  color: var(--light-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.action {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .row {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .copy {
+    flex-basis: auto;
+  }
+}

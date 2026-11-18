@@ -60,7 +60,8 @@ def get_conversation(
         .order("created_at", desc=False)
         .execute()
     )
-    messages = msgs_res.data or []
+    messages = [row for row in (msgs_res.data or [])
+                if not (row.get('answer_context') or {}).get('space_chat_marker')]
     for message in messages:
         context = message.get('answer_context')
         if message.get('role') == 'assistant' and isinstance(context, dict) and ('photo_path' in context or 'photo_url' in context):

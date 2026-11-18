@@ -18,7 +18,7 @@ export function ResourceSettings(props: Props) {
   const links = [
     { title: "People and invitations", text: "View members, manage roles and review pending invitations.", href: `${home}?view=people` },
     scope === "organization"
-      ? { title: "Workspaces", text: "Manage the workspaces belonging to this organization.", href: home }
+      ? { title: "Spaces", text: "View every Space in this organization.", href: `/worlds/${encodeURIComponent(id)}?view=spaces` }
       : { title: "Inventories and access", text: "Open an inventory to manage its members and access settings.", href: home },
     ...(scope === "workspace" ? [
       { title: "Tasks and assignments", text: "Coordinate work and see who assigned each task.", href: `${home}?view=board` },
@@ -36,13 +36,13 @@ export function ResourceSettings(props: Props) {
       {organization && <div className="resource-setting-row"><div><span>Organization</span><Link href={`/organizations/${encodeURIComponent(organization.id)}`}>{organization.name}</Link></div></div>}
     </section>
     <section className="resource-settings-card" aria-labelledby="resource-access">
-      <header><h2 id="resource-access">People and shared work</h2><p>{scope === "organization" ? "Members receive workspace access separately. Organization Owners and Admins can access every workspace and inventory." : "Viewers can read. Editors can update items and workspace details. Owners and Admins manage access and deletion."}</p></header>
+      <header><h2 id="resource-access">People and shared work</h2><p>{scope === "organization" ? "Everyone enrolled in this organization can view every Space. Existing editing roles still apply." : "Viewers can read. Editors can update items and workspace details. Owners and Admins manage access and deletion."}</p></header>
       {links.map(link => <Link className="resource-setting-link" key={link.href} href={link.href}><span><strong>{link.title}</strong><small>{link.text}</small></span><ChevronRight size={18} aria-hidden="true" /></Link>)}
     </section>
     <section className="resource-settings-card" aria-labelledby="resource-ownership">
       <header><h2 id="resource-ownership">Ownership and leaving</h2><p>Review the consequences before making a change.</p></header>
       {canTransfer && <div className="resource-setting-row"><div><strong>Transfer ownership</strong><small>Choose an existing member and confirm the transfer.</small></div><TransferOwnership scope={scope} resourceId={id} name={name} onTransferred={props.onTransferred} /></div>}
-      {isOwner ? <p className="resource-settings-note">Transfer ownership before leaving this {scope}.</p> : inheritedAdmin && scope === "workspace" ? <p className="resource-settings-note">Your workspace access comes from the organization. Manage your organization membership to leave.</p> : <div className="resource-setting-row"><div><strong>Leave {scope}</strong><small>Remove your membership. Shared content stays with the team.</small></div><button className="product-button" onClick={props.onLeave}>Leave {scope}</button></div>}
+      {isOwner ? <p className="resource-settings-note">{canTransfer ? `Transfer ownership before leaving this ${scope}.` : "Your personal organization stays with your account."}</p> : inheritedAdmin && scope === "workspace" ? <p className="resource-settings-note">Your workspace access comes from the organization. Manage your organization membership to leave.</p> : <div className="resource-setting-row"><div><strong>Leave {scope}</strong><small>Remove your membership. Shared content stays with the team.</small></div><button className="product-button" onClick={props.onLeave}>Leave {scope}</button></div>}
       {canDelete && <div className="resource-setting-row resource-danger"><div><strong>Delete {scope}</strong><small>Review affected content and choose whether to keep it elsewhere or delete it.</small></div><button className="product-button" onClick={props.onDelete}>Delete {scope}</button></div>}
     </section>
   </div>;

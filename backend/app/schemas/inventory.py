@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
 class AddItemRequest(BaseModel):
@@ -140,6 +140,11 @@ class CatalogCompatibilityResponse(BaseModel):
 
 
 class ScanEvidence(BaseModel):
+    quantity_unit: str | None = Field(default=None, max_length=40)
+    quantity_note: str | None = Field(default=None, max_length=200)
+    quantity_basis: str | None = Field(default=None, max_length=30)
+    quantity_confidence: float | None = Field(default=None, ge=0, le=1)
+    grouped_observations: int | None = Field(default=None, ge=1, le=200)
     identification_reasoning: str | None = Field(default=None, max_length=700)
     identity_confidence: float | None = Field(default=None, ge=0, le=1)
     ocr_text: str | None = Field(default=None, max_length=500)
@@ -161,7 +166,20 @@ class ScanEvidence(BaseModel):
     needs_review: bool = False
 
 
+class ImportField(BaseModel):
+    name: str = Field(max_length=1000)
+    value: JsonValue = None
+
+
+class ImportData(BaseModel):
+    filename: str = Field(max_length=500)
+    sheet: str = Field(max_length=500)
+    fields: list[ImportField] = Field(max_length=500)
+
+
 class ExtractedInventoryItem(BaseModel):
+    import_data: ImportData | None = None
+    purchase_source: str | None = Field(default=None, max_length=200)
     client_request_id: str | None = Field(default=None, min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)

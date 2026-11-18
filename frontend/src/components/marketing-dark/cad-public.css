@@ -183,3 +183,12 @@ html:has(.cad-public-page){background:#000;scroll-behavior:auto}
 .cad-public-page main a:hover{text-decoration:underline;text-underline-offset:4px}
 @media(max-width:980px){.cad-public-page main .x-in{padding:0 16px}.cad-public-page .x-h2{font-size:24px}.cad-public-page .rs-top{flex-wrap:wrap}.cad-public-page .rs-top .chip-pv{display:inline-flex}.cad-public-page .rs-tab{box-sizing:border-box}.cad-public-page .rs-row .nm{min-width:0}}
 @media(prefers-reduced-motion:reduce){.cad-public-page *{animation:none!important;transition:none!important}.cad-public-page .wd{opacity:1!important;transform:none!important}.cad-public-page .ev-bar i{width:var(--w2)}.cad-public-page .cm{height:100vh}}
+
+/* CAD hero illustration only. Preserve the existing heading typography. */
+.cad-public-page .c-hero .hg{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:40px;align-items:center}
+.cad-public-page .c-hero .hart{position:relative;aspect-ratio:1/1;width:100%;max-width:580px;justify-self:end}
+.cad-public-page .c-hero .hart canvas{position:absolute;inset:0;width:100%;height:100%}
+@media(max-width:980px){
+ .cad-public-page .c-hero .hg{grid-template-columns:1fr;gap:10px}
+ .cad-public-page .c-hero .hart{justify-self:center;max-width:460px}
+}

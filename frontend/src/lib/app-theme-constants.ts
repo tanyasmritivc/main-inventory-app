@@ -36,7 +36,7 @@ export function isInteriorPath(pathname: string): boolean {
 }
 
 // Public setup/API docs share Appearance without becoming an authenticated product route.
-export const THEMED_PATH_PREFIXES = [...INTERIOR_PATH_PREFIXES, "/docs/api", "/docs/cad"];
+export const THEMED_PATH_PREFIXES = [...INTERIOR_PATH_PREFIXES, "/docs/api", "/docs/cad", "/docs/connections"];
 
 export function isThemedPath(pathname: string): boolean {
   return THEMED_PATH_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));

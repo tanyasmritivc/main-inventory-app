@@ -1,4 +1,6 @@
 "use client";
+import Link from "@/components/site/inventory-link";
+import { intelligenceEnabled } from "@/lib/inventory-intelligence";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
@@ -60,9 +62,9 @@ type Props = {
   spaceId?: string;
 };
 export function SpreadsheetImportModal(props: Props) {
-  if ((props.kind ?? "inventory") === "inventory") return <DirectSpreadsheetImport
+  if ((props.kind ?? "inventory") === "inventory") return <><DirectSpreadsheetImport
     spaceName={props.spaceName} spaceId={props.spaceId} onSuccess={props.onSuccess}
-    request={(path, body) => apiRequest(path, {method: "POST", token: props.token, body})}/>;
+    request={(path, body) => apiRequest(path, {method: "POST", token: props.token, body})}/>{intelligenceEnabled && <p className="workspace-muted">Photo suggestions run overnight. <Link href="/review/enrichment">Review suggestions and set your time zone</Link></p>}</>;
   return <ReviewedSpreadsheetImport {...props}/>;
 }
 function ReviewedSpreadsheetImport({

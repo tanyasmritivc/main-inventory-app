@@ -13,6 +13,10 @@ const seenInSession = new Set<string>();
 const storageKey = (id: string) => `findez_founding_seen_${id}`;
 const FoundingContext = createContext<{ accountId: string | null; openPlan: () => void } | null>(null);
 
+export function useFoundingAccess() {
+  return useContext(FoundingContext);
+}
+
 export function foundingVersion(createdAt: string | null, now = Date.now()) {
   const age = now - Date.parse(createdAt ?? "");
   return age >= 0 && age < 15 * 60 * 1000 ? "signup" : "signin";

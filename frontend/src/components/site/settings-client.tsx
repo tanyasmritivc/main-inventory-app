@@ -1,4 +1,5 @@
 "use client";
+import styles from "./settings-connections-card.module.css";
 import { SettingsConnections } from "./settings-connections";
 import { AVATAR_PALETTE, avatarPresentationColor } from "./app-theme-ui";
 import type { SettingsSection } from "@/lib/settings-sections";
@@ -391,7 +392,22 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
         </footer>
       </section>}
 
-      {section === "profile" && <section className="settings-panel"><header><h2>Connections</h2></header><div className="settings-row"><div><strong>Amazon &amp; Shopify</strong><small>Manage private Personal purchases or organization connections. Choose an inventory only when adding items you still own.</small></div><Link href="/settings/connections" className="workspace-button">Manage connections</Link></div></section>}
+      {section === "profile" && (
+        <section className="settings-panel" aria-labelledby="profile-connections-heading">
+          <header><h2 id="profile-connections-heading">Connections</h2></header>
+          <div className={styles.row}>
+            <div className={styles.copy}>
+              <h3 className={styles.title}>Amazon &amp; Shopify</h3>
+              <p className={styles.description}>
+                Manage purchases and connected stores for yourself or your organization.
+              </p>
+            </div>
+            <Link href="/settings/connections" className={`workspace-button ${styles.action}`}>
+              Manage connections
+            </Link>
+          </div>
+        </section>
+      )}
 
       {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Theme</h2></header>
         <div className="settings-static-row">

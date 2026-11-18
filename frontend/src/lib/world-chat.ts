@@ -9,6 +9,7 @@ export type WorldAction = {
   id: string;
   status: "pending" | "confirmed" | "cancelled";
   workspace_label: string;
+  organizationSpaces?: boolean;
   inventories: {
     name: string;
     spaces: string[];
@@ -111,8 +112,9 @@ export function parseWorldAction(value: unknown): WorldAction | undefined {
         ? v.workspace_label
         : typeof plan.workspace_name === "string"
           ? plan.workspace_name
-          : "Workspace",
+          : "Organization",
     inventories,
+    organizationSpaces: plan.hierarchy === "organization_spaces",
   };
 }
 export function resolvedWorldHref(link: WorldResource, value: unknown): string {

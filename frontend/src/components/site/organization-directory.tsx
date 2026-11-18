@@ -56,6 +56,7 @@ import { WorkspaceManagementActions } from "./workspace-management-actions";
 import { ResourceSettings } from "./resource-settings";
 import { OrganizationLeaveDialog } from "./organization-leave-dialog";
 type Org = {
+  is_personal?: boolean;
   organization_id: string;
   name: string;
   role: string;
@@ -328,7 +329,7 @@ function Directory({
       !accountId ||
       busy ||
       !window.confirm(
-        "Remove this member and their access to every workspace and inventory in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.",
+        "Remove this member and their access to every Space in this organization? Shared content stays.",
       )
     )
       return;
@@ -507,7 +508,7 @@ function Directory({
               )?.display_name
             }
             canRename={!!manager}
-            canTransfer={!!manager}
+            canTransfer={!!manager && !overview.organization.is_personal}
             canDelete={overview.organization.owner_user_id === accountId}
             isOwner={overview.organization.owner_user_id === accountId}
             onRename={() =>
@@ -662,11 +663,11 @@ function Directory({
                   <UserRound size={20} aria-hidden="true" />
                 </span>
                 <strong>Personal</strong>
-                <span>Private inventory</span>
+                <span>Personal organization</span>
               </Link>
             )}
             {organizations
-              .filter((org) => matches(org.name))
+              .filter((org) => !org.is_personal && matches(org.name))
               .map((org) => (
                 <div
                   className="context-card context-inventory-card context-organization-card"
@@ -853,9 +854,7 @@ function Directory({
                     </select>
                   </label>
                   <p className="workspace-muted">
-                    Members must accept before joining and receive workspace
-                    access separately. Admins can access all workspaces and
-                    inventories in this organization.
+                    Members must accept before joining. Everyone in the organization can view every Space. Admins can manage the organization.
                   </p>
                 </>
               ) : mode === "attach" ? (

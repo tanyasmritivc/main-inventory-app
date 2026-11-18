@@ -17,6 +17,7 @@ export function useApiSession() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [token, setToken] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const currentAccount = useRef<string | null>(null);
   const generation = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export function useApiSession() {
       if (!data.session)
         throw new Error("Your session has expired. Please sign in again.");
       if (request !== generation.current) return null;
+      currentAccount.current = data.session.user.id;
       setToken(data.session.access_token);
       setAccountId(data.session.user.id);
       return data.session.access_token;
@@ -41,6 +43,7 @@ export function useApiSession() {
         "Could not verify your session. Please sign in again.",
       );
       setError(message);
+      currentAccount.current = null;
       setToken(null);
       setAccountId(null);
       return null;
@@ -55,17 +58,22 @@ export function useApiSession() {
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      // INITIAL_SESSION is covered by refresh(). TOKEN_REFRESHED is ignored on
-      // purpose: API requests read the live token themselves, and updating state
-      // here would re-run every token-keyed effect once an hour.
-      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+      // Keep ordinary refreshes from restarting token-keyed page effects. A
+      // recovered or different account must still replace the stale view.
+      if (event === "INITIAL_SESSION") return;
+      if (
+        event === "TOKEN_REFRESHED" &&
+        (!session || currentAccount.current === session.user.id)
+      ) return;
       generation.current++;
       if (session) {
+        currentAccount.current = session.user.id;
         setToken(session.access_token);
         setAccountId(session.user.id);
         setError(null);
         setLoading(false);
       } else if (event === "SIGNED_OUT") {
+        currentAccount.current = null;
         setToken(null);
         setAccountId(null);
         setLoading(false);

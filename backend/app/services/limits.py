@@ -545,11 +545,12 @@ def get_limits_summary(user_id: str) -> dict:
 
     settings = get_settings()
     result["pilot_mode"] = settings.pilot_mode
+    result["limits_enabled"] = not settings.pilot_mode
     result["pilot_ends_at"] = settings.pilot_ends_at
     if settings.pilot_mode:
         result["pilot_notice"] = (
-            "Free Pilot: Unlimited access through November 1, 2026. "
-            "Standard free-plan limits and optional paid plans begin November 2. "
+            "Free pre-launch access. Plan quotas are not enforced during this period. "
+            "There is no automatic cutoff date. "
             "You will not be charged automatically."
         )
     else:

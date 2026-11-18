@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.services.catalog_service import verified_catalog_id_for_identity
+from app.services.inventory_scope import current_inventory
 from app.services.capture_previews import verify_capture_preview
 from app.services.items_repo import (
     _normalize_category,
@@ -60,7 +61,7 @@ def _review_payload(
         "name": str(item.get("name") or "Unidentified item")[:200],
         "category": str(item.get("category") or "Other")[:100],
         "subcategory": item.get("subcategory"),
-        "quantity": max(0, min(100000, int(item.get("quantity") or 1))),
+        "quantity": max(0, min(100000, int(item["quantity"] if item.get("quantity") is not None else 1))),
         "brand": item.get("brand"),
         "part_number": item.get("part_number"),
         "barcode": item.get("barcode"),
@@ -84,7 +85,9 @@ def enqueue_uncertain_items(
     for index, item in enumerate(items):
         evidence = item.get("scan_evidence")
         if isinstance(evidence, dict) and bool(evidence.get("needs_review")):
-            source_key = f"photo:{source_digest}:{index}"
+            scope = current_inventory.get()
+            prefix = f"inventory:{scope.inventory_id}:" if scope else ""
+            source_key = f"{prefix}photo:{source_digest}:{index}"
             uncertain.append((index, source_key, item))
 
     if not uncertain:
@@ -178,6 +181,9 @@ def save_capture_preview(*, user_id: str, preview_id: str, item: dict) -> dict:
     edits = {key: value for key, value in item.items()
              if key in _EDITABLE_FIELDS and key != 'image_url'}
     original = {**preview['item'], **edits}
+    if 'quantity' in edits and (item.get('scan_evidence') or {}).get('quantity_basis') == 'user_confirmed':
+        original['scan_evidence'] = {**original.get('scan_evidence', {}),
+            'quantity_basis': 'user_confirmed', 'quantity_confidence': None}
     client = get_supabase_admin()
     client.table('capture_reviews').upsert(
         _review_payload(user_id=user_id, source_key=preview['source_key'], item=original),
@@ -261,6 +267,8 @@ def resolve_review_item(
     if not isinstance(data, dict):
         raise RuntimeError("Reviewed item was not returned")
     invalidate_inventory_cache(user_id)
+    from app.services.recognition_learning import record_reviewed_items
+    record_reviewed_items([data])
     return data
 
 

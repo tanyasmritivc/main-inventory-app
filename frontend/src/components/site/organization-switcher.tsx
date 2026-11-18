@@ -7,7 +7,6 @@ import {
   Building2,
   Check,
   ChevronDown,
-  FolderKanban,
   Mail,
   Plus,
   RefreshCw,
@@ -26,7 +25,8 @@ import {
 import styles from "./organization-switcher.module.css";
 
 export type SelectedOrganization = { id: string; name: string };
-type Organization = { organization_id: string; name: string; role: string };
+type Organization = {
+  is_personal?: boolean; organization_id: string; name: string; role: string };
 type Props = {
   accountId: string | null;
   organization?: SelectedOrganization;
@@ -74,7 +74,7 @@ function AccountSwitcher({
           throw new Error("Organizations could not be loaded.");
         if (active)
           setOrganizations(
-            [...result.organizations].sort((a, b) =>
+            result.organizations.filter(org => !org.is_personal).sort((a, b) =>
               a.name.localeCompare(b.name),
             ),
           );
@@ -204,12 +204,6 @@ function AccountSwitcher({
                   aria-label="Selected"
                 />
               )}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/workspaces" onClick={onNavigate}>
-              <FolderKanban size={16} />
-              All workspaces
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

@@ -1,4 +1,5 @@
 export type InventoryWorkspace = {
+  world_key?: string;
   workspace_id: string;
   owner_user_id?: string;
   organization_id?: string | null;

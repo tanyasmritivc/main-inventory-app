@@ -1,4 +1,6 @@
 "use client";
+import { InventoryEnrichmentLink, InventoryReadError } from "./inventory-enrichment-link";
+import { intelligenceEnabled } from "@/lib/inventory-intelligence";
 import { PhotoScanHint } from "./photo-scan-hint";
 import { SpaceExtraction } from "./space-extraction";
 import { SpaceInfoLine } from "./web-refresh-ui";
@@ -8,10 +10,11 @@ import {worldHref} from "@/lib/world-navigation";
 import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
+import { importedSheetFor, importedSheetCsv, importedCellText } from "@/lib/imported-spreadsheet";
+import sheetStyles from "./imported-spreadsheet.module.css";
 
 import toolbarStyles from "./inventory-toolbar.module.css";
 import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
-import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -254,10 +257,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inventoryReadError, setInventoryReadError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [spaceCapture, setSpaceCapture] = useState<{file: File; inventoryId: string; worldId: string; spaceId: string; spaceName: string}>();
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
+  const [inventoryViewSpace, setInventoryViewSpace] = useState<string | null>(null);
   const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
   const [spacesLoadError, setSpacesLoadError] = useState<string | null>(null);
   const [initSettled, setInitSettled] = useState(false);
@@ -266,7 +271,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const canEdit = canEditInventory();
-  const [movingSpace, setMovingSpace] = useState<Space | null>(null);
   const [joinSpaceOpen, setJoinSpaceOpen] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinSpaceError, setJoinSpaceError] = useState<string | null>(null);
@@ -366,9 +370,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
+      setInventoryReadError(null);
       if (!q) { setAllItems(res?.items ?? []); adoptRestock((res?.items ?? []).map(item => item.item_id)); }
     } catch (err: unknown) {
-      setError(errorMessage(err, 'Failed to load inventory'));
+      setInventoryReadError(errorMessage(err, 'Failed to load inventory'));
     } finally {
       setLoading(false);
     }
@@ -391,12 +396,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
         if (!active) return;
         if (itemsResult.status === 'fulfilled') {
+          setInventoryReadError(null);
           adoptRestock((itemsResult.value?.items ?? []).map(item => item.item_id));
           setAllItems(itemsResult.value?.items ?? []);
           setItems(itemsResult.value?.items ?? []);
         } else {
           console.error('[init] searchItems failed:', itemsResult.reason);
-          setError(errorMessage(itemsResult.reason, 'Failed to load inventory'));
+          setInventoryReadError(errorMessage(itemsResult.reason, 'Failed to load inventory'));
         }
 
         if (spacesResult.status === 'fulfilled') {
@@ -784,7 +790,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       const needle = query.trim().toLocaleLowerCase();
       const base = selectedSpace
         ? itemsInSpace(allItems ?? [], selectedSpace, spaceIndex).filter((item) => !needle ||
-            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode]
+            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode,
+              ...(item.import_data?.fields?.map(field => importedCellText(field.value)) ?? [])]
               .some((value) => typeof value === 'string' && value.toLocaleLowerCase().includes(needle)))
         : (sourceItems ?? []);
       if (!categoryFilter) return base;
@@ -821,7 +828,15 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     router.push(`/assist?q=${encodeURIComponent(prompt)}`);
   }
 
+  const importedSheet = useMemo(() => selectedSpace
+    ? importedSheetFor(itemsInSpace(allItems ?? [], selectedSpace, spaceIndex))
+    : null, [allItems, selectedSpace, spaceIndex]);
+  const showImportedSheet = !!importedSheet && inventoryViewSpace !== selectedSpace;
+
   const tableColumns = useMemo(() => {
+    if (showImportedSheet && importedSheet) return [
+      ...importedSheet.headers.map((label, index) => ({ field: `import:${index}`, label })),
+    ];
     const spaceItems = visibleItems ?? []
     const cols: { field: string; label: string }[] = [
       { field: 'name', label: 'Part # / Item' },
@@ -843,10 +858,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
     if (canEdit) cols.push({ field: 'actions', label: 'Actions' })
     return cols
-  }, [visibleItems, canEdit])
+  }, [visibleItems, canEdit, showImportedSheet, importedSheet])
 
   const gridTemplate = useMemo(() => {
     return tableColumns.map(col => {
+      if (col.field.startsWith('import:')) return /product|description|name/i.test(col.label) ? '340px' : /date/i.test(col.label) ? '220px' : '150px'
       if (col.field === 'name') return '2fr'
       if (col.field === 'actions') return '120px'
       if (col.field === 'quantity') return '56px'
@@ -876,9 +892,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     return items
   }, [sharedSpaceItems, sharedCategoryFilter, sharedSpaceSearch])
 
-  function exportCsv(rows: InventoryItem[], filename: string) {
+  function exportCsv(rows: InventoryItem[], filename: string, original = false) {
     const fields: Array<keyof InventoryItem> = ['name', 'category', 'subcategory', 'quantity', 'location', 'brand', 'part_number', 'barcode', 'purchase_source', 'notes', 'created_at'];
-    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
+    const csv = original && importedSheet ? importedSheetCsv(importedSheet, rows) : [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url; link.download = `${filename.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase() || 'findez-inventory'}.csv`; link.click();
@@ -948,13 +964,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         <div>
           {selectedSpace && !viewingSharedSpace && (          <button
             type="button"
-            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
+            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.world_key || selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
             style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
           >
             ← My Spaces
           </button>)}
           <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Items')}</h1>
-          {selectedSpace && <div className="refresh-space-summary"><p>{(itemsBySpace[selectedSpace] ?? []).length} items</p><SpaceInfoLine
+          {selectedSpace && !loading && !inventoryReadError && <div className="refresh-space-summary"><p>{(itemsBySpace[selectedSpace] ?? []).length} items</p><SpaceInfoLine
             units={(itemsBySpace[selectedSpace] ?? []).reduce((sum, item) => sum + item.quantity, 0)}
             low={(itemsBySpace[selectedSpace] ?? []).filter(item => needsBuying(restock.plan[item.item_id], item.quantity)).length}
             addedAt={(itemsBySpace[selectedSpace] ?? []).map(item => item.created_at).filter(Boolean).sort()[0]}
@@ -1018,10 +1034,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </div>
       )}
 
+      {inventoryReadError && <InventoryReadError message={inventoryReadError} loading={loading} onRetry={() => void load()} />}
       {error ? <p style={{ fontSize: 13, color: 'var(--danger-ink)', marginBottom: 12 }}>{error}</p> : null}
       {success ? <p role="status" style={{ fontSize: 13, color: 'var(--success-ink)', marginBottom: 12 }}>{success}</p> : null}
 
-      {!selectedSpace && props.mode !== 'home' && !showInventoryTable && initSettled && !loading && (
+      {!selectedSpace && props.mode !== 'home' && !showInventoryTable && initSettled && !loading && !inventoryReadError && (
         <InventoryStats items={allItems} spaces={spaces} lowStock={lowStockCount} />
       )}
 
@@ -1284,10 +1301,21 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
             </>}
-            <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
+            <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory', showImportedSheet)} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
+          {importedSheet && <>
+            <div className={sheetStyles.switcher} role="group" aria-label="Space view">
+              <button type="button" style={toolbarBtnStyle} aria-pressed={showImportedSheet} onClick={() => setInventoryViewSpace(null)}>Imported spreadsheet</button>
+              <button type="button" style={toolbarBtnStyle} aria-pressed={!showImportedSheet} onClick={() => setInventoryViewSpace(selectedSpace)}>Inventory</button>
+            </div>
+            {showImportedSheet && <p className={sheetStyles.hint}>
+              {importedSheet.filename}{importedSheet.sheet ? ` / ${importedSheet.sheet}` : ''}. Original imported values, including quantities and order statuses. Stock edits are shown in Inventory. Scroll sideways to see all columns. Export CSV uses this view and the current filters.
+            </p>}
+          </>}
           {canEdit && <PhotoScanHint />}
+          {intelligenceEnabled && <InventoryEnrichmentLink />}
+
           {/* Space search + category pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
             <input
@@ -1316,16 +1344,17 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           </div>
 
           {/* Items table */}
-          {visibleItems.length === 0 && !loading ? (
+          {inventoryReadError && visibleItems.length === 0 ? null : visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>{query.trim() || categoryFilter ? 'No matching items in this Space' : 'No items in this space yet'}</p>
               {query.trim() || categoryFilter ? <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Try another search or clear the filters.</p> : canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
-            <div className="refresh-inventory-table">
+            <div className={showImportedSheet ? sheetStyles.scroll : undefined} tabIndex={showImportedSheet ? 0 : undefined} role={showImportedSheet ? "region" : undefined} aria-label={showImportedSheet ? "Original spreadsheet columns" : undefined}>
+            <div className={showImportedSheet ? sheetStyles.table : "refresh-inventory-table"}>
               <div className="refresh-table-heading" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                 {tableColumns.map(col => (
-                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: showImportedSheet ? 'none' as const : 'uppercase' as const, color: 'var(--text-secondary)' }}>
                     {col.label}
                   </div>
                 ))}
@@ -1334,6 +1363,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 <React.Fragment key={item.item_id}>
                   <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid var(--line)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
+                      if (col.field.startsWith('import:')) {
+                        const index = Number(col.field.slice(7));
+                        const value = importedCellText(item.import_data?.fields?.[index]?.value);
+                        return <div key={col.field} className={sheetStyles.cell}>
+                          {index === 0 ? <button type="button" className={sheetStyles.open} onClick={() => setExpandedItemId(item.item_id)} aria-label={`Open item ${item.name}`}>{value || '\u00a0'}</button> : value}
+                        </div>;
+                      }
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <DropdownMenu>
@@ -1402,6 +1438,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                   )}
                 </React.Fragment>
               ))}
+            </div>
             </div>
           )}
         </div>
@@ -1490,7 +1527,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" side="top">
                         <DropdownMenuItem onSelect={() => void onRenameSpace(spaceObj)}>Rename space</DropdownMenuItem>
-                        {activeInventory() && <DropdownMenuItem onSelect={() => setMovingSpace(spaceObj)}>Move to inventory</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         {canDeleteSpace() && <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>}
                       </DropdownMenuContent>
@@ -1594,7 +1630,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
       {/* ── Dialogs ───────────────────────────────────────────────────────── */}
 
-      {movingSpace && <MoveSpaceInventory space={movingSpace} onClose={() => setMovingSpace(null)} onMoved={() => { setMovingSpace(null); setSelectedSpace(null); void refreshAll(); }} />}
       {/* New Space */}
       <Dialog open={createSpaceOpen} onOpenChange={(open) => { setCreateSpaceOpen(open); if (!open) { setCreateSpaceError(null); setNewSpaceName(''); } }}>
         <DialogContent className="findez-form-dialog" style={{ maxWidth: 560 }}>

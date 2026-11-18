@@ -4,7 +4,6 @@ import {
   Wrench,
   Boxes,
   Plug,
-  FolderKanban,
   Users,
   Settings,
 } from "lucide-react";
@@ -51,15 +50,9 @@ export function worldNavigation(
       },
       {
         label: "Connections",
-        route: world === "personal" ? "/settings/connections" : `/settings/connections?organization=${encodeURIComponent(world)}`,
+        route: world === "personal" ? "/docs/connections" : `/docs/connections?organization=${encodeURIComponent(world)}`,
         icon: Plug,
         section: "Organization",
-      },
-      {
-        label: "Workspaces",
-        route: worldHref(world, "workspaces"),
-        icon: FolderKanban,
-        section: "Manage",
       },
       ...(world === "personal"
         ? []

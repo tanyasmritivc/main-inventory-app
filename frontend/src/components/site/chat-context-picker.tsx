@@ -23,11 +23,7 @@ export function ChatContextPicker({
   onSelect: (s: ChatSource) => void;
   onClose: () => void;
 }) {
-  const [inventories, setInventories] = useState<
-      { inventory_id: string; name: string; workspace_name: string }[]
-    >([]),
-    [inventory, setInventory] = useState(""),
-    [query, setQuery] = useState(""),
+  const     [query, setQuery] = useState(""),
     [rows, setRows] = useState<ChatSource[]>([]),
     [offset, setOffset] = useState(0),
     [next, setNext] = useState<number | null>(null),
@@ -37,30 +33,6 @@ export function ChatContextPicker({
   const prefix = `/worlds/${encodeURIComponent(worldId)}`;
   useEffect(() => {
     let live = true;
-    void accountRequest<{ inventories: typeof inventories }>(
-      accountId,
-      `${prefix}/directory`,
-    )
-      .then((r) => {
-        if (live) {
-          setInventories(r.inventories);
-          setInventory(r.inventories[0]?.inventory_id || "");
-          if (!r.inventories.length) setLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (live) {
-          setError(userFacingError(e, "Could not load inventories."));
-          setLoading(false);
-        }
-      });
-    return () => {
-      live = false;
-    };
-  }, [accountId, prefix, attempt]);
-  useEffect(() => {
-    if (!inventory) return;
-    let live = true;
     const timer = setTimeout(() => {
       setLoading(true);
       setError("");
@@ -69,7 +41,7 @@ export function ChatContextPicker({
         next_offset: number | null;
       }>(
         accountId,
-        `${prefix}/chat-sources?${new URLSearchParams({ inventory_id: inventory, kind, query, offset: String(offset) })}`,
+        `${prefix}/chat-sources?${new URLSearchParams({ kind, query, offset: String(offset) })}`,
       )
         .then((r) => {
           if (live) {
@@ -88,7 +60,7 @@ export function ChatContextPicker({
       live = false;
       clearTimeout(timer);
     };
-  }, [accountId, prefix, kind, inventory, query, offset, attempt]);
+  }, [accountId, prefix, kind, query, offset, attempt]);
   return (
     <Dialog
       open
@@ -110,24 +82,6 @@ export function ChatContextPicker({
           again when you send.
         </DialogDescription>
         <div className={styles.stack}>
-          <label>
-            Inventory
-            <select
-              value={inventory}
-              onChange={(e) => {
-                setRows([]);
-                setLoading(true);
-                setInventory(e.target.value);
-                setOffset(0);
-              }}
-            >
-              {inventories.map((i) => (
-                <option key={i.inventory_id} value={i.inventory_id}>
-                  {i.workspace_name} / {i.name}
-                </option>
-              ))}
-            </select>
-          </label>
           <label>
             Search
             <input
@@ -160,7 +114,7 @@ export function ChatContextPicker({
                 </button>
               ))}
               {!rows.length && !error && (
-                <p>No sources found in this inventory.</p>
+                <p>No sources found in this organization.</p>
               )}
             </div>
           )}

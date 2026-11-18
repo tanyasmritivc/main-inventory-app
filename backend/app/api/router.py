@@ -33,11 +33,15 @@ from app.api.routes.invitations import router as invitations_router
 from app.api.routes.onboarding import router as onboarding_router
 
 api_router = APIRouter()
+from app.api.routes.voice import router as voice_router
+api_router.include_router(voice_router)
 api_router.include_router(me_router)
 api_router.include_router(items_router)
 api_router.include_router(inventory_router)
 api_router.include_router(ai_router)
 api_router.include_router(imports_router)
+from app.api.routes.connectors import router as connectors_router
+api_router.include_router(connectors_router)
 api_router.include_router(documents_router)
 api_router.include_router(activity_router)
 api_router.include_router(sharing_router)
@@ -78,20 +82,41 @@ api_router.include_router(access_invitations_router)
 from app.api.routes.workspace_directory import router as directory_router
 api_router.include_router(directory_router)
 for scoped_feature_router in (
-    items_router, inventory_router, ai_router, imports_router, documents_router,
+    items_router, inventory_router, ai_router, imports_router, connectors_router, documents_router,
     activity_router, checkouts_router, spaces_router, bins_router,
     conversations_router, project_kits_router, review_router, sharing_router,
 ):
     scoped_router.include_router(scoped_feature_router)
+from app.api.routes.space_chat import router as space_chat_router
+scoped_router.include_router(space_chat_router)
 api_router.include_router(scoped_router)
 
 from app.api.routes.private_images import router as private_images_router
 api_router.include_router(private_images_router)
 
+from app.api.routes.world_chat import router as world_chat_router
+api_router.include_router(world_chat_router)
+
+from app.api.routes.personalization import router as personalization_router
+api_router.include_router(personalization_router)
+
+from app.api.routes.response_feedback import router as response_feedback_router
+api_router.include_router(response_feedback_router)
+
+from app.api.routes.announcements import router as announcements_router
+api_router.include_router(announcements_router)
+
+from app.api.routes.commerce import router as commerce_router
+api_router.include_router(commerce_router)
+
 from app.api.routes.cad import router as cad_router
 api_router.include_router(cad_router)
-from app.api.routes.cad_onshape import router as cad_onshape_router
-api_router.include_router(cad_onshape_router)
+
+from app.api.routes.enrichment import router as enrichment_router
+api_router.include_router(enrichment_router)
 
 from app.api.routes.cad_workspace import router as cad_workspace_router
 api_router.include_router(cad_workspace_router)
+
+from app.api.routes.world_game import router as world_game_router
+api_router.include_router(world_game_router)

@@ -71,6 +71,16 @@ class AccessQuery:
         self.raw,self.query,self.table = raw,query,table
         self.operation = None
 
+    @property
+    def headers(self):
+        # Metadata is not a fluent query builder. Returning this wrapper here
+        # corrupts the query when callers copy request-local actor headers.
+        return self.query.headers
+
+    @headers.setter
+    def headers(self, value):
+        self.query.headers = value
+
     def __getattr__(self, name):
         value = getattr(self.query, name)
         if not callable(value):
@@ -80,6 +90,9 @@ class AccessQuery:
             self.query = value(*args, **kwargs)
             if name in ('select','update','delete','insert','upsert'):
                 self.operation = name
+                if self.table == 'conversations' and name in ('select', 'update', 'delete'):
+                    # Organization Chat uses its own actor+world checked routes.
+                    self.query = self.query.is_('world_key', 'null')
                 if self.table in RESOURCE_TABLES and name in ('select','update','delete'):
                     write = name != 'select' and self.table not in PRIVATE_WRITES
                     excluded = [row['inventory_id'] for row in fences(self.raw)

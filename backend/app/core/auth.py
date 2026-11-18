@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 
@@ -125,6 +125,7 @@ def _select_jwk(*, jwks: dict, token: str) -> dict:
 
 async def get_current_user(
     request: Request,
+    background_tasks: BackgroundTasks,
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> AuthenticatedUser:
     ip = _client_ip(request)
@@ -206,6 +207,11 @@ async def get_current_user(
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
 
+    # Down-scoped integration JWTs are for RLS-backed integration calls only.
+    # Treating one as an account session would bypass its scopes on private APIs.
+    if claims.get("api_key_id"):
+        raise unauthorized("Use the integration API with this credential")
+
     user_id = claims.get("sub")
     if not user_id:
         logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
@@ -243,4 +249,6 @@ async def get_current_user(
 
     from app.services.resource_access import begin_actor
     begin_actor(str(user_id))
+    from app.services.welcome_email import schedule_welcome
+    schedule_welcome(background_tasks, str(user_id))
     return AuthenticatedUser(user_id=str(user_id), first_name=first_name)

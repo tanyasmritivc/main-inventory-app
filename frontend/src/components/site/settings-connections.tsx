@@ -54,16 +54,7 @@ function AccountConnections({ accountId, initialOwner }: { accountId: string; in
     <p>Only organization owners and administrators can manage organization connections. Switching owners does not move or share existing personal records.</p>
     {error && <p role="alert">{error} <button className="workspace-button" onClick={() => setRevision(v => v + 1)}>Retry organizations</button></p>}
     {!accessible && <p role={organizations ? "alert" : "status"}>{organizations ? "You do not have administrator access to this organization. Choose Personal or another organization." : "Checking organization access…"}</p>}
-    <details><summary>How to use Connections</summary>
-      <ol>
-        <li>Choose <strong>Personal</strong> for your private purchases, or your organization for shared purchasing records.</li>
-        <li>In <strong>Your Amazon order history</strong>, open Amazon’s data-request link. Request order data, complete Amazon’s confirmation, then download the export when it is ready.</li>
-        <li>Choose the downloaded CSV or ZIP and click <strong>Preview order history</strong>. Check the destination, products, dates, quantities and order statuses.</li>
-        <li>Click <strong>Save purchase history</strong>. Under <strong>Your connections</strong>, use <strong>View records</strong> to reopen it. Upload a newer export here whenever needed; matching order items update instead of being added twice.</li>
-        <li>To record what you still own, open <Link href="/inventory">your inventory</Link> and choose the correct inventory. Check for an existing item first. For a new item, select <strong>Add items → Manual</strong>, choose its Space under <strong>Save to</strong>, fill in <strong>Name</strong>, <strong>Category</strong> and the <strong>Quantity</strong> you have now, then click <strong>Save item</strong>. For an existing item, edit its current quantity instead of adding a duplicate. Imported purchases do not automatically create or update inventory items.</li>
-      </ol>
-      <p>Use <strong>Delete imported records</strong> to remove an import from FindEZ. This does not delete physical inventory items or orders at Amazon. Shopify and Amazon seller connections require their own enabled setup; they are separate from personal Amazon order imports.</p>
-    </details>
+    <p><Link href={owner === "personal" ? "/docs/connections" : `/docs/connections?organization=${encodeURIComponent(owner)}`}>Connections documentation ↗</Link> · Setup, imports, privacy, and troubleshooting.</p>
     {accessible && <ScopedCommerce key={`${accountId}:${owner}`} accountId={accountId} scope={scope} ownerName={organization?.name || "Personal"} embedded />}
   </div>;
 }

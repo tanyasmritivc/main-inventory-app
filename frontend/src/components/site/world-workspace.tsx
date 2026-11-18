@@ -4,7 +4,7 @@ import Link from "next/link";
 import { rememberWorld } from "@/lib/world-entry";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
-import { Boxes, ChevronRight, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
+import { MapPin, Plus, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { AppShell } from "./app-shell";
 import { AssistClient } from "./assist-client";
@@ -33,7 +33,7 @@ type Inventory = {
 type Directory = {
   world: string;
   inventories: Inventory[];
-  workspaces: { workspace_id: string; name: string; can_create: boolean }[];
+  can_create_space: boolean;
 };
 export function WorldWorkspace(props: {
   worldId: string;
@@ -81,7 +81,6 @@ function WorldContent({
   const [groups, setGroups] = useState<Inventory[]>();
   const [query, setQuery] = useState("");
   const [create, setCreate] = useState(false);
-  const [destination, setDestination] = useState("");
   const [spaceName, setSpaceName] = useState("");
   const [busy, setBusy] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -133,7 +132,7 @@ function WorldContent({
     };
   }, [accountId, worldId, revision]);
   useEffect(() => {
-    if (!directory || view !== "spaces") return;
+    if (!directory || !["spaces", "tools", "workspaces"].includes(view)) return;
     let live = true;
     accountRequest<{ inventories: Inventory[] }>(
       accountId,
@@ -157,9 +156,7 @@ function WorldContent({
     if (
       saving.current ||
       !spaceName.trim() ||
-      !directory?.inventories.some(
-        (i) => i.inventory_id === destination && i.can_edit,
-      )
+      !directory?.can_create_space
     )
       return;
     saving.current = true;
@@ -170,7 +167,7 @@ function WorldContent({
     try {
       const r = await accountRequest<{ space: { id: string; name: string } }>(
         accountId,
-        `/inventories/${encodeURIComponent(destination)}/spaces`,
+        `/worlds/${encodeURIComponent(worldId)}/spaces`,
         {
           method: "POST",
           signal: c.signal,
@@ -194,18 +191,17 @@ function WorldContent({
       if (alive.current) setBusy(false);
     }
   }
-  const chosen = ["chat", "spaces", "search", "tools", "workspaces"].includes(
+  const chosen = view === "workspaces" ? "spaces" : ["chat", "spaces", "search", "tools"].includes(
     view,
   )
     ? view
     : "chat";
   const context = worldNavigation(worldId, name, chosen);
-  const inventories = directory?.inventories || [];
   const filtered = (groups || [])
     .map((g) => ({
       ...g,
       spaces: (g.spaces || []).filter((s) =>
-        `${s.name} ${g.name} ${g.workspace_name}`
+        s.name
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),
@@ -245,7 +241,7 @@ function WorldContent({
                   ? "Spaces"
                   : chosen === "tools"
                     ? "Tools"
-                    : "Workspaces"}
+                    : "Spaces"}
               </h1>
 
             </div>
@@ -257,13 +253,10 @@ function WorldContent({
               >
                 <RefreshCw size={16} />
               </button>
-              {chosen === "spaces" && inventories.some((i) => i.can_edit) && (
+              {chosen === "spaces" && directory.can_create_space && (
                 <button
                   className="workspace-button primary"
                   onClick={() => {
-                    setDestination(
-                      inventories.find((i) => i.can_edit)!.inventory_id,
-                    );
                     setCreateError("");
                     setCreate(true);
                   }}
@@ -272,19 +265,7 @@ function WorldContent({
                   New Space
                 </button>
               )}
-              {chosen === "workspaces" && (
-                <Link
-                  href={
-                    worldId === "personal"
-                      ? "/workspaces"
-                      : "/organizations/" +
-                        encodeURIComponent(worldId) +
-                        "?view=workspaces"
-                  }
-                >
-                  Manage workspaces
-                </Link>
-              )}
+
             </div>
           </PageHeader>
           {chosen === "spaces" && (
@@ -301,9 +282,6 @@ function WorldContent({
               ) : (
                 filtered.map((g) => (
                   <section className={styles.group} key={g.inventory_id}>
-                    <h2>
-                      {g.workspace_name} / {g.name}
-                    </h2>
                     <div className={styles.grid}>
                       {g.spaces.map((s) => (
                         <Link
@@ -330,46 +308,10 @@ function WorldContent({
                     : "No Spaces yet. Create one or describe what you want to organize in chat."}
                 </p>
               )}
-              <section className={styles.group}>
-                <h2>Browse inventories</h2>
-                <div className={styles.grid}>
-                  {inventories.map((i) => (
-                    <Link
-                      className={`${styles.card} theme-card`}
-                      key={i.inventory_id}
-                      href={`/inventory?inventory=${encodeURIComponent(i.inventory_id)}`}
-                    >
-                      <ResourceArt id={i.inventory_id} tile><Boxes size={18} /></ResourceArt>
-                      <div>
-                        <strong>{i.name}</strong>
-                        <small>{i.workspace_name} · All items</small>
-                      </div>
-                      <ChevronRight size={16} aria-hidden="true" style={{ marginLeft: "auto", flexShrink: 0, color: "var(--text3)" }} />
-                    </Link>
-                  ))}
-                </div>
-              </section>
+
             </>
           )}
-          {chosen === "workspaces" && (
-            <div className={styles.grid}>
-              {directory.workspaces.map((w) => (
-                <Link
-                  className={`${styles.card} ${styles.resource} theme-card`}
-                  key={w.workspace_id}
-                  href={`/workspaces/${encodeURIComponent(w.workspace_id)}`}
-                >
-                  <ResourceArt id={w.workspace_id} />
-                  <div className={styles.caption}>
-                    <FolderKanban size={16} />
-                    <strong>{w.name}</strong>
-
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-          {chosen === "tools" && <WorldTools accountId={accountId} inventories={inventories} organizationId={worldId === "personal" ? undefined : worldId} />}
+          {chosen === "tools" && <WorldTools accountId={accountId} inventories={groups || []} organizationId={worldId === "personal" ? undefined : worldId} />}
         </section>
       )}
       <Dialog
@@ -384,23 +326,6 @@ function WorldContent({
         >
           <DialogTitle>New Space</DialogTitle>
           <form onSubmit={saveSpace} className={styles.page}>
-            <label>
-              Inventory
-              <select
-                aria-label="Inventory"
-                className="product-select"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-              >
-                {inventories
-                  .filter((i) => i.can_edit)
-                  .map((i) => (
-                    <option key={i.inventory_id} value={i.inventory_id}>
-                      {i.workspace_name} / {i.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
             <label>
               Name
               <input

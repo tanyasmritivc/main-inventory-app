@@ -21,7 +21,6 @@ import {
   Plug,
 } from "lucide-react";
 import {
-  APP_NAV_ITEMS,
   type AppNavItem,
   AppSidebar,
 } from "@/components/site/app-sidebar";
@@ -51,6 +50,7 @@ import { ContextChat, hasContextChat } from "./context-chat";
 import { FoundingAccessProvider, FoundingBanner } from "@/components/founding-access/founding-access";
 
 import { SessionLocation } from "./session-location";
+import { WorldInvitation } from "@/components/world/world-invitation";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -305,7 +305,7 @@ export function AppShell({
     },
     {
       label: "Connections",
-      route: "/settings/connections",
+      route: "/docs/connections",
       icon: Plug,
       section: "Account settings",
     },
@@ -349,7 +349,7 @@ export function AppShell({
   ];
   const world = inventory
     ? worldNavigation(
-        inventory.workspace.organization_id || "personal",
+        inventory.workspace.world_key || inventory.workspace.organization_id || "personal",
         inventory.workspace.organization_name || "Personal",
         (pathname === "/cad" || pathname.startsWith("/cad/")) ? "cad" : ["/inventory", "/home", "/spaces"].includes(pathname)
           ? "spaces"
@@ -359,56 +359,13 @@ export function AppShell({
   const navigationItems = accountPage
     ? accountItems
     : context?.items ||
-      (inventory?.can_open === false
-        ? [
-            {
-              label: "Workspace",
-              route: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`,
-              icon: ArrowLeft,
-              section: "Workspace",
-            },
-            {
-              label: "Inventory settings",
-              route: "/inventory-access",
-              icon: Users,
-              section: "Administration",
-            },
-          ]
-        : world
-          ? world.items
-          : [
-              ...DIRECTORY_NAVIGATION,
-              ...APP_NAV_ITEMS.filter((item) =>
-                [
-                  "/notifications",
-                  "/settings",
-                  "/settings/api-keys",
-                  "/docs/api",
-                ].includes(item.route),
-              ),
-            ]);
+      (world ? world.items : DIRECTORY_NAVIGATION);
   const breadcrumbs = accountPage
     ? [{ label: "Account", href: "/settings" }]
     : context?.breadcrumbs ||
-      (inventory
-        ? [
-            inventory.workspace.organization_id
-              ? {
-                  label:
-                    inventory.workspace.organization_name || "Organization",
-                  href: worldHref(inventory.workspace.organization_id),
-                }
-              : { label: "Workspaces", href: "/workspaces" },
-            {
-              label: inventory.workspace.name,
-              href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`,
-            },
-            {
-              label: inventory.name,
-              href: `/${inventory.can_open === false ? "inventory-access" : "inventory"}?inventory=${encodeURIComponent(inventory.inventory_id)}`,
-            },
-          ]
-        : []);
+      (world ? [...world.breadcrumbs, {
+        label: "Spaces", href: worldHref(inventory!.workspace.world_key || inventory!.workspace.organization_id || "personal", "spaces"),
+      }] : []);
   const commandItems = navigationItems.filter((item) =>
     [item.label, item.section, ...(item.keywords ?? [])]
       .join(" ")
@@ -481,7 +438,7 @@ export function AppShell({
           {breadcrumbs.length > 0 && (
             <nav
               className="app-inventory-switcher"
-              aria-label={inventory ? "Current inventory" : "Current workspace"}
+              aria-label="Current organization"
             >
               {breadcrumbs.map((crumb, index) => (
                 <span className="context-crumb" key={crumb.href}>
@@ -499,6 +456,7 @@ export function AppShell({
             </nav>
           )}
           <div className="app-topbar-spacer" />
+          <Link className="app-command-trigger" style={{ width: "auto", minWidth: "max-content", padding: "0 10px", fontSize: 12 }} href="/world">World</Link>
           <button
             className="app-command-trigger"
             aria-label="Go to a page"
@@ -517,6 +475,7 @@ export function AppShell({
             avatarUrl={avatarUrl}
           />
         </header>
+        {userId && <WorldInvitation key={userId} accountId={userId} worldId={pathname.match(/^\/worlds\/([^/]+)/)?.[1] || "personal"} />}
         <main id="app-main" className="app-main" tabIndex={-1}>
           <div className="app-content">{children}</div>
         </main>

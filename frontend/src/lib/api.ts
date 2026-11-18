@@ -4,6 +4,9 @@ import { activeInventory, assertInventory, canDeleteSpace, inventoryApiPath } fr
 import type { AccessInvitation } from "./access-invitation";
 
 export type InventoryItem = {
+  inventory_role?: import("./inventory-intelligence").InventoryRole;
+  reorder_enabled?: boolean;
+  reorder_threshold?: number | null;
   /** Original imported values, independent of current stock and location. */
   import_data?: {
     filename: string;

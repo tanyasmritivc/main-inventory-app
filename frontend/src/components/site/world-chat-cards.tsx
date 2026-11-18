@@ -93,7 +93,7 @@ export function WorldActionCard({
       {action.inventories.map((inv, index) => (
         <div key={index}>
           <strong>{inv.name}</strong>
-          {!!inv.spaces.length && <p>{inv.spaces.join(" · ")}</p>}
+          {!action.organizationSpaces && !!inv.spaces.length && <p>{inv.spaces.join(" · ")}</p>}
           <ul>
             {inv.items.map((i, n) => (
               <li key={n}>

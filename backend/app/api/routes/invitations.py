@@ -25,6 +25,7 @@ def preview_invitation(
 ):
     response.headers["Cache-Control"] = "no-store"
     client = get_supabase_admin()
+    from app.api.routes.collaboration import members_with_names
     if body.kind == "space":
         rows = client.table("team_shares").select(
             "share_id,share_name,owner_user_id,permission,expires_at"
@@ -40,8 +41,10 @@ def preview_invitation(
             "kind": "space", "name": share.get("share_name") or "Shared space",
             "target_id": share["share_id"], "already_joined": owner or bool(members),
             "permission": "edit" if owner else share.get("permission", "view"),
+            "inviter": members_with_names([{'user_id': share["owner_user_id"]}], client)[0],
+            "inviter_label": "Invited by",
         }
-    rows = client.table("teams").select("team_id,name").eq(
+    rows = client.table("teams").select("team_id,name,owner_user_id,join_code_created_by").eq(
         "join_code", body.code
     ).limit(1).execute().data or []
     if not rows:
@@ -54,4 +57,6 @@ def preview_invitation(
         "kind": "team", "name": team.get("name") or "FindEZ team",
         "target_id": team["team_id"], "already_joined": bool(members),
         "permission": members[0]["role"] if members else "member",
+        "inviter": members_with_names([{'user_id': team.get("join_code_created_by") or team["owner_user_id"]}], client)[0],
+        "inviter_label": "Invited by" if team.get("join_code_created_by") else "Workspace owner",
     }

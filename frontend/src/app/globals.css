@@ -1603,3 +1603,25 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
 
 .member-identity-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; vertical-align: middle; }
 .member-identity-label > span:last-child { overflow-wrap: anywhere; }
+
+/* One website typeface, including portals and route-specific legacy styles.
+   Keep this policy in a named layer: important layer rules outrank unlayered
+   legacy/inline font declarations regardless of route CSS loading order.
+   Only family changes; sizes, weights, spacing and responsive layouts remain
+   owned by their components. Code samples retain semantic monospace. */
+@layer findez-typography {
+  :root {
+    --font-ui: var(--font-app-inter, var(--font-inter, Arial)), Arial, sans-serif;
+    --font-ui-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  body,
+  body * {
+    font-family: var(--font-ui) !important;
+  }
+
+  body :is(code, pre, kbd, samp),
+  body :is(code, pre, kbd, samp) * {
+    font-family: var(--font-ui-code) !important;
+  }
+}

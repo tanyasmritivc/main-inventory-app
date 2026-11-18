@@ -134,10 +134,5 @@ export function workspaceNavigation(
 }
 export const DIRECTORY_NAVIGATION: AppNavItem[] = [
   { label: "New chat", route: "/worlds", icon: Building2, section: "FindEZ" },
-  {
-    label: "All workspaces",
-    route: "/workspaces",
-    icon: FolderKanban,
-    section: "FindEZ",
-  },
+  { label: "Organizations", route: "/organizations", icon: Building2, section: "FindEZ" },
 ];

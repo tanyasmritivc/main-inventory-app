@@ -4,7 +4,6 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from email.utils import make_msgid, parseaddr
-from html import escape
 import re
 from urllib.parse import quote
 import weakref
@@ -12,6 +11,7 @@ import weakref
 from fastapi import HTTPException
 
 from app.core.config import get_settings
+from app.services.invitation_email import render_invitation_email
 from app.services.email_delivery import (
     send_transactional_email as deliver_transactional_email,
 )
@@ -48,10 +48,7 @@ def space_invitation_url(share_code: str) -> str:
 
 
 def render_team_invitation(*, share_name: str, share_code: str) -> tuple[str, str, str]:
-    safe_name = escape(share_name)
-    safe_code = escape(share_code)
     join_link = space_invitation_url(share_code)
-    safe_link = escape(join_link, quote=True)
     subject = f"You've been invited to view '{share_name}' on FindEZ"
     text = (
         f"You've been invited to view '{share_name}' on FindEZ.\n\n"
@@ -59,20 +56,14 @@ def render_team_invitation(*, share_name: str, share_code: str) -> tuple[str, st
         "On iPhone, the link opens FindEZ. If you don't have the app yet, it takes "
         "you to the App Store; after installing, open this link again to join."
     )
-    html = f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FindEZ invitation</title></head>
-<body style="margin:0;padding:0;width:100%;background:#f4f3ef;color:#24211d;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
-<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f3ef"><tr><td align="center" style="padding:32px 16px;">
-<!--[if mso]><table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0"><tr><td><![endif]-->
-<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:560px;"><tr><td style="padding:0 4px 24px;">
-<table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td width="40"><img src="https://findez.ai/favicon.png" width="32" height="32" alt="" style="display:block;border:0;border-radius:7px;"></td><td style="font-size:23px;font-weight:700;letter-spacing:-1px;color:#24211d;">FindEZ</td></tr></table>
-</td></tr><tr><td bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e4e0d9;border-top:3px solid #bc4800;border-radius:12px;padding:30px 24px 8px;">
-<h1 style="margin:0 0 18px;color:#24211d;font-size:28px;font-weight:700;letter-spacing:-0.6px;line-height:1.25;overflow-wrap:break-word;">You're invited to FindEZ</h1>
-<p style="margin:0 0 22px;color:#55534f;font-size:16px;line-height:1.65;overflow-wrap:break-word;">Someone shared <strong>'{safe_name}'</strong> with you.</p><table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 0 26px;"><tr><td bgcolor="#f5f4f1" style="padding:18px 20px;border:1px solid #e8e5df;border-radius:8px;"><p style="margin:0 0 10px;color:#66615a;font-size:12px;line-height:1.5;">JOIN CODE</p><strong style="font-family:Consolas,Menlo,monospace;font-size:22px;line-height:1.4;letter-spacing:2px;color:#24211d;word-break:break-all;">{safe_code}</strong></td></tr></table><table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:6px 0 28px;"><tr><td bgcolor="#bc4800" style="border-radius:8px;text-align:center;"><a href="{safe_link}" style="display:inline-block;padding:15px 24px;border:1px solid #bc4800;border-radius:8px;background:#bc4800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:1.4;text-decoration:none;text-align:center;mso-padding-alt:0;">Open FindEZ &amp; Join</a></td></tr></table><p style="margin:0 0 22px;color:#55534f;font-size:14px;line-height:1.65;overflow-wrap:break-word;">On iPhone, this opens FindEZ. Don't have the app yet? The link takes you to the App Store. After installing, open this email and tap the button again to join.</p>
-</td></tr></table>
-<!--[if mso]></td></tr></table><![endif]-->
-</td></tr></table></body></html>
-"""
+    html = render_invitation_email(
+        title=f"Invitation to {share_name}",
+        introduction="A space has been shared with you on FindEZ.",
+        action_label="Open FindEZ & Join", action_url=join_link, code=share_code,
+        instructions="On iPhone, this opens FindEZ. Don't have the app yet? "
+        "The link takes you to the App Store. After installing, open this email "
+        "and tap the button again to join.",
+    )
     return subject, text, html
 
 

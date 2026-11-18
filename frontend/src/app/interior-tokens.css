@@ -76,6 +76,7 @@ html[data-app-theme] :where(input:not([type=file]):not([type=checkbox]):not([typ
   font-family:var(--font-main); font-size:14px; box-shadow:none;
 }
 html[data-app-theme] :is(input:not([type=file]):not([type=checkbox]):not([type=radio]):not([type=range]),select) { min-height:42px; padding:0 12px; }
+html[data-app-theme] .app-frame .inventory-workspace .inventory-search-control input.spaces-search { padding-left:38px; }
 html[data-app-theme] textarea { padding:12px; }
 html[data-app-theme] :is(input,textarea)::placeholder { color:var(--placeholder); opacity:1; }
 html[data-app-theme] :is(input,select,textarea):hover { border-color:var(--line2); }

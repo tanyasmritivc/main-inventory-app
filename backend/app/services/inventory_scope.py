@@ -19,6 +19,8 @@ class InventoryScope:
     owner_id: str
     team_id: str | None
     role: str
+    chat_space_id: str | None = None
+    chat_space_name: str | None = None
 
     @property
     def can_edit(self):
@@ -33,7 +35,7 @@ def inventory_cache_key(user_id: str) -> str:
     from app.services.resource_access import access_cache_key, request_actor
     from app.services.supabase_client import get_supabase_raw
     prefix = access_cache_key(get_supabase_raw()) if request_actor.get() else ""
-    return prefix + (f'{scope.inventory_id}:{scope.actor_id}:{user_id}' if scope else user_id)
+    return prefix + (f'{scope.inventory_id}:{scope.actor_id}:{user_id}' + (f':space:{scope.chat_space_id}' if scope.chat_space_id else '') if scope else user_id)
 
 
 TABLES = frozenset((
@@ -76,12 +78,25 @@ class InventoryClient:
         if not self.scope.can_edit and table not in PRIVATE and table != 'activity_log':
             raise HTTPException(403, 'You have view-only access to this inventory.')
 
+    def chat_filter(self, query, table):
+        if not self.scope.chat_space_id:
+            return query
+        if table == 'items':
+            return query.eq('space_id', self.scope.chat_space_id)
+        if table == 'spaces':
+            return query.eq('id', self.scope.chat_space_id)
+        if table == 'conversations':
+            from app.services.space_chat import conversation_ids
+            return query.in_('id', conversation_ids(self.raw, self.scope) or ['00000000-0000-0000-0000-000000000000'])
+        return query
+
     def record(self, table, key, value):
         query = self.raw.table(ALIASES.get(table, table)).select('*').eq(key, value).eq('inventory_id', self.scope.inventory_id)
         if table in PRIVATE and table != 'messages':
             query = query.eq('user_id', self.scope.actor_id)
         if table in PRIVATE_LEGACY:
             query = query.or_(f'inventory_visibility.eq.inventory,user_id.eq.{self.scope.actor_id}')
+        query = self.chat_filter(query, table)
         rows = query.limit(1).execute().data or []
         if not rows:
             raise HTTPException(404, 'This record is not in the selected inventory.')
@@ -129,6 +144,13 @@ class InventoryQuery:
         if row.get('inventory_id', scope.inventory_id) != scope.inventory_id:
             raise HTTPException(422, 'Choose the current inventory.')
         row['inventory_id'] = scope.inventory_id
+        if scope.chat_space_id:
+            if self.table == 'items':
+                if ('space_id' in row and row['space_id'] != scope.chat_space_id) or ('location' in row and row['location'] != scope.chat_space_name):
+                    raise HTTPException(422, 'This chat can only change items in its selected Space.')
+                if self.operation in ('insert', 'upsert'):
+                    row.update(space_id=scope.chat_space_id, location=scope.chat_space_name)
+
         if self.operation in ('insert', 'upsert') and self.table in PRIVATE_LEGACY:
             row['inventory_visibility'] = 'inventory'
         if self.table == 'capture_reviews' and row.get('source_key'):
@@ -150,6 +172,8 @@ class InventoryQuery:
         self.operation = 'select'
         if args and isinstance(args[0], str) and '*' not in args[0]:
             extra = ['inventory_id']
+            if self.table == 'messages' and self.client.scope.chat_space_id:
+                extra += ['answer_context']
             if self.table in PRIVATE_LEGACY:
                 extra += ['inventory_visibility']
             fields = args[0].split(',')
@@ -223,11 +247,16 @@ class InventoryQuery:
         return self
 
     def execute(self):
+        if self.operation in ('select', 'update', 'delete'):
+            self.query = self.client.chat_filter(self.query, self.table)
         if self.table == 'messages' and self.operation not in ('insert', 'upsert'):
             if not self.conversation_id:
                 raise HTTPException(400, 'Choose a conversation.')
             self.client.record('conversations', 'id', self.conversation_id)
-        return self.query.execute()
+        result = self.query.execute()
+        if self.table == 'messages' and self.operation == 'select' and self.client.scope.chat_space_id and isinstance(result.data, list):
+            result.data = [row for row in result.data if not (row.get('answer_context') or {}).get('space_chat_marker')]
+        return result
 
     def __getattr__(self, name):
         value = getattr(self.query, name)

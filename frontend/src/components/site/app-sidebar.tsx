@@ -93,7 +93,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     section: "Your world",
     keywords: ["uncertain", "confirm", "correct"],
   },
-  { label: "Connections", route: "/settings/connections", icon: Plug, section: "Your world", keywords: ["Shopify", "Amazon", "commerce", "imports"] },
+  { label: "Connections", route: "/docs/connections", icon: Plug, section: "Your world", keywords: ["Shopify", "Amazon", "commerce", "imports"] },
   { label: "Activity", route: "/activity", icon: History, section: "You" },
   {
     label: "Notifications",

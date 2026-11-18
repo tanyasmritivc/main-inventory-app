@@ -1,13 +1,14 @@
 """Recipient-bound collaboration invitations. No access is granted by delivery."""
 import hashlib
-import html
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
 
 from app.core.config import get_settings
+from app.services.invitation_email import render_invitation_email
 from app.services.email_delivery import send_transactional_email
 from app.services.supabase_client import get_supabase_raw
 
@@ -42,13 +43,16 @@ def code_hash(code: str) -> str:
 
 
 def decorate(invitation: dict) -> dict:
+    from app.api.routes.collaboration import members_with_names
+    actor = invitation.get('invited_by')
+    inviter = members_with_names([{'user_id': actor}])[0] if actor else None
     scope, resource = invitation['scope'], invitation['resource_id']
     destination = {
         'organization': f'/organizations/{resource}',
         'workspace': f'/workspaces/{resource}',
         'inventory': f'/home?inventory={resource}',
     }[scope]
-    return {**invitation, 'name': invitation['resource_name'], 'destination': destination}
+    return {**invitation, 'name': invitation['resource_name'], 'destination': destination, 'inviter': inviter}
 
 
 def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email: str | None = None, member_id: str | None = None, _save=None, _code: str | None = None) -> dict:
@@ -67,30 +71,26 @@ def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email:
         return {'invitation': invitation, 'code': code, 'invite_url': url, 'email_sent': None, 'delivery_status': 'not_retried'}
     from app.services.push_notifications import enqueue_invitation
     enqueue_invitation(saved['invitation_id'])
+    inviter_name = (invitation.get('inviter') or {}).get('display_name') or 'A team member'
     sent = False
     try:
         send_transactional_email(
             to=invitation['recipient_email'],
             subject=f'Invitation to {name} on FindEZ',
-            text=(f'You are invited to {name} ({scope}) as {role}. '
+            text=(f'{inviter_name} invited you to join FindEZ.\nYou are invited to {name} ({scope}) as {role}. '
                   f'Review and accept or decline: {url}\n'
                   f'Or open {base}/join/access and enter code {code}. '
                   'Sign in with this email address. No access is granted until you accept. '
                   'This invitation expires in 7 days. If you did not expect it, you can decline or ignore it.'),
-            html=(f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FindEZ invitation</title></head>
-<body style="margin:0;padding:0;width:100%;background:#f4f3ef;color:#24211d;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
-<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f3ef"><tr><td align="center" style="padding:32px 16px;">
-<!--[if mso]><table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0"><tr><td><![endif]-->
-<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:560px;"><tr><td style="padding:0 4px 24px;">
-<table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td width="40"><img src="https://findez.ai/favicon.png" width="32" height="32" alt="" style="display:block;border:0;border-radius:7px;"></td><td style="font-size:23px;font-weight:700;letter-spacing:-1px;color:#24211d;">FindEZ</td></tr></table>
-</td></tr><tr><td bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e4e0d9;border-top:3px solid #bc4800;border-radius:12px;padding:30px 24px 8px;">
-<h1 style="margin:0 0 18px;color:#24211d;font-size:28px;font-weight:700;letter-spacing:-0.6px;line-height:1.25;overflow-wrap:break-word;">Invitation to {html.escape(name)}</h1>
-<p style="margin:0 0 22px;color:#55534f;font-size:16px;line-height:1.65;overflow-wrap:break-word;">{html.escape(scope.title())} access: {html.escape(role.title())}</p><table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:6px 0 28px;"><tr><td bgcolor="#bc4800" style="border-radius:8px;text-align:center;"><a href="{html.escape(url, quote=True)}" style="display:inline-block;padding:15px 24px;border:1px solid #bc4800;border-radius:8px;background:#bc4800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:1.4;text-decoration:none;text-align:center;mso-padding-alt:0;">Review invitation</a></td></tr></table><p style="margin:0 0 22px;color:#55534f;font-size:14px;line-height:1.65;overflow-wrap:break-word;">Or enter code <strong style="font-family:Consolas,Menlo,monospace;color:#24211d;">{code}</strong> at {html.escape(base)}/join/access.</p><p style="margin:0 0 22px;color:#55534f;font-size:14px;line-height:1.65;overflow-wrap:break-word;">Sign in with this email address. You choose whether to accept. No access is granted until then. Expires in 7 days.</p>
-</td></tr></table>
-<!--[if mso]></td></tr></table><![endif]-->
-</td></tr></table></body></html>
-"""),
+            html=render_invitation_email(
+                title=f"Invitation to {name}",
+                introduction=f"Invited by {inviter_name}",
+                access_label=f"{scope.title()} access: {role.title()}",
+                action_label="Review invitation", action_url=url, code=code,
+                fallback_url=f"{base}/join/access",
+                instructions="Sign in with this email address. You choose whether to accept. "
+                "No access is granted until then. Expires in 7 days.",
+            ),
             message_id=f"<access-invite-{invitation['invitation_id']}@findez.ai>",
         )
         sent = True
@@ -106,12 +106,28 @@ def inbox(actor: str) -> list[dict]:
 
 
 def notification_rows(actor: str) -> list[dict]:
+    # The actionable inbox intentionally contains only pending invitations.
+    # Notification history retains decisions/expiry without restoring access.
+    client = get_supabase_raw()
+    identity = client.auth.admin.get_user_by_id(actor).user
+    if not identity or not identity.email_confirmed_at or not identity.email:
+        return []
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    rows = client.table('app_access_invitations').select(
+        'invitation_id,scope,resource_id,resource_name,role,status,invited_by,team_id,created_at,expires_at,seen_at'
+    ).eq('recipient_email', identity.email.lower()).gte('created_at', cutoff).order('created_at', desc=True).execute().data or []
+    now = datetime.now(timezone.utc)
+    for row in rows:
+        row.pop('code_hash', None)
+        row.pop('recipient_email', None)
+        if row['status'] == 'pending' and datetime.fromisoformat(row['expires_at'].replace('Z', '+00:00')) <= now:
+            row['status'] = 'expired'
     return [{
         'activity_id': row['invitation_id'], 'action': 'access_invitation',
         'actor_id': row['invited_by'], 'team_id': row.get('team_id'),
-        'created_at': row['created_at'], 'is_read': bool(row.get('seen_at')),
+        'created_at': row['created_at'], 'is_read': bool(row.get('seen_at')) or row['status'] != 'pending',
         'summary': f"Invitation to {row['name']}",
-        'display_text': f"Invitation to {row['name']}",
+        'display_text': f"Invitation to {row['name']}" + (f" ({row['status']})" if row['status'] != 'pending' else ''),
         'activity_type': 'Invitation', 'team_name': '', 'invitation': row,
         'metadata': {'invitation_id': row['invitation_id']},
-    } for row in inbox(actor)]
+    } for row in map(decorate, rows)]

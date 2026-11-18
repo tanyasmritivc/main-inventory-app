@@ -222,6 +222,8 @@ def create_app() -> FastAPI:
                 content={"status": "degraded", "database": "unreachable"},
             )
 
+    from app.core.assistant_stream import AssistantStreamMiddleware
+    app.add_middleware(AssistantStreamMiddleware)
     return app
 
 

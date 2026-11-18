@@ -1,4 +1,6 @@
 "use client";
+import Link from "@/components/site/inventory-link";
+import { intelligenceEnabled } from "@/lib/inventory-intelligence";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import { privateImageSrc } from "@/lib/private-image";
@@ -159,6 +161,7 @@ function AccountReviewQueue({token, accountId}: {token: string; accountId: strin
         <div><h1>Review</h1><p>Check uncertain captures before adding them to your inventory.</p></div>
         <button type="button" className="product-button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} />Refresh</button>
       </header>
+      {intelligenceEnabled && <p><Link href="/review/enrichment" className="workspace-button">Review product photos and classifications</Link></p>}
       {error && <div role="alert" className="notice-error">{error}</div>}
       {notice && <div role="status" className="notice-success">{notice}</div>}
       {loading && items.length === 0 ? <div className="review-empty"><span className="loading-spinner" />Loading Review…</div> : null}

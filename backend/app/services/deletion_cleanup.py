@@ -41,7 +41,9 @@ def _references(client):
     for table, fields, key in (
         ('items', 'image_url', 'item_id'), ('item_events', 'image_url', 'event_id'),
         ('capture_reviews', 'image_url,source_frame_url,scan_evidence', 'review_id'),
-        ('messages', 'content', 'id'), ('documents', 'storage_path', 'document_id'),
+        ('messages', 'content,answer_context', 'id'),
+        ('documents', 'storage_path', 'document_id'),
+        ('team_documents', 'storage_path', 'team_document_id'),
         ('profiles', 'avatar_path', 'id'),
     ):
         offset = 0
@@ -50,6 +52,10 @@ def _references(client):
             if not isinstance(rows, list):
                 raise ValueError('Reference lookup could not be confirmed')
             for row in rows:
+                if table == 'messages':
+                    context = row.get('answer_context')
+                    if isinstance(context, dict) and isinstance(context.get('photo_path'), str):
+                        images.add(context['photo_path'])
                 for value in _strings(row):
                     for url in re.findall(r'https?://[^\s"<>]+', value):
                         path = _image_path(url)
@@ -61,7 +67,7 @@ def _references(client):
                             documents.add(doc)
                         if profile:
                             profiles.add(profile)
-                    if table == 'documents':
+                    if table in ('documents', 'team_documents'):
                         documents.add(value)
                     if table == 'profiles':
                         profiles.add(value)
@@ -70,6 +76,17 @@ def _references(client):
             offset += PAGE
             if offset >= MAX_REFERENCE_ROWS:
                 raise ValueError('Reference scan needs maintenance review')
+    if get_settings().findez_inventory_intelligence_enabled:
+        for offset in range(0, MAX_REFERENCE_ROWS, PAGE):
+            rows = client.table('app_item_enrichment').select('result').in_('status', ['ready','approved','processing','queued']).order('id').range(offset, offset + PAGE - 1).execute().data
+            if not isinstance(rows, list):
+                raise ValueError('Enrichment references could not be confirmed')
+            for row in rows:
+                path = (row.get('result') or {}).get('storage_path')
+                if path: images.add(path)
+            if len(rows) < PAGE: break
+        else:
+            raise ValueError('Enrichment reference scan needs maintenance review')
     return images, documents, profiles
 
 

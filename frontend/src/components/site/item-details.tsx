@@ -1,4 +1,7 @@
 "use client";
+import { ItemClassification } from "@/components/site/item-classification";
+import { intelligenceEnabled } from "@/lib/inventory-intelligence";
+import { activeInventory } from "@/lib/inventory-selection";
 import { useEffect, useRef, useState } from "react";
 import { useApiSession } from "@/lib/use-api-session";
 import { accountRequest } from "@/lib/account-request";
@@ -82,6 +85,9 @@ export function ItemDetails({
   return <div className="item-details">
     {showTitle && <h2>{item.name}</h2>}
     <p className="item-category">{item.category}</p>
+    {intelligenceEnabled && activeInventory() && personal && <ItemClassification
+      key={`${item.item_id}:${item.inventory_role}`} itemId={item.item_id} role={item.inventory_role ?? "unclassified"}
+      canEdit={canEdit} onChanged={role => onChanged?.({ ...item, inventory_role: role })} />}
     <ItemPhotoGallery itemId={item.item_id} context={context} canEdit={canEdit} onChanged={onChanged} />
     <dl className="item-details-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{fieldValue(label!, value)}</dd></div>)}</dl>
     {item.import_data?.fields?.length ? <section className="item-import-details"><h3>Imported details</h3><p className="workspace-muted">{item.import_data.filename} / {item.import_data.sheet}</p><dl>{item.import_data.fields.map((field, index) => <div key={index}><dt>{field.name.trim() ? field.name : `Column ${index + 1}`}</dt><dd>{field.value === null || field.value === undefined || field.value === "" ? "Empty" : typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value)}</dd></div>)}</dl></section> : null}

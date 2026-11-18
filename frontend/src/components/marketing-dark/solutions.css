@@ -18,6 +18,12 @@
 .solutions-page .x-nav .x-p{height:30px;padding:0 13px;font-size:13px}
 @media(max-width:700px){.solutions-page .x-nav .x-in{padding:0 16px}}
 /* hero */
+@keyframes solutions-hero-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:no-preference){
+ .solutions-page .s-hero .s-h1,.solutions-page .s-hero .x-ctas,.solutions-page .s-hero .s-ins{animation:solutions-hero-enter 420ms ease-out backwards}
+ .solutions-page .s-hero .x-ctas{animation-delay:70ms}
+ .solutions-page .s-hero .s-ins{animation-delay:140ms}
+}
 .solutions-page .s-hero{padding:150px 0 0}
 .solutions-page .s-h1{font:500 56px/1.02 var(--font-app-tight),var(--font-app-inter);letter-spacing:-.045em;max-width:1000px}
 .solutions-page .s-h1 span{display:block;color:var(--g2)}

@@ -68,9 +68,9 @@ from app.services.ai_service import (
     interpret_barcode,
     parse_search_query_to_keywords,
 )
-from app.services.find_pipeline import (
-    FindPipelineError,
-    extract_inventory_items_with_find,
+from app.services.photo_extraction import (
+    PhotoExtractionError,
+    extract_inventory_items,
 )
 from app.core.limiter import limiter
 from app.services.storage import upload_image
@@ -566,7 +566,8 @@ async def extract_from_image_route(
         content=analysis_bytes,
     )
     try:
-        data = await extract_inventory_items_with_find(
+        data = await extract_inventory_items(
+            direct_photo=True,
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",
@@ -574,11 +575,11 @@ async def extract_from_image_route(
             source_frame_url=stored.url,
         )
         items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-    except FindPipelineError as exc:
-        logger.warning("FIND single item extraction failed: %s", exc.public_message)
+    except PhotoExtractionError as exc:
+        logger.warning("Photo single item extraction failed: %s", exc.public_message)
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
-        logger.exception("FIND single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
+        logger.exception("Photo single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
 
     try:
@@ -646,73 +647,88 @@ async def inventory_extract_from_image_route(
             },
         )
 
-    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
-    stored = upload_image(
-        user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{analysis_filename}",
-        content=analysis_bytes,
-    )
-
-    try:
-        data = await extract_inventory_items_with_find(
-            filename=analysis_filename,
-            image_bytes=analysis_bytes,
-            content_type="image/jpeg",
-            user_id=user.user_id,
-            source_frame_url=stored.url,
-        )
-    except FindPipelineError as exc:
-        logger.warning(
-            "FIND inventory extraction failed (file=%s, size=%d, status=%d)",
-            file.filename,
-            len(analysis_bytes),
-            exc.status_code,
-        )
-        raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
-    except Exception:
-        logger.exception(
-            "FIND inventory extraction failed unexpectedly (file=%s, size=%d)",
-            file.filename,
-            len(analysis_bytes),
-        )
-        raise HTTPException(
-            status_code=503,
-            detail="Photo analysis is temporarily unavailable. Please try again.",
+    effective_owner = user.user_id
+    async def extract(report=None):
+        source_digest = hashlib.sha256(analysis_bytes).hexdigest()
+        stored = upload_image(
+            user_id=effective_owner,
+            filename=f"capture-{uuid4().hex}-{analysis_filename}",
+            content=analysis_bytes,
         )
 
-    items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-    try:
-        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
-        items = prepare(
-            user_id=user.user_id, source_digest=source_digest, items=items
-        )
-    except Exception as exc:
-        logger.exception("Could not prepare uncertain capture results")
-        raise service_unavailable(
-            "Photo preview could not be prepared. Please try again."
-            if preview_only is True else
-            "Uncertain items could not be saved for review. Please try again."
-        ) from exc
-    summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
+        try:
+            data = await extract_inventory_items(
+            direct_photo=True,
+                filename=analysis_filename,
+                image_bytes=analysis_bytes,
+                content_type="image/jpeg",
+                user_id=effective_owner,
+                source_frame_url=stored.url,
+                **({"on_progress": report} if report else {}),
+            )
+        except PhotoExtractionError as exc:
+            logger.warning(
+                "Photo inventory extraction failed (file=%s, size=%d, status=%d)",
+                file.filename,
+                len(analysis_bytes),
+                exc.status_code,
+            )
+            raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
+        except Exception:
+            logger.exception(
+                "Photo inventory extraction failed unexpectedly (file=%s, size=%d)",
+                file.filename,
+                len(analysis_bytes),
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Photo analysis is temporarily unavailable. Please try again.",
+            )
 
-    if not isinstance(summary, dict):
-        summary = {"total_detected": len(items), "categories": {}}
+        if report:
+            report("Checking catalog matches and preparing review...")
+        items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
+        try:
+            prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+            items = prepare(
+                user_id=effective_owner, source_digest=source_digest, items=items
+            )
+        except Exception as exc:
+            logger.exception("Could not prepare uncertain capture results")
+            raise service_unavailable(
+                "Photo preview could not be prepared. Please try again."
+                if preview_only is True else
+                "Uncertain items could not be saved for review. Please try again."
+            ) from exc
+        summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
 
-    if "total_detected" not in summary:
-        summary["total_detected"] = len(items)
-    if "categories" not in summary:
-        summary["categories"] = {}
+        if not isinstance(summary, dict):
+            summary = {"total_detected": len(items), "categories": {}}
 
-    try:
-        create_activity(
-            user_id=user.user_id,
-            summary=f"Scanned image for inventory items ({len(items)} detected)",
-            metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
-                    )
-    except Exception:
-        logger.exception("Failed to write scan activity")
+        if "total_detected" not in summary:
+            summary["total_detected"] = len(items)
+        if "categories" not in summary:
+            summary["categories"] = {}
 
-    return MultiExtractFromImageResponse(items=items, summary=summary)
+        try:
+            create_activity(
+                user_id=effective_owner,
+                summary=f"Scanned image for inventory items ({len(items)} detected)",
+                metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
+                        )
+        except Exception:
+            logger.exception("Failed to write scan activity")
+
+        return MultiExtractFromImageResponse(items=items, summary=summary)
+
+    if 'text/event-stream' in request.headers.get('accept', ''):
+        from fastapi.responses import StreamingResponse
+        from app.services.extraction_stream import stream_extraction
+        from app.api.routes.ai import _authorized_stream
+        return StreamingResponse(_authorized_stream(stream_extraction(extract)),
+            media_type='text/event-stream',
+            headers={'Cache-Control': 'no-store, no-transform', 'X-Accel-Buffering': 'no'})
+    return await extract()
 
 
 @router.post("/inventory/bulk_create", response_model=BulkCreateResponse)
@@ -801,6 +817,9 @@ async def barcode_lookup_route(
     if not barcode:
         raise bad_request("Missing barcode")
 
+    from app.services.camera_barcode import internal_item_id
+    barcode = internal_item_id(barcode) or barcode
+
     # STEP -1: UUID → FindEZ QR code, look up by item_id directly
     _UUID_RE = re.compile(
         r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -869,6 +888,11 @@ async def barcode_lookup_route(
             },
         )
 
+    return await lookup_barcode_product(barcode, user.user_id)
+
+
+async def lookup_barcode_product(barcode: str, user_id: str) -> BarcodeLookupResponse:
+    """Resolve product identity without reading any user's inventory."""
     out: dict[str, Any] | None = None
 
     # STEP 0: Check internal parts_catalog first
@@ -912,26 +936,7 @@ async def barcode_lookup_route(
             logger.exception("OpenFoodFacts barcode lookup failed")
             out = None
 
-    # STEP 4: Final fallback to AI logic
-    if out is None:
-        try:
-            ai_out = await anyio.to_thread.run_sync(lambda: interpret_barcode(barcode=barcode))
-            if isinstance(ai_out, dict):
-                ai_norm: dict[str, Any] = {
-                    "barcode": barcode,
-                    "name": (ai_out.get("name") or "").strip(),
-                    "brand": (ai_out.get("brand") or "").strip() or None,
-                    "category": (ai_out.get("category") or "").strip() or None,
-                    "image_url": (ai_out.get("image_url") or "").strip() or None,
-                    "model": (ai_out.get("model") or ai_out.get("part_number") or None),
-                }
-                if is_valid_result(ai_norm):
-                    out = ai_norm
-                    save_to_catalog(barcode=barcode, data=out, source="ai")
-        except Exception:
-            logger.exception("AI barcode fallback failed")
-            out = None
-
+    # A barcode alone is not visual evidence. Unknown products stay unknown.
     if not is_valid_result(out):
         return BarcodeLookupResponse(
             barcode=barcode,
@@ -942,7 +947,7 @@ async def barcode_lookup_route(
             image_url=None,
         )
 
-    await increment_usage(user.user_id, "barcode_scan")
+    await increment_usage(user_id, "barcode_scan")
     return BarcodeLookupResponse(
         barcode=barcode,
         name=(out.get("name") or "Unknown item"),

@@ -1,6 +1,7 @@
 "use client";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
+import { configuredLowStock } from "@/lib/inventory-intelligence";
 import { useMemo, useState } from "react";
 import Link from "@/components/site/inventory-link";
 
@@ -11,6 +12,8 @@ import { Input } from "@/components/ui/input";
 export type HomeInventoryRow = {
   name: string;
   quantity: number;
+  reorder_enabled?: boolean;
+  reorder_threshold?: number | null;
   location: string;
   created_at: string;
 };
@@ -28,7 +31,7 @@ export function HomeHouseholdFeaturesClient(props: { items: HomeInventoryRow[]; 
   }, [props.items, query]);
 
   const lowCount = useMemo(() => {
-    return (props.items || []).filter((it) => typeof it.quantity === "number" && it.quantity <= 1).length;
+    return (props.items || []).filter(configuredLowStock).length;
   }, [props.items]);
 
   const staleCount = useMemo(() => {

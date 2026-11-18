@@ -11,6 +11,7 @@ const publicRoutes = [
   "/solutions/engineering-labs",
   "/cad-intelligence",
   "/docs/cad",
+  "/docs/connections",
   "/founders",
   "/desktop",
   "/research",

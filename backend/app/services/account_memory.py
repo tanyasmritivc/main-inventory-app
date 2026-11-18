@@ -72,7 +72,7 @@ def snapshot(actor, inventory=None):
         if (before[0].get('revision', 0) if before else 0) != (after[0].get('revision', 0) if after else 0):
             raise HTTPException(409, 'Memory changed while loading. Refresh before trying again.')
         settings = (control.get('payload') or {}) if control else {}
-        return {'available': True, 'enabled': settings.get('enabled') is True,
+        return {'available': True, 'enabled': settings.get('enabled', True) is True,
                 'revision': control.get('revision', 0) if control else 0,
                 'generation': settings.get('generation', 0), 'entries': entries,
                 'legacy': legacy, 'legacy_truncated': len(rows) == 101 or len(aliases) == 101}
