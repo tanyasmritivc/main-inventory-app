@@ -35,6 +35,12 @@ void main() {
         await Future<void>.delayed(const Duration(seconds: 2));
         debugPrint('NATIVE_CAPTURE_READY source-${brightness.name}-$page');
         await Future<void>.delayed(const Duration(seconds: 2));
+        expect(
+          navigator.canPop(),
+          isTrue,
+          reason: 'The native presentation must own a route before dismissal',
+        );
+        expect(find.byType(SnackBar), findsNothing);
         // Pop the owning Flutter route; its disposal dismisses UIKit as well.
         navigator.pop();
         await tester.pumpAndSettle();
