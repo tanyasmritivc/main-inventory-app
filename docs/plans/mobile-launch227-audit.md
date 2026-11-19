@@ -19,7 +19,7 @@ automatic-after-approval release setting and reviewer credentials.
   adaptation. Four compact-screen, light/dark and enlarged-text checks cover
   actual Markdown tables and emphasis.
 
-## Evidence recorded so far
+## Pre-submission test history
 
 - Baseline: 1,404 Flutter tests passed, one existing release-config skip.
 - Updated full host suite: 1,410 passed, one release-config skip.
@@ -38,7 +38,8 @@ the weight; the final check passes after applying emphasis after that adapter.
 An initial focused command named a nonexistent test file; a later focused runner
 stalled. Neither is counted as passing. The sequential full host suite completed.
 
-Private logs and Apple metadata are in `projects/findez-launch227-private`.
-No customer inventory was changed by automated fixtures. No backend migration or
-deployment is part of this mobile change. Final packaging and submission receipts
-will be added after the remaining gates complete.
+## Submission and final verification
+
+On November 19, Apple accepted version 1.1.5 (227) for public App Review. State: WAITING_FOR_REVIEW. Release is automatic after approval. Seven iPhone and seven iPad screenshots matched the prior listing by checksum and order. Production login, workspace loading, database health, and browser sign-in to Spaces passed after recovery from the full server disk.
+
+The broad iOS run passed 1,117 checks, skipped one, and had eight attachment-menu failures. All eight passed on isolated rerun. The final chat regression suite passed 23 checks each on the iPhone and iPad simulators after correcting the iOS test transport. Physical build 227 launch remains unverified because iPhone Mirroring reported the phone in use. Apple validated the signed IPA with its advisory about the April 2027 SDK requirement.

@@ -1,14 +1,8 @@
-## November 17 — Mobile launch 227 audit in progress
+## November 19 — Mobile 227 submitted to Apple
 
-User authorizes fixing mobile bugs and submitting to public App Review with the
-same App Store screenshots. Work is in this checkout; no other mobile lane.
-Organization Space Ask routing and semantic answer emphasis are corrected; main
-Ask and personal scope remain unchanged. Updated host suite: 1,410 passed, one
-configuration skip; four formatting tests plus explicit production-config gate
-passed. Analyzer clean. Broad native audit is running; native final regression,
-physical candidate acceptance, signed package and public submission remain pending.
-Draft 1.1.5 retains all 14 screenshots and prior reviewer access/release setting.
-See docs/plans/mobile-launch227-audit.md. No Git push performed.
+On November 19, Apple accepted version 1.1.5 (227) for public App Review. State: WAITING_FOR_REVIEW. Release is automatic after approval. Seven iPhone and seven iPad screenshots matched the prior listing by checksum and order. Production login, workspace loading, database health, and browser sign-in to Spaces passed after recovery from the full server disk.
+
+The broad iOS run passed 1,117 checks, skipped one, and had eight attachment-menu failures. All eight passed on isolated rerun. The final chat regression suite passed 23 checks each on the iPhone and iPad simulators after correcting the iOS test transport. Physical build 227 launch remains unverified because iPhone Mirroring reported the phone in use. Apple validated the signed IPA with its advisory about the April 2027 SDK requirement.
 
 ## November 17 - Spaces counts and outlines, build 226 uploaded
 
