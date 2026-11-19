@@ -2,6 +2,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile/core/background_http.dart';
 import 'context_chat_test.dart' as chat;
 import '../test/space_chat_api_test.dart' as scope;
 import '../test/chat_answer_format_test.dart' as formatting;
@@ -18,6 +20,9 @@ Future<void> resetClient() async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   group('Organization Space routing', () {
+    // Route iOS requests through the zone-scoped HTTP fixture in these tests.
+    setUp(() => debugAssistantHttpClientFactory = http.Client.new);
+    tearDown(() => debugAssistantHttpClientFactory = null);
     setUpAll(resetClient);
     tearDownAll(resetClient);
     scope.main();
