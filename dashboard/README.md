@@ -6,6 +6,9 @@ product vision. It does not claim every proposed business metric is connected.
 
 ## Current delivery and device acceptance
 
+Current internal TestFlight build: **1.0.0 (5)**, available in **Founder Private**.
+See `verification/apple-build5-release.json` for Apple’s status.
+
 Previously verified on the founder’s phone: **1.0.0 (4)**, source `e622b42`, VALID and IN_BETA_TESTING in
 Founder Private. Build 4 is installed on Tanya's iPhone. Tanya confirmed that an
 email code arrives, sign-in opens Overview, and Overview returns after phone
