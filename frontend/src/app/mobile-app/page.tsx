@@ -1,9 +1,12 @@
+import {socialText} from '@/lib/marketing-social';
 import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import type { Metadata } from "next";
 import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
 import { FindEZMark } from "@/components/site/findez-brand";
 
 export const metadata: Metadata = {
+  ...socialText("Get the FindEZ AI app | FindEZ", "Take your physical memory with you. Scan your things, save their locations in Spaces, and ask FindEZ AI about them on iPhone.", "/"),
+
   title: "Get the FindEZ AI app",
   description: "Take your physical memory with you. Scan your things, save their locations in Spaces, and ask FindEZ AI about them on iPhone.",
   robots: { index: false, follow: false },

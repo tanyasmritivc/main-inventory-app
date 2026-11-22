@@ -1,10 +1,13 @@
+import {socialText} from '@/lib/marketing-social';
 import Link from "next/link";
 import { LegalDocument } from "@/components/site/legal-document";
 import { MarketingNav } from "@/components/site/marketing-nav";
 import { PRIVACY_EFFECTIVE_DATE, privacySections } from "@/lib/legal-content";
 import styles from "@/components/site/legal-document.module.css";
 
-export const metadata = { title: "Privacy Policy", description: "How FindEZ handles information, permissions, device storage, and privacy requests.", alternates: { canonical: "/privacy" } };
+export const metadata = {
+  ...socialText("Privacy Policy | FindEZ", "How FindEZ handles information, permissions, device storage, and privacy requests.", "/"),
+ title: "Privacy Policy", description: "How FindEZ handles information, permissions, device storage, and privacy requests.", alternates: { canonical: "/privacy" } };
 
 export default function PrivacyPage() {
   return <div className={styles.page}><MarketingNav /><LegalDocument

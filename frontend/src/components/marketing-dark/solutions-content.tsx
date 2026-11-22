@@ -1,9 +1,9 @@
 // Server-rendered copy and sample questions from the supplied Solutions prototype.
 export function SolutionsHero(){return (<section className={"s-hero"}><div className={"x-in"}>
-<h1 className={"s-h1"}>{"A better way to find what you already have."}<span >{"Parts, tools, equipment and supplies, for teams that build things."}</span></h1>
+<h1 className={"s-h1"}>{"Know what you have. Find it when you need it."}<span >{"Better visibility into the parts, tools, equipment and materials your team depends on."}</span></h1>
 <div className={"x-ctas"}><a className={"x-p w lg"} href={"/signup"}>{"Get Free Founders Access"}</a><a className={"x-p d lg"} href={"#sm"}>{"See how it works"}</a></div>
 <div className={"s-ins"} id={"s-ins"}>
-<div className={"s-tabs"} role={"tablist"}><button className={"s-tab on"} role={"tab"} aria-selected={"true"}>{"Robotics teams"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Workshops"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Makerspaces"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Engineering labs"}</button></div>
+<div className={"s-tabs"} role={"tablist"}><button className={"s-tab on"} role={"tab"} aria-selected={"true"}>{"Robotics teams"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Hardware & engineering teams"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Research labs"}</button><button className={"s-tab"} role={"tab"} aria-selected={"false"}>{"Workshops & manufacturing"}</button></div>
 <div className={"s-body"}>
 <div className={"s-chat"}><div className={"s-k"}>{"ASK"}</div><div className={"s-q"} id={"s-q"}>{"Where are the 24 tooth HTD pulleys?"}</div>
 <div className={"s-k"} style={{"marginTop": "26px"}}>{"RESOLVED PATH"}</div>
@@ -15,10 +15,10 @@ export function SolutionsHero(){return (<section className={"s-hero"}><div class
 </div>
 </div></section>);}
 const audiences = [
-  {name: 'Robotics teams', tags: 'FTC · FRC · ROBOTICS CLUBS', headline: 'Less time searching for parts. More time building robots.', description: 'Keep track of electronics, components, tools and spare parts. Bring existing team records into FindEZ and ask what your team has when you need it.', href: '/solutions/robotics', link: 'Explore Robotics teams'},
-  {name: 'Workshops & machine shops', tags: 'CNC · 3D PRINTING · TOOLING', headline: 'Inventory that doesn’t depend on someone’s memory.', description: 'Make tooling, accessories, consumables and replacement parts easier to record and search.', href: '/solutions/workshops', link: 'Explore Workshops'},
-  {name: 'Makers & makerspaces', tags: 'ELECTRONICS · MATERIALS · SHARED TOOLS', headline: 'Components and supplies, within reach.', description: 'Make electronics, materials, tools and shared equipment easier to keep track of.', href: '/solutions/makerspaces', link: 'Explore Makerspaces'},
-  {name: 'Engineering labs', tags: 'COMPONENTS · EQUIPMENT · SUPPLIES', headline: 'Shared inventory, easier to find.', description: 'Keep records of lab components, equipment, supplies and materials in one searchable inventory.', href: '/solutions/engineering-labs', link: 'Explore Engineering labs'},
+  {name: 'Robotics teams', tags: 'FTC · FRC · ROBOTICS CLUBS', headline: "Spend more time building, less time searching.", description: "Track the parts, motors, electronics and spares your robotics team shares. Ask what’s available before the next build.", href: '/solutions/robotics', link: 'Explore Robotics teams'},
+  {name: 'Workshops & manufacturing', tags: 'CNC · 3D PRINTING · TOOLING', headline: "Keep the essentials ready for work.", description: "Tools, materials and spare parts across the shop floor. Know what's there, how much, and where it belongs.", href: '/solutions/workshops', link: 'Explore Workshops'},
+  {name: 'Hardware & engineering teams', tags: 'ELECTRONICS · MATERIALS · SHARED TOOLS', headline: "Know what's available before buying more.", description: "Prototypes pull parts from everywhere. See what your team already has, and how many, before anyone buys it again.", href: '/solutions/makerspaces', link: 'Explore Makerspaces'},
+  {name: 'Research labs', tags: 'COMPONENTS · EQUIPMENT · SUPPLIES', headline: "Keep shared equipment accounted for.", description: 'Keep records of lab components, equipment, supplies and materials in one searchable inventory.', href: '/solutions/engineering-labs', link: 'Explore Engineering labs'},
 ];
 export function AudienceCards(){return <section className="x-sec"><div className="x-in">
   <h2 className="x-h2">Built around the places where things get lost.<span>Four kinds of teams. One way to find things.</span></h2>

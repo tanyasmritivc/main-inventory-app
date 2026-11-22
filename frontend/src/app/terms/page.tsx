@@ -1,10 +1,13 @@
+import {socialText} from '@/lib/marketing-social';
 import Link from "next/link";
 import { LegalDocument } from "@/components/site/legal-document";
 import { MarketingNav } from "@/components/site/marketing-nav";
 import { LEGAL_EFFECTIVE_DATE, termsSections } from "@/lib/legal-content";
 import styles from "@/components/site/legal-document.module.css";
 
-export const metadata = { title: "Terms of Service", description: "FindEZ account, content, sharing, payment, safety, and service terms.", alternates: { canonical: "/terms" } };
+export const metadata = {
+  ...socialText("Terms of Service | FindEZ", "FindEZ account, content, sharing, payment, safety, and service terms.", "/"),
+ title: "Terms of Service", description: "FindEZ account, content, sharing, payment, safety, and service terms.", alternates: { canonical: "/terms" } };
 
 export default function TermsPage() {
   return <div className={styles.page}><MarketingNav /><LegalDocument

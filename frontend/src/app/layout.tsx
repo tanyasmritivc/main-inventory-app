@@ -1,3 +1,4 @@
+import {shareTitle, shareDescription} from '@/lib/marketing-social';
 import { Suspense } from "react";
 import { AppThemeDocument } from "@/components/site/use-app-theme";
 import type { Metadata } from "next";
@@ -37,8 +38,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: PUBLIC_SITE_TITLE,
-    description: PUBLIC_SITE_DESCRIPTION,
+    title: shareTitle,
+    description: shareDescription,
     url: PUBLIC_SITE_URL,
     siteName: "FindEZ",
     type: "website",
@@ -47,8 +48,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     images: ["/brand/findez-petals-512.png"],
-    title: PUBLIC_SITE_TITLE,
-    description: PUBLIC_SITE_DESCRIPTION,
+    title: shareTitle,
+    description: shareDescription,
   },
   icons: {
     icon: [

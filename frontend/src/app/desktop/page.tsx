@@ -1,8 +1,12 @@
+import {socialText} from '@/lib/marketing-social';
 import type { Metadata } from "next";
 import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import styles from "./desktop.module.css";
 
 export const metadata: Metadata = {
+  ...socialText("Download FindEZ for Mac | FindEZ", "Your inventory, Ask and CAD Intelligence in the FindEZ desktop app.", "/desktop"),
+  alternates: {canonical: "/desktop"},
+
   title: "Download FindEZ for Mac",
   description: "Your inventory, Ask and CAD Intelligence in the FindEZ desktop app.",
 };
@@ -16,7 +20,7 @@ export default function DesktopPage() {
   return <><HeaderMarkup reserveSpace/><main className={styles.page}>
     <section className={styles.hero}>
       <span className={styles.eyebrow}>FINDEZ FOR DESKTOP · PREVIEW 0.1.2</span>
-      <h1>Your world.<br />One app away.</h1>
+      <h1>Your inventory.<br />One app away.</h1>
       <p>Your inventory, Ask and CAD Intelligence, together on your desktop. Sign in with your existing FindEZ account.</p>
     </section>
     <section className={styles.downloads} aria-label="Download FindEZ">

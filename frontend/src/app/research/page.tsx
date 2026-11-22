@@ -1,3 +1,4 @@
+import {socialText} from '@/lib/marketing-social';
 import type { Metadata } from "next";
 import {HeaderMarkup, FooterMarkup} from "@/components/marketing-dark/public-chrome";
 import { publicFonts } from "@/components/landing-v5/fonts";
@@ -8,6 +9,8 @@ import "@/components/pages-ui/pages.css";
 import "@/components/research/research.css";
 
 export const metadata: Metadata = {
+  ...socialText("FIND Research | FindEZ AI", "FindEZ AI's proprietary perception pipeline, combining specialized computer vision and intelligent recognition systems to identify physical inventory items with increasing precision. Currently in development.", "/research"),
+
  title: { absolute: "FIND Research | FindEZ AI" },
  description: "FindEZ AI's proprietary perception pipeline, combining specialized computer vision and intelligent recognition systems to identify physical inventory items with increasing precision. Currently in development.",
  alternates: { canonical: "/research" },

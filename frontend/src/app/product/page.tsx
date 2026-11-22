@@ -1,3 +1,4 @@
+import {socialText} from '@/lib/marketing-social';
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,6 +7,7 @@ import { BlurText, HeroBackdrop, GradientCard, SpotlightCard, TypedQuestion } fr
 import { MapPin, Wrench, History } from "lucide-react";
 
 export const metadata: Metadata = {
+ twitter: socialText("Product | FindEZ","See how FindEZ turns photos and lists into an organized inventory you can search, update and share.","/product").twitter,
  title: "Product", description: "See how FindEZ turns photos and lists into an organized inventory you can search, update and share.",
  alternates: { canonical: "/product" }, openGraph: { title: "Product | FindEZ", description: "Capture, organize, ask and share your physical inventory.", url: "https://findez.ai/product" },
 };
