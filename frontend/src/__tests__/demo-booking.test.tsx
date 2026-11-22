@@ -24,8 +24,10 @@ test('qualification passes to the calendar, and editing preserves the visitor’
   fireEvent.click(screen.getByRole('button',{name:/Choose a date/}));
   const url=new URL(screen.getByTitle('FindEZ demo booking calendar').getAttribute('src')!);
   expect(url.origin).toBe('https://calendly.com');
-  expect(url.searchParams.get('a1')).toBe('Lab & Co');
-  expect(url.searchParams.get('a5')).toBe('BOM and inventory comparison');
+  expect(url.searchParams.get('a1')?.split('\n')).toEqual([
+    'Organization: Lab & Co', 'Role: Engineer', 'Organization type: R&D laboratory',
+    'Demo interest: BOM and inventory comparison',
+  ]);
   expect(url.searchParams.get('a4')).toBeNull();
   fireEvent.click(screen.getByRole('button',{name:'Edit your details'}));
   expect((company as HTMLInputElement).value).toBe('Lab & Co');

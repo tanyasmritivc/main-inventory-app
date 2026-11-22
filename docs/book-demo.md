@@ -13,15 +13,10 @@ and calendar invitation enabled. Calendly owns booking records, meeting links,
 rescheduling and cancellations. To send additional messages, attach 24-hour and
 1-hour reminders and a post-demo follow-up workflow to this event.
 
-The page prefills name and email. Configure these six text questions on the event
-in this order to carry visitor answers into the booking and host notification.
-
-1. Company or organization
-2. Job title or role
-3. Organization type
-4. Team size (optional)
-5. What would you like to explore?
-6. Which CAD software does your team use? (optional)
+The published event has one free-text preparation question. Keep that question
+first on the event. The site prefills name and email and sends organization,
+role, organization type, team size, demo interest and CAD software together
+in the preparation answer. The invitee can review and edit it before confirming.
 
 An invitee who stops before scheduling has not booked an appointment. Pilot
 requests open an email draft to the published FindEZ contact address. Before

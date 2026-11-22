@@ -17,12 +17,17 @@ export function DemoBooking({eventUrl}: {eventUrl: string | null}) {
     if (!eventUrl) return;
     const fields = new FormData(event.currentTarget);
     const url = new URL(eventUrl);
-    for (const [field, param] of Object.entries({
-      name:'name', email:'email', organization:'a1', role:'a2', type:'a3', size:'a4', interest:'a5', cad:'a6',
-    })) {
+    url.searchParams.set('name', String(fields.get('name')).trim());
+    url.searchParams.set('email', String(fields.get('email')).trim());
+    // The published event has one free-text preparation question.
+    const notes = Object.entries({
+      organization: 'Organization', role: 'Role', type: 'Organization type',
+      size: 'Team size', interest: 'Demo interest', cad: 'CAD software',
+    }).flatMap(([field, label]) => {
       const value = String(fields.get(field) || '').trim();
-      if (value) url.searchParams.set(param, value);
-    }
+      return value ? [label + ': ' + value] : [];
+    });
+    url.searchParams.set('a1', notes.join('\n'));
     url.searchParams.set('embed_domain', window.location.hostname);
     url.searchParams.set('embed_type', 'Inline');
     setBooking(url.href);
