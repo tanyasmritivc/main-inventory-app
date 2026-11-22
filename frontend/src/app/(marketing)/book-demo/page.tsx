@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { DemoSearch } from '@/components/demo-search';
 import { HeaderMarkup, FooterMarkup } from '@/components/marketing-dark/public-chrome';
 import { DemoBooking } from '@/components/demo-booking';
 import { calendlyEvent } from '@/lib/demo-scheduling';
@@ -20,8 +20,8 @@ export default function BookDemo() {
       <div className={styles.columns}>
         <section className={styles.story}>
           <h1>See FindEZ<br/>in action.</h1>
-          <p className={styles.intro}>Follow a part from the shelf to an engineering design. See how your team can find what’s on hand and check what a build still needs.</p>
-          <Image className={styles.photo} src="/images/landing/workbench-wide.jpg" alt="Engineering workbench with labeled parts drawers and open hardware bins" width={720} height={380} sizes="(max-width: 800px) 92vw, 40vw" />
+          <p className={styles.intro}>Follow a part from the shelf to an engineering design. See how your team finds what’s on hand and checks what a build still needs.</p>
+          <DemoSearch />
           <h2>What you’ll see</h2>
           <ul>
             <li>Find a part, its quantity and its location with AI search.</li>
@@ -31,8 +31,7 @@ export default function BookDemo() {
           </ul>
           <a className={styles.pilot} href="mailto:info@findez.ai?subject=FindEZ%20organization%20pilot%20request">Request an Organization Pilot <span aria-hidden="true">↗</span></a>
         </section>
-        <section className={styles.panel} aria-labelledby="booking-title">
-          <h2 id="booking-title">Book your personalized demo</h2>
+        <section className={styles.panel} aria-label="Book your demo">
           <DemoBooking eventUrl={scheduler} />
         </section>
       </div>

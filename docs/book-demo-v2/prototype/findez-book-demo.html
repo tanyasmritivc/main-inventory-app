@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FindEZ AI · Book a Demo (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161616}
+.fd *{box-sizing:border-box}
+.fd a{text-decoration:none}
+.fd-nav a{color:#A9A7A1;transition:color .15s}
+.fd-nav a:hover{color:#F3F1EA}
+.fd-label{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:500;color:#C9C7C1;min-width:0}
+.fd-opt{color:#85837E;font-weight:400}
+.fd-input{height:46px;width:100%;border:1px solid #2F2F2F;border-radius:10px;padding:0 14px;font:inherit;font-size:15px;font-weight:400;color:#F3F1EA;background:#121212;transition:border-color .15s,box-shadow .15s}
+.fd-input:hover{border-color:#454545}
+.fd-input:focus{outline:none;border-color:#F3F1EA;box-shadow:0 0 0 3px rgba(243,241,234,.08)}
+select.fd-input{appearance:none;-webkit-appearance:none;padding-right:38px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A9A7A1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+select.fd-input option{background:#1D1D1D;color:#F3F1EA}
+.fd-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fd-primary{height:48px;border:0;border-radius:999px;background:#F3F1EA;color:#111111;font:inherit;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 22px}
+.fd-primary:hover{opacity:.88}
+.fd-primary[disabled]{background:#3A3A3A;color:#85837E;cursor:not-allowed;opacity:1}
+.fd-ghost{height:48px;border:1px solid #333333;border-radius:999px;background:transparent;color:#F3F1EA;font:inherit;font-size:15px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0 22px;transition:border-color .15s}
+.fd-ghost:hover{border-color:#F3F1EA}
+.fd-day{height:52px;border-radius:10px;font:inherit;font-size:15px;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color .15s,background .15s}
+.fd-day[disabled]{cursor:default}
+.fd-slot{height:46px;border-radius:10px;font:inherit;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color .15s}
+.fd-day:not([disabled]):hover,.fd-slot:hover{border-color:#F3F1EA !important}
+.fd button:focus-visible,.fd a:focus-visible{outline:2px solid #F3F1EA;outline-offset:2px}
+.fd-link{color:#F3F1EA;border-bottom:1px solid #4A4A4A;padding-bottom:3px;transition:border-color .15s}
+.fd-link:hover{border-color:#F3F1EA}
+@keyframes fd-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.fd-in{animation:fd-in .3s ease-out both}
+@keyframes fd-blink{0%,100%{opacity:1}50%{opacity:0}}
+.fd-caret{display:inline-block;width:1.5px;height:15px;background:#F3F1EA;margin-left:2px;vertical-align:-2px;animation:fd-blink 1s steps(1) infinite}
+@media (prefers-reduced-motion: reduce){.fd-in,.fd-caret{animation:none}}
+@media (max-width:900px){.fd-nav{display:none !important}}
+@media (max-width:560px){.fd-row{grid-template-columns:1fr}.fd-card{padding:24px !important}.fd-hide-sm{display:none !important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/template" id="tpl">
+<div class="fd" style="min-height: 100vh; background: #161616; color: #F3F1EA; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column">
+
+<header style="background: #0E0E0E; border-bottom: 1px solid #222222">
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 32px; height: 72px; display: flex; align-items: center; gap: 40px">
+<a href="#" style="display: flex; align-items: center; gap: 10px; color: #F3F1EA">
+<svg width="20" height="20" viewBox="0 0 100 100" aria-hidden="true"><path fill="#F3F1EA" d="M12 24A12 12 0 0 1 24 12L40.5 12A5 5 0 0 1 45.5 17L45.5 38.5A4.5 4.5 0 0 0 50 43A4.5 4.5 0 0 0 54.5 38.5L54.5 17A5 5 0 0 1 59.5 12L76 12A12 12 0 0 1 88 24L88 40.5A5 5 0 0 1 83 45.5L61.5 45.5A4.5 4.5 0 0 0 57 50A4.5 4.5 0 0 0 61.5 54.5L83 54.5A5 5 0 0 1 88 59.5L88 76A12 12 0 0 1 76 88L59.5 88A5 5 0 0 1 54.5 83L54.5 61.5A4.5 4.5 0 0 0 50 57A4.5 4.5 0 0 0 45.5 61.5L45.5 83A5 5 0 0 1 40.5 88L24 88A12 12 0 0 1 12 76L12 59.5A5 5 0 0 1 17 54.5L38.5 54.5A4.5 4.5 0 0 0 43 50A4.5 4.5 0 0 0 38.5 45.5L17 45.5A5 5 0 0 1 12 40.5Z"></path></svg>
+<span style="font-weight: 500; font-size: 18px; letter-spacing: -0.01em">FindEZ AI</span>
+</a>
+<nav class="fd-nav" aria-label="Main" style="display: flex; gap: 30px; font-size: 15px; margin: 0 auto">
+<a href="#">Solutions</a><a href="#">CAD Intelligence</a><a href="#">Founders Access</a><a href="#">Developers</a><a href="#">Community</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 15px; margin-left: auto">
+<a href="#" class="fd-hide-sm" style="color: #A9A7A1; padding: 0 10px">Sign in</a>
+<a href="#" class="fd-hide-sm" style="height: 40px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 999px; background: #1F1F1F; color: #F3F1EA">Download</a>
+<a href="#" class="fd-primary" style="height: 40px; padding: 0 18px; font-size: 15px">Book a Demo</a>
+</div>
+</div>
+</header>
+
+<main style="flex: 1">
+<div style="max-width: 1200px; margin: 0 auto; padding: 104px 32px 120px; display: flex; flex-wrap: wrap; gap: 72px 88px; align-items: flex-start">
+
+<section style="flex: 1 1 420px; min-width: 0; max-width: 540px">
+<h1 style="margin: 0; font-family: 'Inter Tight', Inter, sans-serif; font-weight: 500; font-size: clamp(44px, 6vw, 84px); line-height: 0.98; letter-spacing: -0.045em">See FindEZ<br>in action.</h1>
+<p style="margin: 28px 0 0; font-size: 18px; line-height: 1.6; color: #A9A7A1; max-width: 500px">Follow a part from the shelf to an engineering design. See how your team finds what’s on hand and checks what a build still needs.</p>
+
+<div aria-hidden="true" style="margin-top: 48px; border: 1px solid #2A2A2A; border-radius: 18px; background: #111111; overflow: hidden">
+<div style="padding: 18px 20px; border-bottom: 1px solid #222222; display: flex; align-items: center; gap: 12px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#85837E" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<span style="font-size: 15px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{typed}}<span class="fd-caret"></span></span>
+<span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .04em; color: #85837E; white-space: nowrap">Sample data</span>
+</div>
+<div style="padding: 6px 20px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid {{r.line}}; opacity: {{r.op}}; transition: opacity .35s">
+<span style="width: 34px; height: 34px; border-radius: 9px; background: #1D1D1D; display: grid; place-items: center; flex: 0 0 34px; font-family: 'Geist Mono', monospace; font-size: 10px; color: #A9A7A1">{{r.tag}}</span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1"><span style="font-size: 14px; font-weight: 500">{{r.name}}</span><span style="font-size: 13px; color: #85837E">{{r.where}}</span></span>
+<span style="font-size: 13px; font-weight: 500; color: {{r.qtyColor}}; font-variant-numeric: tabular-nums; white-space: nowrap">{{r.qty}}</span>
+</div>
+</sc-for>
+</div>
+<div style="padding: 14px 20px; background: #161616; border-top: 1px solid #222222; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px">
+<span style="color: #A9A7A1">drivetrain_v4 · Autodesk Fusion</span>
+<span style="white-space: nowrap"><span style="color: #F3F1EA">7 of 8 ready</span><span style="color: #E3B45C"> · 1 short</span></span>
+</div>
+</div>
+
+<div style="margin-top: 56px">
+<div style="font-size: 15px; font-weight: 500; padding-bottom: 14px">What you’ll see</div>
+<sc-for list="{{seeList}}" as="s" hint-placeholder-count="4">
+<div style="display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-top: 1px solid #262626; font-size: 16px; line-height: 1.5; color: #D6D4CE">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F3F1EA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 4px; flex: 0 0 16px"><path d="m5 12 5 5 9-10"></path></svg>
+<span>{{s.t}}</span>
+</div>
+</sc-for>
+<div style="border-top: 1px solid #262626"></div>
+</div>
+<div style="margin-top: 36px; font-size: 15px"><a href="#" class="fd-link">Request an Organization Pilot ↗</a></div>
+</section>
+
+<section class="fd-card" aria-label="Book your demo" style="flex: 1 1 440px; min-width: 0; max-width: 560px; margin-left: auto; border: 1px solid #2A2A2A; border-radius: 22px; background: #1B1B1B; padding: 40px; position: sticky; top: 24px">
+
+<sc-if value="{{isForm}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="font-size: 13px; color: #A9A7A1">20 minutes · Live online</div>
+<h2 style="margin: 12px 0 0; font-family: 'Inter Tight', Inter, sans-serif; font-size: 30px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1">Book your personalized demo</h2>
+<p style="margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: #A9A7A1">Tell us about your team, then choose a time.</p>
+<div style="display: flex; flex-direction: column; gap: 18px; margin-top: 32px">
+<div class="fd-row">
+<label class="fd-label">Full name<input class="fd-input" value="{{f.name}}" onChange="{{setName}}" autocomplete="name"></label>
+<label class="fd-label">Work email<input class="fd-input" type="email" value="{{f.email}}" onChange="{{setEmail}}" autocomplete="email"></label>
+</div>
+<div class="fd-row">
+<label class="fd-label">Company or organization<input class="fd-input" value="{{f.company}}" onChange="{{setCompany}}" autocomplete="organization"></label>
+<label class="fd-label">Job title or role<input class="fd-input" value="{{f.role}}" onChange="{{setRole}}" autocomplete="organization-title"></label>
+</div>
+<div class="fd-row">
+<label class="fd-label">Organization type<select class="fd-input" value="{{f.orgType}}" onChange="{{setOrg}}">
+<option value="">Select</option><option value="Robotics team">Robotics team</option><option value="University or lab">University or research lab</option><option value="Hardware startup">Hardware startup</option><option value="Engineering company">Engineering company</option><option value="School or makerspace">School or makerspace</option><option value="Other">Other</option></select></label>
+<label class="fd-label"><span>Team size <span class="fd-opt">(optional)</span></span><select class="fd-input" value="{{f.size}}" onChange="{{setSize}}">
+<option value="">Select</option><option value="1 to 10">1 to 10</option><option value="11 to 50">11 to 50</option><option value="51 to 200">51 to 200</option><option value="200+">200+</option></select></label>
+</div>
+<label class="fd-label">What would you like to explore?<select class="fd-input" value="{{f.explore}}" onChange="{{setExplore}}">
+<option value="">Select</option><option value="AI inventory management">AI inventory management</option><option value="Robotics team inventory">Robotics team inventory</option><option value="CAD Intelligence and Fusion">CAD Intelligence and Fusion</option><option value="BOM and inventory comparison">BOM and inventory comparison</option><option value="Organization-wide deployment">Organization-wide deployment</option><option value="Other">Other</option></select></label>
+<label class="fd-label"><span>Which CAD software does your team use? <span class="fd-opt">(optional)</span></span><select class="fd-input" value="{{f.cad}}" onChange="{{setCad}}">
+<option value="">Select</option><option value="Autodesk Fusion">Autodesk Fusion</option><option value="Onshape">Onshape</option><option value="SolidWorks">SolidWorks</option><option value="Other">Other</option><option value="Not currently using CAD">Not currently using CAD</option></select></label>
+<sc-if value="{{cadNote}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 13px; line-height: 1.5; color: #A9A7A1; margin-top: -6px">FindEZ integrates with Autodesk Fusion today. We’ll show how teams on other tools use FindEZ alongside their CAD.</div>
+</sc-if>
+<sc-if value="{{showErr}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="font-size: 14px; color: #F29B85">{{err}}</div>
+</sc-if>
+<button class="fd-primary" type="button" onClick="{{toTime}}" style="margin-top: 8px; width: 100%; height: 52px">Choose a date and time <span aria-hidden="true">→</span></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isTime}}" hint-placeholder-val="{{false}}">
+<div>
+<div style="font-size: 13px; color: #A9A7A1">20 minutes · Pacific Time</div>
+<h2 style="margin: 12px 0 0; font-family: 'Inter Tight', Inter, sans-serif; font-size: 30px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1">Pick a time</h2>
+<div style="margin-top: 32px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; text-align: center">
+<sc-for list="{{dow}}" as="d" hint-placeholder-count="5"><span style="font-size: 12px; color: #85837E; padding-bottom: 2px">{{d}}</span></sc-for>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="10">
+<button class="fd-day" type="button" disabled="{{d.disabled}}" aria-label="{{d.aria}}" aria-pressed="{{d.on}}" onClick="{{d.pick}}" style="border: 1px solid {{d.border}}; background: {{d.bg}}; color: {{d.fg}}">{{d.n}}</button>
+</sc-for>
+</div>
+<sc-if value="{{hasDate}}" hint-placeholder-val="{{false}}">
+<div style="margin-top: 28px">
+<div style="font-size: 13px; font-weight: 500; color: #C9C7C1; padding-bottom: 12px">{{dateLabel}}</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{slots}}" as="s" hint-placeholder-count="6">
+<button class="fd-slot" type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="border: 1px solid {{s.border}}; background: {{s.bg}}; color: {{s.fg}}">{{s.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display: flex; gap: 10px; margin-top: 32px">
+<button class="fd-ghost" type="button" onClick="{{toForm}}">Back</button>
+<button class="fd-primary" type="button" onClick="{{book}}" disabled="{{cantBook}}" style="flex: 1">Confirm booking</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+<div>
+<span style="width: 44px; height: 44px; border-radius: 22px; background: #F3F1EA; color: #111111; display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span>
+<h2 style="margin: 22px 0 0; font-family: 'Inter Tight', Inter, sans-serif; font-size: 30px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1">You’re booked.</h2>
+<p style="margin: 10px 0 0; font-size: 15px; color: #A9A7A1">A calendar invite is on its way to {{emailShown}}.</p>
+<div style="margin-top: 28px; border-top: 1px solid #2A2A2A">
+<div style="display: flex; justify-content: space-between; gap: 16px; padding: 15px 0; border-bottom: 1px solid #2A2A2A; font-size: 14px"><span style="color: #A9A7A1">When</span><span style="text-align: right">{{whenLabel}}</span></div>
+<div style="display: flex; justify-content: space-between; gap: 16px; padding: 15px 0; border-bottom: 1px solid #2A2A2A; font-size: 14px"><span style="color: #A9A7A1">Where</span><span style="text-align: right">Zoom · link in your invite</span></div>
+<div style="display: flex; justify-content: space-between; gap: 16px; padding: 15px 0; border-bottom: 1px solid #2A2A2A; font-size: 14px"><span style="color: #A9A7A1">Focus</span><span style="text-align: right">{{focusLabel}}</span></div>
+</div>
+<div style="display: flex; gap: 10px; margin-top: 32px">
+<a href="#" class="fd-primary" style="flex: 1">Add to calendar</a>
+<button class="fd-ghost" type="button" onClick="{{reschedule}}">Reschedule</button>
+</div>
+</div>
+</sc-if>
+</section>
+</div>
+</main>
+
+<footer style="border-top: 1px solid #222222">
+<div style="max-width: 1200px; margin: 0 auto; padding: 24px 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: #85837E">
+<span>© 2026 FindEZ AI</span>
+<span style="display: flex; gap: 20px"><a href="#" style="color: #85837E">Privacy</a><a href="#" style="color: #85837E">Terms</a></span>
+</div>
+</footer>
+</div>
+</script>
+<script>
+/* Tiny template runtime for this prototype only. Do not ship it: port the markup, CSS and the Component logic into React. */
+class DCLogic{setState(p){this.state={...this.state,...p};schedule()}}
+
+class Component extends DCLogic {
+  state = { step: 'form', f: { name: '', email: '', company: '', role: '', orgType: '', size: '', explore: '', cad: '' }, day: null, time: null, err: '', q: 0, n: 0 };
+  componentDidMount() {
+    this._t = setInterval(() => {
+      const Q = this.queries();
+      const s = this.state;
+      const full = Q[s.q];
+      if (s.n < full.length + 26) this.setState({ n: s.n + 1 });
+      else this.setState({ q: (s.q + 1) % Q.length, n: 0 });
+    }, 70);
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+  queries() { return ['M4 x 12 socket head screws', 'GoBILDA 5203 motor', '8mm hex shaft']; }
+  setF(k, v) { this.setState({ f: { ...this.state.f, [k]: v }, err: '' }); }
+  renderVals() {
+    const s = this.state;
+    const ink = '#F3F1EA';
+    const sel = (on) => ({ on: on ? 'true' : 'false', bg: on ? ink : 'transparent', fg: on ? '#111111' : ink, border: on ? ink : '#333333' });
+    const Q = this.queries();
+    const RES = [
+      [{ tag: 'M4', name: 'M4 x 12 socket head', where: 'Pit cart · Bin B3', qty: '46 on hand' }, { tag: 'M4', name: 'M4 x 16 socket head', where: 'Shop wall · Drawer 2', qty: '18 on hand' }, { tag: 'M4', name: 'M4 nylock nut', where: 'Pit cart · Bin B4', qty: '4 left', low: true }],
+      [{ tag: 'MTR', name: 'GoBILDA 5203 Yellow Jacket', where: 'Electronics shelf · Tote 1', qty: '3 on hand' }, { tag: 'MTR', name: 'Motor mount plate', where: 'Shop wall · Drawer 5', qty: '6 on hand' }, { tag: 'CBL', name: 'Motor encoder cable', where: 'Electronics shelf · Tote 2', qty: '1 left', low: true }],
+      [{ tag: 'SFT', name: '8mm REX shaft, 96mm', where: 'Stock rack · Slot 4', qty: '7 on hand' }, { tag: 'BRG', name: '8mm flanged bearing', where: 'Pit cart · Bin A1', qty: '22 on hand' }, { tag: 'SFT', name: '8mm REX shaft, 150mm', where: 'Stock rack · Slot 4', qty: '2 left', low: true }]
+    ];
+    const typed = Q[s.q].slice(0, Math.min(s.n, Q[s.q].length));
+    const done = s.n >= Q[s.q].length;
+    const rows = RES[s.q].map((r, i) => ({ ...r, op: done ? 1 : 0.25, line: i === 2 ? 'transparent' : '#222222', qtyColor: r.low ? '#E3B45C' : '#C9C7C1' }));
+    const DAYS = [
+      { d: 23, m: 'November', w: 'Monday' }, { d: 24, m: 'November', w: 'Tuesday' }, { d: 25, m: 'November', w: 'Wednesday' }, { d: 26, m: 'November', w: 'Thursday', off: true }, { d: 27, m: 'November', w: 'Friday', off: true },
+      { d: 30, m: 'November', w: 'Monday' }, { d: 1, m: 'December', w: 'Tuesday' }, { d: 2, m: 'December', w: 'Wednesday' }, { d: 3, m: 'December', w: 'Thursday' }, { d: 4, m: 'December', w: 'Friday' }
+    ];
+    const key = (x) => x.m + x.d;
+    const chosen = DAYS.find(x => key(x) === s.day);
+    const dateLabel = chosen ? (chosen.w + ', ' + chosen.m + ' ' + chosen.d) : '';
+    const T = ['9:00 AM', '10:30 AM', '12:00 PM', '1:30 PM', '3:00 PM', '4:30 PM'];
+    const canBook = !!(chosen && s.time);
+    const f = s.f;
+    return {
+      typed, rows,
+      seeList: [{ t: 'Find a part, its quantity and its location with AI search.' }, { t: 'Share inventory across teams and spaces.' }, { t: 'Work in Autodesk Fusion and generate a custom STEP model.' }, { t: 'Compare a bill of materials with available stock.' }],
+      isForm: s.step === 'form', isTime: s.step === 'time', isDone: s.step === 'done',
+      f,
+      setName: (e) => this.setF('name', e.target.value),
+      setEmail: (e) => this.setF('email', e.target.value),
+      setCompany: (e) => this.setF('company', e.target.value),
+      setRole: (e) => this.setF('role', e.target.value),
+      setOrg: (e) => this.setF('orgType', e.target.value),
+      setSize: (e) => this.setF('size', e.target.value),
+      setExplore: (e) => this.setF('explore', e.target.value),
+      setCad: (e) => this.setF('cad', e.target.value),
+      cadNote: f.cad === 'Onshape' || f.cad === 'SolidWorks' || f.cad === 'Other',
+      showErr: !!s.err, err: s.err,
+      toTime: () => {
+        const v = this.state.f;
+        if (!v.name || !v.email || !v.company || !v.role || !v.orgType || !v.explore) { this.setState({ err: 'Please complete the required fields.' }); return; }
+        if (v.email.indexOf('@') < 1) { this.setState({ err: 'Please enter a valid work email.' }); return; }
+        this.setState({ step: 'time', err: '' });
+      },
+      dow: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      days: DAYS.map(x => {
+        const on = key(x) === s.day;
+        const c = sel(on);
+        return {
+          n: x.d === 1 ? 'Dec 1' : String(x.d), disabled: !!x.off, on: c.on,
+          bg: x.off ? 'transparent' : c.bg, fg: x.off ? '#555555' : c.fg, border: x.off ? '#242424' : c.border,
+          aria: x.w + ', ' + x.m + ' ' + x.d + (x.off ? ', unavailable' : ''),
+          pick: () => { if (!x.off) this.setState({ day: key(x), time: null }); }
+        };
+      }),
+      hasDate: !!chosen, dateLabel,
+      slots: T.map(t => ({ label: t, ...sel(s.time === t), pick: () => this.setState({ time: t }) })),
+      toForm: () => this.setState({ step: 'form' }),
+      cantBook: !canBook,
+      book: () => { if (canBook) this.setState({ step: 'done' }); },
+      emailShown: f.email || 'your inbox',
+      whenLabel: chosen ? (dateLabel + ', ' + s.time + ' PT') : '',
+      focusLabel: f.explore || 'General overview',
+      reschedule: () => this.setState({ step: 'time' })
+    };
+  }
+}
+
+const C=new Component();
+const get=(sc,p)=>p.split('.').reduce((o,k)=>o==null?o:o[k],sc);
+function sub(str,sc){const m=str.match(/^\{\{([^}]+)\}\}$/);if(m)return get(sc,m[1].trim());return str.replace(/\{\{([^}]+)\}\}/g,(_,p)=>{const v=get(sc,p.trim());return v==null?'':v})}
+function proc(node,sc,out){
+ if(node.nodeType===3){out.appendChild(document.createTextNode(sub(node.textContent,sc)));return}
+ if(node.nodeType!==1)return;
+ const tag=node.tagName.toLowerCase();
+ if(tag==='sc-for'){const L=sub(node.getAttribute('list'),sc)||[];const as=node.getAttribute('as');L.forEach(it=>{const s2=Object.create(sc);s2[as]=it;node.childNodes.forEach(c=>proc(c,s2,out))});return}
+ if(tag==='sc-if'){if(sub(node.getAttribute('value'),sc))node.childNodes.forEach(c=>proc(c,sc,out));return}
+ const svg='http://www.w3.org/2000/svg';
+ const el=(tag==='svg'||out.namespaceURI===svg)?document.createElementNS(svg,tag):document.createElement(tag);
+ for(const a of node.attributes){const v=sub(a.value,sc);
+  if(/^on/i.test(a.name)){if(typeof v==='function'){let ev=a.name.slice(2).toLowerCase();if(ev==='change'&&tag==='input')ev='input';el.addEventListener(ev,v)}continue}
+  if(a.name==='disabled'){if(v===true||v==='true')el.setAttribute('disabled','');continue}
+  if(a.name==='value'){el._v=v;continue}
+  el.setAttribute(a.name,v)}
+ node.childNodes.forEach(c=>proc(c,sc,el));if(el._v!==undefined)el.value=el._v;out.appendChild(el)}
+const T=document.createElement('template');T.innerHTML=document.getElementById('tpl').textContent;
+const root=document.getElementById('root');
+function path(n){const p=[];while(n&&n!==root){p.unshift([...n.parentNode.children].indexOf(n));n=n.parentNode}return p}
+function at(p){let n=root;for(const i of p){n=n&&n.children[i]}return n}
+let q=false;function schedule(){if(!q){q=true;requestAnimationFrame(()=>{q=false;render()})}}
+function render(){const a=document.activeElement;let fp=null,ss=null,se=null;if(a&&root.contains(a)&&a!==document.body){fp=path(a);try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}}
+ const frag=document.createDocumentFragment();const sc=C.renderVals();T.content.childNodes.forEach(c=>proc(c,sc,frag));root.replaceChildren(frag);
+ if(fp){const n=at(fp);if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}}
+window.C=C;render();if(C.componentDidMount)C.componentDidMount();</script>
+</body>
+</html>

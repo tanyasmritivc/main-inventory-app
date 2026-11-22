@@ -29,6 +29,6 @@ test('qualification passes to the calendar, and editing preserves the visitor’
     'Demo interest: BOM and inventory comparison',
   ]);
   expect(url.searchParams.get('a4')).toBeNull();
-  fireEvent.click(screen.getByRole('button',{name:'Edit your details'}));
+  fireEvent.click(screen.getByRole('button',{name:'Back'}));
   expect((company as HTMLInputElement).value).toBe('Lab & Co');
 });
