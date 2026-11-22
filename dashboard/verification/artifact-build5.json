@@ -1,0 +1,9 @@
+{
+  "bundle_id": "com.findez.dashboard",
+  "version": "1.0.0",
+  "build": "5",
+  "sha256": "714b13b82cf9e4b28e9a490ef95f69fac44501165c1b1351cf034133681da113",
+  "internal_only": true,
+  "compiled_configuration_checked": true,
+  "uploaded": true
+}

@@ -63,6 +63,42 @@ class Sources:
                 return users, False
         return users, True
 
+    async def active_users(self, current, account_ids):
+        """Count distinct current accounts that performed a recorded product action."""
+        windows = (("dau", "Daily active users", 1), ("wau", "Weekly active users", 7),
+                   ("mau", "Monthly active users", 30))
+        definition = ("Distinct registered accounts with a recorded user chat, inventory or organization "
+                      "action, search, scan, review or team action during the rolling window. "
+                      "Passive browsing and sign-ins alone are excluded.")
+        bounds = {"and": f"(created_at.gte.{(current - timedelta(days=30)).isoformat()},created_at.lte.{current.isoformat()})"}
+        feeds = (
+            ("messages", "id,created_at,conversations!inner(user_id)", {"role": "eq.user"}),
+            ("app_access_audit", "audit_id,created_at,actor_id", {}),
+            ("team_activity", "activity_id,created_at,actor_id", {}),
+            ("activity_log", "activity_id,created_at,actor_id:metadata->>actor_id,user_id,inventory_id",
+             {"event_type": "in.(bulk_create,search_items,scan_image,review_resolved)"}),
+        )
+        pages = await asyncio.gather(*(self.rows(table, fields, {**bounds, **params})
+                                       for table, fields, params in feeds), return_exceptions=True)
+        complete = account_ids is not None and all(not isinstance(page, Exception) and not page[1] for page in pages)
+        latest = {}
+        if complete:
+            for (table, _, _), (rows, _) in zip(feeds, pages):
+                for row in rows:
+                    actor = row["conversations"]["user_id"] if table == "messages" else row.get("actor_id")
+                    if table == "activity_log" and not actor and row.get("inventory_id") is None:
+                        actor = row.get("user_id")
+                    if actor in account_ids:
+                        at = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
+                        if at <= current and (actor not in latest or at > latest[actor]):
+                            latest[actor] = at
+        return [metric(key, label,
+                       sum(at >= current - timedelta(days=days) for at in latest.values()) if complete else None,
+                       source="Recorded FindEZ product actions", definition=definition,
+                       period="Last 24 hours" if days == 1 else f"Last {days} days",
+                       note="" if complete else "Complete activity data is unavailable.")
+                for key, label, days in windows]
+
     async def application(self):
         users, capped = await self.accounts()
         current = datetime.now(timezone.utc)
@@ -72,6 +108,7 @@ class Sources:
             except (AttributeError, ValueError, TypeError):
                 return False
         results = await asyncio.gather(
+            self.active_users(current, None if capped else {u["id"] for u in users}),
             self.rest("items", "item_id", {"limit": 0}, True),
             self.rest("spaces", "id", {"limit": 0}, True),
             self.rest("teams", "team_id", {"limit": 0}, True),
@@ -81,7 +118,7 @@ class Sources:
             self.rows("team_memberships", "team_id,user_id,role"),
             return_exceptions=True,
         )
-        total_items, spaces, teams, profiles, items, space_rows, memberships = results
+        active, total_items, spaces, teams, profiles, items, space_rows, memberships = results
         profile_map = {} if isinstance(profiles, Exception) else {p["id"]: p for p in profiles[0]}
         item_counts = Counter() if isinstance(items, Exception) else Counter(p["user_id"] for p in items[0])
         space_counts = Counter() if isinstance(space_rows, Exception) else Counter(p["user_id"] for p in space_rows[0])
@@ -111,9 +148,9 @@ class Sources:
             ms.append(metric("activation", "Accounts with saved items", round(activated / len(users) * 100, 1), unit="percent", source="Auth + items", definition="Registered accounts with at least one saved item record. This is a proxy, not onboarding completion.", note="Activation proxy"))
         else:
             ms.append(metric("activation", "Accounts with saved items", definition="Requires complete account and item counts."))
+        if not isinstance(active, Exception):
+            ms.extend(active)
         for identity, label, detail in [
-            ("dau", "Daily active users", "A sign-in is not a session or a product action. Product activity instrumentation is not connected."),
-            ("mau", "Monthly active users", "Requires durable product activity events."),
             ("retention", "Day 7 retention", "Requires signup cohorts and durable daily activity."),
             ("platform", "Usage by platform", "Web, iOS and Android events are not instrumented."),
             ("acquisition", "Acquisition channels", "Campaign attribution is not connected."),

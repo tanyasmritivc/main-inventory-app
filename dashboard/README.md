@@ -6,7 +6,7 @@ product vision. It does not claim every proposed business metric is connected.
 
 ## Current delivery and device acceptance
 
-Current private beta: **1.0.0 (4)**, source `e622b42`, VALID and IN_BETA_TESTING in
+Previously verified on the founder’s phone: **1.0.0 (4)**, source `e622b42`, VALID and IN_BETA_TESTING in
 Founder Private. Build 4 is installed on Tanya's iPhone. Tanya confirmed that an
 email code arrives, sign-in opens Overview, and Overview returns after phone
 lock/reopen/unlock. See `verification/apple-build4-release.json` and
@@ -41,12 +41,22 @@ shows customer growth, recurring revenue, tracked Assist usage, service health,
 open issues and one saved or incident-driven priority. Decorative icons and
 repeated priority cards were removed.
 
+## Active users in Overview
+
+Overview and Analytics report distinct registered accounts active in the last
+24 hours, 7 days and 30 days. The dashboard combines user-authored chat messages,
+actor-attributed inventory and organization audit records, team actions and
+recorded searches, scans, bulk creates and review resolutions. Multiple actions,
+devices and organizations count once per account in each window. Sign-in alone
+and passive browsing are outside this measure. Incomplete event reads display
+**Unavailable**. A completed read with no qualifying accounts displays **0**.
+
 ## Real data and availability
 
 | Area | Connected now | Unavailable until instrumented or connected |
 | --- | --- | --- |
 | Customers | Auth directory, creation and sign-in timestamps, recorded plan/status, inventory/Space counts and memberships | Reliable last product activity, customer billing history and per-customer feature events |
-| Analytics | Account totals, new accounts, daily signup history, saved records, Spaces, Teams, accounts-with-items activation proxy | DAU/WAU/MAU, sessions, onboarding funnel, retention cohorts, platforms, geography and attribution |
+| Analytics | Account totals, new accounts, daily signup history, saved records, Spaces, Teams, accounts-with-items activation proxy and rolling daily, weekly and monthly active users | Sessions, onboarding funnel, retention cohorts, platforms, geography and attribution |
 | Revenue | Read-only Stripe adapter implemented | Existing credentials are test mode, so actual revenue/subscriptions are unavailable. Costs, cash, profit and forecasts are not inferred |
 | AI & FIND | Recorded personal/team Assist and scan quota counters, separately labeled legacy usage | Success, quality, token use, provider expenses, request traces, GPU and queue telemetry |
 | Infrastructure | Direct web/backend/database probes, server resources, health history | Provider release feeds, SSL and backup verification, customer API latency and full security monitoring |

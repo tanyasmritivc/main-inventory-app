@@ -1,3 +1,14 @@
+## November 22 — private dashboard active users
+
+The founder dashboard now measures distinct active registered accounts across
+rolling 24-hour, 7-day and 30-day windows. The deployed snapshot collector
+matched an independent PostgreSQL aggregate for all three windows. The mobile
+Overview shows the three counts together. Service tests (24), Flutter widget
+tests (21), static analysis and release archive validation passed. Apple
+acknowledged the internal-only 1.0.0 (5) upload with its iOS SDK 27 advisory for
+April 2027. See `dashboard/verification/` for release receipts. Build 5 has
+not been accepted on the founder’s physical device.
+
 # October 18 dashboard idle recovery and founder access confirmed
 
 The repeated blank screen was on installed build 2. Tanya clarified she had not

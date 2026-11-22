@@ -93,6 +93,38 @@ class RefreshApi extends FakeApi {
 }
 
 void main() {
+  testWidgets('Overview shows a distinct count for each activity window', (
+    tester,
+  ) async {
+    final data = fixture();
+    data['analytics']['metrics'].addAll([
+      {'id': 'dau', 'value': 0, 'unit': 'count'},
+      {'id': 'wau', 'value': 7, 'unit': 'count'},
+      {'id': 'mau', 'value': 19, 'unit': 'count'},
+    ]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Overview(data: data, go: (_) {}),
+        ),
+      ),
+    );
+    for (final pair in [
+      ('Last 24 hours', '0'),
+      ('Last 7 days', '7'),
+      ('Last 30 days', '19'),
+    ]) {
+      final row = find
+          .ancestor(of: find.text(pair.$1), matching: find.byType(Row))
+          .first;
+      expect(
+        find.descendant(of: row, matching: find.text(pair.$2)),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   test('unavailable and a measured zero have different presentations', () {
     expect(displayValue({'value': null}), 'Unavailable');
     expect(displayValue({'value': 0, 'unit': 'count'}), '0');

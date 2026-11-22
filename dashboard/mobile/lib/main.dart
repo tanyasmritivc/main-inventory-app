@@ -879,6 +879,46 @@ class Overview extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 18),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Active users',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final window in const [
+                    ('dau', 'Last 24 hours'),
+                    ('wau', 'Last 7 days'),
+                    ('mau', 'Last 30 days'),
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              window.$2,
+                              style: const TextStyle(color: muted),
+                            ),
+                          ),
+                          Text(
+                            displayValue(
+                              findMetric(
+                                data,
+                                'analytics',
+                                window.$1,
+                                window.$2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Each account counts once per period when it performs a recorded FindEZ action.',
+                    style: TextStyle(fontSize: 13, color: muted),
+                  ),
                 ],
               ),
             ),

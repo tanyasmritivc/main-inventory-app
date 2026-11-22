@@ -150,3 +150,33 @@ def test_email_delivery_failure_is_reported_and_audited(tmp_path):
     assert response.status_code==503
     assert 'private SMTP' not in response.text
     assert store.audits()[0]['outcome']=='failed'
+
+
+def test_active_users_deduplicate_across_spaces_sources_and_time_windows(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    _, _, source = client(tmp_path)
+    current = datetime(2026, 11, 22, 12, tzinfo=timezone.utc)
+    def event(days, **fields):
+        return dict(created_at=(current - timedelta(days=days)).isoformat(), **fields)
+
+    async def rows(table, fields, params):
+        assert 'created_at.gte.' in params['and'] and 'created_at.lte.' in params['and']
+        data = {
+            'messages': [event(1, conversations={'user_id': 'a'})],
+            'app_access_audit': [event(3, actor_id='a'), event(7, actor_id='b')],
+            'team_activity': [event(30, actor_id='c'), event(0, actor_id='deleted')],
+            'activity_log': [event(30.1, user_id='old'), event(0, inventory_id='shared', user_id='owner'),
+                             event(1, actor_id='a', user_id='owner'), event(29, user_id='personal')],
+        }
+        return data[table], False
+    source.rows = rows
+    accounts = {'a','b','c','old','owner','personal'}
+    def counts():
+        return [m['value'] for m in asyncio.run(source.active_users(current, accounts))]
+    assert counts() == [1, 2, 4]
+    source.rows = AsyncMock(return_value=([], False))
+    assert counts() == [0, 0, 0]
+    source.rows = AsyncMock(return_value=([], True))
+    assert counts() == [None, None, None]
+    source.rows = AsyncMock(side_effect=ValueError('activity unavailable'))
+    assert counts() == [None, None, None]
