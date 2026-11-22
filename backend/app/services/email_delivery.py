@@ -13,6 +13,7 @@ def send_transactional_email(
     html: str,
     text: str,
     message_id: str | None = None,
+    reply_to: str | None = None,
 ) -> None:
     """Send app mail through the configured SMTP relay, with Resend as fallback."""
     settings = get_settings()
@@ -22,6 +23,8 @@ def send_transactional_email(
         message["From"] = sender
         message["To"] = to
         message["Subject"] = subject.replace("\r", " ").replace("\n", " ")
+        if reply_to:
+            message["Reply-To"] = reply_to
         if message_id:
             message["Message-ID"] = message_id
         message.set_content(text)
@@ -47,6 +50,7 @@ def send_transactional_email(
             "subject": subject,
             "html": html,
             "text": text,
+            **({"reply_to": reply_to} if reply_to else {}),
             **({"headers": {"Message-ID": message_id}} if message_id else {}),
         })
         return

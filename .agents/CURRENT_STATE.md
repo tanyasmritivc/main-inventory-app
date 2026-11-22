@@ -1,3 +1,12 @@
+## November 22 · Native public demo requests
+
+The production `/book-demo` form collects contact details and optional interests. The
+FindEZ API saves the request and both email jobs atomically in a private persistent
+SQLite inbox under the API service account’s `~/.local/share/findez-demo/`. Each
+delivery is retried independently using the existing transactional relay. Tanya
+receives the request and arranges the meeting. There is no automatic calendar booking.
+The release rollback assets are in `/home/ubuntu/findez-native-demo.4JVcHy/rollback`.
+
 ## November 22 — Ask includes stockouts in running-low answers
 
 The deployed Ask backend includes recorded zero quantities in a general restocking

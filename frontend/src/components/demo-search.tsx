@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { DemoTopic } from './demo-booking';
 import styles from '@/app/(marketing)/book-demo/demo.module.css';
 
 const searches = [
@@ -21,7 +22,18 @@ const searches = [
   ] },
 ];
 
-export function DemoSearch() {
+const examples = {
+  'AI inventory search': searches[0],
+  'Robotics inventory': searches[1],
+  'Fusion and STEP models': { query: '8mm shaft for a Fusion assembly', rows: searches[2].rows },
+  'BOM comparison': { query: 'Compare drivetrain_v4 with stock', rows: [
+    ['SFT', '8mm REX shaft', 'Required 2 · On hand 7', 'Ready'],
+    ['BRG', '8mm flanged bearing', 'Required 4 · On hand 22', 'Ready'],
+    ['MTR', '5203 Yellow Jacket', 'Required 4 · On hand 3', '1 short'],
+  ] },
+};
+
+export function DemoSearch({topic}: {topic?: DemoTopic}) {
   const card = useRef<HTMLDivElement>(null);
   const [frame, setFrame] = useState({ search: 0, tick: searches[0].query.length });
   const [playing, setPlaying] = useState(false);
@@ -31,7 +43,7 @@ export function DemoSearch() {
     let timer: number | undefined;
     function sync() {
       window.clearInterval(timer);
-      const play = visible && !document.hidden && !motion.matches;
+      const play = !topic && visible && !document.hidden && !motion.matches;
       setPlaying(play);
       if (motion.matches) setFrame({ search: 0, tick: searches[0].query.length });
       if (play) timer = window.setInterval(() => setFrame(({ search, tick }) =>
@@ -50,19 +62,19 @@ export function DemoSearch() {
       motion.removeEventListener('change', sync);
       document.removeEventListener('visibilitychange', sync);
     };
-  }, []);
-  const { query, rows } = searches[frame.search];
+  }, [topic]);
+  const { query, rows } = topic ? examples[topic] : searches[frame.search];
   return <div ref={card} aria-hidden="true" className={styles.sample}>
     <div className={styles.searchBar}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <span className={styles.query}>{query.slice(0, frame.tick)}<i className={styles.caret} style={{animationPlayState: playing ? 'running' : 'paused'}} /></span>
+      <span className={styles.query}>{topic ? query : query.slice(0, frame.tick)}<i className={styles.caret} style={{animationPlayState: playing ? 'running' : 'paused'}} /></span>
       <span className={styles.sampleLabel}>Sample data</span>
     </div>
-    <div className={styles.results} style={{opacity: frame.tick >= query.length ? 1 : 0.25}}>
+    <div className={styles.results} style={{opacity: topic || frame.tick >= query.length ? 1 : 0.25}}>
       {rows.map(([tag, name, location, quantity]) => <div key={name} className={styles.result}>
         <span className={styles.tag}>{tag}</span>
         <span className={styles.part}>{name}<small>{location}</small></span>
-        <span className={quantity.endsWith('left') ? styles.low : styles.qty}>{quantity}</span>
+        <span className={/(left|short)$/.test(quantity) ? styles.low : styles.qty}>{quantity}</span>
       </div>)}
     </div>
     <div className={styles.sampleFooter}><span>drivetrain_v4 · Autodesk Fusion</span><span>7 of 8 ready<span className={styles.low}> · 1 short</span></span></div>
