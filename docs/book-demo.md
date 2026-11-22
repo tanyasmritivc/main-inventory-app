@@ -1,7 +1,8 @@
 # FindEZ product demo booking
 
-The public marketing route is `/book-demo`. Set `FINDEZ_DEMO_CALENDLY_URL` in
-the web service environment to the published 20-minute event URL. The page reads
+The public marketing route is `/book-demo`. Its 20-minute FindEZ Product Demo uses
+`https://calendly.com/tanya-findez/30min`. To switch events, set
+`FINDEZ_DEMO_CALENDLY_URL` in the web service environment. The page reads
 this setting at request time. A missing or invalid URL shows the sales email
 address. A video meeting room URL cannot supply availability.
 

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function BookDemo() {
-  const scheduler = calendlyEvent(process.env.FINDEZ_DEMO_CALENDLY_URL);
+  const scheduler = calendlyEvent(process.env.FINDEZ_DEMO_CALENDLY_URL ?? 'https://calendly.com/tanya-findez/30min');
   return <>
     <HeaderMarkup reserveSpace currentPage="book-demo" />
     <main className={styles.page} id="main">
