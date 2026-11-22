@@ -99,8 +99,8 @@ def deliver_one():
         reply = job["email"]
     else:
         to, subject = job["email"], "We received your FindEZ demo request"
-        text = ("Thanks for requesting a FindEZ demo. Tanya will email you to arrange a time.\n\n"
-                "If you’d like to share anything else before the demo, reply to this email.\n\nTanya at FindEZ")
+        text = ("Thanks for requesting a FindEZ demo. We will email you to arrange a time.\n\n"
+                "If you’d like to share anything else before the demo, reply to this email.\n\nThe FindEZ team")
         reply = FOUNDER
     try:
         send_transactional_email(to=to, subject=subject, html="<p>" + escape(text).replace("\n", "<br>") + "</p>",

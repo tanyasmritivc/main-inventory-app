@@ -80,7 +80,7 @@ export function DemoBooking({interests, setInterests}: {
   if (thanks) return <>
     <span aria-hidden="true" className={styles.confirmed}>✓</span>
     <h2 ref={heading} tabIndex={-1}>Thanks, {thanks}.</h2>
-    <p>We’ve received your demo request. Tanya will email you to arrange a time.</p>
+    <p>We’ve received your demo request. We will email you to arrange a time.</p>
     <a className={styles.explore} href="/">Explore FindEZ <span aria-hidden="true">↗</span></a>
   </>;
   return <>
