@@ -10,7 +10,6 @@
 }
 .columns { max-width: 1180px; margin: auto; padding: clamp(36px,6vw,88px) 28px; display: grid; grid-template-columns: .95fr 1.05fr; align-items: start; gap: clamp(30px,6vw,84px); }
 .story, .panel { min-width: 0; }
-.page .eyebrow { font-size: .78rem; font-weight: 600; margin: 0 0 17px; color: var(--muted); letter-spacing: .05em; }
 .story h1 { margin: 0; font-size: clamp(3rem,5.3vw,5.4rem); line-height: .98; letter-spacing: -.055em; font-weight: 550; }
 .page .intro { margin: 22px 0; max-width: 38em; color: var(--muted); line-height: 1.6; font-size: 1.06rem; }
 .photo { width: 100%; height: auto; aspect-ratio: 2.6; object-fit: cover; object-position: 50% 56%; border-radius: 12px; }

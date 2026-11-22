@@ -19,7 +19,6 @@ export default function BookDemo() {
     <main className={styles.page} id="main">
       <div className={styles.columns}>
         <section className={styles.story}>
-          <p className={styles.eyebrow}>Live product demonstration</p>
           <h1>See FindEZ<br/>in action.</h1>
           <p className={styles.intro}>Follow a part from the shelf to an engineering design. See how your team can find what’s on hand and check what a build still needs.</p>
           <Image className={styles.photo} src="/images/landing/workbench-wide.jpg" alt="Engineering workbench with labeled parts drawers and open hardware bins" width={720} height={380} sizes="(max-width: 800px) 92vw, 40vw" />
@@ -33,7 +32,6 @@ export default function BookDemo() {
           <a className={styles.pilot} href="mailto:info@findez.ai?subject=FindEZ%20organization%20pilot%20request">Request an Organization Pilot <span aria-hidden="true">↗</span></a>
         </section>
         <section className={styles.panel} aria-labelledby="booking-title">
-          <p className={styles.eyebrow}>20 minutes · Live online</p>
           <h2 id="booking-title">Book your personalized demo</h2>
           <DemoBooking eventUrl={scheduler} />
         </section>
