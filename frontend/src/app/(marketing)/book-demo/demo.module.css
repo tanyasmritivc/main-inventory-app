@@ -55,14 +55,14 @@
 .panel small { font-size: 13px; color: var(--muted); }
 .panel h2 { margin: 12px 0 0; font-size: 30px; letter-spacing: -.03em; line-height: 1.1; scroll-margin-top: 96px; }
 .panel p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--muted); }
-.form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 16px; margin-top: 32px; }
+.form { --light-panel: #121212; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 16px; margin-top: 32px; }
 .form label { display: flex; flex-direction: column; gap: 8px; min-width: 0; color: var(--secondary); font-size: 13px; font-weight: 500; }
 .optional { color: var(--subtle); font-weight: 400; }
 .wide, .note, .error, .button { grid-column: 1/-1; }
-.form input, .form select { height: 46px; width: 100%; border: 1px solid #2f2f2f; border-radius: 10px; padding: 0 14px; font: inherit; font-size: 15px; font-weight: 400; color: var(--ink); background-color: #121212; }
-.form input:hover, .form select:hover { border-color: #454545; }
-.page :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.form select { appearance: none; padding-right: 38px; cursor: pointer; background: #121212 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a9a7a1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
+.page:global(#main) .form :is(input, select) { height: 46px; width: 100%; border: 1px solid #2f2f2f; border-radius: 10px; padding: 0 14px; font: inherit; font-size: 15px; font-weight: 400; color: var(--ink); background-color: #121212; }
+.page:global(#main) .form :is(input, select):hover { border-color: #454545; }
+.page:global(#main) :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.page:global(#main) .form select { appearance: none; padding-right: 38px; cursor: pointer; background: #121212 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a9a7a1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
 .note { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: -6px; }
 .error { color: var(--ink); font-size: 14px; }
 .button, .back { border-radius: 999px; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
