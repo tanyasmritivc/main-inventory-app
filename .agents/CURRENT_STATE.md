@@ -1,3 +1,16 @@
+## November 22 — Ask includes stockouts in running-low answers
+
+The deployed Ask backend includes recorded zero quantities in a general restocking
+lookup regardless of reorder settings. Positive quantities qualify at or below
+an enabled threshold. Unknown quantities are excluded. Explicit zero-only and
+threshold-only lookups remain available.
+
+70 focused tests passed. Three separate gateway unit tests also failed on the
+unmodified baseline. Both public health checks returned 200. A signed-in review
+account asked “What is running low?” and received a table of both zero-quantity
+parts without reorder rules in one turn. The test conversation was removed.
+The previous three modules are in `/home/ubuntu/findez-ask-stock.7W1Dkn/original`.
+
 ## November 22 — production web audit and fixes
 
 Live build `SewoEn52Be4Z7kMvvlH08` runs from

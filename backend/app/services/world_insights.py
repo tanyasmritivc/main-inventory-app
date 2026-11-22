@@ -9,7 +9,7 @@ class Model(BaseModel):
 
 class Filters(Model):
     inventory_role: Literal['personal_asset','consumable','replenishable_supply','equipment','retail_stock','raw_material','unclassified'] | None = None
-    stock_status: Literal['low', 'out'] | None = Field(default=None, description='low checks saved enabled reorder thresholds only; out checks zero recorded quantity only. Never invent a threshold.')
+    stock_status: Literal['restock', 'low', 'out'] | None = Field(default=None, description='Use restock for general running-low questions: recorded zero or at/below an enabled reorder threshold. Use low for threshold-only requests and out for zero-only requests. Never invent a threshold.')
     location: str | None = Field(default=None, max_length=100)
     category: str | None = Field(default=None, max_length=100)
     brand: str | None = Field(default=None, max_length=100)
@@ -27,6 +27,13 @@ class Filters(Model):
         if self.created_date is not None:
             date.fromisoformat(self.created_date)
         return self
+
+STOCK_BASIS = {
+    'restock': 'Out of stock at recorded zero regardless of reorder settings, or low stock at a positive quantity at/below an enabled threshold.',
+    'low': 'At or below an enabled saved reorder threshold.',
+    'out': 'Recorded quantity is zero regardless of reorder settings.',
+}
+
 
 class Query(Model):
     inventory_id: str | None = None
@@ -47,7 +54,7 @@ class Activity(Model):
 
 MODELS = {'world_query': Query, 'world_projects': Projects, 'world_project_readiness': Readiness, 'world_activity': Activity}
 DESCRIPTIONS = {
-    'world_query': 'Search current saved inventory across the selected organization by omitting inventory_id. For an ordinary part lookup, call once with one distinctive term, such as terms=["gear"]. Multiple terms are AND constraints, never alternative synonyms or a list of part types. When matching rows answer the question, use them instead of repeatedly searching each variant. For what am I running low on or what needs restocking, call this ONCE with filters.stock_status=low and no inventory_id to check the whole organization. No directory lookup is needed. Answer from that result; do not repeatedly guess quantity cutoffs or load full inventories. Items without enabled thresholds cannot be called low, even at zero. Classification indicates purpose, never a threshold. Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
+    'world_query': 'Search current saved inventory across the selected organization by omitting inventory_id. For an ordinary part lookup, call once with one distinctive term, such as terms=["gear"]. Multiple terms are AND constraints, never alternative synonyms or a list of part types. When matching rows answer the question, use them instead of repeatedly searching each variant. For what am I running low on or what needs restocking, call this ONCE with filters.stock_status=restock and no inventory_id to check the whole organization. No directory lookup is needed. Answer from that result; do not repeatedly guess quantity cutoffs or load full inventories. Report zero quantities as out of stock even without a reorder rule. Report positive threshold matches as low stock. Classification indicates purpose, never a threshold. Search saved fields with typo tolerance and explicit location, brand, quantity or date filters. Server returns record counts and physical unit totals with completeness. Choose inventory_id or omit to search the selected organization. Likely matches need clarification before changes. Physical units are not reservation-adjusted availability.',
     'world_projects': 'Find saved projects by name in one authorized inventory. Returns exact project IDs for readiness.',
     'world_project_readiness': 'Compare a saved project BOM with current stock and reservations. Returns deterministic shortages. Similar names do not prove compatibility. This does not reserve or purchase parts.',
     'world_activity': 'Read the signed-in user\'s inventory changes since an optional ISO timestamp. Results are limited to 100 and may be incomplete. Historical events are not current inventory facts.',
@@ -67,7 +74,8 @@ def execute(actor, world, name, args):
             with w.in_inventory(actor, world, choice['inventory_id']) as inv:
                 result = query_inventory(user_id=inv['owner_user_id'], terms=parsed.terms,
                     filters=parsed.filters.model_dump(exclude_none=True, mode='json'))
-                summaries.append({'inventory_id': inv['inventory_id'], 'name': inv['name'],
+                summaries.append({**({'out_of_stock_count': result.get('out_of_stock_count', 0)}
+                    if parsed.filters.stock_status else {}), 'inventory_id': inv['inventory_id'], 'name': inv['name'],
                     **{k: result.get(k) for k in ('record_count', 'known_units', 'unknown_quantity_records', 'complete')}})
                 items.extend({**item, 'inventory_id': inv['inventory_id'], 'inventory_name': inv['name']}
                     for item in result.get('items', [])[:max(0, 100-len(items))])
@@ -78,7 +86,8 @@ def execute(actor, world, name, args):
             'complete': all(s.get('complete') is True for s in summaries),
             'rows_truncated': sum(s.get('record_count') or 0 for s in summaries) > len(items),
             'quantity_basis': 'Saved physical quantities, before project reservations.',
-            **({'stock_basis': 'At/below an enabled saved reorder threshold. Items without enabled thresholds are not classified as low.'}
+            **({'stock_basis': STOCK_BASIS[parsed.filters.stock_status],
+                'out_of_stock_count': sum(s['out_of_stock_count'] for s in summaries)}
                if parsed.filters.stock_status else {})}
     with w.in_inventory(actor, world, parsed.inventory_id) as inv:
         if name == 'world_projects':

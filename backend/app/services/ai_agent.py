@@ -576,6 +576,8 @@ _TOOLS: list[dict[str, Any]] = [
                         }, 'required': ['field']}},
                     }},
                     'filters': {'type': 'object', 'properties': {
+                        'stock_status': {'type': 'string', 'enum': ['restock', 'low', 'out'],
+                            'description': 'Use restock for general running-low questions (recorded zero or an enabled threshold reached), low for threshold-only requests, and out for zero-only requests.'},
                         'inventory_role': {'type': 'string', 'enum': ['personal_asset','consumable','replenishable_supply','equipment','retail_stock','raw_material','unclassified']},
                         'location': {'type': 'string'}, 'category': {'type': 'string'},
                         'brand': {'type': 'string'}, 'space_id': {'type': 'string'},
