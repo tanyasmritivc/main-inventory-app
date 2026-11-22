@@ -54,3 +54,12 @@
 
 .findez-public-chrome.findez-public-chrome .x-tag { margin-top:12px; }
 .findez-public-chrome.findez-public-chrome .x-fg h4 { margin-bottom:12px; }
+
+@media(max-width:1150px) and (min-width:981px) {
+ .findez-public-chrome.findez-public-chrome .x-links { position:static; transform:none; margin:auto; gap:14px; }
+ .findez-public-chrome.findez-public-chrome .x-act { margin-left:0; }
+}
+@media(max-width:400px) {
+ .findez-public-chrome.findez-public-chrome .x-act { gap:5px; }
+ .findez-public-chrome.findez-public-chrome.x-nav .x-p { padding:0 9px; }
+}

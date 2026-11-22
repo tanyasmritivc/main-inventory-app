@@ -16,6 +16,7 @@ const publicRoutes = [
   "/desktop",
   "/research",
   "/pricing",
+  "/book-demo",
   "/privacy",
   "/terms",
   "/docs/api",
