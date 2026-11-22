@@ -35,7 +35,7 @@ function remember(id: string) {
 }
 
 function anotherDialogIsOpen() {
-  return Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"], dialog[open]'))
+  return Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"], [role="dialog"][data-state="open"], dialog[open]'))
     .some(node => !node.closest('[data-founding-dialog]') && !node.hidden &&
       node.dataset.state !== "closed" && getComputedStyle(node).display !== "none" &&
       getComputedStyle(node).visibility !== "hidden");
@@ -60,20 +60,24 @@ export function FoundingAccessProvider({ accountId, createdAt, pathname, childre
   useEffect(() => {
     if (!accountId || !eligible || open || hasSeen(accountId)) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // Defer the automatic welcome for this page once the user starts a form.
+    let editing = document.activeElement?.matches('input:not([type="hidden"]), textarea, [contenteditable="true"]') ?? false;
+    const onInput = () => { editing = true; clearTimeout(timer); };
     const schedule = () => {
       clearTimeout(timer);
-      if (hasSeen(accountId) || anotherDialogIsOpen()) return;
+      if (editing || hasSeen(accountId) || anotherDialogIsOpen()) return;
       timer = setTimeout(() => {
-        if (!hasSeen(accountId) && !anotherDialogIsOpen()) show(false);
+        if (!editing && !hasSeen(accountId) && !anotherDialogIsOpen()) show(false);
       }, 600);
     };
     // Wait until any verification/command/confirmation dialog has finished.
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, { subtree: true, childList: true, attributes: true,
       attributeFilter: ["aria-modal", "data-state", "hidden", "open"] });
+    document.addEventListener("input", onInput, true);
     window.addEventListener("storage", schedule);
     schedule();
-    return () => { clearTimeout(timer); observer.disconnect(); window.removeEventListener("storage", schedule); };
+    return () => { clearTimeout(timer); observer.disconnect(); document.removeEventListener("input", onInput, true); window.removeEventListener("storage", schedule); };
   }, [accountId, eligible, open, pathname, show]);
 
   useEffect(() => {

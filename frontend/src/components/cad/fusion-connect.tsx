@@ -1,4 +1,5 @@
 "use client";
+import { cadWorldPath } from "@/lib/cad-links";
 import { useEffect, useRef, useState } from "react";
 import { accountRequest } from "@/lib/account-request";
 import { activeInventory } from "@/lib/inventory-selection";
@@ -56,7 +57,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
     finally { locked.current = false; if (mounted.current) setBusy(false); }
   }
   return <section className={styles.page}>
-    <header className={styles.hero}><a href="/docs/cad#connect">← CAD Intelligence</a><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href="/docs/cad#downloads">Downloads and installation</a><p>Setup, generation permissions, and troubleshooting are in CAD Intelligence. <a href="/docs/cad#connect">Read the CAD documentation</a>.</p></header>
+    <header className={styles.hero}><a href={cadWorldPath("/docs/cad#connect", inventory.workspace?.organization_id)}>← CAD Intelligence</a><h1>Connect FindEZ to Fusion.</h1><p>Read parts and compare your assembly with this inventory.</p><a href={cadWorldPath("/docs/cad#downloads", inventory.workspace?.organization_id)}>Downloads and installation</a><p>Setup, generation permissions, and troubleshooting are in CAD Intelligence. <a href={cadWorldPath("/docs/cad#connect", inventory.workspace?.organization_id)}>Read the CAD documentation</a>.</p></header>
     <div className={styles.card}>
       {approved ? <div role="status"><h2>Connection approved</h2><p>{allowWrites ? "Model generation and shared BOM saves are enabled for this session." : "This session can browse and compare. To generate models or save BOMs, reconnect and enable the optional CAD writing permission."}</p><p>{allowPurchasing ? "Purchase plans and confirmed receiving are enabled. Approvals and ordering still require your inventory owner/admin role." : "Purchasing access is disabled for this session."}</p><p>Return to Fusion. The panel will connect automatically. If it timed out, start again there.</p></div> : <>
         <h2>{inventory.name}</h2>
@@ -67,7 +68,7 @@ function ConnectionForm({ code, inventory }: { code: string; inventory: NonNulla
         {purchasingEnabled && inventory.can_edit && <label className={styles.permissionOption}><input type="checkbox" checked={allowPurchasing} onChange={e => setAllowPurchasing(e.target.checked)} /><span><strong>Enable purchase plans and receiving (optional)</strong>Allow this Fusion session to read quotes and orders, create purchase plans, record supplier quotes, and add delivered quantities to existing stock after an explicit confirmation. Approvals and order recording require an owner/admin role. No vendor checkout or payment is performed.</span></label>}
         <p>Only approve a code displayed in your own Fusion add-in. Access expires after eight hours. Assembly comparison does not upload geometry. Model generation sends only the specification you explicitly submit.</p>
         <button disabled={busy || !confirmed || !/^[A-HJ-NP-Z2-9]{10}$/.test(value)} onClick={connect}>{busy ? "Connecting..." : "Connect this inventory"}</button>
-        <p><a href={`/cad/fusion/connect${value ? `?code=${encodeURIComponent(value)}` : ""}`}>Choose a different inventory</a></p>
+        <p><a href={cadWorldPath(`/cad/fusion/connect${value ? `?code=${encodeURIComponent(value)}` : ""}`, inventory.workspace?.organization_id)}>Choose a different inventory</a></p>
       </>}
       {error && <p role="alert">{error}</p>}
     </div>

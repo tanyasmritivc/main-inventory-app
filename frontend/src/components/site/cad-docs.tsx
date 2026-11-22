@@ -1,3 +1,4 @@
+import { cadWorldPath } from "@/lib/cad-links";
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { HeaderMarkup, FooterMarkup } from '@/components/marketing-dark/public-chrome';
@@ -14,7 +15,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
   const comparisonHref = world ? `/cad?world=${encodeURIComponent(world)}` : '/cad';
   return <AppThemeProvider><div className={styles.siteHeader}><HeaderMarkup reserveSpace manageScroll={false} /></div><div className={styles.page}>
     <a href="#cad-docs-content" className={styles.skipLink}>Skip to documentation</a>
-    <header className={styles.header}><Link href="/docs/cad" className={styles.brand}>CAD Intelligence</Link><div><a href="#downloads">Downloads</a><Link href={comparisonHref}>Open comparison tool ↗</Link><DocsAppearance /></div></header>
+    <header className={styles.header}><Link href={cadWorldPath("/docs/cad", world)} className={styles.brand}>CAD Intelligence</Link><div><a href="#downloads">Downloads</a><Link href={comparisonHref}>Open comparison tool ↗</Link><DocsAppearance /></div></header>
     <div className={styles.layout}>
       <aside className={styles.sidebar}><CadDocsNavigation /></aside>
       <main id="cad-docs-content" className={styles.content}>
@@ -24,7 +25,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
           <ReferenceTable caption="CAD tools and guides" headings={['I want to…', 'Open']} rows={[
             ['Set up or update the Fusion add-in', <a key="setup" href="#downloads">Downloads and installation</a>],
             ['Make a model without knowing how to design in Fusion', <a key="first" href="#first-model">Create your first design</a>],
-            ['Connect or manage Fusion access', <Link key="connect" href="/cad/fusion/connect">Connect an inventory / manage sessions</Link>],
+            ['Connect or manage Fusion access', <Link key="connect" href={cadWorldPath("/cad/fusion/connect", world)}>Connect an inventory / manage sessions</Link>],
             ['Compare a file or review saved BOM versions', <Link key="compare" href={comparisonHref}>Comparison and saved BOMs</Link>],
             ['Fix a problem', <a key="help" href="#troubleshooting">Troubleshooting</a>],
           ]} /><p>A bill of materials (BOM) lists the parts and quantities a design requires. FindEZ compares that list with one inventory you can access. Start with the workflow that fits your design.</p>
@@ -67,11 +68,11 @@ export function CadDocs({ world }: { world?: string } = {}) {
 
         <section id="connect"><h2>Connect an inventory</h2><ol>
           <li>In the Fusion panel, click <strong>Sign in with FindEZ</strong>. Keep the displayed ten-character code visible.</li>
-          <li>Your normal browser opens the <Link href="/cad/fusion/connect">Fusion connection page</Link>. Sign in to FindEZ there, choose Personal or your organization, and select an inventory you can access.</li>
+          <li>Your normal browser opens the <Link href={cadWorldPath("/cad/fusion/connect", world)}>Fusion connection page</Link>. Sign in to FindEZ there, choose Personal or your organization, and select an inventory you can access.</li>
           <li>Check that the code matches your Fusion panel. Select <strong>I started this connection in Fusion and the code matches</strong>.</li><li>To generate models or save BOMs, also select <strong>Enable model generation and saved BOMs</strong>. This separate, optional checkbox is available to inventory editors. Leaving it unchecked allows browsing and comparison only.</li><li>To manage purchases inside Fusion, separately select <strong>Enable purchase plans and receiving</strong> when available. This permits confirmed deliveries to increase stock. Owners/admins approve and record orders.</li><li>Click <strong>Connect this inventory</strong>.</li>
           <li>Return to Fusion. The panel connects automatically and shows the selected inventory. If the code expired, start sign-in again from the panel.</li>
         </ol><p>Pairing codes expire after ten minutes. A connected session lasts up to eight hours and is limited to the selected inventory. Use <strong>Disconnect</strong> to choose another inventory. Opening the connection page alone does not create a pairing code.</p>
-          <h3>Review or revoke a connection</h3><p>Open <Link href="/cad/fusion/connect">Manage Fusion connections</Link>, select an inventory, and review <strong>Your active Fusion connections</strong>. Reload after a new connection completes. Disconnect an entry to revoke it. If Fusion cannot reach the server during disconnect, its local session is cleared, but server revocation must be retried from the browser or allowed to expire.</p>
+          <h3>Review or revoke a connection</h3><p>Open <Link href={cadWorldPath("/cad/fusion/connect", world)}>Manage Fusion connections</Link>, select an inventory, and review <strong>Your active Fusion connections</strong>. Reload after a new connection completes. Disconnect an entry to revoke it. If Fusion cannot reach the server during disconnect, its local session is cleared, but server revocation must be retried from the browser or allowed to expire.</p>
         </section>
 
         <section id="first-model"><h2>Create your first design</h2><p>You do not need to draw the part yourself. Start with an empty, editable Fusion design; FindEZ can generate the geometry from your description.</p><ol>
@@ -244,7 +245,7 @@ export function CadDocs({ world }: { world?: string } = {}) {
             ['Further integrations', 'Direct Onshape connection and engineering-reviewed alternatives. Shared-stock planning previews support selected saved projects; they do not reserve stock.'],
           ]} /><p>Catalog availability, owned stock, CAD geometry, and vendor offers remain distinct. A generated model or similarly named part must not silently become a verified engineering substitute. Suggested purchases and design substitutions require human review.</p></section>
 
-        <section id="support"><h2>Support & documentation coverage</h2><p>This guide covers the public CAD downloads, Fusion workspace candidate, export-only workflow, web comparison, Onshape CSV, and current limitations. The <Link href="/cad-intelligence">public CAD Intelligence page</Link> introduces the feature; the <Link href={comparisonHref}>comparison tool</Link> uses your signed-in inventory.</p><p>Contact <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">info@findez.ai</a> with your operating system, Fusion version, FindEZ add-in version, the step you reached, and the exact error or a redacted screenshot. Never include passwords, access tokens, pairing codes, or private design files.</p><div className={styles.footerLinks}><a href="#downloads">Downloads ↓</a><Link href="/cad/fusion/connect">Manage Fusion connections ↗</Link><Link href={comparisonHref}>Open comparison tool ↗</Link><Link href="/docs/api">API documentation</Link><a href="#quickstart">Back to start ↑</a></div></section>
+        <section id="support"><h2>Support & documentation coverage</h2><p>This guide covers the public CAD downloads, Fusion workspace candidate, export-only workflow, web comparison, Onshape CSV, and current limitations. The <Link href="/cad-intelligence">public CAD Intelligence page</Link> introduces the feature; the <Link href={comparisonHref}>comparison tool</Link> uses your signed-in inventory.</p><p>Contact <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">info@findez.ai</a> with your operating system, Fusion version, FindEZ add-in version, the step you reached, and the exact error or a redacted screenshot. Never include passwords, access tokens, pairing codes, or private design files.</p><div className={styles.footerLinks}><a href="#downloads">Downloads ↓</a><Link href={cadWorldPath("/cad/fusion/connect", world)}>Manage Fusion connections ↗</Link><Link href={comparisonHref}>Open comparison tool ↗</Link><Link href="/docs/api">API documentation</Link><a href="#quickstart">Back to start ↑</a></div></section>
       </main>
     </div>
   </div><FooterMarkup /></AppThemeProvider>;

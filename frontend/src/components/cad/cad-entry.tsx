@@ -1,5 +1,6 @@
 "use client";
 
+import { cadWorldPath } from "@/lib/cad-links";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { AppShell } from "@/components/site/app-shell";
@@ -50,7 +51,7 @@ function AccountEntry({ accountId, worldId, destination }: { accountId: string; 
   }, [accountId, world, allowed, attempt]);
   const ready = allowed && directory?.world === world;
   return <AppShell><section className={styles.page}>
-    <header className={styles.hero}><div className={styles.topline}><a href="/docs/cad">← CAD Intelligence</a></div><h1>Start with your inventory.</h1>
+    <header className={styles.hero}><div className={styles.topline}><a href={cadWorldPath("/docs/cad", world)}>← CAD Intelligence</a></div><h1>Start with your inventory.</h1>
       <p>Choose where your parts are stored. Then compare your assembly or parts list.</p></header>
     <div className={`${styles.card} ${styles.inventoryPicker}`}>
       <label className={styles.file}>Organization
@@ -69,6 +70,6 @@ function AccountEntry({ accountId, worldId, destination }: { accountId: string; 
         </li>)}</ul>
         : <p>No inventories are available here. <Link href="/workspaces">Open workspaces</Link> to create or join one.</p>}
     </div>
-    <p className={styles.muted}>New to this? <a href="/docs/cad" target="_blank" rel="noreferrer">Follow the step-by-step setup guide</a> or <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">email support</a>. Downloads and installation instructions are in <a href="/docs/cad#downloads">CAD Intelligence</a>.</p>
+    <p className={styles.muted}>New to this? <a href={cadWorldPath("/docs/cad", world)} target="_blank" rel="noreferrer">Follow the step-by-step setup guide</a> or <a href="mailto:info@findez.ai?subject=FindEZ%20CAD%20setup%20help">email support</a>. Downloads and installation instructions are in <a href={cadWorldPath("/docs/cad#downloads", world)}>CAD Intelligence</a>.</p>
   </section></AppShell>;
 }

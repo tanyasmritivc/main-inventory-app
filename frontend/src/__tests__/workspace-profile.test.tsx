@@ -229,7 +229,7 @@ test("organization navigation contains only its management destinations",async()
  expect(screen.getByRole("link",{name:"People"}).getAttribute("aria-current")).toBe("page");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
  expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
- expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/worlds/acme?view=workspaces");
+ expect(screen.getByRole("link",{name:"Spaces"}).getAttribute("href")).toBe("/worlds/acme?view=spaces");
 });
 test("workspace navigation selects only the current section and retains its parent organization",async()=>{
  const workspace={workspace_id:"ftc",name:"Robotics",kind:"team" as const,team_id:"ftc",role:"owner" as const,organization_id:"acme",organization_name:"Acme"};

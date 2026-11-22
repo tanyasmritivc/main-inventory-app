@@ -1,3 +1,24 @@
+## November 22 — production web audit and fixes
+
+Live build `SewoEn52Be4Z7kMvvlH08` runs from
+`/home/ubuntu/findez-web-audit-20261122/frontend`. The previous November 18
+release and its static chunks were retained. The welcome dialog defers during
+editing. CAD source changes clear the old file, mapping and results, and CAD and
+Connections navigation carry the selected organization through supported links.
+The focused Fusion connection link from a comparison uses its verified inventory.
+
+The deployed web suite passed 552 tests. The repository suite passed 747 after
+bringing its onboarding expectations in line with the organization-and-Space
+workflow. TypeScript and the production build passed. ESLint reported zero errors
+and 78 warnings. Live Chromium checks covered 48 distinct navigation cases,
+32 internal link targets, ten signed-out guard checks, and ten inventory-scoped
+pages. Signed-in checks covered search, the Space Ask panel, a completed gear
+query, a five-row Ask table, CSV BOM review and comparison, source reset,
+organization continuity, both theme choices, and sign-out. Native WKWebView
+rendered CAD docs, Connections docs and sign-in at 390px, and pricing at 1440px.
+No real purchases, destructive account operations, third-party account connections
+or physical-camera scans were exercised in production.
+
 ## Inventory chat readout — November 17, 2026 (published)
 
 Reproduced reported gear interruption: missing imported descriptions/bulky tool

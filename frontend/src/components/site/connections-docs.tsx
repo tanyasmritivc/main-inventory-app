@@ -1,3 +1,4 @@
+import { cadWorldPath } from "@/lib/cad-links";
 import Link from 'next/link';
 import { HeaderMarkup, FooterMarkup } from '@/components/marketing-dark/public-chrome';
 import { connectionsPath } from '@/lib/commerce';
@@ -13,7 +14,7 @@ export function ConnectionsDocs({ organization }: { organization?: string } = {}
     <div className={styles.page}>
       <a href="#connections-docs-content" className={styles.skipLink}>Skip to documentation</a>
       <header className={styles.header}>
-        <Link href="/docs/connections" className={styles.brand}>Connections</Link>
+        <Link href={organization ? `/docs/connections?organization=${encodeURIComponent(organization)}` : "/docs/connections"} className={styles.brand}>Connections</Link>
         <div><Link href={manageHref}>Manage connections ↗</Link><DocsAppearance /></div>
       </header>
       <div className={styles.layout}>
@@ -112,9 +113,9 @@ export function ConnectionsDocs({ organization }: { organization?: string } = {}
           </section>
 
           <section id="support"><h2>Related guides & support</h2>
-            <p>Use the <Link href="/docs/api">API documentation</Link> for external inventory integrations and the <Link href="/docs/cad">CAD documentation</Link> for design and bill-of-materials workflows.</p>
+            <p>Use the <Link href="/docs/api">API documentation</Link> for external inventory integrations and the <Link href={cadWorldPath("/docs/cad", organization)}>CAD documentation</Link> for design and bill-of-materials workflows.</p>
             <p>For help, email <a href="mailto:info@findez.ai?subject=FindEZ%20Connections%20help">info@findez.ai</a> with the step you reached and the displayed error. Redact private purchase details from screenshots and never include passwords or access tokens.</p>
-            <div className={styles.footerLinks}><Link href={manageHref}>Manage connections ↗</Link><Link href="/docs/api">API documentation</Link><Link href="/docs/cad">CAD documentation</Link><a href="#quickstart">Back to start ↑</a></div>
+            <div className={styles.footerLinks}><Link href={manageHref}>Manage connections ↗</Link><Link href="/docs/api">API documentation</Link><Link href={cadWorldPath("/docs/cad", organization)}>CAD documentation</Link><a href="#quickstart">Back to start ↑</a></div>
           </section>
         </main>
       </div>

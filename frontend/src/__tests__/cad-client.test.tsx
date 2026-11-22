@@ -97,3 +97,15 @@ test("spreadsheet preview failure is visible and retryable", async () => {
   expect((await screen.findByRole("alert")).textContent).toContain("could not be read");
   expect((screen.getByRole("button", {name:"Review columns"}) as HTMLButtonElement).disabled).toBe(false);
 });
+
+test("switching upload sources clears the previous file and its review", async () => {
+  jest.mocked(previewBom).mockResolvedValue(previewData);
+  render(<CadClient />);
+  fireEvent.change(screen.getByLabelText("BOM file"), { target: { files: [new File(["Name,Qty"], "previous.csv")] } });
+  fireEvent.click(screen.getByRole("button", {name: "Review columns"}));
+  await screen.findByText("Review spreadsheet columns");
+  fireEvent.click(screen.getByRole("button", {name: /Fusion BOM file/}));
+  expect(screen.queryByText("previous.csv")).toBeNull();
+  expect(screen.queryByText("Review spreadsheet columns")).toBeNull();
+  expect((screen.getByRole("button", {name: "Compare with inventory"}) as HTMLButtonElement).disabled).toBe(true);
+});
