@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { DemoExamples } from './demo-examples';
 import styles from '@/app/(marketing)/book-demo/demo.module.css';
 
-const topics = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison'] as const;
+const topics = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison', 'Parts and equipment management', 'Organization-wide inventory visibility'] as const;
 type DemoTopic = (typeof topics)[number];
-const organizationTypes = ['Robotics team', 'Robotics company', 'Hardware startup', 'Engineering or manufacturing company', 'University or research lab', 'Makerspace or workshop', 'School', 'Other'];
+const organizationTypes = ['Robotics team', 'Robotics company', 'Hardware startup', 'Engineering company', 'Manufacturing', 'Research and development', 'Educational institution', 'Makerspace or workshop', 'School', 'Other'];
 const teamSizes = ['1 to 10', '11 to 50', '51 to 200', '201 to 1,000', '1,000+'];
 const cadTools = ['Autodesk Fusion', 'Onshape', 'SolidWorks', 'Other', "We don't use CAD"];
 
@@ -79,13 +80,15 @@ export function DemoBooking() {
     }
     const details = {
       ...contact,
+      form_version: 2,
       organization_type: value('organizationType'),
       team_size: value('teamSize') || undefined,
-      referral: value('referral'),
+      referral: value('referral') || undefined,
       interests: other ? [...interests, 'Other'] : interests,
       other_interest: other ? value('otherInterest') || undefined : undefined,
       cad_software: value('cadSoftware') || undefined,
       problem: value('problem') || undefined,
+      comments: value('comments') || undefined,
     };
     const body = JSON.stringify(details);
     sending.current = true;
@@ -124,7 +127,7 @@ export function DemoBooking() {
     <span aria-hidden="true" className={styles.confirmed}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
     <h2 ref={heading} tabIndex={-1}>Thanks for requesting a demo.</h2>
     <p>We will be in touch to arrange a walkthrough.</p>
-    <a className={styles.back} href="/">Back to findez.ai</a>
+    <Link className={styles.back} href="/">Back to findez.ai</Link>
   </div> : <form className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
     <fieldset className={styles.fields} hidden={stage !== 'contact'} disabled={stage !== 'contact' || pending}>
       <div className={styles.row}>
@@ -141,7 +144,7 @@ export function DemoBooking() {
         <SelectField label="What best describes your organization?" name="organizationType" options={organizationTypes} required/>
         <SelectField label="Team size" name="teamSize" options={teamSizes}/>
       </div>
-      <label><span>How did you hear about FindEZ?<Marker required/></span><input name="referral" maxLength={1000} required pattern=".*\S.*" placeholder="e.g. Instagram, a friend, a competition"/></label>
+      <label><span>How did you hear about FindEZ?<Marker/></span><input name="referral" maxLength={1000} placeholder="e.g. Instagram, a friend, a competition"/></label>
       <fieldset>
         <legend>What would you like to explore?<Marker/></legend>
         <div className={styles.chips}>
@@ -160,8 +163,11 @@ export function DemoBooking() {
       </fieldset>
       <SelectField label="Which CAD software does your team use?" name="cadSoftware" options={cadTools}/>
       <label><span>What are you trying to solve?<Marker/></span>
-        <textarea name="problem" maxLength={4000} rows={4} placeholder="For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering."/>
+        <textarea name="problem" maxLength={4000} rows={4} placeholder="Tell us about your current inventory workflow and anything else you would like us to cover."/>
       </label>
+      <details><summary>Additional comments (optional)</summary>
+        <label><span>Anything else we should know?</span><textarea name="comments" rows={2} maxLength={2000}/></label>
+      </details>
     </fieldset>
     {error && <div role="alert" className={styles.error}>{error}</div>}
     <div className={styles.actions}>

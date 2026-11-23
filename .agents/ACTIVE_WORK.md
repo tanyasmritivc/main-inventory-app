@@ -1,3 +1,7 @@
+## Demo management and founder follow-up (local implementation)
+
+The web/API workspace and the founder dashboard checkout contain an isolated, tested demo CRM change. Production migration and release are pending separate authorization. Configuration, operating workflow and affected files are in [the demo sales guide](../docs/demo-sales.md).
+
 ## Inventory chat readout — November 17, 2026 (published)
 
 Reproduced reported gear interruption: missing imported descriptions/bulky tool

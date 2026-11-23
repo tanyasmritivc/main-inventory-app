@@ -71,11 +71,10 @@ def create_app() -> FastAPI:
 
     # ── RequestValidationError — hide Pydantic internals, keep generic 422 ──
     async def _validation_exception_handler(request: Request, exc: RequestValidationError):
-        logger.error(
-            "Validation error on %s %s",
-            request.method, request.url.path,
-            exc_info=exc,
-        )
+        # Demo validation exceptions include submitted contact details or private scheduling links.
+        private_demo = request.url.path.startswith(("/demo-requests", "/demo-scheduling/", "/internal/demo-sales"))
+        logger.error("Validation error on %s %s", request.method, request.url.path,
+                     exc_info=None if private_demo else exc)
         if request.url.path.startswith("/api/v1/"):
             detail = {
                 "code": "invalid_request",

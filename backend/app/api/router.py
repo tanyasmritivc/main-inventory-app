@@ -35,7 +35,9 @@ from app.api.routes.onboarding import router as onboarding_router
 from app.api.routes.demo_requests import router as demo_requests_router
 
 api_router = APIRouter()
+from app.api.routes.demo_sales import router as demo_sales_router
 api_router.include_router(demo_requests_router)
+api_router.include_router(demo_sales_router)
 from app.api.routes.voice import router as voice_router
 api_router.include_router(voice_router)
 api_router.include_router(me_router)

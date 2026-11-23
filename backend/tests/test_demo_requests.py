@@ -18,7 +18,7 @@ class DemoRequestsTest(unittest.TestCase):
             "name": "Test Visitor", "organization": "Hardware Lab", "role": "Design lead",
             "organization_type": "Hardware startup", "team_size": "11 to 50", "referral": "A colleague",
             "interests": ["AI inventory search", "Other"], "other_interest": "Trace assemblies",
-            "cad_software": "Autodesk Fusion", "problem": "Check stock & compare assemblies",
+            "cad_software": "Autodesk Fusion", "problem": "Check stock & compare assemblies", "comments": "Please include the lab manager.",
         }
         with TemporaryDirectory() as tmp, patch.object(inbox, "INBOX", Path(tmp) / "db"), \
                 patch.object(inbox, "send_transactional_email") as mailer:

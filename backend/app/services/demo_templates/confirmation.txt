@@ -1,0 +1,29 @@
+Hi {first_name},
+
+Thank you for your interest in FindEZ AI!
+
+We've received your request for a product demonstration. We're looking forward to showing you how FindEZ helps engineering teams discover, manage, and understand their physical inventory.
+
+During the demo, we'll walk you through:
+
+• AI-powered inventory search and discovery.
+• Inventory visibility across parts, quantities, and storage locations.
+• Autodesk Fusion integration and CAD workflows.
+• Bill of Materials (BOM) comparison and inventory availability.
+
+We'd also love to learn a little about how your team currently manages its parts, equipment, and inventory so we can make the demonstration relevant to your workflow.
+
+What happens next?
+
+We'll confirm your meeting details and send your calendar invitation with the meeting link.
+
+In the meantime, you can explore FindEZ at https://findez.ai.
+
+Looking forward to connecting!
+
+Best,
+Tanya
+Founder, FindEZ AI
+AI Robots Inc.
+Sunnyvale, California
+https://findez.ai

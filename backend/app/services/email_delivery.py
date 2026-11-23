@@ -1,3 +1,4 @@
+import base64
 import os
 import smtplib
 import ssl
@@ -14,6 +15,7 @@ def send_transactional_email(
     text: str,
     message_id: str | None = None,
     reply_to: str | None = None,
+    calendar: tuple[str, str] | None = None,
 ) -> None:
     """Send app mail through the configured SMTP relay, with Resend as fallback."""
     settings = get_settings()
@@ -29,6 +31,9 @@ def send_transactional_email(
             message["Message-ID"] = message_id
         message.set_content(text)
         message.add_alternative(html, subtype="html")
+        if calendar:
+            method, ics = calendar
+            message.add_alternative(ics, subtype="calendar", params={"method": method})
         with smtplib.SMTP(
             settings.brevo_smtp_host,
             settings.brevo_smtp_port,
@@ -50,6 +55,7 @@ def send_transactional_email(
             "subject": subject,
             "html": html,
             "text": text,
+            **({"attachments": [{"filename": "findez-demo.ics", "content": base64.b64encode(calendar[1].encode()).decode()}]} if calendar else {}),
             **({"reply_to": reply_to} if reply_to else {}),
             **({"headers": {"Message-ID": message_id}} if message_id else {}),
         })
