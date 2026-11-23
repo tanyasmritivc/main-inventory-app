@@ -37,9 +37,11 @@ test('requires contact details and confirms only after a saved request, reusing 
     fireEvent.change(screen.getByRole('textbox',{name:/Tell us what else/}), {target:{value:'Parts traceability'}});
     fireEvent.click(submit);
     await screen.findByText(/couldn’t confirm your request/);
-    expect(screen.queryByText(/Thanks, Test/)).toBeNull();
+    expect(screen.queryByText(/Thanks for requesting a demo/)).toBeNull();
     fireEvent.click(submit);
-    await screen.findByRole('heading',{name:'Thanks, Test.'});
+    await screen.findByRole('heading',{name:'Thanks for requesting a demo.'});
+    expect(screen.getByText('We will be in touch to arrange a walkthrough.')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/Test Visitor|visitor@example\.com/);
     expect(send.mock.calls[0][1].body).toEqual(send.mock.calls[1][1].body);
     expect(JSON.parse(send.mock.calls[1][1].body).interests).toEqual(['BOM comparison','Robotics inventory']);
   } finally { global.fetch = oldFetch; }

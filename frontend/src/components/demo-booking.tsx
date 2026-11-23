@@ -43,7 +43,7 @@ export function DemoBooking() {
   const [interests, setInterests] = useState<DemoTopic[]>([]);
   const [other, setOther] = useState(false);
   const [pending, setPending] = useState(false);
-  const [thanks, setThanks] = useState<{name: string; email: string} | null>(null);
+  const [thanks, setThanks] = useState(false);
   const [error, setError] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
   const sending = useRef(false);
@@ -93,7 +93,7 @@ export function DemoBooking() {
       if (response.status === 429) { setError('Too many requests. Please try again later.'); return; }
       if (response.status === 422) { setError('Please check your name, work email, and organization.'); return; }
       if (!response.ok || (await response.json()).status !== 'received') throw new Error();
-      setThanks({name: details.name.split(/\s+/)[0], email: details.email});
+      setThanks(true);
     } catch {
       setError('We couldn’t confirm your request. Please try again.');
     } finally {
@@ -113,8 +113,8 @@ export function DemoBooking() {
     </div>
     {thanks ? <div className={styles.thanks}>
     <span aria-hidden="true" className={styles.confirmed}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
-    <h2 ref={heading} tabIndex={-1}>Thanks, {thanks.name}.</h2>
-    <p>We will be in touch at {thanks.email} to arrange a walkthrough.</p>
+    <h2 ref={heading} tabIndex={-1}>Thanks for requesting a demo.</h2>
+    <p>We will be in touch to arrange a walkthrough.</p>
     <a className={styles.back} href="/">Back to findez.ai</a>
   </div> : <form className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
     <fieldset className={styles.fields} hidden={stage !== 'contact'} disabled={stage !== 'contact' || pending}>
