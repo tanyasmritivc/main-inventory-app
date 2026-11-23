@@ -4,11 +4,31 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { DemoExamples } from './demo-examples';
 import styles from '@/app/(marketing)/book-demo/demo.module.css';
 
-const questions = [
-  {label: 'Which inventory workflows would you like to see?', topics: ['AI inventory search', 'Robotics inventory']},
-  {label: 'Which CAD workflows should we cover?', topics: ['Fusion and STEP models', 'BOM comparison']},
-] as const;
-type DemoTopic = (typeof questions)[number]['topics'][number];
+const topics = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison'] as const;
+type DemoTopic = (typeof topics)[number];
+const organizationTypes = ['Robotics team', 'Robotics company', 'Hardware startup', 'Engineering or manufacturing company', 'University or research lab', 'Makerspace or workshop', 'School', 'Other'];
+const teamSizes = ['1 to 10', '11 to 50', '51 to 200', '201 to 1,000', '1,000+'];
+const cadTools = ['Autodesk Fusion', 'Onshape', 'SolidWorks', 'Other', "We don't use CAD"];
+
+function Marker({required = false}: {required?: boolean}) {
+  return required
+    ? <span className={styles.required} aria-hidden="true">*</span>
+    : <span className={styles.optional}> (optional)</span>;
+}
+
+function SelectField({label, name, options, required = false}: {
+  label: string; name: string; options: string[]; required?: boolean;
+}) {
+  return <label>
+    <span>{label}<Marker required={required}/></span>
+    <span className={styles.selectWrap}>
+      <select name={name} required={required} defaultValue="">
+        <option value="">Select</option>
+        {options.map(option => <option key={option}>{option}</option>)}
+      </select>
+    </span>
+  </label>;
+}
 
 export function DemoExperience() {
   return <div className={styles.frame}>
@@ -21,6 +41,7 @@ export function DemoBooking() {
   const [stage, setStage] = useState<'contact' | 'questions'>('contact');
   const [contact, setContact] = useState({name: '', email: '', organization: ''});
   const [interests, setInterests] = useState<DemoTopic[]>([]);
+  const [other, setOther] = useState(false);
   const [pending, setPending] = useState(false);
   const [thanks, setThanks] = useState<{name: string; email: string} | null>(null);
   const [error, setError] = useState('');
@@ -44,8 +65,8 @@ export function DemoBooking() {
     if (sending.current) return;
     const form = event.currentTarget;
     if (!form.checkValidity()) {
-      const field = form.querySelector<HTMLInputElement>('input:invalid');
-      setError(field?.validity.typeMismatch ? 'Please enter a valid work email.' : 'Please fill in your name, work email and organization.');
+      const field = form.querySelector<HTMLInputElement | HTMLSelectElement>('input:invalid, select:invalid');
+      setError(field?.validity.typeMismatch ? 'Please enter a valid work email.' : 'Please complete the required fields.');
       field?.focus();
       return;
     }
@@ -95,22 +116,44 @@ export function DemoBooking() {
     <h2 ref={heading} tabIndex={-1}>Thanks, {thanks.name}.</h2>
     <p>We will be in touch at {thanks.email} to arrange a walkthrough.</p>
     <a className={styles.back} href="/">Back to findez.ai</a>
-  </div> : <form key={stage} className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
-    {stage === 'contact' ? <>
-    <div className={styles.row}>
-      <label><span>Full name<span className={styles.required} aria-hidden="true">*</span></span><input defaultValue={contact.name} name="name" placeholder="Alex Chen" autoComplete="name" required pattern=".*\S.*" maxLength={120} disabled={pending}/></label>
-      <label><span>Work email<span className={styles.required} aria-hidden="true">*</span></span><input defaultValue={contact.email} name="email" type="email" placeholder="alex@yourteam.org" autoComplete="email" required maxLength={254} disabled={pending}/></label>
-    </div>
-    <label><span>Company or organization<span className={styles.required} aria-hidden="true">*</span></span><input defaultValue={contact.organization} name="organization" placeholder="Your team, lab or company" autoComplete="organization" required pattern=".*\S.*" maxLength={180} disabled={pending}/></label>
-    </> : questions.map(question => <fieldset key={question.label} disabled={pending}>
-      <legend>{question.label} <span>(optional)</span></legend>
-      <div className={styles.chips}>{question.topics.map(topic => {
-        const selected = interests.includes(topic);
-        return <button key={topic} type="button" aria-pressed={selected} onClick={() => setInterests(
-          selected ? interests.filter(item => item !== topic) : [...interests, topic]
-        )}>{topic}<span aria-hidden="true">{selected ? '✓' : '+'}</span></button>;
-      })}</div>
-    </fieldset>)}
+  </div> : <form className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
+    <fieldset className={styles.fields} hidden={stage !== 'contact'} disabled={stage !== 'contact' || pending}>
+      <div className={styles.row}>
+        <label><span>Full name<Marker required/></span><input name="name" placeholder="Alex Chen" autoComplete="name" required pattern=".*\S.*" maxLength={120}/></label>
+        <label><span>Work email<Marker required/></span><input name="email" type="email" placeholder="alex@yourteam.org" autoComplete="email" required maxLength={254}/></label>
+      </div>
+      <div className={styles.row}>
+        <label><span>Company or organization<Marker required/></span><input name="organization" placeholder="Your team, lab or company" autoComplete="organization" required pattern=".*\S.*" maxLength={180}/></label>
+        <label><span>Job title or role<Marker required/></span><input name="role" placeholder="e.g. Build lead" autoComplete="organization-title" required pattern=".*\S.*"/></label>
+      </div>
+    </fieldset>
+    <fieldset className={styles.fields} hidden={stage !== 'questions'} disabled={stage !== 'questions' || pending}>
+      <div className={styles.row}>
+        <SelectField label="What best describes your organization?" name="organizationType" options={organizationTypes} required/>
+        <SelectField label="Team size" name="teamSize" options={teamSizes}/>
+      </div>
+      <label><span>How did you hear about FindEZ?<Marker required/></span><input name="referral" required pattern=".*\S.*" placeholder="e.g. Instagram, a friend, a competition"/></label>
+      <fieldset>
+        <legend>What would you like to explore?<Marker/></legend>
+        <div className={styles.chips}>
+          {topics.map(topic => {
+            const selected = interests.includes(topic);
+            return <button key={topic} type="button" aria-pressed={selected} onClick={() => setInterests(
+              selected ? interests.filter(item => item !== topic) : [...interests, topic]
+            )}>{topic}<span aria-hidden="true">{selected ? '✓' : '+'}</span></button>;
+          })}
+          <button type="button" aria-pressed={other} aria-controls="demo-other-interest" onClick={() => setOther(!other)}>
+            Other<span aria-hidden="true">{other ? '✓' : '+'}</span>
+          </button>
+        </div>
+        <input id="demo-other-interest" name="otherInterest" hidden={!other} disabled={!other}
+          aria-label="Tell us what else you'd like to see" placeholder="Tell us what else you'd like to see"/>
+      </fieldset>
+      <SelectField label="Which CAD software does your team use?" name="cadSoftware" options={cadTools}/>
+      <label><span>What are you trying to solve?<Marker/></span>
+        <textarea name="problem" rows={4} placeholder="For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering."/>
+      </label>
+    </fieldset>
     {error && <div role="alert" className={styles.error}>{error}</div>}
     <div className={styles.actions}>
       {stage === 'questions' && <button className={styles.back} type="button" disabled={pending} onClick={() => changeStage('contact')}>Back</button>}

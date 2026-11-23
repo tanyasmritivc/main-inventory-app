@@ -29,6 +29,8 @@ body{margin:0;background:#F7F7F8}
 .cz-input:hover{border-color:#D4D4DA}
 .cz-input:focus{outline:none;background:#FFFFFF;border-color:#0A0A0B;box-shadow:0 0 0 3px rgba(10,10,11,.06)}
 .cz-disp{font-family:'Inter Tight',Inter,sans-serif;font-weight:400;letter-spacing:-0.024em}
+select.cz-input{appearance:none;-webkit-appearance:none;padding-right:42px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235E5F66' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.cz-area{height:auto;min-height:120px;padding:14px 16px;line-height:1.5;resize:vertical}
 .cz-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .cz-chip{height:40px;padding:0 16px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:border-color .15s,background .15s}
 .cz-chip:hover{border-color:#0A0A0B !important}
@@ -89,7 +91,17 @@ body{margin:0;background:#F7F7F8}
 <label class="cz-label"><span>Full name<span class="cz-req">*</span></span><input class="cz-input" placeholder="Alex Chen" value="{{f.name}}" onChange="{{setName}}" autocomplete="name"></label>
 <label class="cz-label"><span>Work email<span class="cz-req">*</span></span><input class="cz-input" type="email" placeholder="alex@yourteam.org" value="{{f.email}}" onChange="{{setEmail}}" autocomplete="email"></label>
 </div>
+<div class="cz-row">
 <label class="cz-label"><span>Company or organization<span class="cz-req">*</span></span><input class="cz-input" placeholder="Your team, lab or company" value="{{f.company}}" onChange="{{setCompany}}" autocomplete="organization"></label>
+<label class="cz-label"><span>Job title or role<span class="cz-req">*</span></span><input class="cz-input" placeholder="e.g. Build lead" value="{{f.role}}" onChange="{{setRole}}" autocomplete="organization-title"></label>
+</div>
+<div class="cz-row">
+<label class="cz-label"><span>What best describes your organization?<span class="cz-req">*</span></span><select class="cz-input" value="{{f.orgType}}" onChange="{{setOrg}}">
+<option value="">Select</option><option value="Robotics team">Robotics team</option><option value="Robotics company">Robotics company</option><option value="Hardware startup">Hardware startup</option><option value="Engineering or manufacturing company">Engineering or manufacturing company</option><option value="University or research lab">University or research lab</option><option value="Makerspace or workshop">Makerspace or workshop</option><option value="School">School</option><option value="Other">Other</option></select></label>
+<label class="cz-label"><span>Team size <span class="cz-opt">(optional)</span></span><select class="cz-input" value="{{f.size}}" onChange="{{setSize}}">
+<option value="">Select</option><option value="1 to 10">1 to 10</option><option value="11 to 50">11 to 50</option><option value="51 to 200">51 to 200</option><option value="201 to 1,000">201 to 1,000</option><option value="1,000+">1,000+</option></select></label>
+</div>
+<label class="cz-label"><span>How did you hear about FindEZ?<span class="cz-req">*</span></span><input class="cz-input" placeholder="e.g. Instagram, a friend, a competition" value="{{f.heard}}" onChange="{{setHeard}}"></label>
 <fieldset style="border: 0; margin: 0; padding: 0">
 <legend style="font-size: 14px; font-weight: 500; padding: 0 0 12px; color: #0A0A0B">What would you like to explore? <span class="cz-opt">(optional)</span></legend>
 <div style="display: flex; flex-wrap: wrap; gap: 10px">
@@ -97,7 +109,13 @@ body{margin:0;background:#F7F7F8}
 <button class="cz-chip" type="button" aria-pressed="{{c.on}}" onClick="{{c.toggle}}" style="border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.fg}}">{{c.label}}<span aria-hidden="true" style="font-size: 16px; line-height: 1">{{c.mark}}</span></button>
 </sc-for>
 </div>
+<sc-if value="{{showOther}}" hint-placeholder-val="{{false}}">
+<input class="cz-input" aria-label="What else would you like to explore?" placeholder="Tell us what else you’d like to see" value="{{f.otherExplore}}" onChange="{{setOtherExplore}}" style="margin-top: 12px">
+</sc-if>
 </fieldset>
+<label class="cz-label"><span>Which CAD software does your team use? <span class="cz-opt">(optional)</span></span><select class="cz-input" value="{{f.cad}}" onChange="{{setCad}}">
+<option value="">Select</option><option value="Autodesk Fusion">Autodesk Fusion</option><option value="Onshape">Onshape</option><option value="SolidWorks">SolidWorks</option><option value="Other">Other</option><option value="We don’t use CAD">We don’t use CAD</option></select></label>
+<label class="cz-label"><span>What are you trying to solve? <span class="cz-opt">(optional)</span></span><textarea class="cz-input cz-area" rows="4" placeholder="For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering." value="{{f.problem}}" onChange="{{setProblem}}"></textarea></label>
 <sc-if value="{{showErr}}" hint-placeholder-val="{{false}}">
 <div role="alert" style="font-size: 14px; color: #B42318">{{err}}</div>
 </sc-if>
@@ -116,12 +134,12 @@ body{margin:0;background:#F7F7F8}
 </div>
 </section>
 
-<section class="cz-right" aria-label="How teams use FindEZ" style="background: #F2F3F5; border-left: 1px solid #E6E6EA; display: flex; flex-direction: column; align-items: center; padding: 56px 40px 40px">
-<div style="width: 100%; max-width: 520px; flex: 1; display: flex; flex-direction: column">
+<section class="cz-right" aria-label="How teams use FindEZ" style="background: #F2F3F5; border-left: 1px solid #E6E6EA; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 56px 40px 40px">
+<div style="width: 100%; max-width: 520px; display: flex; flex-direction: column; position: sticky; top: 40px">
 <div class="cz-disp" style="text-align: center; font-size: 26px; line-height: 1.2">How teams like yours use FindEZ</div>
 
-<div style="margin-top: 28px; position: relative; flex: 1; display: flex; flex-direction: column">
-<article style="background: #FFFFFF; border: 1px solid #E6E6EA; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; flex: 1">
+<div style="margin-top: 28px; position: relative; display: flex; flex-direction: column">
+<article style="background: #FFFFFF; border: 1px solid #E6E6EA; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column">
 <div style="display: flex; align-items: center; gap: 16px; padding: 22px 26px; border-bottom: 1px solid #ECECEF">
 <span class="cz-disp" style="font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums">{{s.stat}}</span>
 <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; line-height: 1.45; text-transform: uppercase; color: #5E5F66">{{s.statLabel}}</span>
@@ -131,7 +149,7 @@ body{margin:0;background:#F7F7F8}
 <div class="cz-disp" style="margin-top: 10px; font-size: 22px; line-height: 1.35">{{s.q}}</div>
 <div style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #5E5F66">{{s.a}}</div>
 </div>
-<div style="position: relative; flex: 1; min-height: 260px; background: {{s.bg}}; overflow: hidden">
+<div style="position: relative; height: 300px; background: {{s.bg}}; overflow: hidden">
 <sc-if value="{{s.isBearing}}" hint-placeholder-val="{{true}}">
 <svg class="cz-fade" viewBox="-180 -140 360 280" style="position: absolute; inset: 0; width: 100%; height: 100%" aria-hidden="true" fill="none" stroke="{{s.stroke}}" stroke-width="1.6" vector-effect="non-scaling-stroke">
 <g opacity=".35" transform="translate(26 -18)"><circle r="104"></circle><circle r="62"></circle></g>
@@ -204,7 +222,7 @@ body{margin:0;background:#F7F7F8}
 class DCLogic{setState(p){this.state={...this.state,...p};schedule()}}
 
 class Component extends DCLogic {
-  state = { step: 'form', f: { name: '', email: '', company: '' }, picked: [], err: '', i: 0 };
+  state = { step: 'form', f: { name: '', email: '', company: '', role: '', orgType: '', size: '', heard: '', otherExplore: '', cad: '', problem: '' }, picked: [], err: '', i: 0 };
   start() { if (this._t) clearInterval(this._t); this._t = setInterval(() => { if (typeof document !== 'undefined' && document.hidden) return; this.setState({ i: (this.state.i + 1) % 4 }); }, 4000); }
   componentDidMount() { this.start(); }
   componentWillUnmount() { clearInterval(this._t); this._t = null; }
@@ -220,7 +238,7 @@ class Component extends DCLogic {
       { tab: 'Workshops', who: 'A workshop', stat: '2', statLabel: 'Spare drive belts<br>Maintenance cabinet', q: '“Do we have spare belts for the CNC?”', a: 'Recorded in the Maintenance cabinet, Shelf 3.', bg: 'radial-gradient(70% 90% at 0% 0%, rgba(255,181,71,.9), rgba(255,181,71,0) 60%), radial-gradient(70% 90% at 100% 100%, rgba(111,184,255,.85), rgba(111,184,255,0) 62%), #0A0A0B', stroke: '#FFFFFF', tagColor: 'rgba(255,255,255,.65)', kind: 'bolt' }
     ];
     const cur = SLIDES[s.i];
-    const CH = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison'];
+    const CH = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison', 'Other'];
     const f = s.f;
     return {
       isForm: s.step === 'form', isDone: s.step === 'done', f,
@@ -228,11 +246,19 @@ class Component extends DCLogic {
       setName: (e) => this.setF('name', e.target.value),
       setEmail: (e) => this.setF('email', e.target.value),
       setCompany: (e) => this.setF('company', e.target.value),
+      setRole: (e) => this.setF('role', e.target.value),
+      setOrg: (e) => this.setF('orgType', e.target.value),
+      setSize: (e) => this.setF('size', e.target.value),
+      setHeard: (e) => this.setF('heard', e.target.value),
+      setOtherExplore: (e) => this.setF('otherExplore', e.target.value),
+      setCad: (e) => this.setF('cad', e.target.value),
+      setProblem: (e) => this.setF('problem', e.target.value),
+      showOther: s.picked.indexOf('Other') >= 0,
       chips: CH.map(l => { const on = s.picked.indexOf(l) >= 0; return { label: l, on: on ? 'true' : 'false', mark: on ? '✓' : '+', bg: on ? '#0A0A0B' : '#FFFFFF', fg: on ? '#FFFFFF' : '#0A0A0B', border: on ? '#0A0A0B' : '#E6E6EA', toggle: () => this.setState({ picked: on ? s.picked.filter(x => x !== l) : s.picked.concat([l]) }) }; }),
       showErr: !!s.err, err: s.err,
       submit: () => {
         const v = this.state.f;
-        if (!v.name || !v.email || !v.company) { this.setState({ err: 'Please fill in your name, work email and organization.' }); return; }
+        if (!v.name || !v.email || !v.company || !v.role || !v.orgType || !v.heard.trim()) { this.setState({ err: 'Please complete the required fields.' }); return; }
         if (v.email.indexOf('@') < 1) { this.setState({ err: 'Please enter a valid work email.' }); return; }
         this.setState({ step: 'done', err: '' });
       },
@@ -256,7 +282,7 @@ function proc(node,sc,out){
  const svg='http://www.w3.org/2000/svg';
  const el=(tag==='svg'||out.namespaceURI===svg)?document.createElementNS(svg,tag):document.createElement(tag);
  for(const a of node.attributes){const v=sub(a.value,sc);
-  if(/^on/i.test(a.name)){if(typeof v==='function'){let ev=a.name.slice(2).toLowerCase();if(ev==='change'&&tag==='input')ev='input';el.addEventListener(ev,v)}continue}
+  if(/^on/i.test(a.name)){if(typeof v==='function'){let ev=a.name.slice(2).toLowerCase();if(ev==='change'&&(tag==='input'||tag==='textarea'))ev='input';el.addEventListener(ev,v)}continue}
   if(a.name==='disabled'){if(v===true||v==='true')el.setAttribute('disabled','');continue}
   if(a.name==='value'){el._v=v;continue}
   el.setAttribute(a.name,v)}

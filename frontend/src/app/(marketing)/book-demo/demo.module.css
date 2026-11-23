@@ -33,16 +33,16 @@
 .row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
 .form label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; font-weight: 500; color: var(--ink); }
 .required { margin-left: 2px; color: #b45309; }
-.page:global(#main) .form input {
+.page:global(#main) .form :is(input, select, textarea) {
   width: 100%; height: 54px; padding: 0 16px; border: 1px solid #e6e6ea; border-radius: 10px;
   font: inherit; font-weight: 400; font-size: 16px; color: var(--ink); background: #f2f3f5;
 }
-.page:global(#main) .form input::placeholder { color: #9a9aa2; }
-.page:global(#main) .form input:hover { border-color: #d4d4da; }
-.page:global(#main) .form input:focus { background: #fff; border-color: var(--ink); outline: 2px solid var(--ink); outline-offset: 1px; }
+.page:global(#main) .form :is(input, textarea)::placeholder { color: #9a9aa2; }
+.page:global(#main) .form :is(input, select, textarea):hover { border-color: #d4d4da; }
+.page:global(#main) .form :is(input, select, textarea):focus { background: #fff; border-color: var(--ink); outline: 2px solid var(--ink); outline-offset: 1px; }
 .form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .form legend { padding: 0 0 12px; font-size: 14px; font-weight: 500; color: var(--ink); }
-.form legend span { font-weight: 400; color: #9a9aa2; }
+.form .optional { font-weight: 400; color: #9a9aa2; }
 .chips, .tabs { display: flex; flex-wrap: wrap; }
 .chips { gap: 10px; }
 .chips button, .tabs button, .submit, .back { font: inherit; cursor: pointer; }
@@ -99,3 +99,16 @@
 
 .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .intro h1, .thanks h2 { scroll-margin-top: 68px; }
+
+.fields { display: grid; gap: 22px; }
+.form [hidden] { display: none !important; }
+.selectWrap { position: relative; }
+.selectWrap::after {
+  content: ''; pointer-events: none; position: absolute; right: 18px; top: 22px;
+  width: 8px; height: 8px; border: solid #85858c; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
+.page:global(#main) .form select { appearance: none; padding-right: 36px; text-overflow: ellipsis; }
+.page:global(#main) .form select:has(option:checked[value=""]) { color: #9a9aa2; }
+.form option { color: var(--ink); }
+.page:global(#main) .form textarea { height: auto; line-height: 1.5; resize: vertical; padding: 14px 16px; }
+.chips + input { margin-top: 12px; }

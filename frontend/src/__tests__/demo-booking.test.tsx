@@ -13,9 +13,9 @@ test('requires contact details and confirms only after a saved request, reusing 
     render(<DemoBooking/>);
     const next = () => fireEvent.click(screen.getByRole('button', {name: 'Continue'}));
     next();
-    expect(screen.getByRole('alert').textContent).toBe("Please fill in your name, work email and organization.");
+    expect(screen.getByRole('alert').textContent).toBe("Please complete the required fields.");
     expect(send).not.toHaveBeenCalled();
-    for (const [label,value] of [['Full name','Test Visitor'],['Work email','visitor@example.com'],['Company or organization','Test Lab']]) {
+    for (const [label,value] of [['Full name','Test Visitor'],['Work email','visitor@example.com'],['Company or organization','Test Lab'],['Job title or role','Engineer']]) {
       fireEvent.change(screen.getByRole('textbox', {name: label}), {target:{value}});
     }
     next();
@@ -28,6 +28,13 @@ test('requires contact details and confirms only after a saved request, reusing 
     expect(send).not.toHaveBeenCalled();
     const submit = screen.getByRole('button', {name: /Request a demo/});
     fireEvent.click(screen.getByRole('button',{name:/Robotics inventory/}));
+    fireEvent.click(submit);
+    expect(screen.getByRole('alert').textContent).toBe('Please complete the required fields.');
+    expect(send).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText(/What best describes/), {target:{value:'Hardware startup'}});
+    fireEvent.change(screen.getByLabelText(/How did you hear/), {target:{value:'A colleague'}});
+    fireEvent.click(screen.getByRole('button',{name:'Other'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/Tell us what else/}), {target:{value:'Parts traceability'}});
     fireEvent.click(submit);
     await screen.findByText(/couldn’t confirm your request/);
     expect(screen.queryByText(/Thanks, Test/)).toBeNull();

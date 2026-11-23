@@ -1,23 +1,59 @@
-# Codex prompt: switch the live Book a Demo page to light mode and deploy it directly (web only)
+# Codex prompt: Book a Demo page in light mode with the new form questions, deployed directly (web only)
 
 Unzip this folder into the repo at `docs/book-demo-light/`. Then paste everything below the line into Codex from the repo root.
 
+This replaces the earlier light-mode-only prompt. Run this one instead.
+
 ---
 
-**SWITCH THE LIVE BOOK A DEMO PAGE TO LIGHT MODE, INCLUDING ITS HEADER AND FOOTER, AND DEPLOY IT. DO NOT MAKE A VERCEL COPY.**
+**SWITCH THE LIVE BOOK A DEMO PAGE TO LIGHT MODE (HEADER AND FOOTER INCLUDED), ADD THE NEW FORM QUESTIONS, AND DEPLOY IT. DO NOT MAKE A VERCEL COPY.**
 
 - No Vercel deployment, no Vercel preview, no Render, no local copy, no staging copy.
 - The only deploy target is the self-hosted production server for findez.ai.
 - If the repo's deploy scripts or config point at Vercel, don't use them: find the self-hosted deploy path. If you can't find it, stop and tell me, and don't deploy anywhere else.
 
-WEB (NEXT.JS) ONLY. The Book a Demo page you just built from `docs/book-demo-v3/` is live and dark. **The whole page must be light: the header, the content and the footer.** Every other page on findez.ai stays exactly as it is.
+WEB (NEXT.JS) ONLY. The Book a Demo page you just built from `docs/book-demo-v3/` is live and dark. Two changes:
+
+1. **The whole page must be light:** the header, the content and the footer. Every other page on findez.ai stays exactly as it is.
+2. **The form gets more questions** (listed below).
 
 ## WHAT CHANGES
 
-**Colours only.** Layout, spacing, fonts, copy, the form, the submission, the cards, the 4-second rotation and all behaviour stay exactly as they are now.
+**Colours and the form fields.** Layout, spacing, fonts, the cards, the 4-second rotation and all other behaviour stay exactly as they are now.
 
-- **Don't change any copy.** The live page's wording stays as it is, even where it differs from the prototype.
-- `docs/book-demo-light/prototype/findez-book-demo-light.html` and `screens/` show the target. Match the colours, not the prototype's wording.
+- **Don't change any other copy.** The live page's existing wording stays as it is, even where it differs from the prototype (for example "we will be in touch").
+- `docs/book-demo-light/prototype/findez-book-demo-light.html` and `screens/` show the target. Match the colours and the new fields, not the prototype's other wording.
+
+## THE FORM QUESTIONS
+
+Use this order, labels and options exactly.
+
+**Rows:** pairs share a row on desktop and stack under 560px.
+
+| Row | Field | Required | Type and options |
+|---|---|---|---|
+| Row 1 | Full name | Yes | Text, placeholder "Alex Chen" |
+| Row 1 | Work email | Yes | Email, placeholder "alex@yourteam.org" |
+| Row 2 | Company or organization | Yes | Text, placeholder "Your team, lab or company" |
+| Row 2 | Job title or role | Yes | Text, placeholder "e.g. Build lead" |
+| Row 3 | What best describes your organization? | Yes | Dropdown: Robotics team, Robotics company, Hardware startup, Engineering or manufacturing company, University or research lab, Makerspace or workshop, School, Other |
+| Row 3 | Team size (optional) | No | Dropdown: 1 to 10, 11 to 50, 51 to 200, 201 to 1,000, 1,000+ |
+| Full width | How did you hear about FindEZ? | Yes | Open text box, placeholder "e.g. Instagram, a friend, a competition" |
+| Full width | What would you like to explore? (optional) | No | The existing multi-select chips plus a new **Other** chip. When Other is on, show a text box under the chips: "Tell us what else you'd like to see". |
+| Full width | Which CAD software does your team use? (optional) | No | Dropdown: Autodesk Fusion, Onshape, SolidWorks, Other, We don't use CAD |
+| Full width | What are you trying to solve? (optional) | No | Multi-line text box, about 4 rows, resizable, placeholder "For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering." |
+
+**Field rules:**
+
+- **Required marker:** required fields show the amber asterisk. Optional fields show "(optional)" in grey after the label.
+- **Dropdowns:**
+  - Same field style as the inputs: `#F2F3F5` fill, 1px `#E6E6EA` line, 54px tall, a small grey chevron on the right.
+  - No native browser styling (`appearance: none`).
+  - First option "Select".
+- **Validation:** if any required field is empty, show one line above the button: "Please complete the required fields." Keep the existing work email check.
+- **Submission:** send every new answer through the **same submission the form uses today**, alongside the existing fields.
+  - If the answers end up in an email or a web-side handler, include all of them there.
+  - **If saving the new fields would need a backend (FastAPI) or Supabase change, don't make that change.** Send what the current handler accepts, then stop and tell me exactly which fields aren't stored and what change would be needed.
 
 ## HEADER AND FOOTER: A LIGHT VARIANT, ONLY ON THIS PAGE
 
@@ -52,7 +88,7 @@ WEB (NEXT.JS) ONLY. The Book a Demo page you just built from `docs/book-demo-v3/
 | Paragraph and thank-you text | `#5E5F66` |
 | "(optional)" | `#9A9AA2` |
 | Required asterisk | `#B45309` |
-| Fields | `#F2F3F5` background, 1px `#E6E6EA` line, `#0A0A0B` text, `#9A9AA2` placeholder |
+| Fields, dropdowns and the text box | `#F2F3F5` background, 1px `#E6E6EA` line, `#0A0A0B` text, `#9A9AA2` placeholder |
 | Field on hover | line `#D4D4DA` |
 | Field on focus | white background, `#0A0A0B` line |
 | Choice chip, off | white, 1px `#E6E6EA` line, `#0A0A0B` text |
@@ -87,6 +123,7 @@ Drawing panels:
 
 1. Open the live Book a Demo page at 1440×900 and at 390 wide, and compare it with `screens/`. Everything, header and footer included, should be light.
 2. Check that:
+   - all the new fields show in the right order, the required ones block submit, and the Other chip shows its text box;
    - the cards still change every 4 seconds and the tabs work;
    - the form and the thank-you state look like `screens/desktop/06` to `08`;
    - the phone menu and the Community dropdown are readable in light.
@@ -95,6 +132,7 @@ Drawing panels:
 
 ## Report back
 
+- How the form submits now, which new answers are included, and anything that couldn't be stored without a backend change.
 - How you added the light variant (the prop name) and that only the Book a Demo page uses it.
 - The files you changed.
 - How you deployed, and confirmation that nothing went to Vercel or Render.
