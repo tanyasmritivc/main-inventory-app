@@ -63,3 +63,26 @@
  .findez-public-chrome.findez-public-chrome .x-act { gap:5px; }
  .findez-public-chrome.findez-public-chrome.x-nav .x-p { padding:0 9px; }
 }
+
+.findez-public-chrome.findez-public-chrome[data-theme="light"] {
+  --w: #0a0a0b;
+  --g1: #5e5f66;
+  --g2: #9a9aa2;
+  --ln: #e6e6ea;
+  color-scheme: light;
+  background: white;
+}
+.findez-public-header-space[data-theme="light"],
+.findez-public-chrome[data-theme="light"].x-nav.sc { background: white; }
+.findez-public-chrome[data-theme="light"].x-nav { box-shadow: 0 1px 0 var(--ln); }
+.findez-public-chrome[data-theme="light"] .x-logo svg { fill: currentColor; }
+.findez-public-chrome[data-theme="light"] .x-fg .x-logo,
+.findez-public-chrome[data-theme="light"] .x-ddm a { color: var(--w); }
+.findez-public-chrome[data-theme="light"] .x-p.w { background: var(--w); color: white; }
+.findez-public-chrome[data-theme="light"] .x-p.w:hover { background: #262628; }
+.findez-public-chrome[data-theme="light"] .x-p.d,
+.findez-public-chrome[data-theme="light"] .x-ddm a:hover { background: #f2f3f5; }
+.findez-public-chrome[data-theme="light"] .x-p.d:hover { background: var(--ln); }
+.findez-public-chrome[data-theme="light"] .x-ddm { background: white; box-shadow: inset 0 0 0 1px var(--ln), 0 12px 32px -16px #0002; }
+.findez-public-chrome[data-theme="light"] .x-fb { box-shadow: 0 -1px 0 var(--ln); }
+.findez-public-chrome[data-theme="light"] :is(a,button):focus-visible { outline-color: var(--w); }

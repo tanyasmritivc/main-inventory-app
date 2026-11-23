@@ -42,8 +42,8 @@ const slides = [
     label: "Multimeters · Electronics wall",
     question: "“Where are the multimeters?”",
     answer: "Recorded on the Electronics wall. There are 6.",
-    background: "#26272B",
-    stroke: "#F3F1EA",
+    background: "#E4E6EA",
+    stroke: "#0A0A0B",
     drawing: <>
       <g transform="translate(22 -14)" opacity=".35"><circle r="100"></circle></g>
       <circle r="100"></circle><use href="#cz-pulley"></use><circle r="56"></circle>

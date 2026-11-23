@@ -12,10 +12,10 @@ export const dynamic = 'force-dynamic';
 
 export default function BookDemo() {
   return <>
-    <HeaderMarkup reserveSpace currentPage="book-demo" />
+    <HeaderMarkup theme="light" reserveSpace currentPage="book-demo" />
     <main className={styles.page} id="main">
       <DemoExperience />
     </main>
-    <FooterMarkup />
+    <FooterMarkup theme="light" />
   </>;
 }
