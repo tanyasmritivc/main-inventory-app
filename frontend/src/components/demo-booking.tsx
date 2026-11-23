@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { DemoSearch } from './demo-search';
+import { DemoExamples } from './demo-examples';
 import styles from '@/app/(marketing)/book-demo/demo.module.css';
 
 const topics = ['AI inventory search', 'Robotics inventory', 'Fusion and STEP models', 'BOM comparison'] as const;
@@ -9,23 +9,15 @@ export type DemoTopic = typeof topics[number];
 
 export function DemoExperience() {
   const [interests, setInterests] = useState<DemoTopic[]>([]);
-  return <div className={styles.columns}>
-    <section className={styles.story}>
-      <h1>See FindEZ<br/>in action.</h1>
-      <p className={styles.intro}>Follow a part from the shelf to an engineering design. See how your team finds what’s on hand and checks what a build still needs.</p>
-      <DemoSearch topic={interests.at(-1)} />
-      <h2>What you’ll see</h2>
-      <ul>
-        <li>Find a part, its quantity and its location with AI search.</li>
-        <li>Share inventory across teams and spaces.</li>
-        <li>Work in Autodesk Fusion and generate a custom STEP model.</li>
-        <li>Compare a bill of materials with available stock.</li>
-      </ul>
-      <a className={styles.pilot} href="mailto:info@findez.ai?subject=FindEZ%20organization%20pilot%20request">Request an Organization Pilot <span aria-hidden="true">↗</span></a>
-    </section>
-    <section className={styles.panel} aria-label="Request a demo">
+  return <div className={styles.frame}>
+    <section aria-labelledby="demo-title">
+      <div className={styles.intro}>
+        <h1 id="demo-title">See FindEZ<br/>in action.</h1>
+        <p>Curious how your team could find parts faster and check a build against what’s on the shelf? Tell us about your team and we will be in touch.</p>
+      </div>
       <DemoBooking interests={interests} setInterests={setInterests}/>
     </section>
+    <DemoExamples/>
   </div>;
 }
 
@@ -33,7 +25,7 @@ export function DemoBooking({interests, setInterests}: {
   interests: DemoTopic[]; setInterests: (next: DemoTopic[]) => void;
 }) {
   const [pending, setPending] = useState(false);
-  const [thanks, setThanks] = useState('');
+  const [thanks, setThanks] = useState<{name: string; email: string} | null>(null);
   const [error, setError] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
   const sending = useRef(false);
@@ -46,7 +38,7 @@ export function DemoBooking({interests, setInterests}: {
     const form = event.currentTarget;
     if (!form.checkValidity()) {
       const field = form.querySelector<HTMLInputElement>('input:invalid');
-      setError(field?.validity.typeMismatch ? 'Please enter a valid work email.' : 'Please complete the required fields.');
+      setError(field?.validity.typeMismatch ? 'Please enter a valid work email.' : 'Please fill in your name, work email and organization.');
       field?.focus();
       return;
     }
@@ -68,7 +60,7 @@ export function DemoBooking({interests, setInterests}: {
       if (response.status === 429) { setError('Too many requests. Please try again later.'); return; }
       if (response.status === 422) { setError('Please check your name, work email, and organization.'); return; }
       if (!response.ok || (await response.json()).status !== 'received') throw new Error();
-      setThanks(details.name.split(/\s+/)[0]);
+      setThanks({name: details.name.split(/\s+/)[0], email: details.email});
     } catch {
       setError('We couldn’t confirm your request. Please try again.');
     } finally {
@@ -77,30 +69,28 @@ export function DemoBooking({interests, setInterests}: {
     }
   }
 
-  if (thanks) return <>
-    <span aria-hidden="true" className={styles.confirmed}>✓</span>
-    <h2 ref={heading} tabIndex={-1}>Thanks, {thanks}.</h2>
-    <p>We’ve received your demo request. We will email you to arrange a time.</p>
-    <a className={styles.explore} href="/">Explore FindEZ <span aria-hidden="true">↗</span></a>
-  </>;
-  return <>
-    <h2>Request a demo</h2>
-    <p>Tell us about your team. Tanya will be in touch to arrange a walkthrough.</p>
-    <form className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
-      <label>Full name<input name="name" autoComplete="name" required pattern=".*\S.*" maxLength={120} disabled={pending}/></label>
-      <label>Work email<input name="email" type="email" autoComplete="email" required maxLength={254} disabled={pending}/></label>
-      <label className={styles.wide}>Company or organization<input name="organization" autoComplete="organization" required pattern=".*\S.*" maxLength={180} disabled={pending}/></label>
-      <fieldset className={styles.interests} disabled={pending}>
-        <legend>What would you like to explore? <span className={styles.optional}>(optional)</span></legend>
-        <div className={styles.chips}>{topics.map(topic => {
-          const selected = interests.includes(topic);
-          return <button key={topic} type="button" aria-pressed={selected} onClick={() => setInterests(
-            selected ? interests.filter(item => item !== topic) : [...interests, topic]
-          )}>{topic}<span aria-hidden="true">{selected ? '×' : '+'}</span></button>;
-        })}</div>
-      </fieldset>
-      {error && <div role="alert" className={styles.error}>{error}</div>}
-      <button type="submit" className={styles.button} disabled={pending}>{pending ? 'Sending request…' : 'Request a demo'} <span aria-hidden="true">→</span></button>
-    </form>
-  </>;
+  if (thanks) return <div className={styles.thanks}>
+    <span aria-hidden="true" className={styles.confirmed}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
+    <h2 ref={heading} tabIndex={-1}>Thanks, {thanks.name}.</h2>
+    <p>We will be in touch at {thanks.email} to arrange a walkthrough.</p>
+    <a className={styles.back} href="/">Back to findez.ai</a>
+  </div>;
+  return <form className={styles.form} noValidate onSubmit={submit} onChange={() => setError('')} aria-busy={pending}>
+    <div className={styles.row}>
+      <label><span>Full name<span className={styles.required} aria-hidden="true">*</span></span><input name="name" placeholder="Alex Chen" autoComplete="name" required pattern=".*\S.*" maxLength={120} disabled={pending}/></label>
+      <label><span>Work email<span className={styles.required} aria-hidden="true">*</span></span><input name="email" type="email" placeholder="alex@yourteam.org" autoComplete="email" required maxLength={254} disabled={pending}/></label>
+    </div>
+    <label><span>Company or organization<span className={styles.required} aria-hidden="true">*</span></span><input name="organization" placeholder="Your team, lab or company" autoComplete="organization" required pattern=".*\S.*" maxLength={180} disabled={pending}/></label>
+    <fieldset disabled={pending}>
+      <legend>What would you like to explore? <span>(optional)</span></legend>
+      <div className={styles.chips}>{topics.map(topic => {
+        const selected = interests.includes(topic);
+        return <button key={topic} type="button" aria-pressed={selected} onClick={() => setInterests(
+          selected ? interests.filter(item => item !== topic) : [...interests, topic]
+        )}>{topic}<span aria-hidden="true">{selected ? '✓' : '+'}</span></button>;
+      })}</div>
+    </fieldset>
+    {error && <div role="alert" className={styles.error}>{error}</div>}
+    <button type="submit" className={styles.submit} disabled={pending}>{pending ? 'Sending request…' : 'Request a demo'} <span aria-hidden="true">→</span></button>
+  </form>;
 }

@@ -19,10 +19,10 @@ test('requires contact details and confirms only after a saved request, reusing 
     render(<Example/>);
     const submit = screen.getByRole('button', {name: /Request a demo/});
     fireEvent.click(submit);
-    expect(screen.getByRole('alert').textContent).toMatch(/required/);
+    expect(screen.getByRole('alert').textContent).toBe("Please fill in your name, work email and organization.");
     expect(send).not.toHaveBeenCalled();
     for (const [label,value] of [['Full name','Test Visitor'],['Work email','visitor@example.com'],['Company or organization','Test Lab']]) {
-      fireEvent.change(screen.getByLabelText(label), {target:{value}});
+      fireEvent.change(screen.getByRole('textbox', {name: label}), {target:{value}});
     }
     fireEvent.click(screen.getByRole('button',{name:/BOM comparison/}));
     fireEvent.click(screen.getByRole('button',{name:/Robotics inventory/}));
