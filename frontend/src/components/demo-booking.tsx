@@ -39,7 +39,7 @@ export function DemoExperience() {
 
 export function DemoBooking() {
   const [stage, setStage] = useState<'contact' | 'questions'>('contact');
-  const [contact, setContact] = useState({name: '', email: '', organization: ''});
+  const [contact, setContact] = useState({name: '', email: '', organization: '', role: ''});
   const [interests, setInterests] = useState<DemoTopic[]>([]);
   const [other, setOther] = useState(false);
   const [pending, setPending] = useState(false);
@@ -70,14 +70,23 @@ export function DemoBooking() {
       field?.focus();
       return;
     }
+    const data = new FormData(form);
+    const value = (key: string) => String(data.get(key) ?? '').trim();
     if (stage === 'contact') {
-      const data = new FormData(form);
-      const value = (key: string) => String(data.get(key) ?? '').trim();
-      setContact({name: value('name'), email: value('email'), organization: value('organization')});
+      setContact({name: value('name'), email: value('email'), organization: value('organization'), role: value('role')});
       changeStage('questions');
       return;
     }
-    const details = {...contact, interests};
+    const details = {
+      ...contact,
+      organization_type: value('organizationType'),
+      team_size: value('teamSize') || undefined,
+      referral: value('referral'),
+      interests: other ? [...interests, 'Other'] : interests,
+      other_interest: other ? value('otherInterest') || undefined : undefined,
+      cad_software: value('cadSoftware') || undefined,
+      problem: value('problem') || undefined,
+    };
     const body = JSON.stringify(details);
     sending.current = true;
     setPending(true);
@@ -91,7 +100,7 @@ export function DemoBooking() {
         signal: AbortSignal.timeout(20000),
       });
       if (response.status === 429) { setError('Too many requests. Please try again later.'); return; }
-      if (response.status === 422) { setError('Please check your name, work email, and organization.'); return; }
+      if (response.status === 422) { setError('Please check your contact details and demo answers.'); return; }
       if (!response.ok || (await response.json()).status !== 'received') throw new Error();
       setThanks(true);
     } catch {
@@ -124,7 +133,7 @@ export function DemoBooking() {
       </div>
       <div className={styles.row}>
         <label><span>Company or organization<Marker required/></span><input name="organization" placeholder="Your team, lab or company" autoComplete="organization" required pattern=".*\S.*" maxLength={180}/></label>
-        <label><span>Job title or role<Marker required/></span><input name="role" placeholder="e.g. Build lead" autoComplete="organization-title" required pattern=".*\S.*"/></label>
+        <label><span>Job title or role<Marker required/></span><input name="role" maxLength={180} placeholder="e.g. Build lead" autoComplete="organization-title" required pattern=".*\S.*"/></label>
       </div>
     </fieldset>
     <fieldset className={styles.fields} hidden={stage !== 'questions'} disabled={stage !== 'questions' || pending}>
@@ -132,7 +141,7 @@ export function DemoBooking() {
         <SelectField label="What best describes your organization?" name="organizationType" options={organizationTypes} required/>
         <SelectField label="Team size" name="teamSize" options={teamSizes}/>
       </div>
-      <label><span>How did you hear about FindEZ?<Marker required/></span><input name="referral" required pattern=".*\S.*" placeholder="e.g. Instagram, a friend, a competition"/></label>
+      <label><span>How did you hear about FindEZ?<Marker required/></span><input name="referral" maxLength={1000} required pattern=".*\S.*" placeholder="e.g. Instagram, a friend, a competition"/></label>
       <fieldset>
         <legend>What would you like to explore?<Marker/></legend>
         <div className={styles.chips}>
@@ -146,12 +155,12 @@ export function DemoBooking() {
             Other<span aria-hidden="true">{other ? '✓' : '+'}</span>
           </button>
         </div>
-        <input id="demo-other-interest" name="otherInterest" hidden={!other} disabled={!other}
+        <input id="demo-other-interest" name="otherInterest" maxLength={1000} hidden={!other} disabled={!other}
           aria-label="Tell us what else you'd like to see" placeholder="Tell us what else you'd like to see"/>
       </fieldset>
       <SelectField label="Which CAD software does your team use?" name="cadSoftware" options={cadTools}/>
       <label><span>What are you trying to solve?<Marker/></span>
-        <textarea name="problem" rows={4} placeholder="For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering."/>
+        <textarea name="problem" maxLength={4000} rows={4} placeholder="For example: we keep rebuying parts we already have, or we want to check a Fusion assembly before ordering."/>
       </label>
     </fieldset>
     {error && <div role="alert" className={styles.error}>{error}</div>}

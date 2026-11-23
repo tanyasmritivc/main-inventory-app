@@ -33,6 +33,9 @@ test('requires contact details and confirms only after a saved request, reusing 
     expect(send).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText(/What best describes/), {target:{value:'Hardware startup'}});
     fireEvent.change(screen.getByLabelText(/How did you hear/), {target:{value:'A colleague'}});
+    fireEvent.change(screen.getByLabelText(/Team size/), {target:{value:'11 to 50'}});
+    fireEvent.change(screen.getByLabelText(/Which CAD software/), {target:{value:'Onshape'}});
+    fireEvent.change(screen.getByLabelText(/What are you trying to solve/), {target:{value:'Check stock before a build'}});
     fireEvent.click(screen.getByRole('button',{name:'Other'}));
     fireEvent.change(screen.getByRole('textbox',{name:/Tell us what else/}), {target:{value:'Parts traceability'}});
     fireEvent.click(submit);
@@ -43,6 +46,11 @@ test('requires contact details and confirms only after a saved request, reusing 
     expect(screen.getByText('We will be in touch to arrange a walkthrough.')).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/Test Visitor|visitor@example\.com/);
     expect(send.mock.calls[0][1].body).toEqual(send.mock.calls[1][1].body);
-    expect(JSON.parse(send.mock.calls[1][1].body).interests).toEqual(['BOM comparison','Robotics inventory']);
+    expect(JSON.parse(send.mock.calls[1][1].body)).toMatchObject({
+      name: 'Test Visitor', email: 'visitor@example.com', organization: 'Test Lab', role: 'Engineer',
+      organization_type: 'Hardware startup', team_size: '11 to 50', referral: 'A colleague',
+      interests: ['BOM comparison','Robotics inventory','Other'], other_interest: 'Parts traceability',
+      cad_software: 'Onshape', problem: 'Check stock before a build',
+    });
   } finally { global.fetch = oldFetch; }
 });

@@ -1,4 +1,5 @@
 import asyncio
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -12,6 +13,34 @@ from app.services import demo_requests as inbox
 
 
 class DemoRequestsTest(unittest.TestCase):
+    def test_all_answers_reach_inbox_and_team_email(self):
+        answers = {
+            "name": "Test Visitor", "organization": "Hardware Lab", "role": "Design lead",
+            "organization_type": "Hardware startup", "team_size": "11 to 50", "referral": "A colleague",
+            "interests": ["AI inventory search", "Other"], "other_interest": "Trace assemblies",
+            "cad_software": "Autodesk Fusion", "problem": "Check stock & compare assemblies",
+        }
+        with TemporaryDirectory() as tmp, patch.object(inbox, "INBOX", Path(tmp) / "db"), \
+                patch.object(inbox, "send_transactional_email") as mailer:
+            app = FastAPI()
+            app.include_router(router)
+            # Drive the queue explicitly after saving the request.
+            client = TestClient(app)
+            self.addCleanup(client.close)
+            response = client.post("/demo-requests", json={
+                **answers, "email": "visitor@example.org", "request_id": str(uuid4()),
+            })
+            self.assertEqual(response.status_code, 202)
+            with inbox.connect() as db:
+                self.assertEqual(json.loads(db.execute("SELECT details FROM requests").fetchone()[0]), answers)
+            self.assertTrue(inbox.deliver_one())
+            self.assertTrue(inbox.deliver_one())
+            founder = next(call.kwargs for call in mailer.call_args_list if call.kwargs["to"] == inbox.FOUNDER)
+            for value in answers.values():
+                self.assertIn(", ".join(value) if isinstance(value, list) else value, founder["text"])
+            self.assertIn("Check stock &amp; compare assemblies", founder["html"])
+            self.assertEqual(founder["reply_to"], "visitor@example.org")
+
     def test_request_and_independent_mail_retries(self):
         async def sleeping_worker():
             await asyncio.sleep(3600)

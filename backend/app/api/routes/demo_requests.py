@@ -23,7 +23,7 @@ async def lifespan(app):
 
 
 router = APIRouter(lifespan=lifespan)
-Interest = Literal["AI inventory search", "Robotics inventory", "Fusion and STEP models", "BOM comparison"]
+Interest = Literal["AI inventory search", "Robotics inventory", "Fusion and STEP models", "BOM comparison", "Other"]
 
 
 class DemoRequest(BaseModel):
@@ -32,7 +32,19 @@ class DemoRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120, pattern=r"^[^\x00-\x1f\x7f]+$")
     organization: str = Field(min_length=1, max_length=180, pattern=r"^[^\x00-\x1f\x7f]+$")
     email: str = Field(min_length=3, max_length=254, pattern=r"^[^\s<>@,;:]+@[^\s<>@,;:]+\.[^\s<>@,;:]+$")
-    interests: list[Interest] = Field(default_factory=list, max_length=4)
+    interests: list[Interest] = Field(default_factory=list, max_length=5)
+
+    # Older forms submitted contact details and interests only.
+    role: str | None = Field(default=None, max_length=180)
+    organization_type: Literal[
+        "Robotics team", "Robotics company", "Hardware startup", "Engineering or manufacturing company",
+        "University or research lab", "Makerspace or workshop", "School", "Other",
+    ] | None = None
+    team_size: Literal["1 to 10", "11 to 50", "51 to 200", "201 to 1,000", "1,000+"] | None = None
+    referral: str | None = Field(default=None, max_length=1000)
+    other_interest: str | None = Field(default=None, max_length=1000)
+    cad_software: Literal["Autodesk Fusion", "Onshape", "SolidWorks", "Other", "We don't use CAD"] | None = None
+    problem: str | None = Field(default=None, max_length=4000)
 
     @field_validator("email")
     @classmethod
@@ -50,9 +62,11 @@ class DemoRequest(BaseModel):
 @limiter.limit("6/minute")
 def submit_demo_request(request: Request, body: DemoRequest):
     try:
-        inbox.save(str(body.request_id), body.email, {
-            "name": body.name, "organization": body.organization, "interests": sorted(set(body.interests)),
-        })
+        details = body.model_dump(exclude={"request_id", "email"}, exclude_none=True)
+        details["interests"] = sorted(set(body.interests))
+        if "Other" not in body.interests:
+            details.pop("other_interest", None)
+        inbox.save(str(body.request_id), body.email, details)
     except inbox.TooManyRequests:
         raise HTTPException(429, "Too many demo requests. Please try again later.")
     except inbox.RequestConflict:

@@ -93,7 +93,16 @@ def deliver_one():
             "A visitor requested a FindEZ demo.", "",
             "Name: " + details["name"], "Email: " + job["email"],
             "Organization: " + details["organization"],
+            *[f"{label}: {details[key]}" for key, label in (
+                ("role", "Job title or role"), ("organization_type", "Organization type"),
+                ("team_size", "Team size"), ("referral", "How they heard about FindEZ"),
+            ) if details.get(key)],
+            "",
             "Demo interests: " + (", ".join(details["interests"]) or "Unspecified"),
+            *[f"{label}: {details[key]}" for key, label in (
+                ("other_interest", "Other interest"), ("cad_software", "CAD software"),
+                ("problem", "What they are trying to solve"),
+            ) if details.get(key)],
             "", "Reply to this message to arrange a time.",
         ])
         reply = job["email"]

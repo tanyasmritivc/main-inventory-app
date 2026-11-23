@@ -1,6 +1,6 @@
 ## November 22 · Native public demo requests
 
-The light, two-screen `/book-demo` form validates contact details before opening the qualification questions. Only the final submit calls the API. The existing endpoint accepts name, email, organization and four predefined interests. Role, organization type, team size, referral source, Other interest and its description, CAD software and the problem statement currently stay in the browser and are omitted from storage and mail. The
+The light, two-screen `/book-demo` form validates contact details before opening the qualification questions. Only the final submit calls the API. The form submits the visitor's role, organization type, team size, referral source, selected interests, Other description, CAD software and problem statement along with contact details. The API saves supplied answers in the existing JSON details field and includes them in the team's notification. Requests from older forms and mail retries for existing records remain supported. The
 FindEZ API saves the request and both email jobs atomically in a private persistent
 SQLite inbox under the API service account’s `~/.local/share/findez-demo/`. Each
 delivery is retried independently using the existing transactional relay. Tanya
