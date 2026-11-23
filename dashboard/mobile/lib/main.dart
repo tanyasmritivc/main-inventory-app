@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dashboard_api.dart';
+import 'demo_requests.dart';
 
 const orange = Color(0xFFC45120);
 const surface = Colors.white;
@@ -478,6 +479,7 @@ const destinations = [
   'Admin & Security',
   'Settings',
   'Issues',
+  'Demo Requests',
 ];
 
 class DashboardShell extends StatefulWidget {
@@ -505,7 +507,7 @@ class _DashboardShellState extends State<DashboardShell> {
         ? PageList(
             children: [
               for (final group in <String, List<int>>{
-                'Business': [1, 2],
+                'Business': [1, 2, 11],
                 'Operations': [4, 5, 6],
                 'Company': [7, 8, 9],
               }.entries) ...[
@@ -690,6 +692,7 @@ class _DashboardShellState extends State<DashboardShell> {
 
   Widget _page() {
     final api = widget.api;
+    if (page == 11) return DemoRequests(api: api);
     final data = api.data;
     if (data == null) return const SizedBox.shrink();
     switch (page) {

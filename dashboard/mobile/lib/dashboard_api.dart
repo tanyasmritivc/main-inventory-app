@@ -341,6 +341,39 @@ class DashboardApi extends ChangeNotifier {
     }
   }
 
+  Future<Json> demoSales({
+    String? id,
+    String? operation,
+    Json? body,
+    Map<String, String>? query,
+  }) async {
+    if (!signedIn) throw DashboardError('Sign in to view demo requests.', 401);
+    await _refreshToken();
+    if (!signedIn) throw DashboardError('Session locked.', 401);
+    const origin = String.fromEnvironment(
+      'DEMO_API_ORIGIN',
+      defaultValue: 'https://findez.openstack.ftctools.com',
+    );
+    final target = Uri.parse(origin);
+    if (target.scheme != 'https') {
+      throw DashboardError('Configure a secure demo API origin.');
+    }
+    final url = target.replace(
+      pathSegments: ['internal', 'demo-sales', ?id, ?operation],
+      queryParameters: query,
+    );
+    final token = session?['access_token'];
+    final result = await _request(
+      body == null ? 'GET' : 'POST',
+      url,
+      body: body,
+    );
+    if (!signedIn || token != session?['access_token']) {
+      throw DashboardError('Session changed. Open the record again.');
+    }
+    return result;
+  }
+
   Future<void> saveIssue({
     required String title,
     String description = '',

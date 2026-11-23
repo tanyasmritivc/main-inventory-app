@@ -100,6 +100,10 @@ def create_app(sources=None, store=None, owner=None, monitor=True):
         response.headers.update({"Cache-Control": "no-store, private", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY"})
         return response
 
+    @app.get("/dashboard/v1/demo-access")
+    async def demo_access(user=Depends(founder)):
+        return {"id": user["id"]}
+
     @app.get("/dashboard/v1/health")
     async def service_health():
         return {"status": "ok"}

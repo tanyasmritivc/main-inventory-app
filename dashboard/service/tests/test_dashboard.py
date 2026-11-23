@@ -180,3 +180,15 @@ def test_active_users_deduplicate_across_spaces_sources_and_time_windows(tmp_pat
     assert counts() == [None, None, None]
     source.rows = AsyncMock(side_effect=ValueError('activity unavailable'))
     assert counts() == [None, None, None]
+
+
+def test_demo_access_uses_existing_owner_and_mfa_policy(tmp_path):
+    path = '/dashboard/v1/demo-access'
+    founder_client, _, _ = client(tmp_path)
+    assert founder_client.get(path).status_code == 401
+    headers = {'Authorization':'Bearer example'}
+    assert founder_client.get(path, headers=headers).json() == {'id': OWNER}
+    for user in ({'id':'other','email_confirmed_at':'yes'}, {'id':OWNER},
+                 {'id':OWNER,'email_confirmed_at':'yes','factors':[{'status':'verified'}]}):
+        restricted, _, _ = client(tmp_path,user)
+        assert restricted.get(path,headers=headers).status_code in (401,403)
