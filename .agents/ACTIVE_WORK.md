@@ -1,3 +1,7 @@
+## November 23, 2026 — Production iPhone reminders
+
+The self-hosted five-minute worker now enables dispatch only with the recorded notification policy active. The previous launcher forced dispatch off. An explicitly requested one-device APNs probe was accepted by Apple and its recipient confirmed the banner. The approved migration `20261124_inventory_push_actions.sql` and corresponding API are live. An authorized registration initializes ordinary phone alerts only for an untouched server preference. Existing opt-outs, quiet hours and caps take precedence. Expiry and missing-location reminders target personal default inventories. Optional add-item and shelf-photo suggestions require an explicit preference and a capable iOS client. API and worker health passed after activation.
+
 ## November 6 - Notification API and inbox activated; push stays off
 
 User approved production migration and API/inbox activation. Runtime

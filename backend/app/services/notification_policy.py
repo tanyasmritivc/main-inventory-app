@@ -19,5 +19,5 @@ def fallback_timezone() -> str:
 CAPABILITIES = {
     'inventory_alerts': True, 'capture_reminders': True,
     'weekly_recap': False, 'cleanup_insights': False,
-    'reengagement': False, 'user_reminders': False,
+    'reengagement': True, 'user_reminders': False,
 }

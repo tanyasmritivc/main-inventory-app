@@ -221,6 +221,17 @@ def enqueue_notifications(
 
 
 def send_test(user_id: str) -> int:
+    if notification_policy.enabled():
+        from uuid import uuid4
+        from app.services.notification_delivery import send_once
+        from app.services.supabase_client import get_supabase_raw
+        device = get_supabase_raw().rpc('findez_claim_test_device', {'p_user': user_id}).execute().data
+        if not device:
+            return 0
+        state, _ = send_once(device, str(uuid4()), user_id, {
+            'title': 'FindEZ push test', 'body': 'Phone alerts can reach this device.',
+        }, self_test=True)
+        return int(state == 'accepted')
     devices = get_supabase_admin().table("push_devices").select(
         "device_token,environment"
     ).eq("user_id", user_id).eq("enabled", True).execute().data or []

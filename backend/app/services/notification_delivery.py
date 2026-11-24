@@ -10,11 +10,17 @@ from app.services.supabase_client import get_supabase_raw
 log = logging.getLogger(__name__)
 
 
-def send_once(device, notification_id, recipient, content):
+def send_once(device, notification_id, recipient, content, *, self_test=False):
     credentials = push_notifications._credentials()
     if credentials is None:
         return 'failed', 'not_configured'
     host = 'api.sandbox.push.apple.com' if device.get('environment') == 'sandbox' else 'api.push.apple.com'
+    payload = {'aps': {'alert': content, 'sound': 'default'}, 'recipient_user_id': recipient}
+    if self_test:
+        payload['action'] = 'push_test'
+    else:
+        payload.update(action='personalization', notification_id=notification_id)
+        payload['aps']['category'] = 'PERSONALIZATION'
     try:
         with httpx.Client(http2=True, timeout=10.0) as client:
             response = client.post(
@@ -23,9 +29,7 @@ def send_once(device, notification_id, recipient, content):
                          'apns-topic': credentials[3], 'apns-push-type': 'alert',
                          'apns-priority': '10', 'apns-collapse-id': notification_id,
                          'apns-expiration': '0'},
-                json={'aps': {'alert': content, 'sound': 'default', 'category': 'PERSONALIZATION'},
-                      'action': 'personalization', 'notification_id': notification_id,
-                      'recipient_user_id': recipient})
+                json=payload)
     except httpx.HTTPError:
         return 'unknown', 'transport_unknown'
     if response.status_code == 200:
@@ -44,6 +48,7 @@ def send_once(device, notification_id, recipient, content):
 
 def dispatch(limit=50):
     client = get_supabase_raw()
+    client.rpc('findez_seed_inventory_pushes', {'p_limit': limit}).execute()
     candidates = client.rpc('findez_personalization_candidates', {'p_limit': min(100,max(1,limit))}).execute().data or []
     accepted = 0
     for row in candidates:
@@ -52,7 +57,12 @@ def dispatch(limit=50):
             if not claimed:
                 continue
             cutoff = (datetime.now(timezone.utc)-timedelta(days=90)).isoformat()
-            devices = client.table('push_devices').select('device_token,environment').eq('user_id',claimed['user_id']).eq('enabled',True).eq('personalization_destinations',True).gte('updated_at',cutoff).order('updated_at',desc=True).limit(1).execute().data or []
+            device_query = (client.table('push_devices').select('device_token,environment')
+                            .eq('user_id', claimed['user_id']).eq('enabled', True)
+                            .eq('personalization_destinations', True).gte('updated_at', cutoff))
+            if claimed.get('entity_type') == 'inventory':
+                device_query = device_query.eq('inventory_push_actions', True)
+            devices = device_query.order('updated_at', desc=True).limit(1).execute().data or []
             if not devices:
                 client.rpc('findez_notification_cancel_reservation', {'p_id':row['id']}).execute()
                 continue

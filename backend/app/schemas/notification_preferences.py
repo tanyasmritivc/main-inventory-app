@@ -14,6 +14,7 @@ class PreferenceChange(BaseModel):
     timezone: str | None = Field(default=None, max_length=100)
     inventory_alerts: StrictBool | None = None
     capture_reminders: StrictBool | None = None
+    reengagement: StrictBool | None = None
     show_details: StrictBool | None = None
     paused_until: datetime | None = None
 
@@ -35,7 +36,7 @@ class PreferenceChange(BaseModel):
             raise ValueError('Pause for up to seven days')
         return value
 
-    @field_validator('push_enabled','in_app_enabled','quiet_enabled','quiet_start','quiet_end','inventory_alerts','capture_reminders','show_details')
+    @field_validator('push_enabled','in_app_enabled','quiet_enabled','quiet_start','quiet_end','inventory_alerts','capture_reminders','reengagement','show_details')
     @classmethod
     def not_null(cls, value):
         if value is None:

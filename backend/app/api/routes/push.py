@@ -15,6 +15,7 @@ class RegisterDeviceRequest(BaseModel):
     device_token: str = Field(min_length=32, max_length=256, pattern=r"^[0-9a-fA-F]+$")
     environment: Literal["sandbox", "production"]
     personalization_destinations: bool = False
+    inventory_push_actions: bool = False
 
 
 @router.post("/devices")
@@ -26,6 +27,7 @@ def register_device(body: RegisterDeviceRequest, user: AuthenticatedUser = Depen
         "platform": "ios",
         "environment": body.environment,
         "enabled": True,
+        "inventory_push_actions": body.inventory_push_actions,
         "personalization_destinations": body.personalization_destinations,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }, on_conflict="device_token").execute().data or []

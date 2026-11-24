@@ -41,6 +41,10 @@ def destination(notification_id: UUID, user: AuthenticatedUser=Depends(get_curre
     from app.services.supabase_client import get_supabase_admin
     actor = actor_id(user)
     inv = _inventory(result['inventory_id'], actor)
+    if result['entity_type'] == 'inventory':
+        if not result['active'] or result.get('quick_action') not in {'first_item', 'add_item', 'snap'}:
+            raise HTTPException(404, 'This reminder is no longer available.')
+        return {**result, 'inventory': inv}
     world = inv['workspace'].get('organization_id') or 'personal'
     with in_inventory(actor, world, result['inventory_id']):
         table, column = ('items', 'item_id') if result['entity_type']=='item' else ('capture_reviews', 'review_id')
