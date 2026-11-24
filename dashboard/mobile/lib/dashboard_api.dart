@@ -341,6 +341,9 @@ class DashboardApi extends ChangeNotifier {
     }
   }
 
+  Future<Json> notificationAnalytics() =>
+      _request('GET', Uri.parse('$base/notification-analytics'));
+
   Future<Json> demoSales({
     String? id,
     String? operation,

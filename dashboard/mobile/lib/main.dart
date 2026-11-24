@@ -1,3 +1,4 @@
+import 'notification_analytics.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dashboard_api.dart';
@@ -480,6 +481,7 @@ const destinations = [
   'Settings',
   'Issues',
   'Demo Requests',
+  'Notification analytics',
 ];
 
 class DashboardShell extends StatefulWidget {
@@ -507,7 +509,7 @@ class _DashboardShellState extends State<DashboardShell> {
         ? PageList(
             children: [
               for (final group in <String, List<int>>{
-                'Business': [1, 2, 11],
+                'Business': [1, 2, 11, 12],
                 'Operations': [4, 5, 6],
                 'Company': [7, 8, 9],
               }.entries) ...[
@@ -692,6 +694,7 @@ class _DashboardShellState extends State<DashboardShell> {
 
   Widget _page() {
     final api = widget.api;
+    if (page == 12) return NotificationAnalytics(api: api);
     if (page == 11) return DemoRequests(api: api);
     final data = api.data;
     if (data == null) return const SizedBox.shrink();

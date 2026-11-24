@@ -100,6 +100,20 @@ def create_app(sources=None, store=None, owner=None, monitor=True):
         response.headers.update({"Cache-Control": "no-store, private", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY"})
         return response
 
+    @app.get("/dashboard/v1/notification-analytics")
+    async def notification_analytics(user=Depends(founder)):
+        try:
+            response = await data.client.post(data.base + "/rest/v1/rpc/findez_notification_analytics",
+                                              headers=data.headers, json={})
+            response.raise_for_status()
+            report = response.json()
+            if not isinstance(report, dict) or not isinstance(report.get("groups"), list):
+                raise ValueError("Invalid notification report")
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(503, "Notification analytics are unavailable.") from None
+        db.audit(user["id"], "read_dashboard", "notification_analytics")
+        return report
+
     @app.get("/dashboard/v1/demo-access")
     async def demo_access(user=Depends(founder)):
         return {"id": user["id"]}

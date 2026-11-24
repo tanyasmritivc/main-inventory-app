@@ -192,3 +192,24 @@ def test_demo_access_uses_existing_owner_and_mfa_policy(tmp_path):
                  {'id':OWNER,'email_confirmed_at':'yes','factors':[{'status':'verified'}]}):
         restricted, _, _ = client(tmp_path,user)
         assert restricted.get(path,headers=headers).status_code in (401,403)
+
+
+def test_notification_analytics_is_founder_only(tmp_path):
+    path = '/dashboard/v1/notification-analytics'
+    c, _, _ = client(tmp_path)
+    assert c.get(path).status_code == 401
+    other, _, _ = client(tmp_path, {'id':'someone-else','email_confirmed_at':'yes'})
+    assert other.get(path,headers={'Authorization':'Bearer token'}).status_code == 403
+    assert c.get(path,headers={'Authorization':'Bearer token'}).status_code == 503
+
+
+def test_founder_reads_notification_report_without_returning_source_headers(tmp_path):
+    c, store, source = client(tmp_path)
+    report = {"days": 30, "groups": [{"category": "discovery", "taps": 1}]}
+    response = httpx.Response(200, json=report, request=httpx.Request("POST","https://auth.example.test/rest/v1/rpc/findez_notification_analytics"))
+    with patch.object(source.client, "post", AsyncMock(return_value=response)) as call:
+        result = c.get("/dashboard/v1/notification-analytics",headers={"Authorization":"Bearer token"})
+    assert result.status_code == 200 and result.json() == report
+    assert call.await_args.args[0].endswith("/rest/v1/rpc/findez_notification_analytics")
+    assert result.headers["cache-control"] == "no-store, private"
+    assert store.audits()[0]["action"] == "read_dashboard"
