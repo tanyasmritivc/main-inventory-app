@@ -36,6 +36,8 @@ def destination(notification_id: UUID, user: AuthenticatedUser=Depends(get_curre
         result = get_supabase_raw().rpc('findez_personalization_destination', {'p_actor':actor_id(user),'p_id':str(notification_id)}).execute().data
     except Exception: raise HTTPException(503, 'This notification could not be opened. Try again.') from None
     if not result: raise HTTPException(404, 'This item or review is no longer available.')
+    if result.get('entity_type') == 'account':
+        return result
     from app.api.routes.inventory_workspaces import _inventory
     from app.services.world_chat import in_inventory
     from app.services.supabase_client import get_supabase_admin

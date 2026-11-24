@@ -51,7 +51,7 @@ jobs:
           createdb notification_policy_ci
           PGDATABASE=notification_policy_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/notification_policy.sql
           FINDEZ_DISPOSABLE_SQL_TESTS=1 PGDATABASE=notification_policy_ci python3 backend/tests/sql/notification_policy_checks.py
-          PGDATABASE=notification_policy_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/inventory_push_actions.sql
+          PGDATABASE=notification_policy_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/inventory_push_actions.sql -f backend/tests/sql/daily_inventory_update.sql
 
   backend:
     name: Backend (Python)

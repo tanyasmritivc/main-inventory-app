@@ -1,3 +1,7 @@
+## November 23, 2026 — Daily inventory update
+
+Signed-in accounts with phone and inventory alerts enabled get a daily personal inventory summary. The worker schedules by the saved time zone, normally at 10 AM, and respects quiet hours and pauses. The account/date key deduplicates runs. The daily update has its own slot independently of the existing event limits and works on existing push-capable iPhone builds. The lock-screen preview follows the saved details preference. Migration: `20261124_daily_inventory_update.sql`.
+
 ## November 23, 2026 — Production iPhone reminders
 
 The self-hosted five-minute worker now enables dispatch only with the recorded notification policy active. The previous launcher forced dispatch off. An explicitly requested one-device APNs probe was accepted by Apple and its recipient confirmed the banner. The approved migration `20261124_inventory_push_actions.sql` and corresponding API are live. An authorized registration initializes ordinary phone alerts only for an untouched server preference. Existing opt-outs, quiet hours and caps take precedence. Expiry and missing-location reminders target personal default inventories. Optional add-item and shelf-photo suggestions require an explicit preference and a capable iOS client. API and worker health passed after activation.

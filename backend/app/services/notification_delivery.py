@@ -10,14 +10,14 @@ from app.services.supabase_client import get_supabase_raw
 log = logging.getLogger(__name__)
 
 
-def send_once(device, notification_id, recipient, content, *, self_test=False):
+def send_once(device, notification_id, recipient, content, *, self_test=False, daily=False):
     credentials = push_notifications._credentials()
     if credentials is None:
         return 'failed', 'not_configured'
     host = 'api.sandbox.push.apple.com' if device.get('environment') == 'sandbox' else 'api.push.apple.com'
     payload = {'aps': {'alert': content, 'sound': 'default'}, 'recipient_user_id': recipient}
-    if self_test:
-        payload['action'] = 'push_test'
+    if self_test or daily:
+        payload['action'] = 'daily_inventory' if daily else 'push_test'
     else:
         payload.update(action='personalization', notification_id=notification_id)
         payload['aps']['category'] = 'PERSONALIZATION'
@@ -48,6 +48,7 @@ def send_once(device, notification_id, recipient, content, *, self_test=False):
 
 def dispatch(limit=50):
     client = get_supabase_raw()
+    client.rpc('findez_seed_daily_inventory', {'p_limit': limit}).execute()
     client.rpc('findez_seed_inventory_pushes', {'p_limit': limit}).execute()
     candidates = client.rpc('findez_personalization_candidates', {'p_limit': min(100,max(1,limit))}).execute().data or []
     accepted = 0
@@ -73,7 +74,8 @@ def dispatch(limit=50):
                 if not content or revision is None or client.rpc('findez_notification_begin_attempt', {'p_id':row['id'],'p_device':devices[0]['device_token'],'p_revision':revision}).execute().data is not True:
                     client.rpc('findez_notification_cancel_reservation', {'p_id':row['id']}).execute()
                     break
-                state, error = send_once(devices[0], row['id'], claimed['user_id'], content)
+                state, error = send_once(devices[0], row['id'], claimed['user_id'], content,
+                                         daily=claimed['category'] == 'daily_inventory')
                 if state == 'retry' and attempt < 2:
                     time.sleep(2**attempt + random.uniform(0,1))
                     continue

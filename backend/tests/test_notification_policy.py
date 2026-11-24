@@ -25,7 +25,7 @@ def test_preferences_are_actor_bound_and_closed(api,monkeypatch):
     calls=[]
     def rpc(name,args): calls.append((name,args));return {'revision':1,'push_enabled':False}
     monkeypatch.setattr(routes,'_policy_rpc',rpc)
-    assert api.get('/notifications/preferences').json()['policy']=={'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}
+    assert api.get('/notifications/preferences').json()['policy']=={'daily_inventory_hour':10,'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}
     assert calls[-1][1]['p_actor']==A
     assert api.patch('/notifications/preferences',json={'expected_revision':0,'push_enabled':True}).status_code==200
     assert calls[-1][1]['p_data']=={'push_enabled':True}
@@ -114,7 +114,10 @@ def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,out
                   'push_devices':[{'device_token':'fake'}]}.get(self.name)
             return SimpleNamespace(data=data)
     monkeypatch.setattr(delivery,'get_supabase_raw',DB)
-    def send(*args):sends.append(args);return next(results)
+    def send(*args, daily):
+        assert not daily
+        sends.append(args)
+        return next(results)
     monkeypatch.setattr(delivery,'send_once',send)
     sleeps=[];monkeypatch.setattr(delivery.time,'sleep',sleeps.append)
     assert delivery.dispatch()['accepted']==int(expected=='accepted')

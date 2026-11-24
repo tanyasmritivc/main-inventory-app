@@ -248,7 +248,7 @@ def read_preferences(user: AuthenticatedUser = Depends(get_current_user)):
     preferences = _policy_rpc('findez_notification_preferences', {'p_actor':actor_id(user),'p_timezone':notification_policy.fallback_timezone()})
     return {'preferences':preferences,'capabilities':notification_policy.CAPABILITIES,
             'timezones':sorted(available_timezones()),
-            'policy':{'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}}
+            'policy':{'daily_inventory_hour':10,'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}}
 
 
 @router.patch('/preferences')
