@@ -13,6 +13,9 @@ class PreferenceChange(BaseModel):
     quiet_end: int | None = Field(default=None, ge=0, le=1439, strict=True)
     timezone: str | None = Field(default=None, max_length=100)
     inventory_alerts: StrictBool | None = None
+    daily_enabled: StrictBool | None = None
+    weekly_recap: StrictBool | None = None
+    cleanup_insights: StrictBool | None = None
     capture_reminders: StrictBool | None = None
     reengagement: StrictBool | None = None
     show_details: StrictBool | None = None
@@ -36,7 +39,7 @@ class PreferenceChange(BaseModel):
             raise ValueError('Pause for up to seven days')
         return value
 
-    @field_validator('push_enabled','in_app_enabled','quiet_enabled','quiet_start','quiet_end','inventory_alerts','capture_reminders','reengagement','show_details')
+    @field_validator('push_enabled','in_app_enabled','quiet_enabled','quiet_start','quiet_end','inventory_alerts','daily_enabled','weekly_recap','cleanup_insights','capture_reminders','reengagement','show_details')
     @classmethod
     def not_null(cls, value):
         if value is None:

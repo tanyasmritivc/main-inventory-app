@@ -104,4 +104,4 @@ class ResetChange(BaseModel):
 
 class NotificationFeedback(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    outcome: Literal['delivered', 'opened', 'dismissed']
+    outcome: Literal['delivered', 'opened', 'dismissed', 'push_tapped', 'destination_opened', 'action_started', 'record_reviewed', 'scan_saved']

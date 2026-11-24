@@ -1,3 +1,7 @@
+## November 23, 2026 — Multi-channel engagement, implemented and tested only
+
+The four-channel upgrade extends the same production architecture in source. See `docs/notification-engagement.md` for policy, attribution, migrations, tests and dashboard details. The user explicitly chose implementation and testing only. The live worker, schema and iPhone release continue to use the previously released daily-alert system.
+
 ## November 23, 2026 — Personalized daily iPhone alerts
 
 The existing 10 AM local delivery now chooses a specific action from eligible personal inventory. The worker rotates recently delivered suggestions and stores the selected target on the daily row. Item names and quantities follow lock-screen preview preferences. Photo review, Add and Scan check the corresponding category and client capability. The signed-in app opens its existing authorized destination. The account/date key, quiet hours and pause still apply. Migration `20261124_daily_inventory_actions.sql` is live. The production API and five-minute timer are active, the worker succeeded, and a read-only selector check passed for the previously verified iPhone account. The next scheduled on-device appearance has not been observed.

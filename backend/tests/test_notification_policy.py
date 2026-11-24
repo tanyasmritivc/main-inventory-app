@@ -23,13 +23,15 @@ def api(monkeypatch):
 
 def test_preferences_are_actor_bound_and_closed(api,monkeypatch):
     calls=[]
-    def rpc(name,args): calls.append((name,args));return {'revision':1,'push_enabled':False}
+    def rpc(name,args):
+        calls.append((name,args))
+        return {'engagement_daily':4} if name=='findez_notification_public_policy' else {'revision':1,'push_enabled':False}
     monkeypatch.setattr(routes,'_policy_rpc',rpc)
-    assert api.get('/notifications/preferences').json()['policy']=={'daily_inventory_hour':10,'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}
-    assert calls[-1][1]['p_actor']==A
+    assert api.get('/notifications/preferences').json()['policy']=={'engagement_daily':4}
+    assert calls[0][1]['p_actor']==A
     assert api.patch('/notifications/preferences',json={'expected_revision':0,'push_enabled':True}).status_code==200
     assert calls[-1][1]['p_data']=={'push_enabled':True}
-    for extra in ({'user_id':B},{'weekly_recap':True},{'push_enabled':None},{'push_enabled':'true'},{'quiet_start':1440},{'timezone':'Mars/Test'},{'paused_until':'2099-01-01T00:00:00Z'}):
+    for extra in ({'user_id':B},{'weekly_recap':'true'},{'push_enabled':None},{'push_enabled':'true'},{'quiet_start':1440},{'timezone':'Mars/Test'},{'paused_until':'2099-01-01T00:00:00Z'}):
         assert api.patch('/notifications/preferences',json={'expected_revision':0,**extra}).status_code==422
 
 
@@ -116,7 +118,7 @@ def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,out
                   'findez_personalization_claim':{'user_id':A,'category':category},
                   'findez_notification_content':{'title':'FindEZ','body':'Generic','revision':0,
                       **({'direct':direct} if direct is not None else {})},
-                  'findez_notification_begin_attempt':True,
+                  'findez_notification_submit':True,
                   'push_devices':[{'device_token':'fake'}]}.get(self.name)
             return SimpleNamespace(data=data)
     monkeypatch.setattr(delivery,'get_supabase_raw',DB)
@@ -130,7 +132,10 @@ def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,out
     assert delivery.dispatch()['accepted']==int(expected=='accepted')
     assert len(sends)==len(outcomes)
     assert all(args[1]==N for args in sends)
-    assert sum(name=='findez_notification_begin_attempt' for name,_ in calls)==len(outcomes)
+    assert sum(name=='findez_notification_submit' for name,_ in calls)==len(outcomes)
+    receipts=[args for name,args in calls if name=='findez_notification_receipt']
+    assert len(receipts)==len(outcomes)
+    assert [r['p_outcome'] for r in receipts]==[state if state in {'unknown','accepted'} else 'rejected' for state,_ in outcomes]
     assert calls[-1][1]['p_result']==expected
     assert len(sleeps)==len(outcomes)-1
 

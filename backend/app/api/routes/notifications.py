@@ -243,12 +243,18 @@ def stock_rules(body: StockRulesChange, user: AuthenticatedUser = Depends(get_cu
         'p_import':body.import_only})}
 
 
+@router.post('/foreground')
+def foreground(user: AuthenticatedUser = Depends(get_current_user)):
+    _policy_rpc('findez_notification_activity', {'p_actor': actor_id(user)})
+    return {'saved': True}
+
+
 @router.get('/preferences')
 def read_preferences(user: AuthenticatedUser = Depends(get_current_user)):
     preferences = _policy_rpc('findez_notification_preferences', {'p_actor':actor_id(user),'p_timezone':notification_policy.fallback_timezone()})
     return {'preferences':preferences,'capabilities':notification_policy.CAPABILITIES,
             'timezones':sorted(available_timezones()),
-            'policy':{'daily_inventory_hour':10,'daily':2,'weekly':5,'noncritical_hours':24,'local_alerts':False}}
+            'policy':_policy_rpc('findez_notification_public_policy', {})}
 
 
 @router.patch('/preferences')

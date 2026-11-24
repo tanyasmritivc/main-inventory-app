@@ -1,4 +1,5 @@
 """Direct APNs, one recorded attempt per request; unknown outcomes never retry."""
+import hashlib
 import logging
 import random
 import time
@@ -18,6 +19,8 @@ def send_once(device, notification_id, recipient, content, *, self_test=False, d
     payload = {'aps': {'alert': content, 'sound': 'default'}, 'recipient_user_id': recipient}
     if self_test or daily:
         payload['action'] = 'daily_inventory' if daily else 'push_test'
+        if daily:
+            payload['notification_id'] = notification_id
     else:
         payload.update(action='personalization', notification_id=notification_id)
         payload['aps']['category'] = 'PERSONALIZATION'
@@ -72,11 +75,27 @@ def dispatch(limit=50):
                 content = client.rpc('findez_notification_content', {'p_id':row['id']}).execute().data
                 direct = content.pop('direct', False) if content else False
                 revision = content.pop('revision',None) if content else None
-                if not content or revision is None or client.rpc('findez_notification_begin_attempt', {'p_id':row['id'],'p_device':devices[0]['device_token'],'p_revision':revision}).execute().data is not True:
+                ready = False
+                if content and revision is not None:
+                    preview = '\x1f'.join((content['title'], content['body'], str(direct).lower()))
+                    ready = client.rpc('findez_notification_submit', {
+                        'p_id': row['id'], 'p_device': devices[0]['device_token'],
+                        'p_revision': revision, 'p_preview': hashlib.sha256(preview.encode()).hexdigest(),
+                    }).execute().data is True
+                if not ready:
                     client.rpc('findez_notification_cancel_reservation', {'p_id':row['id']}).execute()
                     break
+                submitted_at = datetime.now(timezone.utc).isoformat()
                 state, error = send_once(devices[0], row['id'], claimed['user_id'], content,
                                          daily=claimed['category'] == 'daily_inventory' and not direct)
+                if error != 'not_configured':
+                    outcome = state if state in {'accepted', 'unknown'} else 'rejected'
+                    try:
+                        client.rpc('findez_notification_receipt', {
+                            'p_id': row['id'], 'p_outcome': outcome, 'p_submitted': submitted_at,
+                        }).execute()
+                    except Exception:
+                        log.warning('notification_receipt_unavailable')
                 if state == 'retry' and attempt < 2:
                     time.sleep(2**attempt + random.uniform(0,1))
                     continue
