@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/personalization_notifications.dart';
 import 'support/hierarchy_fixture.dart';
+import 'package:mobile/features/scan/scan_page.dart';
+import 'package:mobile/features/inventory/item_editor_sheet.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -107,6 +109,55 @@ void main() {
       expect(find.textContaining('no longer available'), findsOneWidget);
     },
   );
+  for (final action in ['first_item', 'add_item', 'snap']) {
+    testWidgets('authorized $action opens its inventory action', (
+      tester,
+    ) async {
+      fixture.respond = (request) => request.path.endsWith('/destination')
+          ? {
+              'notification_id': id,
+              'inventory_id': 'inv',
+              'entity_id': 'inv',
+              'entity_type': 'inventory',
+              'active': true,
+              'quick_action': action,
+              'inventory': inventory('inv'),
+            }
+          : {'items': [], 'spaces': [], 'saved': true};
+      late BuildContext context;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (c) {
+                context = c;
+                return const Text('Inbox');
+              },
+            ),
+          ),
+        ),
+      );
+      final opening = PersonalizationNotifications.open(
+        context,
+        fixture.api,
+        payload,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        action == 'snap' ? find.byType(ScanPage) : find.byType(ItemEditorSheet),
+        findsOneWidget,
+      );
+      if (action != 'snap') {
+        Navigator.of(context).pop();
+        await tester.pumpAndSettle();
+      }
+      Navigator.of(context).pop();
+      await tester.pumpAndSettle();
+      await opening;
+    });
+  }
   for (final kind in ['item', 'review']) {
     testWidgets('opens the exact authorized $kind in the existing sheet', (
       tester,

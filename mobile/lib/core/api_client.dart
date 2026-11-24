@@ -419,6 +419,7 @@ class ApiClient {
         'device_token': token,
         'environment': environment,
         'personalization_destinations': true,
+        'inventory_push_actions': true,
       },
       options: _authOptions(),
     );

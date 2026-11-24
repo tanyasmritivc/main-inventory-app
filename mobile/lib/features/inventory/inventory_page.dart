@@ -56,6 +56,7 @@ class InventoryPage extends StatefulWidget {
     required this.api,
     required this.refreshToken,
     this.initialQuery,
+    this.openAddItem = false,
     this.showAppBar = true,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
@@ -65,6 +66,7 @@ class InventoryPage extends StatefulWidget {
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
+  final bool openAddItem;
   final bool showAppBar;
   final ValueChanged<String>? onSpaceDeleted;
   final void Function(VoidCallback)? onRegisterJoinSpace;
@@ -1411,6 +1413,8 @@ class _InventoryPageState extends State<InventoryPage>
       ]),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.openAddItem) unawaited(_addItem());
       widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
       widget.onRegisterOpenAssistDestination?.call(_openAssistDestination);
     });

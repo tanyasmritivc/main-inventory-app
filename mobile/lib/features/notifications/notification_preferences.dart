@@ -16,6 +16,7 @@ class NotificationPreferencesController {
   List<String> timezones = [];
   String permission = 'notDetermined';
   String? error;
+  bool _quickActionsAvailable = false;
   bool busy = false;
   bool active = true;
   bool get current => active && account != null && api.accountId == account;
@@ -29,6 +30,8 @@ class NotificationPreferencesController {
     if (data['revision'] is! int) {
       throw const FormatException('Preferences could not be loaded.');
     }
+    _quickActionsAvailable =
+        (result['capabilities'] as Map?)?['reengagement'] == true;
     preferences = data;
     timezones = (result['timezones'] as List? ?? [])
         .whereType<String>()
@@ -63,6 +66,7 @@ class NotificationPreferencesController {
           'quiet_enabled',
           'inventory_alerts',
           'capture_reminders',
+          'reengagement',
           'show_details',
         }.contains(key)) {
           return;
@@ -191,9 +195,14 @@ class NotificationPreferencesController {
             'rows': [
               toggle('inventory_alerts', 'Inventory alerts'),
               toggle('capture_reminders', 'Photo review reminders'),
+              if (p.containsKey('reengagement') && _quickActionsAvailable)
+                toggle(
+                  'reengagement',
+                  'Remind me to add items and snap shelves',
+                ),
             ],
             'footer':
-                'Recorded stock changes and saved photos waiting for review.',
+                'Inventory alerts cover stock, expiry dates and missing locations. Add and snap reminders are optional.',
           },
           {
             'title': 'Quiet hours',

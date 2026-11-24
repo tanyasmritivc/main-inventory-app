@@ -5,6 +5,8 @@ import 'api_error.dart';
 import 'inventory_context.dart';
 import 'inventory_cache.dart';
 import '../features/inventory/item_detail_sheet.dart';
+import '../features/inventory/inventory_page.dart';
+import '../features/scan/scan_page.dart';
 import '../features/review/review_queue_page.dart';
 
 /// Payloads identify a server-owned notification; they never authorize a resource.
@@ -65,7 +67,7 @@ class PersonalizationNotifications {
       ).collaboration('/personalization/notifications/$id/destination');
       if (!context.mounted || api.accountId != account) return;
       if (data['notification_id'] != id ||
-          !{'item', 'review'}.contains(data['entity_type'])) {
+          !{'item', 'review', 'inventory'}.contains(data['entity_type'])) {
         throw const FormatException(
           'This notification is no longer available.',
         );
@@ -80,6 +82,30 @@ class PersonalizationNotifications {
         inventory,
         isCurrent: () => context.mounted && api.accountId == account,
       );
+      if (data['entity_type'] == 'inventory') {
+        final action = data['quick_action'];
+        if (data['entity_id'] != data['inventory_id'] ||
+            data['active'] != true ||
+            !scoped.canEdit ||
+            !{'first_item', 'add_item', 'snap'}.contains(action)) {
+          throw const FormatException(
+            'This inventory reminder is no longer available.',
+          );
+        }
+        unawaited(feedback(api, payload, 'opened'));
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => action == 'snap'
+                ? ScanPage(api: scoped, isActive: true, onSaved: () {})
+                : InventoryPage(
+                    api: scoped,
+                    refreshToken: 0,
+                    openAddItem: true,
+                  ),
+          ),
+        );
+        return;
+      }
       final resource = Map<String, dynamic>.from(data['resource'] as Map);
       final resourceId =
           resource[data['entity_type'] == 'item' ? 'item_id' : 'review_id'];
