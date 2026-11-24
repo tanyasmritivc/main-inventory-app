@@ -1,3 +1,7 @@
+## November 24, 2026 — Morning and evening check-ins on the notification branch
+
+The pending multi-channel scheduler supports two local check-ins at 10 AM and 6 PM. Both share the existing engagement cap, and quiet hours and pauses apply. Keep the existing single daily production baseline until controlled rollout. See `docs/notification-engagement.md`.
+
 ## November 23, 2026 — Multi-channel engagement, implemented and tested only
 
 The four-channel upgrade extends the same production architecture in source. See `docs/notification-engagement.md` for policy, attribution, migrations, tests and dashboard details. The user explicitly chose implementation and testing only. The live worker, schema and iPhone release continue to use the previously released daily-alert system. Pre-merge review closed an engagement-cap bypass and removed persistent low stock from daily selection. Controlled rollout still requires baseline-preserving cohort isolation and physical iPhone acceptance.

@@ -22,8 +22,9 @@ BEGIN
  INSERT INTO notification_delivery_attempts(user_id,category,critical,reserved_at) VALUES(u,'discovery',false,t-interval '2 days'),(u,'discovery',false,t-interval '3 days');
  ASSERT findez_notification_budget(n,p,t)='discovery_cap';
  n.category:='weekly_insight'; ASSERT findez_notification_budget(n,p,t) IS NULL;
- INSERT INTO notification_delivery_attempts(user_id,category,critical,reserved_at) VALUES(u,'weekly_insight',false,t-interval '15 minutes');
+ INSERT INTO notification_delivery_attempts(user_id,category,critical,reserved_at) VALUES(u,'weekly_insight',false,t-interval '1 day');
  ASSERT findez_notification_budget(n,p,t)='insight_cap';
+ UPDATE notification_delivery_attempts SET reserved_at=t-interval '15 minutes' WHERE user_id=u AND category='weekly_insight';
  n.category:='expiry'; ASSERT findez_notification_budget(n,p,t)='spacing';
  n.critical:=true; ASSERT findez_notification_budget(n,p,t) IS NULL;
  ASSERT findez_notification_quiet(p,'2027-03-14 06:30:00+00');

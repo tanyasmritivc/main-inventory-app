@@ -36,7 +36,7 @@ CREATE FUNCTION findez_notification_eligible(p_id uuid,p_at timestamptz) RETURNS
    WHERE n.id=p_id AND n.category IN ('first_item','add_item','snap') AND p.last_foreground_at>p_at-interval '1 hour'))
 $$;
 CREATE FUNCTION findez_notification_public_policy() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
- SELECT jsonb_build_object('daily_inventory_hour',10,'daily',event_daily,'weekly',event_weekly,
+ SELECT jsonb_build_object('daily_inventory_hour',morning_hour,'evening_inventory_hour',evening_hour,'daily',event_daily,'weekly',event_weekly,
  'noncritical_hours',extract(epoch FROM event_gap)/3600,'local_alerts',false,'engagement_daily',engagement_daily,
  'suggestions_daily',suggestions_daily,'discoveries_weekly',discoveries_weekly,'insights_weekly',insights_weekly,
  'spacing_minutes',extract(epoch FROM spacing)/60) FROM notification_channel_policy

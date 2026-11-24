@@ -9,6 +9,8 @@ ALTER TABLE personalization_notifications DROP CONSTRAINT personalization_notifi
  ADD COLUMN action_targets uuid[] NOT NULL DEFAULT '{}', ADD COLUMN experiment_variant text;
 CREATE TABLE notification_channel_policy (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
+ morning_hour int NOT NULL DEFAULT 10 CHECK(morning_hour BETWEEN 0 AND 11),
+ evening_hour int NOT NULL DEFAULT 18 CHECK(evening_hour BETWEEN 12 AND 23),
  engagement_daily int NOT NULL DEFAULT 4 CHECK(engagement_daily BETWEEN 1 AND 10),
  suggestions_daily int NOT NULL DEFAULT 1 CHECK(suggestions_daily BETWEEN 0 AND 3),
  discoveries_weekly int NOT NULL DEFAULT 2 CHECK(discoveries_weekly BETWEEN 0 AND 7),
@@ -63,25 +65,41 @@ BEGIN
  END IF;
  RETURN to_jsonb(p)-'user_id';
 END $$;
+-- An old pending daily row may still expire at midnight. Close its delivery window
+-- before an evening check-in becomes eligible, including during a mid-day upgrade.
+UPDATE personalization_notifications n
+SET expires_at=least(n.expires_at, ((n.scheduled_for AT TIME ZONE p.timezone)::date
+  +make_time(cfg.evening_hour,0,0)) AT TIME ZONE p.timezone)
+FROM notification_preferences p CROSS JOIN notification_channel_policy cfg
+WHERE n.user_id=p.user_id AND n.category='daily_inventory' AND n.state IN ('pending','sending')
+  AND n.attempted_at IS NULL AND n.expires_at>now()
+  AND n.condition_key='daily-inventory/'||(n.scheduled_for AT TIME ZONE p.timezone)::date;
+
 CREATE OR REPLACE FUNCTION public.findez_seed_daily_inventory(p_limit int, p_at timestamptz DEFAULT now()) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE made int;
 BEGIN
  WITH due AS (
-  SELECT p.user_id,local_day,p.timezone FROM notification_preferences p
-  CROSS JOIN LATERAL (SELECT (p_at AT TIME ZONE p.timezone)::date AS local_day) clock
-  WHERE p.push_enabled AND p.daily_enabled AND (p.paused_until IS NULL OR p.paused_until<=p_at)
+  SELECT p.user_id,slot_key,slot_end AT TIME ZONE p.timezone AS expires
+  FROM notification_preferences p CROSS JOIN notification_channel_policy cfg
+  CROSS JOIN LATERAL (SELECT p_at AT TIME ZONE p.timezone AS local_now) clock
+  CROSS JOIN LATERAL (SELECT local_now::date AS local_day,
+    local_now::date+make_time(cfg.morning_hour,0,0) AS morning,
+    local_now::date+make_time(cfg.evening_hour,0,0) AS evening) hours
+  -- The original date-only key is the morning slot, including rows from older versions.
+  CROSS JOIN LATERAL (VALUES
+    ('daily-inventory/'||local_day, morning, evening),
+    ('daily-inventory/'||local_day||'/evening', evening, (local_day+1)::timestamp)
+  ) slots(slot_key,slot_start,slot_end)
+  WHERE local_now>=slot_start AND local_now<slot_end
+    AND p.push_enabled AND p.daily_enabled AND (p.paused_until IS NULL OR p.paused_until<=p_at)
     AND NOT findez_notification_quiet(p,p_at)
-    AND (p_at AT TIME ZONE p.timezone)::time >=
-      CASE WHEN findez_notification_quiet(p,(local_day+time '10:00') AT TIME ZONE p.timezone)
-           THEN time '00:00'+make_interval(mins=>p.quiet_end) ELSE time '10:00' END
     AND EXISTS (SELECT FROM push_devices WHERE user_id=p.user_id AND enabled AND personalization_destinations AND updated_at>p_at-interval '90 days')
-    AND NOT EXISTS (SELECT FROM personalization_notifications WHERE user_id=p.user_id AND condition_key='daily-inventory/'||local_day::text)
+    AND NOT EXISTS (SELECT FROM personalization_notifications WHERE user_id=p.user_id AND condition_key=slot_key)
   ORDER BY p.user_id LIMIT least(100,greatest(1,p_limit))
  )
  INSERT INTO personalization_notifications(user_id,category,entity_type,entity_id,condition_key,policy_version,scheduled_for,expires_at)
- SELECT user_id,'daily_inventory','account',gen_random_uuid(),'daily-inventory/'||local_day::text,1,p_at,
-        (local_day+1)::timestamp AT TIME ZONE timezone FROM due
+ SELECT user_id,'daily_inventory','account',gen_random_uuid(),slot_key,1,p_at,expires FROM due
  ON CONFLICT(user_id,condition_key) DO NOTHING;
  GET DIAGNOSTICS made=ROW_COUNT;
  RETURN made;
@@ -97,7 +115,10 @@ DECLARE
   'title','Your inventory check-in','body','What would you like to find faster? Choose one item and record where you keep it.');
 BEGIN
  IF p.user_id IS DISTINCT FROM n.user_id OR NOT p.daily_enabled OR n.expires_at<=now()
-    OR n.condition_key<>'daily-inventory/'||local_date::text THEN RETURN NULL; END IF;
+    OR n.condition_key NOT IN ('daily-inventory/'||local_date,'daily-inventory/'||local_date||'/evening') THEN RETURN NULL; END IF;
+ IF right(n.condition_key,8)='/evening' THEN
+  fallback:=fallback||jsonb_build_object('title','Your evening inventory check-in','body','Take a moment to review your inventory before tomorrow.');
+ END IF;
  IF kind IS NULL OR NOT EXISTS(SELECT FROM app_inventories WHERE inventory_id=inv AND owner_user_id=n.user_id AND team_id IS NULL)
     OR findez_inventory_role(inv,n.user_id) IS NULL THEN RETURN fallback; END IF;
  IF entity='item' THEN
@@ -190,6 +211,12 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
    AND CASE WHEN recent.category IN ('first_item','add_item') THEN 'add_item'
      WHEN recent.category IN ('locate_item','discovery') THEN 'location'
      WHEN recent.category='weekly_insight' THEN 'quantity' WHEN recent.category='scan_review' THEN 'review' ELSE recent.category END=c.kind)
+ AND NOT EXISTS (
+   SELECT FROM personalization_notifications earlier
+   WHERE earlier.user_id=p_user AND earlier.category='daily_inventory' AND earlier.id<>p_id
+     AND earlier.condition_key IN ('daily-inventory/'||p_date,'daily-inventory/'||p_date||'/evening')
+     AND earlier.attempted_at IS NOT NULL AND earlier.daily_focus->>'id'=c.id::text
+     AND earlier.daily_focus->>'kind'=c.kind)
  ORDER BY h.shown NULLS FIRST,c.priority,target.shown NULLS FIRST,c.recency DESC NULLS LAST,c.id LIMIT 1
 $$;
 
@@ -198,7 +225,7 @@ CREATE FUNCTION findez_notification_budget(n personalization_notifications,p not
 RETURNS text LANGUAGE plpgsql STABLE SET search_path=public AS $$
 DECLARE cfg notification_channel_policy; channel text:=findez_notification_channel(n.category);
  midnight timestamptz:=date_trunc('day',t AT TIME ZONE p.timezone) AT TIME ZONE p.timezone;
- used record;
+ used record; remaining_daily int;
 BEGIN
  SELECT * INTO STRICT cfg FROM notification_channel_policy WHERE singleton;
  SELECT count(*) FILTER(WHERE ch='event' AND reserved_at>=midnight) AS event_today,
@@ -208,6 +235,7 @@ BEGIN
    max(reserved_at) FILTER(WHERE NOT critical) AS last_noncritical,
    count(*) FILTER(WHERE (ch<>'event' OR category='locate_item') AND reserved_at>=midnight) AS engagement,
    count(*) FILTER(WHERE ch='daily' AND reserved_at>=midnight) AS daily_used,
+   count(*) FILTER(WHERE ch='daily' AND reserved_at>=(((t AT TIME ZONE p.timezone)::date+make_time(cfg.evening_hour,0,0)) AT TIME ZONE p.timezone)) AS evening_used,
    count(*) FILTER(WHERE ch='suggestion' AND reserved_at>=midnight) AS suggestions,
    count(*) FILTER(WHERE category=n.category AND reserved_at>t-interval '7 days') AS category_week
  INTO used FROM (
@@ -215,10 +243,14 @@ BEGIN
    WHERE a.user_id=n.user_id AND a.notification_id IS DISTINCT FROM n.id AND a.state<>'cancelled'
    AND a.reserved_at >= least(midnight,t-interval '7 days',t-cfg.event_gap,t-cfg.spacing,t-cfg.review_gap)
  ) history;
+ -- Leave room for both check-ins; release an unused morning slot at evening start.
+ remaining_daily:=CASE WHEN NOT p.daily_enabled THEN 0
+   WHEN (t AT TIME ZONE p.timezone)::time < make_time(cfg.evening_hour,0,0) THEN greatest(0,2-used.daily_used)
+   ELSE greatest(0,1-used.evening_used) END;
  -- Location cleanup retains its legacy event cooldown and also consumes engagement budget.
  IF channel<>'event' OR n.category='locate_item' THEN
    IF used.engagement>=cfg.engagement_daily OR
-      (channel<>'daily' AND p.daily_enabled AND used.daily_used=0 AND used.engagement+1>=cfg.engagement_daily)
+      (channel<>'daily' AND used.engagement+remaining_daily>=cfg.engagement_daily)
    THEN RETURN 'engagement_cap'; END IF;
  END IF;
  IF channel='event' THEN
