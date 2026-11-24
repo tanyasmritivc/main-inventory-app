@@ -5,6 +5,7 @@ import '../../core/ui/content_loading.dart';
 import 'package:dio/dio.dart';
 import '../../core/account_refresh.dart';
 import 'native_bottom_tabs.dart';
+import 'organization_orders.dart';
 import 'retained_tab_transition.dart';
 import '../notifications/notification_bell.dart';
 import 'dart:async';
@@ -414,6 +415,39 @@ class _WorldShellState extends State<WorldShell> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 82, 20, 100),
         children: [
+          if (_directory?['supports_supplier_orders'] == true &&
+              widget.session.organizationId != null)
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Orders'),
+              onTap: () => _guard(() async {
+                final session = widget.session;
+                final org = _world;
+                final account = session.api.accountId;
+                final orders = OrganizationOrders(
+                  api: _chatApi,
+                  organizationId: org,
+                );
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => ListenableBuilder(
+                      listenable: session,
+                      builder: (_, _) =>
+                          session.organizationId == org &&
+                              session.api.accountId == account
+                          ? orders
+                          : const Scaffold(
+                              body: Center(
+                                child: Text(
+                                  'Organization changed. Reopen Orders.',
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                );
+              }),
+            ),
           if (_searchingSpaces)
             LiquidSurface(
               radius: 24,

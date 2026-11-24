@@ -1,4 +1,5 @@
 import 'package:mobile/features/world/smooth_typing_hint.dart';
+import 'package:mobile/features/world/organization_orders.dart';
 import 'dart:convert';
 import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/ui/skeleton.dart';
@@ -34,7 +35,11 @@ void main() {
         return {'user_id': 'actor-a', 'display_name': 'Alex'};
       }
       if (request.path.endsWith('/directory')) {
-        return {'has_items': false, 'can_create_space': true, 'inventories': []};
+        return {
+          'has_items': false,
+          'can_create_space': true,
+          'inventories': [],
+        };
       }
       if (request.path.endsWith('/spaces')) return {'inventories': []};
       return <String, dynamic>{};
@@ -80,6 +85,49 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'Orders keeps supplier quantities separate from matching Space stock',
+    (tester) async {
+      fixture.respond = (request) => {
+        'can_manage': false,
+        'order_lines': [
+          {
+            'name': 'M4 screws',
+            'supplier': 'goBILDA',
+            'sku': 'S12',
+            'order_number': 'G42',
+            'received': 25,
+            'outstanding': 75,
+            'ordered': 100,
+          },
+        ],
+        'recorded_inventory': [
+          {
+            'name': 'M4 screws',
+            'recorded_quantity': 65,
+            'space_name': 'Fasteners',
+            'location': 'A1',
+          },
+        ],
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OrganizationOrders(api: fixture.api, organizationId: 'org-a'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'M4');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('65 recorded'), findsOneWidget);
+      expect(
+        find.textContaining('100 ordered · 25 received · 75 outstanding'),
+        findsOneWidget,
+      );
+      expect(find.text('Import or receive an order'), findsNothing);
+    },
+  );
 
   testWidgets('Spaces follows web rename and deletion while already visible', (
     tester,
