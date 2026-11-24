@@ -30,5 +30,14 @@ BEGIN
  ASSERT NOT findez_notification_quiet(p,t);
  ASSERT findez_notification_preferences(u,'{"daily_enabled":false,"inventory_alerts":true}',0)->>'daily_enabled'='false';
  ASSERT (SELECT inventory_alerts FROM notification_preferences WHERE user_id=u);
+ -- A daily opt-in cannot grant a fifth engagement slot. Genuine stock events retain their own budget.
+ DELETE FROM notification_delivery_attempts WHERE user_id=u;
+ INSERT INTO notification_delivery_attempts(user_id,category,critical,reserved_at,state)
+ SELECT u,k,false,t-interval '3 hours','accepted' FROM unnest(ARRAY['snap','add_item','discovery','discovery']) AS k;
+ p.daily_enabled:=true;
+ n.critical:=false;
+ n.category:='daily_inventory'; ASSERT findez_notification_budget(n,p,t)='engagement_cap';
+ n.category:='locate_item'; ASSERT findez_notification_budget(n,p,t)='engagement_cap';
+ n.category:='low_stock'; ASSERT findez_notification_budget(n,p,t) IS NULL;
 END $$;
 ROLLBACK;

@@ -158,9 +158,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
    GROUP BY 1,2
  ), candidates AS (
    SELECT choice.kind,choice.priority,i.inventory_id,i.item_id AS id,'item' AS entity,i.created_at AS recency
-   FROM records i LEFT JOIN notification_stock_rules rule ON rule.user_id=p_user AND rule.item_id=i.item_id
+   -- Low stock is a transition alert. A daily scan of the same level must not re-arm it.
+   FROM records i
    CROSS JOIN LATERAL (VALUES
-     ('low_stock',1,i.quantity>=0 AND ((i.reorder_enabled AND i.quantity<=i.reorder_threshold) OR i.quantity<=rule.threshold)),
      ('expiry',2,i.expires_on BETWEEN p_date AND p_date+7),
      ('location',3,nullif(btrim(i.location),'') IS NULL AND i.space_id IS NULL),
      ('quantity',4,i.quantity IS NULL OR i.quantity<0),
@@ -206,7 +206,7 @@ BEGIN
    max(reserved_at) FILTER(WHERE ch='event' AND NOT critical) AS last_event,
    max(reserved_at) FILTER(WHERE category='scan_review') AS last_review,
    max(reserved_at) FILTER(WHERE NOT critical) AS last_noncritical,
-   count(*) FILTER(WHERE ch<>'event' AND reserved_at>=midnight) AS engagement,
+   count(*) FILTER(WHERE (ch<>'event' OR category='locate_item') AND reserved_at>=midnight) AS engagement,
    count(*) FILTER(WHERE ch='daily' AND reserved_at>=midnight) AS daily_used,
    count(*) FILTER(WHERE ch='suggestion' AND reserved_at>=midnight) AS suggestions,
    count(*) FILTER(WHERE category=n.category AND reserved_at>t-interval '7 days') AS category_week
@@ -215,6 +215,12 @@ BEGIN
    WHERE a.user_id=n.user_id AND a.notification_id IS DISTINCT FROM n.id AND a.state<>'cancelled'
    AND a.reserved_at >= least(midnight,t-interval '7 days',t-cfg.event_gap,t-cfg.spacing,t-cfg.review_gap)
  ) history;
+ -- Location cleanup retains its legacy event cooldown and also consumes engagement budget.
+ IF channel<>'event' OR n.category='locate_item' THEN
+   IF used.engagement>=cfg.engagement_daily OR
+      (channel<>'daily' AND p.daily_enabled AND used.daily_used=0 AND used.engagement+1>=cfg.engagement_daily)
+   THEN RETURN 'engagement_cap'; END IF;
+ END IF;
  IF channel='event' THEN
    IF used.event_today>=cfg.event_daily OR used.event_week>=cfg.event_weekly THEN RETURN 'event_cap'; END IF;
    IF NOT n.critical AND used.last_event>t-cfg.event_gap THEN RETURN 'event_cooldown'; END IF;
@@ -225,7 +231,6 @@ BEGIN
        AND old.id<>n.id AND a.reserved_at>t-cfg.repeat_stock_gap AND (NOT n.critical OR old.critical)
    ) THEN RETURN 'stock_cooldown'; END IF;
  ELSIF channel<>'daily' THEN
-   IF used.engagement + (CASE WHEN p.daily_enabled AND used.daily_used=0 THEN 1 ELSE 0 END) >=cfg.engagement_daily THEN RETURN 'engagement_cap'; END IF;
    IF channel='suggestion' AND used.suggestions>=cfg.suggestions_daily THEN RETURN 'suggestion_cap'; END IF;
    IF channel='suggestion' AND EXISTS(SELECT FROM personalization_notifications h
      WHERE h.user_id=n.user_id AND h.category='daily_inventory' AND h.accepted_at>t-interval '24 hours'
@@ -242,16 +247,17 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.findez_personalization_claim(p_id uuid) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE n personalization_notifications;p notification_preferences;reason text;
+DECLARE n personalization_notifications;p notification_preferences;reason text; checked_at timestamptz;
 BEGIN
  SELECT * INTO n FROM personalization_notifications WHERE id=p_id;
  IF NOT FOUND THEN RETURN NULL; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(n.user_id::text,193));
  SELECT * INTO n FROM personalization_notifications WHERE id=p_id FOR UPDATE;
  IF n.state<>'pending' THEN RETURN NULL; END IF;
- reason:=findez_notification_eligible(p_id,now());
+ checked_at:=clock_timestamp();
+ reason:=findez_notification_eligible(p_id,checked_at);
  SELECT * INTO p FROM notification_preferences WHERE user_id=n.user_id;
- IF reason IS NULL THEN reason:=findez_notification_budget(n,p,now()); END IF;
+ IF reason IS NULL THEN reason:=findez_notification_budget(n,p,checked_at); END IF;
  IF reason IS NOT NULL THEN
   UPDATE personalization_notifications SET suppression_reason=reason,
    state=CASE WHEN reason IN ('expired','stale','category_off','inactive') THEN 'resolved' ELSE state END,
@@ -259,8 +265,8 @@ BEGIN
   PERFORM findez_notification_metric(reason,n.category);
   RETURN NULL;
  END IF;
- INSERT INTO notification_delivery_attempts(notification_id,user_id,category,critical) VALUES(n.id,n.user_id,n.category,n.critical)
- ON CONFLICT(notification_id) DO UPDATE SET state='reserved',reserved_at=now(),finished_at=NULL
+ INSERT INTO notification_delivery_attempts(notification_id,user_id,category,critical,reserved_at) VALUES(n.id,n.user_id,n.category,n.critical,checked_at)
+ ON CONFLICT(notification_id) DO UPDATE SET state='reserved',reserved_at=excluded.reserved_at,finished_at=NULL
  WHERE notification_delivery_attempts.state='cancelled' AND notification_delivery_attempts.started_at IS NULL;
  IF NOT FOUND THEN RETURN NULL; END IF;
  UPDATE personalization_notifications SET state='sending',suppression_reason=NULL WHERE id=p_id;
@@ -269,18 +275,19 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.findez_notification_begin_attempt(p_id uuid,p_device text DEFAULT NULL,p_revision bigint DEFAULT NULL) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE n personalization_notifications; reason text; a notification_delivery_attempts; p notification_preferences;
+DECLARE n personalization_notifications; reason text; checked_at timestamptz; a notification_delivery_attempts; p notification_preferences;
 BEGIN
  SELECT * INTO n FROM personalization_notifications WHERE id=p_id;
  IF NOT FOUND THEN RETURN false; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(n.user_id::text,193));
  SELECT * INTO a FROM notification_delivery_attempts WHERE notification_id=p_id FOR UPDATE;
  IF NOT FOUND OR a.state NOT IN ('reserved','started') OR a.attempts>=3 THEN RETURN false; END IF;
- reason:=findez_notification_eligible(p_id,now());
+ checked_at:=clock_timestamp();
+ reason:=findez_notification_eligible(p_id,checked_at);
  SELECT * INTO p FROM notification_preferences WHERE user_id=n.user_id;
  IF p_revision IS NOT NULL AND p.revision IS DISTINCT FROM p_revision THEN reason:='preferences_changed'; END IF;
  IF p_device IS NOT NULL AND NOT EXISTS(SELECT FROM push_devices WHERE device_token=p_device AND user_id=n.user_id AND enabled AND personalization_destinations) THEN reason:='no_device'; END IF;
- IF reason IS NULL AND a.started_at IS NULL THEN reason:=findez_notification_budget(n,p,now()); END IF;
+ IF reason IS NULL AND a.started_at IS NULL THEN reason:=findez_notification_budget(n,p,checked_at); END IF;
  IF reason IS NOT NULL THEN
   IF a.started_at IS NULL THEN
    UPDATE notification_delivery_attempts SET state='cancelled',finished_at=now() WHERE id=a.id;
@@ -289,7 +296,7 @@ BEGIN
    scheduled_for=greatest(scheduled_for,now()+interval '5 minutes'),suppression_reason=reason WHERE id=p_id;
   RETURN false;
  END IF;
- UPDATE notification_delivery_attempts SET state='started',reserved_at=CASE WHEN started_at IS NULL THEN now() ELSE reserved_at END,started_at=coalesce(started_at,now()),attempts=attempts+1 WHERE id=a.id;
+ UPDATE notification_delivery_attempts SET state='started',reserved_at=CASE WHEN started_at IS NULL THEN checked_at ELSE reserved_at END,started_at=coalesce(started_at,checked_at),attempts=attempts+1 WHERE id=a.id;
  UPDATE personalization_notifications SET attempted_at=coalesce(attempted_at,now()) WHERE id=p_id;
  RETURN true;
 END $$;

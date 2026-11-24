@@ -1,6 +1,6 @@
 ## November 23, 2026 — Multi-channel engagement, implemented and tested only
 
-The four-channel upgrade extends the same production architecture in source. See `docs/notification-engagement.md` for policy, attribution, migrations, tests and dashboard details. The user explicitly chose implementation and testing only. The live worker, schema and iPhone release continue to use the previously released daily-alert system.
+The four-channel upgrade extends the same production architecture in source. See `docs/notification-engagement.md` for policy, attribution, migrations, tests and dashboard details. The user explicitly chose implementation and testing only. The live worker, schema and iPhone release continue to use the previously released daily-alert system. Pre-merge review closed an engagement-cap bypass and removed persistent low stock from daily selection. Controlled rollout still requires baseline-preserving cohort isolation and physical iPhone acceptance.
 
 ## November 23, 2026 — Personalized daily iPhone alerts
 
