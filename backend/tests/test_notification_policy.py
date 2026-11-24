@@ -99,7 +99,12 @@ def test_unknown_transport_outcome_is_not_retryable(monkeypatch,caplog):
     ([('unknown','transport_unknown')],'unknown'),
     ([('failed','invalid_token')],'failed'),
 ])
-def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,outcomes,expected):
+@pytest.mark.parametrize('category,direct,inbox', [
+    ('low_stock', None, False),
+    ('daily_inventory', True, False),
+    ('daily_inventory', False, True),
+])
+def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,outcomes,expected,category,direct,inbox):
     calls=[];results=iter(outcomes);sends=[]
     class DB:
         name=''
@@ -108,14 +113,16 @@ def test_dispatch_rechecks_each_bounded_attempt_and_keeps_one_id(monkeypatch,out
         def __getattr__(self,key):return lambda *a,**kw:self
         def execute(self):
             data={'findez_personalization_candidates':[{'id':N}],
-                  'findez_personalization_claim':{'user_id':A,'category':'low_stock'},
-                  'findez_notification_content':{'title':'FindEZ','body':'Generic','revision':0},
+                  'findez_personalization_claim':{'user_id':A,'category':category},
+                  'findez_notification_content':{'title':'FindEZ','body':'Generic','revision':0,
+                      **({'direct':direct} if direct is not None else {})},
                   'findez_notification_begin_attempt':True,
                   'push_devices':[{'device_token':'fake'}]}.get(self.name)
             return SimpleNamespace(data=data)
     monkeypatch.setattr(delivery,'get_supabase_raw',DB)
     def send(*args, daily):
-        assert not daily
+        assert daily is inbox
+        assert args[3] == {'title':'FindEZ','body':'Generic'}
         sends.append(args)
         return next(results)
     monkeypatch.setattr(delivery,'send_once',send)

@@ -1,3 +1,7 @@
+## November 23, 2026 — Personalized daily iPhone alerts
+
+The existing 10 AM local delivery now chooses a specific action from eligible personal inventory. The worker rotates recently delivered suggestions and stores the selected target on the daily row. Item names and quantities follow lock-screen preview preferences. Photo review, Add and Scan check the corresponding category and client capability. The signed-in app opens its existing authorized destination. The account/date key, quiet hours and pause still apply. Migration `20261124_daily_inventory_actions.sql` is live. The production API and five-minute timer are active, the worker succeeded, and a read-only selector check passed for the previously verified iPhone account. The next scheduled on-device appearance has not been observed.
+
 ## November 23, 2026 — Daily inventory update
 
 Signed-in accounts with phone and inventory alerts enabled get a daily personal inventory summary. The worker schedules by the saved time zone, normally at 10 AM, and respects quiet hours and pauses. The account/date key deduplicates runs. The daily update has its own slot independently of the existing event limits and works on existing push-capable iPhone builds. The lock-screen preview follows the saved details preference. Migration: `20261124_daily_inventory_update.sql`.

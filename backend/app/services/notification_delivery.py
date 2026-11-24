@@ -70,12 +70,13 @@ def dispatch(limit=50):
             # Most-recent active device avoids duplicate banners across phones.
             for attempt in range(3):
                 content = client.rpc('findez_notification_content', {'p_id':row['id']}).execute().data
+                direct = content.pop('direct', False) if content else False
                 revision = content.pop('revision',None) if content else None
                 if not content or revision is None or client.rpc('findez_notification_begin_attempt', {'p_id':row['id'],'p_device':devices[0]['device_token'],'p_revision':revision}).execute().data is not True:
                     client.rpc('findez_notification_cancel_reservation', {'p_id':row['id']}).execute()
                     break
                 state, error = send_once(devices[0], row['id'], claimed['user_id'], content,
-                                         daily=claimed['category'] == 'daily_inventory')
+                                         daily=claimed['category'] == 'daily_inventory' and not direct)
                 if state == 'retry' and attempt < 2:
                     time.sleep(2**attempt + random.uniform(0,1))
                     continue
