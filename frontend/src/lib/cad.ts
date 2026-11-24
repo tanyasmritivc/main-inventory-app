@@ -23,7 +23,8 @@ export type CadComparison = {
   items: CadLine[];
 };
 
-export type BomField = "name" | "quantity" | "part_number" | "manufacturer" | "barcode" | "unit";
+export type BomField = "name" | "quantity" | "part_number" | "manufacturer" | "barcode" | "unit"
+  | "length_mm" | "diameter_mm" | "thread_pitch_mm" | "inner_diameter_mm" | "outer_diameter_mm" | "thickness_mm" | "width_mm" | "height_mm" | "material" | "finish" | "head_type" | "thread_direction" | "thread_standard" | "strength_grade" | "part_type" | "thread_fit";
 export type BomMapping = Partial<Record<BomField, number>>;
 export type BomSheet = { name: string; headers: string[]; row_count: number; sample: string[][]; suggested_mapping: BomMapping };
 export type BomPreview = { inventory_id: string; file_sha256: string; sheets: BomSheet[] };

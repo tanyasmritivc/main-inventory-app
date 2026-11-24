@@ -7,7 +7,7 @@ from pydantic import Field, ValidationError, StrictBool
 from starlette.concurrency import run_in_threadpool
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.limiter import limiter
-from app.services.cad import workspace, projects, generation, corrections, rexcad, purchasing, revisions, planning
+from app.services.cad import model_library, workspace, projects, generation, corrections, rexcad, purchasing, revisions, planning
 from app.services.cad.search import SearchRequest, search as search_parts
 from app.services.cad.snapshot import Model, Snapshot, MAX_SNAPSHOT_BYTES
 from app.services.cad.repository import read_inventory
@@ -53,6 +53,7 @@ def poll(request: Request, data: Poll, response: Response):
 def info(grant=Depends(session)):
     return {**{k:grant[k] for k in ('inventory_id','inventory_name','workspace_name','session_expires_at')},
             'allow_cad_writes': bool(grant.get('allow_cad_writes')), 'saved_bom_enabled': projects.enabled(),
+            'model_library_enabled':model_library.configured(),
             'generation_enabled': projects.enabled() and rexcad.configured(),
             'purchasing_enabled': purchasing.native_enabled(), 'allow_purchasing': bool(grant.get('allow_purchasing')),
             'can_approve_purchases': bool(grant.get('can_approve_purchases')),
@@ -77,8 +78,11 @@ def revoke(connection_id: UUID,user: AuthenticatedUser = Depends(get_current_use
 @router.get('/inventory')
 @limiter.limit('30/minute')
 def inventory(request: Request, q: str=Query('',max_length=100),offset:int=Query(0,ge=0,le=50000),
-              location:str|None=Query(None,max_length=512),grant=Depends(session)):
-    return workspace.browse(grant,q,offset,location)
+              location:str|None=Query(None,max_length=512),item_id:list[UUID]|None=Query(None,max_length=50),
+              grant=Depends(session)):
+    result = workspace.browse(grant, q, offset, location, [str(key) for key in item_id] if item_id else None)
+    session(request)
+    return result
 
 @router.get('/catalog')
 @limiter.limit('30/minute')
@@ -86,6 +90,25 @@ def catalog(request: Request,q:str=Query('',max_length=100),offset:int=Query(0,g
     result=workspace.catalog(q,offset)
     workspace._inventory(grant['inventory_id'],grant['actor_id'])
     return result
+
+@router.get('/catalog/{catalog_id}/model')
+@limiter.limit('30/minute')
+def catalog_model(request: Request, catalog_id: UUID, grant=Depends(session)):
+    result = model_library.preview(catalog_id)
+    session(request)
+    return result
+
+
+@router.get('/catalog/{catalog_id}/model/{revision_id}/{digest}')
+@limiter.limit('5/minute')
+def catalog_step(request: Request, catalog_id: UUID, revision_id: str, digest: str, grant=Depends(session)):
+    data = model_library.download(catalog_id, revision_id, digest)
+    session(request)
+    return Response(data, media_type='application/step', headers={
+        'Cache-Control':'no-store', 'X-STEP-SHA256':digest,
+        'Content-Disposition':'attachment; filename="catalog.step"',
+    })
+
 
 @router.post('/search')
 @limiter.limit('10/minute')

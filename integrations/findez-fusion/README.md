@@ -1,11 +1,11 @@
-# FindEZ Fusion workspace candidate 0.5.1
+# FindEZ Fusion workspace candidate 0.6.0
 
 Search parts with AI and insert geometry already in Fusion without downloading a
 STEP file or switching browser tabs. Inventory and global catalog remain separate.
 The backend calculates stock from recorded quantities, reservations and checkouts.
 
 To update, stop FindEZ, replace the complete extracted add-in folder, restart
-Fusion, and confirm version 0.5.1 in Scripts and Add-Ins before running it.
+Fusion, and confirm version 0.6.0 in Scripts and Add-Ins before running it.
 Native Fusion placement acceptance remains pending. Export FindEZ BOM still works.
 
 HTTPS hostname and chain verification remain enabled. The package includes public
@@ -52,9 +52,10 @@ The copy preserves geometry and records the selected part and model source.
 Saved FindEZ components appear first for that part in the Current design picker.
 Save the design to retain these associations. No geometry is uploaded to FindEZ.
 
-A catalog record alone is not a CAD model. Parts without geometry still need a
-model created or saved in Fusion. Automatic manufacturer model downloads and the
-nightly catalog generation are not connected. RexCAD on-demand generation is available from Generate model with explicit CAD writing permission. Other model sources offers an
+When the server has published a reviewed model for the exact variant, choose
+Preview catalog model, check its source and revision, then place it. Other parts
+can use existing Fusion geometry. Automatic manufacturer sourcing and nightly
+catalog generation remain pending. RexCAD on-demand generation is available from Generate model with explicit CAD writing permission. Other model sources offers an
 optional local STEP/F3D importer. Neither copies nor local files are certified by
 FindEZ; verify units, dimensions, orientation and compatibility before engineering
 use. Insertion does not reserve or consume stock. F3Z/SAT/STL and literal dragging
@@ -118,7 +119,7 @@ Slate-grey panel surfaces, muted blue primary actions, softer tab selection, and
 quieter BOM summaries replace the high-contrast black and white blocks. The panel
 sets its own background so Fusion’s embedded browser renders consistent surfaces.
 Status messages remain visible while you work. Stop FindEZ, replace the complete add-in folder, restart Fusion, and
-confirm 0.5.1 before running it.
+confirm 0.6.0 before running it.
 
 
 ## Purchasing and planning introduced in 0.5.0
@@ -155,3 +156,20 @@ version, and select that version in Purchases. Existing plans are under Load
 purchase plans. Quote expiry applies to quote approval, not to every creation
 failure. Unknown server errors remain sanitized and uncertain writes retain the
 same safe retry behavior. This fix does not bypass purchasing checks.
+
+## 0.6.0 placement and inventory shortcuts
+
+In Inventory, choose a part and select Save part to keep it on this device. The
+Inventory parts menu lists saved parts and the most frequently confirmed insertions.
+Both lists belong to the signed-in person and selected inventory. Opening a list
+refreshes quantities against the connected server. Up to 50 parts can be saved.
+
+For a host acceptance check, use a disposable design and an inventory containing
+one recorded test part with a known manufacturer and exact part number. Choose a
+STEP model you are authorized to use. Record the Fusion version and OS. Check the
+initial X/Y/Z solid extents against Fusion Measure in the same orientation.
+Translate and rotate the first copy, then cancel. Compare the assembly and verify
+the part is absent. Confirm two copies, compare again, and export the shortages CSV.
+With one uncommitted stock unit, expect two required, one assigned and one short.
+Verify the recorded stock stays at one and that only confirmed placements appear
+under Frequently inserted. Run once on macOS and once on Windows.

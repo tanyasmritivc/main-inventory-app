@@ -16,6 +16,7 @@
   }
   function lock(value) {
     busy = value;
+    $('part-list').disabled = value;
     $('session').setAttribute('aria-busy', String(value));
     if (value) message($('message').textContent || 'Working...', 'busy');
     else if ($('message').dataset.kind === 'busy') message('');
@@ -28,8 +29,34 @@
     purchasing?.lock(value); planning?.lock(value);
     if (!value) { $('models-previous').disabled = !modelPage || modelPage.offset === 0; $('models-next').disabled = !modelPage || modelPage.next_offset === null; $('previous').disabled = offset === 0; $('next').disabled = next === null; $('export').disabled = !$('results').children.length; }
   }
+  let shortcutKey = null;
+  function shortcuts() {
+    const data = JSON.parse(localStorage.getItem(shortcutKey) || '{}');
+    return {saved: Array.isArray(data.saved) ? data.saved : [], uses: data.uses || {}};
+  }
+  function updateShortcuts(change) {
+    if (!shortcutKey) return false;
+    try {
+      const data = shortcuts();
+      change(data);
+      localStorage.setItem(shortcutKey, JSON.stringify(data));
+      return true;
+    } catch { message('Could not save this preference. Check local storage for the Fusion panel.', 'error'); return false; }
+  }
+  function showShortcuts() {
+    $('parts').replaceChildren(); $('search-explanation').textContent = ''; $('page').textContent = '';
+    offset = 0; next = null; lock(false);
+    try {
+      const data = shortcuts();
+      const saved = $('part-list').value === 'saved';
+      const ids = saved ? data.saved : Object.keys(data.uses).sort((a,b) => data.uses[b] - data.uses[a]).slice(0,50);
+      if (ids.length) send('inventory_shortcuts', {ids});
+      else message(saved ? 'Save parts from All parts to see them here.' : 'Confirm a part placement to see it here.');
+    } catch { message('Could not read saved parts on this device.', 'error'); }
+  }
   function browse(start = 0) {
     if (!connected || busy) return;
+    if (source === 'inventory' && shortcutKey && $('part-list').value !== 'all') { showShortcuts(); return; }
     offset = start; next = null;
     $('parts').replaceChildren();
     $('search-explanation').textContent = '';
@@ -51,9 +78,11 @@
     $('browser').hidden = view === 'bom' || view === 'generate' || view === 'purchases'; $('bom').hidden = view !== 'bom'; $('generate').hidden = view !== 'generate'; $('purchases').hidden = view !== 'purchases';
     if (view === 'bom' || view === 'generate' || view === 'purchases') return;
     source = view; offset = 0; next = null;
+    $('part-list-label').hidden = view !== 'inventory' || !shortcutKey;
+    $('search').hidden = view === 'inventory' && $('part-list').value !== 'all';
     $('location-filter').hidden = view !== 'inventory';
     $('query').placeholder = view === 'inventory' ? 'Find 12 M4 screws, or bearings for an 8mm shaft' : 'Describe the catalog part you need';
-    $('source-note').textContent = view === 'inventory' ? 'Your recorded inventory. Available quantities subtract reservations and active checkouts.' : 'Global catalog. These parts are not necessarily owned by your team. Prices and manufacturer CAD downloads are not connected. You can insert geometry from your Fusion project.';
+    $('source-note').textContent = view === 'inventory' ? 'Your recorded inventory. Available quantities subtract reservations and active checkouts.' : 'Global catalog. These parts are not necessarily owned by your team. Choose a part to see available models or insert geometry from your Fusion project.';
     browse();
   }
   function modelBrowse(mode = 'design', folder = null, start = 0) {
@@ -65,6 +94,7 @@
   function showModels(data) {
     modelPage = data; modelPart = data.part_id;
     $('browser').hidden = true; $('bom').hidden = true; $('models').hidden = false;
+    $('library-detail').replaceChildren(); $('library-preview').hidden = !data.has_catalog_identity;
     $('model-part').textContent = 'For: ' + data.part_name;
     $('model-folder').textContent = data.folder; $('model-note').textContent = data.note;
     $('model-parent').hidden = !data.parent;
@@ -97,10 +127,12 @@
   $('models-previous').onclick = () => modelBrowse(modelPage.mode, modelPage.folder_id, Math.max(0, modelPage.offset - 40));
   $('models-next').onclick = () => modelBrowse(modelPage.mode, modelPage.folder_id, modelPage.next_offset);
   $('models-close').onclick = () => { $('models').hidden = true; $('browser').hidden = false; };
+  $('library-preview').onclick = () => send('library_preview', {id:modelPart});
   $('model-local').onclick = () => send('insert_local', { id: modelPart });
   $('connect').onclick = () => { message('Opening secure sign-in in your browser...'); send('connect'); };
   $('disconnect').onclick = () => send('disconnect');
   $('search').onsubmit = event => { event.preventDefault(); browse(); };
+  $('part-list').onchange = () => tab('inventory');
   $('location').onchange = () => browse();
   for (const name of ['inventory','catalog','bom','generate','purchases']) $(name+'-tab').onclick = () => tab(name);
   $('previous').onclick = () => browse(Math.max(0, offset - 50));
@@ -189,21 +221,44 @@
         window.fusionJavaScriptHandler.handle('comparison',JSON.stringify({...data.comparison,historical:true}));
         message('Saved BOM version '+data.version+' from '+data.created_at+'. Historical stock snapshot; compare the open design for current availability.'); return 'OK';
       }
+      if (action === 'library_preview') {
+        const detail = $('library-detail'); detail.replaceChildren();
+        const model = data.model;
+        if (!model) { detail.append(node('p','No reviewed model is available for this exact catalog part.')); return 'OK'; }
+        const preview = node('img'); preview.alt = 'Model preview for ' + model.part_number;
+        preview.src = 'data:image/png;base64,' + model.preview_png;
+        detail.append(node('h3', model.manufacturer + ' ' + model.part_number), preview,
+          node('p', 'Revision ' + model.revision + ' · ' + model.units),
+          node('small', (model.source === 'manufacturer' ? 'Manufacturer source: ' : 'Third-party source: ') + model.source_url));
+        const label = node('label'); const consent = node('input'); consent.type = 'checkbox';
+        label.append(consent, document.createTextNode(' I reviewed the exact variant and model revision.'));
+        const insert = node('button','Place catalog model'); insert.dataset.modelInsert = 'true'; insert.disabled = true;
+        consent.onchange = () => { insert.disabled = busy || !consent.checked; };
+        insert.onclick = () => { if (!busy && consent.checked) send('library_insert',{confirmed:true}); };
+        const card = node('article'); card.append(label,insert); detail.append(card);
+        return 'OK';
+      }
       if (action === 'models') { showModels(data); return 'OK'; }
       if (action === 'pairing') { $('code').textContent = data.code; message('Compare this code with the browser, select an inventory and approve.'); return 'OK'; }
       if (action === 'disconnected') {
+        shortcutKey = null; $('part-list').value = 'all'; $('library-detail').replaceChildren();
         purchasing?.configure(null); planning?.configure(null);
         connected = false; allowWrites = false; generationEnabled = false; bomEnabled = false; draft = null; $('versions').replaceChildren(); $('generation-job').replaceChildren(); $('generation-jobs').replaceChildren(); modelPart = null; modelPage = null; $('model-entries').replaceChildren(); $('models').hidden = true; $('search-explanation').textContent = ''; lock(false); $('session').hidden = true; $('sign-in').hidden = false;
         $('code').textContent = ''; $('parts').replaceChildren(); $('results').replaceChildren(); $('summary').replaceChildren(); $('warnings').replaceChildren();
         message('Disconnected. Sign in to choose an inventory.'); return 'OK';
       }
       if (action === 'connected') {
+        shortcutKey = data.purchase_context ? 'findez.part-shortcuts.' + data.purchase_context : null;
         purchasing?.configure(data); planning?.configure(data);
         connected = true; allowWrites = data.allow_cad_writes === true;
         generationEnabled = data.generation_enabled === true; bomEnabled = data.saved_bom_enabled === true;
         $('generation-note').textContent = !generationEnabled ? 'Model generation is unavailable on this server. You can still choose models from your Fusion project.' : !allowWrites ? 'Reconnect and approve CAD writing access to generate a model.' : 'Ready to generate. Review the specification before submitting.'; $('write-note').textContent = allowWrites ? 'Saved versions and corrections are shared with this inventory. Stock is not changed.' : 'To save BOMs or generate models, reconnect and approve CAD writing access.'; lock(false); $('sign-in').hidden = true; $('session').hidden = false;
         $('inventory-name').textContent = data.inventory_name; $('workspace-name').textContent = data.workspace_name;
         message('Connected. This session expires in eight hours.'); tab('inventory'); return 'OK';
+      }
+      if (action === 'part_used') {
+        updateShortcuts(record => { record.uses[data.id] = (record.uses[data.id] || 0) + 1; });
+        return 'OK';
       }
       if (action === 'inventory' || action === 'catalog' || action === 'search') {
         if (action === 'search' && data.intent === 'clarify') {
@@ -238,6 +293,27 @@
             if (part.requested_quantity !== null) card.append(node('small', `${part.requested_quantity} requested · ${part.shortage_for_request === null ? 'Shortage unknown' : part.shortage_for_request + ' short for this record'}`));
           }
           const insert = node('button','Choose Fusion model'); insert.onclick = () => { modelPart = part.item_id || part.catalog_id; modelBrowse(); }; card.append(insert); container.append(card);
+          if (shortcutKey && resultSource === 'inventory') {
+            const button = node('button', 'Save part');
+            try {
+              const saved = shortcuts().saved.includes(part.item_id);
+              button.textContent = saved ? 'Remove from saved' : 'Save part';
+              button.onclick = () => {
+                let full = false;
+                if (!updateShortcuts(record => {
+                  if (record.saved.includes(part.item_id)) record.saved = record.saved.filter(id => id !== part.item_id);
+                  else if (record.saved.length < 50) record.saved.push(part.item_id);
+                  else full = true;
+                })) return;
+                const active = shortcuts().saved.includes(part.item_id);
+                button.textContent = active ? 'Remove from saved' : 'Save part';
+                if (full)
+                  message('You can save up to 50 parts. Remove one to save another.');
+                if ($('part-list').value === 'saved') browse();
+              };
+              card.append(button);
+            } catch { message('Saved parts are unavailable on this device.', 'error'); }
+          }
         }
         if (!values.length) container.append(node('p','No matching parts found.'));
         next = data.next_offset ?? null; offset = data.offset || 0;

@@ -115,10 +115,13 @@ def inventory_rows(session, query='', location=None):
     return result, sorted({str(i.get('location') or '') for i in items})
 
 
-def browse(session, query='', offset=0, location=None):
+def browse(session, query='', offset=0, location=None, item_ids=None):
     result, locations = inventory_rows(session, query, location)
+    if item_ids is not None:
+        by_id = {str(row['item_id']): row for row in result}
+        result = [by_id[key] for key in dict.fromkeys(item_ids) if key in by_id]
     return {'inventory_id': session['inventory_id'], 'inventory_name': session['inventory_name'],
-            'locations': locations, 'items': result[offset:offset+50], 'total': len(result),
+            'filtered_ids': item_ids is not None, 'locations': locations, 'items': result[offset:offset+50], 'total': len(result),
             'offset': offset, 'next_offset': offset+50 if len(result)>offset+50 else None,
             'stock_basis': 'recorded_not_physically_verified'}
 

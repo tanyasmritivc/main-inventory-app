@@ -13,9 +13,11 @@ import openpyxl
 from pydantic import Field, StrictInt
 
 from app.services.spreadsheet_import import parse_import_tables
+from .specifications import DIMENSIONS, TEXT, dimension
 from .snapshot import Definition, Document, Model, MAX_SNAPSHOT_BYTES
 
-FIELDS = ('name', 'quantity', 'part_number', 'manufacturer', 'barcode', 'unit')
+DIMENSION_UNITS = ('mm', 'cm', 'in', 'inch', 'inches')
+
 ALIASES = {
     'name': ('name', 'component', 'component name', 'description', 'part description', 'item name'),
     'quantity': ('quantity', 'qty', 'required', 'required quantity', 'quantity required', 'count'),
@@ -25,6 +27,36 @@ ALIASES = {
     'unit': ('unit', 'units', 'uom', 'unit of measure'),
 }
 
+# Only explicit specification headers qualify. A plain dimension header needs
+# a unit in each cell; never infer units from an unrelated quantity column.
+def header_unit(header):
+    match = re.search(r'(?:[ _(\[])(mm|cm|in|inch|inches)[)\]]?$', header.strip().casefold())
+    return match[1] if match else None
+
+
+def specification_aliases(key):
+    name = key.removesuffix('_mm').replace('_', ' ')
+    if key in TEXT:
+        return (name, key)
+    return (name, key, *(label for unit in DIMENSION_UNITS for label in
+                        (f'{name} ({unit})', f'{name} [{unit}]', f'{name} {unit}')))
+
+
+def specification_value(key, value, header, row):
+    if len(value) > 256:
+        raise ValueError(f'Row {row}: shorten the {header} specification to 256 characters.')
+    if key in TEXT:
+        return value
+    # Explicit cell units take precedence over the column unit.
+    if re.fullmatch(r'[0-9]+(?:\.[0-9]+)?', value):
+        unit = header_unit(header)
+        if unit is None:
+            raise ValueError(f'Row {row}: include mm, cm or in for {header}.')
+        value += ' ' + unit
+    if dimension(value) is None:
+        raise ValueError(f'Row {row}: use a positive nominal dimension with mm, cm or in for {header}.')
+    return value
+
 
 class Mapping(Model):
     name: StrictInt = Field(ge=0, le=199)
@@ -33,6 +65,22 @@ class Mapping(Model):
     manufacturer: StrictInt | None = Field(default=None, ge=0, le=199)
     barcode: StrictInt | None = Field(default=None, ge=0, le=199)
     unit: StrictInt | None = Field(default=None, ge=0, le=199)
+    length_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    diameter_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    thread_pitch_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    inner_diameter_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    outer_diameter_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    thickness_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    width_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    height_mm: StrictInt | None = Field(default=None, ge=0, le=199)
+    material: StrictInt | None = Field(default=None, ge=0, le=199)
+    finish: StrictInt | None = Field(default=None, ge=0, le=199)
+    head_type: StrictInt | None = Field(default=None, ge=0, le=199)
+    thread_direction: StrictInt | None = Field(default=None, ge=0, le=199)
+    thread_standard: StrictInt | None = Field(default=None, ge=0, le=199)
+    strength_grade: StrictInt | None = Field(default=None, ge=0, le=199)
+    part_type: StrictInt | None = Field(default=None, ge=0, le=199)
+    thread_fit: StrictInt | None = Field(default=None, ge=0, le=199)
 
 
 class TabularRevision(Model):
@@ -120,8 +168,11 @@ def preview(raw, name):
     for table in tables(raw, name):
         normalized = [re.sub(r'\s+', ' ', h.strip()).casefold() for h in table['headers']]
         mapping = {}
-        for field, aliases in ALIASES.items():
+        aliases_by_field = {**ALIASES, **{key: specification_aliases(key) for key in DIMENSIONS | TEXT}}
+        for field, aliases in aliases_by_field.items():
             choices = [i for i, h in enumerate(normalized) if h in aliases]
+            if field == 'name' and 'name' in normalized:
+                choices = [i for i, h in enumerate(normalized) if h == 'name']
             if len(choices) == 1:
                 mapping[field] = choices[0]
         result.append({'name': table['name'], 'headers': table['headers'], 'row_count': len(table['rows']),
@@ -165,7 +216,11 @@ def snapshot(raw, name, sheet_name, mapping, confirmed):
             raise ValueError(f'Row {number}: quantity must be a positive whole number, without separators.') from None
         if values.get('unit', '').casefold() not in ('', 'each', 'ea', 'pc', 'pcs', 'piece', 'pieces', 'unit', 'units'):
             raise ValueError(f'Row {number}: only individual units (each) are supported; convert lengths, weights or packs first.')
-        lines.append(Line(key=f'row:{number}', name=values['name'], required=int(qty),
+        specs = {
+            key: specification_value(key, value, selected['headers'][mapping[key]], number)
+            for key, value in values.items() if value and key in (DIMENSIONS | TEXT)
+        }
+        lines.append(Line(specifications=specs, key=f'row:{number}', name=values['name'], required=int(qty),
                           part_number=values.get('part_number', ''), manufacturer=values.get('manufacturer', ''),
                           barcode=values.get('barcode', ''), part_number_is_default=not bool(values.get('part_number')),
                           procurement_policy='purchase', source_document=sheet_name, source_token=f'row:{number}'))

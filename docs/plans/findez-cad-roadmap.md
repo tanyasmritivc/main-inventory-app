@@ -48,16 +48,35 @@ placement/geometry acceptance cannot be established by protocol fakes.
 
 Receipts: docs/releases/cad-native-planning-20261116/README.md and prior CAD releases.
 
+## 0.6.0 local candidate, November 23, 2026
+
+The candidate shows translation and rotation handles, reports measured initial solid
+extents, and rolls back cancelled insertions. Saved parts and frequently confirmed
+insertions are device-local and keyed to the user and inventory. They resolve to
+fresh authorized inventory rows. The spreadsheet mapper now preserves explicit
+dimensions, thread, material, finish and other nominal variant requirements.
+The optional model library resolves operator-published PNG previews and STEP files
+against the current verified catalog identity and specifications. Each insert is
+bound to the previewed manifest revision and STEP digest. No manufacturer assets
+are bundled. Publication instructions are in the [model library guide](../cad-guide/model-library.md).
+The [native host acceptance sequence](../../integrations/findez-fusion/README.md#060-placement-and-inventory-shortcuts)
+still requires Fusion on macOS and Windows.
+
+Local validation: 302 CAD/Fusion tests and 752 web tests passed. The packaged
+panel passed a Chrome smoke test with a simulated native bridge. The Next.js
+production build succeeded. The full backend run had 313 failures, all present
+in the baseline checkout (314 failures). Its Onshape spreadsheet header test now passes.
+
 ## Ordered remaining work and acceptance
 
 | Stage | Existing/reused | Still required | Completion evidence |
 | --- | --- | --- | --- |
-| Fusion workspace | Candidate connection, personal/team inventory selection, AI parts search, current-design/project model picker, optional local insertion and BOM | Real-host acceptance of native copying/placement; saved/frequent parts; hosted model preview and delivery; richer dimensions/units/orientation verification; reliable placement on supported Fusion versions | Real user signs in, chooses owned part, previews its verified model, inserts and positions it; cancellation leaves design intact; insertion never consumes stock |
-| BOM and matching | Hierarchy extraction, catalog IDs, conservative nominal specification checks, exact identifiers, reviewed corrections, stock allocation, reservations/checkouts | Exact-variant catalog infrastructure; geometry-aware design change impact; automatic synchronization | Duplicate rows cannot reuse stock; corrections survive recheck but invalidate on identity changes; wrong variants need review; unauthorized teams cannot read snapshots |
-| Parts and CAD library | Existing verified parts_catalog identity and specifications | Exact variants and identifiers; licensed source records; CAD assets with units, version, digest, provenance and quality; user submissions; official-model resolution; validated previews; incremental durable generation jobs | Initial curated robotics catalog has authoritative exact variants and permitted assets; unknown/approximate models never masquerade as manufacturer verified |
+| Fusion workspace | Candidate connection, personal/team inventory selection, AI parts search, current-design/project model picker, optional local insertion and BOM | Real-host acceptance of native copying, shortcuts, licensed model preview/delivery, and placement; further units/orientation verification; reliable placement on supported Fusion versions | Real user signs in, chooses owned part, previews its verified model, inserts and positions it; cancellation leaves design intact; insertion never consumes stock |
+| BOM and matching | Hierarchy extraction, catalog IDs, conservative nominal specification checks, exact identifiers, reviewed corrections, stock allocation, reservations/checkouts | Curated exact-variant catalog coverage; geometry-aware design change impact; automatic synchronization | Duplicate rows cannot reuse stock; corrections survive recheck but invalidate on identity changes; wrong variants need review; unauthorized teams cannot read snapshots |
+| Parts and CAD library | Existing verified parts_catalog identity and specifications | Licensed exact-variant records and real preview/STEP assets; user submissions; automated official-model resolution; independent geometry validation; incremental durable generation jobs | Initial curated robotics catalog has authoritative exact variants and permitted assets; unknown/approximate models never masquerade as manufacturer verified |
 | Pricing | Manual exact-part quote history, expiry, currency-separated subtotals, pack/MOQ/all-unit breaks in web and Fusion purchase plans | Approved live feeds; engineering-reviewed alternatives; independent refresh/retry queue; richer freight and availability | Correct integer pack purchasing and decimal money; no mixed-currency total; stale/missing quotes visible; substitutes require engineering review; shipping/tax not fabricated |
 | Procurement | Web and separately authorized Fusion inventory-scoped plans, shared access, vendor CSV, owner/admin approval, manual order records, partial transactional receiving, replay receipts | Vendor cancellations/returns; new stock-record creation during receiving; automatic replenishment allocation; direct checkout | Two receives/retries cannot double stock; viewers cannot approve/receive; ordered is distinct from physically available; cross-project reservations and received stock reconcile |
-| Advanced intelligence | Conservative nominal checks, deterministic matching, AI scoped retrieval and ordered multi-project free-stock previews | Structured specification extraction; reviewed alternatives; budget recommendations; geometry-aware design-change impact; reservation-aware project scheduling | Evidence and uncertainty visible; constraints preserved; user approves substitutions; no automatic design changes or checkout |
+| Advanced intelligence | Conservative nominal checks, deterministic matching, AI scoped retrieval and ordered multi-project free-stock previews | Specification extraction beyond explicit spreadsheet columns; reviewed alternatives; budget recommendations; geometry-aware design-change impact; reservation-aware project scheduling | Evidence and uncertainty visible; constraints preserved; user approves substitutions; no automatic design changes or checkout |
 
 ## Dependencies and boundaries
 
@@ -102,9 +121,9 @@ records must never contain private team inventory or projects.
 
 ## Remaining delivery dependencies
 
-The next connected increments are canonical exact variants with licensed model
-storage and previews, then incremental official-model resolution and validated
-catalog generation. Independent geometry validation must precede verified labels.
+The next catalog milestone is publishing a first set of licensed exact-variant
+models and previews, followed by incremental official-model resolution and
+validated catalog generation. Independent geometry validation must precede verified labels.
 Do not populate fake vendor feeds, fabricate usage rights, or present generated
 nominal parts as manufacturer CAD. Engineering substitutions depend on that trustworthy identity/specification foundation.
 The current multi-project preview only allocates conservatively matched free stock.

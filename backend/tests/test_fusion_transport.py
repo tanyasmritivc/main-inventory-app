@@ -75,3 +75,33 @@ def test_search_http_errors_offer_a_safe_action(monkeypatch,status,code):
     with pytest.raises(client.ClientError) as exc:client.call('/search',method='POST',data={'query':'parts'})
     assert code in str(exc.value)
     assert 'private response' not in str(exc.value)
+
+
+@pytest.mark.parametrize('matches_preview', [True, False])
+def test_library_transport_pins_download_to_previewed_digest(monkeypatch, tmp_path, matches_preview):
+    from email.message import Message
+    import hashlib
+    import io
+    import tempfile
+
+    data = b'fixture STEP bytes'
+    actual = hashlib.sha256(data).hexdigest()
+    expected = actual if matches_preview else '0' * 64
+    response = io.BytesIO(data)
+    response.headers = Message()
+    response.headers['Content-Type'] = 'application/step'
+    response.headers['Content-Length'] = str(len(data))
+    response.headers['X-STEP-SHA256'] = actual
+    opener = Mock()
+    opener.open.return_value = response
+    monkeypatch.setattr(client.request, 'build_opener', lambda *args:opener)
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
+    path = '/catalog/00000000-0000-0000-0000-000000000001/model/' + 'a' * 64 + '/' + expected
+    if matches_preview:
+        saved = Path(client.download_step(path, 'test-session'))
+        assert saved.read_bytes() == data
+        saved.unlink()
+    else:
+        with pytest.raises(client.ClientError):
+            client.download_step(path, 'test-session')
+    assert list(tmp_path.iterdir()) == []

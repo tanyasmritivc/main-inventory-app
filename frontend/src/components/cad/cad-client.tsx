@@ -69,6 +69,14 @@ export function CadClient() {
     } finally { if (!request.signal.aborted) setWorking(false); }
   }
 
+  function columnPicker([field, label]: [BomField, string]) {
+    return <label key={field}>{label}
+          <select aria-label={label} value={mapping[field] ?? ""} onChange={event => { setMapping(current => { const next = { ...current }; if (event.target.value === "") delete next[field]; else next[field] = Number(event.target.value); return next; }); setConfirmed(false); setResult(null); setError(""); }}>
+            <option value="">{field === "name" || field === "quantity" ? "Choose column" : "Not included"}</option>
+            {sheet?.headers.map((header, index) => <option key={index} value={index}>{index + 1}. {header}</option>)}
+          </select></label>;
+  }
+
   return <section className={styles.page}>
     <header className={styles.hero}>
       <div className={styles.topline}><a className={styles.guideLink} href={cadWorldPath("/docs/cad", world)}><BookOpen size={16} /> CAD Intelligence <ArrowUpRight size={14} /></a></div>
@@ -104,11 +112,11 @@ export function CadClient() {
         <label>Worksheet<select aria-label="Worksheet" value={sheetIndex} onChange={event => { const index = Number(event.target.value); setSheetIndex(index); setMapping(preview!.sheets[index].suggested_mapping); setConfirmed(false); setResult(null); setError(""); }}>
           {preview!.sheets.map((item, index) => <option key={item.name} value={index}>{item.name} ({item.row_count} rows)</option>)}
         </select></label>
-        <div className={styles.mappingGrid}>{([['name', 'Component name *'], ['quantity', 'Required quantity *'], ['part_number', 'Manufacturer part number'], ['manufacturer', 'Manufacturer / brand'], ['barcode', 'Barcode'], ['unit', 'Unit']] as [BomField, string][]).map(([field, label]) => <label key={field}>{label}
-          <select aria-label={label} value={mapping[field] ?? ""} onChange={event => { setMapping(current => { const next = { ...current }; if (event.target.value === "") delete next[field]; else next[field] = Number(event.target.value); return next; }); setConfirmed(false); setResult(null); setError(""); }}>
-            <option value="">{field === "name" || field === "quantity" ? "Choose column" : "Not included"}</option>
-            {sheet.headers.map((header, index) => <option key={index} value={index}>{index + 1}. {header}</option>)}
-          </select></label>)}</div>
+        <div className={styles.mappingGrid}>{([['name', 'Component name *'], ['quantity', 'Required quantity *'], ['part_number', 'Manufacturer part number'], ['manufacturer', 'Manufacturer / brand'], ['barcode', 'Barcode'], ['unit', 'Unit']] as [BomField, string][]).map(columnPicker)}</div>
+        <details><summary>Engineering specifications</summary>
+          <p>Map dimensions, material and other requirements that identify the exact variant. Include units in dimension cells or column headers.</p>
+          <div className={styles.mappingGrid}>{([['length_mm', 'Length'], ['diameter_mm', 'Diameter'], ['thread_pitch_mm', 'Thread pitch'], ['inner_diameter_mm', 'Inner diameter'], ['outer_diameter_mm', 'Outer diameter'], ['thickness_mm', 'Thickness'], ['width_mm', 'Width'], ['height_mm', 'Height'], ['material', 'Material'], ['finish', 'Finish'], ['head_type', 'Head type'], ['thread_direction', 'Thread direction'], ['thread_standard', 'Thread standard'], ['strength_grade', 'Strength grade'], ['part_type', 'Part type'], ['thread_fit', 'Thread fit']] as [BomField, string][]).map(columnPicker)}</div>
+        </details>
         <div className={styles.tableWrap} role="region" aria-label="Spreadsheet sample" tabIndex={0}><table><caption>First {sheet.sample.length} rows · {sheet.row_count} total rows in this worksheet</caption>
           <thead><tr>{sheet.headers.map((header, index) => <th key={index} scope="col">{index + 1}. {header}</th>)}</tr></thead>
           <tbody>{sheet.sample.map((row, index) => <tr key={index}>{sheet.headers.map((_, col) => <td key={col}>{row[col] || "Not provided"}</td>)}</tr>)}</tbody></table></div>

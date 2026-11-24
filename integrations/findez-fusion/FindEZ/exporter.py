@@ -7,7 +7,7 @@ leave this boundary; tests use small protocol fakes, not a simulated CAD engine.
 import json
 from uuid import uuid4, UUID
 
-VERSION = '0.5.1'
+VERSION = '0.6.0'
 MAX_BYTES = 5 * 1024 * 1024
 
 

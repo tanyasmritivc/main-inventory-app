@@ -34,6 +34,7 @@ model_browser=ModelBrowser()
 save_retry=None
 generated_design=None
 generated_jobs={}
+library_choice=None
 
 
 def attach(event,handler):
@@ -65,8 +66,8 @@ def task(kind,fn):
             try:
                 app.fireCustomEvent(EVENT,json.dumps(result))
             except RuntimeError:
-                if result['kind']=='generated_file': Path(result['data']['path']).unlink(missing_ok=True)
-        elif result['kind']=='generated_file':
+                if result['kind'] in ('library_file','generated_file'): Path(result['data']['path']).unlink(missing_ok=True)
+        elif result['kind'] in ('library_file','generated_file'):
             Path(result['data']['path']).unlink(missing_ok=True)
     executor.submit(work)
 
@@ -140,13 +141,32 @@ def compare_design(expected=None):
     task('comparison',lambda generation:session.request_at(generation,'/compare',method='POST',data=snapshot))
 
 
+def read_shortcuts(generation, path, ids):
+    data = session.request_at(generation, path)
+    rows = {part['item_id']: part for part in data['items']}
+    # Older servers ignore the new filter. Never show unrelated inventory.
+    if data.get('filtered_ids') is not True or rows.keys() - set(ids):
+        raise ClientError('Update the FindEZ server to load saved and frequently used parts.')
+    items = [rows[key] for key in ids if key in rows]
+    return {**data, 'items': items, 'total': len(items), 'offset': 0, 'next_offset': None}
+
+
+def usage_callback(part):
+    active_generation = session.generation
+    item_id = part.get('item_id')
+    def record():
+        if item_id and context and active_generation == session.generation:
+            send('part_used', {'id': item_id})
+    return record
+
+
 class Result(adsk.core.CustomEventHandler):
     def notify(self,args):
-        global busy,parts,comparison,context,save_retry
+        global busy,parts,comparison,context,save_retry,library_choice
         try:
             message=json.loads(args.additionalInfo)
             if message['generation']!=session.generation:
-                if message['kind']=='generated_file':
+                if message['kind'] in ('generated_file', 'library_file'):
                     Path(message['data']['path']).unlink(missing_ok=True)
                 return
             busy=False
@@ -184,6 +204,27 @@ class Result(adsk.core.CustomEventHandler):
             elif kind=='correction_saved':
                 compare_design()
                 return
+            elif kind in ('library_preview', 'library_file'):
+                try:
+                    if not library_choice or library_choice['design'] != adsk.fusion.Design.cast(app.activeProduct):
+                        raise ClientError('The active design changed. Choose the catalog model again.')
+                    if kind == 'library_preview':
+                        model = data['model']
+                        part = library_choice['part']
+                        if model and (model['catalog_id'] != str(part['catalog_id'])
+                                      or any(part.get(field) and part[field].strip().casefold() != model[key].strip().casefold()
+                                             for field,key in [('part_number','part_number'), ('brand','manufacturer')])):
+                            raise ClientError('The inventory identifiers differ from this catalog model. Review the part association.')
+                        library_choice['model'] = model
+                        send(kind, data)
+                    else:
+                        choice = library_choice
+                        placement.insert(app, choice['part'], data['path'], context['inventory_id'],
+                                         catalog_model=choice['model'], on_confirm=usage_callback(choice['part']))
+                    return
+                finally:
+                    if kind == 'library_file':
+                        Path(data['path']).unlink(missing_ok=True)
             elif kind=='generation_job':
                 generated_jobs[data['id']]=data
             elif kind=='generated_file':
@@ -212,7 +253,7 @@ class Result(adsk.core.CustomEventHandler):
 
 class Incoming(adsk.core.HTMLEventHandler):
     def notify(self,args):
-        global busy,parts,comparison,context,search_design,save_retry,generated_design
+        global busy,parts,comparison,context,search_design,save_retry,generated_design,library_choice
         try:
             # Qt returns sendInfoToHTML acknowledgements through this same event.
             # They are not user commands. Replying to one creates an error loop.
@@ -225,6 +266,8 @@ class Incoming(adsk.core.HTMLEventHandler):
             if not isinstance(data,dict):
                 raise ClientError('Invalid panel command.')
             action=args.action
+            if action in ('inventory','inventory_shortcuts','catalog','search','models','disconnect'):
+                library_choice = None
             if action=='ready':
                 send('connected',context) if context else send('disconnected',{})
             elif action=='connect':
@@ -249,6 +292,15 @@ class Incoming(adsk.core.HTMLEventHandler):
                 parts={}
                 model_browser.clear()
                 task(action,lambda generation:session.request_at(generation,path))
+            elif action=='inventory_shortcuts':
+                ids = data.get('ids')
+                if not context or busy or not isinstance(ids, list) or not 1 <= len(ids) <= 50:
+                    raise ClientError('Reconnect and choose up to 50 saved or frequently used parts.')
+                ids = [str(UUID(key)) for key in ids]
+                path = '/inventory?' + urlencode({'item_id': ids}, doseq=True)
+                parts = {}
+                model_browser.clear()
+                task('inventory', lambda generation: read_shortcuts(generation, path, ids))
             elif action=='search':
                 query=data.get('query','')
                 source=data.get('source','inventory')
@@ -266,13 +318,33 @@ class Incoming(adsk.core.HTMLEventHandler):
                 if not part or not context or busy or placement.pending is not None:
                     raise ClientError('Finish placement or search again and choose a current part.')
                 result=model_browser.browse(app,part,context['inventory_id'],data.get('mode','design'),data.get('folder_id'),data.get('offset',0))
+                result['has_catalog_identity'] = bool(context.get('model_library_enabled') and part.get('catalog_id'))
                 send('models',result)
+            elif action == 'library_preview':
+                part = parts.get(str(data.get('id')))
+                if busy or not context or not context.get('model_library_enabled') or not part or not part.get('catalog_id'):
+                    raise ClientError('Choose a current catalog-linked part first.')
+                design = adsk.fusion.Design.cast(app.activeProduct)
+                if not design or design != model_browser.design or model_browser.part_id != str(data.get('id')):
+                    raise ClientError('Reopen the model picker for the active design.')
+                library_choice = {'design':design, 'part':part, 'model':None}
+                path = '/catalog/' + str(UUID(str(part['catalog_id']))) + '/model'
+                task('library_preview', lambda generation: session.request_at(generation, path))
+            elif action == 'library_insert':
+                choice = library_choice
+                if (busy or not context or not choice or not choice['model'] or data.get('confirmed') is not True
+                        or placement.pending is not None or choice['design'] != adsk.fusion.Design.cast(app.activeProduct)):
+                    raise ClientError('Review the exact model again before insertion.')
+                model = choice['model']
+                path = '/catalog/' + model['catalog_id'] + '/model/' + model['revision_id'] + '/' + model['step_sha256']
+                token = session.token
+                task('library_file', lambda generation: {'path': download_step(path,token)})
             elif action=='insert_model':
                 part=parts.get(str(data.get('id')))
                 if not part or not context or busy or data.get('confirmed') is not True:
                     raise ClientError('Choose a current part and confirm the selected model matches it.')
                 model=model_browser.resolve(app,part,context['inventory_id'],data.get('model_id'))
-                placement.insert_model(app,part,model,context['inventory_id'])
+                placement.insert_model(app,part,model,context['inventory_id'], on_confirm=usage_callback(part))
                 send('notice',{'message':'Position the component with the handles and confirm. Cancel removes this copy. Refresh BOM afterward.'})
             elif action=='compare':
                 compare_design()
@@ -376,7 +448,7 @@ class Incoming(adsk.core.HTMLEventHandler):
                 dialog.title='Choose a CAD model for '+str(part.get('name') or part.get('canonical_name'))
                 dialog.filter='CAD files (*.step;*.stp;*.f3d)'
                 if dialog.showOpen()==adsk.core.DialogResults.DialogOK:
-                    placement.insert(app,part,dialog.filename,context['inventory_id'])
+                    placement.insert(app,part,dialog.filename,context['inventory_id'], on_confirm=usage_callback(part))
                     send('notice',{'message':'Use the placement handles and confirm. Local model geometry is unverified. Refresh the BOM after placement.'})
             elif action=='export':
                 if not comparison:
@@ -430,7 +502,7 @@ def run():
 
 
 def stop():
-    global palette,executor,context,parts,comparison,busy,search_design,save_retry,generated_design,generated_jobs
+    global palette,executor,context,parts,comparison,busy,search_design,save_retry,generated_design,generated_jobs,library_choice
     stop_event.set()
     token=session.clear()
     if executor:
@@ -450,7 +522,7 @@ def stop():
         palette.deleteMe()
     palette,context,parts,comparison,busy=None,None,{},None,False
     search_design=None
-    save_retry,generated_design,generated_jobs=None,None,{}
+    save_retry,generated_design,generated_jobs,library_choice=None,None,{},None
     model_browser.clear()
     handlers.clear()
 

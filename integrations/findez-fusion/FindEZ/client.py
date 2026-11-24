@@ -189,7 +189,8 @@ def download_step(path, token):
     """Download from FindEZ only; the provider credential never leaves its server."""
     import hashlib
     import tempfile
-    if not re.fullmatch(r'/generation/jobs/[a-f0-9-]{36}/download', path):
+    catalog = re.fullmatch(r'/catalog/[a-f0-9-]{36}/model/[a-f0-9]{64}/([a-f0-9]{64})', path)
+    if not catalog and not re.fullmatch(r'/generation/jobs/[a-f0-9-]{36}/download', path):
         raise ClientError('Choose a valid generated model.')
     saved = None
     try:
@@ -208,12 +209,12 @@ def download_step(path, token):
                     total += len(chunk)
                     if total > size: raise ClientError('The STEP download exceeds its expected size.')
                     hasher.update(chunk); output.write(chunk)
-            if total != size or hasher.hexdigest() != digest:
+            if total != size or hasher.hexdigest() != digest or (catalog and digest != catalog[1]):
                 raise ClientError('The STEP download failed its checksum. Retry before inserting.')
             return str(saved)
     except (error.URLError, OSError, HTTPException, ValueError):
         if saved: saved.unlink(missing_ok=True)
-        raise ClientError('The generated model could not be downloaded. Refresh its status and retry.') from None
+        raise ClientError('The STEP model could not be downloaded. Refresh the model and try again.') from None
     except Exception:
         if saved: saved.unlink(missing_ok=True)
         raise

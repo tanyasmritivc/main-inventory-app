@@ -109,3 +109,22 @@ test("switching upload sources clears the previous file and its review", async (
   expect(screen.queryByText("Review spreadsheet columns")).toBeNull();
   expect((screen.getByRole("button", {name: "Compare with inventory"}) as HTMLButtonElement).disabled).toBe(true);
 });
+
+test("engineering column selections are included only after the user confirms the mapping", async () => {
+  jest.mocked(previewBom).mockResolvedValue({...previewData, sheets:[{...previewData.sheets[0],
+    headers:["Name","Qty","Coating"], suggested_mapping:{name:0,quantity:1}}]});
+  compare.mockResolvedValue(result);
+  render(<CadClient />);
+  const file = new File(["Name,Qty,Coating\nBearing,2,Zinc"], "bearing.csv");
+  fireEvent.change(screen.getByLabelText("BOM file"), {target:{files:[file]}});
+  fireEvent.click(screen.getByRole("button", {name:"Review columns"}));
+  await screen.findByText("Engineering specifications");
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.change(screen.getByLabelText("Finish"), {target:{value:"2"}});
+  expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", {name:"Compare with inventory"}));
+  await waitFor(() => expect(compare).toHaveBeenCalledWith(file, expect.any(AbortSignal), {
+    sheet:"Parts", mapping:{name:0,quantity:1,finish:2}, confirmed:true
+  }));
+});

@@ -206,3 +206,43 @@ def test_duplicate_generated_insert_cannot_retarget_inflight_download(workspace,
     module.Incoming().notify(NS(action='generation_insert',data=json.dumps({'id':key,'confirmed':True})))
     task.assert_not_called();assert module.generated_design is original
     assert sent.call_args.args[0]=='error'
+
+
+def test_shortcuts_reject_unfiltered_response_and_keep_order(workspace, monkeypatch):
+    module, _ = workspace
+    request = Mock(return_value={'items':[{'item_id':'a'}, {'item_id':'b'}]})
+    monkeypatch.setattr(module.session, 'request_at', request)
+    with pytest.raises(module.ClientError):
+        module.read_shortcuts(1, '/inventory', ['b', 'a'])
+    request.return_value['filtered_ids'] = True
+    assert module.read_shortcuts(1, '/inventory', ['b','a','removed'])['items'] == [{'item_id':'b'}, {'item_id':'a'}]
+    with pytest.raises(module.ClientError):
+        module.read_shortcuts(1, '/inventory', ['a'])
+
+
+def test_usage_from_disconnected_session_is_discarded(workspace, monkeypatch):
+    module, _ = workspace
+    sent = Mock()
+    monkeypatch.setattr(module, 'send', sent)
+    module.context = {'inventory_id':'a'}
+    record = module.usage_callback({'item_id':'part'})
+    module.session.clear()
+    record()
+    sent.assert_not_called()
+
+
+@pytest.mark.parametrize('stale', ['design','session'])
+def test_catalog_download_cleans_up_on_context_switch(workspace, monkeypatch, tmp_path, stale):
+    module, _ = workspace
+    path = tmp_path / 'catalog.step'
+    path.write_bytes(b'fixture model')
+    module.library_choice = {'design': object() if stale == 'design' else module.app.activeProduct}
+    insert = Mock()
+    monkeypatch.setattr(module.placement, 'insert', insert)
+    monkeypatch.setattr(module, 'send', Mock())
+    module.Result().notify(NS(additionalInfo=json.dumps({
+        'kind':'library_file', 'generation':module.session.generation - int(stale == 'session'),
+        'data':{'path':str(path)}
+    })))
+    assert not path.exists()
+    insert.assert_not_called()

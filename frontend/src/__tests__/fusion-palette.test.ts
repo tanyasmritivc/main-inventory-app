@@ -189,3 +189,41 @@ test('editors cannot approve and malformed pending storage blocks new writes',()
  localStorage.setItem('findez.purchase.pending.v1:actor:inventory','broken');receive('connected',purchasingContext);
  receive('version_saved',{id:'version',version:2});expect(purchaseButton('Create plan from current shortages').disabled).toBe(true);
 });
+
+test('saved and frequent parts use fresh, account-scoped inventory lookups', () => {
+  const connect = (context: string) => receive('connected', {inventory_name:'Lab', purchase_context:context});
+  const select = (value: string) => {
+    const list = document.querySelector<HTMLSelectElement>('#part-list')!;
+    list.value = value;
+    list.dispatchEvent(new Event('change'));
+  };
+  connect('person-a:lab');
+  receive('inventory',{items:[{item_id:'bearing',name:'Bearing',available:1}],locations:[],total:1});
+  Array.from(document.querySelectorAll<HTMLButtonElement>('#parts button')).find(b=>b.textContent==='Save part')!.click();
+  select('saved');
+  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('inventory_shortcuts', JSON.stringify({ids:['bearing']}));
+  select('frequent');
+  expect(document.querySelector('#message')!.textContent).toContain('Confirm a part placement');
+  for (const id of ['motor','bearing','bearing']) receive('part_used',{id});
+  select('frequent');
+  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('inventory_shortcuts', JSON.stringify({ids:['bearing','motor']}));
+  receive('disconnected',{});
+  connect('person-b:lab'); select('saved');
+  expect(document.querySelector('#parts')!.textContent).toBe('');
+  expect(document.querySelector('#message')!.textContent).toContain('Save parts from');
+  receive('disconnected',{}); connect('person-a:lab'); select('saved');
+  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('inventory_shortcuts', JSON.stringify({ids:['bearing']}));
+});
+
+test('catalog placement requires a preview and explicit variant review', () => {
+  receive('library_preview',{model:null});
+  expect(document.querySelector('#library-detail')!.textContent).toContain('No reviewed model');
+  receive('library_preview',{model:{manufacturer:'Example',part_number:'608',revision:'A',units:'mm',
+    source:'manufacturer',source_url:'https://example.org/608',preview_png:'AAAA'}});
+  const insert = document.querySelector<HTMLButtonElement>('#library-detail button')!;
+  expect(insert.disabled).toBe(true);
+  expect(document.querySelector('#library-detail img')?.getAttribute('alt')).toContain('608');
+  document.querySelector<HTMLInputElement>('#library-detail input')!.click();
+  insert.click();
+  expect(host.adsk.fusionSendData).toHaveBeenLastCalledWith('library_insert',JSON.stringify({confirmed:true}));
+});

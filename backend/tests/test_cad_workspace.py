@@ -224,3 +224,12 @@ def test_native_purchase_errors_never_echo_unrecognized_server_data(monkeypatch,
     monkeypatch.setattr(client.request,'build_opener',lambda *args:opener)
     with pytest.raises(client.ClientError) as result:client.call('/purchases',method='POST',data={})
     assert 'private error' not in str(result.value) and result.value.status==409
+
+
+def test_inventory_shortcuts_only_return_current_authorized_rows(monkeypatch):
+    rows = [{'item_id':'a','name':'A','quantity':2}, {'item_id':'b','name':'B','quantity':3}]
+    monkeypatch.setattr(service, 'read_inventory', lambda inventory, actor: (rows, [], []))
+    result = service.browse(grant(), item_ids=['b','unknown','a','b'])
+    assert result['filtered_ids']
+    assert [(item['item_id'],item['available']) for item in result['items']] == [('b',3),('a',2)]
+    assert result['total'] == 2 and result['next_offset'] is None

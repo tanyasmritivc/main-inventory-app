@@ -60,9 +60,10 @@ def test_structured_duplicate_and_ambiguous_boms_rejected():
 def test_csv_onshape_headers_prefer_name_and_keep_identifiers():
     raw = b'Item,Name,Description,Part number,Quantity,Material\n1,M3 screw,Not an identity,M3-12,8,Steel\n2,Washer,,00012,4,\n'
     preview = tabular.preview(raw, 'onshape.csv')['sheets'][0]
-    assert preview['suggested_mapping'] == {'name': 1, 'quantity': 4, 'part_number': 3}
+    assert preview['suggested_mapping'] == {'name': 1, 'quantity': 4, 'part_number': 3, 'material': 5}
     snapshot = tabular.snapshot(raw, 'onshape.csv', preview['name'], preview['suggested_mapping'], True)
-    result = compare(snapshot, [stock()], [], [])
+    assert compare(snapshot, [stock()], [], [])['items'][0]['status'] == 'needs_review'
+    result = compare(snapshot, [stock(specifications={'material': 'Steel'})], [], [])
     assert result['summary']['required_units'] == 12
     assert result['items'][1]['part_number'] == '00012'
     assert result['items'][0]['status'] == 'covered'

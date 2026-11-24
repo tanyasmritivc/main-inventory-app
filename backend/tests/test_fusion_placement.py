@@ -33,8 +33,8 @@ def host(monkeypatch, tmp_path):
 
 
 def command():
-    triad=NS(transform='positioned',setFullVisibility=Mock(),hideAllScaling=Mock(),setFlipVisibility=Mock())
-    inputs=NS(addTriadCommandInput=Mock(return_value=triad),itemById=Mock(return_value=triad))
+    triad=NS(positionTransform='positioned',transform='scaled',isVisible=False,isEnabled=False,isValidExpressions=True,setFullVisibility=Mock(),hideAllScaling=Mock(),setFlipVisibility=Mock())
+    inputs=NS(addTriadCommandInput=Mock(return_value=triad),addTextBoxCommandInput=Mock(),itemById=Mock(return_value=triad))
     return NS(command=NS(commandInputs=inputs,execute=Mock(),executePreview=Mock(),destroy=Mock())),triad
 
 
@@ -135,4 +135,115 @@ def test_failed_project_model_insert_rolls_back(host):
     host.wrapper.component.occurrences=NS(addNewComponentCopy=Mock(return_value=None))
     with pytest.raises(ValueError): host.module.insert_model(host.app,{},('component',original),'inventory')
     host.wrapper.deleteMe.assert_called_once()
+    assert host.module.pending is None
+
+def test_native_handles_are_shown_with_measured_size(host):
+    host.wrapper.preciseBoundingBox = NS(minPoint=NS(x=-1, y=0, z=0), maxPoint=NS(x=1, y=1, z=0.05))
+    host.module.insert(host.app, {}, str(host.path), 'inventory')
+    args, triad = command()
+    host.module.Created().notify(args)
+    assert triad.isVisible and triad.isEnabled
+    args.command.commandInputs.addTextBoxCommandInput.assert_called_once_with(
+        'findezModelSize', 'Model size', 'Initial solid extents (X × Y × Z): 20 × 10 × 0.5 mm', 2, True)
+    host.module.Execute().notify(args)
+    assert host.wrapper.transform2 == triad.positionTransform
+
+
+@pytest.mark.parametrize('high', [0, -1, float('nan'), float('inf')])
+def test_invalid_geometry_never_reports_measured_size(host, high):
+    host.wrapper.preciseBoundingBox = NS(minPoint=NS(x=0,y=0,z=0), maxPoint=NS(x=high,y=1,z=2))
+    assert 'unavailable' in host.module.measured_extents(host.wrapper)
+
+
+@pytest.mark.parametrize('reason', ['invalid expression', 'design switched'])
+def test_invalid_placement_cannot_commit(host, reason):
+    host.module.insert(host.app, {}, str(host.path), 'inventory')
+    args, triad = command()
+    host.module.Created().notify(args)
+    if reason == 'invalid expression':
+        triad.isValidExpressions = False
+    else:
+        host.app.activeProduct = object()
+    host.module.Execute().notify(args)
+    assert args.executeFailed
+    assert host.wrapper.transform2 == 'identity'
+    host.module.Destroyed().notify(args)
+    host.wrapper.deleteMe.assert_called_once()
+
+
+def test_cancel_and_confirm_flow_through_real_bom_comparison(host):
+    from copy import deepcopy
+    from tests.test_cad_prototype import component, design, occurrence, exporter, stock
+    from app.services.cad.snapshot import Snapshot
+    from app.services.cad.comparison import compare
+
+    model = design([], dirty=True)
+    model.snapshots = NS(hasPendingSnapshot=False)
+    host.app.activeProduct = model
+    root = model.rootComponent.occurrences
+    stock_item = stock(1, name='Bearing', part_number='608')
+    inventory = [stock_item]
+    initial_inventory = deepcopy(inventory)
+    serial = 0
+
+    def add_wrapper(transform):
+        nonlocal serial
+        serial += 1
+        key = f'wrapper-{serial}'
+        comp = component(key)
+        def add_attribute(group, name, value):
+            assert group == 'FindEZ'
+            comp.attributes.values[name] = value
+        comp.attributes.add = add_attribute
+        instance = occurrence(comp, key)
+        instance.transform2 = transform
+        instance.isValid = True
+        instance.deleteMe = lambda: root.values.remove(instance)
+        root.values.append(instance)
+        return instance
+
+    def totals():
+        snap = Snapshot.model_validate(exporter.extract(model, 'contract fixture'))
+        rows = compare(snap, inventory, [], [])['items']
+        return tuple(sum(row[field] for row in rows) for field in ('required', 'assigned', 'missing'))
+
+    root.addNewComponent = add_wrapper
+    for confirm, expected in [(False, (0, 0, 0)), (True, (1, 1, 0)), (True, (2, 1, 1))]:
+        host.module.insert(host.app, stock_item, str(host.path), 'test-inventory')
+        args, _ = command()
+        host.module.Created().notify(args)
+        host.module.Preview().notify(args)
+        if confirm:
+            host.module.Execute().notify(args)
+        host.module.Destroyed().notify(args)
+        assert totals() == expected
+        assert inventory == initial_inventory
+
+
+@pytest.mark.parametrize('confirm', [True, False])
+def test_usage_recorded_once_only_on_confirm(host, confirm):
+    record = Mock()
+    host.module.insert(host.app, {}, str(host.path), 'inventory', on_confirm=record)
+    args, _ = command()
+    host.module.Created().notify(args)
+    host.module.Preview().notify(args)
+    if confirm:
+        host.module.Execute().notify(args)
+    record.assert_not_called()
+    host.module.Destroyed().notify(args)
+    host.module.Destroyed().notify(args)
+    assert record.call_count == int(confirm)
+
+
+def test_catalog_placement_uses_reviewed_source_and_exact_digest(host):
+    import hashlib
+    model = {'catalog_id':'variant', 'step_sha256':hashlib.sha256(host.path.read_bytes()).hexdigest(),
+             'source':'manufacturer', 'revision':'A', 'units':'mm', 'source_url':'https://example.org/model'}
+    host.module.insert(host.app, {'catalog_id':'variant'}, str(host.path), 'inv', catalog_model=model)
+    host.wrapper.component.attributes.add.assert_any_call('FindEZ','model_quality','source_reviewed')
+    host.wrapper.component.attributes.add.assert_any_call('FindEZ','procurement_policy','purchase')
+    args, _ = command()
+    host.module.Destroyed().notify(args)
+    with pytest.raises(ValueError, match='no longer matches'):
+        host.module.insert(host.app, {'catalog_id':'different'}, str(host.path), 'inv', catalog_model=model)
     assert host.module.pending is None

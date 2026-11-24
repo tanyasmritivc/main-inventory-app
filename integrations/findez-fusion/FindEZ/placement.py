@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import math
 import adsk.core
 import adsk.fusion
 
@@ -25,7 +26,7 @@ def clear_command_handlers():
     command_handlers.clear()
 
 
-def insert(app,part,path,inventory_id,generated_job=None):
+def insert(app,part,path,inventory_id,generated_job=None, *, on_confirm=None, catalog_model=None):
     global pending
     design=adsk.fusion.Design.cast(app.activeProduct)
     if not design or pending is not None:
@@ -55,12 +56,18 @@ def insert(app,part,path,inventory_id,generated_job=None):
                     'specifications':json.dumps({k:str(v) for k,v in (part.get('specifications') or {}).items() if isinstance(v,(str,int,float))}),
                     'inventory_item_id':part.get('item_id') or '', 'catalog_id':part.get('catalog_id') or '',
                     'model_quality':'unverified','model_sha256':digest,'model_source':'user_selected_local_file'}
+        if catalog_model:
+            if str(part.get('catalog_id')) != catalog_model['catalog_id'] or digest != catalog_model['step_sha256']:
+                raise ValueError('The model no longer matches the selected part and version.')
+            attributes.update(model_source=catalog_model['source'], model_version=catalog_model['revision'],
+                              model_quality='source_reviewed', model_units=catalog_model['units'],
+                              model_reference=catalog_model['source_url'])
         if generated_job:
             attributes.update({'procurement_policy':'fabricate', 'model_quality':'generated_unverified',
                                'model_source':'rexcad', 'generation_job_id':generated_job})
         for key,value in attributes.items():
             component.attributes.add('FindEZ',key,str(value))
-        start_placement(app, design, wrapper)
+        start_placement(app, design, wrapper, on_confirm)
     except Exception:
         pending=None
         if wrapper.isValid:
@@ -68,9 +75,9 @@ def insert(app,part,path,inventory_id,generated_job=None):
         raise
 
 
-def start_placement(app, design, occurrence):
+def start_placement(app, design, occurrence, on_confirm):
     global pending
-    pending={'occurrence':occurrence,'design':design,'committed':False}
+    pending={'occurrence':occurrence,'design':design,'committed':False, 'on_confirm':on_confirm}
     definitions=app.userInterface.commandDefinitions
     definition=definitions.itemById(COMMAND)
     if not definition:
@@ -80,7 +87,7 @@ def start_placement(app, design, occurrence):
         raise ValueError('Fusion could not start placement.')
 
 
-def insert_model(app, part, model, inventory_id):
+def insert_model(app, part, model, inventory_id, *, on_confirm=None):
     """Copy geometry already in Fusion. Only this new wrapper gets metadata."""
     global pending
     design=adsk.fusion.Design.cast(app.activeProduct)
@@ -121,12 +128,38 @@ def insert_model(app, part, model, inventory_id):
                     'model_version':version}
         for key,value in attributes.items():
             component.attributes.add('FindEZ',key,str(value))
-        start_placement(app,design,wrapper)
+        start_placement(app,design,wrapper,on_confirm)
     except Exception:
         pending=None
         if wrapper.isValid:
             wrapper.deleteMe()
         raise
+
+
+def measured_extents(occurrence):
+    """Initial axis-aligned solid envelope. Fusion database length units are cm."""
+    try:
+        box = occurrence.preciseBoundingBox
+        dimensions = [
+            (getattr(box.maxPoint, axis) - getattr(box.minPoint, axis)) * 10
+            for axis in ('x', 'y', 'z')
+        ]
+        if all(math.isfinite(value) and value > 0 for value in dimensions):
+            return 'Initial solid extents (X × Y × Z): ' + ' × '.join(
+                f'{value:.6g}' for value in dimensions
+            ) + ' mm'
+    except (AttributeError, RuntimeError, TypeError):
+        pass
+    return 'Solid extents unavailable. Use Fusion Measure to check this model.'
+
+
+def apply_position(args, state):
+    triad = args.command.commandInputs.itemById('findezPosition')
+    if not triad or not triad.isValidExpressions:
+        raise ValueError('Invalid placement input.')
+    if state['design'] != adsk.fusion.Design.cast(adsk.core.Application.get().activeProduct):
+        raise ValueError('The active design changed.')
+    state['occurrence'].transform2 = triad.positionTransform
 
 
 class Created(adsk.core.CommandCreatedEventHandler):
@@ -140,6 +173,11 @@ class Created(adsk.core.CommandCreatedEventHandler):
             triad.setFullVisibility(True)
             triad.hideAllScaling()
             triad.setFlipVisibility(False)
+            triad.isEnabled = True
+            triad.isVisible = True
+            args.command.commandInputs.addTextBoxCommandInput(
+                'findezModelSize', 'Model size', measured_extents(pending['occurrence']), 2, True
+            )
             attach(args.command.execute,Execute(),command=True)
             attach(args.command.executePreview,Preview(),command=True)
         except Exception:
@@ -154,7 +192,7 @@ class Preview(adsk.core.CommandEventHandler):
         args.isValidResult=False
         if pending and pending['occurrence'].isValid:
             try:
-                pending['occurrence'].transform2=args.command.commandInputs.itemById('findezPosition').transform
+                apply_position(args, pending)
             except Exception:
                 args.executeFailed=True
                 args.executeFailedMessage='The component could not be positioned. Cancel and try again.'
@@ -164,7 +202,7 @@ class Execute(adsk.core.CommandEventHandler):
     def notify(self,args):
         if pending and pending['occurrence'].isValid:
             try:
-                pending['occurrence'].transform2=args.command.commandInputs.itemById('findezPosition').transform
+                apply_position(args, pending)
                 if pending['design'].snapshots.hasPendingSnapshot:
                     pending['design'].snapshots.add()
                 pending['committed']=True
@@ -180,6 +218,8 @@ class Destroyed(adsk.core.CommandEventHandler):
         clear_command_handlers()
         if state and not state['committed'] and state['occurrence'].isValid:
             state['occurrence'].deleteMe()
+        elif state and state['committed'] and state['on_confirm']:
+            state['on_confirm']()
 
 
 def stop(ui):

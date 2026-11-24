@@ -157,3 +157,43 @@ def test_http_rejects_mapping_and_unconfirmed(client):
         assert response.status_code==422
     response=client.post(f'/inventories/{uuid4()}/cad/compare',files={'file':('bom.csv',CSV)})
     assert response.status_code==422
+
+
+@pytest.mark.parametrize('extension', ['csv', 'xlsx'])
+def test_mapped_engineering_specs_reach_matching(extension):
+    headers = ['Name', 'Qty', 'Manufacturer', 'Part number', 'Length (in)', 'Material']
+    row = ['Screw', 2, 'Example', 'M3-12', '0.5', 'steel']
+    raw = (','.join(headers) + '\n' + ','.join(map(str, row)) + '\n').encode() if extension == 'csv' else workbook([headers, row])
+    name = 'parts.' + extension
+    sheet = tabular.preview(raw, name)['sheets'][0]
+    snapshot = snap(raw, name, sheet['name'], sheet['suggested_mapping'])
+    assert snapshot.lines[0].specifications == {'length_mm': '0.5 in', 'material': 'steel'}
+    for actual, covered in [({'length_mm': '12.7 mm', 'material': 'Steel'}, 2),
+                            ({'length_mm': '12 mm', 'material': 'Steel'}, 0),
+                            ({'length_mm': '12.7 mm'}, 0)]:
+        result = compare(snapshot, [{**STOCK, 'specifications': actual}], [], [])
+        assert result['summary']['covered_units'] == covered
+        if not covered:
+            assert result['items'][0]['specification_issues']
+
+
+@pytest.mark.parametrize('header,value,expected', [
+    ('Length', '2', None), ('Length', '2 cm', '2 cm'), ('length_mm', '2', '2 mm'),
+    ('Length [cm]', '', ''), ('Length (mm)', '1 in', '1 in'), ('Length (mm)', '-1', None),
+    ('Length (mm)', '2 to 4', None), ('Length (mm)', '=2+2', None)
+])
+def test_dimension_units_and_unsupported_values(header, value, expected):
+    raw = f'Name,Qty,{header}\nPart,1,{value}\n'.encode()
+    mapping = tabular.preview(raw, 'x.csv')['sheets'][0]['suggested_mapping']
+    assert mapping['length_mm'] == 2
+    if expected is None:
+        with pytest.raises(ValueError, match='Row 2'):
+            snap(raw, mapping=mapping)
+    else:
+        assert snap(raw, mapping=mapping).lines[0].specifications.get('length_mm', '') == expected
+
+
+def test_ambiguous_dimension_columns_require_user_mapping():
+    raw = b'Name,Qty,Length (mm),Length (cm)\nPart,1,10,20\n'
+    assert 'length_mm' not in tabular.preview(raw, 'x.csv')['sheets'][0]['suggested_mapping']
+    assert snap(raw, mapping={'name':0, 'quantity':1, 'length_mm':3}).lines[0].specifications == {'length_mm':'20 cm'}
