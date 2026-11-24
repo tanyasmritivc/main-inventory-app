@@ -1,6 +1,7 @@
 import {
   MessageSquarePlus,
   MapPin,
+  Package,
   Wrench,
   Boxes,
   Plug,
@@ -36,6 +37,7 @@ export function worldNavigation(
         icon: MapPin,
         section: "Organization",
       },
+      ...(world === "personal" ? [] : [{label: "Orders", route: worldHref(world, "orders"), icon: Package, section: "Organization"}]),
       {
         label: "Tools",
         route: worldHref(world, "tools"),

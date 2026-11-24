@@ -57,7 +57,7 @@ GUIDANCE = (
     'Inventory spreadsheet imports and Connections purchase history are DIFFERENT saved sources. '
     'For questions about imported columns, supplier orders, cancellations, returns, prices or '
     'original quantities, use world_imports to inspect the inventory spreadsheet records. '
-    'For an unspecified order-history question, check world_imports as well as world_purchases '
+    'For an unspecified order-history question, check world_supplier_orders in organizations, world_imports, and world_purchases '
     'when that tool is available; an empty purchase library says nothing about inventory imports. '
     'When an inventory or spreadsheet is named, inspect that source first. Discover exact columns '
     'before filtering. Use distinct_field with the order-number column for order counts; '

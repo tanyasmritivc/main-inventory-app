@@ -1349,3 +1349,7 @@ no duplicate card in Tools. /docs/cad is that hub, using the API documentation U
 CAD subroutes select CAD Intelligence in navigation. Public CAD marketing is
 unchanged. Keep generation setup, permissions, troubleshooting, and current
 limitations together here when updating releases.
+
+## 2026-11-24 · Organization supplier orders
+
+Supplier order lines belong to the organization. Uploads, supplier delivery status, historical purchases and CAD candidate matches contribute no stock. Only an explicit receipt into an authorized matching item changes its recorded Space quantity. Already-counted reconciliation links the receipt without a stock adjustment. Preserve the original attachment, positional column mapping and source cells. A repeated or ambiguous heading requires review. Never infer the origin of pre-existing stock from a SKU or name match.

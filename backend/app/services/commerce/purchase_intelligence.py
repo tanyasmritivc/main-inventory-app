@@ -298,14 +298,20 @@ def check(actor, world, query):
         suggestions.append('You have prior purchase records for this item or search. Check whether you still have it, used it, gifted it, or returned it.')
     if products and not ordered:
         suggestions.append('Matching history contains no non-cancelled/non-returned ordered units. It does not establish that you own this item.')
-    if not candidates and not products:
+    supplier_lines=[]
+    if world!='personal':
+        from .supplier_orders import evidence
+        supplier_lines=evidence(actor,world,query).get('order_lines',[])
+        if supplier_lines:
+            suggestions.append('Review the separate supplier order line balances before buying. Receipt history does not identify the origin of pre-existing stock.')
+    if not candidates and not products and not supplier_lines:
         suggestions.append('No match was found in the checked records. Try a shorter product name or another identifier before buying; missing records do not prove you do not own it.')
     suggestions.append('For suggestions about what to build or reuse, tell FIND your goal. Product fit and engineering compatibility still need verification.')
-    return {'query': query, 'result': 'review_before_buying' if has_possible_stock or ordered else 'history_only' if products else 'recorded_zero_stock' if candidates else 'no_match_in_checked_records',
+    return {'query': query, 'result': 'review_before_buying' if has_possible_stock or ordered or supplier_lines else 'history_only' if products else 'recorded_zero_stock' if candidates else 'no_match_in_checked_records',
             'purchase_match_basis': 'exact_asin' if exact and products else 'text_candidate',
             'inventory_match_basis': 'possible_text_match',
             'inventory_complete': inventory.get('complete', False), 'purchases_complete': purchases['complete'] and purchases['matched_products'] <= 10,
             'purchase_match_count': purchases['matched_products'], 'inventory_match_count': len(inventory.get('items', [])),
             'suggestions': suggestions, 'live_amazon_access': False, 'stock_effect': 'none',
             'note': 'This check uses saved imports and recorded inventory. Ordered quantities are not owned quantities; inventory quantities may be allocated. No purchase is made and no stock is changed.',
-            'inventory_matches': candidates, 'purchase_matches': products}
+            'inventory_matches': candidates, 'purchase_matches': products, 'supplier_order_lines':supplier_lines}

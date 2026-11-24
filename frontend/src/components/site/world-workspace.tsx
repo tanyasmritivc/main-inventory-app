@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import styles from "./world-workspace.module.css";
 import { PageTransition } from "./page-transition";
 import { InteriorLoading } from "./interior-state";
+import { SupplierOrders, type OrderSpace } from "./supplier-orders";
 import { WorldTools } from "./world-tools";
 type Inventory = {
   inventory_id: string;
@@ -132,7 +133,7 @@ function WorldContent({
     };
   }, [accountId, worldId, revision]);
   useEffect(() => {
-    if (!directory || !["spaces", "tools", "workspaces"].includes(view)) return;
+    if (!directory || !["spaces", "tools", "workspaces", "orders"].includes(view)) return;
     let live = true;
     accountRequest<{ inventories: Inventory[] }>(
       accountId,
@@ -191,7 +192,7 @@ function WorldContent({
       if (alive.current) setBusy(false);
     }
   }
-  const chosen = view === "workspaces" ? "spaces" : ["chat", "spaces", "search", "tools"].includes(
+  const chosen = view === "workspaces" ? "spaces" : ["chat", "spaces", "search", "tools", ...(worldId === "personal" ? [] : ["orders"])].includes(
     view,
   )
     ? view
@@ -222,6 +223,10 @@ function WorldContent({
       )}
       {!directory ? (
         !error && <InteriorLoading />
+      ) : chosen === "orders" ? (
+        <SupplierOrders world={worldId} accountId={accountId} spaces={(groups || []).flatMap<OrderSpace>(g => g.spaces?.length
+          ? g.spaces.map(s => ({inventory_id:g.inventory_id, space_id:s.id, name:s.name, can_edit:g.can_edit}))
+          : [g])}/>
       ) : chosen === "chat" || chosen === "search" ? (
         <AssistClient
           worldId={worldId}

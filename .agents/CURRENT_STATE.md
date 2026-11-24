@@ -2763,3 +2763,9 @@ runtime hashes and live ZIP verified. No further web activation planned while
 World/Connections releases build on this release. Native Windows Fusion placement
 remains unverified; pricing/procurement/nightly catalogs remain unfinished.
 Receipt: docs/releases/cad-bom-generation-20261116/README.md.
+
+## 2026-11-24 · Organization Orders (implemented and tested only)
+
+The backend/web branch `feat/organization-supplier-orders` adds reviewed supplier imports, scoped order search in Ask, receipts and separate CAD order candidates. Original documents and extra column values are restricted to organization owners/admins. Other members can read normalized organization order lines alongside inventory they can access. The reader uses python-calamine and pdfplumber locally. Uploads are limited to 4 MiB and final imports to 500 reviewed lines. Unreadable table layouts support manual entry or a pasted table against the original attachment.
+
+The additive migration `backend/supabase/migrations/20261124_supplier_orders.sql` is tested on local PostgreSQL only. Production migration, API and web activation were explicitly deferred. Internal iPhone 1.1.6 (232), branch `feat/mobile-organization-orders`, shows Orders in eligible organization Spaces when the server advertises support. Native search reads the signed-in account's results. Import and receiving open the responsive signed-in web review.

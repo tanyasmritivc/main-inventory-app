@@ -6,6 +6,7 @@ import styles from "./cad.module.css";
 type Version = { id: string; project_id: string; version: number; document: { name: string } };
 type Result = { inventory_id: string; note: string; inventory_as_of: string; warnings: string[];
   projects: { version_id: string; name: string; priority: number; required: number; assigned: number; missing: number; review_lines: number; items: { key: string; name: string; missing: number; status: string }[] }[];
+  supplier_order_candidates?: { line_id: string; supplier: string; sku: string; order_number: string; outstanding: number }[]; more_supplier_candidates?: boolean;
   incoming: { plan_id: string; project: string; name: string; quantity: number }[] };
 export function CadPlanning({ versions }: { versions: Version[] }) {
   const inventory=activeInventory();
@@ -31,6 +32,7 @@ function Planning({ inventory,versions }: { inventory: NonNullable<ReturnType<ty
     {result && <div><p>{result.note}</p><p>Inventory read {new Date(result.inventory_as_of).toLocaleString()}</p>{result.warnings.map((w,i)=><p key={i}>{w}</p>)}
       {result.projects.map(p=><section key={p.version_id}><h3>{p.priority}. {p.name}</h3><p>{p.assigned} assigned / {p.required} required · {p.missing} unmatched · {p.review_lines} review lines</p><ul>{p.items.filter(l=>l.missing || l.status==="needs_review").map(l=><li key={l.key}>{l.name}: {l.missing} unmatched ({l.status.replaceAll("_"," ")})</li>)}</ul></section>)}
       <h3>On order — not on hand</h3>{result.incoming.length?<ul>{result.incoming.map((l,i)=><li key={i}>{l.name}: {l.quantity} units / {l.project}</li>)}</ul>:<p>No open incoming order lines.</p>}
+      {!!result.supplier_order_candidates?.length && <section><h3>Possible supplier order matches</h3><p>These open order lines share a BOM part number. Confirm the variant before receiving. They contribute zero units to recorded stock coverage.</p><ul>{result.supplier_order_candidates.map(l=><li key={l.line_id}>{l.supplier} · Order {l.order_number} · {l.sku} · {l.outstanding} outstanding</li>)}</ul>{result.more_supplier_candidates && <p>Showing the first 100 matching lines.</p>}</section>}
     </div>}
   </details>;
 }

@@ -74,8 +74,16 @@ def evaluate(inventory, actor, request):
                 quantity=line['selected_quote']['estimate']['order_quantity']-line['received']
                 if quantity>0: incoming.append({'plan_id':plan['id'],'project':plan['name'],'name':line['name'],
                     'manufacturer':line.get('manufacturer',''),'part_number':line.get('part_number',''),'quantity':quantity})
+    skus = sorted({d.part_number.strip().lower() for d in snapshot.definitions
+                   if d.part_number.strip() and not d.part_number_is_default})
+    supplier_candidates = []
+    if skus:
+        supplier_candidates = get_supabase_raw().rpc('findez_supplier_bom_orders', {
+            'p_actor': actor, 'p_inventory': inventory, 'p_skus': skus
+        }).execute().data or []
     authorize_inventory(inventory,actor)
     return {'inventory_id':inventory,'projects':groups,'incoming':incoming,'summary':result['summary'],
+        'supplier_order_candidates':supplier_candidates[:100],'more_supplier_candidates':len(supplier_candidates)>100,
         'inventory_as_of':result['inventory_as_of'],'completeness':result['completeness'],'warnings':result['warnings'],
         'basis':'selected_priority_after_all_existing_reservations_and_checkouts',
         'note':'Preview only. Earlier selected projects receive free stock first. Existing reservations are excluded, including reservations for these projects. Incoming orders are shown separately and do not count as physical stock. Nothing is reserved or purchased.'}

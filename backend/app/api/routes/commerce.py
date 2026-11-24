@@ -23,8 +23,11 @@ from app.services.commerce.webhooks import verified_event
 
 from app.api.routes.purchase_email import router as purchase_email_router
 
+from app.api.routes.supplier_orders import router as supplier_orders_router
+
 router = APIRouter(prefix='/commerce', tags=['commerce'])
 router.include_router(purchase_email_router)
+router.include_router(supplier_orders_router)
 
 
 @router.post('/webhooks/shopify')

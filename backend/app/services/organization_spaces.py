@@ -42,7 +42,7 @@ def directory(actor, world):
                             'workspace_id': inv.get('team_id') or 'personal',
                             'workspace_name': org['name'], 'organization_id': org_id,
                             'role': inv['role'], 'can_edit': inv['can_edit'], 'item_count': total or 0})
-    return {'world': world, 'organization': org, 'hierarchy': 'organization_spaces',
+    return {'world': world, 'organization': org, 'hierarchy': 'organization_spaces', 'supports_supplier_orders': world != 'personal',
             'inventories': inventories, 'workspaces': [],
             'can_create_space': org['role'] in ('owner', 'admin') or any(i['can_edit'] for i in inventories),
             'has_items': any(i['item_count'] for i in inventories)}

@@ -1,0 +1,478 @@
+import io
+import json
+import os
+import subprocess
+import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from uuid import uuid4
+
+import pytest
+from fastapi import HTTPException
+
+from app.services.commerce import supplier_orders as orders
+
+
+def archive(name, content):
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as out:
+        out.writestr(name, content)
+    return stream.getvalue()
+
+
+CSV = b"Order Number,SKU,Product Name,Qty,Pack Size,Status\nG-42,S-12,M4 x 12 screws,2,50,delivered\n"
+
+
+def test_reviewed_zip_units_and_identity():
+    source = orders.preview(archive("orders/export.csv", CSV), "orders.zip")
+    (line,) = orders.reviewed(source["rows"], source)
+    assert (
+        line["order"],
+        line["line"],
+        line["quantity"],
+        line["pack"],
+        line["status"],
+    ) == ("G-42", "S-12", 2, 50, "delivered")
+    for changed in [{"pack": ""}, {"pack": -1}, {"source_row": 40}, {"quantity": 2.7}]:
+        with pytest.raises(HTTPException):
+            orders.reviewed([{**line, **changed}], source)
+    with pytest.raises(HTTPException):
+        orders.reviewed([line, line], source)
+
+
+def test_invoice_and_confirmation_in_one_zip_describe_one_order_line():
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as bundle:
+        bundle.writestr("order.csv", CSV)
+        bundle.writestr("invoice.csv", CSV)
+    source = orders.preview(stream.getvalue(), "order-docs.zip")
+    (row,) = orders.reviewed(source["rows"], source)
+    assert row["quantity"] * row["pack"] == 100
+    assert row["supporting_sources"][0]["source_file"] == "invoice.csv"
+
+
+@pytest.mark.parametrize(
+    "name,data",
+    [
+        ("bad.zip", b"bad"),
+        ("path.zip", archive("../a.csv", CSV)),
+        ("huge.zip", archive("a.csv", b"x" * (orders.MAX_BYTES + 1))),
+        ("binary.csv", b"\x00abc"),
+        ("wrong.pdf", b"fake"),
+    ],
+)
+def test_unsafe_or_unsupported_files(name, data):
+    with pytest.raises(HTTPException):
+        orders.preview(data, name)
+
+
+def test_manual_pdf_review():
+    from pypdf import PdfWriter
+
+    out = io.BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    writer.write(out)
+    source = orders.preview(out.getvalue(), "invoice.pdf")
+    assert source["documents"] == ["invoice.pdf"] and not source["rows"]
+    line = {
+        "source_file": "invoice.pdf",
+        "source_row": 1,
+        "order": "G42",
+        "line": "1",
+        "name": "Bracket",
+        "quantity": 2,
+        "pack": 1,
+    }
+    assert orders.reviewed([line], source)[0]["sku"] == ""
+
+
+def test_excel_zip_header_offsets_duplicate_labels_and_distinct_sheets():
+    from openpyxl import Workbook
+
+    book = Workbook()
+    sheet = book.active
+    sheet.title = "Fasteners"
+    sheet.append(["goBILDA packing slip"])
+    sheet.append(
+        ["Order #", "Article", "Qty", "Qty", "SKU", "Units per pack", "", "Extra"]
+    )
+    sheet.append(["0091", "M4 screws", 2, 8, 12, 50, "left", "custom info"])
+    sheet["E3"].number_format = "0000"
+    other = book.create_sheet("Shipping")
+    other.append(["Code", "Tracking"])
+    other.append(["UPS", "123"])
+    out = io.BytesIO()
+    book.save(out)
+    data = archive("purchase.xlsx", out.getvalue())
+    source = orders.preview(data, "parts.zip")
+    first, second = source["tables"]
+    assert (
+        first["header"] == 2
+        and "quantity" not in first["suggestions"]
+        and "name" not in first["suggestions"]
+    )
+    assert second["sheet"] == "Shipping"
+    cfg = [
+        {
+            "header": 2,
+            "mapping": {"name": 1, "quantity": 2, "sku": 4, "order": 0, "pack": 5},
+        },
+        None,
+    ]
+    mapped = orders.preview(data, "parts.zip", cfg)
+    (line,) = orders.reviewed(mapped["rows"], mapped)
+    assert (line["order"], line["quantity"], line["pack"], line["sku"]) == (
+        "0091",
+        2,
+        50,
+        "0012",
+    )
+    assert line["original"]["cells"][3:] == ["8", "0012", "50", "left", "custom info"]
+    assert (
+        line["original"]["headers"][2:4] == ["Qty", "Qty"] and line["source_row"] == 3
+    )
+    with pytest.raises(HTTPException):
+        orders.preview(
+            data,
+            "parts.zip",
+            [{"header": 2, "mapping": {"name": 1, "quantity": 1}}, None],
+        )
+
+
+def test_visual_pdf_table_retains_the_printed_columns():
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=300, height=300)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
+    )
+    content = DecodedStreamObject()
+    content.set_data(
+        b"10 100 m 210 100 l S 10 130 m 210 130 l S 10 160 m 210 160 l S 10 100 m 10 160 l S 110 100 m 110 160 l S 210 100 m 210 160 l S BT /F1 10 Tf 15 140 Td (SKU) Tj 100 0 Td (Qty) Tj ET BT /F1 10 Tf 15 112 Td (0012) Tj 100 0 Td (3) Tj ET"
+    )
+    page[NameObject("/Contents")] = writer._add_object(content)
+    out = io.BytesIO()
+    writer.write(out)
+    source = orders.preview(out.getvalue(), "invoice.pdf")
+    (row,) = source["rows"]
+    assert (
+        row["sku"] == "0012"
+        and row["quantity"] == "3"
+        and row["source_sheet"] == "Page 1, table 1"
+    )
+
+
+def test_opendocument_sheet_preserves_headers():
+    grid = [["Qty", "SKU"], ["3", "0012"]]
+    rows = "".join(
+        "<table:table-row>"
+        + "".join(
+            '<table:table-cell office:value-type="string"><text:p>'
+            + v
+            + "</text:p></table:table-cell>"
+            for v in row
+        )
+        + "</table:table-row>"
+        for row in grid
+    )
+    xml = (
+        '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"><office:body><office:spreadsheet><table:table table:name="Parts">'
+        + rows
+        + "</table:table></office:spreadsheet></office:body></office:document-content>"
+    )
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as bundle:
+        bundle.writestr("mimetype", "application/vnd.oasis.opendocument.spreadsheet")
+        bundle.writestr("content.xml", xml)
+        bundle.writestr("META-INF/manifest.xml", "<manifest/>")
+    (row,) = orders.preview(stream.getvalue(), "order.ods")["rows"]
+    assert (row["sku"], row["quantity"], row["source_sheet"]) == ("0012", "3", "Parts")
+
+
+def test_possible_shipped_quantity_is_not_guessed_as_ordered():
+    from app.services.commerce.order_tables import suggest
+
+    assert "quantity" not in suggest(["SKU", "Qty", "Qty Shipped", "Price"])
+    assert suggest(["SKU", "Qty Ordered", "Qty Shipped"])["quantity"] == 1
+
+
+def test_unknown_format_and_original_columns_from_manual_transcription():
+    data = b"example image bytes"
+    source = orders.preview(data, "scan.vendor")
+    assert not source["tables"] and source["documents"] == ["scan.vendor"]
+    source = orders.preview(
+        data, "scan.vendor", pasted={"scan.vendor": "custom label\tlot\nMotor\tA19"}
+    )
+    assert source["tables"][0]["records"][0]["cells"] == ["custom label", "lot"]
+    assert source["rows"][0]["source_sheet"] == "Manually pasted table"
+
+
+@pytest.mark.parametrize(
+    "file,data",
+    [
+        ("export.tsv", b"SKU\tQty\tOrder Number\n0012\t3\t42"),
+        ("export.csv", "SKU;Qty;Order Number\r\n0012;3;42".encode("utf-16")),
+        ("export.json", b'[{"SKU":"0012","Qty":3,"Order Number":"42"}]'),
+        (
+            "export.html",
+            b"<table><tr><th>SKU</th><th>Qty</th><th>Order Number</th></tr><tr><td>0012</td><td>3</td><td>42</td></tr></table>",
+        ),
+        (
+            "export.json",
+            b'{"export":{"lines":[{"SKU":"0012","Qty":3,"Order Number":"42"}]}}',
+        ),
+        (
+            "export.xml",
+            b"<orders><line><SKU>0012</SKU><Qty>3</Qty><OrderNumber>42</OrderNumber></line></orders>",
+        ),
+        ("export.vendor", b"SKU|Qty|Order Number\n0012|3|42"),
+    ],
+)
+def test_different_file_layouts(file, data):
+    (row,) = orders.preview(data, file)["rows"]
+    assert (row["sku"], row["quantity"], row["order"]) == ("0012", "3", "42")
+    assert row["pack"] == ""
+
+
+def test_http_review_rechecks_file_and_keeps_original_column_assignment(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.api.routes import supplier_orders as api
+    from app.core.auth import AuthenticatedUser, get_current_user
+
+    app = FastAPI()
+    app.include_router(api.router)
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser("admin")
+    monkeypatch.setattr(api, "authorize_scope", lambda *args: None)
+    saved = []
+    monkeypatch.setattr(
+        orders,
+        "rpc",
+        lambda actor, org, action, payload: saved.append(payload) or {"created": 1},
+    )
+    path = "/organizations/" + str(uuid4()) + "/orders"
+    client = TestClient(app)
+    blob = {"file": ("order.csv", CSV, "text/csv")}
+    result = client.post(path + "/preview", files=blob)
+    assert result.status_code == 200, result.text
+    preview = result.json()
+    fields = {
+        "supplier": "goBILDA",
+        "historical": "false",
+        "digest": preview["digest"],
+        "assignments": json.dumps(preview["assignments"]),
+        "rows": json.dumps(preview["rows"]),
+    }
+    assert (
+        client.post(
+            path + "/import", files=blob, data={**fields, "digest": "0" * 64}
+        ).status_code
+        == 422
+    )
+    assert client.post(path + "/import", files=blob, data=fields).status_code == 200
+    assert saved[0]["rows"][0]["original"]["cells"] == [
+        "G-42",
+        "S-12",
+        "M4 x 12 screws",
+        "2",
+        "50",
+        "delivered",
+    ]
+
+
+# Supply an empty, disposable local PostgreSQL database with the usual Supabase roles.
+@pytest.fixture
+def db():
+    database = os.environ.get("FINDEZ_ORDER_TEST_DB", "")
+    if not database:
+        pytest.skip(
+            "Set FINDEZ_ORDER_TEST_DB to a new local supplier_orders_test_* database."
+        )
+    assert database.startswith("supplier_orders_test_") and os.environ.get(
+        "PGHOST", ""
+    ).startswith(("/", "127.0.0.1", "localhost"))
+
+    def sql(statement, ok=True):
+        proc = subprocess.run(
+            ["psql", "-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", "-d", database],
+            input=statement,
+            text=True,
+            capture_output=True,
+        )
+        if ok:
+            assert proc.returncode == 0, proc.stderr
+        else:
+            assert proc.returncode != 0
+        return proc.stdout.strip()
+
+    sql(
+        """CREATE TABLE app_organizations(organization_id uuid primary key);
+    CREATE TABLE app_organization_members(organization_id uuid,user_id uuid,role text);
+    CREATE TABLE app_inventories(inventory_id uuid primary key, organization_id uuid,name text);
+    CREATE TABLE test_inventory_grants(inventory_id uuid,user_id uuid,role text);
+    CREATE FUNCTION findez_inventory_role(uuid,uuid) RETURNS text LANGUAGE sql AS
+      'SELECT role FROM test_inventory_grants WHERE inventory_id=$1 AND user_id=$2';
+    CREATE TABLE spaces(id uuid primary key,inventory_id uuid,name text);
+    CREATE TABLE items(item_id uuid primary key,inventory_id uuid,user_id uuid,name text,part_number text,quantity integer,location text,space_id uuid);
+    CREATE TABLE item_events(item_id uuid,user_id uuid,inventory_id uuid,event_type text,content text,quantity_delta integer);"""
+    )
+    sql(
+        (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20261124_supplier_orders.sql"
+        ).read_text()
+    )
+    return sql
+
+
+def test_database_receiving_retries_isolation_and_cad(db):
+    org, other, admin, viewer, inv, item, variant, foreign_space = [
+        str(uuid4()) for _ in range(8)
+    ]
+    db(f"""INSERT INTO app_organizations VALUES ('{org}'),('{other}');
+    INSERT INTO app_organization_members VALUES ('{org}','{admin}','owner'),('{org}','{viewer}','member');
+    INSERT INTO app_inventories VALUES ('{inv}','{org}','Fasteners'),('{foreign_space}','{other}','Private');
+    INSERT INTO test_inventory_grants VALUES ('{inv}','{admin}','owner'),('{foreign_space}','{admin}','owner');
+    INSERT INTO items VALUES ('{item}','{inv}','{admin}','M4 x 12 screws','S-12',40,'A1'),
+      ('{variant}','{inv}','{admin}','M4 x 20 screws','S-20',9,'A2');""")
+
+    shelf = str(uuid4())
+    db(
+        f"insert into spaces values ('{shelf}','{inv}','Fastener Shelf'); update items set space_id='{shelf}' where item_id='{item}'"
+    )
+
+    def rpc(action, payload, who=admin, scope=org, ok=True):
+        payload = json.dumps(payload).replace("'", "''")
+        value = db(
+            f"select findez_supplier_orders('{who}','{scope}','{action}','{payload}');",
+            ok,
+        )
+        return json.loads(value) if ok else None
+
+    source = orders.preview(CSV, "order.csv")
+    payload = {
+        **source,
+        "rows": orders.reviewed(source["rows"], source),
+        "supplier": "goBILDA",
+        "historical": False,
+        "content": "eA==",
+    }
+    assert rpc("import", payload)["created"] == 1
+    assert rpc("import", payload)["duplicate"]
+    rpc("import", {**payload, "supplier": "Unrelated supplier"}, ok=False)
+    assert rpc("import", {**payload, "digest": "alternate-document"})["created"] == 0
+    rpc(
+        "import",
+        {**payload, "digest": "conflict", "rows": [{**payload["rows"][0], "pack": 75}]},
+        ok=False,
+    )
+
+    def search(query):
+        return rpc("search", {"query": query})
+
+    found = search("S-12")
+    (line,) = found["order_lines"]
+    assert (line["ordered"], line["received"], line["outstanding"]) == (100, 0, 100)
+    assert found["recorded_inventory"][0]["recorded_quantity"] == 40
+    assert found["recorded_inventory"][0]["space_name"] == "Fastener Shelf"
+    assert len(search("M4")["recorded_inventory"]) == 2
+    receipt = {
+        "request_id": str(uuid4()),
+        "action": "receive",
+        "line_id": line["id"],
+        "inventory_id": inv,
+        "item_id": item,
+        "quantity": 25,
+    }
+    with ThreadPoolExecutor(2) as pool:
+        results = list(pool.map(lambda _: rpc("receipt", receipt), range(2)))
+    assert results[0] == results[1]
+    found = search("S-12")
+    assert found["recorded_inventory"][0]["recorded_quantity"] == 65
+    assert (
+        found["order_lines"][0]["received"],
+        found["order_lines"][0]["outstanding"],
+    ) == (25, 75)
+    assert found["order_lines"][0]["recent_receipts"][0]["quantity"] == 25
+    assert db("select count(*) from item_events") == "1"
+    cad = json.loads(
+        db(f"select findez_supplier_bom_orders('{admin}','{inv}',array['s-12']);")
+    )
+    assert len(cad) == 1 and cad[0]["outstanding"] == 75
+    rpc("receipt", {**receipt, "quantity": 26}, ok=False)
+    rpc("receipt", {**receipt, "request_id": str(uuid4()), "quantity": 76}, ok=False)
+    rpc(
+        "receipt",
+        {**receipt, "inventory_id": foreign_space, "request_id": str(uuid4())},
+        ok=False,
+    )
+    rpc("receipt", receipt, who=viewer, ok=False)
+    rpc("search", {}, scope=other, ok=False)
+    member = rpc("search", {"query": "S-12"}, who=viewer)
+    assert (
+        not member["recorded_inventory"]
+        and not member["order_lines"][0]["recent_receipts"]
+    )
+    rpc("source", {"id": line["source_id"]}, who=viewer, ok=False)
+    assert rpc("source", {"id": line["source_id"]})["content"] == "eA=="
+    fields = rpc("fields", {"id": line["id"]})
+    assert (
+        fields["original"]["headers"][1] == "SKU"
+        and fields["original"]["cells"][1] == "S-12"
+    )
+    rpc("fields", {"id": line["id"]}, who=viewer, ok=False)
+    rpc(
+        "receipt",
+        {
+            **receipt,
+            "action": "already_counted",
+            "quantity": 10,
+            "request_id": str(uuid4()),
+        },
+    )
+    assert search("S-12")["recorded_inventory"][0]["recorded_quantity"] == 65
+    rpc(
+        "receipt",
+        {
+            **receipt,
+            "action": "cancel",
+            "inventory_id": None,
+            "item_id": None,
+            "quantity": 65,
+            "request_id": str(uuid4()),
+        },
+    )
+    assert search("S-12")["order_lines"][0]["outstanding"] == 0
+    assert (
+        db(
+            "SELECT has_function_privilege('authenticated','findez_supplier_orders(uuid,uuid,text,jsonb)','execute')"
+        )
+        == "f"
+    )
+    for status, historical in [
+        ("returned", False),
+        ("cancelled", False),
+        ("delivered", True),
+    ]:
+        row = {**payload["rows"][0], "status": status, "order": status}
+        rpc(
+            "import",
+            {**payload, "rows": [row], "historical": historical, "digest": status},
+        )
+        closed = search(status)["order_lines"][0]
+        assert closed["outstanding"] is None
+        rpc(
+            "receipt",
+            {**receipt, "line_id": closed["id"], "request_id": str(uuid4())},
+            ok=False,
+        )
