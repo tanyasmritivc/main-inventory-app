@@ -15,6 +15,7 @@ class PreferenceApi extends ApiClient {
   String? get accountId => user;
   int registrations = 0;
   bool fail = false;
+  Map<String, dynamic> policy = {};
   Completer<Map<String, dynamic>>? pending;
   Map<String, dynamic> saved = {
     'revision': 0,
@@ -44,6 +45,7 @@ class PreferenceApi extends ApiClient {
       pending == null
       ? {
           'preferences': Map<String, dynamic>.from(saved),
+          'policy': policy,
           'timezones': ['America/Los_Angeles', 'America/New_York', 'UTC'],
         }
       : await pending!.future;
@@ -150,6 +152,19 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
+
+  test('settings describe only the schedule returned by the server', () async {
+    final api = PreferenceApi();
+    final controller = NotificationPreferencesController(api);
+    await controller.load();
+    expect(controller.model().toString(), contains('each day around 10 AM'));
+    api.policy = {'daily_inventory_hour': 9, 'evening_inventory_hour': 18};
+    await controller.load();
+    expect(controller.model().toString(), contains('around 9 AM and 6 PM'));
+    api.policy = {};
+    await controller.load();
+    expect(controller.model().toString(), isNot(contains('evening')));
+  });
 
   test('independent preferences survive an inventory alert change', () async {
     final api = PreferenceApi()

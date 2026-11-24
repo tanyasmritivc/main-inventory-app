@@ -17,6 +17,8 @@ class NotificationPreferencesController {
   String permission = 'notDetermined';
   String? error;
   bool _quickActionsAvailable = false;
+  int _morningHour = 10;
+  int? _eveningHour;
   bool busy = false;
   bool active = true;
   bool get current => active && account != null && api.accountId == account;
@@ -32,6 +34,15 @@ class NotificationPreferencesController {
     }
     _quickActionsAvailable =
         (result['capabilities'] as Map?)?['reengagement'] == true;
+    final policy = result['policy'];
+    final morning = policy is Map ? policy['daily_inventory_hour'] : null;
+    final evening = policy is Map ? policy['evening_inventory_hour'] : null;
+    _morningHour = morning is int && morning >= 0 && morning < 12
+        ? morning
+        : 10;
+    _eveningHour = evening is int && evening >= 12 && evening <= 23
+        ? evening
+        : null;
     preferences = data;
     timezones = (result['timezones'] as List? ?? [])
         .whereType<String>()
@@ -134,6 +145,12 @@ class NotificationPreferencesController {
 
   Map<String, dynamic> model({double textSizeFactor = 1}) {
     final p = preferences;
+    String hourLabel(int hour) =>
+        '${hour % 12 == 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}';
+    final evening = _eveningHour;
+    final schedule = evening == null
+        ? 'One inventory update each day around ${hourLabel(_morningHour)}'
+        : 'Morning and evening inventory updates around ${hourLabel(_morningHour)} and ${hourLabel(evening)}';
     Map<String, dynamic> toggle(String key, String title) => {
       'id': 'toggle:$key',
       'title': title,
@@ -202,7 +219,7 @@ class NotificationPreferencesController {
                 },
             ],
             'footer':
-                'One inventory update each day around 10 AM in your saved time zone. Quiet hours and pauses apply.',
+                '$schedule in your saved time zone. Quiet hours and pauses apply.',
           },
           {
             'title': 'Alerts',
