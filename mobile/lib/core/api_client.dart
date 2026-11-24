@@ -420,6 +420,7 @@ class ApiClient {
         'environment': environment,
         'personalization_destinations': true,
         'inventory_push_actions': true,
+        'conversion_events': true,
       },
       options: _authOptions(),
     );

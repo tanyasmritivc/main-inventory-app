@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import '../../core/ui/native_presentation.dart';
 import 'package:mobile/core/private_image.dart';
 import 'dart:async';
@@ -38,6 +39,7 @@ Future<void> showItemDetailSheet(
   String? shareId,
   int? initialThreshold,
   String spaceName = '',
+  NotificationVisit? visit,
   ValueChanged<int?>? onThresholdChanged,
   ValueChanged<InventoryItem>? onItemUpdated,
 }) async {
@@ -57,6 +59,7 @@ Future<void> showItemDetailSheet(
       spaceName: spaceName,
       onThresholdChanged: onThresholdChanged,
       onItemUpdated: onItemUpdated,
+      visit: visit,
     ),
   );
 }
@@ -71,6 +74,7 @@ class _ItemDetailSheet extends StatefulWidget {
     this.initialThreshold,
     this.onThresholdChanged,
     this.onItemUpdated,
+    this.visit,
   });
 
   final InventoryItem item;
@@ -80,6 +84,7 @@ class _ItemDetailSheet extends StatefulWidget {
   final String spaceName;
   final int? initialThreshold;
   final ValueChanged<int?>? onThresholdChanged;
+  final NotificationVisit? visit;
   final ValueChanged<InventoryItem>? onItemUpdated;
 
   @override
@@ -142,6 +147,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void initState() {
     super.initState();
+    widget.visit?.shown(context);
     _item = widget.item;
     _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
     _lastSavedNotes = _notesCtrl.text.trim();
@@ -1162,6 +1168,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _closing) {
       return;
     }
+    widget.visit?.record('action_started');
     setState(() {
       _editingField = field;
       _fieldController.text = value;
@@ -1898,6 +1905,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.visit?.canMarkReviewed == true)
+              TextButton(
+                onPressed: () {
+                  widget.visit?.record('record_reviewed');
+                  unawaited(_requestClose());
+                },
+                child: const Text('Mark reviewed'),
+              ),
             // Drag handle
             Semantics(
               label: 'Dismiss item details',

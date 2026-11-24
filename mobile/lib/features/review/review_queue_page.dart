@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import '../../core/ui/content_loading.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
@@ -20,6 +21,7 @@ Future<void> showReviewDetail(
   BuildContext context, {
   required ApiClient api,
   required ReviewItem item,
+  NotificationVisit? visit,
 }) async {
   await showModalBottomSheet<_ReviewOutcome>(
     context: context,
@@ -27,7 +29,7 @@ Future<void> showReviewDetail(
     isScrollControlled: true,
     useSafeArea: true,
     enableDrag: false,
-    builder: (_) => _ReviewDetailSheet(api: api, item: item),
+    builder: (_) => _ReviewDetailSheet(api: api, item: item, visit: visit),
   );
 }
 
@@ -297,7 +299,8 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
 enum _ReviewOutcome { resolved, dismissed }
 
 class _ReviewDetailSheet extends StatefulWidget {
-  const _ReviewDetailSheet({required this.api, required this.item});
+  const _ReviewDetailSheet({required this.api, required this.item, this.visit});
+  final NotificationVisit? visit;
 
   final ApiClient api;
   final ReviewItem item;
@@ -360,6 +363,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   @override
   void initState() {
     super.initState();
+    widget.visit?.shown(context);
     _name = TextEditingController(text: widget.item.name);
     _category = TextEditingController(text: widget.item.category);
     _location = TextEditingController(text: widget.item.location ?? '');
@@ -408,6 +412,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   );
 
   Future<void> _resolve() async {
+    widget.visit?.record('action_started');
     if (_saving || !widget.api.canEdit || !_quantityConfirmed) return;
     if (_name.text.trim().isEmpty ||
         _category.text.trim().isEmpty ||

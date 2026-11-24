@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -24,9 +25,11 @@ class ItemEditorSheet extends StatefulWidget {
     this.initialThreshold,
     this.initialLocation,
     this.availableLocations,
+    this.visit,
     super.key,
   });
 
+  final NotificationVisit? visit;
   final InventoryItem? item;
   final int? initialThreshold;
   final String? initialLocation;
@@ -47,7 +50,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
   @override
   void initState() {
     super.initState();
+    widget.visit?.shown(context);
     _name = TextEditingController(text: widget.item?.name ?? '');
+    if (widget.visit != null) {
+      _name.addListener(() {
+        if (_name.text.isNotEmpty) widget.visit?.record('action_started');
+      });
+    }
     _category = TextEditingController(text: widget.item?.category ?? '');
     _location = TextEditingController(
       text: widget.item?.location ?? widget.initialLocation ?? '',

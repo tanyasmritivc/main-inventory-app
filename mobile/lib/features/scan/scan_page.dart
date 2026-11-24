@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import '../../core/ui/photo_source_sheet.dart';
 import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
@@ -36,6 +37,7 @@ class ScanPage extends StatefulWidget {
     required this.api,
     required this.onSaved,
     this.onCaptureCompleted,
+    this.visit,
     this.isActive = false,
     this.onSpaceScanned,
     this.onSkipCoachmark,
@@ -43,6 +45,7 @@ class ScanPage extends StatefulWidget {
   });
 
   final ApiClient api;
+  final NotificationVisit? visit;
   final VoidCallback onSaved;
 
   /// Called only when every draft has a confirmed item or Review receipt.
@@ -229,6 +232,7 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void initState() {
     super.initState();
+    widget.visit?.shown(context);
     _defaultLocation = TextEditingController();
     _loadSpaces();
   }
@@ -1098,6 +1102,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _pick(ImageSource src, {String? barcodeToAssociate}) async {
+    widget.visit?.record('action_started');
     if (_loading) return;
     try {
       final runNonce = ++_extractionNonce;
@@ -1762,7 +1767,10 @@ class _ScanPageState extends State<ScanPage> {
               : 'Fix the highlighted rows and try again.';
         });
         widget.onSaved();
-        if (failures.isEmpty) widget.onCaptureCompleted?.call(selectedSpace);
+        if (failures.isEmpty) {
+          widget.visit?.record('scan_saved');
+          widget.onCaptureCompleted?.call(selectedSpace);
+        }
         return;
       }
 
@@ -1878,6 +1886,7 @@ class _ScanPageState extends State<ScanPage> {
         widget.onSaved();
 
         if (allSucceeded) {
+          widget.visit?.record('scan_saved');
           // Every item saved - clear the list and offer QR codes.
           final noBarcodeItems = res.inserted
               .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)

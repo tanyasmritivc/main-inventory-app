@@ -65,13 +65,27 @@ class NotificationPreferencesController {
           'in_app_enabled',
           'quiet_enabled',
           'inventory_alerts',
+          'daily_enabled',
+          'cleanup_insights',
+          'weekly_recap',
           'capture_reminders',
           'reengagement',
           'show_details',
         }.contains(key)) {
           return;
         }
+        if ({
+              'daily_enabled',
+              'weekly_recap',
+              'cleanup_insights',
+            }.contains(key) &&
+            !saved.containsKey('daily_enabled')) {
+          return;
+        }
         changes[key] = value;
+        if (key == 'inventory_alerts' && saved.containsKey('daily_enabled')) {
+          changes['daily_enabled'] = saved['daily_enabled'];
+        }
       } else if (id.startsWith('timezone:')) {
         final zone = id.substring(9);
         if (!timezones.contains(zone)) return;
@@ -193,7 +207,17 @@ class NotificationPreferencesController {
           {
             'title': 'Alerts',
             'rows': [
-              toggle('inventory_alerts', 'Inventory alerts and daily update'),
+              toggle(
+                'inventory_alerts',
+                p.containsKey('daily_enabled')
+                    ? 'Inventory alerts'
+                    : 'Inventory alerts and daily update',
+              ),
+              if (p.containsKey('daily_enabled')) ...[
+                toggle('daily_enabled', 'Daily inventory update'),
+                toggle('cleanup_insights', 'Inventory discoveries'),
+                toggle('weekly_recap', 'Weekly inventory insights'),
+              ],
               toggle('capture_reminders', 'Photo review reminders'),
               if (p.containsKey('reengagement') && _quickActionsAvailable)
                 toggle(

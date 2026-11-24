@@ -77,7 +77,14 @@ class PushNotifications {
     ApiClient? api,
   }) async {
     if (!supported) return;
-    _onNotificationTap = onNotificationTap;
+    _onNotificationTap = (payload) async {
+      if (api != null) {
+        unawaited(
+          PersonalizationNotifications.feedback(api, payload, 'push_tapped'),
+        );
+      }
+      await onNotificationTap(payload);
+    };
     _feedbackApi = api;
     if (!_initialized) {
       _initialized = true;

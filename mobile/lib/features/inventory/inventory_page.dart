@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import '../../core/ui/scroll_glass.dart';
 import '../chat/inventory_chat_button.dart';
 import '../../core/account_refresh.dart';
@@ -57,6 +58,7 @@ class InventoryPage extends StatefulWidget {
     required this.refreshToken,
     this.initialQuery,
     this.openAddItem = false,
+    this.visit,
     this.showAppBar = true,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
@@ -66,6 +68,7 @@ class InventoryPage extends StatefulWidget {
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
+  final NotificationVisit? visit;
   final bool openAddItem;
   final bool showAppBar;
   final ValueChanged<String>? onSpaceDeleted;
@@ -2049,6 +2052,7 @@ class _InventoryPageState extends State<InventoryPage>
       isDismissible: true,
       enableDrag: true,
       builder: (context) => ItemEditorSheet(
+        visit: widget.visit,
         availableLocations: {
           ..._items.map(
             (i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim(),

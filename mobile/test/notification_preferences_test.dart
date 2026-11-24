@@ -151,6 +151,27 @@ void main() {
     variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
 
+  test('independent preferences survive an inventory alert change', () async {
+    final api = PreferenceApi()
+      ..saved.addAll({
+        'daily_enabled': true,
+        'cleanup_insights': false,
+        'weekly_recap': false,
+      });
+    final controller = NotificationPreferencesController(api);
+    await controller.perform('load', null);
+    await controller.perform('toggle:inventory_alerts', false);
+    expect(api.changes.last, {
+      'daily_enabled': true,
+      'inventory_alerts': false,
+    });
+    await controller.perform('toggle:cleanup_insights', true);
+    await controller.perform('toggle:weekly_recap', true);
+    expect(api.saved['daily_enabled'], isTrue);
+    expect(api.saved['weekly_recap'], isTrue);
+    expect(api.saved['cleanup_insights'], isTrue);
+  });
+
   test('failed save keeps confirmed state and reports error', () async {
     final api = PreferenceApi();
     final c = NotificationPreferencesController(api);

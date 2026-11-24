@@ -27,13 +27,16 @@ class NotificationsPage extends StatefulWidget {
     this.onUnreadChanged,
     this.onReadStarting,
     this.native = false,
+    this.onNotificationVisit,
   });
+  final VoidCallback? onNotificationVisit;
   final bool native;
   static Future<void> open(
     BuildContext context, {
     required ApiClient api,
     ValueChanged<int>? onUnreadChanged,
     VoidCallback? onReadStarting,
+    VoidCallback? onNotificationVisit,
   }) async {
     final native = usesNativePresentation;
     Widget page() => NotificationsPage(
@@ -41,6 +44,7 @@ class NotificationsPage extends StatefulWidget {
       native: native,
       onUnreadChanged: onUnreadChanged,
       onReadStarting: onReadStarting,
+      onNotificationVisit: onNotificationVisit,
     );
     if (native) {
       await showGeneralDialog<void>(
@@ -86,6 +90,13 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   void initState() {
     super.initState();
+    if (widget.onNotificationVisit != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          widget.onNotificationVisit?.call();
+        }
+      });
+    }
     _account = widget.api.accountId;
     WidgetsBinding.instance.addObserver(this);
     unawaited(_checkPush());

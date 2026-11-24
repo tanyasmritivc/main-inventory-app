@@ -240,7 +240,19 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       await _session.chooseAnother();
       await switching;
     } else {
-      await NotificationsPage.open(context, api: _places.api);
+      await NotificationsPage.open(
+        context,
+        api: _places.api,
+        onNotificationVisit: payload['action'] == 'daily_inventory'
+            ? () => unawaited(
+                PersonalizationNotifications.feedback(
+                  widget.api,
+                  payload,
+                  'destination_opened',
+                ),
+              )
+            : null,
+      );
     }
   }
 

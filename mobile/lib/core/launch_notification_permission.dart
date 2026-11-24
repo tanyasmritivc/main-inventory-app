@@ -47,6 +47,7 @@ class _LaunchNotificationPermissionState
 
   Future<void> _request() async {
     final owner = widget.api.accountId;
+    if (owner != null) unawaited(_foreground(owner));
     try {
       if (owner != null) await PushNotifications.requestPermissionIfNeeded();
     } catch (_) {
@@ -57,6 +58,17 @@ class _LaunchNotificationPermissionState
         setState(() => _settled = true);
         if (owner != null) unawaited(_register(owner));
       }
+    }
+  }
+
+  Future<void> _foreground(String owner) async {
+    try {
+      await ApiClient.forAccount(
+        widget.api,
+        owner,
+      ).collaboration('/notifications/foreground', method: 'POST');
+    } catch (_) {
+      // An optional activity observation never delays sign-in or permission handling.
     }
   }
 
@@ -72,7 +84,13 @@ class _LaunchNotificationPermissionState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_started) _schedule();
+    if (state == AppLifecycleState.resumed) {
+      if (!_started) {
+        _schedule();
+      } else if (_settled && widget.api.accountId != null) {
+        unawaited(_foreground(widget.api.accountId!));
+      }
+    }
   }
 
   @override

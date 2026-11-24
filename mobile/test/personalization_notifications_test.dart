@@ -204,7 +204,7 @@ void main() {
       expect(find.text('Exact authorized part'), findsWidgets);
       expect(
         fixture.requests.where((r) => r.path.endsWith('/feedback')).single.data,
-        {'outcome': 'opened'},
+        {'outcome': 'destination_opened'},
       );
       Navigator.of(context).pop();
       await tester.pumpAndSettle();

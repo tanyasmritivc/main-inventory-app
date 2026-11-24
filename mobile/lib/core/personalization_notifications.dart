@@ -1,3 +1,4 @@
+import 'package:mobile/core/notification_visit.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
@@ -19,7 +20,10 @@ class PersonalizationNotifications {
   static String? identifier(Map<String, dynamic> payload, String? account) {
     final id = payload['notification_id'];
     return account != null &&
-            payload['action'] == 'personalization' &&
+            {
+              'personalization',
+              'daily_inventory',
+            }.contains(payload['action']) &&
             payload['recipient_user_id'] == account &&
             id is String &&
             _uuid.hasMatch(id)
@@ -34,7 +38,17 @@ class PersonalizationNotifications {
   ) async {
     final account = api.accountId;
     final id = identifier(payload, account);
-    if (id == null || !{'delivered', 'opened', 'dismissed'}.contains(outcome)) {
+    if (id == null ||
+        !{
+          'delivered',
+          'opened',
+          'dismissed',
+          'push_tapped',
+          'destination_opened',
+          'action_started',
+          'record_reviewed',
+          'scan_saved',
+        }.contains(outcome)) {
       return;
     }
     try {
@@ -60,6 +74,7 @@ class PersonalizationNotifications {
     if (id == null) return;
     final key = '$account:$id';
     if (!_opening.add(key)) return;
+    var nextRecord = false;
     try {
       final data = await ApiClient.forAccount(
         api,
@@ -82,6 +97,16 @@ class PersonalizationNotifications {
         inventory,
         isCurrent: () => context.mounted && api.accountId == account,
       );
+      final action = data['quick_action'];
+      final visit = NotificationVisit(
+        (event) => feedback(api, payload, event),
+        canMarkReviewed: {
+          'low_stock',
+          'expiry',
+          'progress',
+          'rediscover',
+        }.contains(action),
+      );
       if (data['entity_type'] == 'inventory') {
         final action = data['quick_action'];
         if (data['entity_id'] != data['inventory_id'] ||
@@ -92,15 +117,21 @@ class PersonalizationNotifications {
             'This inventory reminder is no longer available.',
           );
         }
-        unawaited(feedback(api, payload, 'opened'));
+
         await Navigator.of(context).push<void>(
           MaterialPageRoute(
             builder: (_) => action == 'snap'
-                ? ScanPage(api: scoped, isActive: true, onSaved: () {})
+                ? ScanPage(
+                    api: scoped,
+                    isActive: true,
+                    onSaved: () {},
+                    visit: visit,
+                  )
                 : InventoryPage(
                     api: scoped,
                     refreshToken: 0,
                     openAddItem: true,
+                    visit: visit,
                   ),
           ),
         );
@@ -112,18 +143,48 @@ class PersonalizationNotifications {
       if (resourceId != data['entity_id']) {
         throw const FormatException('This notification target changed.');
       }
-      unawaited(feedback(api, payload, 'opened'));
+
       if (data['entity_type'] == 'item') {
         final item = InventoryItem.fromJson(resource);
+        var changed = false;
         await showItemDetailSheet(
           context,
           item: item,
+          visit: visit,
           api: scoped,
           spaceName: item.location,
           permission: scoped.canEdit ? 'edit' : 'view',
-          onItemUpdated: (item) =>
-              InventoryCache.updateItem(item, contextKey: scoped.cacheKey),
+          onItemUpdated: (updated) {
+            changed =
+                changed ||
+                (action == 'discovery' && updated.location.trim().isNotEmpty) ||
+                (action == 'weekly_insight' && updated.quantity >= 0);
+            InventoryCache.updateItem(updated, contextKey: scoped.cacheKey);
+          },
         );
+        if (changed &&
+            (data['remaining_ids'] as List? ?? []).length > 1 &&
+            context.mounted &&
+            api.accountId == account) {
+          nextRecord =
+              await showDialog<bool>(
+                context: context,
+                builder: (dialog) => AlertDialog(
+                  title: const Text('Review another record?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialog, false),
+                      child: const Text('Done'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialog, true),
+                      child: const Text('Next record'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        }
       } else {
         if (resource['status'] != 'pending') {
           throw const FormatException('This review is already complete.');
@@ -132,6 +193,7 @@ class PersonalizationNotifications {
           context,
           api: scoped,
           item: ReviewItem.fromJson(resource),
+          visit: visit,
         );
       }
     } catch (error) {
@@ -142,6 +204,9 @@ class PersonalizationNotifications {
       }
     } finally {
       _opening.remove(key);
+    }
+    if (nextRecord && context.mounted && api.accountId == account) {
+      await open(context, api, payload);
     }
   }
 }

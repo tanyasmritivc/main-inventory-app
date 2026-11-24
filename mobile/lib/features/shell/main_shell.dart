@@ -506,7 +506,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             return;
           }
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            unawaited(_openNotifications());
+            unawaited(
+              _openNotifications(
+                onVisit: payload['action'] == 'daily_inventory'
+                    ? () => unawaited(
+                        PersonalizationNotifications.feedback(
+                          widget.api,
+                          payload,
+                          'destination_opened',
+                        ),
+                      )
+                    : null,
+              ),
+            );
           });
         },
       );
@@ -517,7 +529,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _openNotifications() async {
+  Future<void> _openNotifications({VoidCallback? onVisit}) async {
     if (!mounted ||
         _openingNotifications ||
         widget.api.accountId != _notificationAccount) {
@@ -530,6 +542,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       await NotificationsPage.open(
         context,
         api: widget.api,
+        onNotificationVisit: onVisit,
         onReadStarting: () => _notificationGeneration++,
         onUnreadChanged: (count) {
           if (!mounted || widget.api.accountId != _notificationAccount) {
