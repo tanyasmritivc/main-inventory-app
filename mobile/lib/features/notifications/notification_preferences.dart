@@ -188,12 +188,12 @@ class NotificationPreferencesController {
                 },
             ],
             'footer':
-                'Up to 2 alerts per day and 5 per week. Only one noncritical alert in 24 hours.',
+                'One inventory update each day around 10 AM in your saved time zone. Quiet hours and pauses apply.',
           },
           {
             'title': 'Alerts',
             'rows': [
-              toggle('inventory_alerts', 'Inventory alerts'),
+              toggle('inventory_alerts', 'Inventory alerts and daily update'),
               toggle('capture_reminders', 'Photo review reminders'),
               if (p.containsKey('reengagement') && _quickActionsAvailable)
                 toggle(
