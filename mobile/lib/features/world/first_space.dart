@@ -104,8 +104,8 @@ class FirstSpaceAskLanding extends StatelessWidget {
   }
 }
 
-// The existing composer includes 40 points of bottom padding. Retain its
-// centered position, then start the card halfway through that empty padding.
+// Lift the composer into the available space above the onboarding card.
+// Its existing bottom padding supplies the gap between the two.
 class _ComposerAnchor extends SingleChildRenderObjectWidget {
   const _ComposerAnchor({required this.viewportHeight, required super.child});
   final double viewportHeight;
@@ -131,10 +131,11 @@ class _CenteredComposer extends RenderShiftedBox {
   void performLayout() {
     final box = child!;
     box.layout(constraints, parentUsesSize: true);
-    final top = math.max(0.0, (viewportHeight - box.size.height) / 2);
+    final freeHeight = math.max(0.0, viewportHeight - box.size.height);
+    final top = freeHeight / 2 - math.min(36.0, freeHeight * .12);
     (box.parentData! as BoxParentData).offset = Offset(0, top);
     size = constraints.constrain(
-      Size(box.size.width, top + box.size.height - 20),
+      Size(box.size.width, top + box.size.height - 16),
     );
   }
 }
@@ -294,26 +295,17 @@ Future<FirstSpaceAction?> showFirstSpaceSheet(BuildContext context) {
     context: context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha: .4),
-    transitionDuration: const Duration(milliseconds: 420),
-    transitionBuilder: (_, animation, _, child) => FadeTransition(
-      opacity: animation,
-      child: reduce
-          ? child
-          : SlideTransition(
-              position: Tween(begin: const Offset(0, 1), end: Offset.zero)
-                  .animate(
-                    CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
-              child: child,
-            ),
-    ),
-    pageBuilder: (ctx, _, _) {
+    barrierColor: Colors.transparent,
+    transitionDuration: reduce
+        ? Duration.zero
+        : const Duration(milliseconds: 160),
+    transitionBuilder: (_, _, _, child) => child,
+    pageBuilder: (ctx, animation, _) {
       final theme = Theme.of(ctx);
-      void choose(FirstSpaceAction action) => Navigator.pop(ctx, action);
+      void close([FirstSpaceAction? action]) {
+        if (ModalRoute.of(ctx)?.isCurrent == true) Navigator.pop(ctx, action);
+      }
+
       Widget tile(
         FirstSpaceAction action,
         String label,
@@ -340,7 +332,7 @@ Future<FirstSpaceAction?> showFirstSpaceSheet(BuildContext context) {
           color: primary ? Colors.white : Colors.white.withValues(alpha: .07),
           borderRadius: BorderRadius.circular(20),
           child: InkWell(
-            onTap: () => choose(action),
+            onTap: () => close(action),
             borderRadius: BorderRadius.circular(20),
             child: SizedBox(
               height:
@@ -360,16 +352,29 @@ Future<FirstSpaceAction?> showFirstSpaceSheet(BuildContext context) {
         );
       }
 
+      Widget present(Widget panel) {
+        if (reduce) return panel;
+        return SlideTransition(
+          position: animation.drive(
+            Tween(
+              begin: const Offset(0, .08),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeOutCubic)),
+          ),
+          child: panel,
+        );
+      }
+
       return Stack(
         children: [
           Positioned.fill(
             child: GestureDetector(
               excludeFromSemantics: true,
               behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.pop(ctx),
+              onTap: () => close(),
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: const SizedBox.expand(),
+                child: const ColoredBox(color: Color(0x66000000)),
               ),
             ),
           ),
@@ -377,94 +382,91 @@ Future<FirstSpaceAction?> showFirstSpaceSheet(BuildContext context) {
             minimum: const EdgeInsets.all(8),
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Dismissible(
-                key: const ValueKey('first-space-sheet'),
-                direction: DismissDirection.down,
-                onDismissed: (_) => Navigator.pop(ctx),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(36),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                    child: Material(
-                      color: const Color(0xff1e1e1e).withValues(alpha: .78),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(36),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: .07),
-                        ),
+              child: present(
+                Dismissible(
+                  key: const ValueKey('first-space-sheet'),
+                  direction: DismissDirection.down,
+                  onDismissed: (_) => close(),
+                  child: Material(
+                    clipBehavior: Clip.antiAlias,
+                    color: const Color(0xff1e1e1e),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(36),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: .07),
                       ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: .22),
-                                borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .22),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Add your first items',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Add your first items',
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                              IconButton(
+                                tooltip: 'Close',
+                                onPressed: () => close(),
+                                icon: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: .10,
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.xmark,
+                                    size: 12,
+                                    color: Color(0xffc7c7cc),
                                   ),
                                 ),
-                                IconButton(
-                                  tooltip: 'Close',
-                                  onPressed: () => Navigator.pop(ctx),
-                                  icon: CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.white.withValues(
-                                      alpha: .10,
-                                    ),
-                                    child: const Icon(
-                                      CupertinoIcons.xmark,
-                                      size: 12,
-                                      color: Color(0xffc7c7cc),
-                                    ),
-                                  ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          tile(
+                            FirstSpaceAction.extract,
+                            'Auto extract',
+                            CupertinoIcons.camera,
+                            primary: true,
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: tile(
+                                  FirstSpaceAction.spreadsheet,
+                                  'Spreadsheet',
+                                  CupertinoIcons.table,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            tile(
-                              FirstSpaceAction.extract,
-                              'Auto extract',
-                              CupertinoIcons.camera,
-                              primary: true,
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: tile(
-                                    FirstSpaceAction.spreadsheet,
-                                    'Spreadsheet',
-                                    CupertinoIcons.table,
-                                  ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: tile(
+                                  FirstSpaceAction.chat,
+                                  'Chat',
+                                  CupertinoIcons.chat_bubble,
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: tile(
-                                    FirstSpaceAction.chat,
-                                    'Chat',
-                                    CupertinoIcons.chat_bubble,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
