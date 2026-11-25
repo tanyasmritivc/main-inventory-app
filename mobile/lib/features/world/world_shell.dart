@@ -23,6 +23,7 @@ import '../../core/place_session.dart';
 import '../../core/profile_store.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/member_avatar.dart';
+import '../../core/ui/native_menu_button.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
 import '../inventory/item_detail_sheet.dart';
@@ -502,8 +503,6 @@ class _WorldShellState extends State<WorldShell> {
                 onChanged: _load,
               ),
             ),
-          const SizedBox(height: 16),
-          _more(context),
         ],
       ),
     );
@@ -541,51 +540,26 @@ class _WorldShellState extends State<WorldShell> {
     };
     await _push(page);
   });
-  Widget _more(BuildContext context) => ListTileTheme(
-    data: ListTileThemeData(
-      iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
-      textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-      titleTextStyle: Theme.of(context).textTheme.bodySmall,
-      minLeadingWidth: 20,
-      visualDensity: VisualDensity.compact,
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final label in [('Documents and notes', CupertinoIcons.doc_text)])
-          ListTile(
-            dense: true,
-            leading: Icon(label.$2),
-            title: Text(label.$1),
-            trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-            onTap: () => _tool(label.$1),
+  Future<void> _selectSpacesAction(String action) async {
+    switch (action) {
+      case 'documents':
+        await _tool('Documents and notes');
+      case 'people':
+        await _push(
+          HierarchyPage(
+            api: widget.session.api,
+            level: HierarchyLevel.organization,
+            id: _directory?['organization']?['organization_id'],
+            name: widget.session.organizationName,
+            panel: HierarchyPanel.people,
+            onOpenInventory: (_, _, _) async {},
           ),
-        ListTile(
-          dense: true,
-          leading: const Icon(CupertinoIcons.person_2),
-          title: const Text('People'),
-          trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-          onTap: () => _push(
-            HierarchyPage(
-              api: widget.session.api,
-              level: HierarchyLevel.organization,
-              id: _directory?['organization']?['organization_id'],
-              name: widget.session.organizationName,
-              panel: HierarchyPanel.people,
-              onOpenInventory: (_, _, _) async {},
-            ),
-          ),
-        ),
-        ListTile(
-          dense: true,
-          leading: const Icon(CupertinoIcons.gear),
-          title: const Text('Account settings'),
-          trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-          onTap: _account,
-        ),
-      ],
-    ),
-  );
+        );
+      case 'account':
+        await _account();
+    }
+  }
+
   void _openScan() {
     setState(() => _tab = 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -659,7 +633,7 @@ class _WorldShellState extends State<WorldShell> {
       child: Row(
         children: [
           Expanded(child: leading),
-          if (index == 1)
+          if (index == 1) ...[
             IconButton(
               tooltip: _searchingSpaces
                   ? 'Close Space search'
@@ -673,6 +647,16 @@ class _WorldShellState extends State<WorldShell> {
                 _search.clear();
               }),
             ),
+            AppMenuButton(
+              label: 'More Spaces options',
+              items: const [
+                AppMenuItem('documents', 'Documents and notes', 'doc.text'),
+                AppMenuItem('people', 'People', 'person.2'),
+                AppMenuItem('account', 'Account settings', 'gearshape'),
+              ],
+              onSelected: _selectSpacesAction,
+            ),
+          ],
           if (index == 0) account,
         ],
       ),

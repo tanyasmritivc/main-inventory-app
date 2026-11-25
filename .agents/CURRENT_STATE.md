@@ -4245,3 +4245,7 @@ Validation: 1,211 Flutter tests, one existing skip, clean analysis, 85 focused e
 ## November 24 · Organization Orders screen, iPhone build 233
 
 The mobile Orders screen now distinguishes first use, read-only access and an empty search. Organization owners and admins can open the existing web import flow from a labeled button. Search results show recorded Space stock and supplier order quantities in separate cards, with pull-to-refresh and search clearing. All 29 world shell tests passed, including narrow-screen large-text coverage. Targeted Dart analysis passed. The signed 1.1.6 (233) archive and export passed local release verification.
+
+## November 24 · Spaces overflow menu, iPhone build 234
+
+Documents and notes, People and Account settings moved from inline rows to the ellipsis beside Search in the Spaces header. The menu uses the shared iOS toolbar control. All 30 focused world shell and toolbar tests passed and targeted Dart analysis reported no issues.

@@ -14,6 +14,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/place_session.dart';
 import 'package:mobile/features/world/world_shell.dart';
+import 'package:mobile/features/workspaces/hierarchy_page.dart';
 import 'package:mobile/features/world/retained_tab_transition.dart';
 import 'package:mobile/features/world/world_action_card.dart';
 import 'package:mobile/features/world/world_composer.dart';
@@ -454,7 +455,15 @@ void main() {
     expect(find.text('Parts drawers'), findsOneWidget);
     await tester.tap(find.byTooltip('Close Space search'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Account settings'));
+    final more = find.byTooltip('More Spaces options');
+    expect(
+      tester.getCenter(more).dx,
+      greaterThan(tester.getCenter(find.byTooltip('Search Spaces')).dx),
+    );
+    for (final label in ['Documents and notes', 'People', 'Account settings']) {
+      expect(find.text(label), findsNothing);
+    }
+    await tester.tap(more);
     await tester.pumpAndSettle();
     expect(find.text('Workspaces'), findsNothing);
     expect(find.text('People'), findsOneWidget);
@@ -464,6 +473,28 @@ void main() {
     }
     expect(find.byType(OrganizationPill), findsNothing);
     await worldAuditCapture?.call('more');
+    await tester.tap(find.text('Documents and notes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose a Space'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('People'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<HierarchyPage>(find.byType(HierarchyPage)).panel,
+      HierarchyPanel.people,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Account settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Appearance'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Ask'));
     await tester.pumpAndSettle();
     expect(find.text('Create your inventory world.'), findsOneWidget);
