@@ -30,7 +30,17 @@ type Draft = {
   source_sheet: string;
   source_row: number;
 };
+type Match = {
+  sku: string;
+  name: string;
+  item_id: string;
+  item_name: string;
+  space_name: string;
+  location?: string;
+  recorded_quantity: number | null;
+};
 type Preview = {
+  space_review?: { duplicate: boolean; matches: Match[] };
   digest: string;
   rows: Draft[];
   documents: string[];
@@ -38,6 +48,8 @@ type Preview = {
   assignments: Assignment[];
 };
 type Order = {
+  order_space_id?: string;
+  order_space_name?: string;
   id: string;
   order_number: string;
   line_key: string;
@@ -72,8 +84,15 @@ type Results = {
   recorded_inventory: Stock[];
   has_more: boolean;
   can_manage: boolean;
+  space_orders_supported?: boolean;
+  order_scope_id?: string;
 };
-type Props = { accountId: string; world: string; spaces: OrderSpace[] };
+type Props = {
+  accountId: string;
+  world: string;
+  spaces: OrderSpace[];
+  initialSpace?: string;
+};
 const fields = {
   order: "Order number",
   line: "Supplier line ID",
@@ -89,7 +108,9 @@ function ImportOrder({
   accountId,
   path,
   saved,
+  spaceId,
 }: {
+  spaceId?: string;
   accountId: string;
   path: string;
   saved: (s: string) => void;
@@ -110,6 +131,7 @@ function ImportOrder({
     try {
       const body = new FormData();
       body.append("file", file);
+      if (spaceId) body.append("space_id", spaceId);
       body.append("pasted", JSON.stringify(pasted));
       const next = await accountRequest<Preview>(accountId, path + "/preview", {
         method: "POST",
@@ -136,13 +158,14 @@ function ImportOrder({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!file || lock.current) return;
+    if (!file || lock.current || source?.space_review?.duplicate) return;
     lock.current = true;
     setBusy(true);
     setError("");
     try {
       const body = new FormData();
       body.append("file", file);
+      if (spaceId) body.append("space_id", spaceId);
       body.append("pasted", JSON.stringify(pasted));
       if (source) body.append("assignments", JSON.stringify(assignments));
       if (!source || !mapped) {
@@ -151,6 +174,8 @@ function ImportOrder({
           path + "/preview",
           { method: "POST", body },
         );
+        if (spaceId && !preview.space_review)
+          throw Error("Space order imports are unavailable on this server.");
         setMapped(!!source);
         setAssignments(preview.assignments);
         setSource(preview);
@@ -183,7 +208,7 @@ function ImportOrder({
     }
   }
   return (
-    <details className={styles.panel}>
+    <details className={styles.panel} open={spaceId ? true : undefined}>
       <summary>Import a supplier order</summary>
       <form onSubmit={submit}>
         <fieldset disabled={busy || reading}>
@@ -220,7 +245,13 @@ function ImportOrder({
             and choose how they map to order lines. For files without a readable
             table, add the lines manually.
           </p>
-          {source && !mapped && (
+          {source?.space_review?.duplicate && (
+            <p role="status">
+              This file is already in organization Orders. Choose a different
+              file to import another order.
+            </p>
+          )}
+          {source && !source.space_review?.duplicate && !mapped && (
             <>
               {source.tables.map((t, i) => (
                 <OrderColumnMapping
@@ -330,6 +361,18 @@ function ImportOrder({
                       ),
                     )}
                   </div>
+                  {source.space_review?.matches
+                    .filter((m) => m.sku === row.sku && m.name === row.name)
+                    .map((m) => (
+                      <p key={m.item_id}>
+                        Possible inventory match · {m.item_name} ·{" "}
+                        {m.recorded_quantity ?? "Unknown quantity"} recorded in{" "}
+                        {m.space_name}
+                        {m.location && m.location !== m.space_name
+                          ? " · " + m.location
+                          : ""}
+                      </p>
+                    ))}
                   <label>
                     Supplier status
                     <select
@@ -406,6 +449,7 @@ function ImportOrder({
             disabled={
               busy ||
               reading ||
+              !!source?.space_review?.duplicate ||
               JSON.stringify(pasted) !== parsedPaste ||
               (!!source && mapped && !rows.length)
             }
@@ -509,7 +553,7 @@ function Receive({
   const [action, setAction] = useState(
       line.historical ? "already_counted" : "receive",
     ),
-    [space, setSpace] = useState("");
+    [space, setSpace] = useState(line.order_space_id || "");
   const [query, setQuery] = useState(""),
     [item, setItem] = useState(""),
     [qty, setQty] = useState("");
@@ -704,7 +748,13 @@ function Receive({
   );
 }
 
-export function SupplierOrders({ accountId, world, spaces }: Props) {
+export function SupplierOrders({
+  accountId,
+  world,
+  spaces,
+  initialSpace,
+}: Props) {
+  const [spaceId, setSpaceId] = useState(initialSpace || "");
   const path =
     "/commerce/organizations/" + encodeURIComponent(world) + "/orders";
   const [query, setQuery] = useState(""),
@@ -720,10 +770,18 @@ export function SupplierOrders({ accountId, world, spaces }: Props) {
     const timer = setTimeout(() => {
       accountRequest<Results>(
         accountId,
-        path + "?" + new URLSearchParams({ query, offset: String(offset) }),
+        path +
+          "?" +
+          new URLSearchParams({
+            query,
+            offset: String(offset),
+            ...(spaceId ? { space_id: spaceId } : {}),
+          }),
         { signal: c.signal },
       )
         .then((r) => {
+          if (spaceId && r.order_scope_id !== spaceId)
+            throw Error("Space Orders are unavailable on this server.");
           if (!c.signal.aborted) setData(r);
         })
         .catch((e) => {
@@ -734,7 +792,7 @@ export function SupplierOrders({ accountId, world, spaces }: Props) {
       clearTimeout(timer);
       c.abort();
     };
-  }, [accountId, path, query, offset, revision]);
+  }, [accountId, path, query, offset, revision, spaceId]);
   async function download(line: Order) {
     try {
       const token = await accountToken(accountId);
@@ -770,8 +828,37 @@ export function SupplierOrders({ accountId, world, spaces }: Props) {
       <p>
         Track supplier orders and receive parts into your organization’s Spaces.
       </p>
-      {data?.can_manage && (
-        <ImportOrder accountId={accountId} path={path} saved={saved} />
+      <label>
+        Order Space
+        <select
+          value={spaceId}
+          onChange={(e) => {
+            setSpaceId(e.target.value);
+            setOffset(0);
+            setNotice("");
+          }}
+        >
+          <option value="">All organization orders</option>
+          {spaces
+            .filter((s) => s.space_id)
+            .map((s) => (
+              <option key={s.space_id} value={s.space_id}>
+                {s.name}
+              </option>
+            ))}
+        </select>
+      </label>
+      {data?.can_manage && data.space_orders_supported && !spaceId && (
+        <p>Choose a Space above to import an order.</p>
+      )}
+      {data?.can_manage && (spaceId || !data.space_orders_supported) && (
+        <ImportOrder
+          key={spaceId}
+          accountId={accountId}
+          path={path}
+          saved={saved}
+          spaceId={spaceId}
+        />
       )}
       <label>
         Search orders and recorded inventory
@@ -815,6 +902,7 @@ export function SupplierOrders({ accountId, world, spaces }: Props) {
             <article key={l.id} className={styles.panel}>
               <h3>{l.name}</h3>
               <p>
+                {l.order_space_name && <>{l.order_space_name} · </>}
                 {l.supplier} · Order {l.order_number} · {l.sku || l.line_key}
               </p>
               <p>

@@ -280,6 +280,17 @@ def test_http_review_rechecks_file_and_keeps_original_column_assignment(monkeypa
         == 422
     )
     assert client.post(path + "/import", files=blob, data=fields).status_code == 200
+    space = str(uuid4())
+    scoped = client.post(path + "/preview", files=blob, data={"space_id": space})
+    assert scoped.status_code == 200 and "space_review" in scoped.json()
+    assert saved[-1]["space_id"] == space and saved[-1]["rows"][0]["sku"] == "S-12"
+    assert (
+        client.post(
+            path + "/import", files=blob, data={**fields, "space_id": space}
+        ).status_code
+        == 200
+    )
+    assert saved[-1]["space_id"] == space
     assert saved[0]["rows"][0]["original"]["cells"] == [
         "G-42",
         "S-12",
@@ -323,13 +334,20 @@ def db():
     CREATE FUNCTION findez_inventory_role(uuid,uuid) RETURNS text LANGUAGE sql AS
       'SELECT role FROM test_inventory_grants WHERE inventory_id=$1 AND user_id=$2';
     CREATE TABLE spaces(id uuid primary key,inventory_id uuid,name text);
-    CREATE TABLE items(item_id uuid primary key,inventory_id uuid,user_id uuid,name text,part_number text,quantity integer,location text,space_id uuid);
+    CREATE TABLE bins(id uuid primary key,space_id uuid,name text);
+    CREATE TABLE items(item_id uuid primary key,inventory_id uuid,user_id uuid,name text,part_number text,quantity integer,location text,space_id uuid,bin_id uuid);
     CREATE TABLE item_events(item_id uuid,user_id uuid,inventory_id uuid,event_type text,content text,quantity_delta integer);"""
     )
     sql(
         (
             Path(__file__).resolve().parents[1]
             / "supabase/migrations/20261124_supplier_orders.sql"
+        ).read_text()
+    )
+    sql(
+        (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20261125_space_supplier_orders.sql"
         ).read_text()
     )
     return sql
@@ -459,6 +477,38 @@ def test_database_receiving_retries_isolation_and_cad(db):
         )
         == "f"
     )
+    scoped_row = {**payload["rows"][0], "order": "SPACE-100"}
+    scoped = {
+        **payload,
+        "space_id": shelf,
+        "digest": "space-upload",
+        "rows": [scoped_row],
+    }
+    check = rpc("preview", scoped)
+    assert not check["duplicate"] and [m["item_id"] for m in check["matches"]] == [item]
+    assert check["matches"][0]["recorded_quantity"] == 65
+    assert rpc("import", scoped)["created"] == 1
+    assert rpc("preview", scoped)["duplicate"]
+    assert rpc("import", scoped)["duplicate"]
+    scoped_result = rpc("search", {"space_id": shelf, "query": "M4×12"})
+    assert [l["order_number"] for l in scoped_result["order_lines"]] == ["SPACE-100"]
+    assert scoped_result["recorded_inventory"][0]["recorded_quantity"] == 65
+    scoped_line = scoped_result["order_lines"][0]
+
+    def space_summary(who):
+        return json.loads(
+            db(f"select findez_space_order_summary('{who}','{inv}','{shelf}');")
+        )
+
+    assert space_summary(admin)["lines"][0]["ordered"] == 100
+    assert space_summary(viewer)["lines"] == []
+    assert scoped_line["order_space_name"] == "Fastener Shelf"
+    assert len(search("M4 x 12")["order_lines"]) == 2
+    assert not search("M4 x 120")["order_lines"]
+    assert not rpc("search", {"query": "SPACE-100"}, who=viewer)["order_lines"]
+    rpc("search", {"space_id": shelf}, who=viewer, ok=False)
+    rpc("import", {**scoped, "space_id": str(uuid4())}, ok=False)
+    assert rpc("search", {}, who=admin)["space_orders_supported"]
     for status, historical in [
         ("returned", False),
         ("cancelled", False),

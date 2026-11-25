@@ -46,16 +46,30 @@ def preview(
     org: UUID,
     user: User,
     file: UploadFile = File(...),
+    space_id: UUID | None = Form(None),
     assignments: str | None = Form(None, max_length=50000),
     pasted: str | None = Form(None, max_length=500000),
 ):
     authorize_scope("organization", org, (user.actor_id or user.user_id))
-    return orders.isolated_preview(
+    source = orders.isolated_preview(
         read_source(file),
         file.filename,
         json_form(assignments, list),
         json_form(pasted, dict),
     )
+
+    if space_id:
+        source["space_review"] = orders.rpc(
+            user.actor_id or user.user_id,
+            org,
+            "preview",
+            {
+                "space_id": str(space_id),
+                "digest": source["digest"],
+                "rows": [{"sku": r["sku"], "name": r["name"]} for r in source["rows"]],
+            },
+        )
+    return source
 
 
 @router.post("/import")
@@ -63,6 +77,7 @@ def confirm(
     org: UUID,
     user: User,
     file: UploadFile = File(...),
+    space_id: UUID | None = Form(None),
     supplier: str = Form(min_length=1, max_length=120),
     pasted: str | None = Form(None, max_length=500000),
     historical: bool = Form(...),
@@ -91,6 +106,7 @@ def confirm(
         "import",
         {
             "rows": orders.reviewed(selected, source),
+            "space_id": str(space_id) if space_id else None,
             "historical": historical,
             "supplier": supplier,
             "digest": digest,
@@ -106,8 +122,11 @@ def search(
     user: User,
     query: str = Query("", max_length=200),
     offset: int = Query(0, ge=0),
+    space_id: UUID | None = None,
 ):
-    return orders.evidence((user.actor_id or user.user_id), str(org), query, offset)
+    return orders.evidence(
+        (user.actor_id or user.user_id), str(org), query, offset, space_id
+    )
 
 
 @router.get("/items")

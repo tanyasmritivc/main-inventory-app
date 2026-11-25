@@ -82,9 +82,20 @@ test("the review uses original header positions, requires a separate confirmatio
     source_row: 2,
   };
   api.mockImplementation(async (_actor, path, options) => {
-    if (path.startsWith(base + "?")) return results;
+    if (path.startsWith(base + "?"))
+      return {
+        ...results,
+        order_scope_id: "shelf",
+        space_orders_supported: true,
+      };
     if (path.endsWith("preview"))
       return {
+        space_review: {
+          duplicate: false,
+          matches: [
+            { ...stock, item_name: "M4 screw", name: "Screw", sku: "S12" },
+          ],
+        },
         digest: "test",
         tables: [table],
         documents: [],
@@ -95,7 +106,21 @@ test("the review uses original header positions, requires a separate confirmatio
       };
     return { created: 1 };
   });
-  renderPage();
+  render(
+    <SupplierOrders
+      accountId="actor"
+      world="org"
+      initialSpace="shelf"
+      spaces={[
+        {
+          inventory_id: "inv",
+          space_id: "shelf",
+          name: "Fasteners",
+          can_edit: true,
+        },
+      ]}
+    />,
+  );
   await screen.findByText("Import a supplier order");
   fireEvent.click(screen.getByText("Import a supplier order"));
   fireEvent.change(screen.getByLabelText("Supplier", { exact: true }), {
@@ -116,6 +141,12 @@ test("the review uses original header positions, requires a separate confirmatio
   submit();
   await screen.findByText(/Saved 1 new order lines/);
   const call = api.mock.calls.find((c) => c[1].endsWith("/import"))!;
+  expect(call[2].body.get("space_id")).toBe("shelf");
+  expect(
+    api.mock.calls
+      .filter((c) => c[1].endsWith("/preview"))
+      .every((c) => c[2].body.get("space_id") === "shelf"),
+  ).toBe(true);
   expect(JSON.parse(call[2].body.get("assignments"))[0].mapping.quantity).toBe(
     1,
   );

@@ -40,6 +40,7 @@ export function WorldWorkspace(props: {
   worldId: string;
   view: string;
   initialQuery: string;
+  orderSpaceId?: string;
 }) {
   const { accountId, error } = useApiSession();
   if (!accountId)
@@ -56,11 +57,13 @@ function WorldContent({
   worldId,
   view,
   initialQuery,
+  orderSpaceId,
   accountId,
 }: {
   worldId: string;
   view: string;
   initialQuery: string;
+  orderSpaceId?: string;
   accountId: string;
 }) {
   const alive = useRef(true),
@@ -224,7 +227,7 @@ function WorldContent({
       {!directory ? (
         !error && <InteriorLoading />
       ) : chosen === "orders" ? (
-        <SupplierOrders world={worldId} accountId={accountId} spaces={(groups || []).flatMap<OrderSpace>(g => g.spaces?.length
+        <SupplierOrders key={orderSpaceId || worldId} initialSpace={orderSpaceId} world={worldId} accountId={accountId} spaces={(groups || []).flatMap<OrderSpace>(g => g.spaces?.length
           ? g.spaces.map(s => ({inventory_id:g.inventory_id, space_id:s.id, name:s.name, can_edit:g.can_edit}))
           : [g])}/>
       ) : chosen === "chat" || chosen === "search" ? (

@@ -311,7 +311,16 @@ class EvidenceQuery(BaseModel):
     offset: int = Field(default=0, ge=0, le=1000000)
 
 
-def evidence(actor, world, query="", offset=0):
+def evidence(actor, world, query="", offset=0, space_id=None):
     if world == "personal":
         return {"scope": "organization_orders_only"}
-    return rpc(actor, world, "search", {"query": query, "offset": offset})
+    return rpc(
+        actor,
+        world,
+        "search",
+        {
+            "query": query,
+            "offset": offset,
+            "space_id": str(space_id) if space_id else None,
+        },
+    )

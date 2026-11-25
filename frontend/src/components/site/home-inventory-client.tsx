@@ -813,6 +813,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     }
   }, [allItems, selectedSpace, spaceIndex]);
 
+  const orderOrg = activeInventory()?.workspace.organization_id;
+  const orderSpace = serverSpaces.find(s => s.name === selectedSpace);
+  const ordersHref = orderOrg && orderSpace
+    ? `/worlds/${encodeURIComponent(orderOrg)}?view=orders&space=${encodeURIComponent(orderSpace.id)}`
+    : null;
   const showInventoryTable = !selectedSpace && (query.trim().length > 0 || props.mode === 'inventory');
 
   const lowStockCount = allItems.filter((item) => needsBuying(restock.plan[item.item_id], item.quantity)).length;
@@ -1301,6 +1306,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
             </>}
+            {ordersHref && <Link href={ordersHref} style={toolbarBtnStyle}>{canEdit ? "Import orders" : "View orders"}</Link>}
             <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory', showImportedSheet)} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
