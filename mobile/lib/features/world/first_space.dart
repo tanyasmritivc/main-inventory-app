@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../inventory/space_directory.dart';
+
 enum FirstSpaceAction { extract, spreadsheet, chat }
 
 class _Arrival extends StatelessWidget {
@@ -197,68 +199,47 @@ class FirstSpaceDirectory extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final end = theme.scaffoldBackgroundColor.a == 0
-        ? (dark ? Colors.black : Colors.white)
-        : theme.scaffoldBackgroundColor;
-    final decoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(22),
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        stops: const [0, .55, 1],
-        colors: [
-          dark ? const Color(0xff1b1b1b) : theme.colorScheme.surfaceContainer,
-          dark ? const Color(0xff141414) : theme.colorScheme.surface,
-          end.withValues(alpha: 0),
-        ],
-      ),
-    );
-    Widget column(int top) => Expanded(
-      child: Column(
-        children: [
-          Expanded(
-            flex: top,
-            child: Container(decoration: decoration),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            flex: 100 - top,
-            child: Container(decoration: decoration),
-          ),
-        ],
-      ),
-    );
+    const rowExtent =
+        SpaceDirectoryTile.placeholderHeight + SpaceDirectoryTile.rowGap;
     return _Arrival(
       LayoutBuilder(
         builder: (context, box) => Stack(
-          fit: StackFit.passthrough,
+          alignment: Alignment.topCenter,
           children: [
-            Positioned.fill(
+            IgnorePointer(
               child: ExcludeSemantics(
-                child: Row(
-                  children: [column(40), const SizedBox(width: 12), column(58)],
-                ),
-              ),
-            ),
-            Positioned.fill(
-              top: math.min(90, box.minHeight * .22),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: const LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0, .32, 1],
+                    stops: [0, .4, .56, .7, .85, 1],
                     colors: [
-                      end.withValues(alpha: 0),
-                      end.withValues(alpha: .82),
-                      end.withValues(alpha: .90),
+                      Colors.white,
+                      Color(0xe6ffffff),
+                      Color(0x2effffff),
+                      Color(0x0fffffff),
+                      Colors.transparent,
+                      Colors.transparent,
+                    ],
+                  ).createShader,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < 4; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: SpaceDirectoryTile.rowGap,
+                          ),
+                          child: SpaceDirectoryTile.placeholder(i),
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.only(top: box.minHeight * .39),
+              padding: const EdgeInsets.only(top: 2 * rowExtent - 4),
               child: Column(
                 children: [
                   Text(

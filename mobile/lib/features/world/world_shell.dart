@@ -540,7 +540,7 @@ class _WorldShellState extends State<WorldShell> {
         ),
       for (final row in rows)
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.only(bottom: SpaceDirectoryTile.rowGap),
           child: SpaceDirectoryTile(
             key: ValueKey(
               '${row['group']['inventory_id']}:${spaceIdentifier(row['space'])}',
@@ -555,41 +555,24 @@ class _WorldShellState extends State<WorldShell> {
     return RefreshIndicator(
       onRefresh: _load,
       child: first
-          ? CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 82, 20, 0),
-                  sliver: SliverList.list(children: entries),
-                ),
-                SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    final bottom = _directory?['can_create_space'] == true
-                        ? 76.0
-                        : 18.0;
-                    final height = math.max(
-                      300.0 *
-                          math.max(
-                            1.0,
-                            MediaQuery.textScalerOf(context).scale(16) / 16,
-                          ),
-                      constraints.viewportMainAxisExtent -
-                          constraints.precedingScrollExtent -
-                          22 -
-                          bottom,
-                    );
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 22, 20, bottom),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: height),
-                          child: FirstSpaceDirectory(onStart: _startFirstSpace),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+          ? Padding(
+              // Keep the scrolling onboarding content above the floating New space button.
+              padding: EdgeInsets.only(
+                bottom: _directory?['can_create_space'] == true
+                    ? math.max(
+                        76,
+                        MediaQuery.textScalerOf(context).scale(18) + 48,
+                      )
+                    : 18,
+              ),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 82, 20, 0),
+                children: [
+                  ...entries,
+                  FirstSpaceDirectory(onStart: _startFirstSpace),
+                ],
+              ),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 82, 20, 100),

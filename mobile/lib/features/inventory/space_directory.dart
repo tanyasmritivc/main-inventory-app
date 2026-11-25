@@ -154,6 +154,59 @@ class SpaceDirectoryTile extends StatefulWidget {
     required this.resolveApi,
     required this.onChanged,
   });
+  static const rowGap = 10.0;
+  // A standard two-line ListTile plus the vertical content insets.
+  static const placeholderHeight = 96.0;
+
+  static Widget placeholder(int row) {
+    const palettes = [
+      SpaceTexturePalette.plum,
+      SpaceTexturePalette.terracotta,
+      SpaceTexturePalette.sage,
+      SpaceTexturePalette.plum,
+    ];
+    Widget bar(double width, double height, Color color) => Align(
+      alignment: AlignmentDirectional.centerStart,
+      heightFactor: 1,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(height / 2),
+        ),
+      ),
+    );
+    return SizedBox(
+      height: placeholderHeight,
+      child: _SpaceCard(
+        outline: const Color(0xff262626),
+        leading: Opacity(
+          opacity: .45,
+          child: SpaceTexture.swatch(palettes[row]),
+        ),
+        title: bar(
+          const [112.0, 92.0, 128.0, 104.0][row],
+          12,
+          const Color(0xff242424),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: bar(
+            const [64.0, 52.0, 60.0, 56.0][row],
+            10,
+            const Color(0xff1a1a1a),
+          ),
+        ),
+        trailing: const IconButton(
+          onPressed: null,
+          disabledColor: Color(0xff333333),
+          icon: Icon(CupertinoIcons.ellipsis),
+        ),
+      ),
+    );
+  }
+
   final Map<String, dynamic> space;
   final String subtitle;
   final Future<ApiClient> Function() resolveApi;
@@ -277,53 +330,76 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
       countLabel,
       if (widget.subtitle.isNotEmpty) widget.subtitle,
     ].join(' · ');
-    return Material(
-      key: ValueKey('space-outline-$id'),
-      color: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: AppTheme.border(context)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 12,
-          horizontal: 16,
-        ),
-        leading: SpaceTexture(identity: id.isEmpty ? name : id),
-        title: Text(name),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(subtitle),
-        ),
-        trailing: IconButton(
-          key: _anchor,
-          tooltip: 'Options for $name',
-          onPressed: _busy
-              ? null
-              : () => _run(() async {
-                  final api = await widget.resolveApi();
-                  if (!mounted) return;
-                  api.assertCurrentContext();
-                  await _menu(api);
-                }),
-          icon: const Icon(CupertinoIcons.ellipsis),
-        ),
-        onTap: _busy
+    return _SpaceCard(
+      outlineKey: ValueKey('space-outline-$id'),
+      leading: SpaceTexture(identity: id.isEmpty ? name : id),
+      title: Text(name),
+      subtitle: Text(subtitle),
+      trailing: IconButton(
+        key: _anchor,
+        tooltip: 'Options for $name',
+        onPressed: _busy
             ? null
             : () => _run(() async {
-                // Show the destination immediately, while its authorized data is resolved.
-                await openDirectorySpace(
-                  context,
-                  null,
-                  widget.space,
-                  resolveApi: widget.resolveApi,
-                );
-                if (mounted) await widget.onChanged();
+                final api = await widget.resolveApi();
+                if (!mounted) return;
+                api.assertCurrentContext();
+                await _menu(api);
               }),
+        icon: const Icon(CupertinoIcons.ellipsis),
       ),
+      onTap: _busy
+          ? null
+          : () => _run(() async {
+              // Show the destination immediately, while its authorized data is resolved.
+              await openDirectorySpace(
+                context,
+                null,
+                widget.space,
+                resolveApi: widget.resolveApi,
+              );
+              if (mounted) await widget.onChanged();
+            }),
     );
   }
+}
+
+class _SpaceCard extends StatelessWidget {
+  const _SpaceCard({
+    this.outlineKey,
+    this.outline,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
+  final Key? outlineKey;
+  final Color? outline;
+  final Widget leading, title, subtitle, trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    key: outlineKey,
+    color: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: outline ?? AppTheme.border(context)),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      leading: leading,
+      title: title,
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: subtitle,
+      ),
+      trailing: trailing,
+      onTap: onTap,
+    ),
+  );
 }
 
 class _MenuLabel extends StatelessWidget {

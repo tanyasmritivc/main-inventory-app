@@ -10,14 +10,24 @@ int spaceTextureIndex(String identity) {
   return hash % 4;
 }
 
+enum SpaceTexturePalette { slate, terracotta, plum, sage }
+
 class SpaceTexture extends StatelessWidget {
-  const SpaceTexture({super.key, required this.identity, this.size = 52});
+  const SpaceTexture({super.key, required this.identity, this.size = 52})
+    : _palette = null;
+  const SpaceTexture.swatch(
+    SpaceTexturePalette palette, {
+    super.key,
+    this.size = 52,
+  }) : _palette = palette,
+       identity = '';
+  final SpaceTexturePalette? _palette;
   final String identity;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final index = spaceTextureIndex(identity);
+    final index = _palette?.index ?? spaceTextureIndex(identity);
     // Crop via layout, leaving the original artwork intact. Each 600x360 region
     // excludes the atlas captions, palette swatches, labels and white dividers.
     return ExcludeSemantics(
