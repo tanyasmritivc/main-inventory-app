@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
+import 'space_order_import.dart';
 import '../../core/api_error.dart';
 
 class OrganizationOrders extends StatefulWidget {
@@ -8,9 +9,17 @@ class OrganizationOrders extends StatefulWidget {
     super.key,
     required this.api,
     required this.organizationId,
+    this.spaceId,
+    this.spaceName,
+    this.chooseSpace,
+    this.startImport = false,
   });
   final ApiClient api;
   final String organizationId;
+  final String? spaceId, spaceName;
+  final bool startImport;
+  final Future<({ApiClient api, Map<String, dynamic> space})?> Function()?
+  chooseSpace;
 
   @override
   State<OrganizationOrders> createState() => _OrganizationOrdersState();
@@ -20,6 +29,7 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
   final search = TextEditingController();
   Map<String, dynamic>? result;
   Object? error;
+  bool openedImport = false;
   int offset = 0;
   int generation = 0;
   String query = '';
@@ -45,12 +55,80 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
     try {
       final value = await widget.api.collaboration(
         '/commerce/organizations/${widget.organizationId}/orders',
-        query: {'query': query, 'offset': offset},
+        query: {
+          'query': query,
+          'offset': offset,
+          if (widget.spaceId != null) 'space_id': widget.spaceId,
+        },
       );
       widget.api.assertCurrentContext();
-      if (mounted && request == generation) setState(() => result = value);
+      if (!mounted || request != generation) return;
+      if (widget.spaceId != null && value['order_scope_id'] != widget.spaceId) {
+        throw const FormatException(
+          'Space order imports are unavailable on this server.',
+        );
+      }
+      setState(() => result = value);
+      if (widget.startImport && !openedImport && value['can_manage'] == true) {
+        openedImport = true;
+        await importOrder();
+      }
     } catch (e) {
       if (mounted && request == generation) setState(() => error = e);
+    }
+  }
+
+  Future<void> importOrder() async {
+    try {
+      if (result?['space_orders_supported'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Space order uploads are unavailable. Refresh Orders and try again.',
+            ),
+          ),
+        );
+        return;
+      }
+      var api = widget.api;
+      var spaceId = widget.spaceId, name = widget.spaceName;
+      if (spaceId == null) {
+        final selected = await widget.chooseSpace?.call();
+        if (selected == null || !mounted) return;
+        api = selected.api;
+        spaceId = selected.space['id'] as String;
+        name = selected.space['name'] as String;
+      }
+      api.assertCurrentContext();
+      final count = await Navigator.push<int>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SpaceOrderImport(
+            api: api,
+            organizationId: widget.organizationId,
+            spaceId: spaceId!,
+            spaceName: name!,
+          ),
+        ),
+      );
+      if (count != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              count == 0
+                  ? 'Order already recorded.'
+                  : 'Saved $count order lines. Stock quantities are unchanged.',
+            ),
+          ),
+        );
+        await load();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      }
     }
   }
 
@@ -59,6 +137,7 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
       widget.api.assertCurrentContext();
       final uri = Uri.https('findez.ai', '/worlds/${widget.organizationId}', {
         'view': 'orders',
+        if (widget.spaceId != null) 'space': widget.spaceId!,
       });
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw StateError('Could not open FindEZ in the browser.');
@@ -93,7 +172,11 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Orders')),
+      appBar: AppBar(
+        title: Text(
+          widget.spaceName == null ? 'Orders' : '${widget.spaceName} orders',
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: load,
@@ -128,7 +211,11 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
               if (error != null)
                 _OrderPanel(
                   children: [
-                    Text(describeError(error!).$1),
+                    Text(
+                      error is FormatException
+                          ? (error as FormatException).message
+                          : describeError(error!).$1,
+                    ),
                     TextButton(onPressed: load, child: const Text('Try again')),
                   ],
                 )
@@ -170,16 +257,9 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
                     if (canManage) ...[
                       const SizedBox(height: 20),
                       FilledButton.icon(
-                        onPressed: manage,
-                        icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                        onPressed: importOrder,
+                        icon: const Icon(Icons.upload_file_rounded, size: 17),
                         label: const Text('Import order'),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Opens FindEZ in your browser',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
                       ),
                     ],
                   ],
@@ -189,9 +269,17 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: OutlinedButton.icon(
+                      onPressed: importOrder,
+                      icon: const Icon(Icons.upload_file, size: 17),
+                      label: const Text('Import order'),
+                    ),
+                  ),
+                if (canManage)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
                       onPressed: manage,
-                      icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                      label: const Text('Import or receive an order'),
+                      child: const Text('Receive or reconcile in browser'),
                     ),
                   ),
                 if (query.isNotEmpty) ...[
@@ -216,6 +304,7 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
                   _OrderRow(
                     title: line['name'].toString(),
                     details: [
+                      line['order_space_name'],
                       line['supplier'],
                       line['order_number'],
                       line['sku'],

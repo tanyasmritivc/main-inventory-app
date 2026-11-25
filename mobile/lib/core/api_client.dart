@@ -365,6 +365,31 @@ class ApiClient {
     return response.data ?? {};
   }
 
+  Future<Map<String, dynamic>> uploadOrder({
+    required String organizationId,
+    required String spaceId,
+    required Uint8List bytes,
+    required String filename,
+    required bool confirm,
+    required Map<String, String> fields,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/commerce/organizations/$organizationId/orders/${confirm ? "import" : "preview"}',
+      data: dio.FormData.fromMap({
+        ...fields,
+        'space_id': spaceId,
+        'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+      options: _authOptions().copyWith(
+        receiveTimeout: const Duration(minutes: 2),
+        sendTimeout: const Duration(minutes: 2),
+      ),
+    );
+    assertCurrentContext();
+    return response.data!;
+  }
+
   /// Account-bound hierarchy APIs use the same JWT and server permissions as web.
   Future<Map<String, dynamic>> collaboration(
     String path, {

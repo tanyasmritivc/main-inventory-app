@@ -9,6 +9,7 @@ import 'package:mobile/core/private_image.dart';
 import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
+import '../world/organization_orders.dart';
 import '../profile/account_button.dart';
 import 'dart:convert';
 import 'dart:ui';
@@ -593,6 +594,26 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     );
   }
 
+  bool get _hasOrderSpace =>
+      widget.spaceId?.isNotEmpty == true &&
+      widget.api.inventoryContext?.organizationId != null;
+
+  Future<void> _openOrders({bool importing = false}) async {
+    if (!_hasOrderSpace) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrganizationOrders(
+          api: widget.api,
+          organizationId: widget.api.inventoryContext!.organizationId!,
+          spaceId: widget.spaceId,
+          spaceName: _location,
+          startImport: importing,
+        ),
+      ),
+    );
+  }
+
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -808,6 +829,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             useNative: false,
             onSelected: _onFabItemTap,
             items: [
+              if (_hasOrderSpace && !widget.readOnly)
+                const AppMenuItem(
+                  'Import orders',
+                  'Import orders',
+                  'square.and.arrow.down',
+                ),
               if (!widget.readOnly)
                 const AppMenuItem(
                   'Import Spreadsheet',
@@ -891,6 +918,15 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                             spaceName: _location,
                           ),
                         ),
+                        if (_hasOrderSpace)
+                          TextButton.icon(
+                            onPressed: _openOrders,
+                            icon: const Icon(
+                              Icons.receipt_long_outlined,
+                              size: 18,
+                            ),
+                            label: const Text('Orders'),
+                          ),
                         if (_items.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           IconButton(
@@ -1102,8 +1138,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Widget _buildSpeedDial() {
-    const items = [
-      _FabItem(icon: Icons.camera_alt_outlined, label: 'Scan Photo'),
+    final items = [
+      if (_hasOrderSpace)
+        const _FabItem(
+          icon: Icons.receipt_long_outlined,
+          label: 'Import orders',
+        ),
+      const _FabItem(icon: Icons.camera_alt_outlined, label: 'Scan Photo'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
       _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
     ];
@@ -1189,6 +1230,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     switch (label) {
       case 'Scan Photo':
         unawaited(_uploadImage());
+      case 'Import orders':
+        unawaited(_openOrders(importing: true));
       case 'Import Spreadsheet':
         unawaited(_importSpreadsheet());
       case 'Build Readiness':

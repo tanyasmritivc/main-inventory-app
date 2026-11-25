@@ -478,6 +478,7 @@ class _WorldShellState extends State<WorldShell> {
             final orders = OrganizationOrders(
               api: _chatApi,
               organizationId: org,
+              chooseSpace: () => _chooseSpace(writable: true),
             );
             await Navigator.of(context).push<void>(
               MaterialPageRoute(

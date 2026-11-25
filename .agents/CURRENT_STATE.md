@@ -4249,3 +4249,7 @@ The mobile Orders screen now distinguishes first use, read-only access and an em
 ## November 24 · Spaces overflow menu, iPhone build 234
 
 Documents and notes, People and Account settings moved from inline rows to the ellipsis beside Search in the Spaces header. The menu uses the shared iOS toolbar control. All 30 focused world shell and toolbar tests passed and targeted Dart analysis reported no issues.
+
+## 2026-11-25 — Native Space order imports, build 240
+
+Organization Space detail opens its Orders list and offers Import orders in the add menu. The iOS Files picker, original-column mapping, order-line edits, possible stock matches and explicit import run in Flutter against the Space-scoped API. Receiving or reconciling uses a separate labeled browser action. Existing inventory imports retain their original route. Flutter analysis and 21 targeted regression tests passed. Physical-device acceptance is pending.
