@@ -1,3 +1,7 @@
+## Spreadsheet review and Space creation in Ask
+
+The backend handles spreadsheet review and simple named destinations from the persisted draft. The organization Space tools validate their published schema and still accept legacy plans. Regression coverage includes a 295-row XLSX, permissions, ambiguous names and confirmation replay.
+
 ## CAD 0.6.0 local implementation
 
 Placement, inventory shortcuts, structured BOM import and the optional reviewed model library are on the local CAD candidate branch. Release and real-host acceptance remain pending. See [the CAD tracker](../docs/plans/findez-cad-roadmap.md).

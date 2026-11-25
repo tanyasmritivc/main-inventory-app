@@ -178,12 +178,14 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             from app.services import chat_capture
             draft_row = await asyncio.to_thread(chat_capture.load, actor, key, cid) if supports_capture and not photo else None
             draft = draft_row['answer_context']['chat_capture'] if draft_row else None
-            retained = ({'items': [r['item'] for r in draft['items']], 'source_url': draft['source_url']} if draft else
-                        None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid))
-            if supports_photo_attachment and not photo:
-                retained = await asyncio.to_thread(world.latest_photo, actor, key, cid) or retained
-            if draft and draft.get('source_kind') == 'text':
-                retained = None
+            from app.services.chat_space_creation import spreadsheet_request
+            draft_command = not (photo or source_evidence or context_inventory_id) and spreadsheet_request(draft, message)
+            retained = None
+            if not photo and not draft_command:
+                if draft and draft.get('source_kind') not in ('spreadsheet', 'text'):
+                    retained = {'items': [r['item'] for r in draft['items']], 'source_url': draft['source_url']}
+                if not draft or supports_photo_attachment and draft.get('source_kind') != 'text':
+                    retained = await asyncio.to_thread(world.latest_photo, actor, key, cid) or retained
             evidence = photo_facts(retained) if supports_photo_attachment or not draft or draft['status'] != 'saved' else {}
             from app.services import chat_vision
             image_content = None
@@ -267,7 +269,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             yield encode({'type': 'status', 'message': 'Loading your conversation context...'})
             stage = 'chat_reply'
             from app.services.world_user_context import load as load_user_context
-            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions and not context_inventory_id else None
+            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions and not context_inventory_id and not draft_command else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft, enabled=supports_capture) as capture:
                 async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}), **({'read_only_retry': True} if retry_of else {}), **({'contextual': True} if context_inventory_id else {}))):
                     # Forward reset events: clients must replace failed attempts, not append retries.
