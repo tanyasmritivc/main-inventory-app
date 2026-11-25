@@ -25,10 +25,12 @@ class FirstSpaceAskLanding extends StatelessWidget {
     required this.composer,
     required this.onStart,
     required this.height,
+    this.composerLift,
   });
   final Widget composer;
   final VoidCallback onStart;
   final double height;
+  final double? composerLift;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,11 @@ class FirstSpaceAskLanding extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ComposerAnchor(viewportHeight: height, child: composer),
+              _ComposerAnchor(
+                viewportHeight: height,
+                lift: composerLift,
+                child: composer,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _Arrival(
@@ -107,35 +113,46 @@ class FirstSpaceAskLanding extends StatelessWidget {
 // Lift the composer into the available space above the onboarding card.
 // Its existing bottom padding supplies the gap between the two.
 class _ComposerAnchor extends SingleChildRenderObjectWidget {
-  const _ComposerAnchor({required this.viewportHeight, required super.child});
+  const _ComposerAnchor({
+    required this.viewportHeight,
+    required this.lift,
+    required super.child,
+  });
   final double viewportHeight;
+  final double? lift;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _CenteredComposer(viewportHeight);
+      _CenteredComposer(viewportHeight, lift);
   @override
   void updateRenderObject(
     BuildContext context,
     _CenteredComposer renderObject,
   ) {
-    if (renderObject.viewportHeight != viewportHeight) {
+    if (renderObject.viewportHeight != viewportHeight ||
+        renderObject.lift != lift) {
       renderObject.viewportHeight = viewportHeight;
+      renderObject.lift = lift;
       renderObject.markNeedsLayout();
     }
   }
 }
 
 class _CenteredComposer extends RenderShiftedBox {
-  _CenteredComposer(this.viewportHeight) : super(null);
+  _CenteredComposer(this.viewportHeight, this.lift) : super(null);
   double viewportHeight;
+  double? lift;
   @override
   void performLayout() {
     final box = child!;
     box.layout(constraints, parentUsesSize: true);
     final freeHeight = math.max(0.0, viewportHeight - box.size.height);
-    final top = freeHeight / 2 - math.min(36.0, freeHeight * .12);
+    final top = math.max(
+      0.0,
+      freeHeight / 2 - (lift ?? math.min(36.0, freeHeight * .12)),
+    );
     (box.parentData! as BoxParentData).offset = Offset(0, top);
     size = constraints.constrain(
-      Size(box.size.width, top + box.size.height - 16),
+      Size(box.size.width, top + box.size.height - 20),
     );
   }
 }

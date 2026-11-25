@@ -232,6 +232,9 @@ class _ChatPageState extends State<ChatPage>
   late final TextEditingController _controller;
   final _focusNode = FocusNode();
   bool _firstChatHint = false;
+  static const _firstSpaceLift = 60.0;
+  bool _pendingFirstSpaceReturn = false;
+  int _firstSpaceReturnGeneration = 0;
   final Map<String, Map<String, dynamic>> _responseRatings = {};
   Future<void> _loadRatings(String conversationId) async {
     try {
@@ -2548,7 +2551,14 @@ class _ChatPageState extends State<ChatPage>
   @override
   void didUpdateWidget(covariant ChatPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.api, widget.api)) _voice.cancel();
+    if (!identical(oldWidget.api, widget.api)) {
+      _voice.cancel();
+      _pendingFirstSpaceReturn = false;
+    } else if (widget.onFirstSpaceStart != null) {
+      _pendingFirstSpaceReturn = false;
+    } else if (oldWidget.onFirstSpaceStart != null) {
+      _pendingFirstSpaceReturn = true;
+    }
   }
 
   void _toggleListening() {
@@ -3855,13 +3865,35 @@ class _ChatPageState extends State<ChatPage>
         return FirstSpaceAskLanding(
           composer: composer,
           height: bounds.maxHeight,
+          composerLift: _firstSpaceLift,
           onStart: widget.onFirstSpaceStart!,
         );
       }
+      final playReturn = _pendingFirstSpaceReturn && !compact;
+      if (playReturn) {
+        // A save can finish inside capture or chat. Play on the next Ask landing.
+        _pendingFirstSpaceReturn = false;
+        _firstSpaceReturnGeneration++;
+      }
+      final reduceMotion = MediaQuery.disableAnimationsOf(context);
       return SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: bounds.maxHeight),
-          child: Center(child: composer),
+          child: Center(
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(_firstSpaceReturnGeneration),
+              tween: Tween(begin: playReturn ? 0 : 1, end: 1),
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOut,
+              child: composer,
+              builder: (_, progress, child) => reduceMotion
+                  ? Opacity(opacity: progress, child: child)
+                  : Transform.translate(
+                      offset: Offset(0, -_firstSpaceLift * (1 - progress)),
+                      child: child,
+                    ),
+            ),
+          ),
         ),
       );
     },
