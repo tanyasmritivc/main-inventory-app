@@ -5,6 +5,9 @@ import '../../core/ui/content_loading.dart';
 import 'package:dio/dio.dart';
 import '../../core/account_refresh.dart';
 import 'native_bottom_tabs.dart';
+import 'first_space.dart';
+import 'dart:math' as math;
+import 'package:file_picker/file_picker.dart';
 import 'organization_orders.dart';
 import 'retained_tab_transition.dart';
 import '../notifications/notification_bell.dart';
@@ -129,6 +132,8 @@ class _WorldShellState extends State<WorldShell> {
     _tab = 0;
     _chatFocused = false;
     _history = null;
+    _focusFirstChat = null;
+    _importFirstFile = null;
     _search.clear();
     _searchingSpaces = false;
     _loadedNavigation =
@@ -400,6 +405,54 @@ class _WorldShellState extends State<WorldShell> {
     }
   }
 
+  VoidCallback? _focusFirstChat;
+  Future<void> Function(PlatformFile)? _importFirstFile;
+
+  bool get _firstSpace =>
+      _directory?['has_items'] == false &&
+      _error == null &&
+      _spacesError == null &&
+      _spaceGroups != null &&
+      _spaceGroups!.every(
+        (group) => group['spaces'] is List && (group['spaces'] as List).isEmpty,
+      );
+
+  Future<void> _startFirstSpace() => _guard(() async {
+    final api = _chatApi;
+    final action = await showFirstSpaceSheet(context);
+    if (!mounted ||
+        action == null ||
+        !identical(api, _chatApi) ||
+        !_firstSpace) {
+      return;
+    }
+    api.assertCurrentContext();
+    switch (action) {
+      case FirstSpaceAction.extract:
+        _openScan();
+      case FirstSpaceAction.chat:
+        setState(() => _tab = 0);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && identical(api, _chatApi)) _focusFirstChat?.call();
+        });
+      case FirstSpaceAction.spreadsheet:
+        final picked = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: const ['csv', 'xlsx', 'xls'],
+          withReadStream: true,
+        );
+        if (!mounted ||
+            picked == null ||
+            picked.files.isEmpty ||
+            !identical(api, _chatApi)) {
+          return;
+        }
+        api.assertCurrentContext();
+        setState(() => _tab = 0);
+        await _importFirstFile?.call(picked.files.single);
+    }
+  });
+
   Widget _spaces(BuildContext context) {
     final error = _error ?? _spacesError;
     final query = _search.text.trim().toLowerCase();
@@ -411,100 +464,137 @@ class _WorldShellState extends State<WorldShell> {
         }
       }
     }
+    final first = _firstSpace && !_searchingSpaces;
+    final entries = <Widget>[
+      if (_directory?['supports_supplier_orders'] == true &&
+          widget.session.organizationId != null)
+        ListTile(
+          leading: const Icon(Icons.receipt_long_outlined),
+          title: const Text('Orders'),
+          onTap: () => _guard(() async {
+            final session = widget.session;
+            final org = _world;
+            final account = session.api.accountId;
+            final orders = OrganizationOrders(
+              api: _chatApi,
+              organizationId: org,
+            );
+            await Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => ListenableBuilder(
+                  listenable: session,
+                  builder: (_, _) =>
+                      session.organizationId == org &&
+                          session.api.accountId == account
+                      ? orders
+                      : const Scaffold(
+                          body: Center(
+                            child: Text('Organization changed. Reopen Orders.'),
+                          ),
+                        ),
+                ),
+              ),
+            );
+          }),
+        ),
+      if (_searchingSpaces)
+        LiquidSurface(
+          radius: 24,
+          quiet: true,
+          shadow: false,
+          child: TextField(
+            controller: _search,
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              hintText: 'Search Spaces',
+              prefixIcon: Icon(CupertinoIcons.search, size: 20),
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+            ),
+          ),
+        ),
+      if (_searchingSpaces) const SizedBox(height: 16),
+      if (error != null)
+        Column(
+          children: [
+            Text(describeError(error).$1),
+            TextButton(onPressed: _load, child: const Text('Retry')),
+          ],
+        )
+      else if (_spaceGroups == null)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: ContentLoading(label: 'Loading Spaces...'),
+        )
+      else if (rows.isEmpty && !first)
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            query.isNotEmpty
+                ? 'No matching Spaces.'
+                : 'Your world starts with one thing. Describe it in Ask or add a photo.',
+          ),
+        ),
+      for (final row in rows)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SpaceDirectoryTile(
+            key: ValueKey(
+              '${row['group']['inventory_id']}:${spaceIdentifier(row['space'])}',
+            ),
+            space: row['space'],
+            subtitle: row['group']['can_edit'] == true ? '' : 'View only',
+            resolveApi: () => _inventory(row['group']),
+            onChanged: _load,
+          ),
+        ),
+    ];
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 82, 20, 100),
-        children: [
-          if (_directory?['supports_supplier_orders'] == true &&
-              widget.session.organizationId != null)
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined),
-              title: const Text('Orders'),
-              onTap: () => _guard(() async {
-                final session = widget.session;
-                final org = _world;
-                final account = session.api.accountId;
-                final orders = OrganizationOrders(
-                  api: _chatApi,
-                  organizationId: org,
-                );
-                await Navigator.of(context).push<void>(
-                  MaterialPageRoute(
-                    builder: (_) => ListenableBuilder(
-                      listenable: session,
-                      builder: (_, _) =>
-                          session.organizationId == org &&
-                              session.api.accountId == account
-                          ? orders
-                          : const Scaffold(
-                              body: Center(
-                                child: Text(
-                                  'Organization changed. Reopen Orders.',
-                                ),
-                              ),
-                            ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          if (_searchingSpaces)
-            LiquidSurface(
-              radius: 24,
-              quiet: true,
-              shadow: false,
-              child: TextField(
-                controller: _search,
-                autofocus: true,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: 'Search Spaces',
-                  prefixIcon: Icon(CupertinoIcons.search, size: 20),
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
+      child: first
+          ? CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 82, 20, 0),
+                  sliver: SliverList.list(children: entries),
                 ),
-              ),
-            ),
-          if (_searchingSpaces) const SizedBox(height: 16),
-          if (error != null)
-            Column(
-              children: [
-                Text(describeError(error).$1),
-                TextButton(onPressed: _load, child: const Text('Retry')),
+                SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final bottom = _directory?['can_create_space'] == true
+                        ? 76.0
+                        : 18.0;
+                    final height = math.max(
+                      300.0 *
+                          math.max(
+                            1.0,
+                            MediaQuery.textScalerOf(context).scale(16) / 16,
+                          ),
+                      constraints.viewportMainAxisExtent -
+                          constraints.precedingScrollExtent -
+                          22 -
+                          bottom,
+                    );
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20, 22, 20, bottom),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: height),
+                          child: FirstSpaceDirectory(onStart: _startFirstSpace),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             )
-          else if (_spaceGroups == null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: ContentLoading(label: 'Loading Spaces...'),
-            )
-          else if (rows.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                query.isNotEmpty
-                    ? 'No matching Spaces.'
-                    : 'Your world starts with one thing. Describe it in Ask or add a photo.',
-              ),
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(20, 82, 20, 100),
+              children: entries,
             ),
-          for (final row in rows)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: SpaceDirectoryTile(
-                key: ValueKey(
-                  '${row['group']['inventory_id']}:${spaceIdentifier(row['space'])}',
-                ),
-                space: row['space'],
-                subtitle: row['group']['can_edit'] == true ? '' : 'View only',
-                resolveApi: () => _inventory(row['group']),
-                onChanged: _load,
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -720,6 +810,13 @@ class _WorldShellState extends State<WorldShell> {
                                 : "Find what's in your world.",
                             onChatStateChanged: (value) {
                               if (mounted) setState(() => _chatFocused = value);
+                            },
+                            onFirstSpaceStart: _firstSpace
+                                ? _startFirstSpace
+                                : null,
+                            registerFirstSpaceActions: (focus, importFile) {
+                              _focusFirstChat = focus;
+                              _importFirstFile = importFile;
                             },
                             onRegisterScan: (callback) => _scan = callback,
                             onRegisterAnnouncementIdle: (callback) =>

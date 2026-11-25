@@ -1,4 +1,5 @@
 import 'native_scan_progress.dart';
+import '../world/first_space.dart';
 import '../scan/native_scan_camera.dart';
 import '../../core/ui/native_presentation.dart';
 import '../../core/chat_question.dart';
@@ -66,6 +67,8 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onRegisterScan,
+    this.onFirstSpaceStart,
+    this.registerFirstSpaceActions,
     this.onRegisterAnnouncementIdle,
     this.onChatStateChanged,
     this.onBack,
@@ -82,6 +85,9 @@ class ChatPage extends StatefulWidget {
 
   final bool contextual;
   final String? worldHeading;
+  final VoidCallback? onFirstSpaceStart;
+  final void Function(VoidCallback, Future<void> Function(PlatformFile))?
+  registerFirstSpaceActions;
   final ChatSource? initialSource;
   final VoidCallback? onInitialSourceReady;
   final Future<void> Function(String)? onCaptureAction;
@@ -225,6 +231,7 @@ class _ChatPageState extends State<ChatPage>
   bool get wantKeepAlive => true;
   late final TextEditingController _controller;
   final _focusNode = FocusNode();
+  bool _firstChatHint = false;
   final Map<String, Map<String, dynamic>> _responseRatings = {};
   Future<void> _loadRatings(String conversationId) async {
     try {
@@ -2473,6 +2480,11 @@ class _ChatPageState extends State<ChatPage>
     unawaited(_prefetchInventorySnapshot());
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
+    widget.registerFirstSpaceActions?.call(() {
+      if (!mounted) return;
+      setState(() => _firstChatHint = true);
+      _focusNode.requestFocus();
+    }, _importFirstSpreadsheet);
     widget.onRegisterScan?.call(() {
       if (mounted) {
         unawaited(
@@ -2830,6 +2842,58 @@ class _ChatPageState extends State<ChatPage>
   );
 
   final _attachmentAnchor = GlobalKey();
+
+  Future<void> _importFirstSpreadsheet(PlatformFile file) async {
+    if (_sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    bool current() => mounted && generation == _requestGeneration;
+    setState(() => _pickingPhoto = true);
+    try {
+      if (file.size <= 0 ||
+          file.size > 10 * 1024 * 1024 ||
+          file.readStream == null) {
+        throw const FormatException(
+          'Choose a nonempty spreadsheet under 10 MB.',
+        );
+      }
+      final response = await widget.api.createSpreadsheetDraft(
+        dio.MultipartFile.fromStream(
+          () => file.readStream!,
+          file.size,
+          filename: file.name,
+        ),
+        conversationId: _currentConversationId,
+      );
+      if (!current()) return;
+      final loaded = await _loadConversation(
+        response['conversation_id'] as String,
+      );
+      if (loaded && mounted) {
+        setState(() => _pickingPhoto = false);
+        await _submit(
+          'Help me review this extraction and choose where to save it.',
+        );
+      }
+    } catch (error) {
+      if (mounted && current()) {
+        final legacy =
+            file.extension?.toLowerCase() == 'xls' &&
+            error is dio.DioException &&
+            error.response?.statusCode == 422;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              legacy
+                  ? 'This workbook could not be read. Export it as XLSX or CSV and try again.'
+                  : friendlyApiError(error),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (current()) setState(() => _pickingPhoto = false);
+    }
+  }
 
   Future<void> _captureSource(String kind, {String? detectedBarcode}) async {
     if (_sending || _pickingPhoto) return;
@@ -3735,58 +3799,69 @@ class _ChatPageState extends State<ChatPage>
 
   Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
     builder: (context, bounds) {
+      final composer = ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 680),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _voiceDimmed(_buildEmptyState()),
+              const SizedBox(height: 12),
+              if (_previewDraft != null || _scanningPreview) _capturePreview(),
+              if (_photo != null) _photoPreview(),
+              WorldComposer(
+                hintOverride: _firstChatHint && widget.onFirstSpaceStart != null
+                    ? 'I have 22 bearings in the pit cart, bin A1'
+                    : null,
+                onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                    ? _firstCamera
+                    : null,
+                sourceChips: _sourceChips,
+                menuOpen: _sourceMenuOpen,
+                attachmentKey: _attachmentAnchor,
+                onSourceSelected: (value) =>
+                    unawaited(_selectChatSource(value)),
+                controller: _controller,
+                focusNode: _focusNode,
+                onChanged: (_) => setState(() {}),
+                onAttach: _sending || _pickingPhoto
+                    ? null
+                    : _worldAttachmentMenu,
+                onVoice: _sending ? null : _toggleListening,
+                onVoiceStart: _sending ? null : () => unawaited(_startVoice()),
+                onVoiceEnd: () => _voice.send(),
+                onVoiceCancel: _voice.cancel,
+                voiceSession: _voice,
+                onStop: _sending ? _stopResponse : null,
+                onSend: canSend
+                    ? () => unawaited(_submit(_controller.text))
+                    : null,
+                busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
+                listening: _isListening,
+                compact: compact,
+              ),
+            ],
+          ),
+        ),
+      );
+      if (widget.onFirstSpaceStart != null &&
+          !compact &&
+          _photo == null &&
+          !_voice.active &&
+          !_sending &&
+          !_pickingPhoto) {
+        return FirstSpaceAskLanding(
+          composer: composer,
+          height: bounds.maxHeight,
+          onStart: widget.onFirstSpaceStart!,
+        );
+      }
       return SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: bounds.maxHeight),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _voiceDimmed(_buildEmptyState()),
-                    const SizedBox(height: 12),
-                    if (_previewDraft != null || _scanningPreview)
-                      _capturePreview(),
-                    if (_photo != null) _photoPreview(),
-                    WorldComposer(
-                      onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
-                          ? _firstCamera
-                          : null,
-                      sourceChips: _sourceChips,
-                      menuOpen: _sourceMenuOpen,
-                      attachmentKey: _attachmentAnchor,
-                      onSourceSelected: (value) =>
-                          unawaited(_selectChatSource(value)),
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      onChanged: (_) => setState(() {}),
-                      onAttach: _sending || _pickingPhoto
-                          ? null
-                          : _worldAttachmentMenu,
-                      onVoice: _sending ? null : _toggleListening,
-                      onVoiceStart: _sending
-                          ? null
-                          : () => unawaited(_startVoice()),
-                      onVoiceEnd: () => _voice.send(),
-                      onVoiceCancel: _voice.cancel,
-                      voiceSession: _voice,
-                      onStop: _sending ? _stopResponse : null,
-                      onSend: canSend
-                          ? () => unawaited(_submit(_controller.text))
-                          : null,
-                      busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
-                      listening: _isListening,
-                      compact: compact,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          child: Center(child: composer),
         ),
       );
     },
@@ -3957,6 +4032,9 @@ class _ChatPageState extends State<ChatPage>
                 const LinearProgressIndicator(),
               if (_photo != null) _photoPreview(),
               WorldComposer(
+                hintOverride: _firstChatHint && widget.onFirstSpaceStart != null
+                    ? 'I have 22 bearings in the pit cart, bin A1'
+                    : null,
                 onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
                     ? _firstCamera
                     : null,
@@ -4053,6 +4131,9 @@ class _ChatPageState extends State<ChatPage>
             if (_photo != null) _photoPreview(),
             if (_voice.active || _voice.errorText != null)
               WorldComposer(
+                hintOverride: _firstChatHint && widget.onFirstSpaceStart != null
+                    ? 'I have 22 bearings in the pit cart, bin A1'
+                    : null,
                 controller: _controller,
                 focusNode: _focusNode,
                 onChanged: (_) => setState(() {}),

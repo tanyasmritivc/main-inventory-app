@@ -13,6 +13,7 @@ class WorldComposer extends StatefulWidget {
   const WorldComposer({
     super.key,
     this.attachmentKey,
+    this.hintOverride,
     this.onFirstCamera,
     this.sourceChips,
     this.menuOpen = false,
@@ -34,6 +35,7 @@ class WorldComposer extends StatefulWidget {
     required this.compact,
   });
   final GlobalKey? attachmentKey;
+  final String? hintOverride;
   final VoidCallback? onFirstCamera;
   final Widget? sourceChips;
   final bool menuOpen;
@@ -95,7 +97,8 @@ class _WorldComposerState extends State<WorldComposer>
       oldWidget.focusNode.removeListener(_reset);
       widget.focusNode.addListener(_reset);
     }
-    if (oldWidget.busy != widget.busy ||
+    if (oldWidget.hintOverride != widget.hintOverride ||
+        oldWidget.busy != widget.busy ||
         oldWidget.listening != widget.listening ||
         oldWidget.controller != widget.controller ||
         oldWidget.focusNode != widget.focusNode) {
@@ -104,6 +107,7 @@ class _WorldComposerState extends State<WorldComposer>
   }
 
   bool get _canAnimate =>
+      widget.hintOverride == null &&
       _enabled &&
       _active &&
       !widget.busy &&
@@ -276,11 +280,13 @@ class _WorldComposerState extends State<WorldComposer>
                 height: 1.4,
               ),
               decoration: InputDecoration(
-                hintText: !_showHint
-                    ? (widget.compact
-                          ? 'Ask FindEZ…'
-                          : 'Describe your inventory…')
-                    : null,
+                hintText:
+                    widget.hintOverride ??
+                    (!_showHint
+                        ? (widget.compact
+                              ? 'Ask FindEZ…'
+                              : 'Describe your inventory…')
+                        : null),
                 hint: !_showHint
                     ? null
                     : Semantics(
@@ -301,7 +307,7 @@ class _WorldComposerState extends State<WorldComposer>
                           ),
                         ),
                       ),
-                hintMaxLines: 1,
+                hintMaxLines: widget.hintOverride == null ? 1 : 2,
                 hintStyle: hintStyle,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
