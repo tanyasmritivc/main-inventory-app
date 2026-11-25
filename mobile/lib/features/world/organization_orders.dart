@@ -72,89 +72,243 @@ class _OrganizationOrdersState extends State<OrganizationOrders> {
     }
   }
 
+  void submitQuery(String value) {
+    query = value.trim();
+    offset = 0;
+    load();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final lines = (result?['order_lines'] as List?)?.whereType<Map>() ?? [];
     final stock =
         (result?['recorded_inventory'] as List?)?.whereType<Map>() ?? [];
+    final canManage = result?['can_manage'] == true;
+    final firstOrder =
+        result != null && lines.isEmpty && query.isEmpty && offset == 0;
+    final sectionTitle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Orders')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: search,
-              decoration: const InputDecoration(
-                labelText: 'Part, SKU or order number',
+        child: RefreshIndicator(
+          onRefresh: load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            children: [
+              TextField(
+                controller: search,
+                textInputAction: TextInputAction.search,
+                onSubmitted: submitQuery,
+                decoration: InputDecoration(
+                  hintText: 'Part, SKU or order number',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: search,
+                    builder: (context, value, _) => value.text.isEmpty
+                        ? const SizedBox.shrink()
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            icon: const Icon(Icons.cancel_outlined),
+                            onPressed: () {
+                              search.clear();
+                              submitQuery('');
+                            },
+                          ),
+                  ),
+                ),
               ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: (value) {
-                query = value.trim();
-                offset = 0;
-                load();
-              },
-            ),
-            if (error != null) ...[
-              Text(describeError(error!).$1),
-              TextButton(onPressed: load, child: const Text('Retry')),
-            ] else if (result == null)
-              const Center(child: CircularProgressIndicator())
-            else ...[
-              if (result?['can_manage'] == true)
-                ListTile(
-                  leading: const Icon(Icons.upload_file),
-                  title: const Text('Import or receive an order'),
-                  subtitle: const Text(
-                    'Open the full order review in your browser',
-                  ),
-                  onTap: manage,
-                ),
-              if (query.isNotEmpty) ...[
-                const ListTile(title: Text('Recorded in Spaces')),
-                if (stock.isEmpty)
-                  const Text('No matching inventory records on this page.'),
-                for (final row in stock)
-                  ListTile(
-                    title: Text('${row['name']}'),
-                    subtitle: Text(
-                      '${row['recorded_quantity']} recorded · ${row['space_name']} · ${row['location'] ?? ''}',
+              const SizedBox(height: 20),
+              if (error != null)
+                _OrderPanel(
+                  children: [
+                    Text(describeError(error!).$1),
+                    TextButton(onPressed: load, child: const Text('Try again')),
+                  ],
+                )
+              else if (result == null)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (firstOrder)
+                _OrderPanel(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colors.onSurface.withValues(alpha: .07),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(Icons.receipt_long_outlined, size: 28),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      canManage
+                          ? 'Add your first order'
+                          : 'No supplier orders yet',
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      canManage
+                          ? 'Upload a supplier order to track what you bought. Receive items into a Space when they arrive.'
+                          : 'Orders will appear here when an organization owner or admin imports one.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                    if (canManage) ...[
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: manage,
+                        icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                        label: const Text('Import order'),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Opens FindEZ in your browser',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              else ...[
+                if (canManage)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: OutlinedButton.icon(
+                      onPressed: manage,
+                      icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                      label: const Text('Import or receive an order'),
                     ),
                   ),
-              ],
-              const ListTile(title: Text('Supplier order lines')),
-              if (lines.isEmpty) const Text('No matching orders on this page.'),
-              for (final line in lines)
-                ListTile(
-                  title: Text('${line['name']}'),
-                  isThreeLine: true,
-                  subtitle: Text(
-                    "${line['supplier']} · ${line['order_number']} · ${line['sku']}\n${line['ordered']} ordered · ${line['received']} received · ${line['outstanding'] == null ? 'History only' : "${line['outstanding']} outstanding"}",
-                  ),
-                ),
-              Wrap(
-                children: [
-                  if (offset > 0)
-                    TextButton(
-                      onPressed: () {
-                        offset -= 50;
-                        load();
-                      },
-                      child: const Text('Previous'),
-                    ),
-                  if (result?['has_more'] == true)
-                    TextButton(
-                      onPressed: () {
-                        offset += 50;
-                        load();
-                      },
-                      child: const Text('Next'),
+                if (query.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('Recorded in Spaces', style: sectionTitle),
+                  const SizedBox(height: 8),
+                  if (stock.isEmpty)
+                    const Text('No matching inventory records on this page.'),
+                  for (final row in stock)
+                    _OrderRow(
+                      title: row['name'].toString(),
+                      details: [row['space_name'], row['location']],
+                      quantity: "${row['recorded_quantity']} recorded",
                     ),
                 ],
-              ),
+                const SizedBox(height: 16),
+                Text('Supplier order lines', style: sectionTitle),
+                const SizedBox(height: 8),
+                if (lines.isEmpty)
+                  const Text('No matching order lines on this page.'),
+                for (final line in lines)
+                  _OrderRow(
+                    title: line['name'].toString(),
+                    details: [
+                      line['supplier'],
+                      line['order_number'],
+                      line['sku'],
+                    ],
+                    quantity:
+                        "${line['ordered']} ordered · ${line['received']} received · ${line['outstanding'] == null ? 'History only' : "${line['outstanding']} outstanding"}",
+                  ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    if (offset > 0)
+                      TextButton(
+                        onPressed: () {
+                          offset -= 50;
+                          load();
+                        },
+                        child: const Text('Previous'),
+                      ),
+                    if (result?['has_more'] == true)
+                      TextButton(
+                        onPressed: () {
+                          offset += 50;
+                          load();
+                        },
+                        child: const Text('Next'),
+                      ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _OrderPanel extends StatelessWidget {
+  const _OrderPanel({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.outlineVariant),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _OrderRow extends StatelessWidget {
+  const _OrderRow({
+    required this.title,
+    required this.details,
+    required this.quantity,
+  });
+  final String title;
+  final List<Object?> details;
+  final String quantity;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final metadata = details
+        .whereType<String>()
+        .where((s) => s.trim().isNotEmpty)
+        .join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: _OrderPanel(
+        children: [
+          Text(title, style: theme.textTheme.titleMedium),
+          if (metadata.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              metadata,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(quantity, style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }

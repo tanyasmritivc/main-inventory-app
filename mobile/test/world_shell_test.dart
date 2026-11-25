@@ -86,6 +86,64 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  for (final canManage in [true, false]) {
+    testWidgets('Empty Orders explains the next step, manage=$canManage', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      fixture.respond = (request) => {
+        'can_manage': canManage,
+        'order_lines': [],
+        'recorded_inventory': [],
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.create(
+            canManage ? Brightness.dark : Brightness.light,
+          ),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: OrganizationOrders(api: fixture.api, organizationId: 'org-a'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          canManage ? 'Add your first order' : 'No supplier orders yet',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Import order'),
+        canManage ? findsOneWidget : findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.enterText(find.byType(TextField), 'absent');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('No matching order lines on this page.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          canManage ? 'Add your first order' : 'No supplier orders yet',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets(
     'Orders keeps supplier quantities separate from matching Space stock',
     (tester) async {
