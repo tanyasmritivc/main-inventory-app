@@ -1,3 +1,10 @@
+## November 25 - Per-item photo thumbnails
+
+Auto Extract reads optional normalized object bounds from each vision observation
+and crops the oriented source pixels for that row. A desk-photo gateway check
+located the Mac mini, blister pack and pen. Missing geometry retains the source
+photo. Saving uses the existing crop and original-photo fields.
+
 ## November 24 - Photo inventory subjects and visible quantities
 
 Branch `fix/auto-extract-inventory-subjects` changes the backend Auto Extract vision
