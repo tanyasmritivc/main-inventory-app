@@ -1,5 +1,9 @@
 ## November 24, 2026 — Morning and evening check-ins on the notification branch
 
+## Weekly new-user activation campaign
+
+Implemented on `feat/new-user-activation-campaign`. Production migration and campaign outreach are pending. Configuration and historical enrollment are documented in `docs/weekly-activation.md`.
+
 The pending multi-channel scheduler supports two local check-ins at 10 AM and 6 PM. Both share the existing engagement cap, and quiet hours and pauses apply. Keep the existing single daily production baseline until controlled rollout. See `docs/notification-engagement.md`.
 
 ## November 23, 2026 — Multi-channel engagement, implemented and tested only

@@ -1,5 +1,7 @@
 """Account-only controls; no arbitrary event ingestion or client-selected actor."""
 from uuid import UUID
+from datetime import datetime, timezone
+from app.services import activation_campaign
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.schemas.personalization import ProfileChange, AliasChange, ResetChange, NotificationFeedback
@@ -34,6 +36,10 @@ def reset(body: ResetChange, user: AuthenticatedUser=Depends(get_current_user)):
 def destination(notification_id: UUID, user: AuthenticatedUser=Depends(get_current_user)):
     try:
         result = get_supabase_raw().rpc('findez_personalization_destination', {'p_actor':actor_id(user),'p_id':str(notification_id)}).execute().data
+        if not result and activation_campaign.enabled():
+            result = get_supabase_raw().rpc('findez_activation_destination', {
+                'p_actor': actor_id(user), 'p_id': str(notification_id),
+            }).execute().data
     except Exception: raise HTTPException(503, 'This notification could not be opened. Try again.') from None
     if not result: raise HTTPException(404, 'This item or review is no longer available.')
     if result.get('entity_type') == 'account':
@@ -59,6 +65,13 @@ def destination(notification_id: UUID, user: AuthenticatedUser=Depends(get_curre
 def feedback(notification_id: UUID, body: NotificationFeedback, user: AuthenticatedUser=Depends(get_current_user)):
     try:
         ok = get_supabase_raw().rpc('findez_personalization_feedback', {'p_actor':actor_id(user), 'p_id':str(notification_id),'p_outcome':body.outcome}).execute().data
+        if ok is not True and activation_campaign.enabled() and body.outcome in {'delivered', 'push_tapped'}:
+            field = 'opened_at' if body.outcome == 'push_tapped' else 'delivered_at'
+            query = get_supabase_raw().table('activation_reminders')
+            stamped = query.update({field: datetime.now(timezone.utc).isoformat()}).eq(
+                'id', str(notification_id)).eq('user_id', actor_id(user)).eq('channel', 'push').not_.is_('submitted_at','null').is_(field, 'null').execute().data
+            ok = bool(stamped or query.select('id').eq('id',str(notification_id)).eq(
+                'user_id',actor_id(user)).eq('channel','push').not_.is_('submitted_at','null').limit(1).execute().data)
     except Exception: raise HTTPException(503, 'Notification feedback could not be saved.') from None
     if ok is not True: raise HTTPException(404, 'This notification is no longer available.')
     return {'saved':True}

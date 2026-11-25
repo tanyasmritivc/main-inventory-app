@@ -18,6 +18,7 @@ from app.api.routes.conversations import router as conversations_router
 from app.api.routes.me import router as me_router
 from app.api.routes.teams import router as teams_router
 from app.api.routes.licenses import router as licenses_router
+from app.api.routes.activation import router as activation_router
 from app.api.routes.email import router as email_router
 from app.api.routes.project_kits import router as project_kits_router
 from app.api.routes.team_board import router as team_board_router
@@ -51,6 +52,7 @@ api_router.include_router(conversations_router)
 api_router.include_router(teams_router)
 api_router.include_router(licenses_router)
 api_router.include_router(email_router)
+api_router.include_router(activation_router)
 api_router.include_router(project_kits_router)
 api_router.include_router(team_board_router)
 api_router.include_router(team_workspace_router)

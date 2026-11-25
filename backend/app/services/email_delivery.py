@@ -13,6 +13,7 @@ def send_transactional_email(
     html: str,
     text: str,
     message_id: str | None = None,
+    headers: dict[str, str] | None = None,
 ) -> None:
     """Send app mail through the configured SMTP relay, with Resend as fallback."""
     settings = get_settings()
@@ -24,6 +25,8 @@ def send_transactional_email(
         message["Subject"] = subject.replace("\r", " ").replace("\n", " ")
         if message_id:
             message["Message-ID"] = message_id
+        for key, value in (headers or {}).items():
+            message[key] = value
         message.set_content(text)
         message.add_alternative(html, subtype="html")
         with smtplib.SMTP(
@@ -41,13 +44,18 @@ def send_transactional_email(
         import resend
 
         resend.api_key = resend_key
-        resend.Emails.send({
+        message_headers = dict(headers or {})
+        if message_id:
+            message_headers["Message-ID"] = message_id
+        payload = {
             "from": sender,
             "to": [to],
             "subject": subject,
             "html": html,
             "text": text,
-            **({"headers": {"Message-ID": message_id}} if message_id else {}),
-        })
+        }
+        if message_headers:
+            payload["headers"] = message_headers
+        resend.Emails.send(payload)
         return
     raise RuntimeError("Transactional email is not configured")

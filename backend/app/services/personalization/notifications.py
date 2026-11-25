@@ -48,11 +48,17 @@ def dispatch(limit=50):
 
 
 def main():
+    from app.services import activation_campaign
     result=dispatch()
     get_supabase_raw().rpc('findez_personalization_cleanup',{}).execute()
     get_supabase_raw().rpc('findez_response_feedback_cleanup',{}).execute()
     if notification_policy.enabled():
         get_supabase_raw().rpc('findez_notification_cleanup',{}).execute()
+    # Email recovery also runs when inventory push is disabled or unavailable.
+    try:
+        activation_campaign.dispatch()
+    except Exception:
+        log.warning('activation_dispatch_failed')
     print(result)  # Aggregate counts only, never tokens or content.
 
 

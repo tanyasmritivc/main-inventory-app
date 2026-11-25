@@ -1,5 +1,9 @@
 ## November 6 - Independent notification policy and non-retryable conflicts
 
+## Weekly onboarding reminders
+
+Include older accounts with no retained evidence of setup. Reserve one weekly slot per person across email and push. Persist first personal and organization milestones so deleting records cannot restart the campaign.
+
 Notification preferences are independent of Memory opt-in/reset. Private account
 rules preserve personal thresholds without changing inventory values. Only recorded
 stock crossings and saved pending reviews create candidates; unsupported workflows
