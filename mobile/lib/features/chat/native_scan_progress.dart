@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import '../../core/ui/photo_scan_hint.dart';
+import '../../core/api_client.dart' show ScanEvidence;
 import 'extraction_progress_panel.dart' show scanProgressValue;
 import 'scan_region.dart';
 
@@ -24,11 +25,19 @@ class NativeScanProgress extends StatefulWidget {
     required this.message,
     required this.onStop,
     this.regions = const [],
+    this.draft,
+    this.complete = false,
+    this.onReview,
+    this.onScanAgain,
+    this.onRetry,
   });
   final ImageProvider image;
   final String message;
   final List<ScanRegion> regions;
   final VoidCallback onStop;
+  final Map<String, dynamic>? draft;
+  final bool complete;
+  final VoidCallback? onReview, onScanAgain, onRetry;
   @override
   State<NativeScanProgress> createState() => _NativeScanProgressState();
 }
@@ -55,7 +64,31 @@ class _NativeScanProgressState extends State<NativeScanProgress> {
     );
   }
 
+  List<Map<String, Object>> get _items {
+    final draft = widget.draft;
+    final missing =
+        (draft?['summary'] as Map?)?['unknown_quantity_indices'] as List? ??
+        const [];
+    return [
+      for (final row in (draft?['items'] as List? ?? const []).whereType<Map>())
+        if (row['item'] case final Map item)
+          {
+            'name': item['name']?.toString() ?? '',
+            if (item['quantity'] is num &&
+                !missing.contains(row['index']) &&
+                !(item['scan_evidence'] is Map &&
+                    ScanEvidence.fromJson(
+                      Map<String, dynamic>.from(item['scan_evidence']),
+                    ).quantityMissing))
+              'quantity': item['quantity'] as num,
+          },
+    ];
+  }
+
   Map<String, Object> get _model => {
+    'items': _items,
+    'complete': widget.complete,
+    'failed': widget.onRetry != null,
     'message': widget.message,
     'steps': List<String>.of(_steps),
     'progress': _progress,
@@ -193,6 +226,10 @@ class _NativeScanProgressState extends State<NativeScanProgress> {
         if (!mounted) return;
         _channel = MethodChannel('com.findez.app/scan-progress/$id');
         _channel!.setMethodCallHandler((call) async {
+          if (!mounted) return;
+          if (call.method == 'review') widget.onReview?.call();
+          if (call.method == 'scanAgain') widget.onScanAgain?.call();
+          if (call.method == 'retry') widget.onRetry?.call();
           if (mounted && call.method == 'stop' && !_stopped) {
             _stopped = true;
             widget.onStop();

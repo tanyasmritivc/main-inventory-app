@@ -302,6 +302,8 @@ class _ChatPageState extends State<ChatPage>
   MemoryImage? _previewPhoto;
   Map<String, dynamic>? _previewDraft;
   bool _scanningPreview = false;
+  bool _scannerReviewOpen = false;
+  VoidCallback? _scannerRetry;
   List<ScanRegion> _scanRegions = const [];
   bool _savingCapture = false;
   final _previewKey = GlobalKey<ChatCaptureCardState>();
@@ -3313,6 +3315,9 @@ class _ChatPageState extends State<ChatPage>
     final generation = ++_scanGeneration;
     _focusNode.unfocus();
     setState(() {
+      _scannerReviewOpen = false;
+      _scannerRetry = null;
+      _previewDraft = null;
       _previewPhoto = MemoryImage(photo.bytes);
       _scanRegions = const [];
       _photo = null;
@@ -3364,20 +3369,23 @@ class _ChatPageState extends State<ChatPage>
       }
     } catch (_) {
       if (mounted && generation == _scanGeneration) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Could not finish scanning. Your photo is ready to retry.',
+        void retry() {
+          setState(() => _photo = photo);
+          unawaited(_extractPreview());
+        }
+
+        if (usesNativeScanProgress) {
+          setState(() => _scannerRetry = retry);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Could not finish scanning. Your photo is ready to retry.',
+              ),
+              action: SnackBarAction(label: 'Retry', onPressed: retry),
             ),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () {
-                setState(() => _photo = photo);
-                unawaited(_extractPreview());
-              },
-            ),
-          ),
-        );
+          );
+        }
       }
     } finally {
       unawaited(iterator.cancel());
@@ -3998,6 +4006,64 @@ class _ChatPageState extends State<ChatPage>
             _sources.isNotEmpty) &&
         (!_sending || _canQueueFollowUp);
 
+    if (usesNativeScanProgress &&
+        _previewPhoto != null &&
+        !_scannerReviewOpen &&
+        (_scanningPreview || _scannerRetry != null || _previewDraft != null)) {
+      return SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(
+                    child: Text(
+                      'Auto extract',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: LiquidIconButton(
+                      tooltip: _scanningPreview
+                          ? 'Back, stop scanning'
+                          : 'Back',
+                      icon: CupertinoIcons.chevron_left,
+                      onPressed: _closeCapturePreview,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: NativeScanProgress(
+                key: ValueKey(_scanGeneration),
+                image: _previewPhoto!,
+                message: _scanProgress ?? 'Reading your photo...',
+                regions: _scanRegions,
+                draft: _previewDraft,
+                complete:
+                    !_scanningPreview &&
+                    _scannerRetry == null &&
+                    _previewDraft != null,
+                onStop: _closeCapturePreview,
+                onReview: () => setState(() => _scannerReviewOpen = true),
+                onRetry: _scannerRetry,
+                onScanAgain: () {
+                  _publishPreview();
+                  unawaited(_attachPhoto(autoExtract: true));
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     if (widget.worldHeading != null &&
         (_worldHome ||
             (_session.messages.isEmpty && _currentConversationId == null)) &&
