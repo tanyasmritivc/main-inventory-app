@@ -25,8 +25,8 @@ def row(**changes):
     value = {"name": "Black screws", "category": "Hardware", "quantity": 11,
             "quantity_basis": "estimated_visible", "quantity_note": "About 10–12 visible, overlapping.",
             "confidence": 0.8, "box": [0, 0, 1000, 1000], **changes}
-    count = "unknown" if value["quantity"] is None else "about 10–12 visible, overlapping" if value["quantity_basis"] == "estimated_visible" else str(value["quantity"])
-    value["evidence_quote"] = value["name"] + ": " + count
+    count = "unknown" if value["quantity"] is None else "about 10–12" if value["quantity_basis"] == "estimated_visible" else str(value["quantity"])
+    value.setdefault("evidence_quote", value["name"] + " | " + count + " | Overlapping in tray")
     return value
 
 
@@ -37,7 +37,7 @@ def stream(data, finish="stop"):
 
 
 def responses(data):
-    description = "\n".join("- " + r["evidence_quote"] for r in data["items"])
+    description = "\n".join("ITEM: " + r["evidence_quote"] for r in data["items"])
     return [stream(description), stream(data)]
 
 
@@ -118,8 +118,8 @@ def test_unknown_count_and_guessed_markings_do_not_become_inventory_facts():
 
 def test_table_counts_are_read_from_quote_not_formatter_numbers_or_basis():
     rows = [row(name="Wheel", quantity=900, quantity_basis="counted_visible"), row(name="Screws")]
-    rows[0]["evidence_quote"] = "Wheel | 1"
-    rows[1]["evidence_quote"] = "Screws | ~10–12"
+    rows[0]["evidence_quote"] = "Wheel | 1 | On shelf"
+    rows[1]["evidence_quote"] = "Screws | ~10–12 | In the bin"
     with patch.object(direct, "gateway_completion", side_effect=responses({"items": rows, "partial": False})):
         items = direct.extract(photo(), None, None)["items"]
     assert [r["quantity"] for r in items] == [1, 10]
@@ -217,3 +217,58 @@ def test_extraction_uploads_original_pixel_crop_and_retains_source_for_second_sl
         assert crop.size == (265, 133) and not crop.getexif()
         red, green, blue = crop.getpixel((150, 100))
         assert red > 240 and green < 10 and blue < 10
+
+
+def test_battery_photo_excludes_the_surface_even_if_formatter_offers_it():
+    battery = "BATMAX camera battery | 1 | At center on a white tabletop. Label: 3.7 V."
+    surface = "White surface | 1 | Background only."
+    payload = {"items": [row(name="BATMAX camera battery", evidence_quote=battery),
+                         row(name="White surface", evidence_quote=surface)], "partial": False}
+    with patch.object(direct, "_stream_text", side_effect=[
+            f"ITEM: {battery}\nCONTEXT: {surface}", json.dumps(payload)]) as model:
+        items = direct.extract(photo(), None, None)["items"]
+    assert surface not in model.call_args.args[0][1]["content"]
+    assert [(item["name"], item["quantity"], item["scan_evidence"]["quantity_basis"])
+            for item in items] == [("BATMAX camera battery", 1, "visible_individuals")]
+
+
+@pytest.mark.parametrize(("count", "expected", "basis"), [
+    ("8", 8, "visible_individuals"), ("about 12", 12, "estimated_visible"),
+    ("10-15", 10, "estimated_visible"), ("at least 6", 6, "estimated_visible"),
+    ("unknown", 1, "unknown"), ("3.7V", 1, "unknown"), ("15-10", 1, "unknown"),
+])
+def test_screws_in_a_box_keep_location_and_count_evidence(count, expected, basis):
+    observed = f"Screws | {count} | Bottom left in a plastic box."
+    with patch.object(direct, "_stream_text", side_effect=[
+            f"CONTEXT: Plastic box holding screws.\nITEM: {observed}",
+            json.dumps({"items": [row(name="Screws", notes="Bottom left in a plastic box.",
+                                      evidence_quote=observed)], "partial": False})]):
+        result = direct.extract(photo(), None, None)
+    item, = result["items"]
+    assert (item["name"], item["quantity"], item["scan_evidence"]["quantity_basis"]) == (
+        "Screws", expected, basis)
+    assert "plastic box" in item["notes"] and item["location"] is None
+    assert count in item["scan_evidence"]["quantity_note"]
+
+
+def test_empty_containers_are_inventory_when_they_are_the_photo_subject():
+    quote = "Empty storage bins | 3 | Stack of empty bins for sale."
+    with patch.object(direct, "_stream_text", side_effect=[
+            "ITEM: " + quote, json.dumps({"items": [row(name="Empty storage bins",
+                                                        evidence_quote=quote)], "partial": False})]):
+        item, = direct.extract(photo(), None, None)["items"]
+    assert (item["name"], item["quantity"]) == ("Empty storage bins", 3)
+
+
+def test_scene_only_photo_returns_empty_without_a_formatter_call():
+    with patch.object(direct, "_stream_text", return_value="CONTEXT: A wall and shadows.\nNO ITEMS") as model:
+        assert direct._read_photo(b"test") == ([], False)
+    model.assert_called_once()
+
+
+def test_quantity_cannot_be_upgraded_by_shortening_a_quote():
+    quote = "Bolts | about 12 | Overlap."
+    with patch.object(direct, "_stream_text", side_effect=[
+            "ITEM: " + quote, json.dumps({"items": [row(name="Bolts", evidence_quote="Bolts | 12")],
+                                          "partial": False})]), pytest.raises(ValueError):
+        direct._read_photo(b"test")

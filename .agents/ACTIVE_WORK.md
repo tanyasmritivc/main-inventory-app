@@ -1,3 +1,11 @@
+## November 24 - Photo inventory subjects and visible quantities
+
+Branch `fix/auto-extract-inventory-subjects` changes the backend Auto Extract vision
+and formatting passes. Incidental support surfaces and packaging stay out of draft
+rows. Containers can be inventory when they are the subjects. Count evidence is
+read from a dedicated observation field. Item identification accuracy and count
+accuracy require a separately labeled evaluation set.
+
 ## November 11 - Crop-first Auto Extract follow-up (deployed)
 
 Same branch/PR389. User requests images only: cropped item thumbnail first and
