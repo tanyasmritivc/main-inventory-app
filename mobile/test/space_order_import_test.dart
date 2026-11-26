@@ -31,8 +31,29 @@ void main() {
   final fixture = HierarchyFixture();
   setUpAll(fixture.initialize);
   tearDownAll(() => Supabase.instance.dispose());
-  for (final duplicate in [false, true]) {
-    testWidgets('Scoped file review, duplicate=$duplicate', (tester) async {
+  for (final name in ['screenshot.png', 'orders.zip']) {
+    testWidgets('Rejects $name before uploading', (tester) async {
+      FilePicker.platform = _Picker()
+        ..result = FilePickerResult([PlatformFile(name: name, size: 8)]);
+      fixture.respond = (_) => fail('Unsupported file reached the API');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpaceOrderImport(
+            api: fixture.api,
+            organizationId: 'team',
+            spaceId: 'shelf',
+            spaceName: 'Fasteners',
+          ),
+        ),
+      );
+      await tester.tap(find.text('Choose order file'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Choose an Excel'), findsOneWidget);
+    });
+  }
+  for (final scenario in ['review', 'duplicate', 'direct']) {
+    final duplicate = scenario == 'duplicate';
+    testWidgets('Scoped order import: $scenario', (tester) async {
       FilePicker.platform = _Picker()
         ..result = FilePickerResult([
           PlatformFile(
@@ -96,16 +117,24 @@ void main() {
           ),
         ),
       );
+      if (scenario == 'direct') {
+        await tester.enterText(find.byType(TextField).first, 'goBILDA');
+      }
       await tester.tap(find.text('Choose order file'));
       await tester.pumpAndSettle();
+      if (scenario == 'direct') {
+        expect(calls.map((path) => path.split('/').last), [
+          'preview',
+          'import',
+        ]);
+        return;
+      }
       if (duplicate) {
         expect(find.textContaining('already in organization'), findsOneWidget);
         expect(find.text('Review order lines'), findsNothing);
         expect(calls.length, 1);
         return;
       }
-      await tester.tap(find.text('Review order lines'));
-      await tester.pumpAndSettle();
       expect(
         find.textContaining('40 recorded in Fasteners · A1'),
         findsOneWidget,

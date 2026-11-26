@@ -1,3 +1,4 @@
+import '../../core/spreadsheet_file.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -45,7 +46,7 @@ class SpaceOrderImport extends StatefulWidget {
 
 class _SpaceOrderImportState extends State<SpaceOrderImport> {
   final supplier = TextEditingController();
-  final pasted = <String, String>{};
+
   Uint8List? bytes;
   String filename = '';
   String? error;
@@ -82,15 +83,31 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
 
   Future<void> pick() => run(() async {
     final picked = await FilePicker.platform.pickFiles(
-      type: FileType.any,
+      type: FileType.custom,
+      allowedExtensions: spreadsheetExtensions,
       withData: false,
       withReadStream: true,
     );
     if (picked == null || !mounted) return;
     final file = picked.files.single;
-    const limit = 4 * 1024 * 1024;
-    if (file.size <= 0 || file.size > limit) {
-      throw const FormatException('Choose a nonempty file up to 4 MB.');
+    setState(() {
+      bytes = null;
+      filename = '';
+      preview = null;
+      rows = [];
+      assignments = [];
+      reviewed = false;
+    });
+    if (!isSpreadsheetFilename(file.name)) {
+      throw const FormatException(
+        'Choose an Excel (.xlsx), CSV, or JSON spreadsheet.',
+      );
+    }
+    const limit = spreadsheetByteLimit;
+    if (file.size <= 0 ||
+        file.size > limit ||
+        (file.bytes?.length ?? 0) > limit) {
+      throw const FormatException('Choose a nonempty file up to 10 MB.');
     }
     final buffer = BytesBuilder(copy: false);
     if (file.bytes != null) {
@@ -101,7 +118,7 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
       }
       await for (final chunk in file.readStream!) {
         if (buffer.length + chunk.length > limit) {
-          throw const FormatException('Choose a file up to 4 MB.');
+          throw const FormatException('Choose a file up to 10 MB.');
         }
         buffer.add(chunk);
       }
@@ -114,9 +131,15 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
       reviewed = false;
       rows = [];
       assignments = [];
-      pasted.clear();
     });
     await readColumns();
+    if (mounted &&
+        preview?['space_review']?['duplicate'] == false &&
+        supplier.text.trim().isNotEmpty &&
+        rows.isNotEmpty &&
+        rows.every(ready)) {
+      await save();
+    }
   });
 
   Future<_Json> upload(Map<String, String> fields, {bool confirm = false}) =>
@@ -131,7 +154,6 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
 
   Future<void> readColumns({bool apply = false}) async {
     final result = await upload({
-      if (pasted.isNotEmpty) 'pasted': jsonEncode(pasted),
       if (apply) 'assignments': jsonEncode(assignments),
     });
     if (result['space_review'] is! Map) {
@@ -144,25 +166,28 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
       preview = result;
       assignments = List.from(result['assignments']);
       rows = _maps(result['rows']);
-      reviewed = apply;
+      reviewed = true;
     });
   }
 
-  Future<void> save() => run(() async {
+  bool ready(_Json row) =>
+      [
+        'order',
+        'line',
+        'name',
+      ].every((k) => (row[k] ?? '').toString().trim().isNotEmpty) &&
+      [
+        'quantity',
+        'pack',
+      ].every((k) => (int.tryParse(row[k].toString()) ?? 0) > 0) &&
+      _statuses.contains(row['status']);
+
+  Future<void> save() async {
     if (supplier.text.trim().isEmpty) {
       throw const FormatException('Enter the supplier name.');
     }
     for (final row in rows) {
-      if ([
-            'order',
-            'line',
-            'name',
-          ].any((key) => row[key].toString().trim().isEmpty) ||
-          [
-            'quantity',
-            'pack',
-          ].any((key) => (int.tryParse(row[key].toString()) ?? 0) < 1) ||
-          !_statuses.contains(row['status'])) {
+      if (!ready(row)) {
         throw FormatException(
           'Review row ${row['source_row']} in ${row['source_file']}. Enter the order, line, part, status, quantity and units per pack.',
         );
@@ -174,10 +199,9 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
       'assignments': jsonEncode(assignments),
       'rows': jsonEncode(rows),
       'digest': preview!['digest'],
-      'pasted': jsonEncode(pasted),
     }, confirm: true);
     if (mounted) Navigator.pop(context, result['created'] as int);
-  });
+  }
 
   Widget mapping(int index) {
     final table = preview!['tables'][index];
@@ -328,7 +352,7 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
   Widget build(BuildContext context) {
     final duplicate = preview?['space_review']?['duplicate'] == true;
     final matches = _maps(preview?['space_review']?['matches'] ?? []);
-    final docs = List<String>.from(preview?['documents'] ?? []);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Import orders')),
       body: SafeArea(
@@ -342,9 +366,23 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Text(
-                'Importing records a purchase. Stock changes when you receive it.',
+                'A complete spreadsheet imports directly. You can review missing order details before saving.',
               ),
               const SizedBox(height: 16),
+              TextField(
+                controller: supplier,
+                maxLength: 120,
+                decoration: const InputDecoration(labelText: 'Supplier'),
+              ),
+              SwitchListTile(
+                title: const Text('Purchase history only'),
+                subtitle: const Text(
+                  'Use for past orders without an expected delivery.',
+                ),
+                value: historical,
+                onChanged: (v) => setState(() => historical = v),
+              ),
+              const Text('$spreadsheetFormats · 500 order lines maximum'),
               OutlinedButton.icon(
                 onPressed: pick,
                 icon: const Icon(Icons.upload_file),
@@ -360,20 +398,6 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
               if (preview != null && !duplicate && !reviewed) ...[
                 for (var i = 0; i < (preview!['tables'] as List).length; i++)
                   mapping(i),
-                for (final doc in docs)
-                  TextFormField(
-                    key: ValueKey(doc),
-                    decoration: InputDecoration(
-                      labelText: 'Paste table from $doc',
-                    ),
-                    maxLines: 3,
-                    onChanged: (v) => pasted[doc] = v,
-                  ),
-                if (docs.isNotEmpty)
-                  TextButton(
-                    onPressed: () => run(readColumns),
-                    child: const Text('Read pasted columns'),
-                  ),
                 FilledButton(
                   onPressed: () => run(() => readColumns(apply: true)),
                   child: const Text('Review order lines'),
@@ -382,20 +406,7 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
               if (reviewed && !duplicate) ...[
                 TextButton(
                   onPressed: () => setState(() => reviewed = false),
-                  child: const Text('Back to column mapping'),
-                ),
-                TextField(
-                  controller: supplier,
-                  maxLength: 120,
-                  decoration: const InputDecoration(labelText: 'Supplier'),
-                ),
-                SwitchListTile(
-                  title: const Text('Purchase history only'),
-                  subtitle: const Text(
-                    'Use for past orders without an expected delivery.',
-                  ),
-                  value: historical,
-                  onChanged: (v) => setState(() => historical = v),
+                  child: const Text('Adjust column mapping'),
                 ),
                 if (rows.length > 1)
                   ExpansionTile(
@@ -450,29 +461,8 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
                       onPressed: () => setState(() => rows.remove(row)),
                     ),
                   ),
-                for (final doc in docs)
-                  TextButton(
-                    onPressed: () async {
-                      final numbers = rows
-                          .where((r) => r['source_file'] == doc)
-                          .map((r) => r['source_row'] as int);
-                      final row = <String, dynamic>{
-                        for (final key in _fields.keys) key: '',
-                        'status': 'unknown',
-                        'source_file': doc,
-                        'source_sheet': '',
-                        'source_row':
-                            numbers.fold(0, (int a, b) => a > b ? a : b) + 1,
-                      };
-                      await edit(row);
-                      if (mounted && row['name'] != '') {
-                        setState(() => rows.add(row));
-                      }
-                    },
-                    child: Text('Add a line from $doc'),
-                  ),
                 FilledButton(
-                  onPressed: rows.isEmpty ? null : save,
+                  onPressed: rows.isEmpty ? null : () => run(save),
                   child: Text('Confirm ${rows.length} order lines'),
                 ),
               ],

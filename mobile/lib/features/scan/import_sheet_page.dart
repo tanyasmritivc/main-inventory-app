@@ -1,3 +1,4 @@
+import '../../core/spreadsheet_file.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 
@@ -37,8 +38,6 @@ class ImportSheetPage extends StatefulWidget {
 }
 
 class _ImportSheetPageState extends State<ImportSheetPage> {
-  static const _maxFileBytes = 10 * 1024 * 1024;
-
   _ImportState _state = _ImportState.ready;
   String? _filename;
   String? _errorMessage;
@@ -118,10 +117,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   }
 
   Future<void> _importFile(PlatformFile file) async {
-    final extension = (file.extension ?? file.name.split('.').last)
-        .trim()
-        .toLowerCase();
-    if (!['xlsx', 'csv', 'json'].contains(extension)) {
+    if (!isSpreadsheetFilename(file.name)) {
       setState(() {
         _errorMessage = 'Choose an Excel (.xlsx), CSV, or JSON file.';
       });
@@ -131,7 +127,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       setState(() => _errorMessage = 'The selected file is empty.');
       return;
     }
-    if (file.size > _maxFileBytes) {
+    if (file.size > spreadsheetByteLimit) {
       setState(() {
         _errorMessage = 'Choose a spreadsheet smaller than 10 MB.';
       });
@@ -314,7 +310,7 @@ class _ReadyView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         AppText(
-          'Excel (.xlsx), CSV, or JSON, up to 10 MB',
+          spreadsheetFormats,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textSecondary(context),

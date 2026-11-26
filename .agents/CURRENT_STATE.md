@@ -4253,3 +4253,7 @@ Documents and notes, People and Account settings moved from inline rows to the e
 ## 2026-11-25 — Native Space order imports, build 240
 
 Organization Space detail opens its Orders list and offers Import orders in the add menu. The iOS Files picker, original-column mapping, order-line edits, possible stock matches and explicit import run in Flutter against the Space-scoped API. Receiving or reconciling uses a separate labeled browser action. Existing inventory imports retain their original route. Flutter analysis and 21 targeted regression tests passed. Physical-device acceptance is pending.
+
+## November 25 · Orders spreadsheet picker, build 241
+
+Space Orders uses the native spreadsheet file picker for Excel (.xlsx), CSV and JSON up to 10 MB. With a supplier entered, complete order lines import directly. Incomplete rows open for review and duplicates are flagged. The API retains the existing 500-order-line limit. Flutter tests covered file rejection, direct import, review and duplicate handling. Apple accepted the signed 1.1.6 (241) upload for TestFlight. Physical-device verification remains pending.
