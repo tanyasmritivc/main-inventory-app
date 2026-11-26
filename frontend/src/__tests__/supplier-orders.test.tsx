@@ -121,25 +121,31 @@ test("the review uses original header positions, requires a separate confirmatio
       ]}
     />,
   );
-  await screen.findByText("Import a supplier order");
-  fireEvent.click(screen.getByText("Import a supplier order"));
-  fireEvent.change(screen.getByLabelText("Supplier", { exact: true }), {
-    target: { value: "goBILDA" },
+  const input = (await screen.findByLabelText(
+    "Order file",
+  )) as HTMLInputElement;
+  expect(input.accept).toBe(".csv,.xlsx,.json");
+  fireEvent.change(input, {
+    target: { files: [new File(["png"], "screen.png")] },
   });
-  const input = screen.getByLabelText("Order file") as HTMLInputElement;
+  expect((await screen.findByRole("alert")).textContent).toMatch(/Excel/);
+  expect(api.mock.calls.some((c) => c[1].endsWith("/preview"))).toBe(false);
   fireEvent.change(input, {
     target: { files: [new File(["test"], "parts.xlsx")] },
   });
   const submit = () => fireEvent.submit(input.closest("form")!);
-  submit();
+  fireEvent.click(await screen.findByText("Adjust column mapping"));
   const select = await screen.findByLabelText("Quantity purchased column");
   expect((select as HTMLSelectElement).value).toBe("");
   fireEvent.change(select, { target: { value: "1" } });
   submit();
   await screen.findByDisplayValue("Screw");
   expect(api.mock.calls.some((c) => c[1].endsWith("/import"))).toBe(false);
+  fireEvent.change(screen.getByLabelText("Supplier", { exact: true }), {
+    target: { value: "goBILDA" },
+  });
   submit();
-  await screen.findByText(/Saved 1 new order lines/);
+  await screen.findByText("Imported 1 order line.");
   const call = api.mock.calls.find((c) => c[1].endsWith("/import"))!;
   expect(call[2].body.get("space_id")).toBe("shelf");
   expect(
@@ -168,7 +174,7 @@ test("stock and order balances stay distinct and read-only members cannot receiv
       /100 ordered · 25 received or reconciled · 0 cancelled · 75 outstanding/,
     ),
   ).toBeTruthy();
-  expect(screen.queryByText("Import a supplier order")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Import orders" })).toBeNull();
   expect(screen.queryByLabelText("Record an action")).toBeNull();
 });
 
@@ -225,3 +231,74 @@ test("retrying a receipt preserves its request ID and canonical Space", async ()
     request_id: expect.any(String),
   });
 });
+
+test.each([true, false])(
+  "a complete CSV chosen from Orders is imported once unless already recorded (duplicate=%s)",
+  async (duplicate) => {
+    const draft = {
+      order: "A",
+      line: "1",
+      sku: "001",
+      name: "Screw",
+      quantity: "3",
+      pack: "5",
+      status: "ordered",
+      source_file: "parts.csv",
+      source_row: 2,
+    };
+    api.mockImplementation(async (_actor, path) => {
+      if (path.endsWith("/preview"))
+        return {
+          tables: [],
+          rows: [draft],
+          assignments: [],
+          digest: "csv",
+          space_review: { duplicate, matches: [] },
+        };
+      if (path.endsWith("/import")) return { created: 1 };
+      return results;
+    });
+    render(
+      <SupplierOrders
+        accountId="actor"
+        world="org"
+        spaces={[
+          {
+            inventory_id: "inventory",
+            space_id: "shelf",
+            name: "Fasteners",
+            can_edit: true,
+          },
+        ]}
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Import orders" }),
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Destination Space" }), {
+      target: { value: "shelf" },
+    });
+    fireEvent.change(screen.getByLabelText("Supplier", { exact: true }), {
+      target: { value: "Supplier" },
+    });
+    const input = screen.getByLabelText("Order file");
+    fireEvent.change(input, {
+      target: { files: [new File(["z"], "parts.zip")] },
+    });
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    fireEvent.change(input, {
+      target: { files: [new File(["Name,Qty\nScrew,3"], "parts.csv")] },
+    });
+    await screen.findByText(
+      duplicate
+        ? /This file is already in organization Orders/
+        : "Imported 1 order line.",
+    );
+    expect(
+      api.mock.calls.filter((c) => c[1].endsWith("/preview")),
+    ).toHaveLength(1);
+    expect(api.mock.calls.filter((c) => c[1].endsWith("/import"))).toHaveLength(
+      duplicate ? 0 : 1,
+    );
+  },
+);

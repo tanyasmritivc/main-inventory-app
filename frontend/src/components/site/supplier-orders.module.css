@@ -81,3 +81,111 @@
 .page input.check {
   width: auto;
 }
+
+.heading,
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.heading {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.filters {
+  align-items: end;
+  padding: 18px 0;
+  border-block: 1px solid var(--app-border);
+}
+.filters label:first-child {
+  flex: 0 1 275px;
+}
+.filters label:last-child {
+  flex: 1 1 auto;
+}
+.listTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.empty {
+  border: 1px dashed var(--app-border);
+  border-radius: 14px;
+  text-align: center;
+  padding: 36px 16px;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+}
+.empty svg {
+  color: var(--app-muted);
+  margin-bottom: 4px;
+}
+.dialog {
+  width: min(600px, calc(100vw - 32px));
+  max-width: 600px;
+}
+.dialog fieldset,
+.dialog label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.dialog fieldset {
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+.dialog label {
+  font-size: 14px;
+}
+.dialog input,
+.dialog select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: inherit;
+  padding: 9px 12px;
+  border-radius: 8px;
+}
+.dialog input.check {
+  width: auto;
+}
+.dialog button {
+  cursor: pointer;
+  justify-self: start;
+}
+.dialog .filePicker {
+  position: relative;
+  cursor: pointer;
+  justify-items: center;
+  padding: 24px;
+  border: 1px dashed var(--app-border);
+  border-radius: 12px;
+}
+.filePicker small {
+  color: var(--app-muted);
+}
+.filePicker input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.filePicker:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .filters {
+    display: grid;
+  }
+  .heading {
+    gap: 8px;
+  }
+}

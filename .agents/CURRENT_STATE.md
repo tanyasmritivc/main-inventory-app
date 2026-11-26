@@ -2773,3 +2773,9 @@ The authorized self-hosted release applied `backend/supabase/migrations/20261124
 ## 2026-11-25 — Orders in organization Spaces
 
 The live API and website associate new Space imports with a supplier document and retain separate purchase and receipt balances. Existing organization-wide documents retain their original visibility. A confirmed receipt adds stock; reconciliation links units already recorded. Organization Ask and Space Ask read the relevant purchase evidence. Local PostgreSQL and parser tests passed, along with web component tests and TypeScript. Production verification used a read-only ZIP preview containing Excel and CSV and checked the public website bundles.
+
+## November 25 · Space Orders spreadsheet importer
+
+The live Orders page opens a focused import dialog. Its picker and the Space spreadsheet picker share the Excel (.xlsx), CSV and JSON file policy and 10 MB upload limit. The API validates the uploaded contents on preview and confirmation. Orders retain their 500-line limit. Complete files with a supplier import directly. Ambiguous order fields remain editable before saving. Order imports preserve purchase history and update recorded stock only through a separate receipt.
+
+Verified the three supported formats, rejected PNG and ZIP uploads, and checked the live website bundle. The release used the existing database schema.

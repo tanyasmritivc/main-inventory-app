@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Upload, FileSpreadsheet, PackageOpen } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  spreadsheetAccept,
+  spreadsheetFileError,
+  spreadsheetFileHint,
+} from "@/lib/spreadsheet-file";
 import Link from "next/link";
 import {
   OrderColumnMapping,
@@ -104,12 +116,35 @@ const fields = {
 const message = (e: unknown) =>
   e instanceof Error ? e.message : "Please retry.";
 
+function readyOrderLines(rows: Draft[]) {
+  return (
+    rows.length > 0 &&
+    rows.every(
+      (r) =>
+        r.order.trim() &&
+        r.line.trim() &&
+        r.name.trim() &&
+        [r.quantity, r.pack].every((n) => /^\d+$/.test(n) && Number(n) > 0) &&
+        [
+          "unknown",
+          "ordered",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "returned",
+        ].includes(r.status),
+    )
+  );
+}
+
 function ImportOrder({
   accountId,
   path,
   saved,
   spaceId,
+  onBusy,
 }: {
+  onBusy: (value: boolean) => void;
   spaceId?: string;
   accountId: string;
   path: string;
@@ -120,35 +155,6 @@ function ImportOrder({
     [source, setSource] = useState<Preview>();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [mapped, setMapped] = useState(false);
-  const [pasted, setPasted] = useState<Record<string, string>>({});
-  const [reading, setReading] = useState(false);
-  const [parsedPaste, setParsedPaste] = useState("{}");
-  async function readPasted() {
-    if (!file || lock.current) return;
-    lock.current = true;
-    setReading(true);
-    setError("");
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      if (spaceId) body.append("space_id", spaceId);
-      body.append("pasted", JSON.stringify(pasted));
-      const next = await accountRequest<Preview>(accountId, path + "/preview", {
-        method: "POST",
-        body,
-      });
-      setParsedPaste(JSON.stringify(pasted));
-      setSource(next);
-      setAssignments(next.assignments);
-      setMapped(false);
-      setRows([]);
-    } catch (e) {
-      setError(message(e));
-    } finally {
-      lock.current = false;
-      setReading(false);
-    }
-  }
   const [historical, setHistorical] = useState(true),
     [rows, setRows] = useState<Draft[]>([]);
   const [busy, setBusy] = useState(false),
@@ -156,316 +162,286 @@ function ImportOrder({
   const lock = useRef(false),
     input = useRef<HTMLInputElement>(null);
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!file || lock.current || source?.space_review?.duplicate) return;
-    lock.current = true;
-    setBusy(true);
+  function form(selected: File) {
+    const body = new FormData();
+    body.append("file", selected);
+    if (spaceId) body.append("space_id", spaceId);
+    return body;
+  }
+  async function storeOrder(selected: File, preview: Preview, lines: Draft[]) {
+    const body = form(selected);
+    body.append("supplier", supplier.trim());
+    body.append("digest", preview.digest);
+    body.append("historical", String(historical));
+    body.append("assignments", JSON.stringify(preview.assignments));
+    body.append("rows", JSON.stringify(lines));
+    const result = await accountRequest<{ created: number }>(
+      accountId,
+      path + "/import",
+      { method: "POST", body },
+    );
+    saved(
+      result.created
+        ? `Imported ${result.created} order ${result.created === 1 ? "line" : "lines"}.`
+        : "These order lines were already recorded.",
+    );
+  }
+  async function readFile(selected: File, remap = false) {
+    if (lock.current) return;
     setError("");
+    if (!remap) {
+      setSource(undefined);
+      setRows([]);
+      setAssignments([]);
+      setMapped(false);
+      setFile(undefined);
+    }
+    const invalid = spreadsheetFileError(selected);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+    lock.current = true;
+    onBusy(true);
+    setFile(selected);
+    setBusy(true);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      if (spaceId) body.append("space_id", spaceId);
-      body.append("pasted", JSON.stringify(pasted));
-      if (source) body.append("assignments", JSON.stringify(assignments));
-      if (!source || !mapped) {
-        const preview = await accountRequest<Preview>(
-          accountId,
-          path + "/preview",
-          { method: "POST", body },
-        );
-        if (spaceId && !preview.space_review)
-          throw Error("Space order imports are unavailable on this server.");
-        setMapped(!!source);
-        setAssignments(preview.assignments);
-        setSource(preview);
-        setRows(preview.rows);
-      } else {
-        body.append("supplier", supplier);
-        body.append("digest", source.digest);
-        body.append("historical", String(historical));
-        body.append("rows", JSON.stringify(rows));
-        const result = await accountRequest<{ created: number }>(
-          accountId,
-          path + "/import",
-          { method: "POST", body },
-        );
-        setSource(undefined);
-        setFile(undefined);
-        setRows([]);
-        if (input.current) input.current.value = "";
-        saved(
-          result.created
-            ? `Saved ${result.created} new order lines. Stock quantities are unchanged.`
-            : "These order lines were already recorded.",
-        );
+      const body = form(selected);
+      if (remap) body.append("assignments", JSON.stringify(assignments));
+      const next = await accountRequest<Preview>(accountId, path + "/preview", {
+        method: "POST",
+        body,
+      });
+      if (spaceId && !next.space_review)
+        throw Error("Space order imports are unavailable on this server.");
+      setSource(next);
+      setAssignments(next.assignments);
+      setRows(next.rows);
+      setMapped(true);
+      if (
+        !remap &&
+        supplier.trim() &&
+        !next.space_review?.duplicate &&
+        readyOrderLines(next.rows)
+      ) {
+        await storeOrder(selected, next, next.rows);
       }
-    } catch (e) {
-      setError(message(e));
+    } catch (err) {
+      setError(message(err));
     } finally {
       lock.current = false;
       setBusy(false);
+      onBusy(false);
+    }
+  }
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!file || lock.current || source?.space_review?.duplicate) return;
+    if (!source || !mapped) {
+      await readFile(file, !!source);
+      return;
+    }
+    lock.current = true;
+    onBusy(true);
+    setBusy(true);
+    setError("");
+    try {
+      await storeOrder(file, source, rows);
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+      onBusy(false);
     }
   }
   return (
-    <details className={styles.panel} open={spaceId ? true : undefined}>
-      <summary>Import a supplier order</summary>
-      <form onSubmit={submit}>
-        <fieldset disabled={busy || reading}>
+    <form onSubmit={submit}>
+      <fieldset disabled={busy}>
+        <div className={styles.grid}>
           <label>
             Supplier
             <input
-              required
+              required={!!source && mapped}
               maxLength={120}
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
-              placeholder="goBILDA"
+              placeholder="Supplier name"
             />
           </label>
           <label>
-            Order file
-            <input
-              ref={input}
-              required
-              type="file"
-              onChange={(e) => {
-                setSource(undefined);
-                setMapped(false);
-                setAssignments([]);
-                setPasted({});
-                setParsedPaste("{}");
-                setRows([]);
-                setError("");
-                setFile(e.target.files?.[0]);
-              }}
-            />
+            Order status
+            <select
+              value={historical ? "history" : "open"}
+              onChange={(e) => setHistorical(e.target.value === "history")}
+            >
+              <option value="history">Purchase history only</option>
+              <option value="open">Open order to receive</option>
+            </select>
           </label>
-          <p>
-            Upload a supplier file or ZIP. Review each sheet’s original columns
-            and choose how they map to order lines. For files without a readable
-            table, add the lines manually.
+        </div>
+        <label className={styles.filePicker}>
+          <FileSpreadsheet aria-hidden="true" size={26} />
+          <strong>{file?.name || "Choose spreadsheet"}</strong>
+          <small>{spreadsheetFileHint} Up to 500 order lines.</small>
+          <input
+            ref={input}
+            aria-label="Order file"
+            type="file"
+            accept={spreadsheetAccept}
+            onChange={(e) => {
+              const selected = e.target.files?.[0];
+              e.target.value = "";
+              if (selected) void readFile(selected);
+            }}
+          />
+        </label>
+        {busy && <p role="status">Importing spreadsheet…</p>}
+        {source?.space_review?.duplicate && (
+          <p role="status">
+            This file is already in organization Orders. Choose a different file
+            to import another order.
           </p>
-          {source?.space_review?.duplicate && (
-            <p role="status">
-              This file is already in organization Orders. Choose a different
-              file to import another order.
-            </p>
-          )}
-          {source && !source.space_review?.duplicate && !mapped && (
-            <>
-              {source.tables.map((t, i) => (
-                <OrderColumnMapping
-                  key={JSON.stringify([t.file, t.sheet])}
-                  table={t}
-                  config={assignments[i]}
-                  update={(c) =>
-                    setAssignments((old) =>
-                      old.map((v, n) => (n === i ? c : v)),
-                    )
-                  }
-                />
-              ))}
-              {source.documents.map((doc) => (
-                <label key={doc}>
-                  {doc} · Paste a table or continue to enter lines manually
-                  <textarea
-                    value={pasted[doc] || ""}
-                    onChange={(e) =>
-                      setPasted((old) => ({ ...old, [doc]: e.target.value }))
-                    }
-                    placeholder="Paste cells with their original column headings"
-                  />
-                </label>
-              ))}
-              {Object.values(pasted).some((v) => v.trim()) && (
-                <button type="button" onClick={() => void readPasted()}>
-                  Read pasted columns
-                </button>
-              )}
-            </>
-          )}
-          {source && mapped && (
-            <>
-              {!!source.tables.length && (
-                <button type="button" onClick={() => setMapped(false)}>
-                  Back to column mapping
-                </button>
-              )}
-              <label>
-                Order status
-                <select
-                  value={historical ? "history" : "open"}
-                  onChange={(e) => setHistorical(e.target.value === "history")}
-                >
-                  <option value="history">Purchase history only</option>
-                  <option value="open">Open order to receive</option>
-                </select>
-              </label>
-              <p>
-                Check each line against the document. For individual pieces
-                enter 1 unit per pack. Use a separate line ID for each variant.
-              </p>
-              {rows.length > 1 && (
-                <details>
-                  <summary>Fill blank values across reviewed lines</summary>
-                  {(["order", "pack"] as const).map((k) => (
+        )}
+        {source && !source.space_review?.duplicate && !mapped && (
+          <>
+            {source.tables.map((t, i) => (
+              <OrderColumnMapping
+                key={JSON.stringify([t.file, t.sheet])}
+                table={t}
+                config={assignments[i]}
+                update={(c) =>
+                  setAssignments((old) => old.map((v, n) => (n === i ? c : v)))
+                }
+              />
+            ))}
+          </>
+        )}
+        {source && mapped && !source.space_review?.duplicate && (
+          <>
+            {!!source.tables.length && (
+              <button type="button" onClick={() => setMapped(false)}>
+                Adjust column mapping
+              </button>
+            )}
+            {rows.length > 1 && (
+              <details>
+                <summary>Fill blank values across reviewed lines</summary>
+                {(["order", "pack"] as const).map((k) => (
+                  <label key={k}>
+                    {fields[k]} for blank lines
+                    <input
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.preventDefault();
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value.trim();
+                        if (value)
+                          setRows((old) =>
+                            old.map((r) => (r[k] ? r : { ...r, [k]: value })),
+                          );
+                        e.target.value = "";
+                      }}
+                      placeholder="Enter a value, then leave this field"
+                    />
+                  </label>
+                ))}
+              </details>
+            )}
+            {rows.map((row, i) => (
+              <div className={styles.panel} key={i}>
+                <small>
+                  {row.source_file} {row.source_sheet} · Row {row.source_row}
+                </small>
+                <div className={styles.grid}>
+                  {(Object.keys(fields) as (keyof typeof fields)[]).map((k) => (
                     <label key={k}>
-                      {fields[k]} for blank lines
+                      {fields[k]}
                       <input
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.preventDefault();
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value.trim();
-                          if (value)
-                            setRows((old) =>
-                              old.map((r) => (r[k] ? r : { ...r, [k]: value })),
-                            );
-                          e.target.value = "";
-                        }}
-                        placeholder="Enter a value, then leave this field"
+                        required={k !== "sku"}
+                        type={
+                          k === "quantity" || k === "pack" ? "number" : "text"
+                        }
+                        min={1}
+                        step={1}
+                        value={row[k]}
+                        onChange={(e) =>
+                          setRows((old) =>
+                            old.map((r, n) =>
+                              n === i ? { ...r, [k]: e.target.value } : r,
+                            ),
+                          )
+                        }
                       />
                     </label>
                   ))}
-                </details>
-              )}
-              {rows.map((row, i) => (
-                <div className={styles.panel} key={i}>
-                  <small>
-                    {row.source_file} {row.source_sheet} · Row {row.source_row}
-                  </small>
-                  <div className={styles.grid}>
-                    {(Object.keys(fields) as (keyof typeof fields)[]).map(
-                      (k) => (
-                        <label key={k}>
-                          {fields[k]}
-                          <input
-                            required={k !== "sku"}
-                            type={
-                              k === "quantity" || k === "pack"
-                                ? "number"
-                                : "text"
-                            }
-                            min={1}
-                            step={1}
-                            value={row[k]}
-                            onChange={(e) =>
-                              setRows((old) =>
-                                old.map((r, n) =>
-                                  n === i ? { ...r, [k]: e.target.value } : r,
-                                ),
-                              )
-                            }
-                          />
-                        </label>
-                      ),
-                    )}
-                  </div>
-                  {source.space_review?.matches
-                    .filter((m) => m.sku === row.sku && m.name === row.name)
-                    .map((m) => (
-                      <p key={m.item_id}>
-                        Possible inventory match · {m.item_name} ·{" "}
-                        {m.recorded_quantity ?? "Unknown quantity"} recorded in{" "}
-                        {m.space_name}
-                        {m.location && m.location !== m.space_name
-                          ? " · " + m.location
-                          : ""}
-                      </p>
-                    ))}
-                  <label>
-                    Supplier status
-                    <select
-                      value={row.status}
-                      onChange={(e) =>
-                        setRows((old) =>
-                          old.map((r, n) =>
-                            n === i ? { ...r, status: e.target.value } : r,
-                          ),
-                        )
-                      }
-                    >
-                      {Array.from(
-                        new Set([
-                          row.status,
-                          "unknown",
-                          "ordered",
-                          "shipped",
-                          "delivered",
-                          "cancelled",
-                          "returned",
-                        ]),
-                      ).map((status) => (
-                        <option key={status}>{status}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setRows((old) => old.filter((_, n) => n !== i))
+                </div>
+                {source.space_review?.matches
+                  .filter((m) => m.sku === row.sku && m.name === row.name)
+                  .map((m) => (
+                    <p key={m.item_id}>
+                      Possible inventory match · {m.item_name} ·{" "}
+                      {m.recorded_quantity ?? "Unknown quantity"} recorded in{" "}
+                      {m.space_name}
+                      {m.location && m.location !== m.space_name
+                        ? " · " + m.location
+                        : ""}
+                    </p>
+                  ))}
+                <label>
+                  Supplier status
+                  <select
+                    value={row.status}
+                    onChange={(e) =>
+                      setRows((old) =>
+                        old.map((r, n) =>
+                          n === i ? { ...r, status: e.target.value } : r,
+                        ),
+                      )
                     }
                   >
-                    Exclude line
-                  </button>
-                </div>
-              ))}
-              {source.documents.map((doc) => (
+                    {Array.from(
+                      new Set([
+                        row.status,
+                        "unknown",
+                        "ordered",
+                        "shipped",
+                        "delivered",
+                        "cancelled",
+                        "returned",
+                      ]),
+                    ).map((status) => (
+                      <option key={status}>{status}</option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
-                  key={doc}
                   onClick={() =>
-                    setRows((old) => [
-                      ...old,
-                      {
-                        order: "",
-                        line: "",
-                        sku: "",
-                        name: "",
-                        quantity: "",
-                        pack: "",
-                        status: "unknown",
-                        source_file: doc,
-                        source_sheet: "",
-                        source_row:
-                          1 +
-                          Math.max(
-                            0,
-                            ...old
-                              .filter((r) => r.source_file === doc)
-                              .map((r) => r.source_row),
-                          ),
-                      },
-                    ])
+                    setRows((old) => old.filter((_, n) => n !== i))
                   }
                 >
-                  Add a line from {doc}
+                  Exclude line
                 </button>
-              ))}
-            </>
-          )}
+              </div>
+            ))}
+          </>
+        )}
+        {file && !source?.space_review?.duplicate && (
           <button
             className="workspace-button primary"
-            disabled={
-              busy ||
-              reading ||
-              !!source?.space_review?.duplicate ||
-              JSON.stringify(pasted) !== parsedPaste ||
-              (!!source && mapped && !rows.length)
-            }
+            disabled={busy || (!!source && mapped && !rows.length)}
           >
-            {busy
-              ? "Working…"
-              : source
-                ? mapped
-                  ? "Confirm order lines"
-                  : "Review mapped lines"
-                : "Review file"}
+            {source
+              ? mapped
+                ? "Import order"
+                : "Apply column mapping"
+              : "Retry spreadsheet"}
           </button>
-        </fieldset>
-      </form>
-      {error && <p role="alert">{error}</p>}
-    </details>
+        )}
+        {error && <p role="alert">{error}</p>}
+      </fieldset>
+    </form>
   );
 }
 
@@ -754,6 +730,9 @@ export function SupplierOrders({
   spaces,
   initialSpace,
 }: Props) {
+  const [importBusy, setImportBusy] = useState(false);
+  const [importOpen, setImportOpen] = useState(!!initialSpace);
+  const [destination, setDestination] = useState(initialSpace || "");
   const [spaceId, setSpaceId] = useState(initialSpace || "");
   const path =
     "/commerce/organizations/" + encodeURIComponent(world) + "/orders";
@@ -817,60 +796,103 @@ export function SupplierOrders({
     }
   }
   function saved(s: string) {
+    setImportOpen(false);
     setNotice(s);
     refresh((v) => v + 1);
   }
   return (
     <section className={styles.page}>
-      <PageHeader>
-        <h1>Orders</h1>
-      </PageHeader>
-      <p>
-        Track supplier orders and receive parts into your organization’s Spaces.
-      </p>
-      <label>
-        Order Space
-        <select
-          value={spaceId}
-          onChange={(e) => {
-            setSpaceId(e.target.value);
-            setOffset(0);
-            setNotice("");
-          }}
-        >
-          <option value="">All organization orders</option>
-          {spaces
-            .filter((s) => s.space_id)
-            .map((s) => (
-              <option key={s.space_id} value={s.space_id}>
-                {s.name}
-              </option>
-            ))}
-        </select>
-      </label>
-      {data?.can_manage && data.space_orders_supported && !spaceId && (
-        <p>Choose a Space above to import an order.</p>
-      )}
-      {data?.can_manage && (spaceId || !data.space_orders_supported) && (
-        <ImportOrder
-          key={spaceId}
-          accountId={accountId}
-          path={path}
-          saved={saved}
-          spaceId={spaceId}
-        />
-      )}
-      <label>
-        Search orders and recorded inventory
-        <input
-          placeholder="Part name, SKU or order number"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOffset(0);
-          }}
-        />
-      </label>
+      <div className={styles.heading}>
+        <PageHeader>
+          <h1>Orders</h1>
+        </PageHeader>
+        {data?.can_manage && (
+          <button
+            type="button"
+            className="workspace-button primary"
+            onClick={() => {
+              setDestination(spaces.some((s) => s.can_edit && s.space_id === spaceId) ? spaceId : "");
+              setImportOpen(true);
+            }}
+          >
+            <Upload size={16} /> Import orders
+          </button>
+        )}
+      </div>
+      <Dialog
+        open={importOpen && !!data?.can_manage && (!destination || spaces.some((space) => space.space_id === destination && space.can_edit))}
+        onOpenChange={(v) => {
+          if (!importBusy) setImportOpen(v);
+        }}
+      >
+        <DialogContent className={styles.dialog}>
+          <DialogTitle>Import orders</DialogTitle>
+          <DialogDescription>
+            Complete spreadsheets import directly. Missing order details open
+            for review.
+          </DialogDescription>
+          <label>
+            Destination Space
+            <select
+              disabled={importBusy}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            >
+              <option value="">Choose a Space</option>
+              {spaces
+                .filter((s) => s.space_id && s.can_edit)
+                .map((s) => (
+                  <option key={s.space_id} value={s.space_id}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {destination && (
+            <ImportOrder
+              key={destination}
+              accountId={accountId}
+              path={path}
+              saved={saved}
+              onBusy={setImportBusy}
+              spaceId={destination}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      <div className={styles.filters}>
+        <label>
+          Order Space
+          <select
+            value={spaceId}
+            onChange={(e) => {
+              setSpaceId(e.target.value);
+              setOffset(0);
+              setNotice("");
+            }}
+          >
+            <option value="">All organization orders</option>
+            {spaces
+              .filter((s) => s.space_id)
+              .map((s) => (
+                <option key={s.space_id} value={s.space_id}>
+                  {s.name}
+                </option>
+              ))}
+          </select>
+        </label>
+        <label>
+          Search orders and recorded inventory
+          <input
+            placeholder="Part name, SKU or order number"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOffset(0);
+            }}
+          />
+        </label>
+      </div>
       {notice && <p role="status">{notice}</p>}
       {error && (
         <p role="alert">
@@ -894,9 +916,19 @@ export function SupplierOrders({
               )}
             </div>
           )}
-          <h2>Supplier order lines</h2>
+          <h2 className={styles.listTitle}>Order lines</h2>
           {!data.order_lines.length && (
-            <p>No matching supplier orders on this page.</p>
+            <div className={styles.empty}>
+              <PackageOpen aria-hidden="true" size={26} />
+              <strong>
+                {query ? "No matching order lines" : "No orders yet"}
+              </strong>
+              <p>
+                {query
+                  ? "Try another part, SKU, or order number."
+                  : "Imported order lines will appear here."}
+              </p>
+            </div>
           )}
           {data.order_lines.map((l) => (
             <article key={l.id} className={styles.panel}>

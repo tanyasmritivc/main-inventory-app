@@ -23,8 +23,8 @@ def archive(name, content):
 CSV = b"Order Number,SKU,Product Name,Qty,Pack Size,Status\nG-42,S-12,M4 x 12 screws,2,50,delivered\n"
 
 
-def test_reviewed_zip_units_and_identity():
-    source = orders.preview(archive("orders/export.csv", CSV), "orders.zip")
+def test_reviewed_units_and_identity():
+    source = orders.preview(CSV, "orders.csv")
     (line,) = orders.reviewed(source["rows"], source)
     assert (
         line["order"],
@@ -38,17 +38,6 @@ def test_reviewed_zip_units_and_identity():
             orders.reviewed([{**line, **changed}], source)
     with pytest.raises(HTTPException):
         orders.reviewed([line, line], source)
-
-
-def test_invoice_and_confirmation_in_one_zip_describe_one_order_line():
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w") as bundle:
-        bundle.writestr("order.csv", CSV)
-        bundle.writestr("invoice.csv", CSV)
-    source = orders.preview(stream.getvalue(), "order-docs.zip")
-    (row,) = orders.reviewed(source["rows"], source)
-    assert row["quantity"] * row["pack"] == 100
-    assert row["supporting_sources"][0]["source_file"] == "invoice.csv"
 
 
 @pytest.mark.parametrize(
@@ -66,28 +55,7 @@ def test_unsafe_or_unsupported_files(name, data):
         orders.preview(data, name)
 
 
-def test_manual_pdf_review():
-    from pypdf import PdfWriter
-
-    out = io.BytesIO()
-    writer = PdfWriter()
-    writer.add_blank_page(width=100, height=100)
-    writer.write(out)
-    source = orders.preview(out.getvalue(), "invoice.pdf")
-    assert source["documents"] == ["invoice.pdf"] and not source["rows"]
-    line = {
-        "source_file": "invoice.pdf",
-        "source_row": 1,
-        "order": "G42",
-        "line": "1",
-        "name": "Bracket",
-        "quantity": 2,
-        "pack": 1,
-    }
-    assert orders.reviewed([line], source)[0]["sku"] == ""
-
-
-def test_excel_zip_header_offsets_duplicate_labels_and_distinct_sheets():
+def test_excel_header_offsets_duplicate_labels_and_distinct_sheets():
     from openpyxl import Workbook
 
     book = Workbook()
@@ -104,8 +72,8 @@ def test_excel_zip_header_offsets_duplicate_labels_and_distinct_sheets():
     other.append(["UPS", "123"])
     out = io.BytesIO()
     book.save(out)
-    data = archive("purchase.xlsx", out.getvalue())
-    source = orders.preview(data, "parts.zip")
+    data = out.getvalue()
+    source = orders.preview(data, "parts.xlsx")
     first, second = source["tables"]
     assert (
         first["header"] == 2
@@ -120,7 +88,7 @@ def test_excel_zip_header_offsets_duplicate_labels_and_distinct_sheets():
         },
         None,
     ]
-    mapped = orders.preview(data, "parts.zip", cfg)
+    mapped = orders.preview(data, "parts.xlsx", cfg)
     (line,) = orders.reviewed(mapped["rows"], mapped)
     assert (line["order"], line["quantity"], line["pack"], line["sku"]) == (
         "0091",
@@ -135,68 +103,9 @@ def test_excel_zip_header_offsets_duplicate_labels_and_distinct_sheets():
     with pytest.raises(HTTPException):
         orders.preview(
             data,
-            "parts.zip",
+            "parts.xlsx",
             [{"header": 2, "mapping": {"name": 1, "quantity": 1}}, None],
         )
-
-
-def test_visual_pdf_table_retains_the_printed_columns():
-    from pypdf import PdfWriter
-    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
-
-    writer = PdfWriter()
-    page = writer.add_blank_page(width=300, height=300)
-    font = DictionaryObject(
-        {
-            NameObject("/Type"): NameObject("/Font"),
-            NameObject("/Subtype"): NameObject("/Type1"),
-            NameObject("/BaseFont"): NameObject("/Helvetica"),
-        }
-    )
-    page[NameObject("/Resources")] = DictionaryObject(
-        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
-    )
-    content = DecodedStreamObject()
-    content.set_data(
-        b"10 100 m 210 100 l S 10 130 m 210 130 l S 10 160 m 210 160 l S 10 100 m 10 160 l S 110 100 m 110 160 l S 210 100 m 210 160 l S BT /F1 10 Tf 15 140 Td (SKU) Tj 100 0 Td (Qty) Tj ET BT /F1 10 Tf 15 112 Td (0012) Tj 100 0 Td (3) Tj ET"
-    )
-    page[NameObject("/Contents")] = writer._add_object(content)
-    out = io.BytesIO()
-    writer.write(out)
-    source = orders.preview(out.getvalue(), "invoice.pdf")
-    (row,) = source["rows"]
-    assert (
-        row["sku"] == "0012"
-        and row["quantity"] == "3"
-        and row["source_sheet"] == "Page 1, table 1"
-    )
-
-
-def test_opendocument_sheet_preserves_headers():
-    grid = [["Qty", "SKU"], ["3", "0012"]]
-    rows = "".join(
-        "<table:table-row>"
-        + "".join(
-            '<table:table-cell office:value-type="string"><text:p>'
-            + v
-            + "</text:p></table:table-cell>"
-            for v in row
-        )
-        + "</table:table-row>"
-        for row in grid
-    )
-    xml = (
-        '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"><office:body><office:spreadsheet><table:table table:name="Parts">'
-        + rows
-        + "</table:table></office:spreadsheet></office:body></office:document-content>"
-    )
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w") as bundle:
-        bundle.writestr("mimetype", "application/vnd.oasis.opendocument.spreadsheet")
-        bundle.writestr("content.xml", xml)
-        bundle.writestr("META-INF/manifest.xml", "<manifest/>")
-    (row,) = orders.preview(stream.getvalue(), "order.ods")["rows"]
-    assert (row["sku"], row["quantity"], row["source_sheet"]) == ("0012", "3", "Parts")
 
 
 def test_possible_shipped_quantity_is_not_guessed_as_ordered():
@@ -206,42 +115,45 @@ def test_possible_shipped_quantity_is_not_guessed_as_ordered():
     assert suggest(["SKU", "Qty Ordered", "Qty Shipped"])["quantity"] == 1
 
 
-def test_unknown_format_and_original_columns_from_manual_transcription():
-    data = b"example image bytes"
-    source = orders.preview(data, "scan.vendor")
-    assert not source["tables"] and source["documents"] == ["scan.vendor"]
-    source = orders.preview(
-        data, "scan.vendor", pasted={"scan.vendor": "custom label\tlot\nMotor\tA19"}
-    )
-    assert source["tables"][0]["records"][0]["cells"] == ["custom label", "lot"]
-    assert source["rows"][0]["source_sheet"] == "Manually pasted table"
+@pytest.mark.parametrize(
+    "name,data",
+    [
+        ("screen.png", b"image"),
+        ("purchase.zip", archive("valid.csv", CSV)),
+        ("order.XLS", CSV),
+        ("spreadsheet.tsv", CSV),
+        ("renamed.xlsx", archive("order.csv", CSV)),
+        ("renamed.csv", b"\x89PNG\r\n\x1a\n"),
+        ("order.pdf", b"%PDF-1.7"),
+        ("noext", CSV),
+        ("empty.csv", b""),
+        ("oversize.csv", b"x" * (orders.MAX_BYTES + 1)),
+        ("bad.json", b'{"sku":"s"}'),
+    ],
+)
+def test_only_spreadsheets_can_be_imported(name, data):
+    with pytest.raises(HTTPException):
+        orders.preview(data, name)
+    with pytest.raises(HTTPException):
+        orders.preview(data, name, pasted={name: "Name,Quantity\nScrew,2"})
 
 
 @pytest.mark.parametrize(
-    "file,data",
+    "name,data",
     [
-        ("export.tsv", b"SKU\tQty\tOrder Number\n0012\t3\t42"),
-        ("export.csv", "SKU;Qty;Order Number\r\n0012;3;42".encode("utf-16")),
-        ("export.json", b'[{"SKU":"0012","Qty":3,"Order Number":"42"}]'),
-        (
-            "export.html",
-            b"<table><tr><th>SKU</th><th>Qty</th><th>Order Number</th></tr><tr><td>0012</td><td>3</td><td>42</td></tr></table>",
-        ),
-        (
-            "export.json",
-            b'{"export":{"lines":[{"SKU":"0012","Qty":3,"Order Number":"42"}]}}',
-        ),
-        (
-            "export.xml",
-            b"<orders><line><SKU>0012</SKU><Qty>3</Qty><OrderNumber>42</OrderNumber></line></orders>",
-        ),
-        ("export.vendor", b"SKU|Qty|Order Number\n0012|3|42"),
+        ("vendor.CSV", b"SKU;Qty;Order Number\n0012;3;42"),
+        ("vendor.JSON", b'{"items":[{"SKU":"0012","Qty":3,"Order Number":"42"}]}'),
+        ("parts.json", b'[{"SKU":"0012","Qty":3,"Order Number":"42"}]'),
     ],
 )
-def test_different_file_layouts(file, data):
-    (row,) = orders.preview(data, file)["rows"]
-    assert (row["sku"], row["quantity"], row["order"]) == ("0012", "3", "42")
-    assert row["pack"] == ""
+def test_spreadsheet_formats(name, data):
+    (row,) = orders.preview(data, name)["rows"]
+    assert (row["sku"], row["quantity"], row["order"], row["pack"]) == (
+        "0012",
+        "3",
+        "42",
+        "",
+    )
 
 
 def test_http_review_rechecks_file_and_keeps_original_column_assignment(monkeypatch):
@@ -263,6 +175,23 @@ def test_http_review_rechecks_file_and_keeps_original_column_assignment(monkeypa
     path = "/organizations/" + str(uuid4()) + "/orders"
     client = TestClient(app)
     blob = {"file": ("order.csv", CSV, "text/csv")}
+    image = {"file": ("screen.png", b"image", "text/csv")}
+    assert client.post(path + "/preview", files=image).status_code == 422
+    assert (
+        client.post(
+            path + "/import",
+            files=image,
+            data={
+                "supplier": "test",
+                "historical": "true",
+                "assignments": "[]",
+                "rows": "[]",
+                "digest": "0" * 64,
+            },
+        ).status_code
+        == 422
+    )
+    assert not saved
     result = client.post(path + "/preview", files=blob)
     assert result.status_code == 200, result.text
     preview = result.json()

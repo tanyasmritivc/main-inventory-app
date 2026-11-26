@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { spreadsheetAccept, spreadsheetFileError, spreadsheetFileHint } from "@/lib/spreadsheet-file";
 import { userFacingError } from "@/lib/user-facing-error";
 
 export type ImportRequest = (path: string, body: FormData | Record<string, unknown>) => Promise<unknown>;
@@ -25,8 +26,8 @@ export function DirectSpreadsheetImport({spaceName, spaceId, request, onSuccess,
     if (!selected || lock.current) return;
     lock.current = true; setBusy(true); setError(""); setFile(selected);
     try {
-      if (!/\.(xlsx|csv|json)$/i.test(selected.name) || !selected.size || selected.size > 10 * 1024 * 1024)
-        throw new ImportNotice("Choose a nonempty Excel (.xlsx), CSV, or JSON file up to 10 MB.");
+      const invalid = spreadsheetFileError(selected);
+      if (invalid) throw new ImportNotice(invalid);
       if (!session.current) {
         const form = new FormData();
         form.append("file", selected); form.append("location", spaceName); form.append("direct", "true");
@@ -52,8 +53,8 @@ export function DirectSpreadsheetImport({spaceName, spaceId, request, onSuccess,
   }, [initialFile]);
   return <div className="space-y-4">
     <p>Save directly to <strong>{spaceName}</strong>.</p>
-    <p className="text-sm text-muted-foreground">Excel (.xlsx), CSV, or JSON, up to 10 MB. Every worksheet is included, with original columns retained in item details.</p>
-    {!file && <input aria-label="Choose spreadsheet" type="file" accept=".csv,.xlsx,.json" disabled={busy} onChange={e => { const selected = e.target.files?.[0]; if (selected) void save(selected); }}/>} 
+    <p className="text-sm text-muted-foreground">{spreadsheetFileHint} Every worksheet is included, with original columns retained in item details.</p>
+    {!file && <input aria-label="Choose spreadsheet" type="file" accept={spreadsheetAccept} disabled={busy} onChange={e => { const selected = e.target.files?.[0]; if (selected) void save(selected); }}/>}
     {file && <p>{file.name}</p>}
     {file && <button className="button-primary" disabled={busy || result?.status === "complete" && !result.counts.failed} onClick={() => void save()}>{busy ? "Importing..." : session.current ? "Resume import" : "Import to this Space"}</button>}
     {result && <p role="status">{result.counts.imported} of {result.counts.total} items saved.</p>}

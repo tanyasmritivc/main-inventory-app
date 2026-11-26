@@ -6,7 +6,6 @@ import os
 import subprocess
 import sys
 import hashlib
-import io
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Literal
@@ -68,68 +67,22 @@ class Receipt(BaseModel):
 
 def preview(data, filename, assignments=None, pasted=None):
     if not data or len(data) > MAX_BYTES:
-        raise HTTPException(413, "Choose a nonempty file up to 4 MB.")
-    name = PurePosixPath(filename or "order").name[:240]
-    tables, documents = [], []
-    pasted = pasted or {}
-    if (
-        not isinstance(pasted, dict)
-        or any(not isinstance(v, str) for v in pasted.values())
-        or sum(len(v) for v in pasted.values()) > 500000
-    ):
-        raise HTTPException(422, "Paste a smaller table from the source document.")
-
-    def add(content, member):
-        result = read_tables(content, member)
-        if result:
-            tables.extend(result)
-        else:
-            documents.append(member)
-            if pasted.get(member, "").strip():
-                transcription = read_tables(
-                    pasted[member].encode("utf-8"), "transcription.tsv"
-                )
-                for t in transcription:
-                    t.update(file=member, sheet="Manually pasted table")
-                tables.extend(transcription)
-
+        raise HTTPException(413, "Choose a nonempty file up to 10 MB.")
+    name = PurePosixPath(filename or "").name
+    if len(name) > 240:
+        raise HTTPException(422, "Shorten the spreadsheet filename.")
+    if pasted:
+        raise HTTPException(422, "Upload a spreadsheet to import order lines.")
     try:
-        if name.lower().endswith(".zip"):
-            with zipfile.ZipFile(io.BytesIO(data)) as archive:
-                entries = archive.infolist()
-                if len(entries) > 32 or sum(m.file_size for m in entries) > MAX_BYTES:
-                    raise HTTPException(413, "This order archive is too large.")
-                seen = set()
-                for member in entries:
-                    path = PurePosixPath(member.filename)
-                    if (
-                        path.is_absolute()
-                        or ".." in path.parts
-                        or chr(92) in member.filename
-                        or len(member.filename) > 240
-                        or member.filename in seen
-                    ):
-                        raise HTTPException(
-                            422, "Unsafe or duplicate archive member name."
-                        )
-                    seen.add(member.filename)
-                    if (
-                        member.is_dir()
-                        or "__MACOSX" in path.parts
-                        or path.name == ".DS_Store"
-                    ):
-                        continue
-                    add(archive.read(member), member.filename)
-        else:
-            add(data, name)
-        if set(pasted) - set(documents):
-            raise ValueError("A pasted table must refer to an attached document.")
-        if len(tables) > 32 or sum(len(t["records"]) for t in tables) > MAX_ROWS + 32:
+        tables = read_tables(data, name)
+        if not tables:
+            raise ValueError("The spreadsheet has no data rows.")
+        if len(tables) > 32 or sum(len(t["records"]) for t in tables) > MAX_ROWS + len(
+            tables
+        ):
             raise HTTPException(
                 413, "Import up to 500 order lines and 32 sheets at a time."
             )
-        if not tables and not documents:
-            raise HTTPException(422, "The archive contains no source documents.")
         if assignments is None:
             assignments = [
                 {"header": t["header"], "mapping": t["suggestions"]} for t in tables
@@ -169,16 +122,16 @@ def preview(data, filename, assignments=None, pasted=None):
         "rows": rows,
         "tables": tables,
         "assignments": assignments,
-        "documents": documents,
+        "documents": [],
     }
 
 
 def isolated_preview(data, filename, assignments=None, pasted=None):
-    """Bound hostile workbook/PDF resource use outside the API process."""
+    """Bound spreadsheet parser resource use outside the API process."""
     import base64
 
     if not data or len(data) > MAX_BYTES:
-        raise HTTPException(413, "Choose a nonempty file up to 4 MB.")
+        raise HTTPException(413, "Choose a nonempty file up to 10 MB.")
     env = {
         "PATH": os.defpath,
         "PYTHONPATH": os.pathsep.join(str(p) for p in sys.path if p),
@@ -238,9 +191,7 @@ def reviewed(rows, source):
                 "Check every order number, line ID, description, status, quantity and units per pack.",
             ) from None
         pos = (row.source_file, row.source_sheet, row.source_row)
-        if pos not in allowed and (
-            row.source_file not in source["documents"] or row.source_sheet
-        ):
+        if pos not in allowed:
             raise HTTPException(
                 422, "Select a row or attached document included in the review."
             )
