@@ -353,41 +353,128 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
     final duplicate = preview?['space_review']?['duplicate'] == true;
     final matches = _maps(preview?['space_review']?['matches'] ?? []);
 
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final caption = theme.textTheme.bodySmall?.copyWith(
+      color: colors.onSurfaceVariant,
+      height: 1.4,
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Import orders')),
       body: SafeArea(
         child: AbsorbPointer(
           absorbing: busy,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
-              Text(
-                widget.spaceName,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Icon(Icons.layers_outlined, size: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Destination Space', style: caption),
+                        Text(
+                          widget.spaceName,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const Text(
-                'A complete spreadsheet imports directly. You can review missing order details before saving.',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: supplier,
-                maxLength: 120,
-                decoration: const InputDecoration(labelText: 'Supplier'),
-              ),
-              SwitchListTile(
-                title: const Text('Purchase history only'),
-                subtitle: const Text(
-                  'Use for past orders without an expected delivery.',
+              const SizedBox(height: 24),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: supplier,
+                        maxLength: 120,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'Supplier',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'Supplier name',
+                          counterText: '',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'Purchase history only',
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        subtitle: Text(
+                          'For past orders with no delivery expected.',
+                          style: caption,
+                        ),
+                        value: historical,
+                        onChanged: (v) => setState(() => historical = v),
+                      ),
+                    ],
+                  ),
                 ),
-                value: historical,
-                onChanged: (v) => setState(() => historical = v),
               ),
-              const Text('$spreadsheetFormats · 500 order lines maximum'),
-              OutlinedButton.icon(
-                onPressed: pick,
-                icon: const Icon(Icons.upload_file),
-                label: Text(filename.isEmpty ? 'Choose order file' : filename),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: busy ? null : pick,
+                style:
+                    FilledButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                      minimumSize: const Size.fromHeight(50),
+                    ).copyWith(
+                      backgroundBuilder: (context, states, child) => child!,
+                    ),
+                icon: const Icon(Icons.upload_file_outlined, size: 20),
+                label: Text(
+                  filename.isEmpty ? 'Choose order file' : 'Change file',
+                ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                filename.isEmpty ? 'Excel (.xlsx), CSV or JSON' : filename,
+                textAlign: TextAlign.center,
+                style: caption,
+              ),
+              Text(
+                'Up to 10 MB · 500 order lines',
+                textAlign: TextAlign.center,
+                style: caption,
+              ),
+              const SizedBox(height: 12),
+              if (bytes == null && error == null && !busy)
+                Text(
+                  'Complete order lines import directly when a supplier is entered.',
+                  textAlign: TextAlign.center,
+                  style: caption,
+                ),
+              if (busy) const LinearProgressIndicator(),
+              if (error != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(error!, style: TextStyle(color: colors.error)),
+                  ),
+                ),
               if (bytes != null && preview == null && !busy)
                 TextButton(
                   onPressed: () => run(readColumns),
@@ -463,20 +550,11 @@ class _SpaceOrderImportState extends State<SpaceOrderImport> {
                   ),
                 FilledButton(
                   onPressed: rows.isEmpty ? null : () => run(save),
-                  child: Text('Confirm ${rows.length} order lines'),
-                ),
-              ],
-              if (busy) const LinearProgressIndicator(),
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Text(
-                    error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    'Confirm ${rows.length} order ${rows.length == 1 ? 'line' : 'lines'}',
                   ),
                 ),
+              ],
             ],
           ),
         ),

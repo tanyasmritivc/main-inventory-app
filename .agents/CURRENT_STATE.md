@@ -4257,3 +4257,7 @@ Organization Space detail opens its Orders list and offers Import orders in the 
 ## November 25 · Orders spreadsheet picker, build 241
 
 Space Orders uses the native spreadsheet file picker for Excel (.xlsx), CSV and JSON up to 10 MB. With a supplier entered, complete order lines import directly. Incomplete rows open for review and duplicates are flagged. The API retains the existing 500-order-line limit. Flutter tests covered file rejection, direct import, review and duplicate handling. Apple accepted the signed 1.1.6 (241) upload for TestFlight. Physical-device verification remains pending.
+
+## November 26 · Native order import layout, build 242
+
+Space Order import displays its destination, groups supplier and purchase history, and presents the native file picker as its primary action. The 120-character supplier limit remains enforced with a hidden counter. The file limits and direct-import behavior are displayed beside the picker. Light and dark layout checks and seven focused import tests passed, including large-text access to the file picker and history switch.

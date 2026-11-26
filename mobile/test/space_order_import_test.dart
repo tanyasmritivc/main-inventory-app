@@ -31,6 +31,46 @@ void main() {
   final fixture = HierarchyFixture();
   setUpAll(fixture.initialize);
   tearDownAll(() => Supabase.instance.dispose());
+  testWidgets('Order setup fits a narrow phone at large text sizes', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: SpaceOrderImport(
+          api: fixture.api,
+          organizationId: 'team',
+          spaceId: 'shelf',
+          spaceName: 'Haas Engineering Workshop',
+        ),
+      ),
+    );
+    expect(find.text('Destination Space'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.byType(Switch).hitTestable(),
+      find.byType(ListView),
+      const Offset(0, -140),
+    );
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+    final choose = find.text('Choose order file');
+    await tester.dragUntilVisible(
+      choose.hitTestable(),
+      find.byType(ListView),
+      const Offset(0, -100),
+    );
+    expect(choose.hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   for (final name in ['screenshot.png', 'orders.zip']) {
     testWidgets('Rejects $name before uploading', (tester) async {
       FilePicker.platform = _Picker()
@@ -135,14 +175,28 @@ void main() {
         expect(calls.length, 1);
         return;
       }
+      await tester.scrollUntilVisible(
+        find.textContaining('40 recorded in Fasteners'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(
         find.textContaining('40 recorded in Fasteners · A1'),
         findsOneWidget,
       );
       expect(calls.every((s) => s.endsWith('/preview')), isTrue);
+      await tester.scrollUntilVisible(
+        find.byType(TextField).first,
+        -180,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.enterText(find.byType(TextField).first, 'goBILDA');
-      await tester.ensureVisible(find.text('Confirm 1 order lines'));
-      await tester.tap(find.text('Confirm 1 order lines'));
+      await tester.scrollUntilVisible(
+        find.text('Confirm 1 order line'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Confirm 1 order line'));
       await tester.pumpAndSettle();
       expect(calls.where((s) => s.endsWith('/import')).length, 1);
     });
